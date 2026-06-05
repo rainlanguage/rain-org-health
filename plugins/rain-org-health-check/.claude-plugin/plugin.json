@@ -1,0 +1,10 @@
+{
+  "name": "rain-org-health-check",
+  "description": "Audit the health of all rainlanguage GitHub org repos and produce a prioritized modernization report.",
+  "version": "0.1.0",
+  "author": {
+    "name": "rainlanguage"
+  },
+  "keywords": ["rainlanguage", "rainix", "soldeer", "ci", "audit"],
+  "category": "development"
+}
