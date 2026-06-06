@@ -64,6 +64,21 @@ table unless asked.
   legacy tag and plan a redeploy (deterministic Zoltu via
   `LibRainDeploy.deployAndBroadcast` + committed `*.pointers.sol`).
 
+## Secret-name inventory (consolidation)
+For secret consolidation / dead-secret cleanup, run the companion script:
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/secret-inventory.sh        # whole org
+```
+It reports every GitHub Actions secret **name** referenced across the org + which
+repos use each (names only — it never reads secret *values*), flags repos that
+index `secrets[<expr>]` dynamically (names not statically resolvable), and prints
+the full referenced set to diff against the org's SET secrets
+(`gh api orgs/<org>/actions/secrets --jq '.secrets[].name'`, needs admin) to find
+orphans. Watch for naming drift to consolidate: `CI_DEPLOY_<CHAIN>_RPC_URL` vs
+`RPC_URL_<CHAIN>_FORK` vs generic `CI_DEPLOY_RPC_URL`; per-chain
+`CI_DEPLOY_<CHAIN>_ETHERSCAN_API_KEY` vs `EXPLORER_VERIFICATION_KEY`; `TG_*` vs
+`TELEGRAM_*`.
+
 ## Scope control
 Scanning the whole org is dozens of `gh api` calls; for a quick check pass
 specific repo names. The scan is the discovery step — fixing is a separate,
