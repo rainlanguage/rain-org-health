@@ -56,6 +56,29 @@ Follow these conventions so repeat scans stay clean:
 - On a later scan, close any open `rain-health` issue whose finding no longer
   appears (with a short comment), so the tracker self-heals.
 
+## Audit existing issues for staleness
+Issues outlive the problems they describe — a bug gets fixed or a subsystem
+reworked, but the issue stays open. Thoroughly audit open issues and retire the
+ones the codebase has already resolved. **Judge against the CURRENT code, not the
+issue's filing date.**
+1. List open issues, widest first: `gh issue list --repo <org>/<repo> --state open
+   --limit 200 --json number,title,body,labels,createdAt`. Cover every repo, not
+   just `rain-health` ones.
+2. For each, decide if the described problem still exists:
+   - **`rain-health` issues** — re-run the matching scan; if the finding's
+     `<!-- rain-health:<flag> -->` marker no longer appears, it's resolved.
+   - **other issues** — read the files/symbols/workflows the issue names and check
+     `git log`/PRs since `createdAt`. Stale signals: the named code path was
+     deleted/renamed, the API it complains about was reworked, the workflow it
+     references no longer exists, or a merged PR explicitly closes it.
+3. For each clearly-resolved issue, comment with the **concrete evidence** (the
+   commit/PR that fixed it, or e.g. "magic-nix-cache no longer in any workflow")
+   and close it. When the signal is weak, label `stale?` and leave it for a human
+   rather than closing.
+Be conservative — close only on positive evidence the problem is gone; a quiet or
+old issue is not automatically a resolved one. This is Claude's judgment call,
+issue by issue, not a bulk auto-close.
+
 ## What each finding means + how to fix it
 
 | finding | meaning | remediation |
