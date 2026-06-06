@@ -93,6 +93,21 @@ issue by issue, not a bulk auto-close.
 | `telegram-secret-drift` | uses `TG_TOKEN`/`TG_CHAT_ID` | standardize on `TELEGRAM_BOT_TOKEN` / `TELEGRAM_CHAT_ID` (the org convention). |
 | `old-actions-checkout` / `old-nix-installer` | pinned to deprecated action versions | bump `actions/checkout` to v4+, prefer `nixbuild/nix-quick-install-action`. |
 | `soldeer-unpublished` | foundry.toml has a `[package]` but no revision on the soldeer registry | a publishable package never got pushed — wire `rainix-autopublish` (+ `[package].version`), add a `.soldeerignore` (publish only `src/` + license/readme; soldeer's sensitive-file prompt otherwise hangs CI), and have an org admin create the project on soldeer.xyz before the first push. |
+| `deprecated-interface` | Solidity imports a deprecated rain interpreter interface (V2/V3-era) — `IInterpreterV2`, `IInterpreterCallerV2`, `IInterpreterStoreV2`, `IExpressionDeployerV3`, `EvaluableConfigV3`/`EvaluableV2`, `LibEncodedDispatch`, `.eval2(`, `deployExpression2`, or any `rain.interpreter.interface/.../deprecated/` path | migrate to the current V4 API: `IInterpreterV4.eval4(EvalV4{...})` with `EvaluableV4{interpreter,store,bytecode}` (no expression deployment / encoded dispatch), `StackItem`/`bytes32[]`, eval-time validation. Follow the upstream `RaindexV6`/`LibRaindex` caller pattern. Worked example: flow#474. |
+
+## Detecting deprecated interfaces (code search)
+`deprecated-interface` lives in Solidity source, not workflows, so detect it
+org-wide with code search rather than the workflow scan:
+```bash
+for q in 'IInterpreterV2' 'IInterpreterCallerV2' 'IExpressionDeployerV3' 'LibEncodedDispatch' \
+         'deployExpression2' 'EvaluableConfigV3' '.eval2('; do
+  gh search code --owner rainlanguage "$q" --json repository -q '.[].repository.name'
+done | sort -u
+```
+Any repo that appears is wired to the pre-V4 interpreter API and should be
+migrated to `eval4`/`EvaluableV4` (track per repo; flow#474 is the template).
+Note flow itself was silently on this — its deploy looked fine but the contract
+called the now-removed `LibEncodedDispatch`.
 
 ## Notes / gotchas to carry into fixes
 - A soldeer CI push hangs (`error during IO operation: not connected`) when no
