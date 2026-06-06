@@ -35,28 +35,26 @@ After running, summarize the report for the user: lead with the org-wide
 counts, then group repos by the highest-priority finding. Don't dump the raw
 table unless asked.
 
-## Triage in chat, then file curated issues (don't blind-file)
-Detection is mechanical; filing is judgment. Don't pipe a raw scan straight into
-issues — triage first:
+## Triage in chat, then file issues directly (don't blind-file)
+Detection is mechanical; filing is judgment — so **Claude files the issues
+directly**, not a script. Never pipe a raw scan into issues.
 1. Run the scan and **present the findings as a table in chat** (repo × finding,
    grouped by severity), then discuss with the user: which are real vs false
    positives, what's already known or won't-fix, how to group related findings,
    and what order to tackle them.
-2. File only the **agreed** issues. `file-issues.sh` reads a findings file, so
-   write the curated subset (the `repo|flag` lines you kept) and apply just those:
-   ```bash
-   printf 'rain.solver|submodules dead-magic-nix-cache\n' > /tmp/curated.txt
-   bash ${CLAUDE_PLUGIN_ROOT}/scripts/file-issues.sh --apply /tmp/curated.txt
-   ```
-   When several findings on one repo are really one unit of work (e.g. the whole
-   nix/CI modernization), file a single richer issue yourself with `gh issue
-   create`, embedding the `<!-- rain-health:<flag> -->` marker(s) so idempotency +
-   auto-close still apply.
+2. File only the **agreed** issues, with `gh issue create`, grouping several
+   findings on one repo into a single issue where that's the real unit of work
+   (e.g. the whole nix/CI modernization), and writing each issue's body from the
+   discussion + the remediation column below.
 
-Filing mechanics (`file-issues.sh`): one issue per (repo, finding) in that repo,
-labeled `rain-health`, remediation in the body; idempotent by marker (re-runs
-never duplicate); issues whose finding has cleared auto-close. Dry-run is the
-default — preview before `--apply`, and never blind-file a whole org scan.
+Follow these conventions so repeat scans stay clean:
+- Label every filed issue `rain-health`.
+- Put a hidden marker in the body per finding it covers: `<!-- rain-health:<flag> -->`.
+- Before filing, list open markers to avoid duplicates:
+  `gh issue list --repo <org>/<repo> --label rain-health --state open --json number,body`,
+  and skip any finding whose marker is already present.
+- On a later scan, close any open `rain-health` issue whose finding no longer
+  appears (with a short comment), so the tracker self-heals.
 
 ## What each finding means + how to fix it
 
