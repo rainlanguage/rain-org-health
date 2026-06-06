@@ -35,6 +35,20 @@ After running, summarize the report for the user: lead with the org-wide
 counts, then group repos by the highest-priority finding. Don't dump the raw
 table unless asked.
 
+## File findings as tracked issues
+Chat output scrolls away; persist findings as GitHub issues so they survive and
+can be worked:
+```bash
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/scan.sh > /dev/null      # writes /tmp/roh_findings.txt
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/file-issues.sh           # DRY-RUN preview
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/file-issues.sh --apply   # file / auto-close for real
+```
+One issue per (repo, finding) in that repo, labeled `rain-health`, each carrying
+the remediation. Idempotent via a hidden `<!-- rain-health:<flag> -->` marker:
+re-runs never duplicate, and a finding that has cleared auto-closes its issue.
+Dry-run by default — always preview before `--apply`, since it writes across many
+repos. (Same pattern can wrap `verify-deployments.sh` output.)
+
 ## What each finding means + how to fix it
 
 | finding | meaning | remediation |
