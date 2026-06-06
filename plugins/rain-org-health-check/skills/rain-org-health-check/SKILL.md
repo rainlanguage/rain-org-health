@@ -98,6 +98,25 @@ dispatch-only and free of third-party actions so untrusted code can't run in the
 token's context, and never have it emit a value. Generate the referenced set at
 run time rather than committing a name snapshot.
 
+## Deployment verification (explorer)
+Deploy repos (those with `src/generated/*.pointers.sol`) land contracts at
+deterministic Zoltu addresses — the SAME address on every chain. A deploy's
+`--verify` step can silently fail on one chain (e.g. a bytecode-metadata
+mismatch) and leave a deployed-but-unverified contract. Every published tag's
+contracts should be source-verified on every network it targets; check it:
+```bash
+EXPLORER_VERIFICATION_KEY=<etherscan-v2-key> \
+  bash ${CLAUDE_PLUGIN_ROOT}/scripts/verify-deployments.sh          # all deploy repos
+bash ${CLAUDE_PLUGIN_ROOT}/scripts/verify-deployments.sh rain.verify  # specific
+```
+Per contract it prints per-network `verified | UNVERIFIED | ?`. Etherscan V2
+chains (arbitrum/base/base_sepolia/polygon/ethereum/sepolia) share the one
+multichain key; flare/songbird use Routescan (keyless). `UNVERIFIED` on a live
+network = re-run that chain's verify step. It checks the current (HEAD) pointer
+addresses; a tag with different bytecode has a different address, so verify
+older tags by checking out the tag. It can't distinguish unverified-but-deployed
+from not-deployed — cross-check the prod test if unsure.
+
 ## Scope control
 Scanning the whole org is dozens of `gh api` calls; for a quick check pass
 specific repo names. The scan is the discovery step — fixing is a separate,
