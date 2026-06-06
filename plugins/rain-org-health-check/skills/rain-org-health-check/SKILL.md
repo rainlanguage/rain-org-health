@@ -35,19 +35,28 @@ After running, summarize the report for the user: lead with the org-wide
 counts, then group repos by the highest-priority finding. Don't dump the raw
 table unless asked.
 
-## File findings as tracked issues
-Chat output scrolls away; persist findings as GitHub issues so they survive and
-can be worked:
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/scan.sh > /dev/null      # writes /tmp/roh_findings.txt
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/file-issues.sh           # DRY-RUN preview
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/file-issues.sh --apply   # file / auto-close for real
-```
-One issue per (repo, finding) in that repo, labeled `rain-health`, each carrying
-the remediation. Idempotent via a hidden `<!-- rain-health:<flag> -->` marker:
-re-runs never duplicate, and a finding that has cleared auto-closes its issue.
-Dry-run by default — always preview before `--apply`, since it writes across many
-repos. (Same pattern can wrap `verify-deployments.sh` output.)
+## Triage in chat, then file curated issues (don't blind-file)
+Detection is mechanical; filing is judgment. Don't pipe a raw scan straight into
+issues — triage first:
+1. Run the scan and **present the findings as a table in chat** (repo × finding,
+   grouped by severity), then discuss with the user: which are real vs false
+   positives, what's already known or won't-fix, how to group related findings,
+   and what order to tackle them.
+2. File only the **agreed** issues. `file-issues.sh` reads a findings file, so
+   write the curated subset (the `repo|flag` lines you kept) and apply just those:
+   ```bash
+   printf 'rain.solver|submodules dead-magic-nix-cache\n' > /tmp/curated.txt
+   bash ${CLAUDE_PLUGIN_ROOT}/scripts/file-issues.sh --apply /tmp/curated.txt
+   ```
+   When several findings on one repo are really one unit of work (e.g. the whole
+   nix/CI modernization), file a single richer issue yourself with `gh issue
+   create`, embedding the `<!-- rain-health:<flag> -->` marker(s) so idempotency +
+   auto-close still apply.
+
+Filing mechanics (`file-issues.sh`): one issue per (repo, finding) in that repo,
+labeled `rain-health`, remediation in the body; idempotent by marker (re-runs
+never duplicate); issues whose finding has cleared auto-close. Dry-run is the
+default — preview before `--apply`, and never blind-file a whole org scan.
 
 ## What each finding means + how to fix it
 
