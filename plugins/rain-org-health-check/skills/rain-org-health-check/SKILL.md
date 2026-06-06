@@ -64,20 +64,39 @@ table unless asked.
   legacy tag and plan a redeploy (deterministic Zoltu via
   `LibRainDeploy.deployAndBroadcast` + committed `*.pointers.sol`).
 
-## Secret-name inventory (consolidation)
-For secret consolidation / dead-secret cleanup, run the companion script:
-```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/secret-inventory.sh        # whole org
-```
-It reports every GitHub Actions secret **name** referenced across the org + which
-repos use each (names only — it never reads secret *values*), flags repos that
-index `secrets[<expr>]` dynamically (names not statically resolvable), and prints
-the full referenced set to diff against the org's SET secrets
-(`gh api orgs/<org>/actions/secrets --jq '.secrets[].name'`, needs admin) to find
-orphans. Watch for naming drift to consolidate: `CI_DEPLOY_<CHAIN>_RPC_URL` vs
-`RPC_URL_<CHAIN>_FORK` vs generic `CI_DEPLOY_RPC_URL`; per-chain
-`CI_DEPLOY_<CHAIN>_ETHERSCAN_API_KEY` vs `EXPLORER_VERIFICATION_KEY`; `TG_*` vs
-`TELEGRAM_*`.
+## Secret consolidation / dead-secret audit
+Secret **values** are write-only and unreadable; this audit only ever handles
+secret **names**. Names are low-sensitivity: in-use ones already appear in public
+workflow YAML (that's how the scan finds them) and unused ones are headed for
+deletion, so enumerating names exposes nothing new. Keep the audit generic and
+re-runnable — do not commit any org's actual name list into a shared/public repo
+(that's data, not tooling; a reusable skill stays org-agnostic).
+
+1. **Referenced set** — names referenced anywhere:
+   ```bash
+   bash ${CLAUDE_PLUGIN_ROOT}/scripts/secret-inventory.sh        # whole org
+   ```
+   Lists each referenced name + repos, and flags repos that index
+   `secrets[<expr>]` dynamically (names not statically resolvable — check by hand).
+2. **Set list** — names that actually exist (admin or fine-grained `Secrets:read`):
+   ```bash
+   gh api orgs/<org>/actions/secrets --paginate --jq '.secrets[].name' | sort
+   ```
+3. **Dead = set − referenced.** Before deleting a candidate: re-run step 1 (the
+   referenced set drifts), treat dynamically-built names
+   (`CI_DEPLOY_<CHAIN>_ETHERSCAN_API_KEY` / `_RPC_URL`) as live even if absent, and
+   ignore `GITHUB_TOKEN` (auto-injected, not an org secret).
+4. **Consolidate naming drift:** `CI_DEPLOY_<CHAIN>_RPC_URL` vs `RPC_URL_<CHAIN>_FORK`
+   vs generic `CI_DEPLOY_RPC_URL`; per-chain `CI_DEPLOY_<CHAIN>_ETHERSCAN_API_KEY`
+   → `EXPLORER_VERIFICATION_KEY` (keep flare/songbird — Routescan/Blockscout, not
+   Etherscan); `TG_*` → `TELEGRAM_*`.
+
+**Optional re-runnable automation:** wrap steps 2–3 in a `workflow_dispatch`-only
+workflow in a repo you control, authed with a fine-grained PAT scoped to *only*
+that org + `Secrets: read` (worst-case leak: reading non-sensitive names). Keep it
+dispatch-only and free of third-party actions so untrusted code can't run in the
+token's context, and never have it emit a value. Generate the referenced set at
+run time rather than committing a name snapshot.
 
 ## Scope control
 Scanning the whole org is dozens of `gh api` calls; for a quick check pass
