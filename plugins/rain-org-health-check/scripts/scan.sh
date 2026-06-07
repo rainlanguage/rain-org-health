@@ -66,6 +66,7 @@ except Exception: pass' 2>/dev/null
   printf '%s' "$wfblob" | grep -qE 'TG_TOKEN|TG_CHAT_ID' && add "telegram-secret-drift"
   printf '%s' "$wfblob" | grep -qE 'actions/checkout@v[12]([^0-9]|$)' && add "old-actions-checkout"
   { printf '%s' "$wfblob"; printf '%s' "$foundry"; } | grep -qE 'CI_DEPLOY_[A-Z_]*ETHERSCAN_API_KEY' && add "per-chain-etherscan-key"
+  printf '%s' "$wfblob" | grep -qE 'soldeer push' && printf '%s' "$wfblob" | grep -qE 'skip[-_]warnings' && add "soldeer-skip-warnings"
 
   # soldeer publish gap: has a [package] in foundry.toml but no version on the registry
   pkgname=$(printf '%s' "$foundry" | awk '/^\[package\]/{f=1;next} /^\[/{f=0} f&&/^name/{gsub(/name *= *|"/,"");print;exit}')
