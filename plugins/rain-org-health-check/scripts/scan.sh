@@ -5,7 +5,7 @@
 #   submodules, dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
 #   tasks, PRIVATE_KEY_DEV, per-chain etherscan keys, telegram secret drift,
 #   deprecated publish-soldeer, old action versions, soldeer publish gaps, and
-#   foundry fuzz-config gaps/drift.
+#   foundry fuzz-config gaps / drift / pinned seeds.
 #
 # Usage:
 #   scan.sh                 # scan all active non-fork org repos
@@ -93,6 +93,11 @@ except Exception: pass' 2>/dev/null
       infuzz && /^[[:space:]]*runs[[:space:]]*=/ { gsub(/[^0-9]/,""); print; exit }')
     if [ -z "$fuzzruns" ]; then add "no-fuzz-runs"
     elif [ "$fuzzruns" != "5096" ]; then add "fuzz-runs-drift"; fi
+    # a pinned fuzz seed makes fuzzing deterministic (same inputs every CI run),
+    # defeating cross-run input exploration — no org repo pins one, so flag it.
+    printf '%s' "$foundry" | awk '
+      /^[[:space:]]*\[/ { infuzz = ($0 ~ /\[fuzz\]/ || $0 ~ /\.fuzz\][[:space:]]*$/) }
+      infuzz && /^[[:space:]]*seed[[:space:]]*=/ { f=1 } END { exit !f }' && add "fuzz-seed-pinned"
   fi
 
   [ -n "$flags" ] && printf '%s|%s\n' "$repo" "${flags# }"
