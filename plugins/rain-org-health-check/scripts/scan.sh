@@ -4,7 +4,8 @@
 # Encodes the health signals from the rainix/soldeer modernization effort:
 #   submodules, dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
 #   tasks, PRIVATE_KEY_DEV, per-chain etherscan keys, telegram secret drift,
-#   deprecated publish-soldeer, old action versions, and soldeer publish gaps.
+#   deprecated publish-soldeer, old action versions, soldeer publish gaps, and
+#   foundry fuzz-config gaps/drift.
 #
 # Usage:
 #   scan.sh                 # scan all active non-fork org repos
@@ -78,6 +79,20 @@ except Exception: pass' 2>/dev/null
   # sol lib that COULD publish but has no [package] at all (and not a deploy/app repo)
   if [ -n "$foundry" ] && [ -z "$pkgname" ] && printf '%s' "$foundry" | grep -q 'src ='; then
     : # heuristic only; skip to avoid noise
+  fi
+
+  # foundry fuzz config: the org canonical is the default profile's [fuzz] runs =
+  # 5096. A foundry project with no [fuzz] runs leaves fuzz tests at foundry's
+  # default 256 (shallow); one whose runs differs has drifted. (foundry.toml
+  # usually omits `src`, relying on the default, so gate on the manifest itself.)
+  # Parse the TOML for a `runs` under a [fuzz] / [profile.*.fuzz] section (NOT
+  # optimizer_runs, which lives in the profile table).
+  if [ -n "$foundry" ]; then
+    fuzzruns=$(printf '%s' "$foundry" | awk '
+      /^[[:space:]]*\[/ { infuzz = ($0 ~ /\[fuzz\]/ || $0 ~ /\.fuzz\][[:space:]]*$/) }
+      infuzz && /^[[:space:]]*runs[[:space:]]*=/ { gsub(/[^0-9]/,""); print; exit }')
+    if [ -z "$fuzzruns" ]; then add "no-fuzz-runs"
+    elif [ "$fuzzruns" != "5096" ]; then add "fuzz-runs-drift"; fi
   fi
 
   [ -n "$flags" ] && printf '%s|%s\n' "$repo" "${flags# }"

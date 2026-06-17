@@ -7,7 +7,8 @@ description: >-
   workflows, removed rainix tasks (rainix-rs-prelude / *-artifacts),
   PRIVATE_KEY_DEV deploy keys, per-chain etherscan-key drift, telegram
   secret-name drift, deprecated publish-soldeer references, old action
-  versions, and soldeer publish gaps. Use when asked to check rain org repo
+  versions, soldeer publish gaps, and foundry fuzz-config gaps/drift. Use when
+  asked to check rain org repo
   health, audit rainix/soldeer CI modernization, find which repos still need
   updating, or before/after an org-wide rainix bump.
 allowed-tools: Bash Read Grep WebFetch
@@ -95,6 +96,8 @@ issue by issue, not a bulk auto-close.
 | `soldeer-unpublished` | foundry.toml has a `[package]` but no revision on the soldeer registry | a publishable package never got pushed — wire `rainix-autopublish` (+ `[package].version`), add a `.soldeerignore` (publish only `src/` + license/readme; soldeer's sensitive-file prompt otherwise hangs CI), and have an org admin create the project on soldeer.xyz before the first push. |
 | `deprecated-interface` | Solidity imports a deprecated rain interpreter interface (V2/V3-era) — `IInterpreterV2`, `IInterpreterCallerV2`, `IInterpreterStoreV2`, `IExpressionDeployerV3`, `EvaluableConfigV3`/`EvaluableV2`, `LibEncodedDispatch`, `.eval2(`, `deployExpression2`, or any `rain.interpreter.interface/.../deprecated/` path | migrate to the current V4 API: `IInterpreterV4.eval4(EvalV4{...})` with `EvaluableV4{interpreter,store,bytecode}` (no expression deployment / encoded dispatch), `StackItem`/`bytes32[]`, eval-time validation. Follow the upstream `RaindexV6`/`LibRaindex` caller pattern. Worked example: flow#474. |
 | `soldeer-skip-warnings` | a workflow runs `forge soldeer push` with `--skip-warnings` | **Never** skip soldeer publish warnings — they're the guard that catches accidentally publishing sensitive files (`.env`, keys, `.git`, build dirs) into the package. Remove `--skip-warnings` and scope the publish with a `.soldeerignore` (publish only `src/` + license/readme) so the push succeeds in CI *without* suppressing the warning. |
+| `no-fuzz-runs` | a foundry sol project (`foundry.toml` with a `src` tree) has no `[fuzz] runs` setting, so its fuzz tests run at foundry's shallow default (256) | add the org-canonical default-profile fuzz depth to `foundry.toml`:<br>`[fuzz]`<br>`runs = 5096`<br>Per-test `forge-config: default.fuzz.runs = N` overrides for individually slow fuzz tests stay valid and expected — this only sets the project-wide floor. Don't hardcode an arbitrary value (a flare PR proposed `runs = 1000`, which both undershoots and diverges from the org); use 5096. |
+| `fuzz-runs-drift` | the project's `[fuzz] runs` differs from the org canonical `5096` | align to `runs = 5096` unless there's a documented reason in `foundry.toml` (e.g. a genuinely slow suite) — in which case leave a comment on the setting so the drift reads as intentional, not accidental. |
 
 ## Detecting deprecated interfaces (code search)
 `deprecated-interface` lives in Solidity source, not workflows, so detect it
