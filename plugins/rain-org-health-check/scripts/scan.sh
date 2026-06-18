@@ -4,8 +4,9 @@
 # Encodes the health signals from the rainix/soldeer modernization effort:
 #   submodules, dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
 #   tasks, PRIVATE_KEY_DEV, per-chain etherscan keys, telegram secret drift,
-#   deprecated publish-soldeer, old action versions, soldeer publish gaps, and
-#   foundry fuzz-config gaps / drift / pinned seeds.
+#   deprecated publish-soldeer, old action versions, soldeer publish gaps,
+#   foundry fuzz-config gaps / drift / pinned seeds, and manual-release (not
+#   migrated to autopublish).
 #
 # Usage:
 #   scan.sh                 # scan all active non-fork org repos
@@ -68,6 +69,14 @@ except Exception: pass' 2>/dev/null
   printf '%s' "$wfblob" | grep -qE 'actions/checkout@v[12]([^0-9]|$)' && add "old-actions-checkout"
   { printf '%s' "$wfblob"; printf '%s' "$foundry"; } | grep -qE 'CI_DEPLOY_[A-Z_]*ETHERSCAN_API_KEY' && add "per-chain-etherscan-key"
   printf '%s' "$wfblob" | grep -qE 'soldeer push' && printf '%s' "$wfblob" | grep -qE 'skip[-_]warnings' && add "soldeer-skip-warnings"
+  # manual release not migrated to autopublish: has a manual-release workflow but NO
+  # autopublish/package-release workflow (and no rainix-autopublish reusable call). The
+  # org standard is merge-driven autopublish via the shared rainix-autopublish reusable,
+  # not a manual workflow_dispatch release.
+  printf '%s' "$wfnames" | grep -qiE 'manual-release' \
+    && ! { printf '%s' "$wfnames" | grep -qiE 'package-release|npm-package-release|autopublish' \
+           || printf '%s' "$wfblob" | grep -q 'rainix-autopublish'; } \
+    && add "manual-release-not-autopublish"
 
   # soldeer publish gap: has a [package] in foundry.toml but no version on the registry
   pkgname=$(printf '%s' "$foundry" | awk '/^\[package\]/{f=1;next} /^\[/{f=0} f&&/^name/{gsub(/name *= *|"/,"");print;exit}')
