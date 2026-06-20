@@ -4,7 +4,8 @@
 # Encodes the health signals from the rainix/soldeer modernization effort:
 #   submodules, dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
 #   tasks, PRIVATE_KEY_DEV, per-chain etherscan keys, telegram secret drift,
-#   deprecated publish-soldeer, old action versions, and soldeer publish gaps.
+#   deprecated publish-soldeer, old action versions, soldeer publish gaps, and
+#   unversioned deploy constants.
 #
 # Usage:
 #   scan.sh                 # scan all active non-fork org repos
@@ -78,6 +79,20 @@ except Exception: pass' 2>/dev/null
   # sol lib that COULD publish but has no [package] at all (and not a deploy/app repo)
   if [ -n "$foundry" ] && [ -z "$pkgname" ] && printf '%s' "$foundry" | grep -q 'src ='; then
     : # heuristic only; skip to avoid noise
+  fi
+
+  # deploy-constants-unversioned: a Solidity repo with prod-deployment fork tests
+  # (a *DeployProd.t.sol forks each chain to assert the on-chain deployment) but
+  # no versioned-deploy-constants pattern — no check-published-deploy-constants.sh
+  # and no *DeployTaggedConstants.t.sol. Without a frozen constant suite pinned per
+  # published soldeer tag, every bytecode-changing PR collides with the single
+  # "current" deploy constant and the prod test stays red until a redeploy.
+  if [ -n "$foundry" ]; then
+    tree=$(gh api "repos/$org/$repo/git/trees/HEAD?recursive=1" --jq '.tree[].path' 2>/dev/null)
+    if printf '%s' "$tree" | grep -qE 'DeployProd\.t\.sol$' \
+       && ! printf '%s' "$tree" | grep -qE '(check-published-deploy-constants\.sh|TaggedConstants\.t\.sol)$'; then
+      add "deploy-constants-unversioned"
+    fi
   fi
 
   [ -n "$flags" ] && printf '%s|%s\n' "$repo" "${flags# }"
