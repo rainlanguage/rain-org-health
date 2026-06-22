@@ -4,8 +4,9 @@
 # Encodes the health signals from the rainix/soldeer modernization effort:
 #   submodules, dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
 #   tasks, PRIVATE_KEY_DEV, per-chain etherscan keys, telegram secret drift,
-#   deprecated publish-soldeer, old action versions, soldeer publish gaps, and
-#   unversioned deploy constants.
+#   deprecated publish-soldeer, old action versions, soldeer publish gaps,
+#   foundry fuzz-config gaps / drift / pinned seeds, manual-release (not
+#   migrated to autopublish), and unversioned deploy constants.
 #
 # Usage:
 #   scan.sh                 # scan all active non-fork org repos
@@ -68,6 +69,14 @@ except Exception: pass' 2>/dev/null
   printf '%s' "$wfblob" | grep -qE 'actions/checkout@v[12]([^0-9]|$)' && add "old-actions-checkout"
   { printf '%s' "$wfblob"; printf '%s' "$foundry"; } | grep -qE 'CI_DEPLOY_[A-Z_]*ETHERSCAN_API_KEY' && add "per-chain-etherscan-key"
   printf '%s' "$wfblob" | grep -qE 'soldeer push' && printf '%s' "$wfblob" | grep -qE 'skip[-_]warnings' && add "soldeer-skip-warnings"
+  # manual release not migrated to autopublish: has a manual-release workflow but NO
+  # autopublish/package-release workflow (and no rainix-autopublish reusable call). The
+  # org standard is merge-driven autopublish via the shared rainix-autopublish reusable,
+  # not a manual workflow_dispatch release.
+  printf '%s' "$wfnames" | grep -qiE 'manual-release' \
+    && ! { printf '%s' "$wfnames" | grep -qiE 'package-release|npm-package-release|autopublish' \
+           || printf '%s' "$wfblob" | grep -q 'rainix-autopublish'; } \
+    && add "manual-release-not-autopublish"
 
   # soldeer publish gap: has a [package] in foundry.toml but no version on the registry
   pkgname=$(printf '%s' "$foundry" | awk '/^\[package\]/{f=1;next} /^\[/{f=0} f&&/^name/{gsub(/name *= *|"/,"");print;exit}')
@@ -79,6 +88,25 @@ except Exception: pass' 2>/dev/null
   # sol lib that COULD publish but has no [package] at all (and not a deploy/app repo)
   if [ -n "$foundry" ] && [ -z "$pkgname" ] && printf '%s' "$foundry" | grep -q 'src ='; then
     : # heuristic only; skip to avoid noise
+  fi
+
+  # foundry fuzz config: the org canonical is the default profile's [fuzz] runs =
+  # 5096. A foundry project with no [fuzz] runs leaves fuzz tests at foundry's
+  # default 256 (shallow); one whose runs differs has drifted. (foundry.toml
+  # usually omits `src`, relying on the default, so gate on the manifest itself.)
+  # Parse the TOML for a `runs` under a [fuzz] / [profile.*.fuzz] section (NOT
+  # optimizer_runs, which lives in the profile table).
+  if [ -n "$foundry" ]; then
+    fuzzruns=$(printf '%s' "$foundry" | awk '
+      /^[[:space:]]*\[/ { infuzz = ($0 ~ /\[fuzz\]/ || $0 ~ /\.fuzz\][[:space:]]*$/) }
+      infuzz && /^[[:space:]]*runs[[:space:]]*=/ { gsub(/[^0-9]/,""); print; exit }')
+    if [ -z "$fuzzruns" ]; then add "no-fuzz-runs"
+    elif [ "$fuzzruns" != "5096" ]; then add "fuzz-runs-drift"; fi
+    # a pinned fuzz seed makes fuzzing deterministic (same inputs every CI run),
+    # defeating cross-run input exploration — no org repo pins one, so flag it.
+    printf '%s' "$foundry" | awk '
+      /^[[:space:]]*\[/ { infuzz = ($0 ~ /\[fuzz\]/ || $0 ~ /\.fuzz\][[:space:]]*$/) }
+      infuzz && /^[[:space:]]*seed[[:space:]]*=/ { f=1 } END { exit !f }' && add "fuzz-seed-pinned"
   fi
 
   # deploy-constants-unversioned: a Solidity repo with prod-deployment fork tests
