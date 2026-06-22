@@ -5,8 +5,8 @@
 #   submodules, dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
 #   tasks, PRIVATE_KEY_DEV, per-chain etherscan keys, telegram secret drift,
 #   deprecated publish-soldeer, old action versions, soldeer publish gaps,
-#   foundry fuzz-config gaps / drift / pinned seeds, and manual-release (not
-#   migrated to autopublish).
+#   foundry fuzz-config gaps / drift / pinned seeds, manual-release (not
+#   migrated to autopublish), and unversioned deploy constants.
 #
 # Usage:
 #   scan.sh                 # scan all active non-fork org repos
@@ -107,6 +107,20 @@ except Exception: pass' 2>/dev/null
     printf '%s' "$foundry" | awk '
       /^[[:space:]]*\[/ { infuzz = ($0 ~ /\[fuzz\]/ || $0 ~ /\.fuzz\][[:space:]]*$/) }
       infuzz && /^[[:space:]]*seed[[:space:]]*=/ { f=1 } END { exit !f }' && add "fuzz-seed-pinned"
+  fi
+
+  # deploy-constants-unversioned: a Solidity repo with prod-deployment fork tests
+  # (a *DeployProd.t.sol forks each chain to assert the on-chain deployment) but
+  # no versioned-deploy-constants pattern — no check-published-deploy-constants.sh
+  # and no *DeployTaggedConstants.t.sol. Without a frozen constant suite pinned per
+  # published soldeer tag, every bytecode-changing PR collides with the single
+  # "current" deploy constant and the prod test stays red until a redeploy.
+  if [ -n "$foundry" ]; then
+    tree=$(gh api "repos/$org/$repo/git/trees/HEAD?recursive=1" --jq '.tree[].path' 2>/dev/null)
+    if printf '%s' "$tree" | grep -qE 'DeployProd\.t\.sol$' \
+       && ! printf '%s' "$tree" | grep -qE '(check-published-deploy-constants\.sh|TaggedConstants\.t\.sol)$'; then
+      add "deploy-constants-unversioned"
+    fi
   fi
 
   [ -n "$flags" ] && printf '%s|%s\n' "$repo" "${flags# }"

@@ -7,7 +7,8 @@ description: >-
   workflows, removed rainix tasks (rainix-rs-prelude / *-artifacts),
   PRIVATE_KEY_DEV deploy keys, per-chain etherscan-key drift, telegram
   secret-name drift, deprecated publish-soldeer references, old action
-  versions, soldeer publish gaps, and foundry fuzz-config gaps/drift. Use when
+  versions, soldeer publish gaps, foundry fuzz-config gaps/drift, and
+  unversioned deploy constants. Use when
   asked to check rain org repo
   health, audit rainix/soldeer CI modernization, find which repos still need
   updating, or before/after an org-wide rainix bump.
@@ -100,6 +101,7 @@ issue by issue, not a bulk auto-close.
 | `no-fuzz-runs` | a foundry project has no `[fuzz] runs` setting, so its fuzz tests run at foundry's shallow default (256) | add the org-canonical default-profile fuzz depth to `foundry.toml` — **`runs` only, no `seed`** (see `fuzz-seed-pinned`):<br>`[fuzz]`<br>`runs = 5096`<br>Per-test `forge-config: default.fuzz.runs = N` overrides for individually slow fuzz tests stay valid and expected — this only sets the project-wide floor. Don't hardcode an arbitrary value (a flare PR proposed `runs = 1000`, which both undershoots and diverges from the org); use 5096. |
 | `fuzz-runs-drift` | the project's `[fuzz] runs` differs from the org canonical `5096` | align to `runs = 5096` unless there's a documented reason in `foundry.toml` (e.g. a genuinely slow suite) — in which case leave a comment on the setting so the drift reads as intentional, not accidental. |
 | `fuzz-seed-pinned` | the `[fuzz]` config pins a `seed`, making fuzzing deterministic — every CI run replays the **same** inputs, so it never explores new ones | remove the `seed` line. No org repo pins a fuzz seed; reproducibility on a failure comes from foundry printing the failing counterexample, not from freezing the seed. (A flare PR proposed `seed = "0x1"` alongside the runs change — drop it.) |
+| `deploy-constants-unversioned` | repo deploys deterministically and has a `*DeployProd.t.sol` (forks each chain to assert the on-chain deployment) but pins only a single "current" deploy address/codehash — no per-soldeer-tag suite. Every bytecode-changing PR then collides with that one constant: bump it and the prod-deploy test goes red until a redeploy, the classic premerge chicken-and-egg | adopt the versioned-deploy-constants pattern (reference: `raindex` `LibRaindexDeploy.sol` + `LibRaindexDeployTaggedConstants.t.sol`, and `rain.math.float`). Keep frozen literal `*_DEPLOYED_ADDRESS_<ver>` / `*_DEPLOYED_CODEHASH_<ver>` constants in the deploy lib, one suite per version published to the soldeer registry; add `script/check-published-deploy-constants.sh` (queries `api.soldeer.xyz/api/v1/revision` and lists any published tag missing its suite — prints `OK`/`MISSING:...`/`SKIP`); and a `*DeployTaggedConstants.t.sol` FFI test asserting `OK` (skips when the registry is unreachable). Deploying is the routine deterministic-Zoltu step (`Manual sol artifacts` workflow); the versioned suite records each release so a PR is never blocked on the bleeding-edge deploy. |
 
 ## Detecting deprecated interfaces (code search)
 `deprecated-interface` lives in Solidity source, not workflows, so detect it
