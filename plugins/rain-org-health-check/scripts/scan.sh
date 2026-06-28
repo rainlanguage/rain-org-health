@@ -69,6 +69,13 @@ except Exception: pass' 2>/dev/null
   { printf '%s' "$wfblob"; printf '%s' "$foundry"; } | grep -qE 'CI_DEPLOY_[A-Z_]*ETHERSCAN_API_KEY' && add "per-chain-etherscan-key"
   printf '%s' "$wfblob" | grep -qE 'soldeer push' && printf '%s' "$wfblob" | grep -qE 'skip[-_]warnings' && add "soldeer-skip-warnings"
 
+  # fuzz-runs-not-5096: foundry.toml [fuzz] runs is explicitly set but not the org-standard 5096.
+  # Absent runs (inherits from rainix) is OK; only a wrong explicit value is flagged.
+  if [ -n "$foundry" ]; then
+    fuzz_runs=$(printf '%s' "$foundry" | awk '/^\[fuzz\]/{f=1;next} f&&/^\[/{f=0} f&&/^runs *=/{sub(/^runs *= */,"");sub(/[[:space:]#].*$/,"");print;exit}')
+    [ -n "$fuzz_runs" ] && [ "$fuzz_runs" != "5096" ] && add "fuzz-runs-not-5096"
+  fi
+
   # soldeer publish gap: has a [package] in foundry.toml but no version on the registry
   pkgname=$(printf '%s' "$foundry" | awk '/^\[package\]/{f=1;next} /^\[/{f=0} f&&/^name/{gsub(/name *= *|"/,"");print;exit}')
   if [ -n "$pkgname" ]; then
