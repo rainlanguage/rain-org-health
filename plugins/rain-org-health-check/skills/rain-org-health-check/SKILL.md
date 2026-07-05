@@ -2,7 +2,7 @@
 name: rain-org-health-check
 description: >-
   Audit the health of all rainlanguage GitHub org repos and produce a
-  prioritized modernization report. Detects git submodules, the dead
+  prioritized modernization report. Detects the dead
   DeterminateSystems/magic-nix-cache action, bespoke (non-reusable) CI
   workflows, removed rainix tasks (rainix-rs-prelude / *-artifacts),
   PRIVATE_KEY_DEV deploy keys, per-chain etherscan-key drift, telegram
@@ -84,7 +84,6 @@ issue by issue, not a bulk auto-close.
 
 | finding | meaning | remediation |
 |---|---|---|
-| `submodules` | repo still uses git submodules (`.gitmodules`) | de-submodule to soldeer: add `[dependencies]` (flattened tree) + `[soldeer] recursive_deps = false`, rewrite imports to versioned soldeer paths (`<pkg>-<ver>/src/...`), add the OZ bridge remapping only if it pulls `@openzeppelin-contracts-upgradeable`, drop `lib/` + `.gitmodules`. If a submodule's repo was renamed, check the redirect (e.g. `ethgild` → `rain.vats` = soldeer `rain-vats`). |
 | `dead-magic-nix-cache` | uses `DeterminateSystems/magic-nix-cache-action` (service sunset → HTTP 418, builds fail) | replace the nix setup with `nixbuild/nix-quick-install-action@v30` + `cachix/cachix-action@v15` (name `rainlanguage`, `continue-on-error`) + `nix-community/cache-nix-action@v6`. Better: switch the whole job to a rainix reusable. |
 | `removed-rainix-task` | runs `rainix-rs-prelude` / `rainix-rs-artifacts` / `rainix-sol-artifacts` (removed from latest rainix, or deploy-in-push-CI) | convert CI to the reusable workflows; move deploy out of push CI into `manual-sol-artifacts`. |
 | `bespoke-ci` | runs rainix sol/rs tasks inline instead of calling a reusable | replace with `rainlanguage/rainix/.github/workflows/rainix-sol.yaml` / `rainix-rs.yaml` (or the individual `-static`/`-test`/`-legal`/`-wasm` ones). `secrets: inherit`. |

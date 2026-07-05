@@ -2,7 +2,7 @@
 # rain-org-health-check: scan rainlanguage org repos for modernization debt.
 #
 # Encodes the health signals from the rainix/soldeer modernization effort:
-#   submodules, dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
+#   dead magic-nix-cache, bespoke (non-reusable) CI, removed rainix
 #   tasks, PRIVATE_KEY_DEV, per-chain etherscan keys, telegram secret drift,
 #   deprecated publish-soldeer, old action versions, soldeer publish gaps, and
 #   unversioned deploy constants.
@@ -56,7 +56,6 @@ except Exception: pass' 2>/dev/null
   foundry=$(api "foundry.toml")
 
   # ---- signals ----
-  exists ".gitmodules" && add "submodules"
   printf '%s' "$wfblob" | grep -q 'magic-nix-cache' && add "dead-magic-nix-cache"
   printf '%s' "$wfblob" | grep -qE 'DeterminateSystems/nix-installer-action' && add "old-nix-installer"
   printf '%s' "$wfblob" | grep -qE '(-c|command|nix run[^ ]*) +rainix-(rs|sol)-artifacts|rainix-rs-prelude' && add "removed-rainix-task"
