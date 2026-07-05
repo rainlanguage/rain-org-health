@@ -12,6 +12,7 @@
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
     --bar: #b45309; --bar-track: #eeebe6;
+    --crit: #dc2626; --pm-fill: rgba(180,83,9,0.13);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -21,6 +22,7 @@
       --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
       --clean: #4ade80; --clean-bg: #12241a;
       --bar: #d98a2b; --bar-track: #27241b;
+      --crit: #f87171; --pm-fill: rgba(217,138,43,0.16);
     }
   }
   :root[data-theme="dark"] {
@@ -30,6 +32,7 @@
     --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
     --clean: #4ade80; --clean-bg: #12241a;
     --bar: #d98a2b; --bar-track: #27241b;
+    --crit: #f87171; --pm-fill: rgba(217,138,43,0.16);
   }
   :root[data-theme="light"] {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -38,6 +41,7 @@
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
     --bar: #b45309; --bar-track: #eeebe6;
+    --crit: #dc2626; --pm-fill: rgba(180,83,9,0.13);
   }
   * { box-sizing: border-box; }
   body {
@@ -99,6 +103,26 @@
   .clean { display: inline-flex; align-items: center; gap: 6px; color: var(--clean); font-size: 13px; }
   .clean::before { content: "✓"; font-weight: 700; }
   .empty { color: var(--ink-3); padding: 24px 4px; }
+  .pm-chart-wrap { position: relative; background: var(--surface); border: 1px solid var(--border);
+                   border-radius: 12px; padding: 16px 16px 8px; }
+  .pm-chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .pm-chart text { fill: var(--ink-3); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .pm-axis-line { stroke: var(--border); stroke-width: 1; }
+  .pm-area { fill: var(--pm-fill); stroke: none; }
+  .pm-line { fill: none; stroke: var(--bar); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .pm-dot { fill: var(--bar); }
+  .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
+  .pm-endlabel { fill: var(--bar); font-weight: 700; font-size: 11px; }
+  .pm-cursor { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
+  .pm-tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -100%);
+            background: var(--ink); color: var(--bg); border-radius: 8px; padding: 7px 9px;
+            font-size: 11.5px; line-height: 1.5; white-space: nowrap;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 5; transition: opacity .08s; }
+  .pm-tip .deg { color: var(--crit); font-weight: 700; }
+  .pm-empty { color: var(--ink-3); padding: 26px 4px; }
+  .pm-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
+  .pm-note a { color: var(--ink-3); }
+  .pm-note .deg { color: var(--crit); font-weight: 600; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
   @media (max-width: 620px) {
@@ -126,6 +150,13 @@
     <button class="clearf" id="clearf">Clear signal filter</button>
   </div>
   <div id="repos"></div>
+
+  <h2>Producer run metrics</h2>
+  <div class="tiles" id="pmtiles"></div>
+  <div class="pm-chart-wrap" id="pmwrap">
+    <div class="pm-empty" id="pmempty">loading run metrics…</div>
+  </div>
+  <div class="pm-note" id="pmnote"></div>
 
   <footer>
     Each signal is one piece of rainix/soldeer modernization debt to clear — status, not severity;
@@ -274,6 +305,161 @@ async function load() {
   $("clearf").addEventListener("click", () => setSignal(null));
 }
 load();
+
+// ---- Producer run metrics: live time-series of startup overhead ----
+// Data is issue-pr-cron's public metrics/runs.jsonl (one JSON object per run),
+// fetched cross-origin from raw. Startup overhead = share of a run's tool calls
+// spent recovering state before the first GitHub mutation; lower is better.
+const PM_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/metrics/runs.jsonl";
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+function parseRunId(id) {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(id || "");
+  return m ? new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : null;
+}
+function fmtDay(id) { const d = parseRunId(id); return d ? `${MON[d.getUTCMonth()]} ${d.getUTCDate()}` : ""; }
+function fmtRunTime(id) {
+  const d = parseRunId(id);
+  if (!d) return id || "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${MON[d.getUTCMonth()]} ${d.getUTCDate()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`;
+}
+function fmtAgo(d) {
+  if (!d) return "";
+  const h = (Date.now() - d.getTime()) / 3.6e6;
+  if (h < 1) return `${Math.max(1, Math.round(h * 60))}m ago`;
+  if (h < 48) return `${Math.round(h)}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+function median(a) {
+  if (!a.length) return null;
+  const s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+
+function renderPmTiles(runs) {
+  const pcts = runs.map((r) => r.startupPct);
+  const latest = pcts.length ? pcts[pcts.length - 1] : null;
+  const med = median(pcts);
+  const tiles = [
+    [latest == null ? "—" : latest.toFixed(1) + "%", "latest startup"],
+    [med == null ? "—" : med.toFixed(1) + "%", "median startup"],
+    [String(runs.length), "runs recorded"],
+  ];
+  const box = $("pmtiles");
+  box.innerHTML = "";
+  for (const [n, l] of tiles) {
+    const t = document.createElement("div");
+    t.className = "tile";
+    const num = document.createElement("div");
+    num.className = "n";
+    num.textContent = n;
+    const lab = document.createElement("div");
+    lab.className = "l";
+    lab.textContent = l;
+    t.append(num, lab);
+    box.appendChild(t);
+  }
+}
+
+function renderPmChart(runs) {
+  const VBW = 720, VBH = 210, PADL = 30, PADR = 46, PADT = 14, PADB = 24;
+  const plotW = VBW - PADL - PADR, plotH = VBH - PADT - PADB;
+  const yOf = (p) => PADT + (1 - Math.max(0, Math.min(100, p)) / 100) * plotH;
+  const by = yOf(0);
+  const times = runs.map((r) => { const d = parseRunId(r.runId); return d ? d.getTime() : null; });
+  const timed = times.every((t) => t != null);
+  let xOf;
+  if (runs.length === 1) xOf = () => PADL + plotW / 2;
+  else if (timed) { const mn = Math.min(...times), mx = Math.max(...times), sp = (mx - mn) || 1; xOf = (i) => PADL + ((times[i] - mn) / sp) * plotW; }
+  else xOf = (i) => PADL + (i / (runs.length - 1)) * plotW;
+  const pts = runs.map((r, i) => ({ x: +xOf(i).toFixed(1), y: +yOf(r.startupPct).toFixed(1), run: r }));
+
+  const grid = [0, 25, 50, 75, 100].map((g) => {
+    const gy = yOf(g).toFixed(1);
+    return `<line class="pm-axis-line" x1="${PADL}" y1="${gy}" x2="${VBW - PADR}" y2="${gy}" opacity="${g === 0 ? 0.5 : 0.22}"/>` +
+      `<text x="${PADL - 6}" y="${(+gy + 3).toFixed(1)}" text-anchor="end">${g}</text>`;
+  }).join("");
+
+  let area = "", line = "";
+  if (pts.length >= 2) {
+    area = `<path class="pm-area" d="M ${pts[0].x} ${by} ${pts.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${pts[pts.length - 1].x} ${by} Z"/>`;
+    line = `<path class="pm-line" d="M ${pts.map((p) => `${p.x} ${p.y}`).join(" L ")}"/>`;
+  }
+  const dots = pts.map((p, i) => {
+    const deg = p.run.outcome && p.run.outcome !== "ok";
+    return `<circle class="pm-dot${deg ? " deg" : ""}" cx="${p.x}" cy="${p.y}" r="${i === pts.length - 1 ? 4 : 3}"/>`;
+  }).join("");
+  const last = pts[pts.length - 1];
+  const endlabel = `<text class="pm-endlabel" x="${(last.x + 6).toFixed(1)}" y="${(last.y + 3).toFixed(1)}">${last.run.startupPct.toFixed(0)}%</text>`;
+  const xlabels = pts.length >= 2
+    ? `<text x="${PADL}" y="${VBH - 7}" text-anchor="start">${fmtDay(runs[0].runId)}</text>` +
+      `<text x="${VBW - PADR}" y="${VBH - 7}" text-anchor="end">${fmtDay(runs[runs.length - 1].runId)}</text>`
+    : `<text x="${last.x}" y="${VBH - 7}" text-anchor="middle">${fmtDay(runs[0].runId)}</text>`;
+  const cursor = `<line class="pm-cursor" id="pmcursor" x1="0" y1="${PADT}" x2="0" y2="${VBH - PADB}"/>`;
+
+  const wrap = $("pmwrap");
+  wrap.innerHTML =
+    `<svg class="pm-chart" id="pmsvg" viewBox="0 0 ${VBW} ${VBH}" preserveAspectRatio="xMidYMid meet"` +
+    ` role="img" aria-label="Producer startup overhead percent per run over time">` +
+    grid + cursor + area + line + dots + endlabel + xlabels + `</svg>` +
+    `<div class="pm-tip" id="pmtip"></div>`;
+
+  const svg = $("pmsvg"), tip = $("pmtip"), cur = $("pmcursor");
+  svg.addEventListener("mousemove", (e) => {
+    const rr = svg.getBoundingClientRect();
+    if (!rr.width) return;
+    const relX = ((e.clientX - rr.left) / rr.width) * VBW;
+    let best = 0, bd = Infinity;
+    pts.forEach((p, i) => { const d = Math.abs(p.x - relX); if (d < bd) { bd = d; best = i; } });
+    const p = pts[best], r = p.run, deg = r.outcome && r.outcome !== "ok";
+    cur.setAttribute("x1", p.x); cur.setAttribute("x2", p.x); cur.style.opacity = 1;
+    const wr = wrap.getBoundingClientRect();
+    tip.style.left = (rr.left - wr.left + (p.x / VBW) * rr.width) + "px";
+    tip.style.top = (rr.top - wr.top + (p.y / VBH) * rr.height - 10) + "px";
+    const cost = typeof r.costUsd === "number" ? ` · $${r.costUsd.toFixed(2)}` : "";
+    tip.innerHTML =
+      `<b>${r.startupPct.toFixed(1)}%</b> startup overhead<br>` +
+      `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns<br>` +
+      `${fmtRunTime(r.runId)} · <span class="${deg ? "deg" : ""}">${r.outcome || "ok"}</span>${cost}`;
+    tip.style.opacity = 1;
+  });
+  svg.addEventListener("mouseleave", () => { tip.style.opacity = 0; cur.style.opacity = 0; });
+}
+
+async function loadMetrics() {
+  const empty = $("pmempty");
+  let runs = [];
+  try {
+    const res = await fetch(PM_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    const text = await res.text();
+    runs = text.split("\n").map((l) => l.trim()).filter(Boolean)
+      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .filter((r) => r && r.role === "producer" && typeof r.startupPct === "number")
+      .sort((a, b) => (a.runId || "").localeCompare(b.runId || ""));
+  } catch (e) {
+    if (empty) empty.textContent = "could not load run metrics (metrics/runs.jsonl)";
+    return;
+  }
+  renderPmTiles(runs);
+  if (!runs.length) {
+    if (empty) empty.innerHTML =
+      "No producer runs recorded yet. The first metric lands after the next producer cron run — " +
+      "then this chart fills in, one point per run.";
+    $("pmnote").innerHTML =
+      `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
+      `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
+    return;
+  }
+  renderPmChart(runs);
+  const last = runs[runs.length - 1], deg = last.outcome && last.outcome !== "ok";
+  $("pmnote").innerHTML =
+    `Latest run ${fmtAgo(parseRunId(last.runId))} · outcome <span class="${deg ? "deg" : ""}">${last.outcome || "ok"}</span>. ` +
+    `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
+    `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
+}
+loadMetrics();
 </script>
 </body>
 </html>
