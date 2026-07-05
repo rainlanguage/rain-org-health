@@ -25,12 +25,15 @@ playbook.
 - Read-only — the scan never writes or pushes.
 
 ## Run the scan
+The scanner is a Rust binary (`roh-scan`) run directly from nix — no wrapper
+script:
 ```bash
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/scan.sh            # whole org
-bash ${CLAUDE_PLUGIN_ROOT}/scripts/scan.sh rain.dia rain.flare   # specific repos
+nix run github:rainlanguage/rain-org-health#roh-scan                     # whole org
+nix run github:rainlanguage/rain-org-health#roh-scan -- rain.dia rain.flare   # specific repos
+nix run github:rainlanguage/rain-org-health#roh-scan -- --json site/health.json   # write the dashboard data
 ```
-It prints per-repo findings + an org-wide summary, and writes raw findings to
-`/tmp/roh_findings.txt`. For a different org: `ORG=<org> bash .../scan.sh`.
+It prints per-repo findings + an org-wide summary. For a different org:
+`ORG=<org> nix run …#roh-scan`. Requires an authenticated `gh` (plus `curl`).
 
 After running, summarize the report for the user: lead with the org-wide
 counts, then group repos by the highest-priority finding. Don't dump the raw

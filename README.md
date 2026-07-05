@@ -32,21 +32,25 @@ Ask Claude to "run a rain org health check" (or invoke
 `/rain-org-health-check:rain-org-health-check`). Requires an authenticated `gh`
 with org read access, plus `curl` and `python3`. The scan is **read-only**.
 
-You can also run the scanner directly:
+You can also run the scanner directly (a Rust binary, no wrapper script):
 
 ```sh
-plugins/rain-org-health-check/scripts/scan.sh            # whole org
-plugins/rain-org-health-check/scripts/scan.sh rain.dia rain.flare   # specific repos
+nix run github:rainlanguage/rain-org-health#roh-scan                    # whole org
+nix run github:rainlanguage/rain-org-health#roh-scan -- rain.dia rain.flare  # specific repos
+nix run .#roh-scan -- --json site/health.json                          # refresh dashboard data
 ```
 
 ## Layout
 
 ```
 .claude-plugin/marketplace.json          # marketplace catalog
+flake.nix                                # exposes packages.roh-scan
+Cargo.toml                               # workspace root
 plugins/rain-org-health-check/
 ├── .claude-plugin/plugin.json           # plugin manifest
-├── scripts/scan.sh                      # the org scanner (gh + curl + python3)
+├── roh-scan/                            # the org scanner (Rust; signal detection + gh/curl)
 └── skills/rain-org-health-check/SKILL.md  # skill instructions + remediation playbook
+site/                                    # dashboard (index.html + health.json)
 ```
 
 ## License
