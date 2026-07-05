@@ -1,0 +1,8 @@
+# Workspace root so the rainix rust reusables (cargo test / rainix-rs-static at
+# the repo root) pick up the crate in plugins/. The crate keeps its own manifest.
+[workspace]
+resolver = "2"
+members = ["plugins/rain-org-health-check/roh-scan"]
+
+[profile.release]
+opt-level = 2

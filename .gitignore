@@ -1,1 +1,4 @@
 /tmp/
+/target/
+**/target/
+.mutation-test/
