@@ -1,0 +1,17 @@
+[package]
+name = "roh-scan"
+version = "0.1.0"
+edition = "2021"
+description = "Scan a GitHub org's repos for rainix/soldeer modernization-debt signals."
+license = "LicenseRef-DCL-1.0"
+
+[[bin]]
+name = "roh-scan"
+path = "src/main.rs"
+
+[dependencies]
+regex = "1"
+serde_json = { version = "1", features = ["preserve_order"] }
+
+[profile.release]
+opt-level = 2
