@@ -118,3 +118,39 @@ awk -F'|' '{print $2}' /tmp/roh_findings.txt | tr ' ' '\n' | grep -v '^$' | sort
 echo
 echo "repos with findings: $(wc -l < /tmp/roh_findings.txt | tr -d ' ') / $TOTAL"
 echo "raw findings: /tmp/roh_findings.txt"
+
+# ---- machine-readable output (FORMAT=json → the dashboard data source) ------
+if [ "${FORMAT:-}" = "json" ]; then
+  JSON_OUT="${JSON_OUT:-site/health.json}"
+  mkdir -p "$(dirname "$JSON_OUT")"
+  FINDINGS_FILE=/tmp/roh_findings.txt ORG="$ORG" TOTAL="$TOTAL" python3 - "$JSON_OUT" <<'PY'
+import json, os, sys, datetime
+out_path = sys.argv[1]
+org = os.environ["ORG"]
+total = int(os.environ["TOTAL"])
+repos = []
+summary = {}
+with open(os.environ["FINDINGS_FILE"]) as f:
+    for line in f:
+        line = line.rstrip("\n")
+        if not line or "|" not in line:
+            continue
+        name, sigs = line.split("|", 1)
+        signals = sorted(s for s in sigs.split() if s)
+        repos.append({"name": name, "signals": signals})
+        for s in signals:
+            summary[s] = summary.get(s, 0) + 1
+repos.sort(key=lambda r: (-len(r["signals"]), r["name"]))
+doc = {
+    "generatedAt": datetime.datetime.now(datetime.timezone.utc).strftime("%Y-%m-%dT%H:%M:%SZ"),
+    "org": org,
+    "totalRepos": total,
+    "reposWithFindings": len(repos),
+    "summary": dict(sorted(summary.items(), key=lambda kv: (-kv[1], kv[0]))),
+    "repos": repos,
+}
+with open(out_path, "w") as w:
+    json.dump(doc, w, indent=2)
+print(f"wrote {out_path} ({len(repos)} repos with findings)", file=sys.stderr)
+PY
+fi

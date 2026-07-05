@@ -1,0 +1,260 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>rain org health</title>
+<style>
+  :root {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --bar: #b45309; --bar-track: #eeebe6;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+      --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+      --border: #332f24; --accent: #60a5fa;
+      --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+      --clean: #4ade80; --clean-bg: #12241a;
+      --bar: #d98a2b; --bar-track: #27241b;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+    --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+    --border: #332f24; --accent: #60a5fa;
+    --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+    --clean: #4ade80; --clean-bg: #12241a;
+    --bar: #d98a2b; --bar-track: #27241b;
+  }
+  :root[data-theme="light"] {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --bar: #b45309; --bar-track: #eeebe6;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 4px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .meta { color: var(--ink-3); font-size: 13px; }
+  .theme-btn {
+    margin-left: auto; background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
+    font-size: 13px; cursor: pointer;
+  }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .tile .n { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
+  .tile .l { color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
+       margin: 32px 0 12px; font-weight: 600; }
+  .summary { display: grid; gap: 6px; }
+  .srow {
+    display: grid; grid-template-columns: 220px 1fr 34px; align-items: center; gap: 12px;
+    background: none; border: 0; padding: 4px 6px; border-radius: 8px; cursor: pointer;
+    color: inherit; font: inherit; text-align: left; width: 100%;
+  }
+  .srow:hover { background: var(--surface); }
+  .srow.active { background: var(--surface-2); }
+  .srow .sig { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--ink-2);
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .srow.active .sig { color: var(--ink); font-weight: 600; }
+  .track { height: 12px; background: var(--bar-track); border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: var(--bar); border-radius: 4px; min-width: 3px; }
+  .srow .c { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); text-align: right; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0 8px; }
+  input[type=search] {
+    flex: 1; min-width: 180px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 11px; color: var(--ink); font-size: 14px;
+  }
+  .clearf { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
+            border-radius: 8px; padding: 7px 11px; font-size: 13px; cursor: pointer; display: none; }
+  .clearf.show { display: inline-block; }
+  .repo { border-bottom: 1px solid var(--border); padding: 12px 4px; display: grid;
+          grid-template-columns: 240px 1fr; gap: 14px; align-items: start; }
+  .repo:last-child { border-bottom: 0; }
+  .repo a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 14.5px; word-break: break-word; }
+  .repo a:hover { color: var(--accent); text-decoration: underline; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--debt-bg); color: var(--debt); border: 1px solid var(--debt-border);
+    border-radius: 6px; padding: 2px 8px; cursor: pointer;
+  }
+  .chip::before { content: "▲"; font-size: 9px; }
+  .chip.dim { opacity: 0.32; }
+  .clean { display: inline-flex; align-items: center; gap: 6px; color: var(--clean); font-size: 13px; }
+  .clean::before { content: "✓"; font-weight: 700; }
+  .empty { color: var(--ink-3); padding: 24px 4px; }
+  footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
+  footer a { color: var(--ink-3); }
+  @media (max-width: 620px) {
+    .srow { grid-template-columns: 130px 1fr 30px; }
+    .repo { grid-template-columns: 1fr; gap: 8px; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>rain org health</h1>
+    <span class="meta" id="meta">loading…</span>
+    <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
+  </header>
+
+  <div class="tiles" id="tiles"></div>
+
+  <h2>Modernization debt by signal</h2>
+  <div class="summary" id="summary"></div>
+
+  <h2>Repositories</h2>
+  <div class="controls">
+    <input type="search" id="search" placeholder="Filter repositories…" autocomplete="off" />
+    <button class="clearf" id="clearf">Clear signal filter</button>
+  </div>
+  <div id="repos"></div>
+
+  <footer>
+    Each signal is one piece of rainix/soldeer modernization debt to clear — status, not severity;
+    identity is the label, not the color. Generated by the org-health scan.
+    <span id="src"></span>
+  </footer>
+</div>
+
+<script type="module">
+const $ = (id) => document.getElementById(id);
+let activeSignal = null;
+let data = null;
+
+// Theme toggle: default follows the OS; the button stamps data-theme to override.
+$("theme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+});
+
+function render() {
+  const q = $("search").value.trim().toLowerCase();
+  const repos = data.repos.filter((r) => {
+    if (activeSignal && !r.signals.includes(activeSignal)) return false;
+    if (q && !r.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const el = $("repos");
+  el.innerHTML = "";
+  if (!repos.length) {
+    el.innerHTML = '<div class="empty">No repositories match.</div>';
+    return;
+  }
+  for (const r of repos) {
+    const row = document.createElement("div");
+    row.className = "repo";
+    const a = document.createElement("a");
+    a.href = `https://github.com/${data.org}/${r.name}`;
+    a.textContent = r.name;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    if (!r.signals.length) {
+      const c = document.createElement("span");
+      c.className = "clean";
+      c.textContent = "clean";
+      chips.appendChild(c);
+    } else {
+      for (const s of r.signals) {
+        const c = document.createElement("button");
+        c.className = "chip" + (activeSignal && activeSignal !== s ? " dim" : "");
+        c.textContent = s;
+        c.addEventListener("click", () => setSignal(activeSignal === s ? null : s));
+        chips.appendChild(c);
+      }
+    }
+    row.append(a, chips);
+    el.appendChild(row);
+  }
+}
+
+function setSignal(sig) {
+  activeSignal = sig;
+  $("clearf").classList.toggle("show", !!sig);
+  document.querySelectorAll(".srow").forEach((r) =>
+    r.classList.toggle("active", r.dataset.sig === sig));
+  render();
+}
+
+function renderSummary() {
+  const entries = Object.entries(data.summary);
+  const max = Math.max(1, ...entries.map(([, n]) => n));
+  const box = $("summary");
+  box.innerHTML = "";
+  if (!entries.length) {
+    box.innerHTML = '<div class="empty">No modernization debt detected across the scanned repos.</div>';
+    return;
+  }
+  for (const [sig, n] of entries) {
+    const b = document.createElement("button");
+    b.className = "srow";
+    b.dataset.sig = sig;
+    b.innerHTML =
+      `<span class="sig" title="${sig}">${sig}</span>` +
+      `<span class="track"><span class="fill" style="width:${(n / max) * 100}%"></span></span>` +
+      `<span class="c">${n}</span>`;
+    b.addEventListener("click", () => setSignal(activeSignal === sig ? null : sig));
+    box.appendChild(b);
+  }
+}
+
+function renderTiles() {
+  const signalCount = Object.keys(data.summary).length;
+  const clean = data.totalRepos - data.reposWithFindings;
+  const tiles = [
+    [data.totalRepos, "repos scanned"],
+    [data.reposWithFindings, "with debt"],
+    [clean, "clean"],
+    [signalCount, "distinct signals"],
+  ];
+  $("tiles").innerHTML = tiles
+    .map(([n, l]) => `<div class="tile"><div class="n">${n}</div><div class="l">${l}</div></div>`)
+    .join("");
+}
+
+async function load() {
+  try {
+    const res = await fetch("health.json", { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    data = await res.json();
+  } catch (e) {
+    $("meta").textContent = "could not load health.json";
+    return;
+  }
+  const when = new Date(data.generatedAt);
+  const ago = Math.round((Date.now() - when.getTime()) / 3.6e6);
+  $("meta").textContent =
+    `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
+    (isFinite(ago) ? ` (${ago}h ago)` : "");
+  $("src").innerHTML =
+    ` · <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener">source</a>`;
+  renderTiles();
+  renderSummary();
+  render();
+  $("search").addEventListener("input", render);
+  $("clearf").addEventListener("click", () => setSignal(null));
+}
+load();
+</script>
+</body>
+</html>
