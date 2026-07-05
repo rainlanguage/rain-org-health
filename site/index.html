@@ -112,7 +112,9 @@
   .pm-line { fill: none; stroke: var(--bar); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
   .pm-dot { fill: var(--bar); }
   .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
-  .pm-endlabel { fill: var(--bar); font-weight: 700; font-size: 11px; }
+  /* Qualified with .pm-chart so it outweighs `.pm-chart text` (0,1,1) — an
+     unqualified .pm-endlabel (0,1,0) loses the cascade and renders muted. */
+  .pm-chart text.pm-endlabel { fill: var(--bar); font-weight: 700; font-size: 11px; }
   .pm-cursor { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
   .pm-tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -100%);
             background: var(--ink); color: var(--bg); border-radius: 8px; padding: 7px 9px;
