@@ -1,0 +1,65 @@
+{
+  "generatedAt": "2026-07-05T07:41:08Z",
+  "org": "rainlanguage",
+  "totalRepos": 8,
+  "reposWithFindings": 7,
+  "summary": {
+    "per-chain-etherscan-key": 5,
+    "deploy-constants-unversioned": 2,
+    "removed-rainix-task": 2,
+    "bespoke-ci": 1,
+    "dead-magic-nix-cache": 1,
+    "old-actions-checkout": 1,
+    "old-nix-installer": 1
+  },
+  "repos": [
+    {
+      "name": "flow",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer",
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.interpreter",
+      "signals": [
+        "deploy-constants-unversioned",
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "raindex",
+      "signals": [
+        "old-actions-checkout",
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rainix",
+      "signals": [
+        "bespoke-ci",
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rainlang",
+      "signals": [
+        "deploy-constants-unversioned",
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.erc4626.words",
+      "signals": [
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.math.float",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    }
+  ]
+}
