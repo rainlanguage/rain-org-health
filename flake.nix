@@ -19,7 +19,7 @@
           pname = "roh-scan";
           version = "0.1.0";
           src = ./plugins/rain-org-health-check/roh-scan;
-          cargoLock.lockFile = ./plugins/rain-org-health-check/roh-scan/Cargo.lock;
+          cargoLock.lockFile = ./Cargo.lock;
         };
       in
       {
