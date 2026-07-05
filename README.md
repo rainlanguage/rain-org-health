@@ -1,11 +1,12 @@
 # rain-org-health
 
 A Claude Code **plugin marketplace** providing the `rain-org-health-check`
-skill: an org-wide health audit for the [`rainlanguage`](https://github.com/rainlanguage)
-GitHub org.
+skill: an org-wide health audit for the
+[`rainlanguage`](https://github.com/rainlanguage) GitHub org.
 
-**📊 Live dashboard: <https://rainlanguage.github.io/rain-org-health/>** — per-repo
-modernization-debt signals, updated from each scan. Source in [`site/`](site/).
+**📊 Live dashboard: <https://rainlanguage.github.io/rain-org-health/>** —
+per-repo modernization-debt signals, updated from each scan. Source in
+[`site/`](site/).
 
 It scans every active repo for rainix/soldeer modernization debt and emits a
 prioritized report — git submodules, the dead `magic-nix-cache` action, bespoke

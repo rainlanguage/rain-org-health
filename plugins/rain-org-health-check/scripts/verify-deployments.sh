@@ -56,6 +56,7 @@ is_deploy_repo() { gh api "repos/$ORG/$1/contents/src/generated" \
   --jq '.[].name | select(endswith(".pointers.sol"))' 2>/dev/null | grep -q . ; }
 export -f is_deploy_repo; export ORG
 echo "Finding deploy repos (with src/generated/*.pointers.sol)..." >&2
+# shellcheck disable=SC2016  # $1 is expanded by the inner bash -c, not here
 deploys=$(xargs -P "$PAR" -I{} bash -c 'is_deploy_repo "$1" && echo "$1"' _ {} < /tmp/vd_repos.txt 2>/dev/null | sort)
 [ -z "$deploys" ] && { echo "no deploy repos found"; exit 0; }
 
@@ -65,7 +66,7 @@ for repo in $deploys; do
   ft=$(gh api "repos/$ORG/$repo/contents/foundry.toml" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null)
   nets=$(printf '%s' "$ft" | sed -n '/\[etherscan\]/,/^\[/p' | grep -oE '^[a-z_]+ *=' | grep -oE '^[a-z_]+')
   [ -z "$nets" ] && nets="arbitrum base base_sepolia flare polygon"
-  echo "### $repo  [networks: $(echo $nets | tr '\n' ' ')]"
+  echo "### $repo  [networks: $(echo "$nets" | tr '\n' ' ')]"
   for pf in $(gh api "repos/$ORG/$repo/contents/src/generated" --jq '.[].name | select(endswith(".pointers.sol"))' 2>/dev/null); do
     name=${pf%.pointers.sol}
     addr=$(gh api "repos/$ORG/$repo/contents/src/generated/$pf" --jq '.content' 2>/dev/null | base64 -d 2>/dev/null \

@@ -3,3 +3,6 @@
 [workspace]
 resolver = "2"
 members = ["plugins/rain-org-health-check/roh-scan"]
+
+[profile.release]
+opt-level = 2
