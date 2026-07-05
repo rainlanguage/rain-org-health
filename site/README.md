@@ -2,6 +2,8 @@
 
 Static, dependency-free dashboard for the org-health scan.
 
+**Live: <https://rainlanguage.github.io/rain-org-health/>**
+
 - `index.html` — self-contained page (inline CSS/JS, no build, no external requests) that fetches `health.json` and renders per-repo modernization-debt signals: stat tiles, a per-signal magnitude summary, and a filterable repo list. Theme follows the OS with a manual toggle.
 - `health.json` — the data source, produced by the scan:
 
