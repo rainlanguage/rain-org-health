@@ -111,8 +111,9 @@ pub fn detect_signals(inputs: &RepoInputs) -> Vec<&'static str> {
     // *TaggedConstants.t.sol).
     if !foundry.is_empty() {
         let re_prod = RE_DEPLOYPROD.get_or_init(|| re(r"(?m)DeployProd\.t\.sol$"));
-        let re_ver =
-            RE_VERSIONED.get_or_init(|| re(r"(?m)(check-published-deploy-constants\.sh|TaggedConstants\.t\.sol)$"));
+        let re_ver = RE_VERSIONED.get_or_init(|| {
+            re(r"(?m)(check-published-deploy-constants\.sh|TaggedConstants\.t\.sol)$")
+        });
         if re_prod.is_match(&inputs.tree) && !re_ver.is_match(&inputs.tree) {
             out.push("deploy-constants-unversioned");
         }
@@ -125,26 +126,44 @@ mod tests {
     use super::*;
 
     fn inp(wf: &str) -> RepoInputs {
-        RepoInputs { workflows: wf.into(), ..Default::default() }
+        RepoInputs {
+            workflows: wf.into(),
+            ..Default::default()
+        }
     }
 
     #[test]
     fn magic_nix_cache() {
-        assert!(detect_signals(&inp("uses: DeterminateSystems/magic-nix-cache-action@v2")).contains(&"dead-magic-nix-cache"));
-        assert!(!detect_signals(&inp("uses: cachix/cachix-action@v14")).contains(&"dead-magic-nix-cache"));
+        assert!(
+            detect_signals(&inp("uses: DeterminateSystems/magic-nix-cache-action@v2"))
+                .contains(&"dead-magic-nix-cache")
+        );
+        assert!(!detect_signals(&inp("uses: cachix/cachix-action@v14"))
+            .contains(&"dead-magic-nix-cache"));
     }
 
     #[test]
     fn old_nix_installer() {
-        assert!(detect_signals(&inp("uses: DeterminateSystems/nix-installer-action@v4")).contains(&"old-nix-installer"));
-        assert!(!detect_signals(&inp("uses: nixbuild/nix-quick-install-action@v27")).contains(&"old-nix-installer"));
+        assert!(
+            detect_signals(&inp("uses: DeterminateSystems/nix-installer-action@v4"))
+                .contains(&"old-nix-installer")
+        );
+        assert!(
+            !detect_signals(&inp("uses: nixbuild/nix-quick-install-action@v27"))
+                .contains(&"old-nix-installer")
+        );
     }
 
     #[test]
     fn removed_rainix_task() {
-        assert!(detect_signals(&inp("run: nix develop -c rainix-sol-artifacts")).contains(&"removed-rainix-task"));
-        assert!(detect_signals(&inp("run: nix run .#rainix-rs-prelude")).contains(&"removed-rainix-task"));
-        assert!(!detect_signals(&inp("run: nix develop -c rainix-sol-test")).contains(&"removed-rainix-task"));
+        assert!(
+            detect_signals(&inp("run: nix develop -c rainix-sol-artifacts"))
+                .contains(&"removed-rainix-task")
+        );
+        assert!(detect_signals(&inp("run: nix run .#rainix-rs-prelude"))
+            .contains(&"removed-rainix-task"));
+        assert!(!detect_signals(&inp("run: nix develop -c rainix-sol-test"))
+            .contains(&"removed-rainix-task"));
     }
 
     #[test]
@@ -158,8 +177,12 @@ mod tests {
 
     #[test]
     fn secrets_and_deprecated_refs() {
-        assert!(detect_signals(&inp("key: ${{ secrets.PRIVATE_KEY_DEV }}")).contains(&"private-key-dev"));
-        assert!(detect_signals(&inp("uses: ./.github/workflows/publish-soldeer.yaml")).contains(&"deprecated-publish-soldeer"));
+        assert!(detect_signals(&inp("key: ${{ secrets.PRIVATE_KEY_DEV }}"))
+            .contains(&"private-key-dev"));
+        assert!(
+            detect_signals(&inp("uses: ./.github/workflows/publish-soldeer.yaml"))
+                .contains(&"deprecated-publish-soldeer")
+        );
         assert!(detect_signals(&inp("TG_TOKEN: x")).contains(&"telegram-secret-drift"));
         assert!(detect_signals(&inp("TG_CHAT_ID: y")).contains(&"telegram-secret-drift"));
     }
@@ -167,39 +190,66 @@ mod tests {
     #[test]
     fn checkout_v1_v2_but_not_v12() {
         assert!(detect_signals(&inp("uses: actions/checkout@v2")).contains(&"old-actions-checkout"));
-        assert!(detect_signals(&inp("uses: actions/checkout@v1\n")).contains(&"old-actions-checkout"));
+        assert!(
+            detect_signals(&inp("uses: actions/checkout@v1\n")).contains(&"old-actions-checkout")
+        );
         // the boundary case the regex exists for:
-        assert!(!detect_signals(&inp("uses: actions/checkout@v12")).contains(&"old-actions-checkout"));
-        assert!(!detect_signals(&inp("uses: actions/checkout@v4")).contains(&"old-actions-checkout"));
+        assert!(
+            !detect_signals(&inp("uses: actions/checkout@v12")).contains(&"old-actions-checkout")
+        );
+        assert!(
+            !detect_signals(&inp("uses: actions/checkout@v4")).contains(&"old-actions-checkout")
+        );
     }
 
     #[test]
     fn per_chain_etherscan_from_either_source() {
-        assert!(detect_signals(&inp("CI_DEPLOY_ARBITRUM_ETHERSCAN_API_KEY: x")).contains(&"per-chain-etherscan-key"));
+        assert!(
+            detect_signals(&inp("CI_DEPLOY_ARBITRUM_ETHERSCAN_API_KEY: x"))
+                .contains(&"per-chain-etherscan-key")
+        );
         let from_foundry = RepoInputs {
             foundry: "arbitrum_api_key = \"${CI_DEPLOY_BASE_ETHERSCAN_API_KEY}\"".into(),
             ..Default::default()
         };
         assert!(detect_signals(&from_foundry).contains(&"per-chain-etherscan-key"));
-        assert!(!detect_signals(&inp("ETHERSCAN_API_KEY: shared")).contains(&"per-chain-etherscan-key"));
+        assert!(
+            !detect_signals(&inp("ETHERSCAN_API_KEY: shared")).contains(&"per-chain-etherscan-key")
+        );
     }
 
     #[test]
     fn soldeer_skip_warnings_needs_both() {
-        assert!(detect_signals(&inp("run: forge soldeer push --skip-warnings")).contains(&"soldeer-skip-warnings"));
-        assert!(detect_signals(&inp("run: forge soldeer push --skip_warnings")).contains(&"soldeer-skip-warnings"));
+        assert!(
+            detect_signals(&inp("run: forge soldeer push --skip-warnings"))
+                .contains(&"soldeer-skip-warnings")
+        );
+        assert!(
+            detect_signals(&inp("run: forge soldeer push --skip_warnings"))
+                .contains(&"soldeer-skip-warnings")
+        );
         // push without skip, or skip without push → not flagged
         assert!(!detect_signals(&inp("run: forge soldeer push")).contains(&"soldeer-skip-warnings"));
-        assert!(!detect_signals(&inp("run: something --skip-warnings")).contains(&"soldeer-skip-warnings"));
+        assert!(!detect_signals(&inp("run: something --skip-warnings"))
+            .contains(&"soldeer-skip-warnings"));
     }
 
     #[test]
     fn soldeer_unpublished_from_registry_flag() {
-        let unpub = RepoInputs { soldeer_published: Some(false), ..Default::default() };
+        let unpub = RepoInputs {
+            soldeer_published: Some(false),
+            ..Default::default()
+        };
         assert!(detect_signals(&unpub).contains(&"soldeer-unpublished"));
-        let pub_ = RepoInputs { soldeer_published: Some(true), ..Default::default() };
+        let pub_ = RepoInputs {
+            soldeer_published: Some(true),
+            ..Default::default()
+        };
         assert!(!detect_signals(&pub_).contains(&"soldeer-unpublished"));
-        let unknown = RepoInputs { soldeer_published: None, ..Default::default() };
+        let unknown = RepoInputs {
+            soldeer_published: None,
+            ..Default::default()
+        };
         assert!(!detect_signals(&unknown).contains(&"soldeer-unpublished"));
     }
 
@@ -233,7 +283,10 @@ mod tests {
             Some("rain.vats".to_string())
         );
         // name outside [package] (e.g. in [profile.default]) must NOT match
-        assert_eq!(foundry_package_name("[profile.default]\nname = \"nope\""), None);
+        assert_eq!(
+            foundry_package_name("[profile.default]\nname = \"nope\""),
+            None
+        );
         assert_eq!(foundry_package_name("[dependencies]\nfoo = \"1\""), None);
         assert_eq!(foundry_package_name(""), None);
     }
@@ -257,9 +310,15 @@ mod tests {
             ..Default::default()
         };
         let got = detect_signals(&many);
-        let dead = got.iter().position(|s| *s == "dead-magic-nix-cache").unwrap();
+        let dead = got
+            .iter()
+            .position(|s| *s == "dead-magic-nix-cache")
+            .unwrap();
         let installer = got.iter().position(|s| *s == "old-nix-installer").unwrap();
-        let checkout = got.iter().position(|s| *s == "old-actions-checkout").unwrap();
+        let checkout = got
+            .iter()
+            .position(|s| *s == "old-actions-checkout")
+            .unwrap();
         assert!(dead < installer && installer < checkout);
     }
 }

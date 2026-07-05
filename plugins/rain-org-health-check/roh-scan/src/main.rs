@@ -24,13 +24,23 @@ fn gh_stdout(args: &[&str]) -> Option<String> {
 
 /// Decode a `contents` API response's base64 body ("" on any failure — 404, non-file).
 fn gh_file(org: &str, repo: &str, path: &str) -> String {
-    let Some(raw) = gh_stdout(&["api", &format!("repos/{org}/{repo}/contents/{path}"), "--jq", ".content"]) else {
+    let Some(raw) = gh_stdout(&[
+        "api",
+        &format!("repos/{org}/{repo}/contents/{path}"),
+        "--jq",
+        ".content",
+    ]) else {
         return String::new();
     };
     let b64: String = raw.split_whitespace().collect(); // gh returns base64 with newlines
     use std::io::Write;
     // minimal base64 decode (std has none) — shell out to base64 for correctness parity with scan.sh
-    let mut child = match Command::new("base64").arg("-d").stdin(std::process::Stdio::piped()).stdout(std::process::Stdio::piped()).spawn() {
+    let mut child = match Command::new("base64")
+        .arg("-d")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+    {
         Ok(c) => c,
         Err(_) => return String::new(),
     };
@@ -46,7 +56,12 @@ fn gh_file(org: &str, repo: &str, path: &str) -> String {
 fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     // workflows: list, then concat every *.yml/*.yaml body
     let mut workflows = String::new();
-    if let Some(names) = gh_stdout(&["api", &format!("repos/{org}/{repo}/contents/.github/workflows"), "--jq", ".[].name"]) {
+    if let Some(names) = gh_stdout(&[
+        "api",
+        &format!("repos/{org}/{repo}/contents/.github/workflows"),
+        "--jq",
+        ".[].name",
+    ]) {
         for name in names.lines() {
             let name = name.trim();
             if name.ends_with(".yml") || name.ends_with(".yaml") {
@@ -61,18 +76,31 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     let tree = if foundry.is_empty() {
         String::new()
     } else {
-        gh_stdout(&["api", &format!("repos/{org}/{repo}/git/trees/HEAD?recursive=1"), "--jq", ".tree[].path"]).unwrap_or_default()
+        gh_stdout(&[
+            "api",
+            &format!("repos/{org}/{repo}/git/trees/HEAD?recursive=1"),
+            "--jq",
+            ".tree[].path",
+        ])
+        .unwrap_or_default()
     };
 
     // soldeer registry lookup, only when a package name exists
-    let soldeer_published = foundry_package_name(&foundry).and_then(|pkg| soldeer_has_revision(&pkg));
+    let soldeer_published =
+        foundry_package_name(&foundry).and_then(|pkg| soldeer_has_revision(&pkg));
 
-    RepoInputs { workflows, foundry, tree, soldeer_published }
+    RepoInputs {
+        workflows,
+        foundry,
+        tree,
+        soldeer_published,
+    }
 }
 
 /// Query the soldeer registry for a published revision. Some(true/false), None on error.
 fn soldeer_has_revision(pkg: &str) -> Option<bool> {
-    let url = format!("https://api.soldeer.xyz/api/v1/revision?project_name={pkg}&offset=0&limit=1");
+    let url =
+        format!("https://api.soldeer.xyz/api/v1/revision?project_name={pkg}&offset=0&limit=1");
     let out = Command::new("curl").args(["-fsSL", &url]).output().ok()?;
     if !out.status.success() {
         return None;
@@ -100,16 +128,30 @@ fn main() {
         }
     }
     let org = std::env::var("ORG").unwrap_or_else(|_| "rainlanguage".into());
-    let par: usize = std::env::var("PAR").ok().and_then(|s| s.parse().ok()).unwrap_or(12);
+    let par: usize = std::env::var("PAR")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(12);
 
     let repos: Vec<String> = if !repos_arg.is_empty() {
         repos_arg
     } else {
-        let mut v: Vec<String> = gh_stdout(&["repo", "list", &org, "--no-archived", "--limit", "300", "--json", "name,isFork", "-q", ".[]|select(.isFork==false)|.name"])
-            .unwrap_or_default()
-            .lines()
-            .map(str::to_string)
-            .collect();
+        let mut v: Vec<String> = gh_stdout(&[
+            "repo",
+            "list",
+            &org,
+            "--no-archived",
+            "--limit",
+            "300",
+            "--json",
+            "name,isFork",
+            "-q",
+            ".[]|select(.isFork==false)|.name",
+        ])
+        .unwrap_or_default()
+        .lines()
+        .map(str::to_string)
+        .collect();
         v.sort();
         v
     };
@@ -164,7 +206,10 @@ fn main() {
 
     // JSON output
     if let Some(path) = json_out {
-        let now = Command::new("date").args(["-u", "+%Y-%m-%dT%H:%M:%SZ"]).output().ok()
+        let now = Command::new("date")
+            .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
+            .output()
+            .ok()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
             .unwrap_or_default();
         let doc = json!({
