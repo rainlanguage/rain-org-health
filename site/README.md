@@ -11,8 +11,7 @@ Static, dependency-free dashboard for the org-health scan.
 - `health.json` — the data source, produced by the scan:
 
   ```
-  FORMAT=json JSON_OUT=site/health.json \
-    plugins/rain-org-health-check/scripts/scan.sh
+  nix run .#roh-scan -- --json site/health.json
   ```
 
   Omit repo args to scan the whole org. The committed copy is a real snapshot;
