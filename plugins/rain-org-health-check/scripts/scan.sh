@@ -15,6 +15,11 @@
 # Requires: gh (authenticated), curl, python3. Read-only (no writes/pushes).
 set -uo pipefail
 
+# Private scratch dir (mktemp) so concurrent scans never clobber each other and
+# no fixed world-readable /tmp path is exposed. Cleaned on exit.
+ROH_TMP="$(mktemp -d "${TMPDIR:-/tmp}/roh.XXXXXX")"
+trap 'rm -rf "$ROH_TMP"' EXIT
+
 ORG="${ORG:-rainlanguage}"
 PAR="${PAR:-12}"
 
@@ -22,12 +27,12 @@ command -v gh >/dev/null || { echo "error: gh CLI not found / not authenticated"
 
 # ---- repo list -------------------------------------------------------------
 if [ "$#" -gt 0 ]; then
-  printf '%s\n' "$@" > /tmp/roh_repos.txt
+  printf '%s\n' "$@" > "$ROH_TMP/roh_repos.txt"
 else
   gh repo list "$ORG" --no-archived --limit 300 --json name,isFork \
-    -q '.[]|select(.isFork==false)|.name' 2>/dev/null | sort > /tmp/roh_repos.txt
+    -q '.[]|select(.isFork==false)|.name' 2>/dev/null | sort > "$ROH_TMP/roh_repos.txt"
 fi
-TOTAL=$(wc -l < /tmp/roh_repos.txt | tr -d ' ')
+TOTAL=$(wc -l < "$ROH_TMP/roh_repos.txt" | tr -d ' ')
 echo "Scanning $TOTAL $ORG repos (parallel=$PAR)..." >&2
 
 # ---- per-repo check --------------------------------------------------------
@@ -100,30 +105,30 @@ export -f check_repo
 export ORG
 
 # ---- run -------------------------------------------------------------------
-xargs -P "$PAR" -I{} bash -c 'check_repo "$@"' _ {} "$ORG" < /tmp/roh_repos.txt > /tmp/roh_findings.txt 2>/dev/null
-sort -o /tmp/roh_findings.txt /tmp/roh_findings.txt
+xargs -P "$PAR" -I{} bash -c 'check_repo "$@"' _ {} "$ORG" < "$ROH_TMP/roh_repos.txt" > "$ROH_TMP/roh_findings.txt" 2>/dev/null
+sort -o "$ROH_TMP/roh_findings.txt" "$ROH_TMP/roh_findings.txt"
 
 # ---- report ----------------------------------------------------------------
 echo
 echo "================ rain org health: per-repo findings ================"
-if [ -s /tmp/roh_findings.txt ]; then
-  awk -F'|' '{printf "  %-30s %s\n", $1, $2}' /tmp/roh_findings.txt
+if [ -s "$ROH_TMP/roh_findings.txt" ]; then
+  awk -F'|' '{printf "  %-30s %s\n", $1, $2}' "$ROH_TMP/roh_findings.txt"
 else
   echo "  (no findings — all clean)"
 fi
 echo
 echo "================ org-wide summary (repos affected) ================="
-awk -F'|' '{print $2}' /tmp/roh_findings.txt | tr ' ' '\n' | grep -v '^$' | sort | uniq -c | sort -rn \
+awk -F'|' '{print $2}' "$ROH_TMP/roh_findings.txt" | tr ' ' '\n' | grep -v '^$' | sort | uniq -c | sort -rn \
   | awk '{printf "  %3d  %s\n", $1, $2}'
 echo
-echo "repos with findings: $(wc -l < /tmp/roh_findings.txt | tr -d ' ') / $TOTAL"
-echo "raw findings: /tmp/roh_findings.txt"
+echo "repos with findings: $(wc -l < "$ROH_TMP/roh_findings.txt" | tr -d ' ') / $TOTAL"
+echo "raw findings: "$ROH_TMP/roh_findings.txt""
 
 # ---- machine-readable output (FORMAT=json → the dashboard data source) ------
 if [ "${FORMAT:-}" = "json" ]; then
   JSON_OUT="${JSON_OUT:-site/health.json}"
   mkdir -p "$(dirname "$JSON_OUT")"
-  FINDINGS_FILE=/tmp/roh_findings.txt ORG="$ORG" TOTAL="$TOTAL" python3 - "$JSON_OUT" <<'PY'
+  FINDINGS_FILE="$ROH_TMP/roh_findings.txt" ORG="$ORG" TOTAL="$TOTAL" python3 - "$JSON_OUT" <<'PY'
 import json, os, sys, datetime
 out_path = sys.argv[1]
 org = os.environ["ORG"]

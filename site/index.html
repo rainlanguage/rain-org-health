@@ -205,14 +205,22 @@ function renderSummary() {
     box.innerHTML = '<div class="empty">No modernization debt detected across the scanned repos.</div>';
     return;
   }
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
   for (const [sig, n] of entries) {
-    const b = document.createElement("button");
-    b.className = "srow";
+    const b = el("button", "srow");
     b.dataset.sig = sig;
-    b.innerHTML =
-      `<span class="sig" title="${sig}">${sig}</span>` +
-      `<span class="track"><span class="fill" style="width:${(n / max) * 100}%"></span></span>` +
-      `<span class="c">${n}</span>`;
+    const label = el("span", "sig", sig);
+    label.title = sig;
+    const track = el("span", "track");
+    const fill = el("span", "fill");
+    fill.style.width = (n / max) * 100 + "%";
+    track.appendChild(fill);
+    b.append(label, track, el("span", "c", String(n)));
     b.addEventListener("click", () => setSignal(activeSignal === sig ? null : sig));
     box.appendChild(b);
   }
@@ -227,9 +235,20 @@ function renderTiles() {
     [clean, "clean"],
     [signalCount, "distinct signals"],
   ];
-  $("tiles").innerHTML = tiles
-    .map(([n, l]) => `<div class="tile"><div class="n">${n}</div><div class="l">${l}</div></div>`)
-    .join("");
+  const box = $("tiles");
+  box.innerHTML = "";
+  for (const [n, l] of tiles) {
+    const tile = document.createElement("div");
+    tile.className = "tile";
+    const num = document.createElement("div");
+    num.className = "n";
+    num.textContent = String(n);
+    const lab = document.createElement("div");
+    lab.className = "l";
+    lab.textContent = l;
+    tile.append(num, lab);
+    box.appendChild(tile);
+  }
 }
 
 async function load() {
