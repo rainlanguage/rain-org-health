@@ -7,7 +7,8 @@ description: >-
   workflows, removed rainix tasks (rainix-rs-prelude / *-artifacts),
   PRIVATE_KEY_DEV deploy keys, per-chain etherscan-key drift, telegram
   secret-name drift, deprecated publish-soldeer references, old action
-  versions, and soldeer publish gaps. Use when
+  versions, and soldeer publish gaps. Also reports when each repo was last
+  fully (whole-repo) audited by the audit skill. Use when
   asked to check rain org repo
   health, audit rainix/soldeer CI modernization, find which repos still need
   updating, or before/after an org-wide rainix bump.
@@ -42,6 +43,22 @@ It prints per-repo findings + an org-wide summary. For a different org:
 After running, summarize the report for the user: lead with the org-wide counts,
 then group repos by the highest-priority finding. Don't dump the raw table
 unless asked.
+
+## Audit recency (last whole-repo audit)
+
+Alongside the modernization signals, the scan reports **when each repo was last
+audited by the audit skill's whole-repo pass** — it reads `.audit/last-run.json`
+(the stamp the audit skill commits per run) from each repo. Accuracy hinges on the
+`scope` field: the audit skill is *also* run PR-scoped (the vetter/producer audit
+only a PR's changed files), so a stamp counts as a full audit **only** when
+`scope == "whole-repo"`; a `pr:<n>` / `paths:<…>` stamp (or none) reads as "never
+fully audited". For an audited repo the scan flags staleness by comparing
+`auditedCommit` to the current branch HEAD.
+
+Output: an "audit recency" section (never-audited + stalest first) in the text
+report, and per-repo entries in the JSON `audits` array plus the
+`reposWholeRepoAudited` / `reposNeverAudited` counts. Use it to see which repos are
+overdue for a full audit.
 
 ## Triage in chat, then file issues directly (don't blind-file)
 
