@@ -93,7 +93,8 @@ mod tests {
 
     #[test]
     fn path_scoped_stamp_is_not_a_whole_repo_audit() {
-        let p = r#"{"scope":"paths:src/lib","auditedAt":"2026-07-07T22:00:00Z","auditedCommit":"abc"}"#;
+        let p =
+            r#"{"scope":"paths:src/lib","auditedAt":"2026-07-07T22:00:00Z","auditedCommit":"abc"}"#;
         assert_eq!(parse_last_audit(p, None), None);
     }
 
