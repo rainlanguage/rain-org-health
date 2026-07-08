@@ -6,7 +6,9 @@
 //!   roh-scan [--json <path>] [repo ...]
 //! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
 
+mod audit;
 mod signals;
+use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
 use serde_json::json;
@@ -83,6 +85,35 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     }
 }
 
+/// Read `.audit/last-run.json` and return the whole-repo audit stamp if present.
+/// `None` when the repo has never had a whole-repo audit (no stamp, or only a
+/// PR-/path-scoped one — see the `scope` gate in `audit::parse_last_audit`).
+fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
+    let body = gh_file(org, repo, ".audit/last-run.json");
+    if body.trim().is_empty() {
+        return None;
+    }
+    // Parse first with no HEAD: a PR-/path-scoped or malformed stamp returns None
+    // here, so we skip the extra `commits/HEAD` API call in those cases (org scale).
+    let mut audit = parse_last_audit(&body, None)?;
+    // Confirmed a whole-repo stamp — now resolve HEAD to flag staleness.
+    let head = gh_stdout(&[
+        "api",
+        &format!("repos/{org}/{repo}/commits/HEAD"),
+        "--jq",
+        ".sha",
+    ]);
+    audit.stale = head.as_deref().map(|h| h.trim() != audit.audited_commit);
+    Some(audit)
+}
+
+/// One repo's scan result: modernization signals + last whole-repo audit (if any).
+struct RepoResult {
+    name: String,
+    signals: Vec<&'static str>,
+    last_audit: Option<LastAudit>,
+}
+
 /// Query the soldeer registry for a published revision. Some(true/false), None on error.
 fn soldeer_has_revision(pkg: &str) -> Option<bool> {
     let url =
@@ -146,7 +177,7 @@ fn main() {
 
     // bounded-concurrency fan-out over repos
     let next = AtomicUsize::new(0);
-    let findings: Mutex<Vec<(String, Vec<&'static str>)>> = Mutex::new(Vec::new());
+    let results: Mutex<Vec<RepoResult>> = Mutex::new(Vec::new());
     let nworkers = par.clamp(1, total.max(1));
     std::thread::scope(|s| {
         for _ in 0..nworkers {
@@ -156,15 +187,24 @@ fn main() {
                     break;
                 }
                 let repo = &repos[idx];
-                let sigs = detect_signals(&fetch_inputs(&org, repo));
-                if !sigs.is_empty() {
-                    findings.lock().unwrap().push((repo.clone(), sigs));
-                }
+                let signals = detect_signals(&fetch_inputs(&org, repo));
+                let last_audit = fetch_last_audit(&org, repo);
+                results.lock().unwrap().push(RepoResult {
+                    name: repo.clone(),
+                    signals,
+                    last_audit,
+                });
             });
         }
     });
 
-    let mut findings = findings.into_inner().unwrap();
+    let mut results = results.into_inner().unwrap();
+    // findings view (owned) so we can re-sort `results` for audit recency afterwards
+    let mut findings: Vec<(String, Vec<&'static str>)> = results
+        .iter()
+        .filter(|r| !r.signals.is_empty())
+        .map(|r| (r.name.clone(), r.signals.clone()))
+        .collect();
     findings.sort_by(|a, b| (b.1.len(), &a.0).cmp(&(a.1.len(), &b.0)));
 
     // text report
@@ -190,6 +230,30 @@ fn main() {
     }
     println!("\nrepos with findings: {} / {}", findings.len(), total);
 
+    // audit recency: last WHOLE-REPO audit per repo (never-audited + stalest first)
+    results.sort_by_key(|r| audit_sort_key(r.last_audit.as_ref(), &r.name));
+    let audited = results.iter().filter(|r| r.last_audit.is_some()).count();
+    println!("\n================ audit recency (last whole-repo audit) ============");
+    for r in &results {
+        match &r.last_audit {
+            None => println!("  {:<30} never audited", r.name),
+            Some(a) => {
+                let ver = if a.skill_version.is_empty() {
+                    String::new()
+                } else {
+                    format!("  v{}", a.skill_version)
+                };
+                let mark = if a.stale == Some(true) {
+                    "  (stale: HEAD moved since)"
+                } else {
+                    ""
+                };
+                println!("  {:<30} {}{}{}", r.name, a.audited_at, ver, mark);
+            }
+        }
+    }
+    println!("\nwhole-repo audited: {audited} / {total}");
+
     // JSON output
     if let Some(path) = json_out {
         let now = Command::new("date")
@@ -203,8 +267,19 @@ fn main() {
             "org": org,
             "totalRepos": total,
             "reposWithFindings": findings.len(),
+            "reposWholeRepoAudited": audited,
+            "reposNeverAudited": total - audited,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, sigs)| json!({"name": r, "signals": sigs})).collect::<Vec<_>>(),
+            "audits": results.iter().map(|r| match &r.last_audit {
+                None => json!({ "name": r.name, "lastAudit": serde_json::Value::Null }),
+                Some(a) => json!({ "name": r.name, "lastAudit": {
+                    "auditedAt": a.audited_at,
+                    "auditedCommit": a.audited_commit,
+                    "skillVersion": a.skill_version,
+                    "stale": a.stale,
+                }}),
+            }).collect::<Vec<_>>(),
         });
         if let Some(parent) = std::path::Path::new(&path).parent() {
             let _ = std::fs::create_dir_all(parent);
