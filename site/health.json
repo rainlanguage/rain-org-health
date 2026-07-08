@@ -5,7 +5,6 @@
   "reposWithFindings": 7,
   "summary": {
     "per-chain-etherscan-key": 5,
-    "deploy-constants-unversioned": 2,
     "removed-rainix-task": 2,
     "bespoke-ci": 1,
     "dead-magic-nix-cache": 1,
@@ -24,7 +23,6 @@
     {
       "name": "rain.interpreter",
       "signals": [
-        "deploy-constants-unversioned",
         "per-chain-etherscan-key"
       ]
     },
@@ -45,7 +43,6 @@
     {
       "name": "rainlang",
       "signals": [
-        "deploy-constants-unversioned",
         "per-chain-etherscan-key"
       ]
     },

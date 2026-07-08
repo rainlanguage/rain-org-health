@@ -72,19 +72,6 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     }
     let foundry = gh_file(org, repo, "foundry.toml");
 
-    // tree only needed for the deploy-constants check (foundry repos)
-    let tree = if foundry.is_empty() {
-        String::new()
-    } else {
-        gh_stdout(&[
-            "api",
-            &format!("repos/{org}/{repo}/git/trees/HEAD?recursive=1"),
-            "--jq",
-            ".tree[].path",
-        ])
-        .unwrap_or_default()
-    };
-
     // soldeer registry lookup, only when a package name exists
     let soldeer_published =
         foundry_package_name(&foundry).and_then(|pkg| soldeer_has_revision(&pkg));
@@ -92,7 +79,6 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     RepoInputs {
         workflows,
         foundry,
-        tree,
         soldeer_published,
     }
 }
