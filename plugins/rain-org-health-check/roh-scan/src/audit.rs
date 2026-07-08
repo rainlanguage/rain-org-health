@@ -83,7 +83,7 @@ mod tests {
         };
         let older = mk("2026-01-01T00:00:00Z");
         let newer = mk("2026-06-01T00:00:00Z");
-        let mut keys = vec![
+        let mut keys = [
             audit_sort_key(Some(&newer), "z-newer"),
             audit_sort_key(None, "a-never"),
             audit_sort_key(Some(&older), "m-older"),
