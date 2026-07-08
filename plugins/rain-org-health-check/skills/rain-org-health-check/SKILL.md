@@ -49,7 +49,7 @@ unless asked.
 Alongside the modernization signals, the scan reports **when each repo was last
 audited by the audit skill's whole-repo pass** — it reads `.audit/last-run.json`
 (the stamp the audit skill commits per run) from each repo. Accuracy hinges on the
-`scope` field: the audit skill is *also* run PR-scoped (the vetter/producer audit
+`scope` field: the audit skill is _also_ run PR-scoped (the vetter/producer audit
 only a PR's changed files), so a stamp counts as a full audit **only** when
 `scope == "whole-repo"`; a `pr:<n>` / `paths:<…>` stamp (or none) reads as "never
 fully audited". For an audited repo the scan flags staleness by comparing
