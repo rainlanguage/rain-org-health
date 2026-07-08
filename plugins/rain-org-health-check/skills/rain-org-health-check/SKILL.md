@@ -6,10 +6,9 @@ description: >-
   DeterminateSystems/magic-nix-cache action, bespoke (non-reusable) CI
   workflows, removed rainix tasks (rainix-rs-prelude / *-artifacts),
   PRIVATE_KEY_DEV deploy keys, per-chain etherscan-key drift, telegram
-  secret-name drift, deprecated publish-soldeer references, old action
-  versions, and soldeer publish gaps. Also reports when each repo was last
-  fully (whole-repo) audited by the audit skill. Use when
-  asked to check rain org repo
+  secret-name drift, deprecated publish-soldeer references, old action versions,
+  and soldeer publish gaps. Also reports when each repo was last fully
+  (whole-repo) audited by the audit skill. Use when asked to check rain org repo
   health, audit rainix/soldeer CI modernization, find which repos still need
   updating, or before/after an org-wide rainix bump.
 allowed-tools: Bash Read Grep WebFetch
@@ -48,17 +47,17 @@ unless asked.
 
 Alongside the modernization signals, the scan reports **when each repo was last
 audited by the audit skill's whole-repo pass** — it reads `.audit/last-run.json`
-(the stamp the audit skill commits per run) from each repo. Accuracy hinges on the
-`scope` field: the audit skill is _also_ run PR-scoped (the vetter/producer audit
-only a PR's changed files), so a stamp counts as a full audit **only** when
-`scope == "whole-repo"`; a `pr:<n>` / `paths:<…>` stamp (or none) reads as "never
-fully audited". For an audited repo the scan flags staleness by comparing
+(the stamp the audit skill commits per run) from each repo. Accuracy hinges on
+the `scope` field: the audit skill is _also_ run PR-scoped (the vetter/producer
+audit only a PR's changed files), so a stamp counts as a full audit **only**
+when `scope == "whole-repo"`; a `pr:<n>` / `paths:<…>` stamp (or none) reads as
+"never fully audited". For an audited repo the scan flags staleness by comparing
 `auditedCommit` to the current branch HEAD.
 
 Output: an "audit recency" section (never-audited + stalest first) in the text
 report, and per-repo entries in the JSON `audits` array plus the
-`reposWholeRepoAudited` / `reposNeverAudited` counts. Use it to see which repos are
-overdue for a full audit.
+`reposWholeRepoAudited` / `reposNeverAudited` counts. Use it to see which repos
+are overdue for a full audit.
 
 ## Triage in chat, then file issues directly (don't blind-file)
 
@@ -93,8 +92,7 @@ ones the codebase has already resolved. **Judge against the CURRENT code, not
 the issue's filing date.**
 
 1. List open issues, widest first:
-   `gh issue list --repo <org>/<repo> --state open
---limit 200 --json number,title,body,labels,createdAt`.
+   `gh issue list --repo <org>/<repo> --state open --limit 200 --json number,title,body,labels,createdAt`.
    Cover every repo, not just `rain-health` ones.
 2. For each, decide if the described problem still exists:
    - **`rain-health` issues** — re-run the matching scan; if the finding's
