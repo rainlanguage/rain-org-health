@@ -52,6 +52,15 @@ pub fn parse_last_audit(body: &str, head_sha: Option<&str>) -> Option<LastAudit>
     })
 }
 
+/// Sort key for audit recency: never-audited repos first, then oldest audit
+/// first, name as the final tiebreak — so the most overdue repos sort to the top.
+pub fn audit_sort_key(last_audit: Option<&LastAudit>, name: &str) -> (u8, String, String) {
+    match last_audit {
+        None => (0, String::new(), name.to_string()),
+        Some(a) => (1, a.audited_at.clone(), name.to_string()),
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -63,6 +72,27 @@ mod tests {
         "skillVersion": "0.10.0",
         "fileCount": 42
     }"#;
+
+    #[test]
+    fn audit_sort_key_never_audited_first_then_oldest() {
+        let mk = |at: &str| LastAudit {
+            audited_at: at.into(),
+            audited_commit: "x".into(),
+            skill_version: String::new(),
+            stale: None,
+        };
+        let older = mk("2026-01-01T00:00:00Z");
+        let newer = mk("2026-06-01T00:00:00Z");
+        let mut keys = vec![
+            audit_sort_key(Some(&newer), "z-newer"),
+            audit_sort_key(None, "a-never"),
+            audit_sort_key(Some(&older), "m-older"),
+        ];
+        keys.sort();
+        assert_eq!(keys[0].0, 0, "never-audited sorts first");
+        assert_eq!(keys[1].1, "2026-01-01T00:00:00Z", "then the oldest audit");
+        assert_eq!(keys[2].1, "2026-06-01T00:00:00Z", "then the newer audit");
+    }
 
     #[test]
     fn whole_repo_stamp_parses() {

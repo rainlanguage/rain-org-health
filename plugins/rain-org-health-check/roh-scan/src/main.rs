@@ -8,7 +8,7 @@
 
 mod audit;
 mod signals;
-use audit::{parse_last_audit, LastAudit};
+use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
 use serde_json::json;
@@ -93,14 +93,18 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
     if body.trim().is_empty() {
         return None;
     }
-    // Only resolve HEAD (an extra API call) when a stamp exists, to flag staleness.
+    // Parse first with no HEAD: a PR-/path-scoped or malformed stamp returns None
+    // here, so we skip the extra `commits/HEAD` API call in those cases (org scale).
+    let mut audit = parse_last_audit(&body, None)?;
+    // Confirmed a whole-repo stamp — now resolve HEAD to flag staleness.
     let head = gh_stdout(&[
         "api",
         &format!("repos/{org}/{repo}/commits/HEAD"),
         "--jq",
         ".sha",
     ]);
-    parse_last_audit(&body, head.as_deref().map(str::trim))
+    audit.stale = head.as_deref().map(|h| h.trim() != audit.audited_commit);
+    Some(audit)
 }
 
 /// One repo's scan result: modernization signals + last whole-repo audit (if any).
@@ -108,14 +112,6 @@ struct RepoResult {
     name: String,
     signals: Vec<&'static str>,
     last_audit: Option<LastAudit>,
-}
-
-/// Sort key for audit recency: never-audited first, then oldest audit first.
-fn audit_sort_key(r: &RepoResult) -> (u8, String, String) {
-    match &r.last_audit {
-        None => (0, String::new(), r.name.clone()),
-        Some(a) => (1, a.audited_at.clone(), r.name.clone()),
-    }
 }
 
 /// Query the soldeer registry for a published revision. Some(true/false), None on error.
@@ -235,7 +231,7 @@ fn main() {
     println!("\nrepos with findings: {} / {}", findings.len(), total);
 
     // audit recency: last WHOLE-REPO audit per repo (never-audited + stalest first)
-    results.sort_by_key(audit_sort_key);
+    results.sort_by_key(|r| audit_sort_key(r.last_audit.as_ref(), &r.name));
     let audited = results.iter().filter(|r| r.last_audit.is_some()).count();
     println!("\n================ audit recency (last whole-repo audit) ============");
     for r in &results {
