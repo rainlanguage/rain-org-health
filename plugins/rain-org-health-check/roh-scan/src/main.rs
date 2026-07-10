@@ -7,11 +7,17 @@
 //! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
 
 mod audit;
+mod issues;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
+use issues::{
+    age_days, classify_issues, issue_sort_key, parse_issue_node, parse_pr_closing_refs, IssueNode,
+    OpenIssue,
+};
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
 use serde_json::json;
+use std::collections::HashSet;
 use std::process::Command;
 use std::sync::atomic::{AtomicUsize, Ordering};
 use std::sync::Mutex;
@@ -107,11 +113,69 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
     Some(audit)
 }
 
-/// One repo's scan result: modernization signals + last whole-repo audit (if any).
+/// GraphQL for the issue queue: every open issue with the fields the backlog
+/// view shows. Paginated via gh's `--paginate` ($endCursor + pageInfo).
+const OPEN_ISSUES_QUERY: &str = "query($owner:String!,$name:String!,$endCursor:String){repository(owner:$owner,name:$name){issues(states:OPEN,first:100,after:$endCursor){pageInfo{hasNextPage endCursor}nodes{number title createdAt labels(first:20){nodes{name}}assignees(first:5){nodes{login}}}}}}";
+
+/// GraphQL for coverage: every open PR's `closingIssuesReferences`, with the
+/// referenced issue's repo + owner (a PR can close an issue in another repo).
+const OPEN_PRS_QUERY: &str = "query($owner:String!,$name:String!,$endCursor:String){repository(owner:$owner,name:$name){pullRequests(states:OPEN,first:100,after:$endCursor){pageInfo{hasNextPage endCursor}nodes{closingIssuesReferences(first:25){nodes{number repository{name owner{login}}}}}}}}";
+
+/// Run a paginated GraphQL query and return `--jq`'s one-node-per-line output
+/// (compact JSON objects) as lines for the pure parsers in issues.rs.
+fn gh_graphql_nodes(org: &str, repo: &str, query: &str, jq: &str) -> Vec<String> {
+    gh_stdout(&[
+        "api",
+        "graphql",
+        "--paginate",
+        "-f",
+        &format!("owner={org}"),
+        "-f",
+        &format!("name={repo}"),
+        "-f",
+        &format!("query={query}"),
+        "--jq",
+        jq,
+    ])
+    .unwrap_or_default()
+    .lines()
+    .map(str::to_string)
+    .collect()
+}
+
+/// Fetch one repo's open issues plus the org-wide (repo, issue number) pairs
+/// its open PRs cover. Coverage is classified only after every repo is in,
+/// because a PR here can close an issue elsewhere in the org.
+fn fetch_issue_inputs(org: &str, repo: &str) -> (Vec<IssueNode>, Vec<(String, u64)>) {
+    let issue_nodes = gh_graphql_nodes(
+        org,
+        repo,
+        OPEN_ISSUES_QUERY,
+        ".data.repository.issues.nodes[]",
+    )
+    .iter()
+    .filter_map(|line| parse_issue_node(line))
+    .collect();
+    let closing_refs = gh_graphql_nodes(
+        org,
+        repo,
+        OPEN_PRS_QUERY,
+        ".data.repository.pullRequests.nodes[]",
+    )
+    .iter()
+    .flat_map(|line| parse_pr_closing_refs(line, org))
+    .collect();
+    (issue_nodes, closing_refs)
+}
+
+/// One repo's scan result: modernization signals + last whole-repo audit (if
+/// any) + its open issues and the issue coverage its open PRs provide.
 struct RepoResult {
     name: String,
     signals: Vec<&'static str>,
     last_audit: Option<LastAudit>,
+    issue_nodes: Vec<IssueNode>,
+    closing_refs: Vec<(String, u64)>,
 }
 
 /// Query the soldeer registry for a published revision. Some(true/false), None on error.
@@ -189,10 +253,13 @@ fn main() {
                 let repo = &repos[idx];
                 let signals = detect_signals(&fetch_inputs(&org, repo));
                 let last_audit = fetch_last_audit(&org, repo);
+                let (issue_nodes, closing_refs) = fetch_issue_inputs(&org, repo);
                 results.lock().unwrap().push(RepoResult {
                     name: repo.clone(),
                     signals,
                     last_audit,
+                    issue_nodes,
+                    closing_refs,
                 });
             });
         }
@@ -254,14 +321,42 @@ fn main() {
     }
     println!("\nwhole-repo audited: {audited} / {total}");
 
+    let now = Command::new("date")
+        .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
+        .output()
+        .ok()
+        .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
+        .unwrap_or_default();
+
+    // issue queue: coverage is org-wide (a PR may close an issue in another
+    // repo), so pool every repo's closing refs before classifying any issue.
+    let covered: HashSet<(String, u64)> = results
+        .iter()
+        .flat_map(|r| r.closing_refs.iter().cloned())
+        .collect();
+    let mut queue: Vec<OpenIssue> = results
+        .iter()
+        .flat_map(|r| classify_issues(&r.name, &r.issue_nodes, &covered))
+        .collect();
+    queue.sort_by_key(issue_sort_key);
+    let uncovered = queue.iter().filter(|i| !i.covered).count();
+    println!("\n================ open-issue queue (uncovered first) ===============");
+    if queue.is_empty() {
+        println!("  (no open issues)");
+    }
+    for i in &queue {
+        let cov = if i.covered { "covered  " } else { "UNCOVERED" };
+        let age = match age_days(&i.created_at, &now) {
+            Some(d) => format!("{d:>4}d"),
+            None => "   ?d".to_string(),
+        };
+        let id = format!("{}#{}", i.repo, i.number);
+        println!("  {cov} {age}  {id:<34} {}", i.title);
+    }
+    println!("\nopen issues: {} ({uncovered} uncovered)", queue.len());
+
     // JSON output
     if let Some(path) = json_out {
-        let now = Command::new("date")
-            .args(["-u", "+%Y-%m-%dT%H:%M:%SZ"])
-            .output()
-            .ok()
-            .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
-            .unwrap_or_default();
         let doc = json!({
             "generatedAt": now,
             "org": org,
@@ -269,6 +364,8 @@ fn main() {
             "reposWithFindings": findings.len(),
             "reposWholeRepoAudited": audited,
             "reposNeverAudited": total - audited,
+            "openIssues": queue.len(),
+            "uncoveredIssues": uncovered,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, sigs)| json!({"name": r, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| match &r.last_audit {
@@ -280,6 +377,17 @@ fn main() {
                     "stale": a.stale,
                 }}),
             }).collect::<Vec<_>>(),
+            // pre-sorted uncovered-first, oldest-first — the canonical queue order
+            "issueQueue": queue.iter().map(|i| json!({
+                "repo": i.repo,
+                "number": i.number,
+                "title": i.title,
+                "createdAt": i.created_at,
+                "ageDays": age_days(&i.created_at, &now),
+                "labels": i.labels,
+                "assignee": i.assignee,
+                "covered": i.covered,
+            })).collect::<Vec<_>>(),
         });
         if let Some(parent) = std::path::Path::new(&path).parent() {
             let _ = std::fs::create_dir_all(parent);

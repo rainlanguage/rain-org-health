@@ -6,8 +6,9 @@ Static, dependency-free dashboard for the org-health scan.
 
 - `index.html` — self-contained page (inline CSS/JS, no build, no external
   requests) that fetches `health.json` and renders per-repo modernization-debt
-  signals: stat tiles, a per-signal magnitude summary, and a filterable repo
-  list. Theme follows the OS with a manual toggle.
+  signals: stat tiles, a per-signal magnitude summary, a filterable repo list,
+  and the org-wide open-issue queue (issues uncovered by any open PR first,
+  sortable by age or repo). Theme follows the OS with a manual toggle.
 - `health.json` — the data source, produced by the scan:
 
   ```

@@ -103,6 +103,28 @@
   .clean { display: inline-flex; align-items: center; gap: 6px; color: var(--clean); font-size: 13px; }
   .clean::before { content: "✓"; font-weight: 700; }
   .empty { color: var(--ink-3); padding: 24px 4px; }
+  .iq-sort { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
+             border-radius: 8px; padding: 7px 11px; font-size: 13px; cursor: pointer; }
+  .iq-sort.active { background: var(--surface-2); color: var(--ink); font-weight: 600; }
+  .iq-row { display: grid; grid-template-columns: 92px 46px 200px 1fr 130px; gap: 12px;
+            align-items: baseline; border-bottom: 1px solid var(--border); padding: 9px 4px; }
+  .iq-row:last-child { border-bottom: 0; }
+  .iq-cov { display: inline-flex; align-items: center; font-size: 11px;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+            background: var(--surface); color: var(--ink-2); border: 1px solid var(--border);
+            border-radius: 6px; padding: 2px 8px; justify-self: start; }
+  .iq-cov.uncovered { background: var(--debt-bg); color: var(--debt); border-color: var(--debt-border); }
+  .iq-age { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); text-align: right; }
+  .iq-row a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 13px;
+              font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
+  .iq-row a:hover { color: var(--accent); text-decoration: underline; }
+  .iq-title { font-size: 14px; }
+  .iq-label { display: inline-block; font-size: 11px;
+              font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+              background: var(--surface-2); color: var(--ink-2); border-radius: 5px;
+              padding: 1px 6px; margin-left: 6px; }
+  .iq-assignee { color: var(--ink-3); font-size: 12.5px; overflow: hidden;
+                 text-overflow: ellipsis; white-space: nowrap; }
   .pm-chart-wrap { position: relative; background: var(--surface); border: 1px solid var(--border);
                    border-radius: 12px; padding: 16px 16px 8px; }
   .pm-chart { width: 100%; height: auto; display: block; overflow: visible; }
@@ -130,6 +152,9 @@
   @media (max-width: 620px) {
     .srow { grid-template-columns: 130px 1fr 30px; }
     .repo { grid-template-columns: 1fr; gap: 8px; }
+    .iq-row { grid-template-columns: 90px 46px 1fr; gap: 6px 12px; }
+    .iq-title { grid-column: 1 / -1; }
+    .iq-assignee { display: none; }
   }
 </style>
 </head>
@@ -152,6 +177,14 @@
     <button class="clearf" id="clearf">Clear signal filter</button>
   </div>
   <div id="repos"></div>
+
+  <h2>Open-issue queue</h2>
+  <div class="tiles" id="iqtiles"></div>
+  <div class="controls">
+    <button class="iq-sort active" id="iqsort-age">sort by age</button>
+    <button class="iq-sort" id="iqsort-repo">sort by repo</button>
+  </div>
+  <div id="iqueue"></div>
 
   <h2>Producer run metrics</h2>
   <div class="tiles" id="pmtiles"></div>
@@ -259,6 +292,100 @@ function renderSummary() {
   }
 }
 
+// ---- Open-issue queue: the org-wide backlog, uncovered (no open PR) first ----
+let iqSort = "age";
+
+function issueAgeDays(i) {
+  if (typeof i.ageDays === "number") return i.ageDays;
+  const t = new Date(i.createdAt).getTime();
+  return isFinite(t) ? Math.floor((Date.now() - t) / 864e5) : null;
+}
+
+// Uncovered always sorts ahead of covered; within a group the chosen key
+// applies (age = oldest first via the ISO timestamp; repo = name, then age).
+function iqCompare(a, b) {
+  if (a.covered !== b.covered) return a.covered - b.covered;
+  if (iqSort === "repo" && a.repo !== b.repo) return a.repo.localeCompare(b.repo);
+  const byAge = (a.createdAt || "").localeCompare(b.createdAt || "");
+  return byAge || a.number - b.number;
+}
+
+function setIqSort(mode) {
+  iqSort = mode;
+  $("iqsort-age").classList.toggle("active", mode === "age");
+  $("iqsort-repo").classList.toggle("active", mode === "repo");
+  renderIssueQueue();
+}
+
+function renderIssueQueue() {
+  const box = $("iqueue"), tiles = $("iqtiles");
+  tiles.innerHTML = "";
+  box.innerHTML = "";
+  if (!Array.isArray(data.issueQueue)) {
+    box.innerHTML =
+      '<div class="empty">No issue data in this health.json — regenerate it with a current roh-scan.</div>';
+    return;
+  }
+  const queue = [...data.issueQueue];
+  const uncovered = queue.filter((i) => !i.covered).length;
+  const stats = [
+    [queue.length, "open issues"],
+    [uncovered, "uncovered"],
+    [queue.length - uncovered, "covered by an open PR"],
+  ];
+  for (const [n, l] of stats) {
+    const t = document.createElement("div");
+    t.className = "tile";
+    const num = document.createElement("div");
+    num.className = "n";
+    num.textContent = String(n);
+    const lab = document.createElement("div");
+    lab.className = "l";
+    lab.textContent = l;
+    t.append(num, lab);
+    tiles.appendChild(t);
+  }
+  if (!queue.length) {
+    box.innerHTML = '<div class="empty">No open issues across the scanned repos.</div>';
+    return;
+  }
+  queue.sort(iqCompare);
+  for (const i of queue) {
+    const row = document.createElement("div");
+    row.className = "iq-row";
+    const cov = document.createElement("span");
+    cov.className = "iq-cov" + (i.covered ? "" : " uncovered");
+    cov.textContent = i.covered ? "covered" : "uncovered";
+    cov.title = i.covered
+      ? "an open PR closes this issue"
+      : "no open PR closes this issue";
+    const age = document.createElement("span");
+    age.className = "iq-age";
+    const d = issueAgeDays(i);
+    age.textContent = d == null ? "—" : d + "d";
+    const a = document.createElement("a");
+    a.href = `https://github.com/${data.org}/${i.repo}/issues/${i.number}`;
+    a.textContent = `${i.repo}#${i.number}`;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    const title = document.createElement("span");
+    title.className = "iq-title";
+    title.textContent = i.title ?? "";
+    for (const l of i.labels || []) {
+      const chip = document.createElement("span");
+      chip.className = "iq-label";
+      chip.textContent = l;
+      title.appendChild(chip);
+    }
+    const who = document.createElement("span");
+    who.className = "iq-assignee";
+    who.textContent = i.assignee || "";
+    who.title = i.assignee || "";
+    row.append(cov, age, a, title, who);
+    box.appendChild(row);
+  }
+}
+
 function renderTiles() {
   const signalCount = Object.keys(data.summary).length;
   const clean = data.totalRepos - data.reposWithFindings;
@@ -303,8 +430,11 @@ async function load() {
   renderTiles();
   renderSummary();
   render();
+  renderIssueQueue();
   $("search").addEventListener("input", render);
   $("clearf").addEventListener("click", () => setSignal(null));
+  $("iqsort-age").addEventListener("click", () => setIqSort("age"));
+  $("iqsort-repo").addEventListener("click", () => setIqSort("repo"));
 }
 load();
 

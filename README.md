@@ -5,7 +5,8 @@ skill: an org-wide health audit for the
 [`rainlanguage`](https://github.com/rainlanguage) GitHub org.
 
 **📊 Live dashboard: <https://rainlanguage.github.io/rain-org-health/>** —
-per-repo modernization-debt signals, updated from each scan. Source in
+per-repo modernization-debt signals plus the org-wide open-issue queue
+(uncovered-by-any-open-PR first), updated from each scan. Source in
 [`site/`](site/).
 
 It scans every active repo for rainix/soldeer modernization debt and emits a
