@@ -1,15 +1,19 @@
 {
-  "generatedAt": "2026-07-05T07:41:08Z",
+  "generatedAt": "2026-07-11T17:02:14Z",
   "org": "rainlanguage",
-  "totalRepos": 8,
-  "reposWithFindings": 7,
+  "totalRepos": 105,
+  "reposWithFindings": 32,
+  "reposWholeRepoAudited": 0,
+  "reposNeverAudited": 105,
   "summary": {
-    "per-chain-etherscan-key": 5,
-    "removed-rainix-task": 2,
-    "bespoke-ci": 1,
-    "dead-magic-nix-cache": 1,
-    "old-actions-checkout": 1,
-    "old-nix-installer": 1
+    "old-nix-installer": 12,
+    "per-chain-etherscan-key": 11,
+    "dead-magic-nix-cache": 9,
+    "old-actions-checkout": 7,
+    "removed-rainix-task": 6,
+    "bespoke-ci": 2,
+    "private-key-dev": 1,
+    "telegram-secret-drift": 1
   },
   "repos": [
     {
@@ -21,9 +25,62 @@
       ]
     },
     {
-      "name": "rain.interpreter",
+      "name": "rain.subgraph.docker",
       "signals": [
-        "per-chain-etherscan-key"
+        "dead-magic-nix-cache",
+        "old-nix-installer",
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.webapp",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer",
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "sqlite-web",
+      "signals": [
+        "old-nix-installer",
+        "bespoke-ci",
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "assemblyscript-cbor",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.chainlink",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.local-db.remote",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.solver",
+      "signals": [
+        "old-nix-installer",
+        "telegram-secret-drift"
+      ]
+    },
+    {
+      "name": "rain.tier.interface",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
       ]
     },
     {
@@ -41,9 +98,53 @@
       ]
     },
     {
-      "name": "rainlang",
+      "name": "rainlang-codemirror",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rainlang.xyz",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "dvin.deploy",
       "signals": [
         "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "flow-subgraph",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "private-key-dev-recovery",
+      "signals": [
+        "private-key-dev"
+      ]
+    },
+    {
+      "name": "rain-statusfi",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "rain-svelte-components",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "rain.dia",
+      "signals": [
+        "removed-rainix-task"
       ]
     },
     {
@@ -53,10 +154,498 @@
       ]
     },
     {
+      "name": "rain.extrospection",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.factory",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
       "name": "rain.math.float",
       "signals": [
         "per-chain-etherscan-key"
       ]
+    },
+    {
+      "name": "rain.merkle",
+      "signals": [
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.metadata",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.pyth",
+      "signals": [
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.subgraph.cli",
+      "signals": [
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.tofu.erc20-decimals",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.verify",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain1155",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "raindex.governance",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rainlang",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    }
+  ],
+  "audits": [
+    {
+      "name": ".github",
+      "lastAudit": null
+    },
+    {
+      "name": "adversarial-mutation-test",
+      "lastAudit": null
+    },
+    {
+      "name": "apache-devlake",
+      "lastAudit": null
+    },
+    {
+      "name": "assemblyscript-cbor",
+      "lastAudit": null
+    },
+    {
+      "name": "claude-audit-skills",
+      "lastAudit": null
+    },
+    {
+      "name": "decentralicense",
+      "lastAudit": null
+    },
+    {
+      "name": "devcontainer",
+      "lastAudit": null
+    },
+    {
+      "name": "docs.rainlang.xyz",
+      "lastAudit": null
+    },
+    {
+      "name": "dotrain",
+      "lastAudit": null
+    },
+    {
+      "name": "dune-queries",
+      "lastAudit": null
+    },
+    {
+      "name": "dvin.deploy",
+      "lastAudit": null
+    },
+    {
+      "name": "flow",
+      "lastAudit": null
+    },
+    {
+      "name": "flow-subgraph",
+      "lastAudit": null
+    },
+    {
+      "name": "forker",
+      "lastAudit": null
+    },
+    {
+      "name": "foundry.template",
+      "lastAudit": null
+    },
+    {
+      "name": "github-chore",
+      "lastAudit": null
+    },
+    {
+      "name": "issue-pr-cron",
+      "lastAudit": null
+    },
+    {
+      "name": "lobby-sg",
+      "lastAudit": null
+    },
+    {
+      "name": "meta",
+      "lastAudit": null
+    },
+    {
+      "name": "metamorphic-metadata",
+      "lastAudit": null
+    },
+    {
+      "name": "orderbook-svelte-components",
+      "lastAudit": null
+    },
+    {
+      "name": "org-process",
+      "lastAudit": null
+    },
+    {
+      "name": "private-key-dev-recovery",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-cross-deploy",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-deploy-scripts",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-deployment",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-factories-subgraph",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-integration-templates",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-org-health",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-protocol-subgraph",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-sketches",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-statusfi",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-subgraph-utils",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-svelte-components",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-zora",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.brand",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.chainlink",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.classic.interpreter",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.cli",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.contribute",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.cooldown",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.datacontract",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.defillama",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.deploy",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.devops",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.dex.solve",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.dia",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.erc",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.erc1820",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.erc4626.words",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.error",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.extrospection",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.factory",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.flare",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.forker",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.interface.sale",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.internal",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.interpreter.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.intorastring",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.lib.hash",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.lib.memkv",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.lib.typecast",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.local-db.remote",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.binary",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.fixedpoint",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.float",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.saturating",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.merkle",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.metadata",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.pyth",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.sol.binmaskflag",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.sol.codegen",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.solmem",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.solver",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.strategies",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.string",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.subgraph.cli",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.subgraph.docker",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.things.to.build",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.tier.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.tofu.erc20-decimals",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.vats",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.verify",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.verify.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.wasm",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.webapp",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.will-overflow",
+      "lastAudit": null
+    },
+    {
+      "name": "rain1155",
+      "lastAudit": null
+    },
+    {
+      "name": "rain721a-subgraph",
+      "lastAudit": null
+    },
+    {
+      "name": "raindex",
+      "lastAudit": null
+    },
+    {
+      "name": "raindex-tg-bot",
+      "lastAudit": null
+    },
+    {
+      "name": "raindex.governance",
+      "lastAudit": null
+    },
+    {
+      "name": "raindex.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rainix",
+      "lastAudit": null
+    },
+    {
+      "name": "rainlang",
+      "lastAudit": null
+    },
+    {
+      "name": "rainlang-codemirror",
+      "lastAudit": null
+    },
+    {
+      "name": "rainlang.xyz",
+      "lastAudit": null
+    },
+    {
+      "name": "router",
+      "lastAudit": null
+    },
+    {
+      "name": "specs",
+      "lastAudit": null
+    },
+    {
+      "name": "spirit-kitty-rain",
+      "lastAudit": null
+    },
+    {
+      "name": "sqlite-web",
+      "lastAudit": null
+    },
+    {
+      "name": "sushiswap-router",
+      "lastAudit": null
+    },
+    {
+      "name": "test",
+      "lastAudit": null
+    },
+    {
+      "name": "vapour721a",
+      "lastAudit": null
+    },
+    {
+      "name": "wiki.rainprotocol.xyz",
+      "lastAudit": null
     }
   ]
 }
