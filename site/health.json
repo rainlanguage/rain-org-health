@@ -1,16 +1,18 @@
 {
-  "generatedAt": "2026-07-11T17:02:14Z",
+  "generatedAt": "2026-07-12T17:21:47Z",
   "org": "rainlanguage",
   "totalRepos": 105,
-  "reposWithFindings": 32,
+  "reposWithFindings": 29,
   "reposWholeRepoAudited": 0,
   "reposNeverAudited": 105,
+  "openIssues": 581,
+  "uncoveredIssues": 482,
   "summary": {
-    "old-nix-installer": 12,
     "per-chain-etherscan-key": 11,
-    "dead-magic-nix-cache": 9,
+    "old-nix-installer": 9,
     "old-actions-checkout": 7,
     "removed-rainix-task": 6,
+    "dead-magic-nix-cache": 5,
     "bespoke-ci": 2,
     "private-key-dev": 1,
     "telegram-secret-drift": 1
@@ -49,20 +51,6 @@
       ]
     },
     {
-      "name": "assemblyscript-cbor",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer"
-      ]
-    },
-    {
-      "name": "rain.chainlink",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer"
-      ]
-    },
-    {
       "name": "rain.local-db.remote",
       "signals": [
         "dead-magic-nix-cache",
@@ -74,13 +62,6 @@
       "signals": [
         "old-nix-installer",
         "telegram-secret-drift"
-      ]
-    },
-    {
-      "name": "rain.tier.interface",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer"
       ]
     },
     {
@@ -105,13 +86,6 @@
       ]
     },
     {
-      "name": "rainlang.xyz",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer"
-      ]
-    },
-    {
       "name": "dvin.deploy",
       "signals": [
         "per-chain-etherscan-key"
@@ -121,6 +95,12 @@
       "name": "flow-subgraph",
       "signals": [
         "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "issue-pr-cron",
+      "signals": [
+        "old-nix-installer"
       ]
     },
     {
@@ -646,6 +626,6343 @@
     {
       "name": "wiki.rainprotocol.xyz",
       "lastAudit": null
+    }
+  ],
+  "issueQueue": [
+    {
+      "repo": "rain.datacontract",
+      "number": 1,
+      "title": "https://eips.ethereum.org/EIPS/eip-3540",
+      "createdAt": "2023-03-15T10:23:14Z",
+      "ageDays": 1215,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain-svelte-components",
+      "number": 63,
+      "title": "Bump Rainlang and the extension for the parser",
+      "createdAt": "2023-05-08T09:07:12Z",
+      "ageDays": 1161,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "dotrain",
+      "number": 61,
+      "title": "fuzzing all the regexes against expectations",
+      "createdAt": "2024-01-15T17:39:14Z",
+      "ageDays": 909,
+      "labels": [
+        "enhancement",
+        "update tests"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 89,
+      "title": "Cynic graphql type generation on CI",
+      "createdAt": "2024-01-17T17:22:45Z",
+      "ageDays": 907,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 91,
+      "title": "Curses-style UI for List and Detail commands",
+      "createdAt": "2024-01-17T18:52:24Z",
+      "ageDays": 907,
+      "labels": [
+        "enhancement",
+        "CLI"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 102,
+      "title": "subgraph query integration tests",
+      "createdAt": "2024-01-18T13:43:24Z",
+      "ageDays": 906,
+      "labels": [
+        "test"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 103,
+      "title": "refactor subgraph client to use new subgraph implementation in rain.orderbook repo",
+      "createdAt": "2024-01-18T13:44:15Z",
+      "ageDays": 906,
+      "labels": [
+        "refactor"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 110,
+      "title": "remove the manual steps for codegen for cynic",
+      "createdAt": "2024-01-20T19:30:31Z",
+      "ageDays": 904,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 132,
+      "title": "include the sha or similar in the name of the assets when doing builds off main",
+      "createdAt": "2024-01-24T06:53:42Z",
+      "ageDays": 900,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 134,
+      "title": "contract client / cli integration tests",
+      "createdAt": "2024-01-25T03:58:21Z",
+      "ageDays": 899,
+      "labels": [
+        "CLI",
+        "test"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 142,
+      "title": "Transaction status notice should last until the subgraph includes the submitted transaction",
+      "createdAt": "2024-01-29T13:11:40Z",
+      "ageDays": 895,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 148,
+      "title": "Call local Parser in addOrder functions",
+      "createdAt": "2024-01-29T18:12:03Z",
+      "ageDays": 895,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.cli",
+      "number": 6,
+      "title": "use current metadata cli at https://crates.io/crates/rain-metadata",
+      "createdAt": "2024-01-30T17:20:32Z",
+      "ageDays": 894,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 159,
+      "title": "Pagination with end page",
+      "createdAt": "2024-01-31T00:17:38Z",
+      "ageDays": 893,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 133,
+      "title": "saturating math",
+      "createdAt": "2024-02-03T11:09:02Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 134,
+      "title": "multivariadic comparisons",
+      "createdAt": "2024-02-03T11:09:13Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 135,
+      "title": "rounding direction in math",
+      "createdAt": "2024-02-03T11:09:23Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 137,
+      "title": "LHS parse substitutions",
+      "createdAt": "2024-02-03T11:09:58Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 138,
+      "title": "calldata eval rather than onchain deploys",
+      "createdAt": "2024-02-03T11:10:20Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 139,
+      "title": "undefined word (requires subsitution)",
+      "createdAt": "2024-02-03T11:11:48Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 141,
+      "title": "some kind of onchain registry (ens?) support for things like well known addresses (e.g. weth)",
+      "createdAt": "2024-02-03T11:14:23Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 142,
+      "title": "utf8 support for parsing",
+      "createdAt": "2024-02-03T11:25:52Z",
+      "ageDays": 890,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 168,
+      "title": "put counterparty desired amount in context",
+      "createdAt": "2024-02-03T12:19:19Z",
+      "ageDays": 890,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 169,
+      "title": "if a strat eval reverts in take orders, don't revert the whole take orders, instead skip the order",
+      "createdAt": "2024-02-03T12:24:58Z",
+      "ageDays": 890,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 175,
+      "title": "factory to create governance wrappers",
+      "createdAt": "2024-02-05T04:56:32Z",
+      "ageDays": 888,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 183,
+      "title": "Disable \"Add Order\" button when linting finds problems",
+      "createdAt": "2024-02-06T20:15:10Z",
+      "ageDays": 887,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 184,
+      "title": "Frontmatter lint errors do not underline the text that caused the error",
+      "createdAt": "2024-02-06T20:17:44Z",
+      "ageDays": 887,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 204,
+      "title": "Live Chart w/ Polling",
+      "createdAt": "2024-02-09T02:45:02Z",
+      "ageDays": 884,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 205,
+      "title": "Take Orders Chart: Token Balances",
+      "createdAt": "2024-02-09T02:51:54Z",
+      "ageDays": 884,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 206,
+      "title": "Take Order Chart: number of transactions",
+      "createdAt": "2024-02-09T02:56:18Z",
+      "ageDays": 884,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 208,
+      "title": "Link to orderbook in block explorer",
+      "createdAt": "2024-02-09T02:58:45Z",
+      "ageDays": 884,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 209,
+      "title": "Nix commands to wrap all prerequisite steps of `cargo tauri dev` and `cargo tauri build`",
+      "createdAt": "2024-02-09T03:00:31Z",
+      "ageDays": 884,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 210,
+      "title": "List filtering",
+      "createdAt": "2024-02-09T03:01:57Z",
+      "ageDays": 884,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 211,
+      "title": "make it impossible to close the diagnostics panel, or very easy to bring it back if it is closed",
+      "createdAt": "2024-02-09T03:04:09Z",
+      "ageDays": 884,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 212,
+      "title": "Token detail page",
+      "createdAt": "2024-02-09T03:06:35Z",
+      "ageDays": 884,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 213,
+      "title": "Add logging to tauri app",
+      "createdAt": "2024-02-09T03:07:15Z",
+      "ageDays": 884,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 218,
+      "title": "Frontmatter rebindings parse errors",
+      "createdAt": "2024-02-10T21:01:18Z",
+      "ageDays": 883,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 229,
+      "title": "Refactor front-end caching and pagination of list queries to support chart data",
+      "createdAt": "2024-02-13T04:30:48Z",
+      "ageDays": 880,
+      "labels": [
+        "bug",
+        "refactor"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 235,
+      "title": "Merge clears & takes into single chart / table",
+      "createdAt": "2024-02-14T15:56:55Z",
+      "ageDays": 879,
+      "labels": [
+        "enhancement",
+        "refactor"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 236,
+      "title": "Standardize CLI output method with other rain clis",
+      "createdAt": "2024-02-14T16:32:14Z",
+      "ageDays": 879,
+      "labels": [
+        "refactor"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 239,
+      "title": "Error displayed twice on deposit ",
+      "createdAt": "2024-02-14T22:25:18Z",
+      "ageDays": 879,
+      "labels": [
+        "bug",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "forker",
+      "number": 3,
+      "title": "Make cache expiration configurable or default to never expire",
+      "createdAt": "2024-02-15T21:56:36Z",
+      "ageDays": 878,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 262,
+      "title": "Round values in order takes table -- show full value on hover",
+      "createdAt": "2024-02-15T23:14:17Z",
+      "ageDays": 878,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 269,
+      "title": "cancel in-progress transactions",
+      "createdAt": "2024-02-16T04:42:53Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 272,
+      "title": "don't close deposit modal on ledger error",
+      "createdAt": "2024-02-16T18:14:42Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 273,
+      "title": "add a button to generate a random vaultid on the deposit modal",
+      "createdAt": "2024-02-16T18:14:59Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 274,
+      "title": "Include token symbol & transaction hash in transaction status notice",
+      "createdAt": "2024-02-16T18:15:28Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 276,
+      "title": "Universal mac binaries",
+      "createdAt": "2024-02-16T18:30:29Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 279,
+      "title": "Polling on all pages",
+      "createdAt": "2024-02-16T18:39:07Z",
+      "ageDays": 877,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 280,
+      "title": "Help page content: Ledger Issues",
+      "createdAt": "2024-02-16T18:40:20Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 284,
+      "title": "Fetch token decimals in input field",
+      "createdAt": "2024-02-16T18:56:24Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 288,
+      "title": "move derivation index field before address field",
+      "createdAt": "2024-02-16T19:08:10Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 290,
+      "title": "Select a ledger address rather than requiring user to enter derivation index",
+      "createdAt": "2024-02-16T19:31:07Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 291,
+      "title": "tauri invoke awaits should time out",
+      "createdAt": "2024-02-16T19:34:02Z",
+      "ageDays": 877,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 299,
+      "title": "Hovering orders table column changes width on mac os",
+      "createdAt": "2024-02-17T00:55:24Z",
+      "ageDays": 876,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 301,
+      "title": "Support Legacy & abritarary Ledger Derviation Paths",
+      "createdAt": "2024-02-17T20:39:15Z",
+      "ageDays": 876,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 313,
+      "title": "verify decoded order meta matches actually deployed order",
+      "createdAt": "2024-02-18T03:10:11Z",
+      "ageDays": 875,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 315,
+      "title": "Subgraph vaultId should should be a \"0x\" prefixed hex value",
+      "createdAt": "2024-02-18T18:40:20Z",
+      "ageDays": 875,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 316,
+      "title": "Always convert returned subgraph structs into our own structs, with values converted from string to usable types in desired format",
+      "createdAt": "2024-02-18T19:10:50Z",
+      "ageDays": 875,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 320,
+      "title": "Take an order from the UI",
+      "createdAt": "2024-02-19T18:01:26Z",
+      "ageDays": 874,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 321,
+      "title": "Volume Chart for trading pair",
+      "createdAt": "2024-02-19T19:02:19Z",
+      "ageDays": 874,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 322,
+      "title": "Re-add a previously removed order",
+      "createdAt": "2024-02-19T19:02:59Z",
+      "ageDays": 874,
+      "labels": [
+        "enhancement",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 328,
+      "title": "Adding spaces to rain causes parser to revert with blank reason",
+      "createdAt": "2024-02-19T19:52:00Z",
+      "ageDays": 874,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 332,
+      "title": "Context menus don't disappear when clicking outside of them",
+      "createdAt": "2024-02-20T03:45:48Z",
+      "ageDays": 873,
+      "labels": [
+        "User Stage: Deploy",
+        "ui/ux"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 356,
+      "title": "Input and output cols on trades table are around the wrong wa",
+      "createdAt": "2024-02-22T18:41:03Z",
+      "ageDays": 871,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 363,
+      "title": "Build fix",
+      "createdAt": "2024-02-27T21:44:50Z",
+      "ageDays": 866,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 367,
+      "title": "Observable charting for fuzzed traces in the GUI",
+      "createdAt": "2024-02-28T18:21:08Z",
+      "ageDays": 865,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 387,
+      "title": "Reduce flakiness of ledger connnection",
+      "createdAt": "2024-03-04T19:25:20Z",
+      "ageDays": 860,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 390,
+      "title": "replace typeshare with tsify",
+      "createdAt": "2024-03-05T19:09:13Z",
+      "ageDays": 859,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 391,
+      "title": "support fee on transfer tokens",
+      "createdAt": "2024-03-06T05:03:40Z",
+      "ageDays": 858,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 394,
+      "title": "review if we can use the scale trick in uniswap ops to improve precision of ob",
+      "createdAt": "2024-03-07T02:12:49Z",
+      "ageDays": 857,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 398,
+      "title": "libusb and gmp required on mac os",
+      "createdAt": "2024-03-07T18:04:25Z",
+      "ageDays": 857,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 399,
+      "title": "reliable builds on linux",
+      "createdAt": "2024-03-07T23:59:25Z",
+      "ageDays": 857,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 402,
+      "title": "Make settings / add order text areas multiple rows by default",
+      "createdAt": "2024-03-08T18:57:35Z",
+      "ageDays": 856,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 404,
+      "title": "Display number of block confirmations in transaction status notice as they are received",
+      "createdAt": "2024-03-08T19:04:17Z",
+      "ageDays": 856,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 405,
+      "title": "Specify number of block confirmations to wait for a transaction per chain via config",
+      "createdAt": "2024-03-08T19:08:37Z",
+      "ageDays": 856,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 409,
+      "title": "Include ledger connection requirements in ledger error toasts",
+      "createdAt": "2024-03-08T19:41:44Z",
+      "ageDays": 856,
+      "labels": [],
+      "assignee": "mattyg",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 20,
+      "title": "add a sub parser",
+      "createdAt": "2024-03-12T04:23:56Z",
+      "ageDays": 852,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 417,
+      "title": "Link to specs for words & yaml",
+      "createdAt": "2024-03-12T06:27:33Z",
+      "ageDays": 852,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 435,
+      "title": "Ensure linux .deb packages link to proper system libs or bundle required libs",
+      "createdAt": "2024-03-16T18:09:40Z",
+      "ageDays": 848,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 437,
+      "title": "Generic deposit modal should use dropdown to select token from config, instead of text input",
+      "createdAt": "2024-03-16T18:56:30Z",
+      "ageDays": 848,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 438,
+      "title": "Decimal 18 scaled values for X and Y axis. ",
+      "createdAt": "2024-03-17T13:34:57Z",
+      "ageDays": 847,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 439,
+      "title": "Trade / Deposit charts overlap \"early alpha\" notice",
+      "createdAt": "2024-03-17T21:29:52Z",
+      "ageDays": 847,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 442,
+      "title": "User can navigate to orders page without required settings by clicking \"Home\" button in breadcrumbs",
+      "createdAt": "2024-03-18T00:01:26Z",
+      "ageDays": 846,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 444,
+      "title": "CSV output option for fuzz testing on CLI",
+      "createdAt": "2024-03-18T02:38:42Z",
+      "ageDays": 846,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 446,
+      "title": "Add titles for axes in charts",
+      "createdAt": "2024-03-18T02:50:43Z",
+      "ageDays": 846,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 447,
+      "title": "Set Context in yml options",
+      "createdAt": "2024-03-18T08:33:00Z",
+      "ageDays": 846,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 448,
+      "title": "\"Cannot access unitialized variable\" - White Screen on Mac OS 11",
+      "createdAt": "2024-03-19T00:01:31Z",
+      "ageDays": 845,
+      "labels": [
+        "bug",
+        "ai:close-candidate"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 450,
+      "title": "duplicate `runs` keys in scenarios when nested should be an error",
+      "createdAt": "2024-03-19T17:23:40Z",
+      "ageDays": 845,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 454,
+      "title": "Display date times in locale of user",
+      "createdAt": "2024-03-19T21:19:16Z",
+      "ageDays": 845,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 460,
+      "title": "ability to dismiss/accept the alpha warning",
+      "createdAt": "2024-03-20T04:34:01Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 461,
+      "title": "ability to name axes",
+      "createdAt": "2024-03-20T04:35:10Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 462,
+      "title": "elisions should not error if runs is set during fuzzing",
+      "createdAt": "2024-03-20T04:36:01Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 463,
+      "title": "ability to handle different combinations of IO for a single order in the same block",
+      "createdAt": "2024-03-20T04:41:11Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 464,
+      "title": "ability to set date format in the settings yaml",
+      "createdAt": "2024-03-20T04:42:14Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 465,
+      "title": "ability to set sig figs for decimal amounts in the GUI from the settings yaml",
+      "createdAt": "2024-03-20T04:42:48Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 468,
+      "title": "support using-tokens-from in settings",
+      "createdAt": "2024-03-20T04:46:27Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 470,
+      "title": "stable sorting of charts on the dashboard",
+      "createdAt": "2024-03-20T04:49:31Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 471,
+      "title": "ability to set the denomination of a chart axis to a token, and then have it render the token symbol",
+      "createdAt": "2024-03-20T04:57:35Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 472,
+      "title": "ability to quote bind data transformations while charting",
+      "createdAt": "2024-03-20T05:02:32Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 473,
+      "title": "ability to chart orders that already exist if the rainlang is known",
+      "createdAt": "2024-03-20T05:26:06Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 474,
+      "title": "if you quit without saving your work the app happily exits and deletes the work",
+      "createdAt": "2024-03-20T11:31:11Z",
+      "ageDays": 844,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 476,
+      "title": "Frontend testing harness & basic tests",
+      "createdAt": "2024-03-20T20:46:27Z",
+      "ageDays": 844,
+      "labels": [
+        "ai:close-candidate"
+      ],
+      "assignee": "mattyg",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 481,
+      "title": "Refactor ModalExecute.svelte component to act like a generic \"input\" component",
+      "createdAt": "2024-03-21T21:26:34Z",
+      "ageDays": 843,
+      "labels": [
+        "ai:close-candidate"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 482,
+      "title": "Same transaction status notices for ledger & walletconnect transactions",
+      "createdAt": "2024-03-21T21:27:23Z",
+      "ageDays": 843,
+      "labels": [
+        "enhancement",
+        "ai:close-candidate"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 484,
+      "title": "some kind of gas report for strats during testing",
+      "createdAt": "2024-03-22T06:27:00Z",
+      "ageDays": 842,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 485,
+      "title": "Upload source maps to sentry",
+      "createdAt": "2024-03-22T15:45:19Z",
+      "ageDays": 842,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 493,
+      "title": "support rainlang strings for vault ids",
+      "createdAt": "2024-03-25T19:20:31Z",
+      "ageDays": 839,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 495,
+      "title": "Tab based UI with multi window support",
+      "createdAt": "2024-03-25T23:04:38Z",
+      "ageDays": 839,
+      "labels": [
+        "enhancement",
+        "ai:close-candidate"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 498,
+      "title": "Refactor reporting sentry errors - generic try/catch wrapper",
+      "createdAt": "2024-03-27T14:50:33Z",
+      "ageDays": 837,
+      "labels": [
+        "ai:close-candidate"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 499,
+      "title": "Refactor Config & ConfigSource types for consistent key ordering",
+      "createdAt": "2024-03-27T17:07:59Z",
+      "ageDays": 837,
+      "labels": [
+        "ai:close-candidate"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 43,
+      "title": "review how we interact with flashbots",
+      "createdAt": "2024-03-27T17:37:56Z",
+      "ageDays": 837,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 504,
+      "title": "ability to reference settings in bindings",
+      "createdAt": "2024-03-28T16:46:31Z",
+      "ageDays": 836,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 193,
+      "title": "some kind of \"rain name service\" RNS as sub parser",
+      "createdAt": "2024-03-29T17:50:34Z",
+      "ageDays": 835,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 512,
+      "title": "orderbooks should fallback to the network they are named for",
+      "createdAt": "2024-04-01T11:06:35Z",
+      "ageDays": 832,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 513,
+      "title": "scenario runs should be visible to children",
+      "createdAt": "2024-04-01T12:07:33Z",
+      "ageDays": 832,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 519,
+      "title": "add order screen should be prefilled to a minimal skeleton to an order",
+      "createdAt": "2024-04-02T17:18:29Z",
+      "ageDays": 831,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 521,
+      "title": "ability to copy trade from the order view page",
+      "createdAt": "2024-04-03T04:57:28Z",
+      "ageDays": 830,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 522,
+      "title": "undefined deployer address",
+      "createdAt": "2024-04-03T04:59:15Z",
+      "ageDays": 830,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 523,
+      "title": "nothing visual happens in the app when an order is successfully deployed",
+      "createdAt": "2024-04-03T05:02:20Z",
+      "ageDays": 830,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 524,
+      "title": "small numbers getting rounded to zero on charts",
+      "createdAt": "2024-04-03T05:44:54Z",
+      "ageDays": 830,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 525,
+      "title": "pasting an order into the editor when an order was already charted etc. doesn't clear what was previously done",
+      "createdAt": "2024-04-03T05:49:02Z",
+      "ageDays": 830,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 527,
+      "title": "link to relevant observable plot docs near the yaml while i'm trying to write charts",
+      "createdAt": "2024-04-03T06:09:48Z",
+      "ageDays": 830,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 528,
+      "title": "cmd + s should save order",
+      "createdAt": "2024-04-03T06:13:08Z",
+      "ageDays": 830,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 529,
+      "title": "if there's no elided bindings i shouldn't have to specify runs to generate a chart (should imply 1 run)",
+      "createdAt": "2024-04-03T06:16:37Z",
+      "ageDays": 830,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 531,
+      "title": "can't generate rainlang if there are elided bindings",
+      "createdAt": "2024-04-03T06:42:46Z",
+      "ageDays": 830,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 536,
+      "title": "trades chart only renders scale for days that data exists (i.e. when trades were made) rather than for the whole time frame that was selected",
+      "createdAt": "2024-04-04T11:15:16Z",
+      "ageDays": 829,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.flare",
+      "number": 10,
+      "title": "if the pair is against usd for pair it should just defer to a single pair rather than getting two quotes",
+      "createdAt": "2024-04-04T14:48:17Z",
+      "ageDays": 829,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 541,
+      "title": "ability to debug without specifying charts",
+      "createdAt": "2024-04-04T15:06:29Z",
+      "ageDays": 829,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 543,
+      "title": "ability to set data type for charting",
+      "createdAt": "2024-04-04T16:12:44Z",
+      "ageDays": 829,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 544,
+      "title": "error decoding for toasts",
+      "createdAt": "2024-04-04T19:30:05Z",
+      "ageDays": 829,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 546,
+      "title": "Add link to telegram on sidebar",
+      "createdAt": "2024-04-04T19:33:24Z",
+      "ageDays": 829,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 549,
+      "title": "it is somehow possible to deploy orders from the app without the source attached",
+      "createdAt": "2024-04-04T21:05:29Z",
+      "ageDays": 829,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 550,
+      "title": "deposit modal balance is broken and/or confusing",
+      "createdAt": "2024-04-04T21:08:12Z",
+      "ageDays": 829,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 551,
+      "title": "order screen needs to show the deployer otherwise it's trivial to create a phishing deployer",
+      "createdAt": "2024-04-04T21:11:26Z",
+      "ageDays": 829,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 557,
+      "title": "when we removed the \"back\" button in favour of breadcrumbs, we didn't make the breadcrumbs respect history",
+      "createdAt": "2024-04-05T06:12:55Z",
+      "ageDays": 828,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 559,
+      "title": "the ob yaml frontmatter is not versioned",
+      "createdAt": "2024-04-05T12:21:46Z",
+      "ageDays": 828,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 567,
+      "title": "show full order details including dispair and bytecode along with decoded rainlang meta",
+      "createdAt": "2024-04-06T08:32:09Z",
+      "ageDays": 827,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 570,
+      "title": "withdraw button on vault asks to connect wallet even if already connected",
+      "createdAt": "2024-04-06T12:54:43Z",
+      "ageDays": 827,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 50,
+      "title": "push docker to rainlang org on docker hub",
+      "createdAt": "2024-04-07T08:21:30Z",
+      "ageDays": 826,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 572,
+      "title": "every time we do anything the wallet gets disconnected for no reason",
+      "createdAt": "2024-04-07T14:20:30Z",
+      "ageDays": 826,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 573,
+      "title": "changing the orderbook address in the settings doesn't update the vaults, so if you have the same vault ID in two different orderbooks it shows deposits/withdrawals from the previous ob",
+      "createdAt": "2024-04-07T14:23:19Z",
+      "ageDays": 826,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 574,
+      "title": "probably makes more sense to show the tx.origin on trades in the order page as msg.sender is just whatever arb contract mediated the trade",
+      "createdAt": "2024-04-07T15:25:00Z",
+      "ageDays": 826,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 575,
+      "title": "if there's only one possible deployment in the dropdown on the add order page it should be selected",
+      "createdAt": "2024-04-08T03:02:23Z",
+      "ageDays": 825,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 576,
+      "title": "hover states in the sidebar are weird",
+      "createdAt": "2024-04-08T03:03:02Z",
+      "ageDays": 825,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 588,
+      "title": "io ratio is backwards on the order page",
+      "createdAt": "2024-04-11T19:02:37Z",
+      "ageDays": 822,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 589,
+      "title": "trading chart should indicate direction somehow",
+      "createdAt": "2024-04-12T03:30:56Z",
+      "ageDays": 821,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 64,
+      "title": "bot uses way too much rpc",
+      "createdAt": "2024-04-13T06:26:46Z",
+      "ageDays": 820,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 591,
+      "title": "Orderbook for the network needs to be mentioned explicitly in `orders` section in yml",
+      "createdAt": "2024-04-16T17:46:36Z",
+      "ageDays": 817,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 592,
+      "title": "Fix inverted IO ratio on orders page",
+      "createdAt": "2024-04-18T13:47:44Z",
+      "ageDays": 815,
+      "labels": [],
+      "assignee": "danalexilewis",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 593,
+      "title": "Add balance of vault to order detail page",
+      "createdAt": "2024-04-18T13:51:53Z",
+      "ageDays": 815,
+      "labels": [],
+      "assignee": "danalexilewis",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 595,
+      "title": "Show the connected wallet's current balance when making a deposit",
+      "createdAt": "2024-04-18T13:57:47Z",
+      "ageDays": 815,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 622,
+      "title": "order page should show the orderbook that it is deployed on",
+      "createdAt": "2024-05-06T06:43:25Z",
+      "ageDays": 797,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 623,
+      "title": "implement/test context properly for obv4 associated actions",
+      "createdAt": "2024-05-06T11:32:32Z",
+      "ageDays": 797,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 629,
+      "title": "Tauri command for decoding errors",
+      "createdAt": "2024-05-06T19:51:37Z",
+      "ageDays": 797,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 214,
+      "title": "support `+` for exponents like `1.0e+2` to match negative",
+      "createdAt": "2024-05-07T08:14:04Z",
+      "ageDays": 796,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 216,
+      "title": "support negative numbers",
+      "createdAt": "2024-05-07T08:14:49Z",
+      "ageDays": 796,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 217,
+      "title": "support _ separator like 1_000_000 in decimal literals",
+      "createdAt": "2024-05-07T08:16:01Z",
+      "ageDays": 796,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 218,
+      "title": "support types in decimal literals like 1_d6 and 1_d0 and 1_uint etc.",
+      "createdAt": "2024-05-07T08:16:23Z",
+      "ageDays": 796,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 220,
+      "title": "true/false words",
+      "createdAt": "2024-05-07T08:40:56Z",
+      "ageDays": 796,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 632,
+      "title": "sometimes the QR code for wallet connect doesn't show",
+      "createdAt": "2024-05-08T07:12:55Z",
+      "ageDays": 795,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 228,
+      "title": "lexical ordering of 00 ops doesn't match compatibility number requirements",
+      "createdAt": "2024-05-11T10:49:58Z",
+      "ageDays": 792,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 637,
+      "title": "useless error when `orderbook` is missing on an order in yaml",
+      "createdAt": "2024-05-12T18:52:00Z",
+      "ageDays": 791,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 231,
+      "title": "how should erc 721/1155 be handled as decimals?",
+      "createdAt": "2024-05-13T12:25:47Z",
+      "ageDays": 790,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.internal",
+      "number": 2,
+      "title": "Write CVSS-like criteria to help score and prioritise bugs and infra issues",
+      "createdAt": "2024-05-13T17:06:25Z",
+      "ageDays": 790,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 642,
+      "title": "walletconnect not connecting on linux build",
+      "createdAt": "2024-05-14T10:03:09Z",
+      "ageDays": 789,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 649,
+      "title": "show and ability to change the owner that is being used to eval the debug panel",
+      "createdAt": "2024-05-15T18:38:29Z",
+      "ageDays": 788,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 651,
+      "title": "malformed vault id error should be clearer",
+      "createdAt": "2024-05-18T06:05:32Z",
+      "ageDays": 785,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 657,
+      "title": "add word to read the vault balance from an orderbook",
+      "createdAt": "2024-05-20T17:41:16Z",
+      "ageDays": 783,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 659,
+      "title": "rename `orderbook` word in subparser to `raindex`",
+      "createdAt": "2024-05-20T21:46:59Z",
+      "ageDays": 783,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 661,
+      "title": "should select a tab when clicking on \"words\" on add order screen",
+      "createdAt": "2024-05-21T12:49:36Z",
+      "ageDays": 782,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.internal",
+      "number": 11,
+      "title": "Create a tutorial video for how to get words displaying in the app",
+      "createdAt": "2024-05-22T14:32:06Z",
+      "ageDays": 781,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 671,
+      "title": "inject order counterparty into context grid for simulations",
+      "createdAt": "2024-05-24T03:43:08Z",
+      "ageDays": 779,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 241,
+      "title": "interfaces for pointers",
+      "createdAt": "2024-05-27T06:20:44Z",
+      "ageDays": 776,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 242,
+      "title": "pointer generation for externs",
+      "createdAt": "2024-05-27T06:22:04Z",
+      "ageDays": 776,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.internal",
+      "number": 20,
+      "title": "Create submission form for comp",
+      "createdAt": "2024-05-27T12:45:25Z",
+      "ageDays": 776,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 243,
+      "title": "Contract deployment for base network failing",
+      "createdAt": "2024-05-28T06:16:51Z",
+      "ageDays": 775,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 675,
+      "title": "allow for a charting entrypoint",
+      "createdAt": "2024-06-06T06:51:58Z",
+      "ageDays": 766,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 247,
+      "title": "numeric stack that can handle numbers across different OOMs and also negative numbers",
+      "createdAt": "2024-06-09T10:04:33Z",
+      "ageDays": 763,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 248,
+      "title": "move codegen logic to a dedicated repo",
+      "createdAt": "2024-06-09T14:21:58Z",
+      "ageDays": 763,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 126,
+      "title": "exex spike",
+      "createdAt": "2024-06-17T18:53:23Z",
+      "ageDays": 755,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 252,
+      "title": "Surface RPC errors better",
+      "createdAt": "2024-06-18T18:01:11Z",
+      "ageDays": 754,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 684,
+      "title": "Raindex App Linux Release Error.",
+      "createdAt": "2024-06-19T14:54:30Z",
+      "ageDays": 753,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 144,
+      "title": "Generate ABIs rather than hardcode",
+      "createdAt": "2024-07-01T22:07:39Z",
+      "ageDays": 741,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 705,
+      "title": "some kind of visual warning to users when they are interacting with tokens that don't have `decimals` on the contract",
+      "createdAt": "2024-07-03T07:15:58Z",
+      "ageDays": 739,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 706,
+      "title": "test the post eval lib from ob v4",
+      "createdAt": "2024-07-03T07:51:40Z",
+      "ageDays": 739,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 707,
+      "title": "raindex - browsing and navigation of lists or orders, vaults and trades",
+      "createdAt": "2024-07-04T12:11:46Z",
+      "ageDays": 738,
+      "labels": [
+        "ui/ux"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 258,
+      "title": "Rust for unpacking and formatting rain stack items",
+      "createdAt": "2024-07-05T13:13:02Z",
+      "ageDays": 737,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 710,
+      "title": "Define additional task entrypoints in order frontmatter",
+      "createdAt": "2024-07-05T13:34:29Z",
+      "ageDays": 737,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 726,
+      "title": "Add area chart capability",
+      "createdAt": "2024-07-18T12:35:05Z",
+      "ageDays": 724,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 730,
+      "title": "Vault screen in raindex, list of orders add # trades and tooltip",
+      "createdAt": "2024-07-23T22:22:41Z",
+      "ageDays": 719,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 732,
+      "title": "Vault list page - decrease vaultid chars",
+      "createdAt": "2024-07-24T07:57:32Z",
+      "ageDays": 718,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 743,
+      "title": "Signed Context in Raindex App",
+      "createdAt": "2024-07-28T20:15:02Z",
+      "ageDays": 714,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 41,
+      "title": "Porting legacy tests from \".Flow/flow\" — test case \"should not be able to access values set in a flow across different flows\"",
+      "createdAt": "2024-08-01T16:49:11Z",
+      "ageDays": 710,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 67,
+      "title": "Porting legacy tests from \".FlowERC20/flow\" — test case \"should not be able to access values set in a flow across different flows\"",
+      "createdAt": "2024-08-01T16:53:34Z",
+      "ageDays": 710,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 754,
+      "title": "Uniswap-v3 twap historical data inaccurate.",
+      "createdAt": "2024-08-05T16:42:50Z",
+      "ageDays": 706,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "docs.rainlang.xyz",
+      "number": 53,
+      "title": "OrderBookV4 docs sweep",
+      "createdAt": "2024-08-12T09:15:23Z",
+      "ageDays": 699,
+      "labels": [
+        "documentation"
+      ],
+      "assignee": "dcatki",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 839,
+      "title": "elided bindings have 0 injected into them when going to prod",
+      "createdAt": "2024-09-07T15:09:01Z",
+      "ageDays": 673,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 843,
+      "title": "need to be able to get logs out of the app somehow",
+      "createdAt": "2024-09-09T18:02:33Z",
+      "ageDays": 671,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 850,
+      "title": "add a rainlang repl to the order page",
+      "createdAt": "2024-09-11T06:41:48Z",
+      "ageDays": 669,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.internal",
+      "number": 24,
+      "title": "Cyclo launch",
+      "createdAt": "2024-09-19T10:06:03Z",
+      "ageDays": 661,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rain.internal",
+      "number": 25,
+      "title": "Webapp/Flare incentives launch",
+      "createdAt": "2024-09-23T21:54:57Z",
+      "ageDays": 657,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 888,
+      "title": "Add the dotrain for a deployment to the meta for an order, as well as the composed rainlang",
+      "createdAt": "2024-09-25T13:10:59Z",
+      "ageDays": 655,
+      "labels": [],
+      "assignee": "brusherru",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 889,
+      "title": "Change the \"rainlang\" tab on the order page to \"source\" and add subtabs for the rainlang and the dotrain",
+      "createdAt": "2024-09-25T13:17:00Z",
+      "ageDays": 655,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 25,
+      "title": "some kind of domain switcher navigation so users can move easily between subdomains",
+      "createdAt": "2024-09-28T09:18:29Z",
+      "ageDays": 652,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 41,
+      "title": "New file structure for strats and subdomains",
+      "createdAt": "2024-09-29T20:56:36Z",
+      "ageDays": 651,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 901,
+      "title": "Add official RP4 addresses to deployment CI as env",
+      "createdAt": "2024-09-29T22:43:31Z",
+      "ageDays": 651,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 906,
+      "title": "mousewheel over the charts only moves the horizontal axis, it doesn't move the vertical axis",
+      "createdAt": "2024-09-30T12:01:33Z",
+      "ageDays": 650,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 907,
+      "title": "show max drawdowns",
+      "createdAt": "2024-09-30T12:02:59Z",
+      "ageDays": 650,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "dotrain",
+      "number": 134,
+      "title": "decouple CAS locations from subgraph",
+      "createdAt": "2024-09-30T12:04:32Z",
+      "ageDays": 650,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 69,
+      "title": "i deployed a strat but it didn't show up under \"my strategies\"",
+      "createdAt": "2024-10-02T10:45:35Z",
+      "ageDays": 648,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 83,
+      "title": "Add deposit/withdraw history to strategy page",
+      "createdAt": "2024-10-03T11:41:40Z",
+      "ageDays": 647,
+      "labels": [],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 924,
+      "title": "add `balance` field to `erc20` entity in subgraph",
+      "createdAt": "2024-10-08T02:27:10Z",
+      "ageDays": 642,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 229,
+      "title": "integrate with rubic aggregator - https://rubic.exchange/",
+      "createdAt": "2024-10-08T17:27:11Z",
+      "ageDays": 642,
+      "labels": [],
+      "assignee": "rouzwelt",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 927,
+      "title": "can't deposit any tokens into order on polygon, says 0 wallet balance for all vaults",
+      "createdAt": "2024-10-10T16:39:03Z",
+      "ageDays": 640,
+      "labels": [
+        "bug",
+        "native app"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 139,
+      "title": "i was asked to infinite approve quick on deposit",
+      "createdAt": "2024-10-11T06:37:05Z",
+      "ageDays": 639,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 928,
+      "title": "disconnect wallet connect just spins for several minutes",
+      "createdAt": "2024-10-11T18:41:48Z",
+      "ageDays": 639,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 929,
+      "title": "connect to wallet connect button does nothing (after disconnecting?)",
+      "createdAt": "2024-10-11T18:42:54Z",
+      "ageDays": 639,
+      "labels": [
+        "bug",
+        "native app"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 931,
+      "title": "rainbow wallet on mobile doesn't select correct network",
+      "createdAt": "2024-10-11T18:44:49Z",
+      "ageDays": 639,
+      "labels": [
+        "bug",
+        "native app"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 142,
+      "title": "ability to sort table by headings on my strats page",
+      "createdAt": "2024-10-11T18:48:27Z",
+      "ageDays": 639,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 145,
+      "title": "ability to see other people's orders",
+      "createdAt": "2024-10-12T03:12:31Z",
+      "ageDays": 638,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 936,
+      "title": "clicking on all the accounts in the orders page also turns on \"all accounts\" which includes accounts that aren't in the list",
+      "createdAt": "2024-10-12T07:17:09Z",
+      "ageDays": 638,
+      "labels": [
+        "bug",
+        "native app"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 151,
+      "title": "ability to set the vault id, so multiple strats can point at the same capital",
+      "createdAt": "2024-10-12T11:09:11Z",
+      "ageDays": 638,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "decentralicense",
+      "number": 2,
+      "title": "tracking SPDX",
+      "createdAt": "2024-10-15T10:33:40Z",
+      "ageDays": 635,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 950,
+      "title": "have a local db",
+      "createdAt": "2024-10-17T19:45:13Z",
+      "ageDays": 633,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 192,
+      "title": "have a local db",
+      "createdAt": "2024-10-17T19:48:40Z",
+      "ageDays": 633,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 958,
+      "title": "don't have \"utils\" folder in tauri-app/src/lib/utils",
+      "createdAt": "2024-10-23T13:52:25Z",
+      "ageDays": 627,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 216,
+      "title": "Slow to perform getAddOrderCallData from transactionData.ts",
+      "createdAt": "2024-10-23T14:09:16Z",
+      "ageDays": 627,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 217,
+      "title": "show codemirror modal on the strat page",
+      "createdAt": "2024-10-23T14:48:56Z",
+      "ageDays": 627,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 960,
+      "title": "\"user not connected\" when trying to deposit using ledger directly (not via wallet connect)",
+      "createdAt": "2024-10-23T15:32:29Z",
+      "ageDays": 627,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex-tg-bot",
+      "number": 3,
+      "title": "Ensure raindex tg bot is in typescript",
+      "createdAt": "2024-10-23T23:38:36Z",
+      "ageDays": 627,
+      "labels": [],
+      "assignee": "Siddharth2207",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 221,
+      "title": "Unreadable error messages on WalletConnect tx reject",
+      "createdAt": "2024-10-24T07:57:24Z",
+      "ageDays": 626,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 222,
+      "title": "Would be good to have a transaction store, similar to the one in SFT site.",
+      "createdAt": "2024-10-24T07:58:20Z",
+      "ageDays": 626,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 969,
+      "title": "`Words` tab errors for nested scenarios within the front matter.",
+      "createdAt": "2024-10-29T08:31:57Z",
+      "ageDays": 621,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 243,
+      "title": "Order table styling not working on Firefox",
+      "createdAt": "2024-10-29T19:28:22Z",
+      "ageDays": 621,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "org-process",
+      "number": 2,
+      "title": "define canary order scope of work and purpose and generally when/where/why/how about it",
+      "createdAt": "2024-11-01T23:00:57Z",
+      "ageDays": 618,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 981,
+      "title": "add back button for desktop app",
+      "createdAt": "2024-11-07T22:20:53Z",
+      "ageDays": 612,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 991,
+      "title": "get vault balances for an order in cli",
+      "createdAt": "2024-11-12T16:29:19Z",
+      "ageDays": 607,
+      "labels": [],
+      "assignee": "ninokeldishvili",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 270,
+      "title": "Approve transaction is mined but no block confirmation is received",
+      "createdAt": "2024-11-13T13:28:13Z",
+      "ageDays": 606,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 263,
+      "title": "try to use https://blinklabs.xyz/ to avoid front running that causes expensive reverts",
+      "createdAt": "2024-11-20T11:27:05Z",
+      "ageDays": 599,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "docs.rainlang.xyz",
+      "number": 71,
+      "title": "Raindex solver explainers",
+      "createdAt": "2024-11-28T12:30:50Z",
+      "ageDays": 591,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 302,
+      "title": "need CI to flag basic issues with the integrity and deployability of the yaml",
+      "createdAt": "2024-11-29T14:45:35Z",
+      "ageDays": 590,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 271,
+      "title": "test https://cow.fi/mev-blocker",
+      "createdAt": "2024-12-02T14:08:03Z",
+      "ageDays": 587,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1039,
+      "title": "Unable to install linux release on ubunut24",
+      "createdAt": "2024-12-03T09:43:31Z",
+      "ageDays": 586,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 277,
+      "title": "research the possibility to include arb3 tx gas usage and gasPrice in the arb3 task context from solidity",
+      "createdAt": "2024-12-04T06:18:39Z",
+      "ageDays": 585,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1042,
+      "title": "GStreamer and the Embedded video in the homepage causes local build to freeze",
+      "createdAt": "2024-12-04T08:16:15Z",
+      "ageDays": 585,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 279,
+      "title": "arbitrage strats case",
+      "createdAt": "2024-12-06T18:49:30Z",
+      "ageDays": 583,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 280,
+      "title": "bribe bounty strats/bot ??",
+      "createdAt": "2024-12-10T05:01:18Z",
+      "ageDays": 579,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.strategies",
+      "number": 3,
+      "title": "Validate strategies pushed to rain.strategies using a CI action?",
+      "createdAt": "2025-01-20T13:09:15Z",
+      "ageDays": 538,
+      "labels": [
+        "enhancement",
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 341,
+      "title": "Option to provide custom rpc url while deploying strategies to fetch onchain data",
+      "createdAt": "2025-01-24T15:44:43Z",
+      "ageDays": 534,
+      "labels": [
+        "bug",
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "dotrain",
+      "number": 138,
+      "title": "unify Alloy versions",
+      "createdAt": "2025-02-07T17:42:56Z",
+      "ageDays": 520,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1261,
+      "title": "network selection and network bindings",
+      "createdAt": "2025-02-11T08:38:42Z",
+      "ageDays": 516,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1310,
+      "title": "Modal showing the deployment status from v1",
+      "createdAt": "2025-02-16T06:48:13Z",
+      "ageDays": 511,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1311,
+      "title": "Clear message for the missing binding.",
+      "createdAt": "2025-02-16T07:27:55Z",
+      "ageDays": 511,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1320,
+      "title": "Better validation for fields",
+      "createdAt": "2025-02-16T15:29:37Z",
+      "ageDays": 511,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1337,
+      "title": "Would be great that your own vaults would show up during the strategy deployment so you dont have to copy paste",
+      "createdAt": "2025-02-17T18:16:18Z",
+      "ageDays": 510,
+      "labels": [
+        "good first issue",
+        "webapp",
+        "onlydust-wave"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1347,
+      "title": "Add fuzz-testing for deploymentSteps",
+      "createdAt": "2025-02-19T08:24:15Z",
+      "ageDays": 508,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1348,
+      "title": "Update tests for DeploymentSteps to reflect the new updateFields calls",
+      "createdAt": "2025-02-19T09:31:02Z",
+      "ageDays": 508,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1359,
+      "title": "Refactor Balance/ trade Chart wrappers",
+      "createdAt": "2025-02-19T20:15:10Z",
+      "ageDays": 508,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1374,
+      "title": "is:open label:enhancement Pull Asset list from Sparkdex.ai and/or Blazeswap for choosing the assets to trade",
+      "createdAt": "2025-02-24T00:31:49Z",
+      "ageDays": 503,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1386,
+      "title": "Bitfrost wallet compatibility",
+      "createdAt": "2025-02-26T19:07:44Z",
+      "ageDays": 501,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 316,
+      "title": "Solver KPIs",
+      "createdAt": "2025-03-02T18:07:13Z",
+      "ageDays": 497,
+      "labels": [],
+      "assignee": "hardyjosh",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 317,
+      "title": "Measure downtime (e.g. tracking time between trades for each network and set a downtime threshold)",
+      "createdAt": "2025-03-02T18:09:48Z",
+      "ageDays": 497,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 318,
+      "title": "Arb transaction efficiency (as a proxy for opportunity staleness)",
+      "createdAt": "2025-03-02T18:09:57Z",
+      "ageDays": 497,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 319,
+      "title": "Track transaction revert rates (as a proxy for front-running/MEV issues)",
+      "createdAt": "2025-03-02T18:10:05Z",
+      "ageDays": 497,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1395,
+      "title": "Move transaction args into transaction.ts and extend them for various state of TX (frontend/ with config)",
+      "createdAt": "2025-03-03T08:56:16Z",
+      "ageDays": 496,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1450,
+      "title": "For all vaults/order, return the Chain ID of the Orderbook which deployed it",
+      "createdAt": "2025-03-11T13:41:16Z",
+      "ageDays": 488,
+      "labels": [
+        "rust",
+        "webapp"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.wasm",
+      "number": 18,
+      "title": "Add support for automatically generating the return type in wasm_export macro",
+      "createdAt": "2025-03-11T15:32:26Z",
+      "ageDays": 488,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1509,
+      "title": "Cannot switch chains using walletConnect from tauri-app",
+      "createdAt": "2025-03-25T11:33:14Z",
+      "ageDays": 474,
+      "labels": [
+        "bug",
+        "Tauri"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1525,
+      "title": "Failing to get token info from Ethereum mainnet for valid tokens",
+      "createdAt": "2025-03-27T12:12:24Z",
+      "ageDays": 472,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1533,
+      "title": "Move any value-handling logic out of components into files that can be fuzz-tested",
+      "createdAt": "2025-03-28T10:58:30Z",
+      "ageDays": 471,
+      "labels": [
+        "test"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1537,
+      "title": "Move validateAmount.ts into Rust",
+      "createdAt": "2025-03-28T11:59:05Z",
+      "ageDays": 471,
+      "labels": [
+        "rust"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1550,
+      "title": "packages/webapp/src/routes/deploy/+layout.svelte",
+      "createdAt": "2025-03-28T13:27:38Z",
+      "ageDays": 471,
+      "labels": [
+        "test"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1553,
+      "title": "packages/webapp/src/routes/orders/[network]-[orderHash]/+page.svelte",
+      "createdAt": "2025-03-28T13:31:34Z",
+      "ageDays": 471,
+      "labels": [
+        "test"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1556,
+      "title": "EditableSpan doesn't appear to be used anywhere, could probably be deleted",
+      "createdAt": "2025-03-28T17:06:49Z",
+      "ageDays": 471,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1578,
+      "title": "Order deployed on network, but returned status is failed.",
+      "createdAt": "2025-04-02T13:54:30Z",
+      "ageDays": 466,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1595,
+      "title": "gui.ValidateDeployment to run simulateWriteContract before deploying strates",
+      "createdAt": "2025-04-07T08:48:01Z",
+      "ageDays": 461,
+      "labels": [
+        "rust"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1609,
+      "title": "vault balances tab",
+      "createdAt": "2025-04-09T08:54:00Z",
+      "ageDays": 459,
+      "labels": [
+        "good first issue",
+        "onlydust-wave"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1618,
+      "title": "Add inline deposit/withdraw/remove functionality to list components in webapp",
+      "createdAt": "2025-04-09T16:44:15Z",
+      "ageDays": 459,
+      "labels": [
+        "new feature",
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1650,
+      "title": "make invariant testing work",
+      "createdAt": "2025-04-10T15:16:24Z",
+      "ageDays": 458,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1664,
+      "title": "Should there be an option to paste in a .rain and deploy, instead of having to use a registry URL?",
+      "createdAt": "2025-04-14T08:23:19Z",
+      "ageDays": 454,
+      "labels": [
+        "question"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1672,
+      "title": "Move transaction indexing logic after deploying an order into gui",
+      "createdAt": "2025-04-16T04:49:48Z",
+      "ageDays": 452,
+      "labels": [
+        "rust",
+        "webapp"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 335,
+      "title": "automate deployment poc",
+      "createdAt": "2025-05-02T16:42:06Z",
+      "ageDays": 436,
+      "labels": [],
+      "assignee": "rouzwelt",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1728,
+      "title": "Provide ability to set block numbers for debug tab",
+      "createdAt": "2025-05-04T17:10:14Z",
+      "ageDays": 434,
+      "labels": [],
+      "assignee": "rouzwelt",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1731,
+      "title": "_🧹 Nitpick (assertive)_",
+      "createdAt": "2025-05-06T03:03:19Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1732,
+      "title": "_🧹 Nitpick (assertive)_",
+      "createdAt": "2025-05-06T03:06:47Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1733,
+      "title": "_🛠️ Refactor suggestion_",
+      "createdAt": "2025-05-06T08:27:24Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1734,
+      "title": "_🛠️ Refactor suggestion_",
+      "createdAt": "2025-05-06T08:45:42Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1736,
+      "title": "_🛠️ Refactor suggestion_",
+      "createdAt": "2025-05-06T11:50:39Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1737,
+      "title": "_🛠️ Refactor suggestion_",
+      "createdAt": "2025-05-06T11:52:45Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1739,
+      "title": "_⚠️ Potential issue_",
+      "createdAt": "2025-05-06T12:37:08Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1740,
+      "title": "_🧹 Nitpick (assertive)_",
+      "createdAt": "2025-05-06T12:53:14Z",
+      "ageDays": 432,
+      "labels": [
+        "contract"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1743,
+      "title": "Constructable Transactions that allow multiple tx's to run concurrently",
+      "createdAt": "2025-05-06T15:39:28Z",
+      "ageDays": 432,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "rain.wasm",
+      "number": 25,
+      "title": "Automate publish workflow on main merge",
+      "createdAt": "2025-05-09T13:40:10Z",
+      "ageDays": 429,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1792,
+      "title": "Simulate transactions before sending them to wallet",
+      "createdAt": "2025-05-14T13:13:16Z",
+      "ageDays": 424,
+      "labels": [],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1794,
+      "title": "Replace all transactions in transactionStore with constructor versions",
+      "createdAt": "2025-05-14T13:17:32Z",
+      "ageDays": 424,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "hardingjam",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1867,
+      "title": "vault balance chnage types filter",
+      "createdAt": "2025-05-20T08:11:54Z",
+      "ageDays": 418,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1887,
+      "title": "Optimize PR CI by conditional execution",
+      "createdAt": "2025-05-22T10:46:58Z",
+      "ageDays": 416,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1898,
+      "title": "callback closure for getting prices",
+      "createdAt": "2025-05-27T10:01:10Z",
+      "ageDays": 411,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.strategies",
+      "number": 43,
+      "title": "Rouzwelt  comms",
+      "createdAt": "2025-06-23T17:45:42Z",
+      "ageDays": 384,
+      "labels": [],
+      "assignee": "rouzwelt",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1953,
+      "title": "Remove alloy-ethers-typecast dependency from rain.orderbook",
+      "createdAt": "2025-06-25T15:51:45Z",
+      "ageDays": 382,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1954,
+      "title": "Move query filters in get orders and get vaults queries to the new RaindexClient",
+      "createdAt": "2025-06-25T20:38:34Z",
+      "ageDays": 382,
+      "labels": [],
+      "assignee": "brusherru",
+      "covered": false
+    },
+    {
+      "repo": "rain.wasm",
+      "number": 35,
+      "title": "Update wasm export macro to remove pre-processing on some of the attributes",
+      "createdAt": "2025-06-30T06:38:34Z",
+      "ageDays": 377,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.metadata",
+      "number": 75,
+      "title": "Add transaction metadata, like hash, block number, timestamp to subgraph.",
+      "createdAt": "2025-07-03T05:52:02Z",
+      "ageDays": 374,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1965,
+      "title": "Tauri app does not display error if settings text is not valid",
+      "createdAt": "2025-07-03T11:50:59Z",
+      "ageDays": 374,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1967,
+      "title": "Rethink about the getters that return `Result` in the raindex client sdk",
+      "createdAt": "2025-07-03T12:18:49Z",
+      "ageDays": 374,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1990,
+      "title": "Create strongly typed equivalents of subgraph types, convert between them directly in the subgraph crate, and make the current Sg* types private to the subgraph crate",
+      "createdAt": "2025-07-11T19:03:30Z",
+      "ageDays": 366,
+      "labels": [],
+      "assignee": "TropicalDog17",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1991,
+      "title": "Create types to parse YAML to/from and isolate the YAML handling. Use well-typed values everywhere else",
+      "createdAt": "2025-07-11T19:04:31Z",
+      "ageDays": 366,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 1998,
+      "title": "Ability to reference price ratios in field names/descriptions and for default field values in `DotrainOrderGui` yaml",
+      "createdAt": "2025-07-15T18:01:41Z",
+      "ageDays": 362,
+      "labels": [],
+      "assignee": "big14way",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2011,
+      "title": "Passing structs back to WASM without losing its reference",
+      "createdAt": "2025-07-21T13:47:47Z",
+      "ageDays": 356,
+      "labels": [
+        "bug",
+        "js/wasm"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2016,
+      "title": "Wallet Connect Error",
+      "createdAt": "2025-07-23T05:29:50Z",
+      "ageDays": 354,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2021,
+      "title": "Improve page load time",
+      "createdAt": "2025-07-24T16:56:37Z",
+      "ageDays": 353,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2022,
+      "title": "Improve token selection UI/UX",
+      "createdAt": "2025-07-24T16:57:22Z",
+      "ageDays": 353,
+      "labels": [],
+      "assignee": "Copilot",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2023,
+      "title": "Fix deposit/withdraw buttons",
+      "createdAt": "2025-07-24T16:58:24Z",
+      "ageDays": 353,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2025,
+      "title": "The UI of deploying a limit order of chain, looks like a basic html file - can add some boxes and divs to make to look good with simpler and easier user experience",
+      "createdAt": "2025-07-25T05:47:20Z",
+      "ageDays": 352,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2026,
+      "title": "The theme button is missing on the landing page",
+      "createdAt": "2025-07-25T05:48:45Z",
+      "ageDays": 352,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2027,
+      "title": "the name of the project is not at all clearly visible on the landing page, can be improved with a border maybe or a darker font color",
+      "createdAt": "2025-07-25T05:49:48Z",
+      "ageDays": 352,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.strategies",
+      "number": 58,
+      "title": "Update rain.strategies (`settings.yaml`, individual strategies, and then registry)",
+      "createdAt": "2025-07-28T11:10:54Z",
+      "ageDays": 349,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2041,
+      "title": "Re-deploy orderbook v5 and related infra across all networks",
+      "createdAt": "2025-07-28T11:12:18Z",
+      "ageDays": 349,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 88,
+      "title": "support negative base in pow for integer exponent",
+      "createdAt": "2025-07-30T12:09:50Z",
+      "ageDays": 347,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2049,
+      "title": "Track Schwab fill prices",
+      "createdAt": "2025-08-01T12:10:22Z",
+      "ageDays": 345,
+      "labels": [],
+      "assignee": "0xgleb",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 92,
+      "title": "support more precise interpolation for pow",
+      "createdAt": "2025-08-04T12:37:07Z",
+      "ageDays": 342,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2051,
+      "title": "Add version dropdown to SDK docs website",
+      "createdAt": "2025-08-06T11:08:04Z",
+      "ageDays": 340,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2052,
+      "title": "Think about the flow of mullti-network in sdk",
+      "createdAt": "2025-08-06T14:30:03Z",
+      "ageDays": 340,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.dex.solve",
+      "number": 13,
+      "title": "BalancerV3 POC for arbing QuantMM pools",
+      "createdAt": "2025-08-13T12:55:32Z",
+      "ageDays": 333,
+      "labels": [],
+      "assignee": "rouzwelt",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2105,
+      "title": "Link the abstractions of DotrainRegistry, DotrainOrder and DotrainOrderGui",
+      "createdAt": "2025-08-28T21:19:05Z",
+      "ageDays": 318,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 131,
+      "title": "handle the case of fullA = false in div without erroring",
+      "createdAt": "2025-09-09T14:55:42Z",
+      "ageDays": 306,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 148,
+      "title": "check pow precision for very small but positive b in a^b",
+      "createdAt": "2025-09-30T20:12:44Z",
+      "ageDays": 285,
+      "labels": [
+        "audit"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 149,
+      "title": "handle exponent underflow better?",
+      "createdAt": "2025-10-01T16:33:22Z",
+      "ageDays": 284,
+      "labels": [
+        "audit"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2174,
+      "title": "Invalid values shown on stack in the strategy studio.",
+      "createdAt": "2025-10-01T17:04:12Z",
+      "ageDays": 284,
+      "labels": [
+        "bug",
+        "Tauri"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 151,
+      "title": "comma support in parsing and formatting",
+      "createdAt": "2025-10-02T10:50:32Z",
+      "ageDays": 283,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.pyth",
+      "number": 5,
+      "title": "Generic pyth word for any feed id.",
+      "createdAt": "2025-10-03T15:00:46Z",
+      "ageDays": 282,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2206,
+      "title": "Implement \"0 vault id\" logic in sdk and webapp",
+      "createdAt": "2025-10-14T09:35:07Z",
+      "ageDays": 271,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "sqlite-web",
+      "number": 20,
+      "title": "Refactor js package build process for removing the need for `await init()` call",
+      "createdAt": "2025-10-21T09:27:10Z",
+      "ageDays": 264,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "sqlite-web",
+      "number": 22,
+      "title": "Request: Prepared Query Batch",
+      "createdAt": "2025-11-07T17:11:34Z",
+      "ageDays": 247,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2327,
+      "title": "add retry when deposit tx timeouts",
+      "createdAt": "2025-11-19T17:27:21Z",
+      "ageDays": 235,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2353,
+      "title": "Take Orders SDK Functionality",
+      "createdAt": "2025-12-08T13:13:18Z",
+      "ageDays": 216,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2357,
+      "title": "Take Orders SDK – Phase 3: Exact‑In Simulation and Builder",
+      "createdAt": "2025-12-10T09:32:08Z",
+      "ageDays": 214,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2374,
+      "title": "Support LocalDB as a data source for Order Detail “Volume” tab",
+      "createdAt": "2025-12-25T12:34:35Z",
+      "ageDays": 199,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2377,
+      "title": "Base Network Local DB taking way longer to sync",
+      "createdAt": "2025-12-26T11:53:02Z",
+      "ageDays": 198,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2386,
+      "title": "Implement Take Orders SDK with V6 Exact Swap Interface",
+      "createdAt": "2026-01-05T08:17:53Z",
+      "ageDays": 188,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2389,
+      "title": "V6 Migration - SDK & App Review",
+      "createdAt": "2026-01-06T07:41:32Z",
+      "ageDays": 187,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2394,
+      "title": "Implement LocalDB as data source for Take Orders API",
+      "createdAt": "2026-01-06T14:02:01Z",
+      "ageDays": 187,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2397,
+      "title": "Remove subgraph fallback from get_balance_changes when using local DB",
+      "createdAt": "2026-01-07T14:22:05Z",
+      "ageDays": 186,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2400,
+      "title": "Improve First-Load Experience on Mobile (Sync Status Visibility)",
+      "createdAt": "2026-01-08T14:22:57Z",
+      "ageDays": 185,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2402,
+      "title": "Vaultless Orders (Direct Trading) - V6 Feature Implementation",
+      "createdAt": "2026-01-20T08:21:11Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2404,
+      "title": "Vaultless Phase 2: SDK Validation Guards",
+      "createdAt": "2026-01-20T08:29:55Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2405,
+      "title": "Vaultless Phase 3: GUI Order Operations",
+      "createdAt": "2026-01-20T08:30:53Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2406,
+      "title": "Vaultless Phase 4: Webapp Order Creation UI",
+      "createdAt": "2026-01-20T08:33:11Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2407,
+      "title": "Vaultless Phase 5: Webapp Display - Order Detail",
+      "createdAt": "2026-01-20T08:35:07Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2408,
+      "title": "Vaultless Phase 6: Vault List Handling",
+      "createdAt": "2026-01-20T08:35:49Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2409,
+      "title": "Vaultless Phase 7: Performance Metrics Display",
+      "createdAt": "2026-01-20T08:36:22Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2410,
+      "title": "Vaultless Phase 8: Quote Fillability (Optional)",
+      "createdAt": "2026-01-20T08:37:20Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.metadata",
+      "number": 88,
+      "title": "deterministic deployments",
+      "createdAt": "2026-01-29T12:08:38Z",
+      "ageDays": 164,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.lib.hash",
+      "number": 7,
+      "title": "eip 712",
+      "createdAt": "2026-01-29T13:20:01Z",
+      "ageDays": 164,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2426,
+      "title": "Dynamic Chunking for Local DB Sync",
+      "createdAt": "2026-02-01T16:20:37Z",
+      "ageDays": 161,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2445,
+      "title": "Index metaboard contract events in the sync pipeline",
+      "createdAt": "2026-02-10T07:33:26Z",
+      "ageDays": 152,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2446,
+      "title": "Use local DB for fetching dotrain source",
+      "createdAt": "2026-02-10T07:34:22Z",
+      "ageDays": 152,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2447,
+      "title": "Add local DB support for fetching dotrain source",
+      "createdAt": "2026-02-10T08:56:30Z",
+      "ageDays": 152,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2448,
+      "title": "No way to debug user-reported local database issues",
+      "createdAt": "2026-02-10T09:05:49Z",
+      "ageDays": 152,
+      "labels": [
+        "enhancement",
+        "webapp"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2451,
+      "title": "Local DB sync forensics: separate logs DB + structured sync logs",
+      "createdAt": "2026-02-10T12:20:44Z",
+      "ageDays": 152,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rain.lib.memkv",
+      "number": 13,
+      "title": "support larger pointers",
+      "createdAt": "2026-02-11T16:04:22Z",
+      "ageDays": 151,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2471,
+      "title": "Extract RaindexOrderBuilder from js_api into common crate",
+      "createdAt": "2026-02-19T11:59:26Z",
+      "ageDays": 143,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 434,
+      "title": "upstream GM word to float lib",
+      "createdAt": "2026-02-23T14:33:49Z",
+      "ageDays": 139,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 177,
+      "title": "Investigate exact derivation of log/antilog small table values",
+      "createdAt": "2026-03-23T18:07:57Z",
+      "ageDays": 111,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2523,
+      "title": "Vault detail page intermittently fails to load (v6.raindex.finance)",
+      "createdAt": "2026-03-25T17:10:42Z",
+      "ageDays": 109,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2524,
+      "title": "Investigate lag when changing filters on Orders and Vaults pages",
+      "createdAt": "2026-03-26T06:16:05Z",
+      "ageDays": 108,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2540,
+      "title": "Remote DB deployment via CI action",
+      "createdAt": "2026-04-04T10:17:49Z",
+      "ageDays": 99,
+      "labels": [
+        "claude-audit"
+      ],
+      "assignee": "findolor",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 465,
+      "title": "Rename DISPaiR struct and crate to Rainlang",
+      "createdAt": "2026-04-07T11:36:47Z",
+      "ageDays": 96,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 478,
+      "title": "Rename RainlangExpressionDeployer",
+      "createdAt": "2026-04-12T13:32:38Z",
+      "ageDays": 91,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 479,
+      "title": "CI takes 30-40min due to macOS Nix cache and redundant sol-prelude",
+      "createdAt": "2026-04-12T16:43:51Z",
+      "ageDays": 91,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 412,
+      "title": "[GLOBAL-2] [MEDIUM] Submodules pull conflicting openzeppelin-contracts/forge-std versions",
+      "createdAt": "2026-04-26T09:58:23Z",
+      "ageDays": 77,
+      "labels": [
+        "audit",
+        "pass4",
+        "medium",
+        "human:keep-open"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 434,
+      "title": "Evaluate ERC1155 batch transfer support in LibFlow.flowERC1155",
+      "createdAt": "2026-04-29T12:26:11Z",
+      "ageDays": 74,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 435,
+      "title": "Evaluate ERC1155 transfer data parameter support in LibFlow.flowERC1155",
+      "createdAt": "2026-04-29T12:26:14Z",
+      "ageDays": 74,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.metadata",
+      "number": 106,
+      "title": "Remove MetaBoard.hash() — no longer needed",
+      "createdAt": "2026-04-29T12:37:25Z",
+      "ageDays": 74,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 437,
+      "title": "Migrate to latest rain.interpreter.interface (V4 caller / V4 interpreter / V3 store)",
+      "createdAt": "2026-04-29T14:13:48Z",
+      "ageDays": 74,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.extrospection",
+      "number": 23,
+      "title": "scan rain interpreter bytecode for ops present/reachable",
+      "createdAt": "2026-04-29T18:29:34Z",
+      "ageDays": 74,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 119,
+      "title": "discussion: rainix-managed npm deps via buildNpmPackage",
+      "createdAt": "2026-05-02T07:01:20Z",
+      "ageDays": 71,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.metadata",
+      "number": 107,
+      "title": "Tooling to identify and reap unused deployed subgraphs on Goldsky",
+      "createdAt": "2026-05-04T10:18:25Z",
+      "ageDays": 69,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 123,
+      "title": "headless chromium does not capture fully-rendered SPA output",
+      "createdAt": "2026-05-04T10:28:59Z",
+      "ageDays": 69,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2564,
+      "title": "visualize DB sync stages sequentially with % completion",
+      "createdAt": "2026-05-05T10:40:35Z",
+      "ageDays": 68,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 126,
+      "title": "Standardize post-deploy verification across LibRainDeploy / rainix",
+      "createdAt": "2026-05-09T14:35:02Z",
+      "ageDays": 64,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.erc",
+      "number": 24,
+      "title": "Audit rain.erc end-to-end",
+      "createdAt": "2026-05-09T15:20:05Z",
+      "ageDays": 64,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 132,
+      "title": "Run a full audit pass",
+      "createdAt": "2026-05-09T16:44:19Z",
+      "ageDays": 64,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 153,
+      "title": "Upstream copy-artifacts pattern",
+      "createdAt": "2026-05-10T20:51:08Z",
+      "ageDays": 63,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 162,
+      "title": "Add js-shell slim devShell + reusable workflow",
+      "createdAt": "2026-05-12T16:19:36Z",
+      "ageDays": 61,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.metadata",
+      "number": 111,
+      "title": "Publish all crates: rain-metadata-bindings + rain-metaboard-subgraph",
+      "createdAt": "2026-05-12T19:39:14Z",
+      "ageDays": 61,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 167,
+      "title": "Ubuntu CI jobs hang for the full 6-hour timeout window",
+      "createdAt": "2026-05-13T13:39:49Z",
+      "ageDays": 60,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 168,
+      "title": "Ship a shared LibCopyArtifacts in rainix",
+      "createdAt": "2026-05-13T14:14:57Z",
+      "ageDays": 60,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 169,
+      "title": "Ship a rainix-copy-artifacts.yaml reusable workflow",
+      "createdAt": "2026-05-13T14:20:49Z",
+      "ageDays": 60,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 499,
+      "title": "Speed up copy-artifacts.yaml (currently ~11 min)",
+      "createdAt": "2026-05-13T19:25:33Z",
+      "ageDays": 60,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 173,
+      "title": "Upstream a regen-derived-artifacts-and-assert-clean-tree reusable workflow",
+      "createdAt": "2026-05-14T07:34:58Z",
+      "ageDays": 59,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.cli",
+      "number": 17,
+      "title": "Ship prebuilt rain binary so downstream flakes don't compile from source",
+      "createdAt": "2026-05-14T08:11:25Z",
+      "ageDays": 59,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2574,
+      "title": "Deploy + migration tasks for OrderBook → Raindex rename (#2526)",
+      "createdAt": "2026-05-18T06:41:22Z",
+      "ageDays": 55,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2578,
+      "title": "Replace git submodules with Soldeer for Solidity dependencies",
+      "createdAt": "2026-05-20T06:49:48Z",
+      "ageDays": 53,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2580,
+      "title": "Review and deploy renamed subgraphs (raindex-* on Goldsky)",
+      "createdAt": "2026-05-20T14:24:41Z",
+      "ageDays": 53,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.interpreter.interface",
+      "number": 105,
+      "title": "Rename repo to match new naming convention",
+      "createdAt": "2026-05-22T09:34:05Z",
+      "ageDays": 51,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 510,
+      "title": "Publish Rust crates (bindings, dispair, parser, eval) to crates.io",
+      "createdAt": "2026-05-22T10:37:15Z",
+      "ageDays": 51,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 224,
+      "title": "ci: @rainlanguage/float npm publish fails with 404 Not Found",
+      "createdAt": "2026-05-23T09:30:31Z",
+      "ageDays": 50,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 183,
+      "title": "Pinned nixpkgs ships tailscale 1.98.0 — broken MagicDNS on Linux",
+      "createdAt": "2026-05-23T11:24:47Z",
+      "ageDays": 50,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2593,
+      "title": "Remove ALL git dependencies + submodule path-deps from raindex (zero exceptions)",
+      "createdAt": "2026-05-26T14:22:00Z",
+      "ageDays": 47,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 196,
+      "title": "Publish rainix nix derivations to a shared binary cache (substituter)",
+      "createdAt": "2026-05-27T16:07:51Z",
+      "ageDays": 46,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 519,
+      "title": "Publish rainlang-eval + rainlang_test_fixtures to crates.io (unblock raindex's last git deps)",
+      "createdAt": "2026-05-27T20:00:48Z",
+      "ageDays": 46,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 227,
+      "title": "Package Release fails at npm publish: @rainlanguage/float 404 (scoped package never created)",
+      "createdAt": "2026-05-27T20:03:02Z",
+      "ageDays": 46,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2599,
+      "title": "Unify getrandom to 0.4 across the wasm dependency graph",
+      "createdAt": "2026-05-29T12:56:53Z",
+      "ageDays": 44,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex.interface",
+      "number": 60,
+      "title": "Expose stateOverlay on quote (quote3 / IRaindexV7)",
+      "createdAt": "2026-06-02T18:16:39Z",
+      "ageDays": 40,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.interpreter.interface",
+      "number": 107,
+      "title": "Rename rain.interpreter.interface → rainlang.interface (follow rain.interpreter → rainlang)",
+      "createdAt": "2026-06-03T11:52:53Z",
+      "ageDays": 39,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2647,
+      "title": "Post-action context: subparser words silently alias other fields or revert OOB (generalizes Protofire M02 #2619)",
+      "createdAt": "2026-06-04T12:04:04Z",
+      "ageDays": 38,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2671,
+      "title": "Error-quality + NatSpec-accuracy bundle (OOB->Panic 0x32, clear revert ordering, stale clear/LibOpContext/quote2 NatSpec)",
+      "createdAt": "2026-06-06T10:03:45Z",
+      "ageDays": 36,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2715,
+      "title": "addOrder4 could validate calculate-source output count at add time (would make the runtime UnsupportedCalculateOutputs check removable)",
+      "createdAt": "2026-06-13T06:40:26Z",
+      "ageDays": 29,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 1,
+      "title": "Extend health check to flag untested external/public functions on Solidity contracts",
+      "createdAt": "2026-06-13T08:32:14Z",
+      "ageDays": 29,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2746,
+      "title": "Latest raindex should support Flare end-to-end",
+      "createdAt": "2026-06-14T18:37:02Z",
+      "ageDays": 28,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 95,
+      "title": "run() NatSpec omits @return and the operand parameter, understating the function contract",
+      "createdAt": "2026-06-17T10:18:58Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass5",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 100,
+      "title": "`run` reads inputs[0]/inputs[1] via raw assembly with no length guard (leaky/implicit coupling to integrity)",
+      "createdAt": "2026-06-17T10:19:28Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass4",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 109,
+      "title": "Rounding direction of convertToShares is undocumented and uncontrolled relative to the non-interactive-party rule",
+      "createdAt": "2026-06-17T10:20:20Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass5",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 111,
+      "title": "run() missing @return and operand @param documentation",
+      "createdAt": "2026-06-17T10:20:32Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass3",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 133,
+      "title": "Word names, input ordering, and decimal semantics are duplicated in the README as a second hand-maintained source the meta consumer reads",
+      "createdAt": "2026-06-17T10:22:38Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass6",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2788,
+      "title": "Allow the order input token to be optional",
+      "createdAt": "2026-06-24T02:15:56Z",
+      "ageDays": 18,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain.solver",
+      "number": 453,
+      "title": "update E2E tests",
+      "createdAt": "2026-06-28T00:31:06Z",
+      "ageDays": 14,
+      "labels": [],
+      "assignee": "",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 6,
+      "title": "Scan: flag deploy-pattern drift (manual-sol-artifacts shape, rain.deploy adoption, rpc alias env names, rain-deploy version)",
+      "createdAt": "2026-07-04T14:37:15Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 3,
+      "title": "Queue vs retired python: ledger lines with missing 'source' are included as ai-campaign",
+      "createdAt": "2026-07-04T17:46:08Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 4,
+      "title": "classify_ci treats a STALE check conclusion as green-contributing",
+      "createdAt": "2026-07-04T17:46:11Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 5,
+      "title": "Stale-vet condition carries two provably redundant head-sentinel arms",
+      "createdAt": "2026-07-04T17:46:12Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 6,
+      "title": "close_candidates_section reads the retired close-candidates.jsonl — dead code path",
+      "createdAt": "2026-07-04T17:46:15Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 255,
+      "title": "Convert the static-check shell libraries to Rust",
+      "createdAt": "2026-07-04T18:13:55Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 7,
+      "title": "Convert campaign-run.sh (producer runner) to Rust",
+      "createdAt": "2026-07-04T18:15:51Z",
+      "ageDays": 8,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 8,
+      "title": "Convert review-run.sh (vetter runner) to Rust",
+      "createdAt": "2026-07-04T18:15:53Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 9,
+      "title": "Convert merge-run.sh (merge runner) to Rust",
+      "createdAt": "2026-07-04T18:15:55Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 10,
+      "title": "Convert the PreToolUse hook scripts to Rust",
+      "createdAt": "2026-07-04T18:15:57Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 11,
+      "title": "Convert prompt-inline command recipes to Rust bin subcommands",
+      "createdAt": "2026-07-04T18:28:54Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 12,
+      "title": "Formalize the comment-protocol as Rust subcommands so standard forms are enforced",
+      "createdAt": "2026-07-05T01:35:05Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "flow",
+      "number": 483,
+      "title": "De-submodule: forge-std + rainprotocol-era rain.math.fixedpoint/rain.factory",
+      "createdAt": "2026-07-05T02:06:24Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 8,
+      "title": "Scan signal: archive-candidate recommendations",
+      "createdAt": "2026-07-05T02:06:53Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 257,
+      "title": "Graduate gate-able org-health scan signals into rainix-static subcommands",
+      "createdAt": "2026-07-05T02:24:04Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 253,
+      "title": "Document the lossless-revert conversion design in LibERC4626 (per the #70 REVERT ruling)",
+      "createdAt": "2026-07-05T02:40:44Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 13,
+      "title": "Source verdicts and all human queues from GitHub, not the local ledger",
+      "createdAt": "2026-07-05T02:48:05Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 14,
+      "title": "Pipeline metrics: parse run traces into visible time-series (startup overhead as a first-class metric)",
+      "createdAt": "2026-07-05T07:33:26Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 15,
+      "title": "rainix-static/pipeline bin: emit standard structured run metrics on every invocation",
+      "createdAt": "2026-07-05T07:35:22Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 15,
+      "title": "Producer metrics chart is mouse-only — add touch + a non-visual data alternative",
+      "createdAt": "2026-07-05T11:33:17Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 16,
+      "title": "Producer metrics chart tooltip can overflow horizontally on narrow viewports",
+      "createdAt": "2026-07-05T11:33:19Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 18,
+      "title": "Producer metrics chart: show absolute startup magnitude, not just proportion",
+      "createdAt": "2026-07-05T11:38:21Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 20,
+      "title": "Move review state from local ledger to GitHub API (labels + reviews)",
+      "createdAt": "2026-07-06T07:53:57Z",
+      "ageDays": 6,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 22,
+      "title": "Producer spends the majority of each run re-deriving state (gh-read heavy)",
+      "createdAt": "2026-07-06T08:43:26Z",
+      "ageDays": 6,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 23,
+      "title": "Ready PRs rot to conflict/stale-CI faster than step-3d re-greens them",
+      "createdAt": "2026-07-06T08:43:29Z",
+      "ageDays": 6,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 24,
+      "title": "run-metrics mutation detector undercounts git pushes (overstates idleness)",
+      "createdAt": "2026-07-06T08:43:31Z",
+      "ageDays": 6,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 31,
+      "title": "Label provenance: human:* labels are trusted by name, not by who applied them",
+      "createdAt": "2026-07-07T10:29:49Z",
+      "ageDays": 5,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 35,
+      "title": "Self-heal PRs that carry multiple ai:* verdict labels (ambiguous state)",
+      "createdAt": "2026-07-07T13:27:11Z",
+      "ageDays": 5,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 260,
+      "title": "Codegen deploy tag-constants from soldeer instead of CI-checking hand-maintained ones",
+      "createdAt": "2026-07-07T19:56:30Z",
+      "ageDays": 5,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 20,
+      "title": "Health signal: Protofire audit staleness — last audited tag vs latest published soldeer tag",
+      "createdAt": "2026-07-07T19:57:00Z",
+      "ageDays": 5,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2799,
+      "title": "Make the deploy-constant check pointer-driven (drop the hardcoded prefix list + FFI/soldeer fetch)",
+      "createdAt": "2026-07-07T20:35:30Z",
+      "ageDays": 5,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 31,
+      "title": "audit: verify soldeer autopublish is wired and current (dead publish workflows, cross-org secrets: inherit, [package] drift, registry lag)",
+      "createdAt": "2026-07-08T11:48:59Z",
+      "ageDays": 4,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2800,
+      "title": "Document clear3 signed-context cross-assignment (alice/bob slots)",
+      "createdAt": "2026-07-08T16:06:15Z",
+      "ageDays": 4,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.metadata",
+      "number": 131,
+      "title": "Extend RainMetaDocumentV1Item to use OaSchema as a CBOR map key (the #98 additional consideration)",
+      "createdAt": "2026-07-09T14:37:41Z",
+      "ageDays": 3,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 261,
+      "title": "rainix-static: allowlist file extensions at the repo level",
+      "createdAt": "2026-07-10T06:03:06Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 262,
+      "title": "All-org standard: PR screenshots must render from committed Storybook stories",
+      "createdAt": "2026-07-10T07:05:29Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 35,
+      "title": "Audit skill: flag inconsistent or missing query layer (frontend data-fetching)",
+      "createdAt": "2026-07-10T09:07:51Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 36,
+      "title": "Audit skill: flag per-sink hand-rolled output/URL safety; standardize on framework-native defense (CSP) + one sanitized primitive",
+      "createdAt": "2026-07-10T09:26:46Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainix",
+      "number": 265,
+      "title": "De-bash lib/subgraph.sh (subgraph deploy helpers) to Rust",
+      "createdAt": "2026-07-10T10:03:55Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2801,
+      "title": "Webapp: blank white screen for a long time on load, with no loading indication",
+      "createdAt": "2026-07-10T10:06:36Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2802,
+      "title": "Depositing to a vault doesn't update an order's max output until page reload (stale cache)",
+      "createdAt": "2026-07-10T10:18:41Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 37,
+      "title": "Run-stamps should be JSONL (append-per-run history), not single-object last-run.json",
+      "createdAt": "2026-07-10T10:25:19Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.strategies",
+      "number": 121,
+      "title": "Revert the auction-dca halflife clamp from #118 (fixed-point-era; not needed on float)",
+      "createdAt": "2026-07-10T16:15:57Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 38,
+      "title": "Audit skill: much more framework-tooling awareness — flag hand-rolled reimplementations of framework-native mechanisms",
+      "createdAt": "2026-07-10T16:23:13Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.datacontract",
+      "number": 24,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:36:59Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "raindex",
+      "number": 2803,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:03Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.factory",
+      "number": 39,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:13Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.flare",
+      "number": 200,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:16Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rainlang",
+      "number": 541,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:25Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.sol.codegen",
+      "number": 24,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:56Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain.vats",
+      "number": 326,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:38:09Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 40,
+      "title": "pr-review-report: constrained Zoltu-deploy subcommand so the producer can deploy the sanctioned way only",
+      "createdAt": "2026-07-10T16:45:11Z",
+      "ageDays": 2,
+      "labels": [
+        "ai:close-candidate"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 39,
+      "title": "Flag data→innerHTML string interpolation; recommend escape-by-construction (textContent/DOM), not hand-rolled escaping",
+      "createdAt": "2026-07-11T10:31:13Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 40,
+      "title": "Enforce clap for CLI arg parsing in Rust bins (flag hand-rolled dispatch)",
+      "createdAt": "2026-07-11T13:45:39Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 41,
+      "title": "Flag byte-index string slicing that panics on multi-byte UTF-8 (not-a-char-boundary)",
+      "createdAt": "2026-07-11T13:45:41Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 42,
+      "title": "Flag deploy-pin prod addresses not source-verified on the block explorer for every supported network",
+      "createdAt": "2026-07-11T15:16:59Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 28,
+      "title": "Add scheduled workflow to auto-refresh site/health.json (dashboard has no regeneration job)",
+      "createdAt": "2026-07-11T17:33:49Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 29,
+      "title": "Expose pipeline/queue system metrics on the dashboard (dead-run rate, startup %, create/land/red rates)",
+      "createdAt": "2026-07-12T06:36:54Z",
+      "ageDays": 0,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 43,
+      "title": "Audit skill: LicenseRef-DCL-1.0 is the DecentraLicense — flag mis-naming",
+      "createdAt": "2026-07-12T13:58:04Z",
+      "ageDays": 0,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 42,
+      "title": "FSM: model PR-level close-candidate (extend flag-close-candidate to PRs)",
+      "createdAt": "2026-07-12T14:02:44Z",
+      "ageDays": 0,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 43,
+      "title": "FSM: let blocked-deploy/infra/on override APPROVED (deploy failure is orthogonal to code approval)",
+      "createdAt": "2026-07-12T14:02:46Z",
+      "ageDays": 0,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 44,
+      "title": "Audit rule: render untrusted data via DOM construction, never innerHTML + a hand-rolled escaper",
+      "createdAt": "2026-07-12T14:45:05Z",
+      "ageDays": 0,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 32,
+      "title": "Evolve the FSM panel into a Theory-of-Constraints flow panel (per-state inventory + flow rate → bottleneck)",
+      "createdAt": "2026-07-12T15:03:02Z",
+      "ageDays": 0,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": false
+    },
+    {
+      "repo": "rain-statusfi",
+      "number": 1,
+      "title": "Notes for mvp",
+      "createdAt": "2022-01-23T21:14:25Z",
+      "ageDays": 1631,
+      "labels": [],
+      "assignee": "jessarcher",
+      "covered": true
+    },
+    {
+      "repo": "rain-svelte-components",
+      "number": 60,
+      "title": "AutoAbiForm tests",
+      "createdAt": "2023-04-29T14:41:09Z",
+      "ageDays": 1170,
+      "labels": [],
+      "assignee": "SocioDroid",
+      "covered": true
+    },
+    {
+      "repo": "rain-svelte-components",
+      "number": 71,
+      "title": "InputDropdown tests",
+      "createdAt": "2023-06-05T13:40:13Z",
+      "ageDays": 1133,
+      "labels": [],
+      "assignee": "SocioDroid",
+      "covered": true
+    },
+    {
+      "repo": "rain-svelte-components",
+      "number": 72,
+      "title": "Button test",
+      "createdAt": "2023-06-06T14:42:13Z",
+      "ageDays": 1132,
+      "labels": [],
+      "assignee": "SocioDroid",
+      "covered": true
+    },
+    {
+      "repo": "rain-svelte-components",
+      "number": 75,
+      "title": "Modal test",
+      "createdAt": "2023-06-09T19:11:12Z",
+      "ageDays": 1129,
+      "labels": [],
+      "assignee": "SocioDroid",
+      "covered": true
+    },
+    {
+      "repo": "dotrain",
+      "number": 114,
+      "title": "fix comment parsings",
+      "createdAt": "2024-03-15T18:03:08Z",
+      "ageDays": 849,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 620,
+      "title": "pin all deps",
+      "createdAt": "2024-05-05T14:45:14Z",
+      "ageDays": 798,
+      "labels": [],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "rainlang",
+      "number": 225,
+      "title": "word for pi",
+      "createdAt": "2024-05-10T07:46:56Z",
+      "ageDays": 793,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 1392,
+      "title": "transaction ID on strategy page is not a link, it should be",
+      "createdAt": "2024-10-02T14:14:06Z",
+      "ageDays": 648,
+      "labels": [
+        "good first issue",
+        "webapp",
+        "onlydust-wave"
+      ],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 237,
+      "title": "add bool type to gui presets",
+      "createdAt": "2024-10-28T03:54:18Z",
+      "ageDays": 622,
+      "labels": [
+        "enhancement"
+      ],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 1060,
+      "title": "withdraw2 task not being executed when withdrawAmount is <= 0",
+      "createdAt": "2024-12-10T16:56:34Z",
+      "ageDays": 579,
+      "labels": [
+        "bug"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 1857,
+      "title": "Trade Timestamps in UTC and not local datetime",
+      "createdAt": "2025-05-19T08:59:35Z",
+      "ageDays": 419,
+      "labels": [
+        "good first issue",
+        "webapp",
+        "onlydust-wave"
+      ],
+      "assignee": "GideonBature",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 1951,
+      "title": "Passing default vault_id value to DepositArgs in js_api shouldn't be required",
+      "createdAt": "2025-06-25T12:43:52Z",
+      "ageDays": 382,
+      "labels": [],
+      "assignee": "GideonBature",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2024,
+      "title": "Allow withdrawing at the same time as canceling an order",
+      "createdAt": "2025-07-24T18:57:44Z",
+      "ageDays": 353,
+      "labels": [],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2028,
+      "title": "Remove CLI and ledger support from tauri app",
+      "createdAt": "2025-07-25T07:49:48Z",
+      "ageDays": 352,
+      "labels": [],
+      "assignee": "big14way",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2046,
+      "title": "Too many requests for fetching rain documents from github.",
+      "createdAt": "2025-07-29T16:29:52Z",
+      "ageDays": 348,
+      "labels": [
+        "webapp"
+      ],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "sqlite-web",
+      "number": 3,
+      "title": "Move rust logic to `/crates` and typescript logic to `/packages`",
+      "createdAt": "2025-08-26T06:08:48Z",
+      "ageDays": 320,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2165,
+      "title": "Replace/strip rpc urls before deploying an order",
+      "createdAt": "2025-09-26T08:02:48Z",
+      "ageDays": 289,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "rain.strategies",
+      "number": 73,
+      "title": "Update orderbook contract addresses to V6",
+      "createdAt": "2026-01-09T10:24:47Z",
+      "ageDays": 184,
+      "labels": [],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "specs",
+      "number": 43,
+      "title": "Add `vaultless` field to order input/output spec",
+      "createdAt": "2026-01-20T08:23:13Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2403,
+      "title": "Vaultless Phase 1: Settings & Validation",
+      "createdAt": "2026-01-20T08:27:45Z",
+      "ageDays": 173,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2425,
+      "title": "Token Selection Dropdown Loading Issues",
+      "createdAt": "2026-02-01T16:20:25Z",
+      "ageDays": 161,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2444,
+      "title": "Add contract address field to MetaboardCfg",
+      "createdAt": "2026-02-10T07:31:21Z",
+      "ageDays": 152,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2481,
+      "title": "Show associated orders and counterparty trades for take orders/clears",
+      "createdAt": "2026-02-25T17:08:36Z",
+      "ageDays": 137,
+      "labels": [],
+      "assignee": "findolor",
+      "covered": true
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 183,
+      "title": "Add `canonicalize(Float) -> Float` for byte-equivalence use cases",
+      "createdAt": "2026-04-20T18:07:21Z",
+      "ageDays": 83,
+      "labels": [],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "rain.vats",
+      "number": 303,
+      "title": "Add ERC4626 spec compliance test suite",
+      "createdAt": "2026-05-14T13:25:15Z",
+      "ageDays": 59,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.vats",
+      "number": 315,
+      "title": "Reentrancy audit residuals: ETH-refund outside guard + non-view authorizer trust (defence-in-depth)",
+      "createdAt": "2026-05-31T10:45:17Z",
+      "ageDays": 42,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.vats",
+      "number": 316,
+      "title": "Reentrancy audit report (full call-site table) — guide for reentrancy test coverage",
+      "createdAt": "2026-05-31T10:46:52Z",
+      "ageDays": 42,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2619,
+      "title": "Audit (Protofire M02): order-counterparty() exposed in add/remove post-actions but its context row is never populated (reverts)",
+      "createdAt": "2026-06-02T15:58:05Z",
+      "ageDays": 40,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2653,
+      "title": "signers subparser word uses the raw operand as row without & 0xFF masking (unlike signed-context)",
+      "createdAt": "2026-06-05T17:42:09Z",
+      "ageDays": 37,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "flow",
+      "number": 474,
+      "title": "Migrate flow to V4 interpreter (eval4) + soldeer + reusable workflows",
+      "createdAt": "2026-06-06T09:41:24Z",
+      "ageDays": 36,
+      "labels": [],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2673,
+      "title": "Dust accounting / sweep for residual rounding dust (audit L01 follow-up)",
+      "createdAt": "2026-06-06T10:08:59Z",
+      "ageDays": 36,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.math.float",
+      "number": 239,
+      "title": "pow: negative-exponent squaring loop reverts Panic(0x11) instead of ExponentOverflow",
+      "createdAt": "2026-06-13T13:30:19Z",
+      "ageDays": 29,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2766,
+      "title": "historicalOrderCharts: weighted-average merge divides by zero (NaN/Infinity chart point) when same-timestamp trades' output amounts sum to zero",
+      "createdAt": "2026-06-15T16:27:45Z",
+      "ageDays": 27,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rainix",
+      "number": 229,
+      "title": "Upstream the npm-package-blacklist CI job into a rainix reusable workflow",
+      "createdAt": "2026-06-15T16:30:12Z",
+      "ageDays": 27,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 45,
+      "title": "[M02] [LOW] LibFlareContractRegistry getters return address(0) for an unknown name with no revert",
+      "createdAt": "2026-06-16T11:56:03Z",
+      "ageDays": 26,
+      "labels": [
+        "bug",
+        "low",
+        "mutation-test"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 53,
+      "title": "[F06] [MEDIUM] Excess msg.value is stranded in the caller; library never refunds overpayment",
+      "createdAt": "2026-06-16T12:00:31Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "pass1",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 59,
+      "title": "[F12] [MEDIUM] Only a single happy-path fork test; no unit/mock test, no rate-mapping or float-conversion assertions",
+      "createdAt": "2026-06-16T12:01:12Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "pass2",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 61,
+      "title": "[F14] [MEDIUM] Only a single fork happy-path value is tested; no mocked edge cases (zero rate, max, non-1e18) for getSFLRPerFLR18",
+      "createdAt": "2026-06-16T12:01:26Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "pass2",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 62,
+      "title": "[F15] [MEDIUM] NatSpec semantics ('ETH per FLRETH' / 'FLRETH per ETH') are asserted, not verified, and the underlying method names invert that mapping",
+      "createdAt": "2026-06-16T12:01:32Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "pass5",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 67,
+      "title": "[F20] [MEDIUM] Public ankr RPC default in LibFork makes the entire fork test suite depend on an unowned, mutable endpoint that no test or CI step pins",
+      "createdAt": "2026-06-16T12:02:06Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "pass6",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 68,
+      "title": "[F21] [MEDIUM] sFLR exchange-rate opcode hardcodes 18 decimals against an external upgradeable proxy, pinned only by one exact-value fork assertion",
+      "createdAt": "2026-06-16T12:02:13Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "pass6",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 69,
+      "title": "[F22] [MEDIUM] FtsoV2 LTS path assumes getFeedByIdInWei is 18-decimal but returns a bare uint with no decimals tag, so any future opcode consumer inherits an undetectable scale bug",
+      "createdAt": "2026-06-16T12:02:20Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "pass6",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 75,
+      "title": "[C-flreth-registry] [LOW] 3 mutation-coverage gap(s) in src/lib/flreth/LibDineroFlrEth.sol, src/lib/registry/LibFlareContractRegistry.sol — tests on amt/flreth-registry",
+      "createdAt": "2026-06-16T12:02:40Z",
+      "ageDays": 26,
+      "labels": [
+        "low",
+        "mutation-test",
+        "test-coverage"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 79,
+      "title": "[F28] [LOW] Library returns un-bounded decimals; DecimalsTooLarge guard is the caller's responsibility and undocumented",
+      "createdAt": "2026-06-16T12:03:00Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass1"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 84,
+      "title": "[F33] [LOW] authoringMetaV2 description/name string content is never asserted by any test",
+      "createdAt": "2026-06-16T12:03:35Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass2"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 88,
+      "title": "[F37] [LOW] Both interface functions are undocumented (no NatSpec, no decimals/semantics)",
+      "createdAt": "2026-06-16T12:04:03Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass3"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 99,
+      "title": "[F48] [LOW] Tests use bare src/ and test/ root-relative imports that break under git-submodule consumption",
+      "createdAt": "2026-06-16T12:05:18Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass4"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 100,
+      "title": "[F49] [LOW] Return param name 'ethAmount'/'tokenAmount' is a misnomer for a unitless ratio and risks scale confusion",
+      "createdAt": "2026-06-16T12:05:25Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass5"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 102,
+      "title": "[F51] [LOW] Staleness check can panic-revert (overflow) instead of a clean error for large timeout",
+      "createdAt": "2026-06-16T12:05:38Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass5"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 105,
+      "title": "[F54] [LOW] Stale-price boundary not exercised at uint256 overflow of priceTimestamp + timeout",
+      "createdAt": "2026-06-16T12:05:58Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass5"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 109,
+      "title": "[F58] [LOW] Fork BLOCK_NUMBER pin duplicated as four independent un-shared constants across test files",
+      "createdAt": "2026-06-16T12:06:25Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "low",
+        "pass6"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.flare",
+      "number": 110,
+      "title": "[F59] [INFO] Interface declares getPooledFlrByShares and submit which have no in-repo consumers",
+      "createdAt": "2026-06-16T12:06:32Z",
+      "ageDays": 26,
+      "labels": [
+        "audit",
+        "info",
+        "pass4",
+        "human:keep-open"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2776,
+      "title": "RaindexOrderBuilder: sequential RPC round-trips inflate order prep",
+      "createdAt": "2026-06-17T00:41:00Z",
+      "ageDays": 25,
+      "labels": [],
+      "assignee": "",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 11,
+      "title": "\"Manual sol artifacts\" workflow only supports network 'base' but README implies free network choice",
+      "createdAt": "2026-06-17T10:10:55Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass0",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 13,
+      "title": "Pointers regeneration (BuildPointers.sol) is not in any in-repo build step; the git-clean check depends on an external reusable workflow ass",
+      "createdAt": "2026-06-17T10:11:06Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass6",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 18,
+      "title": "Base fork RPC default is defined twice (foundry.toml rpc_endpoint + LibFork constant) and the test bypasses the configurable one",
+      "createdAt": "2026-06-17T10:11:35Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass6",
+        "low",
+        "human:keep-open"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 31,
+      "title": "Opcode index enumeration duplicated across Extern and SubParser libs, kept aligned only by hand-typed positional literals",
+      "createdAt": "2026-06-17T10:12:49Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass6",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 55,
+      "title": "Inconsistent pragma version style: floating ^0.8.25 vs pinned =0.8.25 across files",
+      "createdAt": "2026-06-17T10:15:06Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass4",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 68,
+      "title": "ERC4626 convert* rounding direction (floor, attacker-controllable) passed through unchecked and undocumented",
+      "createdAt": "2026-06-17T10:16:20Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass1",
+        "high"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 81,
+      "title": "Unnamed @return omits the decimal re-encoding that is the crux of correctness",
+      "createdAt": "2026-06-17T10:17:35Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass3",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 84,
+      "title": "Vault- and asset-reported decimals trusted unbounded for conversion precision (griefing / silent mis-scaling)",
+      "createdAt": "2026-06-17T10:17:53Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass1",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 86,
+      "title": "integrity() has no @param/@return NatSpec tags",
+      "createdAt": "2026-06-17T10:18:04Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass3",
+        "low",
+        "human:keep-open"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 92,
+      "title": "Rounding direction not documented for convertToAssets",
+      "createdAt": "2026-06-17T10:18:41Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass3",
+        "info"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 93,
+      "title": "Rounding direction of convertToAssets is undocumented and untested; no proof it favors the non-interactive party",
+      "createdAt": "2026-06-17T10:18:47Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass5",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 96,
+      "title": "run() reads inputs via raw assembly with no length guard (leaky abstraction)",
+      "createdAt": "2026-06-17T10:19:04Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass4",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 97,
+      "title": "run() reads inputs[0]/inputs[1] via raw assembly with no length check; extern() does not validate input count",
+      "createdAt": "2026-06-17T10:19:11Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass1",
+        "medium",
+        "human:keep-open"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 98,
+      "title": "Short, non-descriptive local names vaultFloat/sharesFloat are acceptable but the raw-assembly read of inputs[0]/inputs[1] has no length asse",
+      "createdAt": "2026-06-17T10:19:17Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass5",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 103,
+      "title": "integrity() missing @param/@return NatSpec tags",
+      "createdAt": "2026-06-17T10:19:45Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass3",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 112,
+      "title": "run() reads inputs[0]/inputs[1] via raw mload with no length check; extern() is externally callable and never enforces integrity, enabling o",
+      "createdAt": "2026-06-17T10:20:38Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass1",
+        "high",
+        "human:keep-open"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 116,
+      "title": "Authoring-meta descriptions omit the lossless-revert constraint and over-claim that any float amount works",
+      "createdAt": "2026-06-17T10:21:01Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass5",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 119,
+      "title": "authoringMetaV2() has no NatSpec (missing @notice/@return)",
+      "createdAt": "2026-06-17T10:21:18Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass3",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 124,
+      "title": "Library LibERC4626SubParser missing @title/@notice",
+      "createdAt": "2026-06-17T10:21:47Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass3",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 139,
+      "title": "15 vault addresses + a pinned fork block + hand-computed expected outputs are three independent sources of truth with no enforced agreement",
+      "createdAt": "2026-06-17T10:23:13Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass6",
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 148,
+      "title": "No test exercises run() with an under-length inputs array (the unchecked-length memory hazard)",
+      "createdAt": "2026-06-17T10:24:05Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass1",
+        "low"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 152,
+      "title": "Test suite has no negative/revert coverage: missing inputs, malformed vault Float, and adversarial vault returns are untested",
+      "createdAt": "2026-06-17T10:24:28Z",
+      "ageDays": 25,
+      "labels": [
+        "audit",
+        "pass1",
+        "info"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "issue-pr-cron",
+      "number": 1,
+      "title": "Gate human review on CodeRabbit being clean (block the approval bucket until CodeRabbit findings are resolved)",
+      "createdAt": "2026-06-20T16:37:12Z",
+      "ageDays": 22,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 210,
+      "title": "Add deferred integrity-pointer tests from #29: slot-distinctness guard + end-to-end integrity-path (input counts + error selector)",
+      "createdAt": "2026-06-20T16:57:22Z",
+      "ageDays": 22,
+      "labels": [
+        "audit",
+        "pass2",
+        "high"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rainix",
+      "number": 236,
+      "title": "Upstream the versioned deploy-constants completeness check into rainix",
+      "createdAt": "2026-06-20T19:04:09Z",
+      "ageDays": 22,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rainix",
+      "number": 248,
+      "title": "CI: single-source the rainix flake-pin sha instead of repeating it across reusables",
+      "createdAt": "2026-06-28T16:21:19Z",
+      "ageDays": 14,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rainix",
+      "number": 250,
+      "title": "Static check: enforce pragma convention (^ for lib/abstract files, = for concrete) alongside single-contract rule",
+      "createdAt": "2026-07-02T14:12:41Z",
+      "ageDays": 10,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.erc4626.words",
+      "number": 245,
+      "title": "Bump rainlang once the bytes32 NotAnAddress ships (rainlang#539)",
+      "createdAt": "2026-07-02T18:56:35Z",
+      "ageDays": 10,
+      "labels": [
+        "medium"
+      ],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex",
+      "number": 2797,
+      "title": "Stale ARCHITECTURE.md references to removed alloy-ethers-typecast dependency",
+      "createdAt": "2026-07-04T16:54:31Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.math.fixedpoint",
+      "number": 24,
+      "title": "Parser accepts a bare trailing decimal point ('1.') as a valid empty fraction — ruled invalid",
+      "createdAt": "2026-07-04T19:48:18Z",
+      "ageDays": 8,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 17,
+      "title": "site/index.html builds innerHTML from data across renderers — fix by construction (textContent/DOM), not per-site escaping",
+      "createdAt": "2026-07-05T11:33:21Z",
+      "ageDays": 7,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 25,
+      "title": "Test coverage: every derived constant needs a re-derivation test pinning it to its formula",
+      "createdAt": "2026-07-07T22:03:55Z",
+      "ageDays": 5,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "claude-audit-skills",
+      "number": 30,
+      "title": "audit: require a fork test for state-changing scripts (prank privileged signers e.g. a Safe, assert the state changes)",
+      "createdAt": "2026-07-08T11:21:06Z",
+      "ageDays": 4,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain-org-health",
+      "number": 24,
+      "title": "Health check: surface the org-wide open-issue queue (backlog view)",
+      "createdAt": "2026-07-09T14:48:48Z",
+      "ageDays": 3,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "raindex.interface",
+      "number": 65,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:06Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.interpreter.interface",
+      "number": 112,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:19Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.pyth",
+      "number": 27,
+      "title": "Migrate to the next-version Soldeer release lifecycle (bump [package].version)",
+      "createdAt": "2026-07-10T16:37:49Z",
+      "ageDays": 2,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "flow",
+      "number": 484,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:15:49Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.subgraph.docker",
+      "number": 12,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:15:54Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.webapp",
+      "number": 356,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:15:58Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "sqlite-web",
+      "number": 30,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:16:02Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.local-db.remote",
+      "number": 12,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:16:22Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.solver",
+      "number": 459,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:16:30Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rainlang-codemirror",
+      "number": 31,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:16:42Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
+    },
+    {
+      "repo": "rain.subgraph.cli",
+      "number": 12,
+      "title": "CI: replace deprecated `DeterminateSystems/nix-installer-action` with org-standard nix-quick-install",
+      "createdAt": "2026-07-11T17:16:49Z",
+      "ageDays": 1,
+      "labels": [],
+      "assignee": "thedavidmeister",
+      "covered": true
     }
   ]
 }
