@@ -38,9 +38,43 @@
           };
           cargoLock.lockFile = ./Cargo.lock;
         };
+        # Reproducible headless render of the dashboard, so an eyeball on the
+        # deployed page (or a CI visual check) is one pinned command rather than
+        # an ad-hoc chromium incantation: `nix run .#screenshot -- [site] [out]`.
+        # The page fetches health.json at runtime, so a `file://` open can't work
+        # — we serve site/ over a local HTTP server and point headless chromium at
+        # it. A bundled fontconfig (dejavu) is REQUIRED: without fonts, headless
+        # chromium lays the page out but draws every text label blank.
+        screenshot = pkgs.writeShellApplication {
+          name = "screenshot";
+          runtimeInputs = [
+            pkgs.chromium
+            pkgs.python3
+          ];
+          text = ''
+            site="''${1:-site}"
+            out="''${2:-dashboard.png}"
+            port="''${PORT:-8799}"
+            export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}
+            python3 -m http.server "$port" --directory "$site" >/dev/null 2>&1 &
+            srv=$!
+            trap 'kill "$srv" 2>/dev/null || true' EXIT
+            sleep 2
+            chromium \
+              --headless --no-sandbox --disable-gpu --hide-scrollbars \
+              --user-data-dir="$(mktemp -d)" \
+              --force-color-profile=srgb \
+              --window-size="''${WIDTH:-1300},''${HEIGHT:-4200}" \
+              --virtual-time-budget=9000 \
+              --screenshot="$out" \
+              "http://127.0.0.1:$port/index.html"
+            echo "wrote $out ($(wc -c <"$out") bytes)"
+          '';
+        };
       in
       {
         packages.roh-scan = roh-scan;
+        packages.screenshot = screenshot;
         packages.default = roh-scan;
         # `nix develop` composes rainix's default devshell, which wires the same
         # pre-commit hooks CI runs (prettier-rainix, cargo fmt/clippy, deadnix,
