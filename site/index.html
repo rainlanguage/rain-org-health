@@ -330,40 +330,75 @@ function renderTiles() {
 // bucket = PRs with a producer note but no state label, and should trend to zero.
 // Consumes health.json's `humanQueue` block (schema == `pr-review-report human-queue --json`).
 // All human-queue fields are UNTRUSTED (titles/reasons are attacker-influenceable PR/issue
-// content): escape in text contexts, coerce with Number()/esc() in numeric/attribute sinks.
-function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
-
+// content). This panel builds the DOM directly (createElement / textContent / .append / .href),
+// matching the rest of the dashboard — so escaping is BY CONSTRUCTION and there is no hand-rolled
+// HTML escaper to keep correct at every sink.
 function renderFsm(hq) {
   const box = $("fsm");
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  // A link whose href is set via the .href PROPERTY (the DOM escapes it) — never string-built.
+  const link = (cls, text, href) => {
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener";
+    a.target = "_blank";
+    return a;
+  };
+
+  box.textContent = "";
   if (!hq || !hq.counts) {
-    box.innerHTML =
-      '<div class="empty">Pipeline state not wired yet — populated once ' +
-      '<a href="https://github.com/rainlanguage/issue-pr-cron/pull/41" rel="noopener" target="_blank">the human-queue tool</a> lands ' +
-      "and the scan folds it into health.json.</div>";
+    const empty = el("div", "empty");
+    empty.append(
+      "Pipeline state not wired yet — populated once ",
+      link(null, "the human-queue tool", "https://github.com/rainlanguage/issue-pr-cron/pull/41"),
+      " lands and the scan folds it into health.json."
+    );
+    box.append(empty);
     return;
   }
   const c = hq.counts;
   const urlOf = (it, issue) => `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
 
   // Main lifecycle rail — issue → un-vetted → ai:ready → queue → approved → merged.
-  const rail = [
+  const rail = el("div", "fsm-rail");
+  const railNodes = [
     { l: "open issue" }, { l: "un-vetted" }, { l: "ai:ready", n: c.ready },
     { l: "queue" }, { l: "approved" }, { l: "merged", done: true },
   ];
-  const railHtml = '<div class="fsm-rail">' + rail.map((nd, i) => {
-    const cls = nd.done ? "done" : (nd.n == null ? "flow" : "");
-    const node = `<div class="fsm-node ${cls}"><span class="nl">${esc(nd.l)}</span>` +
-      (nd.n != null ? `<span class="nc">${Number(nd.n)}</span>` : "") + "</div>";
-    return node + (i < rail.length - 1 ? '<span class="fsm-arrow">→</span>' : "");
-  }).join("") + "</div>";
+  railNodes.forEach((nd, i) => {
+    const node = el("div", "fsm-node" + (nd.done ? " done" : nd.n == null ? " flow" : ""));
+    node.append(el("span", "nl", nd.l));
+    if (nd.n != null) node.append(el("span", "nc", String(Number(nd.n))));
+    rail.append(node);
+    if (i < railNodes.length - 1) rail.append(el("span", "fsm-arrow", "→"));
+  });
 
   // Leak bucket — the loudest element.
-  const alarm = c.leaks > 0
-    ? `<button class="fsm-alarm bad" data-t="leak"><span class="an">${Number(c.leaks)}</span>` +
-      "<span class=\"atxt\"><b>not in any modeled state</b> — producer PRs with a note but no " +
-      "<code>ai:*</code> label. The FSM-leak signal; it should be <b>zero</b>. Click to see what needs modeling.</span></button>"
-    : '<div class="fsm-alarm ok"><span class="an">0</span>' +
-      '<span class="atxt"><b>fully conformant</b> — every open PR sits in a modeled state.</span></div>';
+  let alarm;
+  if (c.leaks > 0) {
+    alarm = el("button", "fsm-alarm bad");
+    alarm.dataset.t = "leak";
+    const atxt = el("span", "atxt");
+    atxt.append(
+      el("b", null, "not in any modeled state"),
+      " — producer PRs with a note but no ",
+      el("code", null, "ai:*"),
+      " label. The FSM-leak signal; it should be ",
+      el("b", null, "zero"),
+      ". Click to see what needs modeling."
+    );
+    alarm.append(el("span", "an", String(Number(c.leaks))), atxt);
+  } else {
+    alarm = el("div", "fsm-alarm ok");
+    const atxt = el("span", "atxt");
+    atxt.append(el("b", null, "fully conformant"), " — every open PR sits in a modeled state.");
+    alarm.append(el("span", "an", "0"), atxt);
+  }
 
   // Human-gated states — the daily action queue.
   const states = [
@@ -374,39 +409,58 @@ function renderFsm(hq) {
     { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, act: "fix infra", kind: "blk" },
     { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, act: "unblock dep", kind: "blk" },
   ];
-  const grid = '<div class="fsm-grid">' + states.map((s) =>
-    `<button class="fsm-state ${s.kind}${s.n ? "" : " zero"}" data-t="${esc(s.key)}">` +
-    `<div class="sc">${Number(s.n)}</div><div class="sk">${esc(s.label)}</div><div class="sa">${esc(s.act)}</div></button>`
-  ).join("") + "</div>";
+  const grid = el("div", "fsm-grid");
+  states.forEach((s) => {
+    const b = el("button", "fsm-state " + s.kind + (s.n ? "" : " zero"));
+    b.dataset.t = s.key;
+    b.append(el("div", "sc", String(Number(s.n))), el("div", "sk", s.label), el("div", "sa", s.act));
+    grid.append(b);
+  });
 
+  // itemsFor returns the item nodes for a state (a DocumentFragment).
   const itemsFor = (key) => {
     let arr, issue = false;
     if (key === "leak") arr = hq.leaks || [];
     else if (key === "closeCandidateIssues") { arr = hq.closeCandidateIssues || []; issue = true; }
     else arr = (hq.states && hq.states[key]) || [];
-    if (!arr.length) return '<div class="empty" style="padding:12px 13px">no items in this state</div>';
-    return arr.map((it) =>
-      `<a class="li" href="${esc(urlOf(it, issue))}" rel="noopener" target="_blank">` +
-      `<span class="lr">${esc(it.repo)}#${Number(it.number)}</span> ${esc(it.title)}` +
-      (it.reason ? `<span class="lz">${esc(it.reason)}</span>` : "") + "</a>"
-    ).join("");
+    const frag = document.createDocumentFragment();
+    if (!arr.length) {
+      const e = el("div", "empty", "no items in this state");
+      e.style.padding = "12px 13px";
+      frag.append(e);
+      return frag;
+    }
+    arr.forEach((it) => {
+      const a = link("li", undefined, urlOf(it, issue));
+      a.append(el("span", "lr", it.repo + "#" + Number(it.number)), " " + (it.title == null ? "" : it.title));
+      if (it.reason) a.append(el("span", "lz", it.reason));
+      frag.append(a);
+    });
+    return frag;
   };
 
-  const note = '<div class="fsm-note">The pipeline is a ' +
-    '<a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/README.md" rel="noopener" target="_blank">finite state machine</a>' +
-    " — every open PR/issue sits in exactly one modeled <code>ai:*</code> state, and this is the daily conformance review" +
-    (hq.sample ? " <b>(sample data — live once issue-pr-cron#41 lands)</b>" : "") + ".</div>";
+  const note = el("div", "fsm-note");
+  note.append(
+    "The pipeline is a ",
+    link(null, "finite state machine", "https://github.com/rainlanguage/issue-pr-cron/blob/main/README.md"),
+    " — every open PR/issue sits in exactly one modeled ",
+    el("code", null, "ai:*"),
+    " state, and this is the daily conformance review"
+  );
+  if (hq.sample) note.append(" ", el("b", null, "(sample data — live once issue-pr-cron#41 lands)"));
+  note.append(".");
 
-  box.innerHTML = alarm + railHtml + grid + '<div class="fsm-list" id="fsmdetail"></div>' + note;
+  const detail = el("div", "fsm-list");
+  detail.id = "fsmdetail";
+  box.append(alarm, rail, grid, detail, note);
 
-  const detail = $("fsmdetail");
   let openKey = null;
   box.querySelectorAll("[data-t]").forEach((b) => b.addEventListener("click", () => {
     const k = b.dataset.t;
     box.querySelectorAll("[data-t]").forEach((x) => x.classList.remove("sel"));
     if (openKey === k) { detail.classList.remove("open"); openKey = null; return; }
     openKey = k;
-    detail.innerHTML = itemsFor(k);
+    detail.replaceChildren(itemsFor(k));
     detail.classList.add("open");
     if (b.classList.contains("fsm-state")) b.classList.add("sel");
   }));
