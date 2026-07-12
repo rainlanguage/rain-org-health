@@ -10,7 +10,14 @@
       "source": "./plugins/rain-org-health-check",
       "description": "Audit rainlanguage org repos for submodules, dead CI actions, non-reusable workflows, removed rainix tasks, PRIVATE_KEY_DEV, secret-naming drift, and soldeer publish gaps.",
       "category": "development",
-      "keywords": ["rainlanguage", "rainix", "soldeer", "ci", "audit", "health-check"]
+      "keywords": [
+        "rainlanguage",
+        "rainix",
+        "soldeer",
+        "ci",
+        "audit",
+        "health-check"
+      ]
     }
   ]
 }

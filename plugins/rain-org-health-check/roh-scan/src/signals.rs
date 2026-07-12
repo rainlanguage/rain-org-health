@@ -13,8 +13,6 @@ pub struct RepoInputs {
     pub workflows: String,
     /// `foundry.toml` content ("" if absent).
     pub foundry: String,
-    /// `git/trees/HEAD?recursive=1` paths, newline-joined ("" if not fetched).
-    pub tree: String,
     /// Registry lookup for the foundry `[package] name`: Some(true) published,
     /// Some(false) unpublished, None if there is no package name or it wasn't queried.
     pub soldeer_published: Option<bool>,
@@ -55,8 +53,6 @@ pub fn detect_signals(inputs: &RepoInputs) -> Vec<&'static str> {
     static RE_CHECKOUT: OnceLock<Regex> = OnceLock::new();
     static RE_ETHERSCAN: OnceLock<Regex> = OnceLock::new();
     static RE_SKIPWARN: OnceLock<Regex> = OnceLock::new();
-    static RE_DEPLOYPROD: OnceLock<Regex> = OnceLock::new();
-    static RE_VERSIONED: OnceLock<Regex> = OnceLock::new();
 
     let wf = &inputs.workflows;
     let foundry = &inputs.foundry;
@@ -105,18 +101,6 @@ pub fn detect_signals(inputs: &RepoInputs) -> Vec<&'static str> {
     // soldeer-unpublished: a [package] exists but the registry has no revision.
     if inputs.soldeer_published == Some(false) {
         out.push("soldeer-unpublished");
-    }
-    // deploy-constants-unversioned: a foundry repo with a *DeployProd.t.sol fork test
-    // but no versioned-constants suite (check-published-deploy-constants.sh /
-    // *TaggedConstants.t.sol).
-    if !foundry.is_empty() {
-        let re_prod = RE_DEPLOYPROD.get_or_init(|| re(r"(?m)DeployProd\.t\.sol$"));
-        let re_ver = RE_VERSIONED.get_or_init(|| {
-            re(r"(?m)(check-published-deploy-constants\.sh|TaggedConstants\.t\.sol)$")
-        });
-        if re_prod.is_match(&inputs.tree) && !re_ver.is_match(&inputs.tree) {
-            out.push("deploy-constants-unversioned");
-        }
     }
     out
 }
@@ -254,29 +238,6 @@ mod tests {
     }
 
     #[test]
-    fn deploy_constants_unversioned() {
-        let flagged = RepoInputs {
-            foundry: "[profile.default]\nsrc = \"src\"".into(),
-            tree: "test/MyDeployProd.t.sol\nsrc/Foo.sol".into(),
-            ..Default::default()
-        };
-        assert!(detect_signals(&flagged).contains(&"deploy-constants-unversioned"));
-        // has the versioned suite → not flagged
-        let versioned = RepoInputs {
-            foundry: "[profile.default]".into(),
-            tree: "test/MyDeployProd.t.sol\ntest/MyDeployTaggedConstants.t.sol".into(),
-            ..Default::default()
-        };
-        assert!(!detect_signals(&versioned).contains(&"deploy-constants-unversioned"));
-        // no foundry.toml → never flagged even with the prod test path
-        let no_foundry = RepoInputs {
-            tree: "test/MyDeployProd.t.sol".into(),
-            ..Default::default()
-        };
-        assert!(!detect_signals(&no_foundry).contains(&"deploy-constants-unversioned"));
-    }
-
-    #[test]
     fn foundry_package_name_parsing() {
         assert_eq!(
             foundry_package_name("[package]\nname = \"rain.vats\"\nversion = \"1.0\""),
@@ -296,7 +257,6 @@ mod tests {
         let clean = RepoInputs {
             workflows: "uses: rainlanguage/rainix/.github/workflows/rainix-sol-test.yaml@main\nuses: actions/checkout@v4".into(),
             foundry: "[profile.default]\nsrc = \"src\"".into(),
-            tree: "src/Foo.sol".into(),
             soldeer_published: Some(true),
         };
         assert!(detect_signals(&clean).is_empty());
