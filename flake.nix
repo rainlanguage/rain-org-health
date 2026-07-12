@@ -50,6 +50,7 @@
           runtimeInputs = [
             pkgs.chromium
             pkgs.python3
+            pkgs.curl
           ];
           text = ''
             site="''${1:-site}"
@@ -59,9 +60,24 @@
             python3 -m http.server "$port" --directory "$site" >/dev/null 2>&1 &
             srv=$!
             trap 'kill "$srv" 2>/dev/null || true' EXIT
-            sleep 2
+            # Wait for the server to accept connections; fail fast if it never comes up
+            # (a fixed sleep hides startup failures and is brittle on a slow host/CI).
+            ready=
+            for _ in $(seq 1 50); do
+              if curl -fsS -o /dev/null "http://127.0.0.1:$port/"; then
+                ready=1
+                break
+              fi
+              sleep 0.1
+            done
+            [ -n "$ready" ] || {
+              echo "screenshot: local server never came up on :$port" >&2
+              exit 1
+            }
+            # --disable-dev-shm-usage: containers/CI often have a tiny /dev/shm, which
+            # crashes headless chromium; write shared memory to /tmp instead.
             chromium \
-              --headless --no-sandbox --disable-gpu --hide-scrollbars \
+              --headless --no-sandbox --disable-gpu --disable-dev-shm-usage --hide-scrollbars \
               --user-data-dir="$(mktemp -d)" \
               --force-color-profile=srgb \
               --window-size="''${WIDTH:-1300},''${HEIGHT:-4200}" \

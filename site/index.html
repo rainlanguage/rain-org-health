@@ -331,7 +331,7 @@ function renderTiles() {
 // Consumes health.json's `humanQueue` block (schema == `pr-review-report human-queue --json`).
 // All human-queue fields are UNTRUSTED (titles/reasons are attacker-influenceable PR/issue
 // content): escape in text contexts, coerce with Number()/esc() in numeric/attribute sinks.
-function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
+function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML.replace(/"/g, "&quot;").replace(/'/g, "&#39;"); }
 
 function renderFsm(hq) {
   const box = $("fsm");
