@@ -89,9 +89,10 @@
         };
       in
       {
-        packages.roh-scan = roh-scan;
-        packages.screenshot = screenshot;
-        packages.default = roh-scan;
+        packages = {
+          inherit roh-scan screenshot;
+          default = roh-scan;
+        };
         # `nix develop` composes rainix's default devshell, which wires the same
         # pre-commit hooks CI runs (prettier-rainix, cargo fmt/clippy, deadnix,
         # nixfmt, statix, taplo, yamlfmt, shellcheck) with rainix's pinned tool
