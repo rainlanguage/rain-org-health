@@ -191,15 +191,23 @@ fn soldeer_has_revision(pkg: &str) -> Option<bool> {
     Some(data.as_array().map(|a| !a.is_empty()).unwrap_or(false))
 }
 
+/// Resolve where the dashboard JSON is written. A bare run POPULATES `site/health.json` (the scan
+/// never print-and-discards by default); `JSON_OUT` overrides the default; `--json <path>` overrides both.
+fn resolve_json_out(json_out_env: Option<String>, json_flag: Option<String>) -> String {
+    json_flag
+        .or(json_out_env)
+        .unwrap_or_else(|| "site/health.json".into())
+}
+
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
-    let mut json_out: Option<String> = std::env::var("JSON_OUT").ok();
+    let mut json_flag: Option<String> = None;
     let mut repos_arg: Vec<String> = Vec::new();
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
             "--json" => {
-                json_out = args.get(i + 1).cloned().or(json_out);
+                json_flag = args.get(i + 1).cloned();
                 i += 2;
             }
             r => {
@@ -208,6 +216,9 @@ fn main() {
             }
         }
     }
+    // POPULATE by default: a bare run writes site/health.json (never print-and-discard);
+    // JSON_OUT overrides the default; --json <path> overrides both.
+    let json_out = resolve_json_out(std::env::var("JSON_OUT").ok(), json_flag);
     let org = std::env::var("ORG").unwrap_or_else(|_| "rainlanguage".into());
     let par: usize = std::env::var("PAR")
         .ok()
@@ -355,8 +366,13 @@ fn main() {
     }
     println!("\nopen issues: {} ({uncovered} uncovered)", queue.len());
 
-    // JSON output
-    if let Some(path) = json_out {
+    // JSON output — always written (populate by default)
+    {
+        let path = json_out;
+        // roh-scan is the producer of SCAN data only. It does NOT compute pipeline/FSM state and
+        // does NOT call pr-review-report: the dashboard's FSM panel fetches issue-pr-cron's own
+        // `human-queue.json` artifact at runtime (see CLAUDE.md — the dashboard is a consumer, not
+        // a producer, of data). Do not re-add a `humanQueue` block to health.json here.
         let doc = json!({
             "generatedAt": now,
             "org": org,
@@ -395,5 +411,33 @@ fn main() {
         if std::fs::write(&path, serde_json::to_string_pretty(&doc).unwrap()).is_ok() {
             eprintln!("wrote {path} ({} repos with findings)", findings.len());
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::resolve_json_out;
+
+    #[test]
+    fn default_populates_site_health_json() {
+        // A bare run (no JSON_OUT, no --json) POPULATES site/health.json — never print-and-discard.
+        assert_eq!(resolve_json_out(None, None), "site/health.json");
+    }
+
+    #[test]
+    fn json_out_env_overrides_default() {
+        assert_eq!(resolve_json_out(Some("env.json".into()), None), "env.json");
+    }
+
+    #[test]
+    fn json_flag_overrides_env_and_default() {
+        assert_eq!(
+            resolve_json_out(Some("env.json".into()), Some("flag.json".into())),
+            "flag.json"
+        );
+        assert_eq!(
+            resolve_json_out(None, Some("flag.json".into())),
+            "flag.json"
+        );
     }
 }
