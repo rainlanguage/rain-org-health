@@ -529,11 +529,22 @@ function median(a) {
   const s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2);
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
-// runs.jsonl fields are external data: escape them before interpolating into
-// innerHTML markup so they render as text, never as elements.
-function escapeHtml(s) {
-  return String(s).replace(/[&<>"']/g, (c) =>
-    ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
+// runs.jsonl fields are external data. Every node below is built with
+// createElement/createElementNS + textContent/setAttribute — never innerHTML
+// string-building — so data renders inert by construction and there is no
+// hand-rolled escaper to keep correct at every sink.
+const SVGNS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs, text) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function htmlEl(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
 }
 
 function renderPmTiles(runs) {
@@ -574,37 +585,45 @@ function renderPmChart(runs) {
   else xOf = (i) => PADL + (i / (runs.length - 1)) * plotW;
   const pts = runs.map((r, i) => ({ x: +xOf(i).toFixed(1), y: +yOf(r.startupPct).toFixed(1), run: r }));
 
-  const grid = [0, 25, 50, 75, 100].map((g) => {
-    const gy = yOf(g).toFixed(1);
-    return `<line class="pm-axis-line" x1="${PADL}" y1="${gy}" x2="${VBW - PADR}" y2="${gy}" opacity="${g === 0 ? 0.5 : 0.22}"/>` +
-      `<text x="${PADL - 6}" y="${(+gy + 3).toFixed(1)}" text-anchor="end">${g}</text>`;
-  }).join("");
-
-  let area = "", line = "";
-  if (pts.length >= 2) {
-    area = `<path class="pm-area" d="M ${pts[0].x} ${by} ${pts.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${pts[pts.length - 1].x} ${by} Z"/>`;
-    line = `<path class="pm-line" d="M ${pts.map((p) => `${p.x} ${p.y}`).join(" L ")}"/>`;
+  const svg = svgEl("svg", {
+    class: "pm-chart", viewBox: `0 0 ${VBW} ${VBH}`, preserveAspectRatio: "xMidYMid meet",
+    role: "img", "aria-label": "Producer startup overhead percent per run over time",
+  });
+  for (const g of [0, 25, 50, 75, 100]) {
+    const gy = +yOf(g).toFixed(1);
+    svg.append(
+      svgEl("line", { class: "pm-axis-line", x1: PADL, y1: gy, x2: VBW - PADR, y2: gy, opacity: g === 0 ? 0.5 : 0.22 }),
+      svgEl("text", { x: PADL - 6, y: +(gy + 3).toFixed(1), "text-anchor": "end" }, String(g)),
+    );
   }
-  const dots = pts.map((p, i) => {
+  const cur = svgEl("line", { class: "pm-cursor", x1: 0, y1: PADT, x2: 0, y2: VBH - PADB });
+  svg.append(cur);
+  if (pts.length >= 2) {
+    svg.append(
+      svgEl("path", { class: "pm-area", d: `M ${pts[0].x} ${by} ${pts.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${pts[pts.length - 1].x} ${by} Z` }),
+      svgEl("path", { class: "pm-line", d: `M ${pts.map((p) => `${p.x} ${p.y}`).join(" L ")}` }),
+    );
+  }
+  pts.forEach((p, i) => {
     const deg = p.run.outcome && p.run.outcome !== "ok";
-    return `<circle class="pm-dot${deg ? " deg" : ""}" cx="${p.x}" cy="${p.y}" r="${i === pts.length - 1 ? 4 : 3}"/>`;
-  }).join("");
+    svg.append(svgEl("circle", { class: "pm-dot" + (deg ? " deg" : ""), cx: p.x, cy: p.y, r: i === pts.length - 1 ? 4 : 3 }));
+  });
   const last = pts[pts.length - 1];
-  const endlabel = `<text class="pm-endlabel" x="${(last.x + 6).toFixed(1)}" y="${(last.y + 3).toFixed(1)}">${last.run.startupPct.toFixed(0)}%</text>`;
-  const xlabels = pts.length >= 2
-    ? `<text x="${PADL}" y="${VBH - 7}" text-anchor="start">${fmtDay(runs[0].runId)}</text>` +
-      `<text x="${VBW - PADR}" y="${VBH - 7}" text-anchor="end">${fmtDay(runs[runs.length - 1].runId)}</text>`
-    : `<text x="${last.x}" y="${VBH - 7}" text-anchor="middle">${fmtDay(runs[0].runId)}</text>`;
-  const cursor = `<line class="pm-cursor" id="pmcursor" x1="0" y1="${PADT}" x2="0" y2="${VBH - PADB}"/>`;
+  svg.append(svgEl("text", {
+    class: "pm-endlabel", x: +(last.x + 6).toFixed(1), y: +(last.y + 3).toFixed(1),
+  }, last.run.startupPct.toFixed(0) + "%"));
+  if (pts.length >= 2) {
+    svg.append(
+      svgEl("text", { x: PADL, y: VBH - 7, "text-anchor": "start" }, fmtDay(runs[0].runId)),
+      svgEl("text", { x: VBW - PADR, y: VBH - 7, "text-anchor": "end" }, fmtDay(runs[runs.length - 1].runId)),
+    );
+  } else {
+    svg.append(svgEl("text", { x: last.x, y: VBH - 7, "text-anchor": "middle" }, fmtDay(runs[0].runId)));
+  }
 
+  const tip = htmlEl("div", "pm-tip");
   const wrap = $("pmwrap");
-  wrap.innerHTML =
-    `<svg class="pm-chart" id="pmsvg" viewBox="0 0 ${VBW} ${VBH}" preserveAspectRatio="xMidYMid meet"` +
-    ` role="img" aria-label="Producer startup overhead percent per run over time">` +
-    grid + cursor + area + line + dots + endlabel + xlabels + `</svg>` +
-    `<div class="pm-tip" id="pmtip"></div>`;
-
-  const svg = $("pmsvg"), tip = $("pmtip"), cur = $("pmcursor");
+  wrap.replaceChildren(svg, tip);
   svg.addEventListener("mousemove", (e) => {
     const rr = svg.getBoundingClientRect();
     if (!rr.width) return;
@@ -616,11 +635,16 @@ function renderPmChart(runs) {
     const wr = wrap.getBoundingClientRect();
     tip.style.left = (rr.left - wr.left + (p.x / VBW) * rr.width) + "px";
     tip.style.top = (rr.top - wr.top + (p.y / VBH) * rr.height - 10) + "px";
-    const cost = typeof r.costUsd === "number" ? ` · $${r.costUsd.toFixed(2)}` : "";
-    tip.innerHTML =
-      `<b>${r.startupPct.toFixed(1)}%</b> startup overhead<br>` +
-      `${escapeHtml(r.startupToolCalls)}/${escapeHtml(r.toolCalls)} tool calls · ${escapeHtml(r.numTurns)} turns<br>` +
-      `${escapeHtml(fmtRunTime(r.runId))} · <span class="${deg ? "deg" : ""}">${escapeHtml(r.outcome || "ok")}</span>${cost}`;
+    tip.replaceChildren(
+      htmlEl("b", null, r.startupPct.toFixed(1) + "%"),
+      " startup overhead",
+      document.createElement("br"),
+      `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
+      document.createElement("br"),
+      `${fmtRunTime(r.runId)} · `,
+      htmlEl("span", deg ? "deg" : null, r.outcome || "ok"),
+    );
+    if (typeof r.costUsd === "number") tip.append(` · $${r.costUsd.toFixed(2)}`);
     tip.style.opacity = 1;
   });
   svg.addEventListener("mouseleave", () => { tip.style.opacity = 0; cur.style.opacity = 0; });
@@ -641,22 +665,35 @@ async function loadMetrics() {
     if (empty) empty.textContent = "could not load run metrics (metrics/runs.jsonl)";
     return;
   }
+  // The shared tail of the metrics note; the source link's href is set via the
+  // .href property, never string-built.
+  const noteTail = () => {
+    const a = htmlEl("a", null, "runs.jsonl");
+    a.href = "https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl";
+    a.rel = "noopener";
+    a.target = "_blank";
+    return [
+      "Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. Source: ",
+      a,
+      ".",
+    ];
+  };
   renderPmTiles(runs);
   if (!runs.length) {
-    if (empty) empty.innerHTML =
+    if (empty) empty.textContent =
       "No producer runs recorded yet. The first metric lands after the next producer cron run — " +
       "then this chart fills in, one point per run.";
-    $("pmnote").innerHTML =
-      `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
-      `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
+    $("pmnote").replaceChildren(...noteTail());
     return;
   }
   renderPmChart(runs);
   const last = runs[runs.length - 1], deg = last.outcome && last.outcome !== "ok";
-  $("pmnote").innerHTML =
-    `Latest run ${fmtAgo(parseRunId(last.runId))} · outcome <span class="${deg ? "deg" : ""}">${escapeHtml(last.outcome || "ok")}</span>. ` +
-    `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
-    `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
+  $("pmnote").replaceChildren(
+    `Latest run ${fmtAgo(parseRunId(last.runId))} · outcome `,
+    htmlEl("span", deg ? "deg" : null, last.outcome || "ok"),
+    ". ",
+    ...noteTail(),
+  );
 }
 loadMetrics();
 </script>
