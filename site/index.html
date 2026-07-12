@@ -329,6 +329,8 @@ function renderTiles() {
 // Every open producer PR/issue sits in exactly one modeled ai:* state; the leak
 // bucket = PRs with a producer note but no state label, and should trend to zero.
 // Consumes health.json's `humanQueue` block (schema == `pr-review-report human-queue --json`).
+// All human-queue fields are UNTRUSTED (titles/reasons are attacker-influenceable PR/issue
+// content): escape in text contexts, coerce with Number()/esc() in numeric/attribute sinks.
 function esc(s) { const d = document.createElement("div"); d.textContent = s == null ? "" : String(s); return d.innerHTML; }
 
 function renderFsm(hq) {
@@ -341,7 +343,7 @@ function renderFsm(hq) {
     return;
   }
   const c = hq.counts;
-  const urlOf = (it, issue) => `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${it.number}`;
+  const urlOf = (it, issue) => `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
 
   // Main lifecycle rail — issue → un-vetted → ai:ready → queue → approved → merged.
   const rail = [
@@ -351,13 +353,13 @@ function renderFsm(hq) {
   const railHtml = '<div class="fsm-rail">' + rail.map((nd, i) => {
     const cls = nd.done ? "done" : (nd.n == null ? "flow" : "");
     const node = `<div class="fsm-node ${cls}"><span class="nl">${esc(nd.l)}</span>` +
-      (nd.n != null ? `<span class="nc">${nd.n}</span>` : "") + "</div>";
+      (nd.n != null ? `<span class="nc">${Number(nd.n)}</span>` : "") + "</div>";
     return node + (i < rail.length - 1 ? '<span class="fsm-arrow">→</span>' : "");
   }).join("") + "</div>";
 
   // Leak bucket — the loudest element.
   const alarm = c.leaks > 0
-    ? `<button class="fsm-alarm bad" data-t="leak"><span class="an">${c.leaks}</span>` +
+    ? `<button class="fsm-alarm bad" data-t="leak"><span class="an">${Number(c.leaks)}</span>` +
       "<span class=\"atxt\"><b>not in any modeled state</b> — producer PRs with a note but no " +
       "<code>ai:*</code> label. The FSM-leak signal; it should be <b>zero</b>. Click to see what needs modeling.</span></button>"
     : '<div class="fsm-alarm ok"><span class="an">0</span>' +
@@ -374,7 +376,7 @@ function renderFsm(hq) {
   ];
   const grid = '<div class="fsm-grid">' + states.map((s) =>
     `<button class="fsm-state ${s.kind}${s.n ? "" : " zero"}" data-t="${esc(s.key)}">` +
-    `<div class="sc">${s.n}</div><div class="sk">${esc(s.label)}</div><div class="sa">${esc(s.act)}</div></button>`
+    `<div class="sc">${Number(s.n)}</div><div class="sk">${esc(s.label)}</div><div class="sa">${esc(s.act)}</div></button>`
   ).join("") + "</div>";
 
   const itemsFor = (key) => {
@@ -384,8 +386,8 @@ function renderFsm(hq) {
     else arr = (hq.states && hq.states[key]) || [];
     if (!arr.length) return '<div class="empty" style="padding:12px 13px">no items in this state</div>';
     return arr.map((it) =>
-      `<a class="li" href="${urlOf(it, issue)}" rel="noopener" target="_blank">` +
-      `<span class="lr">${esc(it.repo)}#${it.number}</span> ${esc(it.title)}` +
+      `<a class="li" href="${esc(urlOf(it, issue))}" rel="noopener" target="_blank">` +
+      `<span class="lr">${esc(it.repo)}#${Number(it.number)}</span> ${esc(it.title)}` +
       (it.reason ? `<span class="lz">${esc(it.reason)}</span>` : "") + "</a>"
     ).join("");
   };
