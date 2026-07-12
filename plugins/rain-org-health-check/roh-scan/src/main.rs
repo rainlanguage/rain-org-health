@@ -274,12 +274,10 @@ fn main() {
             .ok()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
             .unwrap_or_default();
-        // SEAM (rain-org-health#30): the dashboard's "Pipeline state machine" panel reads a
-        // `humanQueue` block from health.json (schema == `pr-review-report human-queue --json`).
-        // Once issue-pr-cron#41 lands + its binary is on PATH here, fold it in — e.g.
-        // `let hq = Command::new("pr-review-report").args(["human-queue","--json"])...` parsed to a
-        // Value and added below as `"humanQueue": hq`. Until then the committed sample in
-        // site/health.json feeds the panel; the renderer degrades gracefully if the field is absent.
+        // roh-scan is the producer of SCAN data only. It does NOT compute pipeline/FSM state and
+        // does NOT call pr-review-report: the dashboard's FSM panel fetches issue-pr-cron's own
+        // `human-queue.json` artifact at runtime (see CLAUDE.md — the dashboard is a consumer, not
+        // a producer, of data). Do not re-add a `humanQueue` block to health.json here.
         let doc = json!({
             "generatedAt": now,
             "org": org,

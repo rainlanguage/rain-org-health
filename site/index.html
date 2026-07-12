@@ -466,6 +466,11 @@ function renderFsm(hq) {
   }));
 }
 
+// FSM-conformance state is issue-pr-cron's OWN artifact, fetched at runtime like the producer
+// metrics below — never baked into this repo or computed here (CLAUDE.md: the dashboard is a
+// consumer, not a producer, of data; new data ⇒ new fetch, not new baking).
+const HQ_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue.json";
+
 async function load() {
   try {
     const res = await fetch("health.json", { cache: "no-store" });
@@ -484,7 +489,10 @@ async function load() {
     ` · <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener">source</a>`;
   renderTiles();
   renderSummary();
-  renderFsm(data.humanQueue);
+  fetch(HQ_URL, { cache: "no-store" })
+    .then((r) => (r.ok ? r.json() : null))
+    .then(renderFsm)
+    .catch(() => renderFsm(null));
   render();
   $("search").addEventListener("input", render);
   $("clearf").addEventListener("click", () => setSignal(null));
