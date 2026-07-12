@@ -274,6 +274,10 @@ fn main() {
             .ok()
             .map(|o| String::from_utf8_lossy(&o.stdout).trim().to_string())
             .unwrap_or_default();
+        // roh-scan is the producer of SCAN data only. It does NOT compute pipeline/FSM state and
+        // does NOT call pr-review-report: the dashboard's FSM panel fetches issue-pr-cron's own
+        // `human-queue.json` artifact at runtime (see CLAUDE.md — the dashboard is a consumer, not
+        // a producer, of data). Do not re-add a `humanQueue` block to health.json here.
         let doc = json!({
             "generatedAt": now,
             "org": org,
