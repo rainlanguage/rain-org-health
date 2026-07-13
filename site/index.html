@@ -12,7 +12,7 @@
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
     --bar: #b45309; --bar-track: #eeebe6;
-    --crit: #dc2626; --pm-fill: rgba(180,83,9,0.13);
+    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -22,7 +22,7 @@
       --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
       --clean: #4ade80; --clean-bg: #12241a;
       --bar: #d98a2b; --bar-track: #27241b;
-      --crit: #f87171; --pm-fill: rgba(217,138,43,0.16);
+      --crit: #f87171; --pm-fill: rgba(236,232,224,0.07);
     }
   }
   :root[data-theme="dark"] {
@@ -32,7 +32,7 @@
     --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
     --clean: #4ade80; --clean-bg: #12241a;
     --bar: #d98a2b; --bar-track: #27241b;
-    --crit: #f87171; --pm-fill: rgba(217,138,43,0.16);
+    --crit: #f87171; --pm-fill: rgba(236,232,224,0.07);
   }
   :root[data-theme="light"] {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -41,7 +41,7 @@
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
     --bar: #b45309; --bar-track: #eeebe6;
-    --crit: #dc2626; --pm-fill: rgba(180,83,9,0.13);
+    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07);
   }
   * { box-sizing: border-box; }
   body {
@@ -109,12 +109,12 @@
   .pm-chart text { fill: var(--ink-3); font-size: 10px; font-variant-numeric: tabular-nums; }
   .pm-axis-line { stroke: var(--border); stroke-width: 1; }
   .pm-area { fill: var(--pm-fill); stroke: none; }
-  .pm-line { fill: none; stroke: var(--bar); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .pm-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
   .pm-dot { fill: var(--ink); }
   .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
   /* Qualified with .pm-chart so it outweighs `.pm-chart text` (0,1,1) — an
      unqualified .pm-endlabel (0,1,0) loses the cascade and renders muted. */
-  .pm-chart text.pm-endlabel { fill: var(--bar); font-weight: 700; font-size: 11px; }
+  .pm-chart text.pm-endlabel { fill: var(--ink); font-weight: 700; font-size: 11px; }
   .pm-cursor { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
   .pm-tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -100%);
             background: var(--ink); color: var(--bg); border-radius: 8px; padding: 7px 9px;
