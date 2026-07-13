@@ -1,0 +1,37 @@
+name: scan
+# Scheduled org scan: regenerate site/health.json so the dashboard stays fresh WITHOUT
+# any PR ever running the scan. PRs only change code/rendering; this keeps the data current.
+on:
+  schedule:
+    - cron: "0 7 * * *" # daily 07:00 UTC
+  workflow_dispatch: {}
+permissions:
+  contents: write # commit the regenerated health.json back to the default branch
+concurrency:
+  group: scan
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - name: Regenerate site/health.json
+        env:
+          # github.token reads the org's PUBLIC repos + search. Set a SCAN_TOKEN secret
+          # (PAT with org read) only if private repos must be scanned.
+          GH_TOKEN: ${{ secrets.SCAN_TOKEN || github.token }}
+          ORG: rainlanguage
+        run: nix run .#roh-scan
+      - name: Commit if changed
+        run: |
+          if [ -n "$(git status --porcelain site/health.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add site/health.json
+            git commit -m "chore(scan): refresh site/health.json"
+            git push
+          else
+            echo "site/health.json unchanged — nothing to commit"
+          fi
