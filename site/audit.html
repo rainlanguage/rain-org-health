@@ -200,6 +200,7 @@
   .au-status.stale { color: var(--crit); border: 1px solid var(--crit); background: transparent; }
   .au-status.current { color: var(--clean); border: 1px solid var(--clean); background: transparent; }
   .au-status.na { color: var(--ink-3); border: 1px solid var(--border); background: transparent; }
+  .au-status.never { color: var(--crit); border: 1px solid var(--crit); background: transparent; }
   .au-drift { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
   .au-drift .add { font-weight: 650; color: var(--clean); font-variant-numeric: tabular-nums; }
   .au-drift .del { font-weight: 650; color: var(--crit); font-variant-numeric: tabular-nums; }
@@ -210,11 +211,6 @@
   .au-drift.big { color: var(--crit); }
   .au-drift.big a.au-drift-link { color: var(--crit); }
   .au-drift.big .dim, .au-drift.big .ok { color: var(--crit); }
-  .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
-  .au-gapchip { font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-                color: var(--ink-2); background: var(--surface); border: 1px solid var(--border);
-                border-radius: 6px; padding: 2px 8px; text-decoration: none; }
-  .au-gapchip:hover { color: var(--accent); border-color: var(--accent); }
   .au-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
                border-radius: 8px; padding: 6px 11px; font-size: 13px; cursor: pointer; margin: 4px 0; }
   .au-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
@@ -410,14 +406,24 @@ function renderAudit() {
     box.append(table);
   }
 
-  // Never externally audited — the gap, listed as repo chips.
+  // Never externally audited — the coverage gap, enumerated per-repo in the same
+  // table language as the audited repos so the gap is concrete, not just a count.
   if (never.length) {
     box.append(el("div", "au-subhead", "Never externally audited (" + never.length + ") — the gap"));
-    const gap = el("div", "au-gap");
+    const table = el("div", "au-table");
     for (const r of never) {
-      gap.append(link("au-gapchip", r.name, "https://github.com/" + data.org + "/" + r.name));
+      const row = el("div", "au-row");
+      const c1 = el("div", "au-repo");
+      c1.append(link(null, r.name, "https://github.com/" + data.org + "/" + r.name));
+      c1.append(el("div", "au-sub", "no audit/protofire/ PDF"));
+      const c2 = el("div");
+      c2.append(el("span", "au-status never", "never"));
+      const c3 = el("div", "au-drift");
+      c3.append(el("span", "dim", "no external audit"));
+      row.append(c1, c2, c3);
+      table.append(row);
     }
-    box.append(gap);
+    box.append(table);
   }
 
   const note = el("div", "au-note");

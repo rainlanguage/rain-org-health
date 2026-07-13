@@ -175,7 +175,7 @@ Deno.test("audit anchor flags: commit-anchored vs no-tag-in-name", () => {
   assert(flags.includes("no tag in PDF name"), `no-tag flag missing: ${JSON.stringify(flags)}`);
 });
 
-Deno.test("audit never-audited: headline count + one chip per uncovered repo", () => {
+Deno.test("audit never-audited: headline count + one enumerated row per uncovered repo", () => {
   const box = auditBox(auditData([
     auditRow({ name: "covered", sourceLocAddedSinceAudit: 1, sourceLocRemovedSinceAudit: 1, filesChangedSinceAudit: 1, commitsSinceAudit: 1 }),
     { name: "gap1", hasProtofireAudit: false },
@@ -184,9 +184,13 @@ Deno.test("audit never-audited: headline count + one chip per uncovered repo", (
   ], 3));
   const alarmNum = collect(box, "an")[0];
   assert(alarmNum && alarmNum.textContent === "3", `headline count = ${alarmNum && alarmNum.textContent}`);
-  const chips = collect(box, "au-gapchip").map((c) => c.textContent);
-  assert(chips.length === 3, `expected 3 never-audited chips, got ${chips.length}`);
-  assert(chips.includes("gap1") && chips.includes("gap2") && chips.includes("gap3"), "each gap repo is a chip");
+  // Each uncovered repo is ENUMERATED as its own row with a "never" status badge,
+  // not collapsed into a chip cloud (#48).
+  const neverBadges = collect(box, "never");
+  assert(neverBadges.length === 3, `expected 3 never rows, got ${neverBadges.length}`);
+  assert(neverBadges.every((b) => b.textContent === "never"), "each gap row carries a never badge");
+  const text = textOf(box);
+  assert(["gap1", "gap2", "gap3"].every((n) => text.includes(n)), "each gap repo is named");
 });
 
 Deno.test("pipeline FSM: leak alarm shows the count; OK alarm when zero", () => {
