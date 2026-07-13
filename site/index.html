@@ -213,39 +213,73 @@
                 margin: 20px 0 6px; font-weight: 600; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
+  /* ---- Top navigation (sticky anchor bar + scroll-spy) ---- */
+  /* --nav-h is set from the live bar height by JS; the fallback keeps the
+     anchor offset correct before the script runs. scroll-padding-top stops a
+     jumped-to heading from hiding under the sticky bar; scroll-behavior is
+     gated on reduced-motion. */
+  html { scroll-padding-top: calc(var(--nav-h, 52px) + 14px); }
+  @media (prefers-reduced-motion: no-preference) { html { scroll-behavior: smooth; } }
+  .topnav {
+    position: sticky; top: 0; z-index: 50;
+    display: flex; gap: 4px; align-items: center;
+    margin: 14px -20px 10px; padding: 8px 20px;
+    background: var(--bg); border-bottom: 1px solid var(--border);
+    overflow-x: auto; scrollbar-width: none;
+  }
+  .topnav::-webkit-scrollbar { display: none; }
+  .topnav a {
+    flex: 0 0 auto; white-space: nowrap; text-decoration: none;
+    color: var(--ink-2); font-size: 13px; font-weight: 500;
+    padding: 6px 11px; border-radius: 8px; border: 1px solid transparent;
+  }
+  .topnav a:hover { background: var(--surface); color: var(--ink); }
+  .topnav a:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+  .topnav a.active { background: var(--surface-2); color: var(--ink);
+                     border-color: var(--border); font-weight: 600; }
   @media (max-width: 620px) {
     .srow { grid-template-columns: 130px 1fr 30px; }
     .repo { grid-template-columns: 1fr; gap: 8px; }
+    .topnav a { padding: 6px 9px; }
   }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
+  <header id="overview">
     <h1>rain org health</h1>
     <span class="meta" id="meta">loading…</span>
     <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
   </header>
 
+  <nav class="topnav" id="topnav" aria-label="Dashboard sections">
+    <a href="#overview" data-spy="overview">Summary</a>
+    <a href="#debt" data-spy="debt">Debt</a>
+    <a href="#repositories" data-spy="repositories">Repositories</a>
+    <a href="#external-audit" data-spy="external-audit">Audit</a>
+    <a href="#pipeline" data-spy="pipeline">Pipeline</a>
+    <a href="#metrics" data-spy="metrics">Metrics</a>
+  </nav>
+
   <div class="tiles" id="tiles"></div>
 
-  <h2>Modernization debt by signal</h2>
+  <h2 id="debt">Modernization debt by signal</h2>
   <div class="summary" id="summary"></div>
 
-  <h2>Repositories</h2>
+  <h2 id="repositories">Repositories</h2>
   <div class="controls">
     <input type="search" id="search" placeholder="Filter repositories…" autocomplete="off" />
     <button class="clearf" id="clearf">Clear signal filter</button>
   </div>
   <div id="repos"></div>
 
-  <h2>External audit coverage · Protofire</h2>
+  <h2 id="external-audit">External audit coverage · Protofire</h2>
   <div id="audit"><div class="empty" id="auditempty">loading external-audit coverage…</div></div>
 
-  <h2>Pipeline state machine</h2>
+  <h2 id="pipeline">Pipeline state machine</h2>
   <div id="fsm"><div class="empty" id="fsmempty">loading pipeline state…</div></div>
 
-  <h2>Producer run metrics</h2>
+  <h2 id="metrics">Producer run metrics</h2>
   <div class="tiles" id="pmtiles"></div>
   <div class="pm-controls" id="pmcontrols"></div>
   <div class="pm-chart-wrap" id="pmwrap">
@@ -979,6 +1013,57 @@ async function loadMetrics() {
     `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
 }
 loadMetrics();
+
+// ---- Section scroll-spy for the sticky top nav ----
+// Pure presentation: the nav is static DOM (built above, not from data); this
+// only reflects scroll position back onto it. Each link's data-spy names a
+// section anchor id (header#overview + the section <h2>s). The active link
+// carries aria-current="true" for assistive tech and .active for styling.
+(function initTopNav() {
+  const nav = $("topnav");
+  if (!nav) return;
+  const links = Array.from(nav.querySelectorAll("a[data-spy]"));
+  const targets = links.map((a) => $(a.dataset.spy)).filter(Boolean);
+  if (!targets.length) return;
+
+  // Publish the live bar height so scroll-padding-top (CSS) and the trigger
+  // line (below) both track it — the bar can grow if labels wrap the buttons.
+  const syncHeight = () =>
+    document.documentElement.style.setProperty("--nav-h", nav.offsetHeight + "px");
+
+  let current = null;
+  const setActive = (id) => {
+    if (id === current) return;
+    current = id;
+    for (const a of links) {
+      const on = a.dataset.spy === id;
+      a.classList.toggle("active", on);
+      if (on) a.setAttribute("aria-current", "true");
+      else a.removeAttribute("aria-current");
+    }
+  };
+  // Active = the last section whose top has scrolled above the line just under
+  // the sticky bar (read live, so a gap between headings holds the prior one).
+  const pick = () => {
+    const line = nav.offsetHeight + 16;
+    let active = targets[0].id;
+    for (const t of targets) {
+      if (t.getBoundingClientRect().top <= line) active = t.id;
+    }
+    setActive(active);
+  };
+
+  // IntersectionObserver fires the recompute at each heading boundary crossing
+  // (no scroll-event thrash); the callback re-reads positions for the decision.
+  const io = new IntersectionObserver(pick, {
+    threshold: 0,
+    rootMargin: "-" + (nav.offsetHeight + 16) + "px 0px 0px 0px",
+  });
+  targets.forEach((t) => io.observe(t));
+  addEventListener("resize", () => { syncHeight(); pick(); }, { passive: true });
+  syncHeight();
+  pick();
+})();
 </script>
 </body>
 </html>
