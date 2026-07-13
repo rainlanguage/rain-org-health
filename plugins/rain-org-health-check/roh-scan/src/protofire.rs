@@ -113,18 +113,24 @@ pub fn counts_as_source_drift(path: &str) -> bool {
     is_source_file(path) && !is_test_path(path)
 }
 
-/// Sum non-test source LOC drift (`additions + deletions`) and count the files
-/// that contributed, over a `compare` file list.
-pub fn source_drift(files: &[CompareFile]) -> (u64, u64) {
-    let mut loc = 0u64;
+/// Sum non-test source LOC drift over a `compare` file list, keeping additions
+/// and deletions SEPARATE — `(added, removed, files)`. A `+X / −Y` diffstat tells
+/// a reader whether the churn is net growth, net shrinkage, or an in-place rewrite;
+/// collapsing to one `added + deletions` total erases that distinction. The
+/// combined total is derivable as `added + removed`. Only non-test source files
+/// contribute to any of the three figures (the `counts_as_source_drift` predicate).
+pub fn source_drift(files: &[CompareFile]) -> (u64, u64, u64) {
+    let mut added = 0u64;
+    let mut removed = 0u64;
     let mut n = 0u64;
     for f in files {
         if counts_as_source_drift(&f.filename) {
-            loc += f.additions + f.deletions;
+            added += f.additions;
+            removed += f.deletions;
             n += 1;
         }
     }
-    (loc, n)
+    (added, removed, n)
 }
 
 /// Index of the newest PDF by commit date (ISO-8601 UTC sorts lexicographically).
@@ -311,23 +317,23 @@ mod tests {
     }
 
     #[test]
-    fn source_drift_sums_only_non_test_source() {
+    fn source_drift_keeps_added_and_removed_separate_over_non_test_source() {
         let files = vec![
             CompareFile {
                 filename: "src/A.sol".into(),
                 additions: 10,
                 deletions: 5,
-            }, // +15
+            }, // +10 / −5
             CompareFile {
                 filename: "test/A.t.sol".into(),
                 additions: 99,
                 deletions: 99,
-            }, // excluded (test)
+            }, // excluded (test) — symmetric so a leak inflates BOTH counts
             CompareFile {
                 filename: "src/B.rs".into(),
                 additions: 3,
                 deletions: 2,
-            }, // +5
+            }, // +3 / −2
             CompareFile {
                 filename: "README.md".into(),
                 additions: 40,
@@ -337,9 +343,22 @@ mod tests {
                 filename: "src/C.ts".into(),
                 additions: 1,
                 deletions: 0,
-            }, // +1
+            }, // +1 / −0
         ];
-        assert_eq!(source_drift(&files), (21, 3));
+        let (added, removed, files_n) = source_drift(&files);
+        // Added and removed are tracked independently: 10+3+1 vs 5+2+0. The
+        // asymmetry (14 ≠ 7) catches a swap; excluding the symmetric 99/99 test
+        // file and the 40/40 README proves the non-test-source predicate gates
+        // BOTH sides, not just the combined total.
+        assert_eq!(added, 14, "additions = non-test source additions only");
+        assert_eq!(removed, 7, "deletions = non-test source deletions only");
+        assert_eq!(files_n, 3, "only the 3 non-test source files contribute");
+        assert_ne!(
+            added, removed,
+            "the two figures are distinct, not one total"
+        );
+        // The combined total the JSON keeps is derivable as the sum.
+        assert_eq!(added + removed, 21);
     }
 
     // ---- newest_pdf_index ----
