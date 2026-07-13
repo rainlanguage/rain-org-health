@@ -2,8 +2,10 @@
 //!
 //! This is a DIFFERENT signal from `audit.rs`: that reads each repo's
 //! `.audit/last-run.json` INTERNAL audit-skill stamp. Here we classify every repo
-//! by whether it carries a formal external audit PDF committed under `audit/`, and
-//! for the ones that do, quantify how much source has drifted since the audit.
+//! by whether it carries a formal Protofire audit PDF committed under
+//! `audit/protofire/`, and for the ones that do, quantify how much source has
+//! drifted since the audit. The scope is that dir specifically — a non-Protofire
+//! report elsewhere under `audit/` is NOT a Protofire audit and must not count.
 //!
 //! All parsing/predicate/arithmetic logic lives here as pure functions (unit +
 //! mutation tested, no I/O); the `gh`/GraphQL orchestration is in `main.rs`.
@@ -20,9 +22,9 @@
 use regex::Regex;
 use std::sync::OnceLock;
 
-/// One external audit PDF found under `audit/` (possibly nested, e.g.
-/// `audit/protofire/…`). `commit_sha` is the commit that ADDED the file — the
-/// drift base when the filename encodes no tag.
+/// One Protofire audit PDF found under `audit/protofire/` (e.g.
+/// `audit/protofire/rain.factory.v0.1.1-r2.0.may-2026.pdf`). `commit_sha` is the
+/// commit that ADDED the file — the drift base when the filename encodes no tag.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditPdf {
     pub filename: String,
@@ -40,7 +42,7 @@ pub struct CompareFile {
 }
 
 /// External-audit coverage status for a repo (the issue's taxonomy):
-/// - `never`   — no PDF under `audit/` (the primary coverage gap)
+/// - `never`   — no PDF under `audit/protofire/` (the primary coverage gap)
 /// - `na`      — has a PDF but the repo has no tags to compare against
 /// - `stale`   — has a PDF and a tag is newer than the audit
 /// - `current` — has a PDF and no tag is newer than the audit
@@ -217,7 +219,7 @@ mod tests {
             parse_audited_tag("rain.extrospection.v0.1.1-r3.0.may-2026.pdf"),
             Some("v0.1.1".into())
         );
-        // bare `audit/<tag>.pdf` form from the issue.
+        // bare `audit/protofire/<tag>.pdf` form from the issue.
         assert_eq!(parse_audited_tag("v1.2.3.pdf"), Some("v1.2.3".into()));
     }
 
@@ -345,7 +347,7 @@ mod tests {
     fn newest_pdf_is_by_commit_date() {
         let mk = |f: &str, iso: &str| AuditPdf {
             filename: f.into(),
-            path: format!("audit/{f}"),
+            path: format!("audit/protofire/{f}"),
             last_commit_iso: iso.into(),
             commit_sha: "sha".into(),
         };

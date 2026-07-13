@@ -164,10 +164,13 @@ fn gh_contents_entries(org: &str, repo: &str, path: &str) -> Option<Vec<(String,
     )
 }
 
-/// Walk `audit/` (contents API, bounded depth) collecting every `.pdf` blob as
-/// (filename, path). PDFs are sometimes nested (`audit/protofire/…`); the depth
-/// cap keeps a pathological tree from fanning out. Unlike the whole-repo trees
-/// API, the contents API never silently truncates on large repos.
+/// Walk the `audit/protofire/` dir (contents API, bounded depth) collecting every
+/// `.pdf` blob as (filename, path). Formal Protofire audits sit flat directly in
+/// `audit/protofire/`; the shallow depth cap tolerates an accidental extra level
+/// while keeping a pathological tree from fanning out. Scoping to this dir
+/// (rather than all of `audit/`) is deliberate: a non-Protofire report elsewhere
+/// under `audit/` must NOT be counted as a Protofire audit. Unlike the whole-repo
+/// trees API, the contents API never silently truncates on large repos.
 fn collect_audit_pdfs(
     org: &str,
     repo: &str,
@@ -280,13 +283,13 @@ fn fetch_compare(
     Some((base_date, files, total, truncated))
 }
 
-/// Assemble a repo's EXTERNAL (Protofire) audit situation: enumerate `audit/`
-/// PDFs, pick the newest as the reference, parse its tag (or fall back to its
-/// commit), find the newest tag, and quantify source-LOC drift base…HEAD — all
-/// clone-free. No PDF ⇒ `never` (the coverage gap), returned cheaply.
+/// Assemble a repo's EXTERNAL (Protofire) audit situation: enumerate
+/// `audit/protofire/` PDFs, pick the newest as the reference, parse its tag (or
+/// fall back to its commit), find the newest tag, and quantify source-LOC drift
+/// base…HEAD — all clone-free. No PDF ⇒ `never` (the coverage gap), returned cheaply.
 fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
     let mut pdf_paths: Vec<(String, String)> = Vec::new();
-    collect_audit_pdfs(org, repo, "audit", 4, &mut pdf_paths);
+    collect_audit_pdfs(org, repo, "audit/protofire", 2, &mut pdf_paths);
     if pdf_paths.is_empty() {
         return ProtofireResult {
             has_pdf: false,
@@ -559,7 +562,7 @@ fn main() {
                 &b.name,
             ))
     });
-    println!("\n============ external audit coverage (Protofire PDFs under audit/) ====");
+    println!("\n============ external audit coverage (Protofire PDFs under audit/protofire/) ====");
     println!("  externally audited:       {externally_audited} / {total}");
     println!(
         "  NEVER externally audited: {} / {total}  (the coverage gap)",
