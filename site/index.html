@@ -180,6 +180,13 @@
   .au-alarm.ok .an { color: var(--clean); }
   .au-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
   .au-alarm .atxt b { color: var(--ink); }
+  .au-loc { display: flex; align-items: baseline; gap: 14px; border-radius: 12px; padding: 12px 18px; margin: 10px 0;
+            background: var(--surface); border: 1px solid var(--border); }
+  .au-loc .an { font-size: 26px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em;
+                color: var(--debt); line-height: 1; white-space: nowrap; }
+  .au-loc .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+  .au-loc .atxt b { color: var(--ink); }
+  .au-loc .split { color: var(--ink-3); }
   .au-table { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; margin: 4px 0 2px; }
   .au-row { display: grid; grid-template-columns: 230px 84px 1fr; gap: 14px; align-items: start;
             padding: 11px 14px; border-bottom: 1px solid var(--border); }
@@ -205,6 +212,7 @@
                 color: var(--ink-2); background: var(--surface); border: 1px solid var(--border);
                 border-radius: 6px; padding: 2px 8px; text-decoration: none; }
   .au-gapchip:hover { color: var(--accent); border-color: var(--accent); }
+  .au-gapchip .chiploc { color: var(--debt); font-weight: 650; }
   .au-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
                border-radius: 8px; padding: 6px 11px; font-size: 13px; cursor: pointer; margin: 4px 0; }
   .au-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
@@ -432,6 +440,34 @@ function renderAudit() {
   alarm.append(el("span", "an", String(neverN)), atxt);
   box.append(alarm);
 
+  // Total unaudited source LOC headline — the risk *magnitude*, not just the repo
+  // count: non-test source LOC not covered by a current audit, org-wide. Sums the
+  // never-audited repos' full source LOC (the bulk) and the audited repos' drift.
+  const fmt = (n) => Number(n).toLocaleString("en-US");
+  const usl = data.unauditedSourceLoc;
+  if (usl && typeof usl.total === "number") {
+    const lower = usl.lowerBound ? "+" : "";
+    const loc = el("div", "au-loc");
+    const ltxt = el("span", "atxt");
+    const split = el("span", "split");
+    split.append(
+      el("b", null, fmt(usl.neverAuditedBulk || 0) + (usl.neverAuditedTruncated ? "+" : "")),
+      " never-audited bulk + ",
+      el("b", null, fmt(usl.driftedSinceAudit || 0) + (usl.driftTruncated ? "+" : "")),
+      " drifted since audit.",
+    );
+    ltxt.append(
+      el("b", null, "total unaudited source LOC"),
+      " — non-test source not covered by a current audit. ",
+      split,
+    );
+    if (usl.lowerBound) {
+      ltxt.append(" ", el("span", "split", "A lower bound — a very large repo's file list truncated."));
+    }
+    loc.append(el("span", "an", fmt(usl.total) + lower), ltxt);
+    box.append(loc);
+  }
+
   // Audited repos — status + source drift since the audited tag/PDF.
   if (audited.length) {
     box.append(el("div", "au-subhead", "Audited repos (" + audited.length + ") — drift since last audit"));
@@ -479,12 +515,18 @@ function renderAudit() {
     box.append(table);
   }
 
-  // Never externally audited — the gap, listed as repo chips.
+  // Never externally audited — the gap, listed as repo chips carrying each repo's
+  // full non-test source LOC (the bulk of the unaudited total), biggest gap first.
   if (never.length) {
-    box.append(el("div", "au-subhead", "Never externally audited (" + never.length + ") — the gap"));
+    box.append(el("div", "au-subhead", "Never externally audited (" + never.length + ") — full source LOC is the gap"));
+    const sorted = never.slice().sort((a, b) => (b.totalSourceLoc || 0) - (a.totalSourceLoc || 0));
     const gap = el("div", "au-gap");
-    for (const r of never) {
-      gap.append(link("au-gapchip", r.name, "https://github.com/" + data.org + "/" + r.name));
+    for (const r of sorted) {
+      const chip = link("au-gapchip", r.name, "https://github.com/" + data.org + "/" + r.name);
+      if (typeof r.totalSourceLoc === "number") {
+        chip.append(el("span", "chiploc", " " + fmt(r.totalSourceLoc) + (r.totalSourceLocTruncated ? "+" : "") + " LOC"));
+      }
+      gap.append(chip);
     }
     box.append(gap);
   }

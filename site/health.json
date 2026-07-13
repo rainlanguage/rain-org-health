@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-13T14:49:03Z",
+  "generatedAt": "2026-07-13T15:15:01Z",
   "org": "rainlanguage",
   "totalRepos": 105,
   "reposWithFindings": 29,
@@ -7,6 +7,14 @@
   "reposNeverAudited": 105,
   "reposExternallyAudited": 4,
   "reposNeverExternallyAudited": 101,
+  "unauditedSourceLoc": {
+    "total": 300052,
+    "neverAuditedBulk": 283752,
+    "driftedSinceAudit": 16300,
+    "neverAuditedTruncated": false,
+    "driftTruncated": true,
+    "lowerBound": true
+  },
   "summary": {
     "per-chain-etherscan-key": 11,
     "old-nix-installer": 9,
@@ -644,7 +652,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "adversarial-mutation-test",
@@ -661,7 +671,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "apache-devlake",
@@ -678,7 +690,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "assemblyscript-cbor",
@@ -695,7 +709,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 2307,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "claude-audit-skills",
@@ -712,7 +728,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "decentralicense",
@@ -729,7 +747,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "devcontainer",
@@ -746,7 +766,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "docs.rainlang.xyz",
@@ -763,7 +785,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 236,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "dotrain",
@@ -780,7 +804,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 10053,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "dune-queries",
@@ -797,7 +823,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "dvin.deploy",
@@ -814,7 +842,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 279,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "flow",
@@ -831,7 +861,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 2432,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "flow-subgraph",
@@ -848,7 +880,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 20022,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "forker",
@@ -865,7 +899,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 77,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "foundry.template",
@@ -882,7 +918,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "github-chore",
@@ -899,7 +937,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "issue-pr-cron",
@@ -916,7 +956,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 6246,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "lobby-sg",
@@ -933,7 +975,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "meta",
@@ -950,7 +994,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 2000,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "metamorphic-metadata",
@@ -967,7 +1013,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 17,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "orderbook-svelte-components",
@@ -984,7 +1032,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 6811,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "org-process",
@@ -1001,7 +1051,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "private-key-dev-recovery",
@@ -1018,7 +1070,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-cross-deploy",
@@ -1035,7 +1089,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 566,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-deploy-scripts",
@@ -1052,7 +1108,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 1966,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-deployment",
@@ -1069,7 +1127,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 4354,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-factories-subgraph",
@@ -1086,7 +1146,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 2091,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-integration-templates",
@@ -1103,7 +1165,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 409,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-org-health",
@@ -1120,7 +1184,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 1542,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-protocol-subgraph",
@@ -1137,7 +1203,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 4535,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-sketches",
@@ -1154,7 +1222,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 795,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-statusfi",
@@ -1171,7 +1241,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 144,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-subgraph-utils",
@@ -1188,7 +1260,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 306,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-svelte-components",
@@ -1205,7 +1279,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 564,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain-zora",
@@ -1222,7 +1298,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 153,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.brand",
@@ -1239,7 +1317,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.chainlink",
@@ -1256,7 +1336,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 133,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.classic.interpreter",
@@ -1273,7 +1355,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.cli",
@@ -1290,7 +1374,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 34,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.contribute",
@@ -1307,7 +1393,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.cooldown",
@@ -1324,7 +1412,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 128,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.datacontract",
@@ -1341,7 +1431,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 200,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.defillama",
@@ -1358,7 +1450,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.deploy",
@@ -1375,7 +1469,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 310,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.devops",
@@ -1392,7 +1488,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 206,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.dex.solve",
@@ -1409,7 +1507,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.dia",
@@ -1426,7 +1526,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 456,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.erc",
@@ -1443,7 +1545,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 1419,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.erc1820",
@@ -1460,7 +1564,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 122,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.erc4626.words",
@@ -1477,7 +1583,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 596,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.error",
@@ -1494,7 +1602,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 585,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.flare",
@@ -1511,7 +1621,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 2933,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.forker",
@@ -1528,7 +1640,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 619,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.interface.sale",
@@ -1545,7 +1659,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 40,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.internal",
@@ -1562,7 +1678,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.interpreter.interface",
@@ -1579,7 +1697,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 3401,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.intorastring",
@@ -1596,7 +1716,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 92,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.lib.hash",
@@ -1613,7 +1735,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 107,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.lib.memkv",
@@ -1630,7 +1754,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 286,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.lib.typecast",
@@ -1647,7 +1773,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 111,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.local-db.remote",
@@ -1664,7 +1792,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.math.binary",
@@ -1681,7 +1811,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 59,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.math.fixedpoint",
@@ -1698,7 +1830,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 640,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.math.float",
@@ -1715,7 +1849,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 8912,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.math.saturating",
@@ -1732,7 +1868,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 57,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.merkle",
@@ -1749,7 +1887,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 392,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.metadata",
@@ -1766,7 +1906,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 8108,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.pyth",
@@ -1783,7 +1925,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 765,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -1800,7 +1944,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 77,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.sol.codegen",
@@ -1817,7 +1963,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 474,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.solmem",
@@ -1834,7 +1982,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 1686,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.solver",
@@ -1851,7 +2001,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 17225,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.strategies",
@@ -1868,7 +2020,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.string",
@@ -1885,7 +2039,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 991,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.subgraph.cli",
@@ -1902,7 +2058,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 404,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.subgraph.docker",
@@ -1919,7 +2077,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 44,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.things.to.build",
@@ -1936,7 +2096,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.tier.interface",
@@ -1953,7 +2115,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 324,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.tofu.erc20-decimals",
@@ -1970,7 +2134,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 461,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.verify",
@@ -1987,7 +2153,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 997,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.verify.interface",
@@ -2004,7 +2172,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 139,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.wasm",
@@ -2021,7 +2191,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 3601,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.webapp",
@@ -2038,7 +2210,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 9532,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.will-overflow",
@@ -2055,7 +2229,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 41,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain1155",
@@ -2072,7 +2248,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 1017,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain721a-subgraph",
@@ -2089,7 +2267,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 227,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "raindex-tg-bot",
@@ -2106,7 +2286,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 162,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "raindex.governance",
@@ -2123,7 +2305,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 217,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "raindex.interface",
@@ -2140,7 +2324,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 3782,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rainix",
@@ -2157,7 +2343,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 816,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rainlang",
@@ -2174,7 +2362,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 15091,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rainlang-codemirror",
@@ -2191,7 +2381,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 899,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rainlang.xyz",
@@ -2208,7 +2400,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 77,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "router",
@@ -2225,7 +2419,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 104,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "specs",
@@ -2242,7 +2438,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "spirit-kitty-rain",
@@ -2259,7 +2457,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 228,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "sqlite-web",
@@ -2276,7 +2476,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 7755,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "sushiswap-router",
@@ -2293,7 +2495,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "test",
@@ -2310,7 +2514,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 0,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "vapour721a",
@@ -2327,7 +2533,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 661,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "wiki.rainprotocol.xyz",
@@ -2344,7 +2552,9 @@
       "filesChangedSinceAudit": null,
       "commitsSinceAudit": null,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": null
+      "daysSinceAudit": null,
+      "totalSourceLoc": 118104,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "raindex",
@@ -2367,7 +2577,9 @@
       "filesChangedSinceAudit": 124,
       "commitsSinceAudit": 482,
       "sourceDriftTruncated": true,
-      "daysSinceAudit": 41
+      "daysSinceAudit": 41,
+      "totalSourceLoc": null,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.factory",
@@ -2395,7 +2607,9 @@
       "filesChangedSinceAudit": 10,
       "commitsSinceAudit": 36,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": 62
+      "daysSinceAudit": 62,
+      "totalSourceLoc": null,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.vats",
@@ -2428,7 +2642,9 @@
       "filesChangedSinceAudit": 5,
       "commitsSinceAudit": 41,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": 54
+      "daysSinceAudit": 54,
+      "totalSourceLoc": null,
+      "totalSourceLocTruncated": false
     },
     {
       "name": "rain.extrospection",
@@ -2461,7 +2677,9 @@
       "filesChangedSinceAudit": 1,
       "commitsSinceAudit": 15,
       "sourceDriftTruncated": false,
-      "daysSinceAudit": 62
+      "daysSinceAudit": 62,
+      "totalSourceLoc": null,
+      "totalSourceLocTruncated": false
     }
   ]
 }

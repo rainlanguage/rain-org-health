@@ -127,6 +127,43 @@ pub fn source_drift(files: &[CompareFile]) -> (u64, u64) {
     (loc, n)
 }
 
+/// Count source LOC in a single file's raw text: the number of lines, where a
+/// final line without a trailing newline still counts. `"" → 0`, `"a" → 1`,
+/// `"a\n" → 1`, `"a\nb" → 2`. `str::lines` also strips a trailing `\r`, so CRLF
+/// and LF files count identically. This is the per-file LOC unit the never-audited
+/// total sums; it is a raw line count (comments/blanks included), matching how the
+/// drift columns count changed lines rather than only "significant" lines.
+pub fn count_lines(content: &str) -> u64 {
+    content.lines().count() as u64
+}
+
+/// Sum non-test source LOC over a repo's `(path, loc)` blob list and count the
+/// contributing files. Reuses `counts_as_source_drift` — the SAME non-test source
+/// predicate as the drift columns — so a repo's "total source LOC" is defined
+/// identically to the per-repo drift figures. A `loc` supplied for a path that is
+/// a test or non-source file is dropped, keeping the aggregate honest even if the
+/// caller over-collects.
+pub fn source_loc_total(files: &[(String, u64)]) -> (u64, u64) {
+    let mut loc = 0u64;
+    let mut n = 0u64;
+    for (path, l) in files {
+        if counts_as_source_drift(path) {
+            loc += l;
+            n += 1;
+        }
+    }
+    (loc, n)
+}
+
+/// The headline figure: total non-test source LOC not covered by a current audit,
+/// org-wide. Two components — the never-audited repos' FULL source LOC (the
+/// dominant `never_audited_bulk`) plus the audited repos' `drifted_since_audit`
+/// (source changed since the audited tag, already out of coverage). Their sum is
+/// the unaudited risk surface.
+pub fn total_unaudited_source_loc(never_audited_bulk: u64, drifted_since_audit: u64) -> u64 {
+    never_audited_bulk + drifted_since_audit
+}
+
 /// Index of the newest PDF by commit date (ISO-8601 UTC sorts lexicographically).
 /// The newest PDF is the reference audit — its filename is parsed for the tag and
 /// its commit is the drift base when no tag is present.
@@ -340,6 +377,49 @@ mod tests {
             }, // +1
         ];
         assert_eq!(source_drift(&files), (21, 3));
+    }
+
+    // ---- count_lines ----
+    #[test]
+    fn count_lines_counts_final_unterminated_line() {
+        assert_eq!(count_lines(""), 0); // empty file is 0 LOC
+        assert_eq!(count_lines("a"), 1); // single line, no trailing newline
+        assert_eq!(count_lines("a\n"), 1); // trailing newline does not add a phantom line
+        assert_eq!(count_lines("a\nb"), 2); // final unterminated line still counts
+        assert_eq!(count_lines("a\nb\n"), 2);
+        assert_eq!(count_lines("\n"), 1); // one empty line
+        assert_eq!(count_lines("\n\n\n"), 3); // three blank lines
+    }
+
+    #[test]
+    fn count_lines_crlf_matches_lf() {
+        // str::lines strips a trailing \r, so CRLF and LF files count identically.
+        assert_eq!(count_lines("a\r\nb\r\nc"), 3);
+        assert_eq!(count_lines("a\nb\nc"), 3);
+    }
+
+    // ---- source_loc_total ----
+    #[test]
+    fn source_loc_total_sums_only_non_test_source() {
+        let files = vec![
+            ("src/A.sol".to_string(), 120),    // counted
+            ("test/A.t.sol".to_string(), 300), // dropped (test dir + suffix)
+            ("src/B.rs".to_string(), 40),      // counted
+            ("README.md".to_string(), 999),    // dropped (non-source)
+            ("types/x.d.ts".to_string(), 50),  // dropped (declaration file)
+            ("src/C.ts".to_string(), 7),       // counted
+        ];
+        assert_eq!(source_loc_total(&files), (167, 3));
+        assert_eq!(source_loc_total(&[]), (0, 0));
+    }
+
+    // ---- total_unaudited_source_loc ----
+    #[test]
+    fn total_unaudited_is_bulk_plus_drift() {
+        assert_eq!(total_unaudited_source_loc(10_000, 250), 10_250);
+        assert_eq!(total_unaudited_source_loc(0, 0), 0);
+        assert_eq!(total_unaudited_source_loc(500, 0), 500); // never-audited bulk alone
+        assert_eq!(total_unaudited_source_loc(0, 42), 42); // drift alone
     }
 
     // ---- newest_pdf_index ----

@@ -11,8 +11,9 @@ mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use protofire::{
-    classify_external_audit, days_between, is_stale, newer_than, newest_pdf_index,
-    parse_audited_tag, source_drift, AuditPdf, CompareFile,
+    classify_external_audit, count_lines, counts_as_source_drift, days_between, is_stale,
+    newer_than, newest_pdf_index, parse_audited_tag, source_drift, source_loc_total,
+    total_unaudited_source_loc, AuditPdf, CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -139,6 +140,13 @@ struct ProtofireResult {
     files_changed: Option<u64>,
     commits_since: Option<u64>,
     source_drift_truncated: bool,
+    /// FULL non-test source LOC of a NEVER-externally-audited repo (the dominant
+    /// term of the unaudited-LOC headline). `None` for audited repos, whose
+    /// out-of-coverage code is the `source_loc` drift instead.
+    total_source_loc: Option<u64>,
+    /// The git-tree API truncated on a very large repo → `total_source_loc` is a
+    /// lower bound (mirrors `source_drift_truncated`).
+    total_source_loc_truncated: bool,
 }
 
 /// List a repo directory via the contents API → (type, path, name) rows. `None`
@@ -283,6 +291,85 @@ fn fetch_compare(
     Some((base_date, files, total, truncated))
 }
 
+/// The repo's default branch — the tree-ish for a full-repo source count. Falls
+/// back to "main" when the field is missing/unreadable, mirroring the branch
+/// fallback in `repo_default_and_latest_tag`.
+fn default_branch(org: &str, repo: &str) -> String {
+    gh_stdout(&[
+        "api",
+        &format!("repos/{org}/{repo}"),
+        "--jq",
+        ".default_branch",
+    ])
+    .map(|s| s.trim().to_string())
+    .filter(|s| !s.is_empty())
+    .unwrap_or_else(|| "main".to_string())
+}
+
+/// Line count of one blob via the raw media type (no base64 round-trip). `None` on
+/// any failure (404, network). Binary blobs are never asked for — the caller only
+/// passes source-file SHAs.
+fn gh_blob_line_count(org: &str, repo: &str, sha: &str) -> Option<u64> {
+    let out = Command::new("gh")
+        .args([
+            "api",
+            &format!("repos/{org}/{repo}/git/blobs/{sha}"),
+            "-H",
+            "Accept: application/vnd.github.raw",
+        ])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    Some(count_lines(&String::from_utf8_lossy(&out.stdout)))
+}
+
+/// A repo's FULL non-test source LOC, clone-free — the count the scan does NOT
+/// otherwise compute (drift only exists for audited repos). Enumerate the default
+/// branch's git tree in one recursive call, keep the blobs the shared
+/// `counts_as_source_drift` predicate accepts (source AND not a test — the SAME
+/// definition as the drift columns), and count each one's lines via the raw blob
+/// API. Filtering BEFORE fetching means only source blobs cost a request.
+///
+/// Returns `(loc, source_files, truncated)`. Like the compare API's 300-file cap,
+/// the git-tree API silently truncates on very large repos (its own `truncated`
+/// flag) → the LOC is then a lower bound, surfaced like `sourceDriftTruncated`.
+fn fetch_source_loc_total(org: &str, repo: &str) -> (u64, u64, bool) {
+    let branch = default_branch(org, repo);
+    let Some(raw) = gh_stdout(&[
+        "api",
+        &format!("repos/{org}/{repo}/git/trees/{branch}?recursive=1"),
+    ]) else {
+        return (0, 0, false);
+    };
+    let Ok(v) = serde_json::from_str::<serde_json::Value>(&raw) else {
+        return (0, 0, false);
+    };
+    let truncated = v["truncated"].as_bool().unwrap_or(false);
+    let mut collected: Vec<(String, u64)> = Vec::new();
+    if let Some(entries) = v["tree"].as_array() {
+        for e in entries {
+            if e["type"].as_str() != Some("blob") {
+                continue;
+            }
+            let path = e["path"].as_str().unwrap_or("");
+            if !counts_as_source_drift(path) {
+                continue;
+            }
+            let sha = e["sha"].as_str().unwrap_or("");
+            if sha.is_empty() {
+                continue;
+            }
+            if let Some(n) = gh_blob_line_count(org, repo, sha) {
+                collected.push((path.to_string(), n));
+            }
+        }
+    }
+    let (loc, files) = source_loc_total(&collected);
+    (loc, files, truncated)
+}
+
 /// Assemble a repo's EXTERNAL (Protofire) audit situation: enumerate
 /// `audit/protofire/` PDFs, pick the newest as the reference, parse its tag (or
 /// fall back to its commit), find the newest tag, and quantify source-LOC drift
@@ -291,6 +378,9 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
     let mut pdf_paths: Vec<(String, String)> = Vec::new();
     collect_audit_pdfs(org, repo, "audit/protofire", 2, &mut pdf_paths);
     if pdf_paths.is_empty() {
+        // Never externally audited: its FULL non-test source LOC is the coverage
+        // gap (the dominant term of the unaudited-LOC headline), so count it here.
+        let (total_source_loc, _files, trunc) = fetch_source_loc_total(org, repo);
         return ProtofireResult {
             has_pdf: false,
             external_audit: protofire::NEVER,
@@ -305,6 +395,8 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
             files_changed: None,
             commits_since: None,
             source_drift_truncated: false,
+            total_source_loc: Some(total_source_loc),
+            total_source_loc_truncated: trunc,
         };
     }
     // Resolve each PDF's commit date + sha, then order by path for stable output.
@@ -376,6 +468,10 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
         files_changed,
         commits_since,
         source_drift_truncated,
+        // Audited repos' out-of-coverage code is the `source_loc` drift, not a
+        // full-repo count — the full-source LOC pass is reserved for never-audited.
+        total_source_loc: None,
+        total_source_loc_truncated: false,
     }
 }
 
@@ -546,6 +642,31 @@ fn main() {
     // first (the gap), then audited stale-first, then by source-LOC drift, then name.
     let now = now_iso();
     let externally_audited = results.iter().filter(|r| r.protofire.has_pdf).count();
+
+    // Unaudited source LOC (the headline): never-audited repos' FULL source LOC
+    // (the bulk) + audited repos' drift since the audited tag (already out of
+    // coverage). Both use the same non-test source predicate as the drift columns.
+    let never_audited_bulk: u64 = results
+        .iter()
+        .filter(|r| !r.protofire.has_pdf)
+        .map(|r| r.protofire.total_source_loc.unwrap_or(0))
+        .sum();
+    let drifted_since_audit: u64 = results
+        .iter()
+        .filter(|r| r.protofire.has_pdf)
+        .map(|r| r.protofire.source_loc.unwrap_or(0))
+        .sum();
+    let total_unaudited_loc = total_unaudited_source_loc(never_audited_bulk, drifted_since_audit);
+    let never_audited_loc_truncated = results
+        .iter()
+        .filter(|r| !r.protofire.has_pdf)
+        .any(|r| r.protofire.total_source_loc_truncated);
+    let drift_loc_truncated = results
+        .iter()
+        .filter(|r| r.protofire.has_pdf)
+        .any(|r| r.protofire.source_drift_truncated);
+    let unaudited_loc_lower_bound = never_audited_loc_truncated || drift_loc_truncated;
+
     let mut pf_view: Vec<&RepoResult> = results.iter().collect();
     pf_view.sort_by(|a, b| {
         let (pa, pb) = (&a.protofire, &b.protofire);
@@ -567,6 +688,10 @@ fn main() {
     println!(
         "  NEVER externally audited: {} / {total}  (the coverage gap)",
         total - externally_audited
+    );
+    println!(
+        "  total unaudited source LOC: {total_unaudited_loc}{lb}  ({never_audited_bulk} never-audited bulk + {drifted_since_audit} drifted since audit)",
+        lb = if unaudited_loc_lower_bound { "+" } else { "" }
     );
     for r in &pf_view {
         let p = &r.protofire;
@@ -613,6 +738,17 @@ fn main() {
             "reposNeverAudited": total - audited,
             "reposExternallyAudited": externally_audited,
             "reposNeverExternallyAudited": total - externally_audited,
+            // Headline (#37): total non-test source LOC not covered by a current audit,
+            // with the never-audited-bulk vs. drifted-since-audit split. `lowerBound` is
+            // true when any git-tree or compare page truncated on a very large repo.
+            "unauditedSourceLoc": {
+                "total": total_unaudited_loc,
+                "neverAuditedBulk": never_audited_bulk,
+                "driftedSinceAudit": drifted_since_audit,
+                "neverAuditedTruncated": never_audited_loc_truncated,
+                "driftTruncated": drift_loc_truncated,
+                "lowerBound": unaudited_loc_lower_bound,
+            },
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, sigs)| json!({"name": r, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| match &r.last_audit {
@@ -651,6 +787,10 @@ fn main() {
                     "commitsSinceAudit": p.commits_since,
                     "sourceDriftTruncated": p.source_drift_truncated,
                     "daysSinceAudit": days,
+                    // Never-audited repos only: FULL non-test source LOC (the bulk term);
+                    // null for audited repos, which report `sourceLocChangedSinceAudit` drift.
+                    "totalSourceLoc": p.total_source_loc,
+                    "totalSourceLocTruncated": p.total_source_loc_truncated,
                 })
             }).collect::<Vec<_>>(),
         });
