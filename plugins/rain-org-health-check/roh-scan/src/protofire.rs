@@ -127,6 +127,21 @@ pub fn source_drift(files: &[CompareFile]) -> (u64, u64) {
     (loc, n)
 }
 
+/// Build the GitHub compare-view URL for a repo's audit drift:
+/// `https://github.com/{owner}/{repo}/compare/{base}...{head}`. `base` is the
+/// resolved audited anchor (tag / commit / PDF-file-commit fallback — the SAME
+/// base the drift count is computed against) and `head` is the current head.
+/// Returns `None` when either ref is empty, so the panel never renders a broken
+/// link to `compare/...head` (or `compare/base...`).
+pub fn compare_url(owner: &str, repo: &str, base: &str, head: &str) -> Option<String> {
+    if base.is_empty() || head.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "https://github.com/{owner}/{repo}/compare/{base}...{head}"
+    ))
+}
+
 /// Index of the newest PDF by commit date (ISO-8601 UTC sorts lexicographically).
 /// The newest PDF is the reference audit — its filename is parsed for the tag and
 /// its commit is the drift base when no tag is present.
@@ -340,6 +355,36 @@ mod tests {
             }, // +1
         ];
         assert_eq!(source_drift(&files), (21, 3));
+    }
+
+    // ---- compare_url ----
+    #[test]
+    fn compare_url_from_base_and_head() {
+        // The audited anchor is a tag: base...head under the repo's compare view.
+        assert_eq!(
+            compare_url("rainlanguage", "rain.factory", "v0.1.1", "main"),
+            Some("https://github.com/rainlanguage/rain.factory/compare/v0.1.1...main".into())
+        );
+        // The fallback anchor is a commit sha (unanchored PDF); still base...head.
+        assert_eq!(
+            compare_url("rainlanguage", "raindex", "e686b4d", "main"),
+            Some("https://github.com/rainlanguage/raindex/compare/e686b4d...main".into())
+        );
+    }
+
+    #[test]
+    fn compare_url_none_when_base_missing() {
+        // No resolvable base (empty tag AND empty fallback commit) ⇒ no URL, so
+        // the panel omits the link rather than pointing at compare/...head.
+        assert_eq!(
+            compare_url("rainlanguage", "rain.factory", "", "main"),
+            None
+        );
+        // A missing head is equally broken (compare/base...) ⇒ also no URL.
+        assert_eq!(
+            compare_url("rainlanguage", "rain.factory", "v0.1.1", ""),
+            None
+        );
     }
 
     // ---- newest_pdf_index ----

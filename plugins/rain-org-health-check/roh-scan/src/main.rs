@@ -11,7 +11,7 @@ mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use protofire::{
-    classify_external_audit, days_between, is_stale, newer_than, newest_pdf_index,
+    classify_external_audit, compare_url, days_between, is_stale, newer_than, newest_pdf_index,
     parse_audited_tag, source_drift, AuditPdf, CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
@@ -130,6 +130,7 @@ struct ProtofireResult {
     external_audit: &'static str,
     pdfs: Vec<AuditPdf>,
     audited_ref: Option<String>,
+    compare_url: Option<String>,
     tag_convention_absent: bool,
     audited_date: String,
     latest_tag: Option<String>,
@@ -296,6 +297,7 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
             external_audit: protofire::NEVER,
             pdfs: Vec::new(),
             audited_ref: None,
+            compare_url: None,
             tag_convention_absent: false,
             audited_date: String::new(),
             latest_tag: None,
@@ -332,6 +334,9 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
     let base = audited_ref
         .clone()
         .unwrap_or_else(|| pdfs[newest].commit_sha.clone());
+    // Link the drift figure to the SAME base…head the drift count uses; empty base
+    // (no tag AND no fallback commit) ⇒ no URL, so the panel omits a broken link.
+    let compare_url = compare_url(org, repo, &base, &default_branch);
     let cmp = if base.is_empty() {
         None
     } else {
@@ -367,6 +372,7 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
         external_audit,
         pdfs,
         audited_ref,
+        compare_url,
         tag_convention_absent,
         audited_date,
         latest_tag,
@@ -641,6 +647,7 @@ fn main() {
                         "lastCommitIso": pdf.last_commit_iso,
                     })).collect::<Vec<_>>(),
                     "auditedRef": p.audited_ref,
+                    "compareUrl": p.compare_url,
                     "tagConventionAbsent": p.tag_convention_absent,
                     "auditedDate": if p.audited_date.is_empty() { serde_json::Value::Null } else { serde_json::Value::from(p.audited_date.clone()) },
                     "latestTag": p.latest_tag,

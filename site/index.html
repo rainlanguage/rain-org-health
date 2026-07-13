@@ -198,6 +198,8 @@
   .au-status.na { color: var(--ink-3); border: 1px solid var(--border); background: transparent; }
   .au-drift { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
   .au-drift .loc { font-weight: 650; color: var(--debt); font-variant-numeric: tabular-nums; }
+  .au-drift a.loc { text-decoration: none; cursor: pointer; }
+  .au-drift a.loc:hover { text-decoration: underline; }
   .au-drift .dim { color: var(--ink-3); }
   .au-drift .ok { color: var(--clean); }
   .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
@@ -461,8 +463,13 @@ function renderAudit() {
           c3.append(document.createElement("br"));
         }
         if (typeof r.sourceLocChangedSinceAudit === "number") {
+          // The drift figure links to the GitHub compare view (audited ref…HEAD)
+          // when the scanner emitted a compareUrl — built with the .href property
+          // via link(), never innerHTML. No compareUrl ⇒ plain span, no dead link.
+          const locText = r.sourceLocChangedSinceAudit + (r.sourceDriftTruncated ? "+" : "") + " src LOC";
+          const locNode = r.compareUrl ? link("loc", locText, r.compareUrl) : el("span", "loc", locText);
           c3.append(
-            el("span", "loc", r.sourceLocChangedSinceAudit + (r.sourceDriftTruncated ? "+" : "") + " src LOC"),
+            locNode,
             " · " + (r.filesChangedSinceAudit || 0) + " files · " + (r.commitsSinceAudit || 0) + " commits" +
               (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "")
           );
