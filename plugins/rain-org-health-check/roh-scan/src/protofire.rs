@@ -46,10 +46,14 @@ pub struct CompareFile {
 /// - `na`      — has a PDF but the repo has no tags to compare against
 /// - `stale`   — has a PDF and a tag is newer than the audit
 /// - `current` — has a PDF and no tag is newer than the audit
+/// - `unknown` — the `audit/protofire/` listing fetch FAILED, so coverage is
+///   indeterminate. This is distinct from `never`: a failed fetch must never be
+///   read as a confirmed coverage gap.
 pub const NEVER: &str = "never";
 pub const NA: &str = "na";
 pub const STALE: &str = "stale";
 pub const CURRENT: &str = "current";
+pub const UNKNOWN: &str = "unknown";
 
 /// Extract the audited git tag (`vMAJOR.MINOR.PATCH`) encoded in a PDF filename
 /// per the naming convention. Returns `None` when the filename encodes no such
