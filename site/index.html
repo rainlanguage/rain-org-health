@@ -171,6 +171,10 @@
   .fsm-list .li .lz { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
+  .fsm-lane { margin: 14px 0 2px; }
+  .fsm-lane-h { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+  .fsm-lane-h .lct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 650; text-transform: none; letter-spacing: 0; }
+  .fsm-lane .fsm-grid { margin: 0; }
   /* ---- External (Protofire) audit coverage ---- */
   .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
   .au-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); }
@@ -579,28 +583,99 @@ function renderFsm(hq) {
     alarm.append(el("span", "an", "0"), atxt);
   }
 
-  // Human-gated states — the daily action queue.
-  const states = [
-    { key: "ai:ready", label: "ai:ready", n: c.ready, act: "merge", kind: "flow" },
-    { key: "ai:design", label: "ai:design", n: c.design, act: "rule", kind: "rule" },
-    { key: "closeCandidateIssues", label: "ai:close-candidate", n: c.closeCandidateIssues, act: "close", kind: "rule", issue: true },
-    { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, act: "diagnose deploy", kind: "blk" },
-    { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, act: "fix infra", kind: "blk" },
-    { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, act: "unblock dep", kind: "blk" },
+  // The full machine, grouped by lane (issue-pr-cron `human-queue --json` `lanes`
+  // object: lane -> state -> { count, prs:[{repo,number,url,title}] }). The object is
+  // SPARSE (only non-empty states are emitted), so the lane/state set below is the
+  // canonical shape — a state absent from the JSON renders zero (dimmed), keeping the
+  // machine's whole shape visible. laneItems maps a state key -> its PR list for the
+  // click-to-expand detail. closeCandidateIssues (open ai:close-candidate ISSUES, not
+  // PRs) is carried alongside as its own group so that inventory isn't lost.
+  const hasLanes = hq.lanes && typeof hq.lanes === "object";
+  const laneItems = new Map();
+  const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
+
+  const stateBox = (key, label, count, act, kind) => {
+    const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
+    b.dataset.t = key;
+    b.append(el("div", "sc", String(Number(count))), el("div", "sk", label), el("div", "sa", act));
+    return b;
+  };
+
+  // Renders every state (kind: flow = moving, rule = needs a human ruling, blk = a
+  // stuck/rework pile) in lane order vet-lifecycle → vetter-verdicts → producer-blocked
+  // → human-decisions, then the close-candidate ISSUES as a final group.
+  const LANES = [
+    { title: "vet lifecycle", lane: "vet-lifecycle", states: [
+      { state: "un-vetted", act: "awaiting first vet", kind: "flow" },
+      { state: "awaiting-re-vet", act: "head moved · re-vet", kind: "flow" },
+    ] },
+    { title: "vetter verdicts", lane: "vetter-verdicts", states: [
+      { state: "ai:ready", act: "merge", kind: "flow" },
+      { state: "ai:reject", act: "producer reworks", kind: "blk" },
+      { state: "ai:relink", act: "Closes → Refs", kind: "rule" },
+      { state: "ai:design", act: "rule", kind: "rule" },
+      { state: "ai:close-candidate", act: "close PR", kind: "rule" },
+    ] },
+    { title: "producer blocked", lane: "producer-blocked", states: [
+      { state: "ai:blocked-deploy", act: "diagnose deploy", kind: "blk" },
+      { state: "ai:blocked-infra", act: "fix infra", kind: "blk" },
+      { state: "ai:blocked-on", act: "unblock dep", kind: "blk" },
+    ] },
+    { title: "human decisions", lane: "human-decisions", states: [
+      { state: "human:reject", act: "override", kind: "rule" },
+      { state: "human:design", act: "override", kind: "rule" },
+      { state: "human:close-candidate", act: "override", kind: "rule" },
+    ] },
   ];
-  const grid = el("div", "fsm-grid");
-  states.forEach((s) => {
-    const b = el("button", "fsm-state " + s.kind + (s.n ? "" : " zero"));
-    b.dataset.t = s.key;
-    b.append(el("div", "sc", String(Number(s.n))), el("div", "sk", s.label), el("div", "sa", s.act));
-    grid.append(b);
-  });
+
+  const grid = el("div"); // container appended into the panel below
+  if (hasLanes) {
+    LANES.forEach((L) => {
+      const g = el("div", "fsm-grid");
+      let laneTotal = 0;
+      L.states.forEach((s) => {
+        const cell = laneState(L.lane, s.state);
+        const count = cell ? Number(cell.count) || 0 : 0;
+        laneTotal += count;
+        laneItems.set(s.state, (cell && cell.prs) || []);
+        g.append(stateBox(s.state, s.state, count, s.act, s.kind));
+      });
+      const lane = el("div", "fsm-lane");
+      const h = el("div", "fsm-lane-h");
+      h.append(el("span", null, L.title), el("span", "lct", String(laneTotal)));
+      lane.append(h, g);
+      grid.append(lane);
+    });
+    // Close-candidate ISSUES (open ai:close-candidate issues, distinct from the PR state).
+    const ig = el("div", "fsm-grid");
+    ig.append(stateBox("closeCandidateIssues", "ai:close-candidate", Number(c.closeCandidateIssues) || 0, "close issue", "rule"));
+    const ilane = el("div", "fsm-lane");
+    const ih = el("div", "fsm-lane-h");
+    ih.append(el("span", null, "close-candidate issues"), el("span", "lct", String(Number(c.closeCandidateIssues) || 0)));
+    ilane.append(ih, ig);
+    grid.append(ilane);
+  } else {
+    // Backward-compat: an older human-queue.json with no `lanes` — render the original
+    // 6 human-action states from the legacy `states`/`counts` keys so the panel never blanks.
+    const legacy = [
+      { key: "ai:ready", label: "ai:ready", n: c.ready, act: "merge", kind: "flow" },
+      { key: "ai:design", label: "ai:design", n: c.design, act: "rule", kind: "rule" },
+      { key: "closeCandidateIssues", label: "ai:close-candidate", n: c.closeCandidateIssues, act: "close", kind: "rule" },
+      { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, act: "diagnose deploy", kind: "blk" },
+      { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, act: "fix infra", kind: "blk" },
+      { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, act: "unblock dep", kind: "blk" },
+    ];
+    const g = el("div", "fsm-grid");
+    legacy.forEach((s) => g.append(stateBox(s.key, s.label, s.n, s.act, s.kind)));
+    grid.append(g);
+  }
 
   // itemsFor returns the item nodes for a state (a DocumentFragment).
   const itemsFor = (key) => {
     let arr, issue = false;
     if (key === "leak") arr = hq.leaks || [];
     else if (key === "closeCandidateIssues") { arr = hq.closeCandidateIssues || []; issue = true; }
+    else if (laneItems.has(key)) arr = laneItems.get(key);
     else arr = (hq.states && hq.states[key]) || [];
     const frag = document.createDocumentFragment();
     if (!arr.length) {
