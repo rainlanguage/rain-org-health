@@ -11,8 +11,8 @@ mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use protofire::{
-    classify_external_audit, days_between, is_stale, newer_than, newest_pdf_index,
-    parse_audited_tag, source_drift, AuditPdf, CompareFile,
+    classify_anchor, classify_external_audit, days_between, is_stale, newer_than, newest_pdf_index,
+    source_drift, AuditAnchor, AuditPdf, CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -130,6 +130,7 @@ struct ProtofireResult {
     external_audit: &'static str,
     pdfs: Vec<AuditPdf>,
     audited_ref: Option<String>,
+    anchor_kind: Option<&'static str>,
     tag_convention_absent: bool,
     audited_date: String,
     latest_tag: Option<String>,
@@ -195,6 +196,21 @@ fn collect_audit_pdfs(
             collect_audit_pdfs(org, repo, &path, depth - 1, acc);
         }
     }
+}
+
+/// Does `sha` name a real commit in the repo? The resolution half of anchor
+/// classification: `gh api repos/{o}/{r}/commits/{sha}` echoes the commit's SHA on
+/// success and nothing on a 404, so a hex-looking filename token that isn't a real
+/// commit falls back to unanchored rather than erroring.
+fn commit_exists(org: &str, repo: &str, sha: &str) -> bool {
+    gh_stdout(&[
+        "api",
+        &format!("repos/{org}/{repo}/commits/{sha}"),
+        "--jq",
+        ".sha",
+    ])
+    .map(|s| !s.trim().is_empty())
+    .unwrap_or(false)
 }
 
 /// Commit date + sha of the commit that last touched (added) a path.
@@ -298,6 +314,7 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
             external_audit: protofire::NEVER,
             pdfs: Vec::new(),
             audited_ref: None,
+            anchor_kind: None,
             tag_convention_absent: false,
             audited_date: String::new(),
             latest_tag: None,
@@ -326,13 +343,23 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
         .collect();
     pdfs.sort_by(|a, b| a.path.cmp(&b.path));
     let newest = newest_pdf_index(&pdfs).expect("non-empty");
-    let audited_ref = parse_audited_tag(&pdfs[newest].filename);
-    let tag_convention_absent = audited_ref.is_none();
+
+    // Classify the audited anchor the newest PDF's filename encodes: a `vX.Y.Z`
+    // tag, a hex commit token that RESOLVES to a real commit, or neither. The
+    // resolver is the I/O half — `commit_exists` guards a hex-looking token that
+    // isn't actually a commit, so it falls back to unanchored (not an error).
+    let anchor = classify_anchor(&pdfs[newest].filename, |sha| commit_exists(org, repo, sha));
+    let audited_ref = anchor.drift_base_ref().map(str::to_string);
+    let anchor_kind = Some(anchor.kind());
+    // Kept for the panel/consumers: true whenever the filename encodes no vX.Y.Z
+    // tag — a commit-anchored PDF is still "tag convention absent" (no tag), it is
+    // just anchored to a commit instead.
+    let tag_convention_absent = !matches!(anchor, AuditAnchor::Tag(_));
 
     let (default_branch, latest_tag, latest_tag_iso) = repo_default_and_latest_tag(org, repo);
 
-    // Drift base: the audited tag when the filename encodes one, else the newest
-    // PDF's own commit (the task's fallback when the tag convention is absent).
+    // Drift base: the audited anchor (tag or resolved commit) when the filename
+    // encodes one, else the newest PDF's own commit (the unanchored fallback).
     let base = audited_ref
         .clone()
         .unwrap_or_else(|| pdfs[newest].commit_sha.clone());
@@ -390,6 +417,7 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
         external_audit,
         pdfs,
         audited_ref,
+        anchor_kind,
         tag_convention_absent,
         audited_date,
         latest_tag,
@@ -598,7 +626,8 @@ fn main() {
         if !p.has_pdf {
             continue;
         }
-        let refd = p.audited_ref.as_deref().unwrap_or("(no tag in PDF name)");
+        let refd = p.audited_ref.as_deref().unwrap_or("(unanchored)");
+        let kind = p.anchor_kind.unwrap_or("unanchored");
         let latest = p.latest_tag.as_deref().unwrap_or("(no tags)");
         let drift = match (
             p.source_loc_added,
@@ -615,13 +644,8 @@ fn main() {
             }
             _ => "drift unavailable".to_string(),
         };
-        let flag = if p.tag_convention_absent {
-            "  [tag convention absent]"
-        } else {
-            ""
-        };
         println!(
-            "  {:<28} {:<8} audited {refd} → latest {latest} · {drift}{flag}",
+            "  {:<28} {:<8} audited {refd} [{kind}-anchored] → latest {latest} · {drift}",
             r.name, p.external_audit
         );
     }
@@ -673,6 +697,7 @@ fn main() {
                         "lastCommitIso": pdf.last_commit_iso,
                     })).collect::<Vec<_>>(),
                     "auditedRef": p.audited_ref,
+                    "anchorKind": p.anchor_kind,
                     "tagConventionAbsent": p.tag_convention_absent,
                     "auditedDate": if p.audited_date.is_empty() { serde_json::Value::Null } else { serde_json::Value::from(p.audited_date.clone()) },
                     "latestTag": p.latest_tag,

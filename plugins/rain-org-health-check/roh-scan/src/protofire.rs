@@ -10,14 +10,18 @@
 //! All parsing/predicate/arithmetic logic lives here as pure functions (unit +
 //! mutation tested, no I/O); the `gh`/GraphQL orchestration is in `main.rs`.
 //!
-//! ## The tag-in-filename convention (the drift enabler)
-//! A Protofire PDF named with the audited git tag — e.g.
-//! `rain.factory.v0.1.1-r2.0.may-2026.pdf` — makes the audited version
-//! machine-readable, so drift is measured against the exact tag rather than
-//! inferred from a commit date. `parse_audited_tag` extracts that `vX.Y.Z` token.
-//! PDFs that don't encode a tag (`raindex.e686b4d.apr-2026.pdf`,
-//! `protofire.rain.metadata.feb-2026.pdf`) are flagged `tag_convention_absent` —
-//! drift is still computed, but from the PDF's own commit rather than a tag.
+//! ## The anchor-in-filename convention (the drift enabler)
+//! A Protofire PDF names the audited git state so drift is measured against the
+//! exact audited ref rather than inferred from the PDF's own commit date. A
+//! filename encodes one of three anchor kinds (`classify_anchor`):
+//! - **tag-anchored** — a `vMAJOR.MINOR.PATCH` token (e.g.
+//!   `rain.factory.v0.1.1-r2.0.may-2026.pdf`); `parse_audited_tag` extracts it.
+//! - **commit-anchored** — a 7–40 hex-char token that RESOLVES to a real commit
+//!   (e.g. `raindex.e686b4d.apr-2026.pdf`, whose `e686b4d` predates any `sol-v`
+//!   contract tag, so the commit is the honest anchor). `parse_commit_candidate`
+//!   extracts the candidate; resolution (the I/O half, in `main.rs`) confirms it.
+//! - **unanchored** — neither, or a hex-looking token that doesn't resolve; drift
+//!   is still computed, but from the PDF's own commit rather than the anchor.
 
 use regex::Regex;
 use std::sync::OnceLock;
@@ -65,6 +69,77 @@ pub fn parse_audited_tag(filename: &str) -> Option<String> {
         Regex::new(r"(?:^|[^A-Za-z0-9])v(\d+\.\d+\.\d+)").expect("static tag regex")
     });
     re.captures(filename).map(|c| format!("v{}", &c[1]))
+}
+
+/// The audited anchor a Protofire PDF filename encodes: the ref the drift base is
+/// measured from. Tag and commit are BOTH honest anchors on the audited contract
+/// state; `Unanchored` is the fallback (drift dated by the PDF's own file commit).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuditAnchor {
+    /// A `vMAJOR.MINOR.PATCH` version tag encoded in the filename.
+    Tag(String),
+    /// A 7–40 hex-char token that resolved to a real commit in the repo.
+    Commit(String),
+    /// Neither a tag nor a resolvable commit.
+    Unanchored,
+}
+
+impl AuditAnchor {
+    /// Stable machine label for the anchor kind, mirrored into `health.json`.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            AuditAnchor::Tag(_) => "tag",
+            AuditAnchor::Commit(_) => "commit",
+            AuditAnchor::Unanchored => "unanchored",
+        }
+    }
+
+    /// The ref the drift base compares from (`compare/{ref}...HEAD`): the tag or
+    /// the resolved commit SHA. `None` when unanchored — the caller then falls back
+    /// to the PDF's own commit.
+    pub fn drift_base_ref(&self) -> Option<&str> {
+        match self {
+            AuditAnchor::Tag(t) => Some(t),
+            AuditAnchor::Commit(sha) => Some(sha),
+            AuditAnchor::Unanchored => None,
+        }
+    }
+}
+
+/// Extract a commit-SHA CANDIDATE (a 7–40 hex-char token on non-alphanumeric
+/// boundaries) from a PDF filename. Only a candidate: whether it names a real
+/// commit is decided by resolution (the I/O half). The both-sides boundary means
+/// only a whole dot/dash-delimited token that is entirely hex matches — so
+/// `raindex`, `metadata`, `interface` never yield a spurious sub-run, while
+/// `raindex.e686b4d.apr-2026.pdf` yields `e686b4d`. Returns the first such token.
+pub fn parse_commit_candidate(filename: &str) -> Option<String> {
+    static RE: OnceLock<Regex> = OnceLock::new();
+    let re = RE.get_or_init(|| {
+        Regex::new(r"(?:^|[^0-9A-Za-z])([0-9a-fA-F]{7,40})(?:[^0-9A-Za-z]|$)")
+            .expect("static commit regex")
+    });
+    re.captures(filename).map(|c| c[1].to_string())
+}
+
+/// Classify the audited anchor a PDF filename encodes. Precedence: a `vX.Y.Z` tag
+/// wins (a tag is never mistaken for a commit); else a 7–40 hex token that
+/// `resolve` confirms names a real commit is commit-anchored; else unanchored.
+///
+/// `resolve` is the I/O seam (in `main.rs`, `gh api repos/{o}/{r}/commits/{sha}`):
+/// keeping it injected leaves this classification pure and network-free to test. A
+/// hex-looking token that does NOT resolve — or no hex token at all — falls back to
+/// `Unanchored` rather than erroring, guarding false positives. `resolve` is called
+/// at most once, only when a tag is absent but a hex candidate is present.
+pub fn classify_anchor<F: FnOnce(&str) -> bool>(filename: &str, resolve: F) -> AuditAnchor {
+    if let Some(tag) = parse_audited_tag(filename) {
+        return AuditAnchor::Tag(tag);
+    }
+    if let Some(sha) = parse_commit_candidate(filename) {
+        if resolve(&sha) {
+            return AuditAnchor::Commit(sha);
+        }
+    }
+    AuditAnchor::Unanchored
 }
 
 /// True if `path` is a TEST file (excluded from source-LOC drift). Pins the
@@ -256,6 +331,87 @@ mod tests {
         );
         // the `v` must be on a non-alnum boundary: `rev1.2.3` is not a tag.
         assert_eq!(parse_audited_tag("rev1.2.3.pdf"), None);
+    }
+
+    // ---- parse_commit_candidate ----
+    #[test]
+    fn extracts_hex_commit_token() {
+        // the motivating case: a 7-hex short SHA delimited by dots.
+        assert_eq!(
+            parse_commit_candidate("raindex.e686b4d.apr-2026.pdf"),
+            Some("e686b4d".into())
+        );
+        assert_eq!(
+            parse_commit_candidate("rain.factory.1a92a86.feb-2026.pdf"),
+            Some("1a92a86".into())
+        );
+        // a full 40-char SHA is in range.
+        let full = "0123456789abcdef0123456789abcdef01234567";
+        assert_eq!(
+            parse_commit_candidate(&format!("raindex.{full}.apr-2026.pdf")),
+            Some(full.into())
+        );
+    }
+
+    #[test]
+    fn no_commit_candidate_when_no_whole_hex_token() {
+        // names with no all-hex token: the boundary rule means a hex sub-run inside
+        // a mixed word ("raindex", "metadata") is NOT a candidate.
+        assert_eq!(
+            parse_commit_candidate("protofire.rain.metadata.feb-2026.pdf"),
+            None
+        );
+        assert_eq!(parse_commit_candidate("2023-08-29-Payant_Report.pdf"), None);
+        // too short: a 6-hex token is below the 7-char floor.
+        assert_eq!(parse_commit_candidate("raindex.abc123.apr-2026.pdf"), None);
+        // too long: 41 hex chars exceeds the 40-char ceiling (git object id width).
+        let over = "0".repeat(41);
+        assert_eq!(parse_commit_candidate(&format!("x.{over}.pdf")), None);
+    }
+
+    // ---- classify_anchor ----
+    #[test]
+    fn classify_prefers_tag_and_skips_resolution() {
+        // a vX.Y.Z name is tag-anchored — the commit resolver must never run.
+        assert_eq!(
+            classify_anchor("rain.factory.v0.1.1-r2.0.may-2026.pdf", |_| panic!(
+                "resolver must not run for a tag-anchored name"
+            )),
+            AuditAnchor::Tag("v0.1.1".into())
+        );
+    }
+
+    #[test]
+    fn classify_commit_anchored_when_hex_resolves() {
+        // raindex's PDF: a hex token that resolves → commit-anchored at e686b4d.
+        let anchor = classify_anchor("raindex.e686b4d.apr-2026.pdf", |sha| {
+            assert_eq!(sha, "e686b4d"); // exactly the filename token is resolved
+            true
+        });
+        assert_eq!(anchor, AuditAnchor::Commit("e686b4d".into()));
+        assert_eq!(anchor.kind(), "commit");
+        assert_eq!(anchor.drift_base_ref(), Some("e686b4d"));
+    }
+
+    #[test]
+    fn classify_unanchored_when_hex_does_not_resolve() {
+        // a hex-looking token that resolution rejects falls back to unanchored — a
+        // false positive must never error or masquerade as a commit anchor.
+        let anchor = classify_anchor("raindex.deadbeef.jan-2026.pdf", |_| false);
+        assert_eq!(anchor, AuditAnchor::Unanchored);
+        assert_eq!(anchor.kind(), "unanchored");
+        assert_eq!(anchor.drift_base_ref(), None);
+    }
+
+    #[test]
+    fn classify_unanchored_when_no_anchor_token() {
+        // neither tag nor hex token: unanchored, and the resolver is never called.
+        assert_eq!(
+            classify_anchor("protofire.rain.metadata.feb-2026.pdf", |_| panic!(
+                "resolver must not run without a hex candidate"
+            )),
+            AuditAnchor::Unanchored
+        );
     }
 
     // ---- is_test_path ----

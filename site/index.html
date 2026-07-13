@@ -452,7 +452,9 @@ function renderAudit() {
       if (r.auditPdfs && r.auditPdfs.length) {
         c1.append(el("div", "au-sub", r.auditPdfs.map((p) => p.filename).join(", ")));
       }
-      if (r.tagConventionAbsent) c1.append(el("div", "au-flag", "no tag in PDF name"));
+      if (r.anchorKind === "commit") c1.append(el("div", "au-flag", "commit-anchored"));
+      else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
+        c1.append(el("div", "au-flag", "no tag in PDF name"));
 
       const c2 = el("div");
       c2.append(el("span", "au-status " + r.externalAudit, r.externalAudit));
