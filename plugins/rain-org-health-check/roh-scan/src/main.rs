@@ -11,8 +11,8 @@ mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use protofire::{
-    classify_external_audit, days_between, is_stale, newer_than, newest_pdf_index,
-    parse_audited_tag, source_drift, AuditPdf, CompareFile,
+    changed_source_file_count, classify_anchor, classify_external_audit, days_between, is_stale,
+    newer_than, newest_pdf_index, source_drift, AuditAnchor, AuditPdf, CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -228,6 +228,7 @@ struct ProtofireResult {
     external_audit: &'static str,
     pdfs: Vec<AuditPdf>,
     audited_ref: Option<String>,
+    anchor_kind: Option<&'static str>,
     tag_convention_absent: bool,
     audited_date: String,
     latest_tag: Option<String>,
@@ -239,6 +240,7 @@ struct ProtofireResult {
     files_changed: Option<u64>,
     commits_since: Option<u64>,
     source_drift_truncated: bool,
+    compare_url: Option<String>,
 }
 
 /// Outcome of listing a repo directory via the contents API: the parsed
@@ -319,6 +321,24 @@ fn collect_audit_pdfs<F: GhApi>(
         }
     }
     false
+}
+
+/// Does `sha` name a real commit in the repo? The resolution half of anchor
+/// classification: `gh api repos/{o}/{r}/commits/{sha}` echoes the commit's SHA on
+/// success and 404s on an unknown ref. It runs through the shared `GhApi` seam so it
+/// shares the retry/backoff of the rest of the audit path; a hex-looking filename
+/// token that isn't a real commit (`NotFound`) — or a fetch that `Failed` after
+/// retries — falls back to unanchored rather than erroring.
+fn commit_exists<F: GhApi>(gh: &F, org: &str, repo: &str, sha: &str) -> bool {
+    match gh.api_jq(&[
+        "api",
+        &format!("repos/{org}/{repo}/commits/{sha}"),
+        "--jq",
+        ".sha",
+    ]) {
+        FetchOutcome::Found(s) => !s.trim().is_empty(),
+        FetchOutcome::NotFound | FetchOutcome::Failed => false,
+    }
 }
 
 /// Commit date + sha of the commit that last touched (added) a path.
@@ -421,6 +441,57 @@ fn fetch_compare<F: GhApi>(
     Some((base_date, files, total, truncated))
 }
 
+/// Every `(path, blob_sha)` blob in a repo's recursive git tree at `sha`. `None`
+/// on a failed/absent fetch OR when GitHub truncated the tree (`.truncated`, the
+/// 100k-entry cap): a truncated tree can't yield a reliable diff, so the caller
+/// must treat drift as indeterminate rather than silently undercount.
+fn fetch_tree_blobs<F: GhApi>(
+    gh: &F,
+    org: &str,
+    repo: &str,
+    sha: &str,
+) -> Option<Vec<(String, String)>> {
+    let raw = match gh.api_jq(&[
+        "api",
+        &format!("repos/{org}/{repo}/git/trees/{sha}?recursive=1"),
+    ]) {
+        FetchOutcome::Found(s) => s,
+        FetchOutcome::NotFound | FetchOutcome::Failed => return None,
+    };
+    let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
+    if v["truncated"].as_bool().unwrap_or(false) {
+        return None;
+    }
+    let blobs = v["tree"]
+        .as_array()?
+        .iter()
+        .filter(|e| e["type"].as_str() == Some("blob"))
+        .filter_map(|e| {
+            Some((
+                e["path"].as_str()?.to_string(),
+                e["sha"].as_str()?.to_string(),
+            ))
+        })
+        .collect();
+    Some(blobs)
+}
+
+/// Accurate count of non-test `.sol` files changed `base…head` via two recursive
+/// tree reads (the blob-sha diff, not the 300-file-capped compare). `None` when
+/// either tree is unavailable or truncated — the caller then reports drift as
+/// indeterminate rather than a false zero.
+fn changed_sol_count<F: GhApi>(
+    gh: &F,
+    org: &str,
+    repo: &str,
+    base: &str,
+    head: &str,
+) -> Option<u64> {
+    let base_tree = fetch_tree_blobs(gh, org, repo, base)?;
+    let head_tree = fetch_tree_blobs(gh, org, repo, head)?;
+    Some(changed_source_file_count(&base_tree, &head_tree))
+}
+
 /// A `ProtofireResult` for a repo with no usable PDF, carrying only the coverage
 /// `state`. `never` (genuinely absent) and `unknown` (fetch failed) share this
 /// shape; the caller decides which by whether the top-level listing FAILED.
@@ -430,6 +501,7 @@ fn empty_protofire(state: &'static str) -> ProtofireResult {
         external_audit: state,
         pdfs: Vec::new(),
         audited_ref: None,
+        anchor_kind: None,
         tag_convention_absent: false,
         audited_date: String::new(),
         latest_tag: None,
@@ -441,6 +513,7 @@ fn empty_protofire(state: &'static str) -> ProtofireResult {
         files_changed: None,
         commits_since: None,
         source_drift_truncated: false,
+        compare_url: None,
     }
 }
 
@@ -476,13 +549,25 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         .collect();
     pdfs.sort_by(|a, b| a.path.cmp(&b.path));
     let newest = newest_pdf_index(&pdfs).expect("non-empty");
-    let audited_ref = parse_audited_tag(&pdfs[newest].filename);
-    let tag_convention_absent = audited_ref.is_none();
+
+    // Classify the audited anchor the newest PDF's filename encodes: a `vX.Y.Z`
+    // tag, a hex commit token that RESOLVES to a real commit, or neither. The
+    // resolver is the I/O half — `commit_exists` guards a hex-looking token that
+    // isn't actually a commit, so it falls back to unanchored (not an error).
+    let anchor = classify_anchor(&pdfs[newest].filename, |sha| {
+        commit_exists(gh, org, repo, sha)
+    });
+    let audited_ref = anchor.drift_base_ref().map(str::to_string);
+    let anchor_kind = Some(anchor.kind());
+    // Kept for the panel/consumers: true whenever the filename encodes no vX.Y.Z
+    // tag — a commit-anchored PDF is still "tag convention absent" (no tag), it is
+    // just anchored to a commit instead.
+    let tag_convention_absent = !matches!(anchor, AuditAnchor::Tag(_));
 
     let (default_branch, latest_tag, latest_tag_iso) = repo_default_and_latest_tag(gh, org, repo);
 
-    // Drift base: the audited tag when the filename encodes one, else the newest
-    // PDF's own commit (the task's fallback when the tag convention is absent).
+    // Drift base: the audited anchor (tag or resolved commit) when the filename
+    // encodes one, else the newest PDF's own commit (the unanchored fallback).
     let base = audited_ref
         .clone()
         .unwrap_or_else(|| pdfs[newest].commit_sha.clone());
@@ -501,7 +586,20 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         commits_since,
         source_drift_truncated,
     ) = match &cmp {
-        Some((base_date, files, total, trunc)) => {
+        // Compare truncated at GitHub's 300-file cap: its per-file +/− misses any
+        // `.sol` sorted beyond the cap (a false zero for large repos like raindex).
+        // Fall back to a tree blob-sha diff for an ACCURATE changed-`.sol` FILE
+        // count; line-level drift isn't recoverable from trees, so leave +/− unknown.
+        Some((base_date, _files, total, trunc)) if *trunc => (
+            base_date.clone(),
+            None,
+            None,
+            None,
+            changed_sol_count(gh, org, repo, &base, &default_branch),
+            Some(*total),
+            true,
+        ),
+        Some((base_date, files, total, _)) => {
             let (added, removed, n) = source_drift(files);
             // Keep +/− separate; the combined `source_loc` is derived as the sum for
             // sorting, the staleness check, and JSON back-compat.
@@ -512,7 +610,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
                 Some(removed),
                 Some(n),
                 Some(*total),
-                *trunc,
+                false,
             )
         }
         // Compare unavailable → date the audit by the PDF's own commit, drift unknown.
@@ -535,11 +633,16 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
     let external_audit = classify_external_audit(true, has_tags, newer_tag_exists);
     let stale = is_stale(newer_tag_exists, source_loc.unwrap_or(0));
 
+    // The GitHub compare-view URL for the audited drift (base…default branch);
+    // None when either ref is empty, so the panel links only when it resolves.
+    let compare_url = protofire::compare_url(org, repo, &base, &default_branch);
+
     ProtofireResult {
         has_pdf: true,
         external_audit,
         pdfs,
         audited_ref,
+        anchor_kind,
         tag_convention_absent,
         audited_date,
         latest_tag,
@@ -551,6 +654,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         files_changed,
         commits_since,
         source_drift_truncated,
+        compare_url,
     }
 }
 
@@ -768,7 +872,13 @@ fn main() {
         if !p.has_pdf {
             continue;
         }
-        let refd = p.audited_ref.as_deref().unwrap_or("(no tag in PDF name)");
+        let refd = p.audited_ref.as_deref().unwrap_or("(unanchored)");
+        // tag → [tag-anchored], commit → [commit-anchored], neither → [unanchored]
+        // (never the malformed [unanchored-anchored]).
+        let anchor_label = match p.anchor_kind {
+            Some("unanchored") | None => "[unanchored]".to_string(),
+            Some(kind) => format!("[{kind}-anchored]"),
+        };
         let latest = p.latest_tag.as_deref().unwrap_or("(no tags)");
         let drift = match (
             p.source_loc_added,
@@ -785,13 +895,8 @@ fn main() {
             }
             _ => "drift unavailable".to_string(),
         };
-        let flag = if p.tag_convention_absent {
-            "  [tag convention absent]"
-        } else {
-            ""
-        };
         println!(
-            "  {:<28} {:<8} audited {refd} → latest {latest} · {drift}{flag}",
+            "  {:<28} {:<8} audited {refd} {anchor_label} → latest {latest} · {drift}",
             r.name, p.external_audit
         );
     }
@@ -843,6 +948,7 @@ fn main() {
                         "lastCommitIso": pdf.last_commit_iso,
                     })).collect::<Vec<_>>(),
                     "auditedRef": p.audited_ref,
+                    "anchorKind": p.anchor_kind,
                     "tagConventionAbsent": p.tag_convention_absent,
                     "auditedDate": if p.audited_date.is_empty() { serde_json::Value::Null } else { serde_json::Value::from(p.audited_date.clone()) },
                     "latestTag": p.latest_tag,
@@ -854,6 +960,7 @@ fn main() {
                     "filesChangedSinceAudit": p.files_changed,
                     "commitsSinceAudit": p.commits_since,
                     "sourceDriftTruncated": p.source_drift_truncated,
+                    "compareUrl": p.compare_url,
                     "daysSinceAudit": days,
                 })
             }).collect::<Vec<_>>(),
@@ -915,6 +1022,59 @@ mod tests {
     /// A `contents` listing row (`type\tpath\tname`) for one flat `.pdf`.
     fn pdf_row(name: &str) -> FetchOutcome {
         FetchOutcome::Found(format!("file\taudit/protofire/{name}\t{name}"))
+    }
+
+    /// A recursive `git/trees` response carrying the given `(path, sha)` blobs and
+    /// truncation flag, as the scanner's tree fetch receives it.
+    fn tree_json(blobs: &[(&str, &str)], truncated: bool) -> FetchOutcome {
+        let tree: Vec<serde_json::Value> = blobs
+            .iter()
+            .map(|(p, s)| json!({"path": p, "type": "blob", "sha": s}))
+            .collect();
+        FetchOutcome::Found(json!({"truncated": truncated, "tree": tree}).to_string())
+    }
+
+    // ---- tree-diff drift fallback: changed_sol_count / fetch_tree_blobs ----
+
+    #[test]
+    fn changed_sol_count_diffs_trees_accurately() {
+        // Mod.sol modified, New.sol added, Gone.sol removed → 3 changed non-test
+        // .sol. Keep.sol is unchanged; the test-file and .rs churn are excluded.
+        let base = tree_json(
+            &[
+                ("src/Keep.sol", "k"),
+                ("src/Mod.sol", "m1"),
+                ("src/Gone.sol", "g"),
+                ("test/T.t.sol", "t1"),
+                ("crates/x/src/lib.rs", "r1"),
+            ],
+            false,
+        );
+        let head = tree_json(
+            &[
+                ("src/Keep.sol", "k"),
+                ("src/Mod.sol", "m2"),
+                ("src/New.sol", "n"),
+                ("test/T.t.sol", "t9"),
+                ("crates/x/src/lib.rs", "r9"),
+            ],
+            false,
+        );
+        let gh = FakeGh::new(vec![("git/trees/base", base), ("git/trees/head", head)]);
+        assert_eq!(changed_sol_count(&gh, "o", "r", "base", "head"), Some(3));
+    }
+
+    #[test]
+    fn changed_sol_count_is_none_when_a_tree_is_truncated_or_failed() {
+        // A truncated tree can't give a reliable diff → None (never a false 0).
+        let gh = FakeGh::new(vec![
+            ("git/trees/base", tree_json(&[("src/A.sol", "a")], true)),
+            ("git/trees/head", tree_json(&[("src/A.sol", "b")], false)),
+        ]);
+        assert_eq!(changed_sol_count(&gh, "o", "r", "base", "head"), None);
+        // A failed fetch is likewise indeterminate, not zero.
+        let gh2 = FakeGh::new(vec![("git/trees/base", FetchOutcome::Failed)]);
+        assert_eq!(changed_sol_count(&gh2, "o", "r", "base", "head"), None);
     }
 
     // ---- external-call coverage: fetch_protofire_audit / collect_audit_pdfs ----
