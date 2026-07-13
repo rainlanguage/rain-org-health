@@ -201,7 +201,8 @@
   .au-status.current { color: var(--clean); border: 1px solid var(--clean); background: transparent; }
   .au-status.na { color: var(--ink-3); border: 1px solid var(--border); background: transparent; }
   .au-drift { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
-  .au-drift .loc { font-weight: 650; color: var(--debt); font-variant-numeric: tabular-nums; }
+  .au-drift .add { font-weight: 650; color: var(--clean); font-variant-numeric: tabular-nums; }
+  .au-drift .del { font-weight: 650; color: var(--crit); font-variant-numeric: tabular-nums; }
   .au-drift .dim { color: var(--ink-3); }
   .au-drift .ok { color: var(--clean); }
   .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
@@ -464,13 +465,21 @@ function renderAudit() {
           c3.append("→ latest " + r.latestTag + (r.latestTagIso ? " · " + day(r.latestTagIso) : ""));
           c3.append(document.createElement("br"));
         }
-        if (typeof r.sourceLocChangedSinceAudit === "number") {
+        if (typeof r.sourceLocAddedSinceAudit === "number" && typeof r.sourceLocRemovedSinceAudit === "number") {
+          // +added / −removed as a diffstat: additions green (--clean), deletions
+          // red (--crit), both theme-aware. The 300-file compare cap truncates
+          // BOTH sides, so the "+" lower-bound marker sits on each number. The
+          // combined total is derived as the sum.
+          const trunc = r.sourceDriftTruncated ? "+" : "";
+          const combined = r.sourceLocAddedSinceAudit + r.sourceLocRemovedSinceAudit;
           c3.append(
-            el("span", "loc", r.sourceLocChangedSinceAudit + (r.sourceDriftTruncated ? "+" : "") + " src LOC"),
-            " · " + (r.filesChangedSinceAudit || 0) + " files · " + (r.commitsSinceAudit || 0) + " commits" +
+            el("span", "add", "+" + r.sourceLocAddedSinceAudit + trunc),
+            " / ",
+            el("span", "del", "−" + r.sourceLocRemovedSinceAudit + trunc),
+            " src LOC · " + (r.filesChangedSinceAudit || 0) + " files · " + (r.commitsSinceAudit || 0) + " commits" +
               (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "")
           );
-          if (r.externalAudit === "current" && r.sourceLocChangedSinceAudit === 0) {
+          if (r.externalAudit === "current" && combined === 0) {
             c3.append(" ", el("span", "ok", "· up to date"));
           }
         } else {

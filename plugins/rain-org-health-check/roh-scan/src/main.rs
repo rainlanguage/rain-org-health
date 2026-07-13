@@ -136,6 +136,8 @@ struct ProtofireResult {
     latest_tag_iso: Option<String>,
     is_stale: bool,
     source_loc: Option<u64>,
+    source_loc_added: Option<u64>,
+    source_loc_removed: Option<u64>,
     files_changed: Option<u64>,
     commits_since: Option<u64>,
     source_drift_truncated: bool,
@@ -302,6 +304,8 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
             latest_tag_iso: None,
             is_stale: false,
             source_loc: None,
+            source_loc_added: None,
+            source_loc_removed: None,
             files_changed: None,
             commits_since: None,
             source_drift_truncated: false,
@@ -338,21 +342,40 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
         fetch_compare(org, repo, &base, &default_branch)
     };
 
-    let (audited_date, source_loc, files_changed, commits_since, source_drift_truncated) =
-        match &cmp {
-            Some((base_date, files, total, trunc)) => {
-                let (loc, n) = source_drift(files);
-                (base_date.clone(), Some(loc), Some(n), Some(*total), *trunc)
-            }
-            // Compare unavailable → date the audit by the PDF's own commit, drift unknown.
-            None => (
-                pdfs[newest].last_commit_iso.clone(),
-                None,
-                None,
-                None,
-                false,
-            ),
-        };
+    let (
+        audited_date,
+        source_loc,
+        source_loc_added,
+        source_loc_removed,
+        files_changed,
+        commits_since,
+        source_drift_truncated,
+    ) = match &cmp {
+        Some((base_date, files, total, trunc)) => {
+            let (added, removed, n) = source_drift(files);
+            // Keep +/− separate; the combined `source_loc` is derived as the sum for
+            // sorting, the staleness check, and JSON back-compat.
+            (
+                base_date.clone(),
+                Some(added + removed),
+                Some(added),
+                Some(removed),
+                Some(n),
+                Some(*total),
+                *trunc,
+            )
+        }
+        // Compare unavailable → date the audit by the PDF's own commit, drift unknown.
+        None => (
+            pdfs[newest].last_commit_iso.clone(),
+            None,
+            None,
+            None,
+            None,
+            None,
+            false,
+        ),
+    };
 
     let has_tags = latest_tag.is_some();
     let newer_tag_exists = latest_tag_iso
@@ -373,6 +396,8 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
         latest_tag_iso,
         is_stale: stale,
         source_loc,
+        source_loc_added,
+        source_loc_removed,
         files_changed,
         commits_since,
         source_drift_truncated,
@@ -575,11 +600,18 @@ fn main() {
         }
         let refd = p.audited_ref.as_deref().unwrap_or("(no tag in PDF name)");
         let latest = p.latest_tag.as_deref().unwrap_or("(no tags)");
-        let drift = match (p.source_loc, p.files_changed, p.commits_since) {
-            (Some(loc), Some(files), Some(commits)) => {
+        let drift = match (
+            p.source_loc_added,
+            p.source_loc_removed,
+            p.files_changed,
+            p.commits_since,
+        ) {
+            (Some(added), Some(removed), Some(files), Some(commits)) => {
                 let days = days_between(&p.audited_date, &now).unwrap_or(-1);
                 let trunc = if p.source_drift_truncated { "+" } else { "" };
-                format!("{loc}{trunc} src LOC / {files} files / {commits} commits · {days}d")
+                format!(
+                    "+{added}{trunc} / -{removed}{trunc} src LOC / {files} files / {commits} commits · {days}d"
+                )
             }
             _ => "drift unavailable".to_string(),
         };
@@ -647,6 +679,8 @@ fn main() {
                     "latestTagIso": p.latest_tag_iso,
                     "isStale": if p.has_pdf { serde_json::Value::from(p.is_stale) } else { serde_json::Value::Null },
                     "sourceLocChangedSinceAudit": p.source_loc,
+                    "sourceLocAddedSinceAudit": p.source_loc_added,
+                    "sourceLocRemovedSinceAudit": p.source_loc_removed,
                     "filesChangedSinceAudit": p.files_changed,
                     "commitsSinceAudit": p.commits_since,
                     "sourceDriftTruncated": p.source_drift_truncated,
