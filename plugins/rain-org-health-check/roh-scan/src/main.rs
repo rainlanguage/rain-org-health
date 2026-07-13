@@ -11,8 +11,9 @@ mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use protofire::{
-    changed_source_file_count, classify_anchor, classify_external_audit, days_between, is_stale,
-    newer_than, newest_pdf_index, source_drift, AuditAnchor, AuditPdf, CompareFile,
+    changed_source_file_count, classify_anchor, classify_external_audit, counts_as_source_drift,
+    days_between, is_stale, newer_than, newest_pdf_index, source_drift, AuditAnchor, AuditPdf,
+    CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -492,6 +493,67 @@ fn changed_sol_count<F: GhApi>(
     Some(changed_source_file_count(&base_tree, &head_tree))
 }
 
+/// Sum non-test Solidity LOC under a directory tree (skips `.git`). The pure
+/// counting half of `count_source_loc`, so it is testable against a fixture dir
+/// without cloning. Uses the SAME non-test-`.sol` predicate as the drift columns.
+fn sum_sol_loc(root: &std::path::Path) -> u64 {
+    fn walk(dir: &std::path::Path, root: &std::path::Path, acc: &mut u64) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let path = entry.path();
+            if path.is_dir() {
+                if path.file_name().and_then(|n| n.to_str()) != Some(".git") {
+                    walk(&path, root, acc);
+                }
+            } else if let Some(rel) = path.strip_prefix(root).ok().and_then(|p| p.to_str()) {
+                if counts_as_source_drift(rel) {
+                    if let Ok(content) = std::fs::read_to_string(&path) {
+                        *acc += content.lines().count() as u64;
+                    }
+                }
+            }
+        }
+    }
+    let mut loc = 0;
+    walk(root, root, &mut loc);
+    loc
+}
+
+/// Total non-test Solidity LOC at HEAD, counted from a shallow clone. #37 wants an
+/// accurate line count, not the tree API's byte size, so we shallow-clone the repo
+/// and count lines in every non-test `.sol` file. `None` on a failed clone
+/// (private/missing/network) — the repo's LOC is then unknown, not zero. Unlike the
+/// rest of the scan this is NOT clone-free; it is bounded to the repos that need a
+/// full-source count (never-audited Solidity projects).
+fn count_source_loc(org: &str, repo: &str) -> Option<u64> {
+    let dir = std::env::temp_dir().join(format!(
+        "rohloc-{}-{}",
+        repo.replace(['/', '.'], "-"),
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+    let url = format!("https://github.com/{org}/{repo}");
+    let ok = Command::new("git")
+        .args([
+            "clone",
+            "--depth",
+            "1",
+            "--single-branch",
+            "--no-tags",
+            "--quiet",
+            &url,
+        ])
+        .arg(&dir)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    let loc = ok.then(|| sum_sol_loc(&dir));
+    let _ = std::fs::remove_dir_all(&dir);
+    loc
+}
+
 /// A `ProtofireResult` for a repo with no usable PDF, carrying only the coverage
 /// `state`. `never` (genuinely absent) and `unknown` (fetch failed) share this
 /// shape; the caller decides which by whether the top-level listing FAILED.
@@ -666,6 +728,9 @@ struct RepoResult {
     last_audit: Option<LastAudit>,
     protofire: ProtofireResult,
     has_foundry: bool,
+    /// FULL non-test `.sol` LOC (#37), counted for never-audited Solidity repos;
+    /// `None` for audited/non-Solidity repos (audited repos use drift instead).
+    full_source_loc: Option<u64>,
 }
 
 /// Whether a repo belongs in the Protofire external-audit report. A Protofire
@@ -793,12 +858,20 @@ fn main() {
         let signals = detect_signals(&inputs);
         let last_audit = fetch_last_audit(&org, repo);
         let protofire = fetch_protofire_audit(&gh, &org, repo);
+        // #37: a never-audited Solidity repo's FULL non-test .sol LOC (via a shallow
+        // clone) quantifies the coverage gap; audited repos use their drift instead.
+        let full_source_loc = if has_foundry && !protofire.has_pdf {
+            count_source_loc(&org, repo)
+        } else {
+            None
+        };
         RepoResult {
             name: repo.to_string(),
             signals,
             last_audit,
             protofire,
             has_foundry,
+            full_source_loc,
         }
     });
     // findings view (owned) so we can re-sort `results` for audit recency afterwards
@@ -869,6 +942,16 @@ fn main() {
         .collect();
     let protofire_total = pf_view.len();
     let externally_audited = pf_view.iter().filter(|r| r.protofire.has_pdf).count();
+    // #37: total unaudited source LOC = the FULL non-test .sol LOC of never-audited
+    // Solidity repos (the bulk) + code that has drifted since audit in the audited
+    // repos. Both use the same non-test-.sol definition as the per-repo drift.
+    let unaudited_loc_never: u64 = pf_view.iter().filter_map(|r| r.full_source_loc).sum();
+    let unaudited_loc_drift: u64 = pf_view
+        .iter()
+        .filter(|r| r.protofire.has_pdf)
+        .filter_map(|r| r.protofire.source_loc)
+        .sum();
+    let unaudited_loc = unaudited_loc_never + unaudited_loc_drift;
     pf_view.sort_by(|a, b| {
         let (pa, pb) = (&a.protofire, &b.protofire);
         (
@@ -889,6 +972,9 @@ fn main() {
     println!(
         "  NEVER externally audited: {} / {protofire_total}  (the coverage gap)",
         protofire_total - externally_audited
+    );
+    println!(
+        "  unaudited source LOC:     {unaudited_loc}  ({unaudited_loc_never} never-audited + {unaudited_loc_drift} drifted since audit)"
     );
     for r in &pf_view {
         let p = &r.protofire;
@@ -943,6 +1029,9 @@ fn main() {
             "reposNeverAudited": total - audited,
             "reposExternallyAudited": externally_audited,
             "reposNeverExternallyAudited": protofire_total - externally_audited,
+            "unauditedSourceLoc": unaudited_loc,
+            "unauditedSourceLocNeverAudited": unaudited_loc_never,
+            "unauditedSourceLocDrifted": unaudited_loc_drift,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, sigs)| json!({"name": r, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| match &r.last_audit {
@@ -978,6 +1067,7 @@ fn main() {
                     "latestTagIso": p.latest_tag_iso,
                     "isStale": if p.has_pdf { serde_json::Value::from(p.is_stale) } else { serde_json::Value::Null },
                     "sourceLocChangedSinceAudit": p.source_loc,
+                    "fullSourceLoc": r.full_source_loc,
                     "sourceLocAddedSinceAudit": p.source_loc_added,
                     "sourceLocRemovedSinceAudit": p.source_loc_removed,
                     "filesChangedSinceAudit": p.files_changed,
@@ -1110,6 +1200,30 @@ mod tests {
         assert!(in_protofire_report(true, true));
         // No PDF and no foundry.toml (docs/subgraph/tooling/.github) → excluded, not a gap.
         assert!(!in_protofire_report(false, false));
+    }
+
+    // ---- unaudited source LOC counting (#37) ----
+    #[test]
+    fn sum_sol_loc_counts_non_test_solidity_lines_only() {
+        let dir = std::env::temp_dir().join(format!("rohloc-unit-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("src")).unwrap();
+        std::fs::create_dir_all(dir.join("test")).unwrap();
+        std::fs::create_dir_all(dir.join(".git")).unwrap();
+        std::fs::write(dir.join("src/A.sol"), "line1\nline2\nline3\n").unwrap(); // 3 non-test .sol
+        std::fs::write(dir.join("deploy/D.sol"), "").ok(); // ensure parent exists next
+        std::fs::create_dir_all(dir.join("deploy")).unwrap();
+        std::fs::write(dir.join("deploy/D.sol"), "a\nb\n").unwrap(); // 2 non-test .sol (deploy/)
+        std::fs::write(dir.join("test/B.t.sol"), "x\ny\nz\nw\n").unwrap(); // .t.sol → excluded
+        std::fs::write(dir.join("test/Helper.sol"), "p\nq\n").unwrap(); // under test/ → excluded
+        std::fs::write(dir.join("README.md"), "not\nsol\n").unwrap(); // non-source → excluded
+        std::fs::write(dir.join(".git/config"), "junk\njunk\n").unwrap(); // .git → skipped
+        let loc = sum_sol_loc(&dir);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(
+            loc, 5,
+            "3 (src/A.sol) + 2 (deploy/D.sol); tests, README, .git excluded"
+        );
     }
 
     // ---- external-call coverage: fetch_protofire_audit / collect_audit_pdfs ----
