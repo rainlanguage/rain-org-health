@@ -1,0 +1,23 @@
+name: site-test
+# Dashboard render-logic tests: deno unit tests that run the real renderAudit
+# (extracted from the inline page JS) under a DOM stub. Keeps the self-contained
+# pages testable without a browser or third-party deps.
+on:
+  push:
+    branches: [master]
+    paths: [site/**, test/**, flake.nix, .github/workflows/site-test.yml]
+  pull_request:
+    paths: [site/**, test/**, flake.nix, .github/workflows/site-test.yml]
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  dashboard-test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: DeterminateSystems/nix-installer-action@main
+      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - run: nix run .#dashboard-test

@@ -207,6 +207,9 @@
   .au-drift .ok { color: var(--clean); }
   .au-drift a.au-drift-link { color: var(--ink-2); text-decoration: none; cursor: pointer; }
   .au-drift a.au-drift-link:hover { text-decoration: underline; }
+  .au-drift.big { color: var(--crit); }
+  .au-drift.big a.au-drift-link { color: var(--crit); }
+  .au-drift.big .dim, .au-drift.big .ok { color: var(--crit); }
   .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
   .au-gapchip { font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
                 color: var(--ink-2); background: var(--surface); border: 1px solid var(--border);
@@ -390,6 +393,10 @@ function renderAudit() {
             node.append("no Solidity drift since audit");
             c3.append(node, commitsTail);
           } else {
+            // The line drift can't be ENUMERATED (the compare exceeded the 300-file
+            // cap), so flag it red — the one case that reads as a warning. An
+            // enumerated diff, however large, stays neutral with its +/- diffstat.
+            c3.classList.add("big");
             node.append(k + (k === 1 ? " .sol file changed" : " .sol files changed"));
             c3.append(node, " · line drift too large to size" + commitsTail);
           }

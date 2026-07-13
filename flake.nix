@@ -88,10 +88,20 @@
             echo "wrote $out ($(wc -c <"$out") bytes)"
           '';
         };
+        # `nix run .#dashboard-test` — deno unit tests over the dashboard's inline
+        # render logic: extracts renderAudit from site/*.html and runs it under a
+        # minimal DOM stub (no browser, no third-party deps). Reads test/ + site/.
+        dashboard-test = pkgs.writeShellApplication {
+          name = "dashboard-test";
+          runtimeInputs = [ pkgs.deno ];
+          text = ''
+            deno test --allow-read "''${1:-test}"
+          '';
+        };
       in
       {
         packages = {
-          inherit roh-scan screenshot;
+          inherit roh-scan screenshot dashboard-test;
           default = roh-scan;
         };
         # `nix develop` composes rainix's default devshell, which wires the same
