@@ -1,17 +1,69 @@
 {
-  "generatedAt": "2026-07-13T17:15:00Z",
+  "generatedAt": "2026-07-13T15:12:44Z",
   "org": "rainlanguage",
-  "totalRepos": 4,
-  "reposWithFindings": 3,
+  "totalRepos": 105,
+  "reposWithFindings": 29,
   "reposWholeRepoAudited": 0,
-  "reposNeverAudited": 4,
+  "reposNeverAudited": 105,
   "reposExternallyAudited": 4,
-  "reposNeverExternallyAudited": 0,
+  "reposNeverExternallyAudited": 101,
   "summary": {
-    "per-chain-etherscan-key": 3,
-    "old-actions-checkout": 1
+    "per-chain-etherscan-key": 11,
+    "old-nix-installer": 9,
+    "old-actions-checkout": 7,
+    "removed-rainix-task": 6,
+    "dead-magic-nix-cache": 5,
+    "bespoke-ci": 2,
+    "private-key-dev": 1,
+    "telegram-secret-drift": 1
   },
   "repos": [
+    {
+      "name": "flow",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer",
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.subgraph.docker",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer",
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.webapp",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer",
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "sqlite-web",
+      "signals": [
+        "old-nix-installer",
+        "bespoke-ci",
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "rain.local-db.remote",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.solver",
+      "signals": [
+        "old-nix-installer",
+        "telegram-secret-drift"
+      ]
+    },
     {
       "name": "raindex",
       "signals": [
@@ -20,6 +72,68 @@
       ]
     },
     {
+      "name": "rainix",
+      "signals": [
+        "bespoke-ci",
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rainlang-codemirror",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "dvin.deploy",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "flow-subgraph",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "issue-pr-cron",
+      "signals": [
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "private-key-dev-recovery",
+      "signals": [
+        "private-key-dev"
+      ]
+    },
+    {
+      "name": "rain-statusfi",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "rain-svelte-components",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "rain.dia",
+      "signals": [
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.erc4626.words",
+      "signals": [
+        "removed-rainix-task"
+      ]
+    },
+    {
       "name": "rain.extrospection",
       "signals": [
         "per-chain-etherscan-key"
@@ -27,6 +141,66 @@
     },
     {
       "name": "rain.factory",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.math.float",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.merkle",
+      "signals": [
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.metadata",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.pyth",
+      "signals": [
+        "removed-rainix-task"
+      ]
+    },
+    {
+      "name": "rain.subgraph.cli",
+      "signals": [
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.tofu.erc20-decimals",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.verify",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain1155",
+      "signals": [
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "raindex.governance",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rainlang",
       "signals": [
         "per-chain-etherscan-key"
       ]
@@ -34,6 +208,210 @@
   ],
   "audits": [
     {
+      "name": ".github",
+      "lastAudit": null
+    },
+    {
+      "name": "adversarial-mutation-test",
+      "lastAudit": null
+    },
+    {
+      "name": "apache-devlake",
+      "lastAudit": null
+    },
+    {
+      "name": "assemblyscript-cbor",
+      "lastAudit": null
+    },
+    {
+      "name": "claude-audit-skills",
+      "lastAudit": null
+    },
+    {
+      "name": "decentralicense",
+      "lastAudit": null
+    },
+    {
+      "name": "devcontainer",
+      "lastAudit": null
+    },
+    {
+      "name": "docs.rainlang.xyz",
+      "lastAudit": null
+    },
+    {
+      "name": "dotrain",
+      "lastAudit": null
+    },
+    {
+      "name": "dune-queries",
+      "lastAudit": null
+    },
+    {
+      "name": "dvin.deploy",
+      "lastAudit": null
+    },
+    {
+      "name": "flow",
+      "lastAudit": null
+    },
+    {
+      "name": "flow-subgraph",
+      "lastAudit": null
+    },
+    {
+      "name": "forker",
+      "lastAudit": null
+    },
+    {
+      "name": "foundry.template",
+      "lastAudit": null
+    },
+    {
+      "name": "github-chore",
+      "lastAudit": null
+    },
+    {
+      "name": "issue-pr-cron",
+      "lastAudit": null
+    },
+    {
+      "name": "lobby-sg",
+      "lastAudit": null
+    },
+    {
+      "name": "meta",
+      "lastAudit": null
+    },
+    {
+      "name": "metamorphic-metadata",
+      "lastAudit": null
+    },
+    {
+      "name": "orderbook-svelte-components",
+      "lastAudit": null
+    },
+    {
+      "name": "org-process",
+      "lastAudit": null
+    },
+    {
+      "name": "private-key-dev-recovery",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-cross-deploy",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-deploy-scripts",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-deployment",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-factories-subgraph",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-integration-templates",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-org-health",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-protocol-subgraph",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-sketches",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-statusfi",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-subgraph-utils",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-svelte-components",
+      "lastAudit": null
+    },
+    {
+      "name": "rain-zora",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.brand",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.chainlink",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.classic.interpreter",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.cli",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.contribute",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.cooldown",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.datacontract",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.defillama",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.deploy",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.devops",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.dex.solve",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.dia",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.erc",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.erc1820",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.erc4626.words",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.error",
+      "lastAudit": null
+    },
+    {
       "name": "rain.extrospection",
       "lastAudit": null
     },
@@ -42,15 +420,2159 @@
       "lastAudit": null
     },
     {
+      "name": "rain.flare",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.forker",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.interface.sale",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.internal",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.interpreter.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.intorastring",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.lib.hash",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.lib.memkv",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.lib.typecast",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.local-db.remote",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.binary",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.fixedpoint",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.float",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.math.saturating",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.merkle",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.metadata",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.pyth",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.sol.binmaskflag",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.sol.codegen",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.solmem",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.solver",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.strategies",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.string",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.subgraph.cli",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.subgraph.docker",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.things.to.build",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.tier.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.tofu.erc20-decimals",
+      "lastAudit": null
+    },
+    {
       "name": "rain.vats",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.verify",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.verify.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.wasm",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.webapp",
+      "lastAudit": null
+    },
+    {
+      "name": "rain.will-overflow",
+      "lastAudit": null
+    },
+    {
+      "name": "rain1155",
+      "lastAudit": null
+    },
+    {
+      "name": "rain721a-subgraph",
       "lastAudit": null
     },
     {
       "name": "raindex",
       "lastAudit": null
+    },
+    {
+      "name": "raindex-tg-bot",
+      "lastAudit": null
+    },
+    {
+      "name": "raindex.governance",
+      "lastAudit": null
+    },
+    {
+      "name": "raindex.interface",
+      "lastAudit": null
+    },
+    {
+      "name": "rainix",
+      "lastAudit": null
+    },
+    {
+      "name": "rainlang",
+      "lastAudit": null
+    },
+    {
+      "name": "rainlang-codemirror",
+      "lastAudit": null
+    },
+    {
+      "name": "rainlang.xyz",
+      "lastAudit": null
+    },
+    {
+      "name": "router",
+      "lastAudit": null
+    },
+    {
+      "name": "specs",
+      "lastAudit": null
+    },
+    {
+      "name": "spirit-kitty-rain",
+      "lastAudit": null
+    },
+    {
+      "name": "sqlite-web",
+      "lastAudit": null
+    },
+    {
+      "name": "sushiswap-router",
+      "lastAudit": null
+    },
+    {
+      "name": "test",
+      "lastAudit": null
+    },
+    {
+      "name": "vapour721a",
+      "lastAudit": null
+    },
+    {
+      "name": "wiki.rainprotocol.xyz",
+      "lastAudit": null
     }
   ],
   "protofireAudits": [
+    {
+      "name": ".github",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "adversarial-mutation-test",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "apache-devlake",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "assemblyscript-cbor",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "claude-audit-skills",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "decentralicense",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "devcontainer",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "docs.rainlang.xyz",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "dotrain",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "dune-queries",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "dvin.deploy",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "flow",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "flow-subgraph",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "forker",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "foundry.template",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "github-chore",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "issue-pr-cron",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "lobby-sg",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "meta",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "metamorphic-metadata",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "orderbook-svelte-components",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "org-process",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "private-key-dev-recovery",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-cross-deploy",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-deploy-scripts",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-deployment",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-factories-subgraph",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-integration-templates",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-org-health",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-protocol-subgraph",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-sketches",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-statusfi",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-subgraph-utils",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-svelte-components",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain-zora",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.brand",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.chainlink",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.classic.interpreter",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.cli",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.contribute",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.cooldown",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.datacontract",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.defillama",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.deploy",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.devops",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.dex.solve",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.dia",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.erc",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.erc1820",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.erc4626.words",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.error",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.flare",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.forker",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.interface.sale",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.internal",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.interpreter.interface",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.intorastring",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.lib.hash",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.lib.memkv",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.lib.typecast",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.local-db.remote",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.math.binary",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.math.fixedpoint",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.math.float",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.math.saturating",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.merkle",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.metadata",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.pyth",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.sol.binmaskflag",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.sol.codegen",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.solmem",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.solver",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.strategies",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.string",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.subgraph.cli",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.subgraph.docker",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.things.to.build",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.tier.interface",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.tofu.erc20-decimals",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.verify",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.verify.interface",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.wasm",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.webapp",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.will-overflow",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain1155",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain721a-subgraph",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "raindex-tg-bot",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "raindex.governance",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "raindex.interface",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rainix",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rainlang",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rainlang-codemirror",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rainlang.xyz",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "router",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "specs",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "spirit-kitty-rain",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "sqlite-web",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "sushiswap-router",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "test",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "vapour721a",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "wiki.rainprotocol.xyz",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "auditedRef": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "raindex",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "raindex.e686b4d.apr-2026.pdf",
+          "path": "audit/protofire/raindex.e686b4d.apr-2026.pdf",
+          "lastCommitIso": "2026-06-02T15:52:40Z"
+        }
+      ],
+      "auditedRef": null,
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-06-02T15:52:40Z",
+      "latestTag": "sol-v0.1.13",
+      "latestTagIso": "2026-07-03T13:10:34Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 15830,
+      "sourceLocAddedSinceAudit": 8295,
+      "sourceLocRemovedSinceAudit": 7535,
+      "filesChangedSinceAudit": 124,
+      "commitsSinceAudit": 482,
+      "sourceDriftTruncated": true,
+      "daysSinceAudit": 41
+    },
     {
       "name": "rain.factory",
       "hasProtofireAudit": true,
@@ -68,7 +2590,6 @@
         }
       ],
       "auditedRef": "v0.1.1",
-      "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-12T15:15:26Z",
       "latestTag": "sol-v0.1.5",
@@ -80,7 +2601,6 @@
       "filesChangedSinceAudit": 10,
       "commitsSinceAudit": 36,
       "sourceDriftTruncated": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/v0.1.1...main",
       "daysSinceAudit": 62
     },
     {
@@ -105,7 +2625,6 @@
         }
       ],
       "auditedRef": "v0.1.5",
-      "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:18:51Z",
       "latestTag": "sol-v0.1.6",
@@ -117,7 +2636,6 @@
       "filesChangedSinceAudit": 5,
       "commitsSinceAudit": 41,
       "sourceDriftTruncated": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
       "daysSinceAudit": 54
     },
     {
@@ -142,7 +2660,6 @@
         }
       ],
       "auditedRef": "v0.1.1",
-      "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-12T15:16:31Z",
       "latestTag": "sol-v0.1.4",
@@ -154,35 +2671,7 @@
       "filesChangedSinceAudit": 1,
       "commitsSinceAudit": 15,
       "sourceDriftTruncated": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
       "daysSinceAudit": 62
-    },
-    {
-      "name": "raindex",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "raindex.e686b4d.apr-2026.pdf",
-          "path": "audit/protofire/raindex.e686b4d.apr-2026.pdf",
-          "lastCommitIso": "2026-06-02T15:52:40Z"
-        }
-      ],
-      "auditedRef": "e686b4d",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-03-24T18:40:27Z",
-      "latestTag": "sol-v0.1.13",
-      "latestTagIso": "2026-07-03T13:10:34Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 0,
-      "sourceLocAddedSinceAudit": 0,
-      "sourceLocRemovedSinceAudit": 0,
-      "filesChangedSinceAudit": 0,
-      "commitsSinceAudit": 687,
-      "sourceDriftTruncated": true,
-      "compareUrl": "https://github.com/rainlanguage/raindex/compare/e686b4d...main",
-      "daysSinceAudit": 111
     }
   ]
 }
