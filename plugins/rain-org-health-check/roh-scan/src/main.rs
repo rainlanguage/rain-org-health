@@ -40,6 +40,104 @@ fn gh_stdout(args: &[&str]) -> Option<String> {
     Some(String::from_utf8_lossy(&out.stdout).into_owned())
 }
 
+/// The three distinguishable results of a `gh api` fetch. Keeping `NotFound`
+/// (a genuine 404) separate from `Failed` (rate-limit/network/spawn error after
+/// retries) is the crux of issue #52: an errored fetch must never masquerade as
+/// an empty resource and become a false coverage claim.
+#[derive(Debug, Clone, PartialEq)]
+enum FetchOutcome {
+    Found(String),
+    NotFound,
+    Failed,
+}
+
+/// The fetch seam. The real impl (`GhCli`) shells out to `gh`; tests inject a
+/// scripted double so the audit path is exercised without network or subprocesses.
+trait GhApi: Sync {
+    fn api_jq(&self, args: &[&str]) -> FetchOutcome;
+}
+
+/// How a single failed (`non-zero exit`) `gh` invocation should be treated. A
+/// `HTTP 404` in stderr (`gh: Not Found (HTTP 404)`) is a genuine absence; every
+/// other failure (secondary-rate-limit 403/429, network, spawn error) is retried.
+#[derive(Debug, PartialEq)]
+enum GhFailure {
+    NotFound,
+    Retryable,
+}
+
+/// Classify a failed `gh` invocation from its stderr.
+fn classify_gh_failure(stderr: &str) -> GhFailure {
+    if stderr.contains("HTTP 404") {
+        GhFailure::NotFound
+    } else {
+        GhFailure::Retryable
+    }
+}
+
+/// The outcome of ONE fetch attempt, before the retry decision folds it into a
+/// final `FetchOutcome`.
+enum Attempt {
+    Found(String),
+    NotFound,
+    Retryable,
+}
+
+/// Bounded-retry driver: run up to `max_attempts` attempts, retrying only a
+/// `Retryable` result; return on the first `Found`/`NotFound`, and once retries
+/// are exhausted a still-`Retryable` outcome becomes `Failed`. Pure — the closure
+/// owns any sleeping/spawning, so tests drive it (and assert the attempt count)
+/// without either.
+fn retry_fetch(max_attempts: u32, mut attempt: impl FnMut(u32) -> Attempt) -> FetchOutcome {
+    for i in 0..max_attempts {
+        match attempt(i) {
+            Attempt::Found(s) => return FetchOutcome::Found(s),
+            Attempt::NotFound => return FetchOutcome::NotFound,
+            Attempt::Retryable => continue,
+        }
+    }
+    FetchOutcome::Failed
+}
+
+/// Real `gh` fetcher. `Command::output()` captures BOTH streams so a failure's
+/// stderr can be classified. 12 concurrent `gh` subprocesses trip GitHub's
+/// secondary rate limit (a 403 — issue #52), so a retryable failure backs off and
+/// retries up to `max_attempts` before surfacing `Failed`.
+struct GhCli {
+    max_attempts: u32,
+    backoff: std::time::Duration,
+}
+
+impl GhCli {
+    fn new() -> Self {
+        GhCli {
+            max_attempts: 4,
+            backoff: std::time::Duration::from_millis(500),
+        }
+    }
+}
+
+impl GhApi for GhCli {
+    fn api_jq(&self, args: &[&str]) -> FetchOutcome {
+        retry_fetch(self.max_attempts, |i| {
+            if i > 0 {
+                std::thread::sleep(self.backoff * i);
+            }
+            match Command::new("gh").args(args).output() {
+                Ok(o) if o.status.success() => {
+                    Attempt::Found(String::from_utf8_lossy(&o.stdout).into_owned())
+                }
+                Ok(o) => match classify_gh_failure(&String::from_utf8_lossy(&o.stderr)) {
+                    GhFailure::NotFound => Attempt::NotFound,
+                    GhFailure::Retryable => Attempt::Retryable,
+                },
+                // A spawn error (gh missing/OS pressure) is transient — retry it.
+                Err(_) => Attempt::Retryable,
+            }
+        })
+    }
+}
+
 /// Decode a `contents` API response's base64 body ("" on any failure — 404, non-file).
 fn gh_file(org: &str, repo: &str, path: &str) -> String {
     let Some(raw) = gh_stdout(&[
@@ -142,18 +240,33 @@ struct ProtofireResult {
     files_changed: Option<u64>,
     commits_since: Option<u64>,
     source_drift_truncated: bool,
+    compare_url: Option<String>,
 }
 
-/// List a repo directory via the contents API → (type, path, name) rows. `None`
-/// on 404 / error (e.g. the directory doesn't exist).
-fn gh_contents_entries(org: &str, repo: &str, path: &str) -> Option<Vec<(String, String, String)>> {
-    let out = gh_stdout(&[
+/// Outcome of listing a repo directory via the contents API: the parsed
+/// `(type, path, name)` rows, a genuine 404 (`NotFound`), or a fetch failure
+/// (`Failed`). `Failed` must NOT be read as an empty directory.
+enum ContentsListing {
+    Found(Vec<(String, String, String)>),
+    NotFound,
+    Failed,
+}
+
+/// List a repo directory via the contents API → typed listing. A 404 maps to
+/// `NotFound` (the directory doesn't exist); a rate-limit/network error maps to
+/// `Failed` so the caller can tell "genuinely absent" from "couldn't fetch".
+fn gh_contents_entries<F: GhApi>(gh: &F, org: &str, repo: &str, path: &str) -> ContentsListing {
+    let out = match gh.api_jq(&[
         "api",
         &format!("repos/{org}/{repo}/contents/{path}"),
         "--jq",
         ".[]|[.type,.path,.name]|@tsv",
-    ])?;
-    Some(
+    ]) {
+        FetchOutcome::Found(s) => s,
+        FetchOutcome::NotFound => return ContentsListing::NotFound,
+        FetchOutcome::Failed => return ContentsListing::Failed,
+    };
+    ContentsListing::Found(
         out.lines()
             .filter_map(|l| {
                 let mut it = l.split('\t');
@@ -174,18 +287,27 @@ fn gh_contents_entries(org: &str, repo: &str, path: &str) -> Option<Vec<(String,
 /// (rather than all of `audit/`) is deliberate: a non-Protofire report elsewhere
 /// under `audit/` must NOT be counted as a Protofire audit. Unlike the whole-repo
 /// trees API, the contents API never silently truncates on large repos.
-fn collect_audit_pdfs(
+///
+/// Returns `true` iff listing THIS `dir` FAILED (a fetch error — as opposed to a
+/// 404 / genuinely-empty dir). A failure while recursing into a SUBDIR is
+/// tolerated (it does not set the flag): only the caller's inspection of the
+/// top-level `audit/protofire` return decides the `unknown` state, so a flaky
+/// nested listing can't poison a repo that has PDFs sitting at the top level.
+fn collect_audit_pdfs<F: GhApi>(
+    gh: &F,
     org: &str,
     repo: &str,
     dir: &str,
     depth: u8,
     acc: &mut Vec<(String, String)>,
-) {
+) -> bool {
     if depth == 0 {
-        return;
+        return false;
     }
-    let Some(entries) = gh_contents_entries(org, repo, dir) else {
-        return;
+    let entries = match gh_contents_entries(gh, org, repo, dir) {
+        ContentsListing::Found(entries) => entries,
+        ContentsListing::NotFound => return false,
+        ContentsListing::Failed => return true,
     };
     for (ty, path, name) in entries {
         if ty == "file" {
@@ -193,35 +315,43 @@ fn collect_audit_pdfs(
                 acc.push((name, path));
             }
         } else if ty == "dir" {
-            collect_audit_pdfs(org, repo, &path, depth - 1, acc);
+            // Tolerate a subdir listing failure — it must not flip the whole repo
+            // to `unknown` when the top-level listing succeeded.
+            let _ = collect_audit_pdfs(gh, org, repo, &path, depth - 1, acc);
         }
     }
+    false
 }
 
 /// Does `sha` name a real commit in the repo? The resolution half of anchor
 /// classification: `gh api repos/{o}/{r}/commits/{sha}` echoes the commit's SHA on
-/// success and nothing on a 404, so a hex-looking filename token that isn't a real
-/// commit falls back to unanchored rather than erroring.
-fn commit_exists(org: &str, repo: &str, sha: &str) -> bool {
-    gh_stdout(&[
+/// success and 404s on an unknown ref. It runs through the shared `GhApi` seam so it
+/// shares the retry/backoff of the rest of the audit path; a hex-looking filename
+/// token that isn't a real commit (`NotFound`) — or a fetch that `Failed` after
+/// retries — falls back to unanchored rather than erroring.
+fn commit_exists<F: GhApi>(gh: &F, org: &str, repo: &str, sha: &str) -> bool {
+    match gh.api_jq(&[
         "api",
         &format!("repos/{org}/{repo}/commits/{sha}"),
         "--jq",
         ".sha",
-    ])
-    .map(|s| !s.trim().is_empty())
-    .unwrap_or(false)
+    ]) {
+        FetchOutcome::Found(s) => !s.trim().is_empty(),
+        FetchOutcome::NotFound | FetchOutcome::Failed => false,
+    }
 }
 
 /// Commit date + sha of the commit that last touched (added) a path.
-fn pdf_commit(org: &str, repo: &str, path: &str) -> (String, String) {
-    let out = gh_stdout(&[
+fn pdf_commit<F: GhApi>(gh: &F, org: &str, repo: &str, path: &str) -> (String, String) {
+    let out = match gh.api_jq(&[
         "api",
         &format!("repos/{org}/{repo}/commits?path={path}&per_page=1"),
         "--jq",
         "[.[0].commit.committer.date // \"\", .[0].sha // \"\"]|@tsv",
-    ])
-    .unwrap_or_default();
+    ]) {
+        FetchOutcome::Found(s) => s,
+        FetchOutcome::NotFound | FetchOutcome::Failed => String::new(),
+    };
     let mut it = out.trim_end_matches('\n').split('\t');
     (
         it.next().unwrap_or("").to_string(),
@@ -233,10 +363,14 @@ fn pdf_commit(org: &str, repo: &str, path: &str) -> (String, String) {
 /// the tag whose commit date is newest (`TAG_COMMIT_DATE` DESC): the REST tags
 /// list is NOT date-ordered, and resolving every tag's date would be O(tags) REST
 /// calls (some repos carry 100+ tags). Empty tag fields ⇒ the repo has no tags.
-fn repo_default_and_latest_tag(org: &str, repo: &str) -> (String, Option<String>, Option<String>) {
+fn repo_default_and_latest_tag<F: GhApi>(
+    gh: &F,
+    org: &str,
+    repo: &str,
+) -> (String, Option<String>, Option<String>) {
     const Q: &str = "query($o:String!,$n:String!){repository(owner:$o,name:$n){defaultBranchRef{name} refs(refPrefix:\"refs/tags/\",orderBy:{field:TAG_COMMIT_DATE,direction:DESC},first:1){nodes{name target{__typename ... on Commit{committedDate} ... on Tag{target{... on Commit{committedDate}}}}}}}}";
     const JQ: &str = ".data.repository | [(.defaultBranchRef.name // \"\"), (.refs.nodes[0].name // \"\"), (.refs.nodes[0].target.committedDate // .refs.nodes[0].target.target.committedDate // \"\")] | @tsv";
-    let out = gh_stdout(&[
+    let out = match gh.api_jq(&[
         "api",
         "graphql",
         "-f",
@@ -247,8 +381,10 @@ fn repo_default_and_latest_tag(org: &str, repo: &str) -> (String, Option<String>
         &format!("n={repo}"),
         "--jq",
         JQ,
-    ])
-    .unwrap_or_default();
+    ]) {
+        FetchOutcome::Found(s) => s,
+        FetchOutcome::NotFound | FetchOutcome::Failed => String::new(),
+    };
     let mut it = out.trim_end_matches('\n').split('\t');
     let branch = it.next().unwrap_or("").to_string();
     let tag = it.next().unwrap_or("").to_string();
@@ -270,16 +406,20 @@ fn repo_default_and_latest_tag(org: &str, repo: &str) -> (String, Option<String>
 /// files_truncated). Clone-free drift: GitHub returns per-file additions/deletions.
 /// The files list is a single page (GitHub caps it at 300); `truncated` flags the
 /// rare raindex-scale diff where the source-LOC total becomes a lower bound.
-fn fetch_compare(
+fn fetch_compare<F: GhApi>(
+    gh: &F,
     org: &str,
     repo: &str,
     base: &str,
     head: &str,
 ) -> Option<(String, Vec<CompareFile>, u64, bool)> {
-    let raw = gh_stdout(&[
+    let raw = match gh.api_jq(&[
         "api",
         &format!("repos/{org}/{repo}/compare/{base}...{head}"),
-    ])?;
+    ]) {
+        FetchOutcome::Found(s) => s,
+        FetchOutcome::NotFound | FetchOutcome::Failed => return None,
+    };
     let v: serde_json::Value = serde_json::from_str(&raw).ok()?;
     let base_date = v["base_commit"]["commit"]["committer"]["date"]
         .as_str()?
@@ -301,38 +441,53 @@ fn fetch_compare(
     Some((base_date, files, total, truncated))
 }
 
+/// A `ProtofireResult` for a repo with no usable PDF, carrying only the coverage
+/// `state`. `never` (genuinely absent) and `unknown` (fetch failed) share this
+/// shape; the caller decides which by whether the top-level listing FAILED.
+fn empty_protofire(state: &'static str) -> ProtofireResult {
+    ProtofireResult {
+        has_pdf: false,
+        external_audit: state,
+        pdfs: Vec::new(),
+        audited_ref: None,
+        anchor_kind: None,
+        tag_convention_absent: false,
+        audited_date: String::new(),
+        latest_tag: None,
+        latest_tag_iso: None,
+        is_stale: false,
+        source_loc: None,
+        source_loc_added: None,
+        source_loc_removed: None,
+        files_changed: None,
+        commits_since: None,
+        source_drift_truncated: false,
+        compare_url: None,
+    }
+}
+
 /// Assemble a repo's EXTERNAL (Protofire) audit situation: enumerate
 /// `audit/protofire/` PDFs, pick the newest as the reference, parse its tag (or
 /// fall back to its commit), find the newest tag, and quantify source-LOC drift
-/// base…HEAD — all clone-free. No PDF ⇒ `never` (the coverage gap), returned cheaply.
-fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
+/// base…HEAD — all clone-free. A genuinely-empty listing ⇒ `never` (the coverage
+/// gap); a FAILED listing ⇒ `unknown` (never a false `never` — issue #52).
+fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireResult {
     let mut pdf_paths: Vec<(String, String)> = Vec::new();
-    collect_audit_pdfs(org, repo, "audit/protofire", 2, &mut pdf_paths);
+    let failed = collect_audit_pdfs(gh, org, repo, "audit/protofire", 2, &mut pdf_paths);
     if pdf_paths.is_empty() {
-        return ProtofireResult {
-            has_pdf: false,
-            external_audit: protofire::NEVER,
-            pdfs: Vec::new(),
-            audited_ref: None,
-            anchor_kind: None,
-            tag_convention_absent: false,
-            audited_date: String::new(),
-            latest_tag: None,
-            latest_tag_iso: None,
-            is_stale: false,
-            source_loc: None,
-            source_loc_added: None,
-            source_loc_removed: None,
-            files_changed: None,
-            commits_since: None,
-            source_drift_truncated: false,
-        };
+        // A failed top-level listing is coverage-indeterminate (`unknown`), NOT a
+        // confirmed gap (`never`). No fetch error may become a coverage claim.
+        return empty_protofire(if failed {
+            protofire::UNKNOWN
+        } else {
+            protofire::NEVER
+        });
     }
     // Resolve each PDF's commit date + sha, then order by path for stable output.
     let mut pdfs: Vec<AuditPdf> = pdf_paths
         .into_iter()
         .map(|(filename, path)| {
-            let (iso, sha) = pdf_commit(org, repo, &path);
+            let (iso, sha) = pdf_commit(gh, org, repo, &path);
             AuditPdf {
                 filename,
                 path,
@@ -348,7 +503,9 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
     // tag, a hex commit token that RESOLVES to a real commit, or neither. The
     // resolver is the I/O half — `commit_exists` guards a hex-looking token that
     // isn't actually a commit, so it falls back to unanchored (not an error).
-    let anchor = classify_anchor(&pdfs[newest].filename, |sha| commit_exists(org, repo, sha));
+    let anchor = classify_anchor(&pdfs[newest].filename, |sha| {
+        commit_exists(gh, org, repo, sha)
+    });
     let audited_ref = anchor.drift_base_ref().map(str::to_string);
     let anchor_kind = Some(anchor.kind());
     // Kept for the panel/consumers: true whenever the filename encodes no vX.Y.Z
@@ -356,7 +513,7 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
     // just anchored to a commit instead.
     let tag_convention_absent = !matches!(anchor, AuditAnchor::Tag(_));
 
-    let (default_branch, latest_tag, latest_tag_iso) = repo_default_and_latest_tag(org, repo);
+    let (default_branch, latest_tag, latest_tag_iso) = repo_default_and_latest_tag(gh, org, repo);
 
     // Drift base: the audited anchor (tag or resolved commit) when the filename
     // encodes one, else the newest PDF's own commit (the unanchored fallback).
@@ -366,7 +523,7 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
     let cmp = if base.is_empty() {
         None
     } else {
-        fetch_compare(org, repo, &base, &default_branch)
+        fetch_compare(gh, org, repo, &base, &default_branch)
     };
 
     let (
@@ -412,6 +569,10 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
     let external_audit = classify_external_audit(true, has_tags, newer_tag_exists);
     let stale = is_stale(newer_tag_exists, source_loc.unwrap_or(0));
 
+    // The GitHub compare-view URL for the audited drift (base…default branch);
+    // None when either ref is empty, so the panel links only when it resolves.
+    let compare_url = protofire::compare_url(org, repo, &base, &default_branch);
+
     ProtofireResult {
         has_pdf: true,
         external_audit,
@@ -429,6 +590,7 @@ fn fetch_protofire_audit(org: &str, repo: &str) -> ProtofireResult {
         files_changed,
         commits_since,
         source_drift_truncated,
+        compare_url,
     }
 }
 
@@ -460,6 +622,37 @@ fn resolve_json_out(json_out_env: Option<String>, json_flag: Option<String>) -> 
     json_flag
         .or(json_out_env)
         .unwrap_or_else(|| "site/health.json".into())
+}
+
+/// Fan `work` out over `repos` across up to `par` worker threads (work-stealing
+/// via a shared cursor) and return a result for EVERY repo. Each result is
+/// produced by `work` and carries its own repo identity, so completeness and the
+/// result SET are independent of `par` — `par=1` and `par=N` yield the same set.
+fn scan_repos<T, F>(repos: Vec<String>, par: usize, work: F) -> Vec<T>
+where
+    F: Fn(&str) -> T + Sync,
+    T: Send,
+{
+    let total = repos.len();
+    if total == 0 {
+        return Vec::new();
+    }
+    let next = AtomicUsize::new(0);
+    let results: Mutex<Vec<T>> = Mutex::new(Vec::new());
+    let nworkers = par.clamp(1, total);
+    std::thread::scope(|s| {
+        for _ in 0..nworkers {
+            s.spawn(|| loop {
+                let idx = next.fetch_add(1, Ordering::Relaxed);
+                if idx >= repos.len() {
+                    break;
+                }
+                let out = work(&repos[idx]);
+                results.lock().unwrap().push(out);
+            });
+        }
+    });
+    results.into_inner().unwrap()
 }
 
 fn main() {
@@ -513,32 +706,21 @@ fn main() {
     let total = repos.len();
     eprintln!("Scanning {total} {org} repos (parallel={par})...");
 
-    // bounded-concurrency fan-out over repos
-    let next = AtomicUsize::new(0);
-    let results: Mutex<Vec<RepoResult>> = Mutex::new(Vec::new());
-    let nworkers = par.clamp(1, total.max(1));
-    std::thread::scope(|s| {
-        for _ in 0..nworkers {
-            s.spawn(|| loop {
-                let idx = next.fetch_add(1, Ordering::Relaxed);
-                if idx >= repos.len() {
-                    break;
-                }
-                let repo = &repos[idx];
-                let signals = detect_signals(&fetch_inputs(&org, repo));
-                let last_audit = fetch_last_audit(&org, repo);
-                let protofire = fetch_protofire_audit(&org, repo);
-                results.lock().unwrap().push(RepoResult {
-                    name: repo.clone(),
-                    signals,
-                    last_audit,
-                    protofire,
-                });
-            });
+    // One shared `gh` fetcher borrowed by every worker (`GhApi: Sync`). It retries
+    // the secondary-rate-limit failure that `par` concurrent subprocesses provoke,
+    // so a transient error surfaces as `unknown`, never a false `never`.
+    let gh = GhCli::new();
+    let mut results: Vec<RepoResult> = scan_repos(repos, par, |repo| {
+        let signals = detect_signals(&fetch_inputs(&org, repo));
+        let last_audit = fetch_last_audit(&org, repo);
+        let protofire = fetch_protofire_audit(&gh, &org, repo);
+        RepoResult {
+            name: repo.to_string(),
+            signals,
+            last_audit,
+            protofire,
         }
     });
-
-    let mut results = results.into_inner().unwrap();
     // findings view (owned) so we can re-sort `results` for audit recency afterwards
     let mut findings: Vec<(String, Vec<&'static str>)> = results
         .iter()
@@ -627,7 +809,12 @@ fn main() {
             continue;
         }
         let refd = p.audited_ref.as_deref().unwrap_or("(unanchored)");
-        let kind = p.anchor_kind.unwrap_or("unanchored");
+        // tag → [tag-anchored], commit → [commit-anchored], neither → [unanchored]
+        // (never the malformed [unanchored-anchored]).
+        let anchor_label = match p.anchor_kind {
+            Some("unanchored") | None => "[unanchored]".to_string(),
+            Some(kind) => format!("[{kind}-anchored]"),
+        };
         let latest = p.latest_tag.as_deref().unwrap_or("(no tags)");
         let drift = match (
             p.source_loc_added,
@@ -645,7 +832,7 @@ fn main() {
             _ => "drift unavailable".to_string(),
         };
         println!(
-            "  {:<28} {:<8} audited {refd} [{kind}-anchored] → latest {latest} · {drift}",
+            "  {:<28} {:<8} audited {refd} {anchor_label} → latest {latest} · {drift}",
             r.name, p.external_audit
         );
     }
@@ -709,6 +896,7 @@ fn main() {
                     "filesChangedSinceAudit": p.files_changed,
                     "commitsSinceAudit": p.commits_since,
                     "sourceDriftTruncated": p.source_drift_truncated,
+                    "compareUrl": p.compare_url,
                     "daysSinceAudit": days,
                 })
             }).collect::<Vec<_>>(),
@@ -724,7 +912,229 @@ fn main() {
 
 #[cfg(test)]
 mod tests {
-    use super::resolve_json_out;
+    use super::*;
+    use std::collections::HashMap;
+
+    /// A scripted `GhApi` for network-free tests. The first route whose needle is
+    /// a substring of the joined args decides the returned `FetchOutcome`; an
+    /// unmatched request defaults to `NotFound`. Per-needle call counts prove
+    /// which endpoints were hit (and that no phantom retry happened at this seam —
+    /// retry lives in `GhCli`, which this double bypasses). Never sleeps or spawns.
+    struct FakeGh {
+        routes: Vec<(&'static str, FetchOutcome)>,
+        calls: Mutex<HashMap<String, usize>>,
+    }
+
+    impl FakeGh {
+        fn new(routes: Vec<(&'static str, FetchOutcome)>) -> Self {
+            FakeGh {
+                routes,
+                calls: Mutex::new(HashMap::new()),
+            }
+        }
+        fn count(&self, needle: &str) -> usize {
+            *self.calls.lock().unwrap().get(needle).unwrap_or(&0)
+        }
+    }
+
+    impl GhApi for FakeGh {
+        fn api_jq(&self, args: &[&str]) -> FetchOutcome {
+            let joined = args.join(" ");
+            for (needle, outcome) in &self.routes {
+                if joined.contains(needle) {
+                    *self
+                        .calls
+                        .lock()
+                        .unwrap()
+                        .entry((*needle).to_string())
+                        .or_insert(0) += 1;
+                    return outcome.clone();
+                }
+            }
+            FetchOutcome::NotFound
+        }
+    }
+
+    /// A `contents` listing row (`type\tpath\tname`) for one flat `.pdf`.
+    fn pdf_row(name: &str) -> FetchOutcome {
+        FetchOutcome::Found(format!("file\taudit/protofire/{name}\t{name}"))
+    }
+
+    // ---- external-call coverage: fetch_protofire_audit / collect_audit_pdfs ----
+
+    #[test]
+    fn found_pdf_classifies_as_audited_not_never_or_unknown() {
+        // A audit/protofire listing carrying a .pdf → the repo is audited. No tags
+        // are scripted, so the taxonomy lands on `na` (has PDF, nothing to compare)
+        // — the point is it is NEITHER `never` NOR `unknown`.
+        let gh = FakeGh::new(vec![(
+            "contents/audit/protofire",
+            pdf_row("rain.example.v1.2.3.jun-2026.pdf"),
+        )]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        assert!(
+            r.has_pdf,
+            "a listed .pdf means the repo has a Protofire audit"
+        );
+        assert_eq!(r.external_audit, protofire::NA);
+        assert_ne!(r.external_audit, protofire::NEVER);
+        assert_ne!(r.external_audit, protofire::UNKNOWN);
+    }
+
+    #[test]
+    fn not_found_listing_is_never_audited() {
+        // A genuine 404 on the top-level listing → genuinely absent → `never`.
+        let gh = FakeGh::new(vec![("contents/audit/protofire", FetchOutcome::NotFound)]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        assert!(!r.has_pdf);
+        assert_eq!(r.external_audit, protofire::NEVER);
+    }
+
+    #[test]
+    fn failed_listing_is_unknown_never_a_false_never() {
+        // THE #52 FIX: a FAILED top-level listing (rate-limit/network after retries)
+        // must classify as `unknown`, never the false coverage claim `never`. This
+        // assertion fails against the pre-fix code, which returned `never` here.
+        let gh = FakeGh::new(vec![("contents/audit/protofire", FetchOutcome::Failed)]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        assert!(!r.has_pdf);
+        assert_eq!(r.external_audit, protofire::UNKNOWN);
+        assert_ne!(
+            r.external_audit,
+            protofire::NEVER,
+            "a failed fetch must NEVER be reported as never-audited"
+        );
+        // The listing was fetched exactly once at this seam (retry lives in GhCli).
+        assert_eq!(gh.count("contents/audit/protofire"), 1);
+    }
+
+    // ---- retry: pure classifier + bounded-retry driver (no sleeping) ----
+
+    #[test]
+    fn gh_failure_classifies_404_as_notfound_else_retryable() {
+        assert_eq!(
+            classify_gh_failure("gh: Not Found (HTTP 404)"),
+            GhFailure::NotFound
+        );
+        assert_eq!(
+            classify_gh_failure("HTTP 403: API rate limit exceeded (secondary)"),
+            GhFailure::Retryable
+        );
+        assert_eq!(classify_gh_failure(""), GhFailure::Retryable);
+    }
+
+    #[test]
+    fn retry_fetch_retries_then_succeeds_with_exact_count() {
+        // Retryable for the first 2 attempts, then Found → the driver returns Found
+        // and the attempt count proves it retried exactly twice (3 attempts total).
+        let mut calls = 0u32;
+        let out = retry_fetch(4, |_| {
+            calls += 1;
+            if calls < 3 {
+                Attempt::Retryable
+            } else {
+                Attempt::Found("ok".into())
+            }
+        });
+        assert_eq!(out, FetchOutcome::Found("ok".into()));
+        assert_eq!(calls, 3, "two retries then a success");
+    }
+
+    #[test]
+    fn retry_fetch_exhausts_to_failed() {
+        // Always Retryable → after `max_attempts` the outcome is `Failed`, and it
+        // tried exactly `max_attempts` times (no more, no fewer).
+        let mut calls = 0u32;
+        let out = retry_fetch(4, |_| {
+            calls += 1;
+            Attempt::Retryable
+        });
+        assert_eq!(out, FetchOutcome::Failed);
+        assert_eq!(calls, 4);
+    }
+
+    #[test]
+    fn retry_fetch_notfound_short_circuits() {
+        // A 404 is authoritative — the driver returns immediately without retrying.
+        let mut calls = 0u32;
+        let out = retry_fetch(4, |_| {
+            calls += 1;
+            Attempt::NotFound
+        });
+        assert_eq!(out, FetchOutcome::NotFound);
+        assert_eq!(calls, 1, "NotFound must not be retried");
+    }
+
+    // ---- concurrency: scan_repos ----
+
+    fn repo_set(names: &[&str]) -> Vec<String> {
+        names.iter().map(|s| s.to_string()).collect()
+    }
+
+    fn sorted(mut v: Vec<(String, &'static str)>) -> Vec<(String, &'static str)> {
+        v.sort();
+        v
+    }
+
+    #[test]
+    fn scan_repos_returns_every_repo_at_any_parallelism() {
+        let repos = repo_set(&["a", "b", "c", "d", "e"]);
+        let expected = vec![
+            "a".to_string(),
+            "b".to_string(),
+            "c".to_string(),
+            "d".to_string(),
+            "e".to_string(),
+        ];
+        // par=1, par==len, and par>len must all cover every repo exactly once.
+        for par in [1usize, repos.len(), repos.len() + 3] {
+            let out = scan_repos(repos.clone(), par, |r| (r.to_string(), "ok"));
+            let mut names: Vec<String> = out.into_iter().map(|(n, _)| n).collect();
+            names.sort();
+            assert_eq!(names, expected, "par={par} must cover every repo");
+        }
+    }
+
+    #[test]
+    fn scan_repos_result_set_is_par_independent() {
+        let repos = repo_set(&["alpha", "beta", "gamma", "delta"]);
+        let baseline = sorted(scan_repos(repos.clone(), 1, |r| (r.to_string(), "state")));
+        for par in [2usize, 4, 50] {
+            let got = sorted(scan_repos(repos.clone(), par, |r| (r.to_string(), "state")));
+            assert_eq!(got, baseline, "par={par} must yield the same result set");
+        }
+    }
+
+    #[test]
+    fn scan_repos_isolates_per_repo_results_across_threads() {
+        // One repo yields `unknown`, the rest `current`. No thread may cross-
+        // contaminate: exactly the one repo is `unknown`, every other is `current`.
+        let repos = repo_set(&["r0", "r1", "r2", "r3", "r4", "r5"]);
+        let out = scan_repos(repos.clone(), 4, |r| {
+            let state = if r == "r3" {
+                protofire::UNKNOWN
+            } else {
+                protofire::CURRENT
+            };
+            (r.to_string(), state)
+        });
+        assert_eq!(out.len(), repos.len(), "every repo produced a result");
+        for (name, state) in &out {
+            if name == "r3" {
+                assert_eq!(*state, protofire::UNKNOWN, "only r3 is unknown");
+            } else {
+                assert_eq!(*state, protofire::CURRENT, "{name} must stay current");
+            }
+        }
+        let unknowns = out.iter().filter(|(_, s)| *s == protofire::UNKNOWN).count();
+        assert_eq!(unknowns, 1, "exactly one repo is unknown — no leakage");
+    }
+
+    #[test]
+    fn scan_repos_empty_input_is_empty() {
+        let out: Vec<(String, &'static str)> = scan_repos(Vec::new(), 4, |r| (r.to_string(), "x"));
+        assert!(out.is_empty());
+    }
 
     #[test]
     fn default_populates_site_health_json() {

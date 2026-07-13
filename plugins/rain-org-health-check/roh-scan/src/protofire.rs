@@ -50,10 +50,14 @@ pub struct CompareFile {
 /// - `na`      — has a PDF but the repo has no tags to compare against
 /// - `stale`   — has a PDF and a tag is newer than the audit
 /// - `current` — has a PDF and no tag is newer than the audit
+/// - `unknown` — the `audit/protofire/` listing fetch FAILED, so coverage is
+///   indeterminate. This is distinct from `never`: a failed fetch must never be
+///   read as a confirmed coverage gap.
 pub const NEVER: &str = "never";
 pub const NA: &str = "na";
 pub const STALE: &str = "stale";
 pub const CURRENT: &str = "current";
+pub const UNKNOWN: &str = "unknown";
 
 /// Extract the audited git tag (`vMAJOR.MINOR.PATCH`) encoded in a PDF filename
 /// per the naming convention. Returns `None` when the filename encodes no such
@@ -142,48 +146,47 @@ pub fn classify_anchor<F: FnOnce(&str) -> bool>(filename: &str, resolve: F) -> A
     AuditAnchor::Unanchored
 }
 
-/// True if `path` is a TEST file (excluded from source-LOC drift). Pins the
-/// exclusion set for the org's languages (sol / rs / ts): any `test`/`tests`/
-/// `spec`/`specs`/`__tests__` path segment, or a per-language test basename
-/// suffix (`*.t.sol`, `*.test.ts`, `*.spec.ts`, and the js/jsx/tsx/mjs/cjs kin).
+/// Build the GitHub compare-view URL for a repo's audit drift:
+/// `https://github.com/{owner}/{repo}/compare/{base}...{head}`. `base` is the
+/// audited anchor (tag or resolved commit); `head` the repo default branch.
+/// `None` when either side is empty (a `compare/...head` or `compare/base...`
+/// link is broken), so the panel omits the link rather than pointing at a
+/// malformed compare view.
+pub fn compare_url(owner: &str, repo: &str, base: &str, head: &str) -> Option<String> {
+    if base.is_empty() || head.is_empty() {
+        return None;
+    }
+    Some(format!(
+        "https://github.com/{owner}/{repo}/compare/{base}...{head}"
+    ))
+}
+
+/// True if a Solidity path is a TEST file (excluded from source-LOC drift): it
+/// ends with the Foundry test suffix `.t.sol`, OR it lies under a `test/` or
+/// `tests/` directory (any such path segment, including a leading one — so
+/// `test/util/Foo.sol` is a test even without a `.t.sol` suffix). Solidity
+/// scripts (`.s.sol`) are NOT tests and are deliberately not matched here.
 pub fn is_test_path(path: &str) -> bool {
     let p = path.to_ascii_lowercase();
-    const TEST_DIRS: [&str; 5] = ["test", "tests", "spec", "specs", "__tests__"];
-    if p.split('/').any(|seg| TEST_DIRS.contains(&seg)) {
+    if p.ends_with(".t.sol") {
         return true;
     }
-    const TEST_SUFFIXES: [&str; 13] = [
-        ".t.sol",
-        ".test.ts",
-        ".spec.ts",
-        ".test.tsx",
-        ".spec.tsx",
-        ".test.js",
-        ".spec.js",
-        ".test.jsx",
-        ".spec.jsx",
-        ".test.mjs",
-        ".spec.mjs",
-        ".test.cjs",
-        ".spec.cjs",
-    ];
-    TEST_SUFFIXES.iter().any(|s| p.ends_with(s))
+    const TEST_DIRS: [&str; 2] = ["test", "tests"];
+    p.split('/').any(|seg| TEST_DIRS.contains(&seg))
 }
 
-/// True if `path` is a SOURCE-CODE file whose LOC drift is meaningful. Scoped to
-/// the org's languages (sol / rs / ts + js family). TypeScript declaration files
-/// (`*.d.ts`) are generated type surface, not hand-written source, so excluded.
+/// True if `path` is a Solidity SOURCE file whose LOC drift is meaningful.
+/// Protofire audits are Solidity audits, so drift is measured over `.sol` files
+/// ONLY — every other language is out of scope for this metric.
 pub fn is_source_file(path: &str) -> bool {
-    let p = path.to_ascii_lowercase();
-    if p.ends_with(".d.ts") {
-        return false;
-    }
-    const SRC_EXT: [&str; 8] = [".sol", ".rs", ".ts", ".tsx", ".js", ".jsx", ".mjs", ".cjs"];
-    SRC_EXT.iter().any(|e| p.ends_with(e))
+    path.to_ascii_lowercase().ends_with(".sol")
 }
 
-/// The drift predicate: a file counts toward source-LOC drift iff it is source
-/// AND not a test. A "source LOC" number that silently counts tests is misleading.
+/// The drift predicate: a file counts toward source-LOC drift iff it is a
+/// non-test Solidity source file. Every `.sol` outside a test — src/, deploy/,
+/// script(s)/ (`.s.sol` scripts included), config, dependencies/ — counts; only
+/// the test exclusion removes files. A "source LOC" number that silently counts
+/// tests is misleading.
 pub fn counts_as_source_drift(path: &str) -> bool {
     is_source_file(path) && !is_test_path(path)
 }
@@ -417,58 +420,68 @@ mod tests {
     // ---- is_test_path ----
     #[test]
     fn test_dirs_are_tests() {
+        // A `test/` or `tests/` segment (leading or nested) marks a test, even
+        // without a `.t.sol` suffix.
         assert!(is_test_path("test/Foo.sol"));
-        assert!(is_test_path("src/lib/tests/mod.rs"));
-        assert!(is_test_path("packages/ui/__tests__/a.ts"));
-        assert!(is_test_path("spec/thing.js"));
+        assert!(is_test_path("test/util/Helper.sol")); // nested under test/, plain .sol
+        assert!(is_test_path("src/lib/tests/Mod.sol"));
     }
 
     #[test]
-    fn test_suffixes_are_tests() {
+    fn test_suffix_is_a_test() {
+        // The Foundry `.t.sol` suffix marks a test anywhere.
         assert!(is_test_path("src/Vault.t.sol"));
-        assert!(is_test_path("app/foo.test.ts"));
-        assert!(is_test_path("app/foo.spec.tsx"));
+        assert!(is_test_path("test/Foo.t.sol"));
     }
 
     #[test]
-    fn non_test_source_is_not_a_test() {
+    fn non_test_solidity_is_not_a_test() {
         assert!(!is_test_path("src/Vault.sol"));
-        assert!(!is_test_path("src/lib.rs"));
-        assert!(!is_test_path("app/latest.ts")); // "latest" contains "test" but is not a segment/suffix
+        assert!(!is_test_path("deploy/Deploy.sol"));
+        assert!(!is_test_path("script/Thing.s.sol")); // a script, NOT a test
         assert!(!is_test_path("contracts/Contest.sol")); // "Contest" is not a test segment
     }
 
-    // ---- is_source_file ----
+    // ---- is_source_file (Solidity only) ----
     #[test]
-    fn recognizes_source_extensions() {
+    fn recognizes_solidity_source() {
         for p in [
             "src/A.sol",
-            "src/b.rs",
-            "x.ts",
-            "x.tsx",
-            "x.js",
-            "x.jsx",
-            "x.mjs",
-            "x.cjs",
+            "deploy/Deploy.sol",
+            "script/Thing.s.sol",
+            "dependencies/x/Y.sol",
         ] {
-            assert!(is_source_file(p), "{p} should be source");
+            assert!(is_source_file(p), "{p} should be Solidity source");
         }
     }
 
     #[test]
-    fn non_source_and_decls_excluded() {
+    fn non_solidity_excluded() {
+        // Protofire audits are Solidity audits — every non-`.sol` extension is out
+        // of scope, including the languages the metric used to (wrongly) count.
         assert!(!is_source_file("README.md"));
         assert!(!is_source_file("audit/report.pdf"));
         assert!(!is_source_file("foundry.toml"));
-        assert!(!is_source_file("types/index.d.ts")); // generated declarations, not source
+        assert!(!is_source_file("src/lib.rs")); // Rust dropped
+        assert!(!is_source_file("packages/x/src/a.ts")); // TypeScript dropped
+        assert!(!is_source_file("app/ui.tsx")); // TSX dropped
     }
 
     // ---- counts_as_source_drift ----
     #[test]
-    fn drift_counts_source_but_not_tests() {
-        assert!(counts_as_source_drift("src/Vault.sol"));
-        assert!(!counts_as_source_drift("src/Vault.t.sol")); // source ext but a test
-        assert!(!counts_as_source_drift("test/helpers.sol")); // in a test dir
+    fn drift_counts_non_test_solidity_only() {
+        // Every non-test `.sol` counts, regardless of directory.
+        assert!(counts_as_source_drift("src/Foo.sol"));
+        assert!(counts_as_source_drift("deploy/Deploy.sol"));
+        assert!(counts_as_source_drift("script/Thing.s.sol")); // scripts are source, not tests
+        assert!(counts_as_source_drift("dependencies/x/Y.sol"));
+        // Tests are excluded: the `.t.sol` suffix and the `test/` directory both.
+        assert!(!counts_as_source_drift("src/Foo.t.sol")); // Solidity but a test suffix
+        assert!(!counts_as_source_drift("test/util/Helper.sol")); // under test/, plain .sol
+        assert!(!counts_as_source_drift("test/Foo.t.sol")); // both
+                                                            // Non-Solidity never counts — the JS/TS/Rust extensions were dropped.
+        assert!(!counts_as_source_drift("src/lib.rs"));
+        assert!(!counts_as_source_drift("packages/x/src/a.ts"));
         assert!(!counts_as_source_drift("README.md")); // not source at all
     }
 
@@ -479,7 +492,12 @@ mod tests {
                 filename: "src/A.sol".into(),
                 additions: 10,
                 deletions: 5,
-            }, // +10 / −5
+            }, // +10 / −5  counts (src/ Solidity)
+            CompareFile {
+                filename: "deploy/D.sol".into(),
+                additions: 2,
+                deletions: 1,
+            }, // +2 / −1   counts (deploy/ Solidity is audited surface)
             CompareFile {
                 filename: "test/A.t.sol".into(),
                 additions: 99,
@@ -489,7 +507,7 @@ mod tests {
                 filename: "src/B.rs".into(),
                 additions: 3,
                 deletions: 2,
-            }, // +3 / −2
+            }, // excluded (.rs — not Solidity, not audited surface)
             CompareFile {
                 filename: "README.md".into(),
                 additions: 40,
@@ -499,22 +517,23 @@ mod tests {
                 filename: "src/C.ts".into(),
                 additions: 1,
                 deletions: 0,
-            }, // +1 / −0
+            }, // excluded (.ts — not Solidity)
         ];
         let (added, removed, files_n) = source_drift(&files);
-        // Added and removed are tracked independently: 10+3+1 vs 5+2+0. The
-        // asymmetry (14 ≠ 7) catches a swap; excluding the symmetric 99/99 test
-        // file and the 40/40 README proves the non-test-source predicate gates
-        // BOTH sides, not just the combined total.
-        assert_eq!(added, 14, "additions = non-test source additions only");
-        assert_eq!(removed, 7, "deletions = non-test source deletions only");
-        assert_eq!(files_n, 3, "only the 3 non-test source files contribute");
+        // Only non-test Solidity contributes: 10+2 additions vs 5+1 deletions
+        // across src/ and deploy/. The asymmetry (12 ≠ 6) catches an added/removed
+        // swap; excluding the symmetric 99/99 test file, the 40/40 README, and the
+        // .rs/.ts files proves the non-test-Solidity predicate gates BOTH sides —
+        // Rust/TS are not part of a Protofire (Solidity) audit's surface.
+        assert_eq!(added, 12, "additions = non-test Solidity additions only");
+        assert_eq!(removed, 6, "deletions = non-test Solidity deletions only");
+        assert_eq!(files_n, 2, "only the 2 non-test .sol files contribute");
         assert_ne!(
             added, removed,
             "the two figures are distinct, not one total"
         );
         // The combined total the JSON keeps is derivable as the sum.
-        assert_eq!(added + removed, 21);
+        assert_eq!(added + removed, 18);
     }
 
     // ---- newest_pdf_index ----

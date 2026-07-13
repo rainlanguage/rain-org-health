@@ -205,6 +205,8 @@
   .au-drift .del { font-weight: 650; color: var(--crit); font-variant-numeric: tabular-nums; }
   .au-drift .dim { color: var(--ink-3); }
   .au-drift .ok { color: var(--clean); }
+  .au-drift a.au-drift-link { color: var(--ink-2); text-decoration: none; cursor: pointer; }
+  .au-drift a.au-drift-link:hover { text-decoration: underline; }
   .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
   .au-gapchip { font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
                 color: var(--ink-2); background: var(--surface); border: 1px solid var(--border);
@@ -474,11 +476,25 @@ function renderAudit() {
           // combined total is derived as the sum.
           const trunc = r.sourceDriftTruncated ? "+" : "";
           const combined = r.sourceLocAddedSinceAudit + r.sourceLocRemovedSinceAudit;
+          const addSpan = el("span", "add", "+" + r.sourceLocAddedSinceAudit + trunc);
+          const delSpan = el("span", "del", "−" + r.sourceLocRemovedSinceAudit + trunc);
+          // The `+added / −removed src LOC` diffstat links to the GitHub compare
+          // view (audited base…default branch) when the scanner resolved a
+          // compareUrl; href is set via the property, never innerHTML. No
+          // compareUrl ⇒ a plain span (no dead link). The +/− keep their colors.
+          let diffstat;
+          if (typeof r.compareUrl === "string" && r.compareUrl) {
+            diffstat = el("a", "au-drift-link");
+            diffstat.href = r.compareUrl;
+            diffstat.rel = "noopener noreferrer";
+            diffstat.target = "_blank";
+          } else {
+            diffstat = el("span");
+          }
+          diffstat.append(addSpan, " / ", delSpan, " src LOC");
           c3.append(
-            el("span", "add", "+" + r.sourceLocAddedSinceAudit + trunc),
-            " / ",
-            el("span", "del", "−" + r.sourceLocRemovedSinceAudit + trunc),
-            " src LOC · " + (r.filesChangedSinceAudit || 0) + " files · " + (r.commitsSinceAudit || 0) + " commits" +
+            diffstat,
+            " · " + (r.filesChangedSinceAudit || 0) + " files · " + (r.commitsSinceAudit || 0) + " commits" +
               (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "")
           );
           if (r.externalAudit === "current" && combined === 0) {
