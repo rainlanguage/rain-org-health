@@ -207,6 +207,9 @@
   .au-drift .ok { color: var(--clean); }
   .au-drift a.au-drift-link { color: var(--ink-2); text-decoration: none; cursor: pointer; }
   .au-drift a.au-drift-link:hover { text-decoration: underline; }
+  .au-drift.big { color: var(--crit); }
+  .au-drift.big .add { color: var(--crit); }
+  .au-drift.big a.au-drift-link { color: var(--crit); }
   .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
   .au-gapchip { font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
                 color: var(--ink-2); background: var(--surface); border: 1px solid var(--border);
@@ -366,9 +369,15 @@ function renderAudit() {
           }
           return el("span");
         };
+        // A drift reads as "too big" — a badly out-of-date audit — past either
+        // threshold; the truncated (too-large-to-size) case is big by definition. A
+        // big drift renders the whole cell red as a warning (.au-drift.big).
+        const BIG_LOC = 500,
+          BIG_FILES = 20;
         if (typeof r.sourceLocAddedSinceAudit === "number" && typeof r.sourceLocRemovedSinceAudit === "number") {
           // +added / −removed src LOC: additions green (--clean), deletions red (--crit).
           const combined = r.sourceLocAddedSinceAudit + r.sourceLocRemovedSinceAudit;
+          if (combined > BIG_LOC || (r.filesChangedSinceAudit || 0) > BIG_FILES) c3.classList.add("big");
           const diffstat = mkNode();
           diffstat.append(
             el("span", "add", "+" + r.sourceLocAddedSinceAudit),
@@ -390,6 +399,7 @@ function renderAudit() {
             node.append("no Solidity drift since audit");
             c3.append(node, commitsTail);
           } else {
+            c3.classList.add("big");
             node.append(k + (k === 1 ? " .sol file changed" : " .sol files changed"));
             c3.append(node, " · line drift too large to size" + commitsTail);
           }
