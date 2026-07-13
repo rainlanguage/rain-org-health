@@ -734,10 +734,12 @@ function renderPmChart(runs) {
     const cost = typeof r.costUsd === "number" ? ` · $${r.costUsd.toFixed(2)}` : "";
     const mins = startupMin(r), minsTxt = mins == null ? null : mins.toFixed(1) + " min";
     const pm = plotMin(r);
-    // Lead line shows the active unit; the complementary measure trails it. An
-    // errored run has no startup time — its plotted point is its time-to-death.
+    // Lead line shows the active unit; the complementary measure trails it. Only
+    // the durationMs-fallback case — an error run with no startupMs — reads as
+    // time-before-erroring; an error run that DID reach a first mutation has a
+    // real startupMs and gets the normal startup-time phrasing (still red).
     let head;
-    if (abs && r.outcome === "error")
+    if (abs && r.outcome === "error" && typeof r.startupMs !== "number")
       head = `<b>${pm == null ? "—" : pm.toFixed(1) + " min"}</b> before erroring`;
     else if (abs)
       head = `<b>${minsTxt || "—"}</b> startup time · ${r.startupPct.toFixed(1)}% of calls`;
