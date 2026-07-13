@@ -211,6 +211,40 @@ pub fn source_drift(files: &[CompareFile]) -> (u64, u64, u64) {
     (added, removed, n)
 }
 
+/// Count non-test Solidity files that differ between two git trees — the accurate
+/// drift-file count when a `compare` diff is TRUNCATED at GitHub's 300-file cap.
+/// A large repo whose `.sol` sorts past the cap otherwise reads as a false zero
+/// drift; the tree blob-sha diff sidesteps the cap and distinguishes a real zero
+/// (no `.sol` changed) from "the `.sol` files weren't in the truncated page".
+/// Each input is `(path, blob_sha)` for every blob in a recursive tree. A non-test
+/// `.sol` path counts when it is added, removed, or its blob sha changed. Line
+/// counts are NOT recoverable from trees, so this reports the file count only.
+pub fn changed_source_file_count(base: &[(String, String)], head: &[(String, String)]) -> u64 {
+    use std::collections::HashMap;
+    let src = |files: &[(String, String)]| -> HashMap<String, String> {
+        files
+            .iter()
+            .filter(|(p, _)| counts_as_source_drift(p))
+            .map(|(p, s)| (p.clone(), s.clone()))
+            .collect()
+    };
+    let base_map = src(base);
+    let head_map = src(head);
+    let mut changed = 0u64;
+    for (path, sha) in &head_map {
+        // Added (absent in base) or content-modified (blob sha differs).
+        if base_map.get(path) != Some(sha) {
+            changed += 1;
+        }
+    }
+    for path in base_map.keys() {
+        if !head_map.contains_key(path) {
+            changed += 1; // removed
+        }
+    }
+    changed
+}
+
 /// Index of the newest PDF by commit date (ISO-8601 UTC sorts lexicographically).
 /// The newest PDF is the reference audit — its filename is parsed for the tag and
 /// its commit is the drift base when no tag is present.
@@ -534,6 +568,52 @@ mod tests {
         );
         // The combined total the JSON keeps is derivable as the sum.
         assert_eq!(added + removed, 18);
+    }
+
+    // ---- changed_source_file_count (tree diff) ----
+    #[test]
+    fn changed_source_file_count_counts_added_removed_modified_non_test_sol() {
+        let b = |p: &str, s: &str| (p.to_string(), s.to_string());
+        let base = vec![
+            b("src/Keep.sol", "aaa"),       // unchanged
+            b("src/Modify.sol", "bbb"),     // modified (sha changes below)
+            b("src/Removed.sol", "ccc"),    // removed below
+            b("src/Old.sol", "ddd"),        // renamed -> src/New.sol
+            b("test/T.t.sol", "t1"),        // test — excluded
+            b("test/util/H.sol", "t2"),     // under test/ — excluded
+            b("crates/x/src/lib.rs", "r1"), // Rust — excluded
+            b("README.md", "m1"),           // non-source — excluded
+        ];
+        let head = vec![
+            b("src/Keep.sol", "aaa"),       // unchanged (same sha)
+            b("src/Modify.sol", "b2b"),     // modified
+            b("src/New.sol", "eee"),        // renamed target (add)
+            b("deploy/D.sol", "fff"),       // added (deploy/ is source)
+            b("test/T.t.sol", "t9"),        // test churn — excluded
+            b("crates/x/src/lib.rs", "r9"), // Rust churn — excluded
+        ];
+        // Changed non-test .sol: Modify (mod), New (add), deploy/D (add),
+        // Removed (del), Old (del from rename) = 5. Keep is unchanged; the test,
+        // Rust, and README churn are all excluded on both sides.
+        assert_eq!(changed_source_file_count(&base, &head), 5);
+    }
+
+    #[test]
+    fn changed_source_file_count_zero_when_only_non_sol_churn() {
+        let b = |p: &str, s: &str| (p.to_string(), s.to_string());
+        // A repo where only non-Solidity churned: a real, legitimate zero — the
+        // count must be 0, NOT conflated with a truncated-compare unknown.
+        let base = vec![
+            b("src/A.sol", "x"),
+            b("docs/readme.md", "d1"),
+            b("crates/a/src/l.rs", "r1"),
+        ];
+        let head = vec![
+            b("src/A.sol", "x"),
+            b("docs/readme.md", "d2"),
+            b("crates/a/src/l.rs", "r2"),
+        ];
+        assert_eq!(changed_source_file_count(&base, &head), 0);
     }
 
     // ---- newest_pdf_index ----

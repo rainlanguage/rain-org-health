@@ -469,36 +469,52 @@ function renderAudit() {
           c3.append("→ latest " + r.latestTag + (r.latestTagIso ? " · " + day(r.latestTagIso) : ""));
           c3.append(document.createElement("br"));
         }
-        if (typeof r.sourceLocAddedSinceAudit === "number" && typeof r.sourceLocRemovedSinceAudit === "number") {
-          // +added / −removed as a diffstat: additions green (--clean), deletions
-          // red (--crit), both theme-aware. The 300-file compare cap truncates
-          // BOTH sides, so the "+" lower-bound marker sits on each number. The
-          // combined total is derived as the sum.
-          const trunc = r.sourceDriftTruncated ? "+" : "";
-          const combined = r.sourceLocAddedSinceAudit + r.sourceLocRemovedSinceAudit;
-          const addSpan = el("span", "add", "+" + r.sourceLocAddedSinceAudit + trunc);
-          const delSpan = el("span", "del", "−" + r.sourceLocRemovedSinceAudit + trunc);
-          // The `+added / −removed src LOC` diffstat links to the GitHub compare
-          // view (audited base…default branch) when the scanner resolved a
-          // compareUrl; href is set via the property, never innerHTML. No
-          // compareUrl ⇒ a plain span (no dead link). The +/− keep their colors.
-          let diffstat;
+        // Drift since the audited ref, in three honest cases: (1) exact +/- from a
+        // non-truncated compare; (2) the compare hit GitHub's 300-file cap → an
+        // accurate changed-.sol FILE count from the tree diff (line drift is not
+        // recoverable, and 0 is a genuine "no Solidity drift"); (3) no compare data.
+        const commitsTail =
+          " · " + (r.commitsSinceAudit || 0) + " commits" +
+          (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "");
+        // The drift figure links to the GitHub compare view (audited base…default
+        // branch) when the scanner resolved a compareUrl; href is set via the
+        // property, never innerHTML. No compareUrl ⇒ a plain span (no dead link).
+        const mkNode = () => {
           if (typeof r.compareUrl === "string" && r.compareUrl) {
-            diffstat = el("a", "au-drift-link");
-            diffstat.href = r.compareUrl;
-            diffstat.rel = "noopener noreferrer";
-            diffstat.target = "_blank";
-          } else {
-            diffstat = el("span");
+            const a = el("a", "au-drift-link");
+            a.href = r.compareUrl;
+            a.rel = "noopener noreferrer";
+            a.target = "_blank";
+            return a;
           }
-          diffstat.append(addSpan, " / ", delSpan, " src LOC");
-          c3.append(
-            diffstat,
-            " · " + (r.filesChangedSinceAudit || 0) + " files · " + (r.commitsSinceAudit || 0) + " commits" +
-              (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "")
+          return el("span");
+        };
+        if (typeof r.sourceLocAddedSinceAudit === "number" && typeof r.sourceLocRemovedSinceAudit === "number") {
+          // +added / −removed src LOC: additions green (--clean), deletions red (--crit).
+          const combined = r.sourceLocAddedSinceAudit + r.sourceLocRemovedSinceAudit;
+          const diffstat = mkNode();
+          diffstat.append(
+            el("span", "add", "+" + r.sourceLocAddedSinceAudit),
+            " / ",
+            el("span", "del", "−" + r.sourceLocRemovedSinceAudit),
+            " src LOC"
           );
+          c3.append(diffstat, " · " + (r.filesChangedSinceAudit || 0) + " files" + commitsTail);
           if (r.externalAudit === "current" && combined === 0) {
             c3.append(" ", el("span", "ok", "· up to date"));
+          }
+        } else if (r.sourceDriftTruncated && typeof r.filesChangedSinceAudit === "number") {
+          // The compare exceeded the 300-file cap, so the tree blob-sha diff gives
+          // the accurate changed-.sol file count (line drift unrecoverable). A count
+          // of 0 is a real "no Solidity drift", not an unknown.
+          const k = r.filesChangedSinceAudit;
+          const node = mkNode();
+          if (k === 0) {
+            node.append("no Solidity drift since audit");
+            c3.append(node, commitsTail);
+          } else {
+            node.append(k + (k === 1 ? " .sol file changed" : " .sol files changed"));
+            c3.append(node, " · line drift too large to size" + commitsTail);
           }
         } else {
           c3.append(el("span", "dim", "drift unavailable"));
