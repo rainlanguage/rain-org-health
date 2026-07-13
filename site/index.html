@@ -12,7 +12,7 @@
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
     --bar: #b45309; --bar-track: #eeebe6;
-    --crit: #dc2626; --pm-fill: rgba(180,83,9,0.13);
+    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07); --pm-fill-deg: rgba(220,38,38,0.15);
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -22,7 +22,7 @@
       --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
       --clean: #4ade80; --clean-bg: #12241a;
       --bar: #d98a2b; --bar-track: #27241b;
-      --crit: #f87171; --pm-fill: rgba(217,138,43,0.16);
+      --crit: #f87171; --pm-fill: rgba(236,232,224,0.07); --pm-fill-deg: rgba(248,113,113,0.18);
     }
   }
   :root[data-theme="dark"] {
@@ -32,7 +32,7 @@
     --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
     --clean: #4ade80; --clean-bg: #12241a;
     --bar: #d98a2b; --bar-track: #27241b;
-    --crit: #f87171; --pm-fill: rgba(217,138,43,0.16);
+    --crit: #f87171; --pm-fill: rgba(236,232,224,0.07); --pm-fill-deg: rgba(248,113,113,0.18);
   }
   :root[data-theme="light"] {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -41,7 +41,7 @@
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
     --bar: #b45309; --bar-track: #eeebe6;
-    --crit: #dc2626; --pm-fill: rgba(180,83,9,0.13);
+    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07); --pm-fill-deg: rgba(220,38,38,0.15);
   }
   * { box-sizing: border-box; }
   body {
@@ -109,12 +109,14 @@
   .pm-chart text { fill: var(--ink-3); font-size: 10px; font-variant-numeric: tabular-nums; }
   .pm-axis-line { stroke: var(--border); stroke-width: 1; }
   .pm-area { fill: var(--pm-fill); stroke: none; }
-  .pm-line { fill: none; stroke: var(--bar); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-  .pm-dot { fill: var(--bar); }
+  .pm-area.deg { fill: var(--pm-fill-deg); }
+  .pm-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .pm-line.deg { stroke: var(--crit); }
+  .pm-dot { fill: var(--ink); }
   .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
   /* Qualified with .pm-chart so it outweighs `.pm-chart text` (0,1,1) — an
      unqualified .pm-endlabel (0,1,0) loses the cascade and renders muted. */
-  .pm-chart text.pm-endlabel { fill: var(--bar); font-weight: 700; font-size: 11px; }
+  .pm-chart text.pm-endlabel { fill: var(--ink); font-weight: 700; font-size: 11px; }
   .pm-cursor { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
   .pm-tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -100%);
             background: var(--ink); color: var(--bg); border-radius: 8px; padding: 7px 9px;
@@ -125,6 +127,12 @@
   .pm-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
   .pm-note a { color: var(--ink-3); }
   .pm-note .deg { color: var(--crit); font-weight: 600; }
+  .pm-controls { display: flex; justify-content: flex-end; margin: 0 2px 10px; }
+  .pm-toggle { display: inline-flex; gap: 2px; background: var(--surface); border: 1px solid var(--border);
+               border-radius: 8px; padding: 2px; }
+  .pm-toggle button { background: none; border: 0; color: var(--ink-2); font: inherit; font-size: 12.5px;
+                      padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+  .pm-toggle button.on { background: var(--surface-2); color: var(--ink); font-weight: 600; }
   /* ---- Pipeline FSM conformance ---- */
   .fsm-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
   .fsm-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); cursor: pointer; text-align: left; color: inherit; font: inherit; width: 100%; }
@@ -196,6 +204,7 @@
 
   <h2>Producer run metrics</h2>
   <div class="tiles" id="pmtiles"></div>
+  <div class="pm-controls" id="pmcontrols"></div>
   <div class="pm-chart-wrap" id="pmwrap">
     <div class="pm-empty" id="pmempty">loading run metrics…</div>
   </div>
@@ -506,6 +515,14 @@ load();
 const PM_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/metrics/runs.jsonl";
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
+// The chart reads startup two ways: "pct" = proportion of a run's tool calls
+// spent before its first mutation (startupPct, always present); "abs" = the
+// wall-clock minutes that startup took (startupMs, present only from the
+// metric's backfill onward). pmRuns caches the parsed runs so the toggle can
+// re-render both views without re-fetching.
+let pmMode = "pct";
+let pmRuns = [];
+
 function parseRunId(id) {
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(id || "");
   return m ? new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : null;
@@ -529,14 +546,75 @@ function median(a) {
   const s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2);
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
+// Recorded startup time in minutes, or null when the run has no wall-clock
+// startup value: startupMs is null (no mutation was reached) or absent (an old
+// rotated-out record). This is what the STAT TILES average, so it stays strict
+// — a run that never mutated contributes no startup time.
+function startupMin(r) {
+  return typeof r.startupMs === "number" ? r.startupMs / 60000 : null;
+}
+// Minutes at which to PLOT a run on the absolute axis — position is time, colour
+// (below) is error-ness; they are independent. A run that reached a first
+// mutation has startupMs. A run that errored before mutating has no startupMs,
+// but its whole run was pre-mutation time that then died, so durationMs IS that
+// time — plot it there (near the baseline for a fast death, higher for a slow
+// one). A non-errored run without startupMs is genuinely missing data
+// (durationMs would be total run time, not startup) → gap.
+function plotMin(r) {
+  if (typeof r.startupMs === "number") return r.startupMs / 60000;
+  if (r.outcome === "error" && typeof r.durationMs === "number") return r.durationMs / 60000;
+  return null;
+}
+// Round a per-gridline span up to a tidy 1/1.5/2/3/5/10 × 10ⁿ step, so the
+// minutes axis lands on human numbers (…0 15 30 45) instead of 0 11.4 22.8….
+function niceStep(v) {
+  if (!(v > 0)) return 1;
+  const pow = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / pow;
+  const s = n <= 1 ? 1 : n <= 1.5 ? 1.5 : n <= 2 ? 2 : n <= 3 ? 3 : n <= 5 ? 5 : 10;
+  return s * pow;
+}
+// The proportion ↔ absolute toggle. Absolute is offered only when some run
+// actually carries a wall-clock value; with none (all rotated out) the panel
+// stays on %, since an all-gaps minutes chart would say nothing.
+function renderPmControls(runs) {
+  const box = $("pmcontrols");
+  box.textContent = "";
+  if (!runs.some((r) => startupMin(r) != null)) { pmMode = "pct"; return; }
+  const group = document.createElement("div");
+  group.className = "pm-toggle";
+  group.setAttribute("role", "group");
+  group.setAttribute("aria-label", "Startup metric units");
+  for (const [m, label] of [["pct", "proportion (%)"], ["abs", "absolute (min)"]]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.classList.toggle("on", pmMode === m);
+    b.setAttribute("aria-pressed", pmMode === m ? "true" : "false");
+    b.addEventListener("click", () => {
+      if (pmMode === m) return;
+      pmMode = m;
+      renderPmControls(pmRuns);
+      renderPmTiles(pmRuns);
+      renderPmChart(pmRuns);
+    });
+    group.append(b);
+  }
+  box.append(group);
+}
 
 function renderPmTiles(runs) {
-  const pcts = runs.map((r) => r.startupPct);
-  const latest = pcts.length ? pcts[pcts.length - 1] : null;
-  const med = median(pcts);
+  const abs = pmMode === "abs";
+  const valOf = (r) => (abs ? startupMin(r) : r.startupPct);
+  // Latest = the most recent run that HAS a value (in abs mode the newest run
+  // may be a gap); median is over the runs that have a value.
+  let latest = null;
+  for (let i = runs.length - 1; i >= 0 && latest == null; i--) latest = valOf(runs[i]);
+  const med = median(runs.map(valOf).filter((v) => v != null));
+  const fmt = (v) => (v == null ? "—" : abs ? v.toFixed(1) + " min" : v.toFixed(1) + "%");
   const tiles = [
-    [latest == null ? "—" : latest.toFixed(1) + "%", "latest startup"],
-    [med == null ? "—" : med.toFixed(1) + "%", "median startup"],
+    [fmt(latest), "latest startup"],
+    [fmt(med), "median startup"],
     [String(runs.length), "runs recorded"],
   ];
   const box = $("pmtiles");
@@ -556,45 +634,102 @@ function renderPmTiles(runs) {
 }
 
 function renderPmChart(runs) {
-  const VBW = 720, VBH = 210, PADL = 30, PADR = 46, PADT = 14, PADB = 24;
+  const abs = pmMode === "abs";
+  const VBW = 720, VBH = 210, PADL = abs ? 34 : 30, PADR = 46, PADT = 14, PADB = 24;
   const plotW = VBW - PADL - PADR, plotH = VBH - PADT - PADB;
-  const yOf = (p) => PADT + (1 - Math.max(0, Math.min(100, p)) / 100) * plotH;
+  // Value in the active unit. In abs mode null = a gap (a non-errored run with
+  // no recorded startup time); errored runs plot at their time-to-death.
+  const valOf = (r) => (abs ? plotMin(r) : r.startupPct);
+
+  // Y scale + gridlines. Proportion is a fixed 0–100%; absolute autoscales the
+  // minutes axis to a tidy ceiling over the runs that carry a value.
+  let ymax, gridVals, fmtY;
+  if (abs) {
+    const vv = runs.map(valOf).filter((v) => v != null);
+    const step = niceStep(Math.max(1, ...vv) / 4);
+    ymax = step * 4;
+    gridVals = [0, step, step * 2, step * 3, step * 4];
+    fmtY = (g) => (g % 1 === 0 ? String(g) : g.toFixed(1));
+  } else {
+    ymax = 100;
+    gridVals = [0, 25, 50, 75, 100];
+    fmtY = (g) => String(g);
+  }
+  const yOf = (v) => PADT + (1 - Math.max(0, Math.min(ymax, v)) / ymax) * plotH;
   const by = yOf(0);
+
   const times = runs.map((r) => { const d = parseRunId(r.runId); return d ? d.getTime() : null; });
   const timed = times.every((t) => t != null);
   let xOf;
   if (runs.length === 1) xOf = () => PADL + plotW / 2;
   else if (timed) { const mn = Math.min(...times), mx = Math.max(...times), sp = (mx - mn) || 1; xOf = (i) => PADL + ((times[i] - mn) / sp) * plotW; }
   else xOf = (i) => PADL + (i / (runs.length - 1)) * plotW;
-  const pts = runs.map((r, i) => ({ x: +xOf(i).toFixed(1), y: +yOf(r.startupPct).toFixed(1), run: r }));
+  // One entry per run; y == null marks a gap — no dot, and the line breaks.
+  const pts = runs.map((r, i) => {
+    const v = valOf(r);
+    return { x: +xOf(i).toFixed(1), y: v == null ? null : +yOf(v).toFixed(1), v, run: r };
+  });
+  // Contiguous stretches of real points — line + area draw per stretch so a gap
+  // stays a gap instead of being bridged across the missing runs.
+  const segs = [];
+  let seg = [];
+  for (const p of pts) {
+    if (p.y == null) { if (seg.length) { segs.push(seg); seg = []; } }
+    else seg.push(p);
+  }
+  if (seg.length) segs.push(seg);
+  const real = pts.filter((p) => p.y != null);
 
-  const grid = [0, 25, 50, 75, 100].map((g) => {
+  const grid = gridVals.map((g) => {
     const gy = yOf(g).toFixed(1);
     return `<line class="pm-axis-line" x1="${PADL}" y1="${gy}" x2="${VBW - PADR}" y2="${gy}" opacity="${g === 0 ? 0.5 : 0.22}"/>` +
-      `<text x="${PADL - 6}" y="${(+gy + 3).toFixed(1)}" text-anchor="end">${g}</text>`;
+      `<text x="${PADL - 6}" y="${(+gy + 3).toFixed(1)}" text-anchor="end">${fmtY(g)}</text>`;
   }).join("");
 
+  // Colour is error-ness (position is time/percent — independent). A sub-segment,
+  // and the shading beneath it, turns red when BOTH its endpoints errored, so a run
+  // of consecutive error runs reads as a red stretch; a lone error is just a red dot.
+  // Split each contiguous stretch into maximal runs of same error-ness so each colour
+  // draws as ONE path (no anti-alias seams within a colour; a seam only at a colour change).
+  const isDeg = (p) => p.run.outcome && p.run.outcome !== "ok";
   let area = "", line = "";
-  if (pts.length >= 2) {
-    area = `<path class="pm-area" d="M ${pts[0].x} ${by} ${pts.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${pts[pts.length - 1].x} ${by} Z"/>`;
-    line = `<path class="pm-line" d="M ${pts.map((p) => `${p.x} ${p.y}`).join(" L ")}"/>`;
+  for (const s of segs) {
+    if (s.length < 2) continue;
+    const pairDeg = (i) => isDeg(s[i]) && isDeg(s[i + 1]); // sub-segment s[i]→s[i+1]
+    let start = 0;
+    while (start < s.length - 1) {
+      const deg = pairDeg(start);
+      let end = start;
+      while (end + 1 <= s.length - 2 && pairDeg(end + 1) === deg) end++;
+      const run = s.slice(start, end + 2); // points spanned: s[start]..s[end+1]
+      const k = deg ? " deg" : "";
+      area += `<path class="pm-area${k}" d="M ${run[0].x} ${by} ${run.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${run[run.length - 1].x} ${by} Z"/>`;
+      line += `<path class="pm-line${k}" d="M ${run.map((p) => `${p.x} ${p.y}`).join(" L ")}"/>`;
+      start = end + 1; // next run shares this boundary point, keeping the line continuous
+    }
   }
-  const dots = pts.map((p, i) => {
-    const deg = p.run.outcome && p.run.outcome !== "ok";
-    return `<circle class="pm-dot${deg ? " deg" : ""}" cx="${p.x}" cy="${p.y}" r="${i === pts.length - 1 ? 4 : 3}"/>`;
+  const dots = real.map((p) => {
+    return `<circle class="pm-dot${isDeg(p) ? " deg" : ""}" cx="${p.x}" cy="${p.y}" r="${p === real[real.length - 1] ? 4 : 3}"/>`;
   }).join("");
-  const last = pts[pts.length - 1];
-  const endlabel = `<text class="pm-endlabel" x="${(last.x + 6).toFixed(1)}" y="${(last.y + 3).toFixed(1)}">${last.run.startupPct.toFixed(0)}%</text>`;
-  const xlabels = pts.length >= 2
+  let endlabel = "";
+  if (real.length) {
+    const l = real[real.length - 1];
+    const lbl = abs ? l.v.toFixed(1) + "m" : l.v.toFixed(0) + "%";
+    endlabel = `<text class="pm-endlabel" x="${(l.x + 6).toFixed(1)}" y="${(l.y + 3).toFixed(1)}">${lbl}</text>`;
+  }
+  const xlabels = runs.length >= 2
     ? `<text x="${PADL}" y="${VBH - 7}" text-anchor="start">${fmtDay(runs[0].runId)}</text>` +
       `<text x="${VBW - PADR}" y="${VBH - 7}" text-anchor="end">${fmtDay(runs[runs.length - 1].runId)}</text>`
-    : `<text x="${last.x}" y="${VBH - 7}" text-anchor="middle">${fmtDay(runs[0].runId)}</text>`;
+    : `<text x="${PADL + plotW / 2}" y="${VBH - 7}" text-anchor="middle">${fmtDay(runs[0].runId)}</text>`;
   const cursor = `<line class="pm-cursor" id="pmcursor" x1="0" y1="${PADT}" x2="0" y2="${VBH - PADB}"/>`;
+  const aria = abs
+    ? "Producer startup time in minutes per run over time"
+    : "Producer startup overhead percent per run over time";
 
   const wrap = $("pmwrap");
   wrap.innerHTML =
     `<svg class="pm-chart" id="pmsvg" viewBox="0 0 ${VBW} ${VBH}" preserveAspectRatio="xMidYMid meet"` +
-    ` role="img" aria-label="Producer startup overhead percent per run over time">` +
+    ` role="img" aria-label="${aria}">` +
     grid + cursor + area + line + dots + endlabel + xlabels + `</svg>` +
     `<div class="pm-tip" id="pmtip"></div>`;
 
@@ -606,13 +741,29 @@ function renderPmChart(runs) {
     let best = 0, bd = Infinity;
     pts.forEach((p, i) => { const d = Math.abs(p.x - relX); if (d < bd) { bd = d; best = i; } });
     const p = pts[best], r = p.run, deg = r.outcome && r.outcome !== "ok";
+    // Anchor the cursor + tip on the run's plotted point; a gap run has no y, so
+    // fall back to the baseline for the vertical anchor.
+    const anchorY = p.y == null ? by : p.y;
     cur.setAttribute("x1", p.x); cur.setAttribute("x2", p.x); cur.style.opacity = 1;
     const wr = wrap.getBoundingClientRect();
     tip.style.left = (rr.left - wr.left + (p.x / VBW) * rr.width) + "px";
-    tip.style.top = (rr.top - wr.top + (p.y / VBH) * rr.height - 10) + "px";
+    tip.style.top = (rr.top - wr.top + (anchorY / VBH) * rr.height - 10) + "px";
     const cost = typeof r.costUsd === "number" ? ` · $${r.costUsd.toFixed(2)}` : "";
+    const mins = startupMin(r), minsTxt = mins == null ? null : mins.toFixed(1) + " min";
+    const pm = plotMin(r);
+    // Lead line shows the active unit; the complementary measure trails it. Only
+    // the durationMs-fallback case — an error run with no startupMs — reads as
+    // time-before-erroring; an error run that DID reach a first mutation has a
+    // real startupMs and gets the normal startup-time phrasing (still red).
+    let head;
+    if (abs && r.outcome === "error" && typeof r.startupMs !== "number")
+      head = `<b>${pm == null ? "—" : pm.toFixed(1) + " min"}</b> before erroring`;
+    else if (abs)
+      head = `<b>${minsTxt || "—"}</b> startup time · ${r.startupPct.toFixed(1)}% of calls`;
+    else
+      head = `<b>${r.startupPct.toFixed(1)}%</b> startup overhead` + (minsTxt ? ` · ${minsTxt}` : "");
     tip.innerHTML =
-      `<b>${r.startupPct.toFixed(1)}%</b> startup overhead<br>` +
+      `${head}<br>` +
       `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns<br>` +
       `${fmtRunTime(r.runId)} · <span class="${deg ? "deg" : ""}">${r.outcome || "ok"}</span>${cost}`;
     tip.style.opacity = 1;
@@ -635,6 +786,8 @@ async function loadMetrics() {
     if (empty) empty.textContent = "could not load run metrics (metrics/runs.jsonl)";
     return;
   }
+  pmRuns = runs;
+  renderPmControls(runs);
   renderPmTiles(runs);
   if (!runs.length) {
     if (empty) empty.innerHTML =
@@ -650,6 +803,8 @@ async function loadMetrics() {
   $("pmnote").innerHTML =
     `Latest run ${fmtAgo(parseRunId(last.runId))} · outcome <span class="${deg ? "deg" : ""}">${last.outcome || "ok"}</span>. ` +
     `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
+    `Toggle to <b>absolute</b> to read the wall-clock startup time in minutes (run start → first mutation, <code>startupMs</code>); ` +
+    `errored runs plot at their time-to-failure, non-errored runs with no recorded time are gaps. ` +
     `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
 }
 loadMetrics();
