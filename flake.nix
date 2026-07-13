@@ -40,7 +40,7 @@
         };
         # Reproducible headless render of the dashboard, so an eyeball on the
         # deployed page (or a CI visual check) is one pinned command rather than
-        # an ad-hoc chromium incantation: `nix run .#screenshot -- [site] [out]`.
+        # an ad-hoc chromium incantation: `nix run .#screenshot -- [site] [out] [page]`.
         # The page fetches health.json at runtime, so a `file://` open can't work
         # — we serve site/ over a local HTTP server and point headless chromium at
         # it. A bundled fontconfig (dejavu) is REQUIRED: without fonts, headless
@@ -55,6 +55,7 @@
           text = ''
             site="''${1:-site}"
             out="''${2:-dashboard.png}"
+            page="''${3:-index.html}"
             port="''${PORT:-8799}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}
             python3 -m http.server "$port" --directory "$site" >/dev/null 2>&1 &
@@ -83,7 +84,7 @@
               --window-size="''${WIDTH:-1300},''${HEIGHT:-4200}" \
               --virtual-time-budget=9000 \
               --screenshot="$out" \
-              "http://127.0.0.1:$port/index.html"
+              "http://127.0.0.1:$port/$page"
             echo "wrote $out ($(wc -c <"$out") bytes)"
           '';
         };
