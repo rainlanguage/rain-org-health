@@ -171,6 +171,46 @@
   .fsm-list .li .lz { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
+  /* ---- External (Protofire) audit coverage ---- */
+  .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
+  .au-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); }
+  .au-alarm.ok { background: var(--clean-bg); border: 1px solid var(--clean); }
+  .au-alarm .an { font-size: 32px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
+  .au-alarm.bad .an { color: var(--crit); }
+  .au-alarm.ok .an { color: var(--clean); }
+  .au-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+  .au-alarm .atxt b { color: var(--ink); }
+  .au-table { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; margin: 4px 0 2px; }
+  .au-row { display: grid; grid-template-columns: 230px 84px 1fr; gap: 14px; align-items: start;
+            padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  .au-row:last-child { border-bottom: 0; }
+  .au-row.stale { background: var(--debt-bg); }
+  .au-repo a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 14px; word-break: break-word; }
+  .au-repo a:hover { color: var(--accent); text-decoration: underline; }
+  .au-sub { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
+  .au-flag { display: inline-block; font-size: 11px; color: var(--debt); border: 1px solid var(--debt-border);
+             background: var(--debt-bg); border-radius: 5px; padding: 0 5px; margin-top: 3px; font-family: inherit; }
+  .au-status { display: inline-flex; align-items: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+               font-weight: 650; border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
+  .au-status.stale { color: var(--crit); border: 1px solid var(--crit); background: transparent; }
+  .au-status.current { color: var(--clean); border: 1px solid var(--clean); background: transparent; }
+  .au-status.na { color: var(--ink-3); border: 1px solid var(--border); background: transparent; }
+  .au-drift { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+  .au-drift .loc { font-weight: 650; color: var(--debt); font-variant-numeric: tabular-nums; }
+  .au-drift .dim { color: var(--ink-3); }
+  .au-drift .ok { color: var(--clean); }
+  .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
+  .au-gapchip { font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                color: var(--ink-2); background: var(--surface); border: 1px solid var(--border);
+                border-radius: 6px; padding: 2px 8px; text-decoration: none; }
+  .au-gapchip:hover { color: var(--accent); border-color: var(--accent); }
+  .au-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
+               border-radius: 8px; padding: 6px 11px; font-size: 13px; cursor: pointer; margin: 4px 0; }
+  .au-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
+  .au-note code { color: var(--ink-3); }
+  .au-subhead { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
+                margin: 20px 0 6px; font-weight: 600; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
   @media (max-width: 620px) {
@@ -198,6 +238,9 @@
     <button class="clearf" id="clearf">Clear signal filter</button>
   </div>
   <div id="repos"></div>
+
+  <h2>External audit coverage · Protofire</h2>
+  <div id="audit"><div class="empty" id="auditempty">loading external-audit coverage…</div></div>
 
   <h2>Pipeline state machine</h2>
   <div id="fsm"><div class="empty" id="fsmempty">loading pipeline state…</div></div>
@@ -332,6 +375,133 @@ function renderTiles() {
     tile.append(num, lab);
     box.appendChild(tile);
   }
+}
+
+// ---- External (Protofire) audit coverage panel ----
+// Consumes health.json's `protofireAudits` array + the reposNeverExternallyAudited
+// headline count (produced by roh-scan — the dashboard renders, never computes).
+// Every string here (repo names, PDF filenames, git tags) is cross-repo and
+// attacker-influenceable, so the DOM is built with createElement / textContent /
+// .href — never innerHTML with data. Escaping is BY CONSTRUCTION (CLAUDE.md
+// "Rendering untrusted data").
+function renderAudit() {
+  const box = $("audit");
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const link = (cls, text, href) => {
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    return a;
+  };
+  const day = (iso) => (typeof iso === "string" ? iso.slice(0, 10) : "");
+
+  box.textContent = "";
+  const rows = data.protofireAudits || [];
+  if (!rows.length) {
+    box.append(el("div", "empty", "No external-audit data in health.json yet."));
+    return;
+  }
+  const audited = rows.filter((r) => r.hasProtofireAudit);
+  const never = rows.filter((r) => !r.hasProtofireAudit);
+  const staleCount = audited.filter((r) => r.externalAudit === "stale").length;
+  const neverN = data.reposNeverExternallyAudited != null ? data.reposNeverExternallyAudited : never.length;
+
+  // Headline alarm — the never-audited count is the point.
+  const alarm = el("div", "au-alarm " + (neverN > 0 ? "bad" : "ok"));
+  const atxt = el("span", "atxt");
+  if (neverN > 0) {
+    atxt.append(
+      el("b", null, "repos never externally audited"),
+      " — no PDF under ",
+      el("code", null, "audit/"),
+      ". The external-audit coverage gap. ",
+      el("b", null, String(audited.length)),
+      " audited, ",
+      el("b", null, String(staleCount)),
+      " with a newer tag than the audit."
+    );
+  } else {
+    atxt.append(el("b", null, "every repo externally audited"), " — a Protofire PDF under audit/ for all.");
+  }
+  alarm.append(el("span", "an", String(neverN)), atxt);
+  box.append(alarm);
+
+  // Audited repos — status + source drift since the audited tag/PDF.
+  if (audited.length) {
+    box.append(el("div", "au-subhead", "Audited repos (" + audited.length + ") — drift since last audit"));
+    const table = el("div", "au-table");
+    for (const r of audited) {
+      const row = el("div", "au-row" + (r.externalAudit === "stale" ? " stale" : ""));
+
+      const c1 = el("div", "au-repo");
+      c1.append(link(null, r.name, "https://github.com/" + data.org + "/" + r.name));
+      const auditedLabel = r.auditedRef ? "audited " + r.auditedRef : "audited via PDF";
+      const sub = el("div", "au-sub", auditedLabel + (r.auditedDate ? " · " + day(r.auditedDate) : ""));
+      c1.append(sub);
+      if (r.auditPdfs && r.auditPdfs.length) {
+        c1.append(el("div", "au-sub", r.auditPdfs.map((p) => p.filename).join(", ")));
+      }
+      if (r.tagConventionAbsent) c1.append(el("div", "au-flag", "no tag in PDF name"));
+
+      const c2 = el("div");
+      c2.append(el("span", "au-status " + r.externalAudit, r.externalAudit));
+
+      const c3 = el("div", "au-drift");
+      if (r.externalAudit === "na") {
+        c3.append(el("span", "dim", "no tags to compare against"));
+      } else {
+        if (r.latestTag) {
+          c3.append("→ latest " + r.latestTag + (r.latestTagIso ? " · " + day(r.latestTagIso) : ""));
+          c3.append(document.createElement("br"));
+        }
+        if (typeof r.sourceLocChangedSinceAudit === "number") {
+          c3.append(
+            el("span", "loc", r.sourceLocChangedSinceAudit + (r.sourceDriftTruncated ? "+" : "") + " src LOC"),
+            " · " + (r.filesChangedSinceAudit || 0) + " files · " + (r.commitsSinceAudit || 0) + " commits" +
+              (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "")
+          );
+          if (r.externalAudit === "current" && r.sourceLocChangedSinceAudit === 0) {
+            c3.append(" ", el("span", "ok", "· up to date"));
+          }
+        } else {
+          c3.append(el("span", "dim", "drift unavailable"));
+        }
+      }
+      row.append(c1, c2, c3);
+      table.append(row);
+    }
+    box.append(table);
+  }
+
+  // Never externally audited — the gap, listed as repo chips.
+  if (never.length) {
+    box.append(el("div", "au-subhead", "Never externally audited (" + never.length + ") — the gap"));
+    const gap = el("div", "au-gap");
+    for (const r of never) {
+      gap.append(link("au-gapchip", r.name, "https://github.com/" + data.org + "/" + r.name));
+    }
+    box.append(gap);
+  }
+
+  const note = el("div", "au-note");
+  note.append(
+    "External audits are formal ",
+    el("code", null, "Protofire"),
+    " PDFs committed under ",
+    el("code", null, "audit/"),
+    " — a different signal from the internal audit-skill recency. Drift is measured clone-free against the audited git tag when the PDF filename encodes one (e.g. ",
+    el("code", null, "rain.factory.v0.1.1-r2.0.may-2026.pdf"),
+    "), else against the PDF's own commit — those rows are flagged ",
+    el("code", null, "no tag in PDF name"),
+    "."
+  );
+  box.append(note);
 }
 
 // ---- Pipeline FSM: the daily conformance review (README "Pipeline state machine").
@@ -498,6 +668,7 @@ async function load() {
     ` · <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener">source</a>`;
   renderTiles();
   renderSummary();
+  renderAudit();
   fetch(HQ_URL, { cache: "no-store" })
     .then((r) => (r.ok ? r.json() : null))
     .then(renderFsm)
