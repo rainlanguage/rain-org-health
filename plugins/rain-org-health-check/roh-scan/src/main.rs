@@ -665,6 +665,16 @@ struct RepoResult {
     signals: Vec<&'static str>,
     last_audit: Option<LastAudit>,
     protofire: ProtofireResult,
+    has_foundry: bool,
+}
+
+/// Whether a repo belongs in the Protofire external-audit report. A Protofire
+/// audit is a Solidity audit, so the report only concerns Foundry/Solidity
+/// projects (proxied by a `foundry.toml`) plus anything already carrying a PDF; a
+/// repo with neither (docs, subgraph, tooling, `.github`) is not a coverage gap
+/// and must not inflate the never-audited count (issue #54).
+fn in_protofire_report(has_pdf: bool, has_foundry: bool) -> bool {
+    has_pdf || has_foundry
 }
 
 /// Query the soldeer registry for a published revision. Some(true/false), None on error.
@@ -775,7 +785,12 @@ fn main() {
     // so a transient error surfaces as `unknown`, never a false `never`.
     let gh = GhCli::new();
     let mut results: Vec<RepoResult> = scan_repos(repos, par, |repo| {
-        let signals = detect_signals(&fetch_inputs(&org, repo));
+        let inputs = fetch_inputs(&org, repo);
+        // A repo counts toward the Protofire (Solidity-audit) report only if it is a
+        // Foundry/Solidity project — proxied by a foundry.toml, which fetch_inputs
+        // already retrieves, so this gate adds no extra request (#54).
+        let has_foundry = !inputs.foundry.trim().is_empty();
+        let signals = detect_signals(&inputs);
         let last_audit = fetch_last_audit(&org, repo);
         let protofire = fetch_protofire_audit(&gh, &org, repo);
         RepoResult {
@@ -783,6 +798,7 @@ fn main() {
             signals,
             last_audit,
             protofire,
+            has_foundry,
         }
     });
     // findings view (owned) so we can re-sort `results` for audit recency afterwards
@@ -844,8 +860,15 @@ fn main() {
     // audited repos list their drift since the audited tag/PDF. Order: never-audited
     // first (the gap), then audited stale-first, then by source-LOC drift, then name.
     let now = now_iso();
-    let externally_audited = results.iter().filter(|r| r.protofire.has_pdf).count();
-    let mut pf_view: Vec<&RepoResult> = results.iter().collect();
+    // Protofire coverage is a Solidity question: a repo that is not a Foundry/Solidity
+    // project (no foundry.toml) and carries no PDF is excluded from the report entirely
+    // — not listed and not counted as a coverage gap (#54).
+    let mut pf_view: Vec<&RepoResult> = results
+        .iter()
+        .filter(|r| in_protofire_report(r.protofire.has_pdf, r.has_foundry))
+        .collect();
+    let protofire_total = pf_view.len();
+    let externally_audited = pf_view.iter().filter(|r| r.protofire.has_pdf).count();
     pf_view.sort_by(|a, b| {
         let (pa, pb) = (&a.protofire, &b.protofire);
         (
@@ -862,10 +885,10 @@ fn main() {
             ))
     });
     println!("\n============ external audit coverage (Protofire PDFs under audit/protofire/) ====");
-    println!("  externally audited:       {externally_audited} / {total}");
+    println!("  externally audited:       {externally_audited} / {protofire_total}");
     println!(
-        "  NEVER externally audited: {} / {total}  (the coverage gap)",
-        total - externally_audited
+        "  NEVER externally audited: {} / {protofire_total}  (the coverage gap)",
+        protofire_total - externally_audited
     );
     for r in &pf_view {
         let p = &r.protofire;
@@ -919,7 +942,7 @@ fn main() {
             "reposWholeRepoAudited": audited,
             "reposNeverAudited": total - audited,
             "reposExternallyAudited": externally_audited,
-            "reposNeverExternallyAudited": total - externally_audited,
+            "reposNeverExternallyAudited": protofire_total - externally_audited,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, sigs)| json!({"name": r, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| match &r.last_audit {
@@ -1075,6 +1098,18 @@ mod tests {
         // A failed fetch is likewise indeterminate, not zero.
         let gh2 = FakeGh::new(vec![("git/trees/base", FetchOutcome::Failed)]);
         assert_eq!(changed_sol_count(&gh2, "o", "r", "base", "head"), None);
+    }
+
+    // ---- Protofire-report membership gate (#54) ----
+    #[test]
+    fn protofire_report_includes_solidity_projects_and_audited_repos_only() {
+        // An audited repo (has a PDF) is always in the report, even without a foundry.toml.
+        assert!(in_protofire_report(true, false));
+        // A Foundry/Solidity project with no audit is the coverage gap → included.
+        assert!(in_protofire_report(false, true));
+        assert!(in_protofire_report(true, true));
+        // No PDF and no foundry.toml (docs/subgraph/tooling/.github) → excluded, not a gap.
+        assert!(!in_protofire_report(false, false));
     }
 
     // ---- external-call coverage: fetch_protofire_audit / collect_audit_pdfs ----
