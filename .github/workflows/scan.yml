@@ -3,7 +3,7 @@ name: scan
 # any PR ever running the scan. PRs only change code/rendering; this keeps the data current.
 on:
   schedule:
-    - cron: "0 7 * * *" # daily 07:00 UTC
+    - cron: "0 0 * * *" # daily 00:00 UTC
   workflow_dispatch: {}
 permissions:
   contents: write # commit the regenerated health.json back to the default branch
