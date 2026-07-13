@@ -544,11 +544,24 @@ function median(a) {
   const s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2);
   return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
 }
-// Absolute startup time in minutes, or null when there is no wall-clock value:
-// startupMs is null (a no-mutation / dead run) or absent (an old rotated-out
-// record from before the metric was emitted). Both surface as a gap.
+// Recorded startup time in minutes, or null when the run has no wall-clock
+// startup value: startupMs is null (no mutation was reached) or absent (an old
+// rotated-out record). This is what the STAT TILES average, so it stays strict
+// — a run that never mutated contributes no startup time.
 function startupMin(r) {
   return typeof r.startupMs === "number" ? r.startupMs / 60000 : null;
+}
+// Minutes at which to PLOT a run on the absolute axis — position is time, colour
+// (below) is error-ness; they are independent. A run that reached a first
+// mutation has startupMs. A run that errored before mutating has no startupMs,
+// but its whole run was pre-mutation time that then died, so durationMs IS that
+// time — plot it there (near the baseline for a fast death, higher for a slow
+// one). A non-errored run without startupMs is genuinely missing data
+// (durationMs would be total run time, not startup) → gap.
+function plotMin(r) {
+  if (typeof r.startupMs === "number") return r.startupMs / 60000;
+  if (r.outcome === "error" && typeof r.durationMs === "number") return r.durationMs / 60000;
+  return null;
 }
 // Round a per-gridline span up to a tidy 1/1.5/2/3/5/10 × 10ⁿ step, so the
 // minutes axis lands on human numbers (…0 15 30 45) instead of 0 11.4 22.8….
@@ -622,8 +635,9 @@ function renderPmChart(runs) {
   const abs = pmMode === "abs";
   const VBW = 720, VBH = 210, PADL = abs ? 34 : 30, PADR = 46, PADT = 14, PADB = 24;
   const plotW = VBW - PADL - PADR, plotH = VBH - PADT - PADB;
-  // Value in the active unit; null = no data point (a gap, only in abs mode).
-  const valOf = (r) => (abs ? startupMin(r) : r.startupPct);
+  // Value in the active unit. In abs mode null = a gap (a non-errored run with
+  // no recorded startup time); errored runs plot at their time-to-death.
+  const valOf = (r) => (abs ? plotMin(r) : r.startupPct);
 
   // Y scale + gridlines. Proportion is a fixed 0–100%; absolute autoscales the
   // minutes axis to a tidy ceiling over the runs that carry a value.
@@ -719,10 +733,16 @@ function renderPmChart(runs) {
     tip.style.top = (rr.top - wr.top + (anchorY / VBH) * rr.height - 10) + "px";
     const cost = typeof r.costUsd === "number" ? ` · $${r.costUsd.toFixed(2)}` : "";
     const mins = startupMin(r), minsTxt = mins == null ? null : mins.toFixed(1) + " min";
-    // Lead line shows the active unit; the complementary measure trails it.
-    const head = abs
-      ? `<b>${minsTxt || "—"}</b> startup time · ${r.startupPct.toFixed(1)}% of calls`
-      : `<b>${r.startupPct.toFixed(1)}%</b> startup overhead` + (minsTxt ? ` · ${minsTxt}` : "");
+    const pm = plotMin(r);
+    // Lead line shows the active unit; the complementary measure trails it. An
+    // errored run has no startup time — its plotted point is its time-to-death.
+    let head;
+    if (abs && r.outcome === "error")
+      head = `<b>${pm == null ? "—" : pm.toFixed(1) + " min"}</b> before erroring`;
+    else if (abs)
+      head = `<b>${minsTxt || "—"}</b> startup time · ${r.startupPct.toFixed(1)}% of calls`;
+    else
+      head = `<b>${r.startupPct.toFixed(1)}%</b> startup overhead` + (minsTxt ? ` · ${minsTxt}` : "");
     tip.innerHTML =
       `${head}<br>` +
       `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns<br>` +
@@ -765,7 +785,7 @@ async function loadMetrics() {
     `Latest run ${fmtAgo(parseRunId(last.runId))} · outcome <span class="${deg ? "deg" : ""}">${last.outcome || "ok"}</span>. ` +
     `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
     `Toggle to <b>absolute</b> to read the wall-clock startup time in minutes (run start → first mutation, <code>startupMs</code>); ` +
-    `runs with no recorded time are gaps. ` +
+    `errored runs plot at their time-to-failure, non-errored runs with no recorded time are gaps. ` +
     `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
 }
 loadMetrics();
