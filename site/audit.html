@@ -184,9 +184,6 @@
   .au-alarm.ok .an { color: var(--clean); }
   .au-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
   .au-alarm .atxt b { color: var(--ink); }
-  .au-loc { margin: 2px 2px 12px; font-size: 14px; color: var(--ink-2); }
-  .au-loc .n { font-size: 20px; font-weight: 650; color: var(--crit); font-variant-numeric: tabular-nums; letter-spacing: -0.01em; }
-  .au-loc .sub { color: var(--ink-3); font-size: 12.5px; }
   .au-table { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; margin: 4px 0 2px; }
   .au-row { display: grid; grid-template-columns: 230px 84px 1fr; gap: 14px; align-items: start;
             padding: 11px 14px; border-bottom: 1px solid var(--border); }
@@ -318,20 +315,6 @@ function renderAudit() {
   alarm.append(el("span", "an", String(neverN)), atxt);
   box.append(alarm);
 
-  // #37: the MAGNITUDE of the gap — total unaudited source LOC (never-audited
-  // repos' full non-test .sol LOC + code drifted since audit in audited repos).
-  if (typeof data.unauditedSourceLoc === "number") {
-    const fmt = (n) => (n >= 1000 ? (n / 1000).toFixed(n >= 10000 ? 0 : 1) + "k" : String(n));
-    const loc = el("div", "au-loc");
-    loc.append(el("span", "n", fmt(data.unauditedSourceLoc)), " unaudited source LOC");
-    const nev = data.unauditedSourceLocNeverAudited;
-    const dri = data.unauditedSourceLocDrifted;
-    if (typeof nev === "number" && typeof dri === "number") {
-      loc.append(el("span", "sub", " · " + fmt(nev) + " never-audited + " + fmt(dri) + " drifted since audit"));
-    }
-    box.append(loc);
-  }
-
   // Audited repos — status + source drift since the audited tag/PDF.
   if (audited.length) {
     box.append(el("div", "au-subhead", "Audited repos (" + audited.length + ") — drift since last audit"));
@@ -437,7 +420,7 @@ function renderAudit() {
       c2.append(el("span", "au-status never", "never"));
       const c3 = el("div", "au-drift");
       if (typeof r.fullSourceLoc === "number") {
-        c3.append(el("span", "del", r.fullSourceLoc + " src LOC"), " unaudited");
+        c3.append(el("span", "add", "+" + r.fullSourceLoc + " src LOC"), " unaudited");
       } else {
         c3.append(el("span", "dim", "no external audit"));
       }

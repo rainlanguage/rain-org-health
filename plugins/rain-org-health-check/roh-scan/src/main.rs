@@ -942,16 +942,6 @@ fn main() {
         .collect();
     let protofire_total = pf_view.len();
     let externally_audited = pf_view.iter().filter(|r| r.protofire.has_pdf).count();
-    // #37: total unaudited source LOC = the FULL non-test .sol LOC of never-audited
-    // Solidity repos (the bulk) + code that has drifted since audit in the audited
-    // repos. Both use the same non-test-.sol definition as the per-repo drift.
-    let unaudited_loc_never: u64 = pf_view.iter().filter_map(|r| r.full_source_loc).sum();
-    let unaudited_loc_drift: u64 = pf_view
-        .iter()
-        .filter(|r| r.protofire.has_pdf)
-        .filter_map(|r| r.protofire.source_loc)
-        .sum();
-    let unaudited_loc = unaudited_loc_never + unaudited_loc_drift;
     pf_view.sort_by(|a, b| {
         let (pa, pb) = (&a.protofire, &b.protofire);
         (
@@ -972,9 +962,6 @@ fn main() {
     println!(
         "  NEVER externally audited: {} / {protofire_total}  (the coverage gap)",
         protofire_total - externally_audited
-    );
-    println!(
-        "  unaudited source LOC:     {unaudited_loc}  ({unaudited_loc_never} never-audited + {unaudited_loc_drift} drifted since audit)"
     );
     for r in &pf_view {
         let p = &r.protofire;
@@ -1029,9 +1016,6 @@ fn main() {
             "reposNeverAudited": total - audited,
             "reposExternallyAudited": externally_audited,
             "reposNeverExternallyAudited": protofire_total - externally_audited,
-            "unauditedSourceLoc": unaudited_loc,
-            "unauditedSourceLocNeverAudited": unaudited_loc_never,
-            "unauditedSourceLocDrifted": unaudited_loc_drift,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, sigs)| json!({"name": r, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| match &r.last_audit {
