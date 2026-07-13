@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>rain org health — overview</title>
+<title>rain org health — audit</title>
 <style>
   :root {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -239,14 +239,14 @@
     <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
   </header>
   <nav class="nav">
-    <a href="index.html" class="active">Overview</a>
+    <a href="index.html">Overview</a>
     <a href="repositories.html">Repositories</a>
-    <a href="audit.html">Audit</a>
+    <a href="audit.html" class="active">Audit</a>
     <a href="pipeline.html">Pipeline</a>
     <a href="metrics.html">Metrics</a>
   </nav>
-  <div class="tiles" id="tiles"></div>
-  <div id="auditglance"></div>
+  <h2>External audit coverage · Protofire</h2>
+  <div id="audit"><div class="empty" id="auditempty">loading external-audit coverage…</div></div>
   <footer>
     Org-health dashboard — status, not severity; identity is the label, not the color.
     <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener">source</a>.
@@ -261,6 +261,172 @@ $("theme").addEventListener("click", () => {
   document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
 });
 let data = null;
+// ---- External (Protofire) audit coverage panel ----
+// Consumes health.json's `protofireAudits` array + the reposNeverExternallyAudited
+// headline count (produced by roh-scan — the dashboard renders, never computes).
+// Every string here (repo names, PDF filenames, git tags) is cross-repo and
+// attacker-influenceable, so the DOM is built with createElement / textContent /
+// .href — never innerHTML with data. Escaping is BY CONSTRUCTION (CLAUDE.md
+// "Rendering untrusted data").
+function renderAudit() {
+  const box = $("audit");
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const link = (cls, text, href) => {
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    return a;
+  };
+  const day = (iso) => (typeof iso === "string" ? iso.slice(0, 10) : "");
+
+  box.textContent = "";
+  const rows = data.protofireAudits || [];
+  if (!rows.length) {
+    box.append(el("div", "empty", "No external-audit data in health.json yet."));
+    return;
+  }
+  const audited = rows.filter((r) => r.hasProtofireAudit);
+  const never = rows.filter((r) => !r.hasProtofireAudit);
+  const staleCount = audited.filter((r) => r.externalAudit === "stale").length;
+  const neverN = data.reposNeverExternallyAudited != null ? data.reposNeverExternallyAudited : never.length;
+
+  // Headline alarm — the never-audited count is the point.
+  const alarm = el("div", "au-alarm " + (neverN > 0 ? "bad" : "ok"));
+  const atxt = el("span", "atxt");
+  if (neverN > 0) {
+    atxt.append(
+      el("b", null, "repos never externally audited"),
+      " — no PDF under ",
+      el("code", null, "audit/"),
+      ". The external-audit coverage gap. ",
+      el("b", null, String(audited.length)),
+      " audited, ",
+      el("b", null, String(staleCount)),
+      " with a newer tag than the audit."
+    );
+  } else {
+    atxt.append(el("b", null, "every repo externally audited"), " — a Protofire PDF under audit/ for all.");
+  }
+  alarm.append(el("span", "an", String(neverN)), atxt);
+  box.append(alarm);
+
+  // Audited repos — status + source drift since the audited tag/PDF.
+  if (audited.length) {
+    box.append(el("div", "au-subhead", "Audited repos (" + audited.length + ") — drift since last audit"));
+    const table = el("div", "au-table");
+    for (const r of audited) {
+      const row = el("div", "au-row" + (r.externalAudit === "stale" ? " stale" : ""));
+
+      const c1 = el("div", "au-repo");
+      c1.append(link(null, r.name, "https://github.com/" + data.org + "/" + r.name));
+      const auditedLabel = r.auditedRef ? "audited " + r.auditedRef : "audited via PDF";
+      const sub = el("div", "au-sub", auditedLabel + (r.auditedDate ? " · " + day(r.auditedDate) : ""));
+      c1.append(sub);
+      if (r.auditPdfs && r.auditPdfs.length) {
+        c1.append(el("div", "au-sub", r.auditPdfs.map((p) => p.filename).join(", ")));
+      }
+      if (r.anchorKind === "commit") c1.append(el("div", "au-flag", "commit-anchored"));
+      else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
+        c1.append(el("div", "au-flag", "no tag in PDF name"));
+
+      const c2 = el("div");
+      c2.append(el("span", "au-status " + r.externalAudit, r.externalAudit));
+
+      const c3 = el("div", "au-drift");
+      if (r.externalAudit === "na") {
+        c3.append(el("span", "dim", "no tags to compare against"));
+      } else {
+        if (r.latestTag) {
+          c3.append("→ latest " + r.latestTag + (r.latestTagIso ? " · " + day(r.latestTagIso) : ""));
+          c3.append(document.createElement("br"));
+        }
+        // Drift since the audited ref, in three honest cases: (1) exact +/- from a
+        // non-truncated compare; (2) the compare hit GitHub's 300-file cap → an
+        // accurate changed-.sol FILE count from the tree diff (line drift is not
+        // recoverable, and 0 is a genuine "no Solidity drift"); (3) no compare data.
+        const commitsTail =
+          " · " + (r.commitsSinceAudit || 0) + " commits" +
+          (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "");
+        // The drift figure links to the GitHub compare view (audited base…default
+        // branch) when the scanner resolved a compareUrl; href is set via the
+        // property, never innerHTML. No compareUrl ⇒ a plain span (no dead link).
+        const mkNode = () => {
+          if (typeof r.compareUrl === "string" && r.compareUrl) {
+            const a = el("a", "au-drift-link");
+            a.href = r.compareUrl;
+            a.rel = "noopener noreferrer";
+            a.target = "_blank";
+            return a;
+          }
+          return el("span");
+        };
+        if (typeof r.sourceLocAddedSinceAudit === "number" && typeof r.sourceLocRemovedSinceAudit === "number") {
+          // +added / −removed src LOC: additions green (--clean), deletions red (--crit).
+          const combined = r.sourceLocAddedSinceAudit + r.sourceLocRemovedSinceAudit;
+          const diffstat = mkNode();
+          diffstat.append(
+            el("span", "add", "+" + r.sourceLocAddedSinceAudit),
+            " / ",
+            el("span", "del", "−" + r.sourceLocRemovedSinceAudit),
+            " src LOC"
+          );
+          c3.append(diffstat, " · " + (r.filesChangedSinceAudit || 0) + " files" + commitsTail);
+          if (r.externalAudit === "current" && combined === 0) {
+            c3.append(" ", el("span", "ok", "· up to date"));
+          }
+        } else if (r.sourceDriftTruncated && typeof r.filesChangedSinceAudit === "number") {
+          // The compare exceeded the 300-file cap, so the tree blob-sha diff gives
+          // the accurate changed-.sol file count (line drift unrecoverable). A count
+          // of 0 is a real "no Solidity drift", not an unknown.
+          const k = r.filesChangedSinceAudit;
+          const node = mkNode();
+          if (k === 0) {
+            node.append("no Solidity drift since audit");
+            c3.append(node, commitsTail);
+          } else {
+            node.append(k + (k === 1 ? " .sol file changed" : " .sol files changed"));
+            c3.append(node, " · line drift too large to size" + commitsTail);
+          }
+        } else {
+          c3.append(el("span", "dim", "drift unavailable"));
+        }
+      }
+      row.append(c1, c2, c3);
+      table.append(row);
+    }
+    box.append(table);
+  }
+
+  // Never externally audited — the gap, listed as repo chips.
+  if (never.length) {
+    box.append(el("div", "au-subhead", "Never externally audited (" + never.length + ") — the gap"));
+    const gap = el("div", "au-gap");
+    for (const r of never) {
+      gap.append(link("au-gapchip", r.name, "https://github.com/" + data.org + "/" + r.name));
+    }
+    box.append(gap);
+  }
+
+  const note = el("div", "au-note");
+  note.append(
+    "External audits are formal ",
+    el("code", null, "Protofire"),
+    " PDFs committed under ",
+    el("code", null, "audit/"),
+    " — a different signal from the internal audit-skill recency. Drift is measured clone-free against the audited git tag when the PDF filename encodes one (e.g. ",
+    el("code", null, "rain.factory.v0.1.1-r2.0.may-2026.pdf"),
+    "), else against the PDF's own commit — those rows are flagged ",
+    el("code", null, "no tag in PDF name"),
+    "."
+  );
+  box.append(note);
+}
 async function load() {
   try {
     const r = await fetch("health.json", { cache: "no-store" });
@@ -274,52 +440,7 @@ async function load() {
   $("meta").textContent =
     `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
     (isFinite(ago) ? ` (${ago}h ago)` : "");
-  const signalCount = Object.keys(data.summary || {}).length;
-  const clean = data.totalRepos - data.reposWithFindings;
-  const tiles = [
-    [data.totalRepos, "repos scanned"],
-    [data.reposWithFindings, "with debt"],
-    [clean, "clean"],
-    [signalCount, "distinct signals"],
-    [data.reposExternallyAudited, "externally audited"],
-    [data.reposNeverExternallyAudited, "never audited"],
-  ];
-  const box = $("tiles");
-  box.textContent = "";
-  for (const [n, l] of tiles) {
-    const t = document.createElement("div");
-    t.className = "tile";
-    const num = document.createElement("div");
-    num.className = "n";
-    num.textContent = n == null ? "—" : String(n);
-    const lab = document.createElement("div");
-    lab.className = "l";
-    lab.textContent = l;
-    t.append(num, lab);
-    box.appendChild(t);
-  }
-  const neverN = data.reposNeverExternallyAudited || 0;
-  const g = $("auditglance");
-  g.textContent = "";
-  const alarm = document.createElement(neverN > 0 ? "a" : "div");
-  alarm.className = "au-alarm " + (neverN > 0 ? "bad" : "ok");
-  if (neverN > 0) {
-    alarm.href = "audit.html";
-    alarm.style.textDecoration = "none";
-    alarm.style.color = "inherit";
-    alarm.style.cursor = "pointer";
-  }
-  const an = document.createElement("span");
-  an.className = "an";
-  an.textContent = String(neverN);
-  const atxt = document.createElement("span");
-  atxt.className = "atxt";
-  atxt.textContent =
-    neverN > 0
-      ? "repos never externally audited — the Protofire coverage gap. Open the Audit page →"
-      : "every repo externally audited.";
-  alarm.append(an, atxt);
-  g.append(alarm);
+  renderAudit();
 }
 load();
 </script>
