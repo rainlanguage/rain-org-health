@@ -3,6 +3,13 @@ on:
   push:
     branches: [master]
     paths: [site/**, .github/workflows/pages.yml]
+  # scan.yml commits health.json with GITHUB_TOKEN, and GitHub does NOT fire the
+  # `push` event above on a GITHUB_TOKEN push (it blocks recursive workflow
+  # triggers) — so a fresh scan would land on master but never deploy. Also run
+  # when the scan workflow completes, so the refreshed data actually ships.
+  workflow_run:
+    workflows: [scan]
+    types: [completed]
   workflow_dispatch:
 permissions:
   contents: read
@@ -14,6 +21,9 @@ concurrency:
 jobs:
   deploy:
     runs-on: ubuntu-latest
+    # On a scan completion, only deploy if the scan succeeded (a failed scan
+    # leaves health.json unchanged); push and manual dispatch always deploy.
+    if: ${{ github.event_name != 'workflow_run' || github.event.workflow_run.conclusion == 'success' }}
     environment:
       name: github-pages
       url: ${{ steps.deploy.outputs.page_url }}

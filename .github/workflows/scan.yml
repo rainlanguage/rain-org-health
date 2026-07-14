@@ -31,7 +31,18 @@ jobs:
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add site/health.json
             git commit -m "chore(scan): refresh site/health.json"
-            git push
+            # A concurrent merge to master rejects a plain push (non-fast-forward).
+            # Only the scan touches health.json, so rebasing onto the latest master
+            # and retrying is conflict-free and makes the race unable to fail the scan.
+            for attempt in 1 2 3 4 5; do
+              if git pull --rebase origin master && git push; then
+                exit 0
+              fi
+              echo "push race (attempt ${attempt}/5) — rebased onto master, retrying…"
+              sleep 3
+            done
+            echo "::error::could not push refreshed health.json after 5 attempts"
+            exit 1
           else
             echo "site/health.json unchanged — nothing to commit"
           fi
