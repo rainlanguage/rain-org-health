@@ -11,9 +11,9 @@ mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use protofire::{
-    changed_source_file_count, classify_anchor, classify_external_audit, counts_as_source_drift,
-    days_between, is_stale, newer_than, newest_pdf_index, source_drift, AuditAnchor, AuditPdf,
-    CompareFile,
+    anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
+    counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
+    AuditAnchor, AuditPdf, CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -345,6 +345,25 @@ fn commit_exists<F: GhApi>(gh: &F, org: &str, repo: &str, sha: &str) -> bool {
     }
 }
 
+/// Committer date (ISO-8601 UTC) of a git ref — a commit SHA **or** a tag name —
+/// via `gh api repos/{o}/{r}/commits/{ref}` (the endpoint resolves a tag ref to
+/// its commit). This is the AUDITED state's real date, used to order one audit
+/// PDF against another (see `AuditPdf::audit_date_iso`). Runs through the shared
+/// `GhApi` seam so it inherits the audit path's retry/backoff. `None` when the ref
+/// does not resolve (`NotFound`) or the fetch `Failed` after retries — the caller
+/// then falls back to the PDF's own file-commit date.
+fn commit_date<F: GhApi>(gh: &F, org: &str, repo: &str, git_ref: &str) -> Option<String> {
+    match gh.api_jq(&[
+        "api",
+        &format!("repos/{org}/{repo}/commits/{git_ref}"),
+        "--jq",
+        ".commit.committer.date",
+    ]) {
+        FetchOutcome::Found(s) if !s.trim().is_empty() => Some(s.trim().to_string()),
+        FetchOutcome::Found(_) | FetchOutcome::NotFound | FetchOutcome::Failed => None,
+    }
+}
+
 /// Commit date + sha of the commit that last touched (added) a path.
 fn pdf_commit<F: GhApi>(gh: &F, org: &str, repo: &str, path: &str) -> (String, String) {
     let out = match gh.api_jq(&[
@@ -621,11 +640,20 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         .into_iter()
         .map(|(filename, path)| {
             let (iso, sha) = pdf_commit(gh, org, repo, &path);
+            // Recency by the AUDITED commit/tag date (the audit's real date),
+            // resolved from the filename's anchor ref. Falls back to the PDF's own
+            // file-commit date when the name encodes no resolvable anchor — so a
+            // bulk move that ties every PDF's file-commit date still orders them by
+            // which audit is newer (see `newest_pdf_index`).
+            let audit_date_iso = anchor_ref(&filename)
+                .and_then(|r| commit_date(gh, org, repo, &r))
+                .unwrap_or_else(|| iso.clone());
             AuditPdf {
                 filename,
                 path,
                 last_commit_iso: iso,
                 commit_sha: sha,
+                audit_date_iso,
             }
         })
         .collect();
@@ -1068,6 +1096,7 @@ fn main() {
                         "filename": pdf.filename,
                         "path": pdf.path,
                         "lastCommitIso": pdf.last_commit_iso,
+                        "auditDateIso": pdf.audit_date_iso,
                     })).collect::<Vec<_>>(),
                     "referencePdfIndex": p.reference_pdf_index,
                     "auditedRef": p.audited_ref,
@@ -1287,6 +1316,74 @@ mod tests {
         );
         // The listing was fetched exactly once at this seam (retry lives in GhCli).
         assert_eq!(gh.count("contents/audit/protofire"), 1);
+    }
+
+    // ---- audit-date reference selection (commit_date + newest-by-audit) ----
+
+    #[test]
+    fn commit_date_resolves_ref_else_none() {
+        let gh = FakeGh::new(vec![(
+            "commits/deadbee",
+            FetchOutcome::Found("2026-02-07T15:29:43Z".into()),
+        )]);
+        // A resolvable ref → its committer date.
+        assert_eq!(
+            commit_date(&gh, "o", "r", "deadbee").as_deref(),
+            Some("2026-02-07T15:29:43Z")
+        );
+        // An unresolvable ref (NotFound at this seam) → None, so the caller falls
+        // back to the PDF's own file-commit date.
+        assert_eq!(commit_date(&gh, "o", "r", "0000000"), None);
+    }
+
+    #[test]
+    fn reference_pdf_is_newest_audit_not_newest_file_commit() {
+        // Two audited PDFs. The JAN one has the NEWER file-commit date but the
+        // OLDER audited-commit date; the FEB one is the reverse. The reference must
+        // be the newest AUDIT (feb), proving selection keys on the audited commit
+        // date — not the PDF's own file-commit date, which a batch move collapses.
+        // (Pre-fix, this picks the jan PDF by its newer file date and FAILS.)
+        let listing = FetchOutcome::Found(format!(
+            "file\taudit/protofire/{a}\t{a}\nfile\taudit/protofire/{b}\t{b}",
+            a = "repo.aaaaaa1.jan-2026.pdf",
+            b = "repo.bbbbbb2.feb-2026.pdf",
+        ));
+        let gh = FakeGh::new(vec![
+            ("contents/audit/protofire", listing),
+            // pdf_commit (file dates): jan file is NEWER than feb file.
+            (
+                "commits?path=audit/protofire/repo.aaaaaa1",
+                FetchOutcome::Found("2026-08-01T00:00:00Z\tfileshaA".into()),
+            ),
+            (
+                "commits?path=audit/protofire/repo.bbbbbb2",
+                FetchOutcome::Found("2026-07-01T00:00:00Z\tfileshaB".into()),
+            ),
+            // Anchor (audited-commit) dates: feb is NEWER than jan. This route also
+            // answers commit_exists for the chosen anchor (non-empty ⇒ exists).
+            (
+                "commits/aaaaaa1",
+                FetchOutcome::Found("2026-01-27T00:00:00Z".into()),
+            ),
+            (
+                "commits/bbbbbb2",
+                FetchOutcome::Found("2026-02-07T00:00:00Z".into()),
+            ),
+            ("graphql", FetchOutcome::Found("main\t\t".into())),
+        ]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        // Sorted by path, jan is index 0 and feb index 1; the reference is feb.
+        assert_eq!(
+            r.reference_pdf_index,
+            Some(1),
+            "reference is the newest AUDIT"
+        );
+        assert_eq!(
+            r.audited_ref.as_deref(),
+            Some("bbbbbb2"),
+            "drift anchors to the feb audit's commit"
+        );
+        assert!(r.pdfs[1].filename.contains("feb-2026"));
     }
 
     // ---- retry: pure classifier + bounded-retry driver (no sleeping) ----
