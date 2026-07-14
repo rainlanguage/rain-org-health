@@ -35,6 +35,13 @@ pub struct AuditPdf {
     pub path: String,
     pub last_commit_iso: String,
     pub commit_sha: String,
+    /// Recency key for choosing the reference audit: the committer date of the
+    /// commit/tag the filename anchors to — the audit's real date. Falls back to
+    /// the PDF's own file-commit date (`last_commit_iso`) when the name encodes no
+    /// resolvable anchor. Unlike `last_commit_iso` this does NOT collapse when
+    /// several PDFs are moved in one commit (which ties their file-commit dates):
+    /// the audited commit's own timestamp still orders one audit against another.
+    pub audit_date_iso: String,
 }
 
 /// One changed file from the `compare` API — the inputs the drift sum needs.
@@ -146,6 +153,17 @@ pub fn classify_anchor<F: FnOnce(&str) -> bool>(filename: &str, resolve: F) -> A
     AuditAnchor::Unanchored
 }
 
+/// The anchor REF a PDF filename encodes — a `vX.Y.Z` tag (preferred) or a 7–40
+/// hex commit candidate — as a bare git ref string, or `None` when the name
+/// encodes neither. Unlike `classify_anchor` this performs NO resolution (no
+/// I/O): the caller resolves the ref (e.g. `gh api commits/{ref}` for the audit's
+/// date). Same precedence as `classify_anchor` so both agree on which token is
+/// the anchor. A hex candidate that is not a real commit is still returned here;
+/// resolving it simply fails and the caller falls back.
+pub fn anchor_ref(filename: &str) -> Option<String> {
+    parse_audited_tag(filename).or_else(|| parse_commit_candidate(filename))
+}
+
 /// Build the GitHub compare-view URL for a repo's audit drift:
 /// `https://github.com/{owner}/{repo}/compare/{base}...{head}`. `base` is the
 /// audited anchor (tag or resolved commit); `head` the repo default branch.
@@ -245,13 +263,16 @@ pub fn changed_source_file_count(base: &[(String, String)], head: &[(String, Str
     changed
 }
 
-/// Index of the newest PDF by commit date (ISO-8601 UTC sorts lexicographically).
-/// The newest PDF is the reference audit — its filename is parsed for the tag and
-/// its commit is the drift base when no tag is present.
+/// Index of the reference (newest) audit PDF, by the AUDITED commit/tag date
+/// (`audit_date_iso`, ISO-8601 UTC — lexicographic order == chronological). The
+/// audit date is the audited commit's own timestamp, NOT the PDF file's commit
+/// date, so several PDFs moved together in a single commit (which ties their file
+/// dates) still order by which audit is genuinely newer. The reference PDF's
+/// filename then supplies the drift-base anchor (tag or commit).
 pub fn newest_pdf_index(pdfs: &[AuditPdf]) -> Option<usize> {
     pdfs.iter()
         .enumerate()
-        .max_by(|(_, a), (_, b)| a.last_commit_iso.cmp(&b.last_commit_iso))
+        .max_by(|(_, a), (_, b)| a.audit_date_iso.cmp(&b.audit_date_iso))
         .map(|(i, _)| i)
 }
 
@@ -451,6 +472,24 @@ mod tests {
         );
     }
 
+    // ---- anchor_ref ----
+    #[test]
+    fn anchor_ref_prefers_tag_then_commit_then_none() {
+        // A vX.Y.Z tag is the ref (same precedence as classify_anchor).
+        assert_eq!(
+            anchor_ref("rain.factory.v0.1.1-r2.0.may-2026.pdf").as_deref(),
+            Some("v0.1.1")
+        );
+        // No tag but a whole-hex token → that commit candidate is the ref (returned
+        // WITHOUT resolution — unlike classify_anchor, no I/O here).
+        assert_eq!(
+            anchor_ref("raindex.e686b4d.apr-2026.pdf").as_deref(),
+            Some("e686b4d")
+        );
+        // Neither → None; the caller then dates the PDF by its own file commit.
+        assert_eq!(anchor_ref("protofire.rain.metadata.feb-2026.pdf"), None);
+    }
+
     // ---- is_test_path ----
     #[test]
     fn test_dirs_are_tests() {
@@ -618,18 +657,23 @@ mod tests {
 
     // ---- newest_pdf_index ----
     #[test]
-    fn newest_pdf_is_by_commit_date() {
-        let mk = |f: &str, iso: &str| AuditPdf {
+    fn newest_pdf_is_by_audit_date_not_file_commit_date() {
+        // Every PDF shares ONE file-commit date (as when a batch of PDFs is moved
+        // into audit/protofire/ in a single commit) — so file-commit date can't
+        // distinguish them. The AUDITED commit/tag date (audit_date_iso) must.
+        let mk = |f: &str, audit_iso: &str| AuditPdf {
             filename: f.into(),
             path: format!("audit/protofire/{f}"),
-            last_commit_iso: iso.into(),
+            last_commit_iso: "2026-07-14T00:00:00Z".into(),
             commit_sha: "sha".into(),
+            audit_date_iso: audit_iso.into(),
         };
         let pdfs = vec![
             mk("old.pdf", "2025-01-01T00:00:00Z"),
             mk("new.pdf", "2026-05-12T00:00:00Z"),
             mk("mid.pdf", "2026-02-01T00:00:00Z"),
         ];
+        // Newest is the newest AUDIT (index 1), even though all file dates tie.
         assert_eq!(newest_pdf_index(&pdfs), Some(1));
         assert_eq!(newest_pdf_index(&[]), None);
     }
