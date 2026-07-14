@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-14T04:21:25Z",
+  "generatedAt": "2026-07-14T05:04:17Z",
   "org": "rainlanguage",
   "totalRepos": 93,
   "reposWithFindings": 29,
@@ -1349,12 +1349,14 @@
         {
           "filename": "rain.factory.1a92a86.feb-2026.pdf",
           "path": "audit/protofire/rain.factory.1a92a86.feb-2026.pdf",
-          "lastCommitIso": "2026-05-31T08:00:31Z"
+          "lastCommitIso": "2026-05-31T08:00:31Z",
+          "auditDateIso": "2026-02-10T17:28:38Z"
         },
         {
           "filename": "rain.factory.v0.1.1-r2.0.may-2026.pdf",
           "path": "audit/protofire/rain.factory.v0.1.1-r2.0.may-2026.pdf",
-          "lastCommitIso": "2026-05-31T08:00:31Z"
+          "lastCommitIso": "2026-05-31T08:00:31Z",
+          "auditDateIso": "2026-05-12T15:15:26Z"
         }
       ],
       "referencePdfIndex": 1,
@@ -1376,40 +1378,6 @@
       "daysSinceAudit": 63
     },
     {
-      "name": "rain.datacontract",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.datacontract.3bff30782e408386f73b9353c5122e2e0ab24df2.feb-2026.pdf",
-          "path": "audit/protofire/rain.datacontract.3bff30782e408386f73b9353c5122e2e0ab24df2.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T04:15:36Z"
-        },
-        {
-          "filename": "rain.datacontract.6217921940ff7b2f0bd260d79573b109a2f8bf66.jan-2026.pdf",
-          "path": "audit/protofire/rain.datacontract.6217921940ff7b2f0bd260d79573b109a2f8bf66.jan-2026.pdf",
-          "lastCommitIso": "2026-07-14T04:15:36Z"
-        }
-      ],
-      "referencePdfIndex": 1,
-      "auditedRef": "6217921940ff7b2f0bd260d79573b109a2f8bf66",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-01-27T17:48:15Z",
-      "latestTag": "v0.1.0",
-      "latestTagIso": "2026-05-09T19:58:28Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 143,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 43,
-      "sourceLocRemovedSinceAudit": 100,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 28,
-      "sourceDriftTruncated": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/6217921940ff7b2f0bd260d79573b109a2f8bf66...main",
-      "daysSinceAudit": 168
-    },
-    {
       "name": "rain.vats",
       "hasProtofireAudit": true,
       "externalAudit": "stale",
@@ -1417,17 +1385,20 @@
         {
           "filename": "ethgild-v3.a9901296.2025-05.pdf",
           "path": "audit/protofire/ethgild-v3.a9901296.2025-05.pdf",
-          "lastCommitIso": "2026-05-31T08:42:41Z"
+          "lastCommitIso": "2026-05-31T08:42:41Z",
+          "auditDateIso": "2025-05-24T14:58:47Z"
         },
         {
           "filename": "ethgild-v3.b44855c2.2025-07.pdf",
           "path": "audit/protofire/ethgild-v3.b44855c2.2025-07.pdf",
-          "lastCommitIso": "2026-05-31T08:42:41Z"
+          "lastCommitIso": "2026-05-31T08:42:41Z",
+          "auditDateIso": "2025-07-31T11:52:33Z"
         },
         {
           "filename": "rain.vats.v0.1.5-r2.0.may-2026.pdf",
           "path": "audit/protofire/rain.vats.v0.1.5-r2.0.may-2026.pdf",
-          "lastCommitIso": "2026-05-31T08:42:41Z"
+          "lastCommitIso": "2026-05-31T08:42:41Z",
+          "auditDateIso": "2026-05-20T14:18:51Z"
         }
       ],
       "referencePdfIndex": 2,
@@ -1449,6 +1420,42 @@
       "daysSinceAudit": 55
     },
     {
+      "name": "rain.datacontract",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.datacontract.3bff30782e408386f73b9353c5122e2e0ab24df2.feb-2026.pdf",
+          "path": "audit/protofire/rain.datacontract.3bff30782e408386f73b9353c5122e2e0ab24df2.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T04:15:36Z",
+          "auditDateIso": "2026-02-07T15:29:43Z"
+        },
+        {
+          "filename": "rain.datacontract.6217921940ff7b2f0bd260d79573b109a2f8bf66.jan-2026.pdf",
+          "path": "audit/protofire/rain.datacontract.6217921940ff7b2f0bd260d79573b109a2f8bf66.jan-2026.pdf",
+          "lastCommitIso": "2026-07-14T04:15:36Z",
+          "auditDateIso": "2026-01-27T17:48:15Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "3bff30782e408386f73b9353c5122e2e0ab24df2",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-02-07T15:29:43Z",
+      "latestTag": "v0.1.0",
+      "latestTagIso": "2026-05-09T19:58:28Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 2,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 1,
+      "sourceLocRemovedSinceAudit": 1,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 14,
+      "sourceDriftTruncated": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/3bff30782e408386f73b9353c5122e2e0ab24df2...main",
+      "daysSinceAudit": 157
+    },
+    {
       "name": "rain.extrospection",
       "hasProtofireAudit": true,
       "externalAudit": "stale",
@@ -1456,17 +1463,20 @@
         {
           "filename": "rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
           "path": "audit/protofire/rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z"
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-02-10T12:58:40Z"
         },
         {
           "filename": "rain.extrospection.f2c4f5a.feb-2026.pdf",
           "path": "audit/protofire/rain.extrospection.f2c4f5a.feb-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z"
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-02-06T16:54:18Z"
         },
         {
           "filename": "rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
           "path": "audit/protofire/rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z"
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-05-12T15:16:31Z"
         }
       ],
       "referencePdfIndex": 2,
@@ -1495,7 +1505,8 @@
         {
           "filename": "raindex.e686b4d.apr-2026.pdf",
           "path": "audit/protofire/raindex.e686b4d.apr-2026.pdf",
-          "lastCommitIso": "2026-06-02T15:52:40Z"
+          "lastCommitIso": "2026-06-02T15:52:40Z",
+          "auditDateIso": "2026-03-24T18:40:27Z"
         }
       ],
       "referencePdfIndex": 0,
