@@ -13,7 +13,7 @@ function assert(cond, msg) {
 }
 
 // Selector match for the stub: supports "[data-t]", ".class", "#id", and a bare tag
-// — the only forms the render code uses (closest/querySelector/querySelectorAll).
+// — the only forms the render code uses (querySelector / querySelectorAll).
 function matchesSel(node, sel) {
   if (!node || typeof node !== "object") return false;
   if (sel === "[data-t]") return node.dataset != null && node.dataset.t != null;
@@ -28,8 +28,8 @@ function matchesSel(node, sel) {
 // A DOM element stub covering what the render functions touch: className, a separate
 // classList (add/remove/contains), textContent (setting it clears children, like the
 // DOM), dataset, and enough tree API to exercise the click path — parent tracking,
-// document-fragment spread, append/appendChild/replaceChildren/after, closest,
-// querySelector(All), and addEventListener + a click() that fires stored handlers.
+// document-fragment spread, append/appendChild/replaceChildren, querySelector(All),
+// and addEventListener + a click() that fires stored handlers.
 function makeEl(tag) {
   const el = {
     tagName: String(tag).toLowerCase(),
@@ -76,24 +76,6 @@ function makeEl(tag) {
     replaceChildren(...ns) {
       el.children = [];
       for (const n of ns) el._adopt(n);
-    },
-    after(node) {
-      const p = el.parent;
-      if (!p) return;
-      if (node.parent) {
-        const j = node.parent.children.indexOf(node);
-        if (j >= 0) node.parent.children.splice(j, 1);
-      }
-      p.children.splice(p.children.indexOf(el) + 1, 0, node);
-      node.parent = p;
-    },
-    closest(sel) {
-      let n = el;
-      while (n) {
-        if (matchesSel(n, sel)) return n;
-        n = n.parent;
-      }
-      return null;
     },
     querySelectorAll(sel) {
       const out = [];
@@ -477,10 +459,10 @@ Deno.test("pipeline FSM: the two close-candidate states carry distinct labels", 
   );
 });
 
-// #66 (primary): clicking a state must attach the detail directly under THAT state's
-// own lane with a header naming it and a count == its own list length — not park a
-// single panel at the bottom (under close-candidate issues) for every state.
-Deno.test("pipeline FSM: clicking a state attaches the detail under that state's lane, header + count match", () => {
+// #66 (primary): the shared detail panel stays at the bottom, but clicking a state
+// opens it with a HEADER naming THAT state and a count == its own list length — so
+// which state the list belongs to is unambiguous (not attached to the last lane).
+Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header naming it + matching count", () => {
   const box = fsmBox({
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 2 },
     lanes: {
@@ -504,21 +486,16 @@ Deno.test("pipeline FSM: clicking a state attaches the detail under that state's
     box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
   const detail = box.querySelectorAll("#fsmdetail")[0];
   assert(detail, "detail panel exists");
+  const detailHost = detail.parent; // the panel stays a child of this throughout
 
   // Click the close-candidate PRs box (3 PRs).
   const prBox = boxByT("ai:close-candidate");
   prBox.click();
-  const prLane = prBox.closest(".fsm-lane");
-  assert(
-    detail.parent === prLane.parent,
-    "detail relocates into the clicked lane's container",
-  );
-  assert(
-    prLane.parent.children.indexOf(detail) ===
-      prLane.parent.children.indexOf(prLane) + 1,
-    "detail sits immediately AFTER the clicked box's own lane",
-  );
   assert(detail.classList.contains("open"), "detail is open");
+  assert(
+    detail.parent === detailHost,
+    "the panel stays put (not relocated per click)",
+  );
   assert(
     collect(detail, "dhl")[0].textContent === "ai:close-candidate (PRs)",
     "header names the clicked state",
@@ -529,19 +506,10 @@ Deno.test("pipeline FSM: clicking a state attaches the detail under that state's
   );
   assert(collect(detail, "li").length === 3, "renders exactly the 3 PRs");
 
-  // Click the close-candidate ISSUES box (2 issues) — the SAME panel moves to ITS lane.
-  const isBox = boxByT("closeCandidateIssues");
-  isBox.click();
-  const isLane = isBox.closest(".fsm-lane");
-  assert(
-    isLane !== prLane,
-    "issues are a different lane than the PR close-candidates",
-  );
-  assert(
-    isLane.parent.children.indexOf(detail) ===
-      isLane.parent.children.indexOf(isLane) + 1,
-    "detail re-attaches immediately after the issues lane, not the PR lane",
-  );
+  // Click the close-candidate ISSUES box (2 issues) — the SAME bottom panel re-populates
+  // with the issues state's own header + count, so the two never blur together.
+  boxByT("closeCandidateIssues").click();
+  assert(detail.parent === detailHost, "still the same panel, still in place");
   assert(
     collect(detail, "dhl")[0].textContent === "ai:close-candidate (issues)",
     "header re-names to the issues state",

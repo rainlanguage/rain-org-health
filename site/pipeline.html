@@ -162,7 +162,7 @@
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
   .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
-  .fsm-list { margin: 2px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
+  .fsm-list { margin: 18px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
   .fsm-list.open { display: block; }
   .fsm-list .li { display: block; padding: 9px 13px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); font-size: 13.5px; }
   .fsm-list .li:last-child { border-bottom: 0; }
@@ -489,13 +489,10 @@ function renderFsm(hq) {
     box.querySelectorAll("[data-t]").forEach((x) => x.classList.remove("sel"));
     if (openKey === k) { detail.classList.remove("open"); openKey = null; return; }
     openKey = k;
+    // The detail is a single panel at the bottom of the machine; its header names
+    // the selected state (below) and CSS gives it clear vertical separation, so it
+    // reads as the clicked state's list rather than an extension of the last lane.
     detail.replaceChildren(detailBody(k, labelOf(b, k)));
-    // Attach the detail directly beneath the lane (or the box) that owns the clicked
-    // state, so the list reads as belonging to THAT state — not parked under the last
-    // lane on the page (previously the fixed panel always sat under close-candidate
-    // issues, so every state's list looked attached to it).
-    const anchor = (b.closest && b.closest(".fsm-lane")) || b;
-    anchor.after(detail);
     detail.classList.add("open");
     if (b.classList.contains("fsm-state")) b.classList.add("sel");
   }));
