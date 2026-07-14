@@ -175,6 +175,26 @@ Deno.test("audit anchor flags: commit-anchored vs no-tag-in-name", () => {
   assert(flags.includes("no tag in PDF name"), `no-tag flag missing: ${JSON.stringify(flags)}`);
 });
 
+Deno.test("audit shows only the referenced PDF, summarising older ones", () => {
+  const box = auditBox(auditData([
+    auditRow({
+      referencePdfIndex: 1,
+      auditPdfs: [
+        { filename: "repo.v0.1.0-r1.jan-2026.pdf" },
+        { filename: "repo.v0.1.1-r2.may-2026.pdf" },
+      ],
+      sourceLocAddedSinceAudit: 1,
+      sourceLocRemovedSinceAudit: 1,
+      filesChangedSinceAudit: 1,
+      commitsSinceAudit: 1,
+    }),
+  ]));
+  const t = textOf(box);
+  assert(t.includes("repo.v0.1.1-r2.may-2026.pdf"), "shows the referenced PDF");
+  assert(!t.includes("repo.v0.1.0-r1.jan-2026.pdf"), "does NOT list the older PDF");
+  assert(t.includes("+1 older"), "summarises the older PDF count");
+});
+
 Deno.test("audit never-audited: headline count + one enumerated row per uncovered repo", () => {
   const box = auditBox(auditData([
     auditRow({ name: "covered", sourceLocAddedSinceAudit: 1, sourceLocRemovedSinceAudit: 1, filesChangedSinceAudit: 1, commitsSinceAudit: 1 }),
