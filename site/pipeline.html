@@ -162,13 +162,17 @@
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
   .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
-  .fsm-list { margin: 2px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
+  .fsm-list { margin: 18px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
   .fsm-list.open { display: block; }
   .fsm-list .li { display: block; padding: 9px 13px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); font-size: 13.5px; }
   .fsm-list .li:last-child { border-bottom: 0; }
   .fsm-list .li:hover { background: var(--surface); }
   .fsm-list .li .lr { color: var(--ink-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
   .fsm-list .li .lz { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+  .fsm-list .fsm-dh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 13px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .fsm-list .fsm-dh .dhl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); }
+  .fsm-list .fsm-dh .dhc { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  .fsm-list .empty { padding: 12px 13px; }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
   .fsm-lane { margin: 14px 0 2px; }
@@ -390,7 +394,10 @@ function renderFsm(hq) {
         const count = cell ? Number(cell.count) || 0 : 0;
         laneTotal += count;
         laneItems.set(s.state, (cell && cell.prs) || []);
-        g.append(stateBox(s.state, s.state, count, s.act, s.kind));
+        // The PR close-candidate state and the close-candidate ISSUES group both read
+        // `ai:close-candidate`; qualify the PR one so the two never look identical.
+        const boxLabel = s.state === "ai:close-candidate" ? "ai:close-candidate (PRs)" : s.state;
+        g.append(stateBox(s.state, boxLabel, count, s.act, s.kind));
       });
       const lane = el("div", "fsm-lane");
       const h = el("div", "fsm-lane-h");
@@ -400,7 +407,7 @@ function renderFsm(hq) {
     });
     // Close-candidate ISSUES (open ai:close-candidate issues, distinct from the PR state).
     const ig = el("div", "fsm-grid");
-    ig.append(stateBox("closeCandidateIssues", "ai:close-candidate", Number(c.closeCandidateIssues) || 0, "close issue", "rule"));
+    ig.append(stateBox("closeCandidateIssues", "ai:close-candidate (issues)", Number(c.closeCandidateIssues) || 0, "close issue", "rule"));
     const ilane = el("div", "fsm-lane");
     const ih = el("div", "fsm-lane-h");
     ih.append(el("span", null, "close-candidate issues"), el("span", "lct", String(Number(c.closeCandidateIssues) || 0)));
@@ -422,18 +429,26 @@ function renderFsm(hq) {
     grid.append(g);
   }
 
-  // itemsFor returns the item nodes for a state (a DocumentFragment).
+  // itemsFor returns { arr, issue } for a state key: the item list, and whether the
+  // items are issues (vs PRs) — which decides the GitHub URL path.
   const itemsFor = (key) => {
-    let arr, issue = false;
-    if (key === "leak") arr = hq.leaks || [];
-    else if (key === "closeCandidateIssues") { arr = hq.closeCandidateIssues || []; issue = true; }
-    else if (laneItems.has(key)) arr = laneItems.get(key);
-    else arr = (hq.states && hq.states[key]) || [];
+    if (key === "leak") return { arr: hq.leaks || [], issue: false };
+    if (key === "closeCandidateIssues") return { arr: hq.closeCandidateIssues || [], issue: true };
+    if (laneItems.has(key)) return { arr: laneItems.get(key), issue: false };
+    return { arr: (hq.states && hq.states[key]) || [], issue: false };
+  };
+
+  // Detail body for a clicked box: a header naming THIS state and its OWN item count
+  // (the list length rendered directly below it), so the panel can never read as
+  // belonging to another section, then the items.
+  const detailBody = (key, label) => {
+    const { arr, issue } = itemsFor(key);
     const frag = document.createDocumentFragment();
+    const h = el("div", "fsm-dh");
+    h.append(el("span", "dhl", label), el("span", "dhc", arr.length + (arr.length === 1 ? " item" : " items")));
+    frag.append(h);
     if (!arr.length) {
-      const e = el("div", "empty", "no items in this state");
-      e.style.padding = "12px 13px";
-      frag.append(e);
+      frag.append(el("div", "empty", "no items in this state"));
       return frag;
     }
     arr.forEach((it) => {
@@ -460,13 +475,24 @@ function renderFsm(hq) {
   detail.id = "fsmdetail";
   box.append(alarm, rail, grid, detail, note);
 
+  // Header label for a clicked box: its own state label (.sk), or a friendly name for
+  // the leak alarm (which carries no .sk).
+  const labelOf = (b, k) => {
+    const sk = b.querySelector && b.querySelector(".sk");
+    if (sk && sk.textContent) return sk.textContent;
+    return k === "leak" ? "not in any modeled state" : k;
+  };
+
   let openKey = null;
   box.querySelectorAll("[data-t]").forEach((b) => b.addEventListener("click", () => {
     const k = b.dataset.t;
     box.querySelectorAll("[data-t]").forEach((x) => x.classList.remove("sel"));
     if (openKey === k) { detail.classList.remove("open"); openKey = null; return; }
     openKey = k;
-    detail.replaceChildren(itemsFor(k));
+    // The detail is a single panel at the bottom of the machine; its header names
+    // the selected state (below) and CSS gives it clear vertical separation, so it
+    // reads as the clicked state's list rather than an extension of the last lane.
+    detail.replaceChildren(detailBody(k, labelOf(b, k)));
     detail.classList.add("open");
     if (b.classList.contains("fsm-state")) b.classList.add("sel");
   }));
