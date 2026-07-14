@@ -1373,7 +1373,11 @@ mod tests {
         ]);
         let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
         // Sorted by path, jan is index 0 and feb index 1; the reference is feb.
-        assert_eq!(r.reference_pdf_index, Some(1), "reference is the newest AUDIT");
+        assert_eq!(
+            r.reference_pdf_index,
+            Some(1),
+            "reference is the newest AUDIT"
+        );
         assert_eq!(
             r.audited_ref.as_deref(),
             Some("bbbbbb2"),
