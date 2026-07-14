@@ -1,74 +1,28 @@
 {
-  "generatedAt": "2026-07-14T12:26:35Z",
+  "generatedAt": "2026-07-14T12:46:20Z",
   "org": "rainlanguage",
   "totalRepos": 92,
-  "reposWithFindings": 29,
+  "reposWithFindings": 27,
   "reposWholeRepoAudited": 0,
   "reposNeverAudited": 92,
   "reposExternallyAudited": 9,
   "reposNeverExternallyAudited": 28,
   "summary": {
-    "old-nix-installer": 10,
     "per-chain-etherscan-key": 10,
     "old-actions-checkout": 7,
-    "dead-magic-nix-cache": 6,
     "removed-rainix-task": 6,
+    "old-nix-installer": 3,
     "bespoke-ci": 2,
+    "dead-magic-nix-cache": 2,
     "private-key-dev": 1,
     "telegram-secret-drift": 1
   },
   "repos": [
     {
-      "name": "flow",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer",
-        "removed-rainix-task"
-      ]
-    },
-    {
-      "name": "rain.subgraph.docker",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer",
-        "removed-rainix-task"
-      ]
-    },
-    {
-      "name": "rain.webapp",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer",
-        "old-actions-checkout"
-      ]
-    },
-    {
-      "name": "sqlite-web",
-      "signals": [
-        "old-nix-installer",
-        "bespoke-ci",
-        "old-actions-checkout"
-      ]
-    },
-    {
       "name": "rain-org-health",
       "signals": [
         "dead-magic-nix-cache",
         "old-nix-installer"
-      ]
-    },
-    {
-      "name": "rain.local-db.remote",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer"
-      ]
-    },
-    {
-      "name": "rain.solver",
-      "signals": [
-        "old-nix-installer",
-        "telegram-secret-drift"
       ]
     },
     {
@@ -90,6 +44,19 @@
       "signals": [
         "dead-magic-nix-cache",
         "old-nix-installer"
+      ]
+    },
+    {
+      "name": "sqlite-web",
+      "signals": [
+        "bespoke-ci",
+        "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "flow",
+      "signals": [
+        "removed-rainix-task"
       ]
     },
     {
@@ -171,9 +138,15 @@
       ]
     },
     {
-      "name": "rain.subgraph.cli",
+      "name": "rain.solver",
       "signals": [
-        "old-nix-installer"
+        "telegram-secret-drift"
+      ]
+    },
+    {
+      "name": "rain.subgraph.docker",
+      "signals": [
+        "removed-rainix-task"
       ]
     },
     {
@@ -186,6 +159,12 @@
       "name": "rain.verify",
       "signals": [
         "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.webapp",
+      "signals": [
+        "old-actions-checkout"
       ]
     },
     {
