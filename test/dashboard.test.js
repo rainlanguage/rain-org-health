@@ -12,15 +12,32 @@ function assert(cond, msg) {
   if (!cond) throw new Error("assertion failed: " + msg);
 }
 
-// A DOM element stub covering only what the render functions touch: className, a
-// separate classList, textContent (setting it clears children, like the DOM),
-// dataset, append/appendChild, and querySelectorAll (returns [] — the click
-// wiring runs over its result and is a no-op at render time).
+// Selector match for the stub: supports "[data-t]", ".class", "#id", and a bare tag
+// — the only forms the render code uses (closest/querySelector/querySelectorAll).
+function matchesSel(node, sel) {
+  if (!node || typeof node !== "object") return false;
+  if (sel === "[data-t]") return node.dataset != null && node.dataset.t != null;
+  if (sel[0] === ".") {
+    return typeof node.className === "string" &&
+      node.className.split(" ").includes(sel.slice(1));
+  }
+  if (sel[0] === "#") return node.id === sel.slice(1);
+  return node.tagName === String(sel).toLowerCase();
+}
+
+// A DOM element stub covering what the render functions touch: className, a separate
+// classList (add/remove/contains), textContent (setting it clears children, like the
+// DOM), dataset, and enough tree API to exercise the click path — parent tracking,
+// document-fragment spread, append/appendChild/replaceChildren/after, closest,
+// querySelector(All), and addEventListener + a click() that fires stored handlers.
 function makeEl(tag) {
   const el = {
     tagName: String(tag).toLowerCase(),
     className: "",
     _text: undefined,
+    _isFragment: false,
+    _ev: {},
+    parent: null,
     children: [],
     style: {},
     dataset: {},
@@ -29,19 +46,76 @@ function makeEl(tag) {
       add(c) {
         this._s.add(c);
       },
+      remove(c) {
+        this._s.delete(c);
+      },
       contains(c) {
         return this._s.has(c);
       },
     },
+    // Adopt one node, spreading a document fragment's children (like the real DOM).
+    _adopt(n) {
+      if (n && typeof n === "object" && n._isFragment) {
+        for (const c of n.children) {
+          el.children.push(c);
+          if (c && typeof c === "object") c.parent = el;
+        }
+        n.children = [];
+      } else {
+        el.children.push(n);
+        if (n && typeof n === "object") n.parent = el;
+      }
+    },
     append(...ns) {
-      for (const n of ns) el.children.push(n);
+      for (const n of ns) el._adopt(n);
     },
     appendChild(n) {
-      el.children.push(n);
+      el._adopt(n);
       return n;
     },
-    querySelectorAll() {
-      return [];
+    replaceChildren(...ns) {
+      el.children = [];
+      for (const n of ns) el._adopt(n);
+    },
+    after(node) {
+      const p = el.parent;
+      if (!p) return;
+      if (node.parent) {
+        const j = node.parent.children.indexOf(node);
+        if (j >= 0) node.parent.children.splice(j, 1);
+      }
+      p.children.splice(p.children.indexOf(el) + 1, 0, node);
+      node.parent = p;
+    },
+    closest(sel) {
+      let n = el;
+      while (n) {
+        if (matchesSel(n, sel)) return n;
+        n = n.parent;
+      }
+      return null;
+    },
+    querySelectorAll(sel) {
+      const out = [];
+      const walk = (n) => {
+        for (const c of n.children || []) {
+          if (c && typeof c === "object") {
+            if (matchesSel(c, sel)) out.push(c);
+            walk(c);
+          }
+        }
+      };
+      walk(el);
+      return out;
+    },
+    querySelector(sel) {
+      return el.querySelectorAll(sel)[0] || null;
+    },
+    addEventListener(type, fn) {
+      (el._ev[type] = el._ev[type] || []).push(fn);
+    },
+    click() {
+      (el._ev.click || []).forEach((fn) => fn());
     },
   };
   Object.defineProperty(el, "textContent", {
@@ -60,14 +134,19 @@ function makeEl(tag) {
 // column-0 brace matching (nested braces are indented, so the first `^}$` after
 // the header is the function's own close).
 function extractFn(script, name) {
-  const re = new RegExp("^function " + name + "\\([^)]*\\)[\\s\\S]*?^\\}$", "m");
+  const re = new RegExp(
+    "^function " + name + "\\([^)]*\\)[\\s\\S]*?^\\}$",
+    "m",
+  );
   const m = re.exec(script);
   if (!m) throw new Error("could not extract function " + name);
   return m[0];
 }
 
 function pageScript(file) {
-  const html = Deno.readTextFileSync(new URL("../site/" + file, import.meta.url));
+  const html = Deno.readTextFileSync(
+    new URL("../site/" + file, import.meta.url),
+  );
   return html
     .replace(/^[\s\S]*?<script type="module">/, "")
     .replace(/<\/script>[\s\S]*$/, "");
@@ -77,7 +156,9 @@ function pageScript(file) {
 function collect(root, cls, out = []) {
   for (const c of root.children || []) {
     if (c && typeof c === "object") {
-      if (typeof c.className === "string" && c.className.split(" ").includes(cls)) out.push(c);
+      if (
+        typeof c.className === "string" && c.className.split(" ").includes(cls)
+      ) out.push(c);
       collect(c, cls, out);
     }
   }
@@ -89,7 +170,9 @@ function textOf(node) {
   let s = "";
   for (const c of node.children || []) {
     if (typeof c === "string") s += c;
-    else if (c && typeof c === "object") s += (c._text !== undefined ? c._text : textOf(c));
+    else if (c && typeof c === "object") {
+      s += c._text !== undefined ? c._text : textOf(c);
+    }
   }
   return s;
 }
@@ -104,75 +187,176 @@ function auditBox(data) {
   const box = makeEl("div");
   const document = { createElement: (t) => makeEl(t) };
   const $ = (id) => (id === "audit" ? box : makeEl("div"));
-  bind("audit.html", "renderAudit", ["document", "$", "data"], [document, $, data])();
+  bind("audit.html", "renderAudit", ["document", "$", "data"], [
+    document,
+    $,
+    data,
+  ])();
   return box;
 }
 
 function fsmBox(hq) {
   const box = makeEl("div");
-  const document = { createElement: (t) => makeEl(t) };
+  const document = {
+    createElement: (t) => makeEl(t),
+    createDocumentFragment: () => {
+      const f = makeEl("#fragment");
+      f._isFragment = true;
+      return f;
+    },
+  };
   const $ = (id) => (id === "fsm" ? box : makeEl("div"));
   bind("pipeline.html", "renderFsm", ["document", "$"], [document, $])(hq);
   return box;
 }
 
 function auditRow(over) {
-  return { name: "r", hasProtofireAudit: true, externalAudit: "stale", ...over };
+  return {
+    name: "r",
+    hasProtofireAudit: true,
+    externalAudit: "stale",
+    ...over,
+  };
 }
 
 function auditData(rows, neverN = 0) {
-  return { org: "testorg", reposNeverExternallyAudited: neverN, protofireAudits: rows };
+  return {
+    org: "testorg",
+    reposNeverExternallyAudited: neverN,
+    protofireAudits: rows,
+  };
 }
 
 Deno.test("audit drift is red ONLY when the line drift is unenumerable", () => {
   const box = auditBox(auditData([
-    auditRow({ name: "unenumerable", sourceDriftTruncated: true, filesChangedSinceAudit: 47, commitsSinceAudit: 687, compareUrl: "https://h/x/compare/a...b" }),
-    auditRow({ name: "enumerated-large", sourceLocAddedSinceAudit: 9000, sourceLocRemovedSinceAudit: 8000, filesChangedSinceAudit: 200, commitsSinceAudit: 500, compareUrl: "https://h/x/compare/v...b" }),
-    auditRow({ name: "nodrift", sourceDriftTruncated: true, filesChangedSinceAudit: 0, commitsSinceAudit: 5 }),
+    auditRow({
+      name: "unenumerable",
+      sourceDriftTruncated: true,
+      filesChangedSinceAudit: 47,
+      commitsSinceAudit: 687,
+      compareUrl: "https://h/x/compare/a...b",
+    }),
+    auditRow({
+      name: "enumerated-large",
+      sourceLocAddedSinceAudit: 9000,
+      sourceLocRemovedSinceAudit: 8000,
+      filesChangedSinceAudit: 200,
+      commitsSinceAudit: 500,
+      compareUrl: "https://h/x/compare/v...b",
+    }),
+    auditRow({
+      name: "nodrift",
+      sourceDriftTruncated: true,
+      filesChangedSinceAudit: 0,
+      commitsSinceAudit: 5,
+    }),
   ]));
   const drifts = collect(box, "au-drift");
   assert(drifts.length === 3, `expected 3 drift cells, got ${drifts.length}`);
-  assert(drifts.filter((d) => d.classList.contains("big")).length === 1, "exactly one red cell");
-  const unenum = drifts.filter((d) => textOf(d).includes("line drift too large to size"));
-  assert(unenum.length === 1 && unenum[0].classList.contains("big"), "unenumerable cell is red");
+  assert(
+    drifts.filter((d) => d.classList.contains("big")).length === 1,
+    "exactly one red cell",
+  );
+  const unenum = drifts.filter((d) =>
+    textOf(d).includes("line drift too large to size")
+  );
+  assert(
+    unenum.length === 1 && unenum[0].classList.contains("big"),
+    "unenumerable cell is red",
+  );
   const enumerated = drifts.filter((d) => textOf(d).includes("src LOC"));
-  assert(enumerated.length === 1 && !enumerated[0].classList.contains("big"), "enumerated diff is NOT red");
+  assert(
+    enumerated.length === 1 && !enumerated[0].classList.contains("big"),
+    "enumerated diff is NOT red",
+  );
   const zero = drifts.filter((d) => textOf(d).includes("no Solidity drift"));
-  assert(zero.length === 1 && !zero[0].classList.contains("big"), "zero drift is NOT red");
+  assert(
+    zero.length === 1 && !zero[0].classList.contains("big"),
+    "zero drift is NOT red",
+  );
 });
 
 Deno.test("audit enumerated drift shows +added / -removed and file + commit counts", () => {
   const box = auditBox(auditData([
-    auditRow({ sourceLocAddedSinceAudit: 328, sourceLocRemovedSinceAudit: 37, filesChangedSinceAudit: 10, commitsSinceAudit: 36 }),
+    auditRow({
+      sourceLocAddedSinceAudit: 328,
+      sourceLocRemovedSinceAudit: 37,
+      filesChangedSinceAudit: 10,
+      commitsSinceAudit: 36,
+    }),
   ]));
   const cell = collect(box, "au-drift")[0];
   const add = collect(cell, "add");
   const del = collect(cell, "del");
-  assert(add.length === 1 && add[0].textContent === "+328", `add span = ${add[0] && add[0].textContent}`);
-  assert(del.length === 1 && del[0].textContent === "−37", `del span = ${del[0] && del[0].textContent}`);
+  assert(
+    add.length === 1 && add[0].textContent === "+328",
+    `add span = ${add[0] && add[0].textContent}`,
+  );
+  assert(
+    del.length === 1 && del[0].textContent === "−37",
+    `del span = ${del[0] && del[0].textContent}`,
+  );
   assert(textOf(cell).includes("10 files"), "shows the changed-file count");
   assert(textOf(cell).includes("36 commits"), "shows the commit count");
 });
 
 Deno.test("audit up-to-date marker only when current AND zero drift", () => {
   const upToDate = auditBox(auditData([
-    auditRow({ externalAudit: "current", sourceLocAddedSinceAudit: 0, sourceLocRemovedSinceAudit: 0, filesChangedSinceAudit: 0, commitsSinceAudit: 0 }),
+    auditRow({
+      externalAudit: "current",
+      sourceLocAddedSinceAudit: 0,
+      sourceLocRemovedSinceAudit: 0,
+      filesChangedSinceAudit: 0,
+      commitsSinceAudit: 0,
+    }),
   ]));
-  assert(textOf(collect(upToDate, "au-drift")[0]).includes("up to date"), "current + 0 drift is up to date");
+  assert(
+    textOf(collect(upToDate, "au-drift")[0]).includes("up to date"),
+    "current + 0 drift is up to date",
+  );
   const stale = auditBox(auditData([
-    auditRow({ externalAudit: "stale", sourceLocAddedSinceAudit: 0, sourceLocRemovedSinceAudit: 0, filesChangedSinceAudit: 0, commitsSinceAudit: 1 }),
+    auditRow({
+      externalAudit: "stale",
+      sourceLocAddedSinceAudit: 0,
+      sourceLocRemovedSinceAudit: 0,
+      filesChangedSinceAudit: 0,
+      commitsSinceAudit: 1,
+    }),
   ]));
-  assert(!textOf(collect(stale, "au-drift")[0]).includes("up to date"), "stale is never up to date");
+  assert(
+    !textOf(collect(stale, "au-drift")[0]).includes("up to date"),
+    "stale is never up to date",
+  );
 });
 
 Deno.test("audit anchor flags: commit-anchored vs no-tag-in-name", () => {
   const box = auditBox(auditData([
-    auditRow({ name: "commitrepo", anchorKind: "commit", sourceLocAddedSinceAudit: 1, sourceLocRemovedSinceAudit: 1, filesChangedSinceAudit: 1, commitsSinceAudit: 1 }),
-    auditRow({ name: "unrepo", anchorKind: "unanchored", sourceLocAddedSinceAudit: 1, sourceLocRemovedSinceAudit: 1, filesChangedSinceAudit: 1, commitsSinceAudit: 1 }),
+    auditRow({
+      name: "commitrepo",
+      anchorKind: "commit",
+      sourceLocAddedSinceAudit: 1,
+      sourceLocRemovedSinceAudit: 1,
+      filesChangedSinceAudit: 1,
+      commitsSinceAudit: 1,
+    }),
+    auditRow({
+      name: "unrepo",
+      anchorKind: "unanchored",
+      sourceLocAddedSinceAudit: 1,
+      sourceLocRemovedSinceAudit: 1,
+      filesChangedSinceAudit: 1,
+      commitsSinceAudit: 1,
+    }),
   ]));
   const flags = collect(box, "au-flag").map((f) => f.textContent);
-  assert(flags.includes("commit-anchored"), `commit-anchored flag missing: ${JSON.stringify(flags)}`);
-  assert(flags.includes("no tag in PDF name"), `no-tag flag missing: ${JSON.stringify(flags)}`);
+  assert(
+    flags.includes("commit-anchored"),
+    `commit-anchored flag missing: ${JSON.stringify(flags)}`,
+  );
+  assert(
+    flags.includes("no tag in PDF name"),
+    `no-tag flag missing: ${JSON.stringify(flags)}`,
+  );
 });
 
 Deno.test("audit shows only the referenced PDF, summarising older ones", () => {
@@ -191,26 +375,47 @@ Deno.test("audit shows only the referenced PDF, summarising older ones", () => {
   ]));
   const t = textOf(box);
   assert(t.includes("repo.v0.1.1-r2.may-2026.pdf"), "shows the referenced PDF");
-  assert(!t.includes("repo.v0.1.0-r1.jan-2026.pdf"), "does NOT list the older PDF");
+  assert(
+    !t.includes("repo.v0.1.0-r1.jan-2026.pdf"),
+    "does NOT list the older PDF",
+  );
   assert(t.includes("+1 older"), "summarises the older PDF count");
 });
 
 Deno.test("audit never-audited: headline count + one enumerated row per uncovered repo", () => {
   const box = auditBox(auditData([
-    auditRow({ name: "covered", sourceLocAddedSinceAudit: 1, sourceLocRemovedSinceAudit: 1, filesChangedSinceAudit: 1, commitsSinceAudit: 1 }),
+    auditRow({
+      name: "covered",
+      sourceLocAddedSinceAudit: 1,
+      sourceLocRemovedSinceAudit: 1,
+      filesChangedSinceAudit: 1,
+      commitsSinceAudit: 1,
+    }),
     { name: "gap1", hasProtofireAudit: false },
     { name: "gap2", hasProtofireAudit: false },
     { name: "gap3", hasProtofireAudit: false },
   ], 3));
   const alarmNum = collect(box, "an")[0];
-  assert(alarmNum && alarmNum.textContent === "3", `headline count = ${alarmNum && alarmNum.textContent}`);
+  assert(
+    alarmNum && alarmNum.textContent === "3",
+    `headline count = ${alarmNum && alarmNum.textContent}`,
+  );
   // Each uncovered repo is ENUMERATED as its own row with a "never" status badge,
   // not collapsed into a chip cloud (#48).
   const neverBadges = collect(box, "never");
-  assert(neverBadges.length === 3, `expected 3 never rows, got ${neverBadges.length}`);
-  assert(neverBadges.every((b) => b.textContent === "never"), "each gap row carries a never badge");
+  assert(
+    neverBadges.length === 3,
+    `expected 3 never rows, got ${neverBadges.length}`,
+  );
+  assert(
+    neverBadges.every((b) => b.textContent === "never"),
+    "each gap row carries a never badge",
+  );
   const text = textOf(box);
-  assert(["gap1", "gap2", "gap3"].every((n) => text.includes(n)), "each gap repo is named");
+  assert(
+    ["gap1", "gap2", "gap3"].every((n) => text.includes(n)),
+    "each gap repo is named",
+  );
 });
 
 Deno.test("pipeline FSM: leak alarm shows the count; OK alarm when zero", () => {
@@ -218,17 +423,132 @@ Deno.test("pipeline FSM: leak alarm shows the count; OK alarm when zero", () => 
     counts: { leaks: 3, ready: 5, closeCandidateIssues: 0 },
     lanes: { "vetter-verdicts": { "ai:ready": { count: 5, prs: [] } } },
   });
-  const bad = collect(box, "fsm-alarm").filter((a) => a.className.split(" ").includes("bad"));
+  const bad = collect(box, "fsm-alarm").filter((a) =>
+    a.className.split(" ").includes("bad")
+  );
   assert(bad.length === 1, "a leak alarm is rendered when leaks > 0");
-  assert(collect(bad[0], "an")[0].textContent === "3", "leak alarm shows the leak count");
-  assert(textOf(box).includes("not in any modeled state"), "leak alarm copy present");
+  assert(
+    collect(bad[0], "an")[0].textContent === "3",
+    "leak alarm shows the leak count",
+  );
+  assert(
+    textOf(box).includes("not in any modeled state"),
+    "leak alarm copy present",
+  );
 
-  const clean = fsmBox({ counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 }, lanes: {} });
-  const ok = collect(clean, "fsm-alarm").filter((a) => a.className.split(" ").includes("ok"));
+  const clean = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
+    lanes: {},
+  });
+  const ok = collect(clean, "fsm-alarm").filter((a) =>
+    a.className.split(" ").includes("ok")
+  );
   assert(ok.length === 1, "a zero-leak run shows the OK alarm");
   assert(textOf(clean).includes("fully conformant"), "conformant copy present");
 });
 
 Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", () => {
-  assert(textOf(fsmBox(null)).includes("not wired yet"), "null human-queue → not-wired-yet copy");
+  assert(
+    textOf(fsmBox(null)).includes("not wired yet"),
+    "null human-queue → not-wired-yet copy",
+  );
+});
+
+// #66: the close-candidate PR STATE and the close-candidate ISSUES group must not
+// share the identical "ai:close-candidate" label (they read as one contradictory
+// control otherwise).
+Deno.test("pipeline FSM: the two close-candidate states carry distinct labels", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 18 },
+    lanes: {},
+  });
+  const labels = collect(box, "sk").map((s) => s.textContent);
+  assert(
+    labels.includes("ai:close-candidate (PRs)"),
+    `PR label missing: ${JSON.stringify(labels)}`,
+  );
+  assert(
+    labels.includes("ai:close-candidate (issues)"),
+    `issues label missing: ${JSON.stringify(labels)}`,
+  );
+  assert(
+    !labels.includes("ai:close-candidate"),
+    "the bare, ambiguous ai:close-candidate label must be gone",
+  );
+});
+
+// #66 (primary): clicking a state must attach the detail directly under THAT state's
+// own lane with a header naming it and a count == its own list length — not park a
+// single panel at the bottom (under close-candidate issues) for every state.
+Deno.test("pipeline FSM: clicking a state attaches the detail under that state's lane, header + count match", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 2 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:close-candidate": {
+          count: 3,
+          prs: [
+            { repo: "o/a", number: 1, title: "pr one" },
+            { repo: "o/b", number: 2, title: "pr two" },
+            { repo: "o/c", number: 3, title: "pr three" },
+          ],
+        },
+      },
+    },
+    closeCandidateIssues: [
+      { repo: "o/x", number: 10, title: "issue ten" },
+      { repo: "o/y", number: 11, title: "issue eleven" },
+    ],
+  });
+  const boxByT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  assert(detail, "detail panel exists");
+
+  // Click the close-candidate PRs box (3 PRs).
+  const prBox = boxByT("ai:close-candidate");
+  prBox.click();
+  const prLane = prBox.closest(".fsm-lane");
+  assert(
+    detail.parent === prLane.parent,
+    "detail relocates into the clicked lane's container",
+  );
+  assert(
+    prLane.parent.children.indexOf(detail) ===
+      prLane.parent.children.indexOf(prLane) + 1,
+    "detail sits immediately AFTER the clicked box's own lane",
+  );
+  assert(detail.classList.contains("open"), "detail is open");
+  assert(
+    collect(detail, "dhl")[0].textContent === "ai:close-candidate (PRs)",
+    "header names the clicked state",
+  );
+  assert(
+    collect(detail, "dhc")[0].textContent === "3 items",
+    "header count == the PR list length",
+  );
+  assert(collect(detail, "li").length === 3, "renders exactly the 3 PRs");
+
+  // Click the close-candidate ISSUES box (2 issues) — the SAME panel moves to ITS lane.
+  const isBox = boxByT("closeCandidateIssues");
+  isBox.click();
+  const isLane = isBox.closest(".fsm-lane");
+  assert(
+    isLane !== prLane,
+    "issues are a different lane than the PR close-candidates",
+  );
+  assert(
+    isLane.parent.children.indexOf(detail) ===
+      isLane.parent.children.indexOf(isLane) + 1,
+    "detail re-attaches immediately after the issues lane, not the PR lane",
+  );
+  assert(
+    collect(detail, "dhl")[0].textContent === "ai:close-candidate (issues)",
+    "header re-names to the issues state",
+  );
+  assert(
+    collect(detail, "dhc")[0].textContent === "2 items",
+    "header count == the issue list length",
+  );
+  assert(collect(detail, "li").length === 2, "renders exactly the 2 issues");
 });
