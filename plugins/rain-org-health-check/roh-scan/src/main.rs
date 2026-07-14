@@ -502,15 +502,26 @@ fn sum_sol_loc(root: &std::path::Path) -> u64 {
             return;
         };
         for entry in entries.flatten() {
+            // file_type() does NOT follow symlinks (unlike Path::is_dir); skip links
+            // so a symlink cycle can't overflow the stack and a link can't read or
+            // traverse outside the clone.
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
+            if ft.is_symlink() {
+                continue;
+            }
             let path = entry.path();
-            if path.is_dir() {
+            if ft.is_dir() {
                 if path.file_name().and_then(|n| n.to_str()) != Some(".git") {
                     walk(&path, root, acc);
                 }
-            } else if let Some(rel) = path.strip_prefix(root).ok().and_then(|p| p.to_str()) {
-                if counts_as_source_drift(rel) {
-                    if let Ok(content) = std::fs::read_to_string(&path) {
-                        *acc += content.lines().count() as u64;
+            } else if ft.is_file() {
+                if let Some(rel) = path.strip_prefix(root).ok().and_then(|p| p.to_str()) {
+                    if counts_as_source_drift(rel) {
+                        if let Ok(content) = std::fs::read_to_string(&path) {
+                            *acc += content.lines().count() as u64;
+                        }
                     }
                 }
             }
@@ -535,8 +546,13 @@ fn count_source_loc(org: &str, repo: &str) -> Option<u64> {
     ));
     let _ = std::fs::remove_dir_all(&dir);
     let url = format!("https://github.com/{org}/{repo}");
-    let ok = Command::new("git")
+    // Bound the clone via `timeout` so one stalled network connection can't block a
+    // scan worker indefinitely (a non-zero exit — including the 124 timeout — is
+    // treated as a failed clone, i.e. unknown LOC).
+    let ok = Command::new("timeout")
         .args([
+            "120",
+            "git",
             "clone",
             "--depth",
             "1",
@@ -860,7 +876,10 @@ fn main() {
         let protofire = fetch_protofire_audit(&gh, &org, repo);
         // #37: a never-audited Solidity repo's FULL non-test .sol LOC (via a shallow
         // clone) quantifies the coverage gap; audited repos use their drift instead.
-        let full_source_loc = if has_foundry && !protofire.has_pdf {
+        // Only CONFIRMED never-audited repos get a LOC count. `!has_pdf` also matches
+        // `unknown` (the audit fetch FAILED), and an errored lookup must not be
+        // presented as a confirmed coverage gap with a source-LOC magnitude (cf #52).
+        let full_source_loc = if has_foundry && protofire.external_audit == protofire::NEVER {
             count_source_loc(&org, repo)
         } else {
             None
@@ -1202,11 +1221,15 @@ mod tests {
         std::fs::write(dir.join("test/Helper.sol"), "p\nq\n").unwrap(); // under test/ → excluded
         std::fs::write(dir.join("README.md"), "not\nsol\n").unwrap(); // non-source → excluded
         std::fs::write(dir.join(".git/config"), "junk\njunk\n").unwrap(); // .git → skipped
+                                                                          // A symlink to a real .sol must NOT be followed (else A.sol is counted twice);
+                                                                          // the total staying 5 proves symlinks are skipped, not traversed.
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(dir.join("src/A.sol"), dir.join("src/link.sol")).unwrap();
         let loc = sum_sol_loc(&dir);
         let _ = std::fs::remove_dir_all(&dir);
         assert_eq!(
             loc, 5,
-            "3 (src/A.sol) + 2 (deploy/D.sol); tests, README, .git excluded"
+            "3 (src/A.sol) + 2 (deploy/D.sol); tests, README, .git, and the symlink excluded"
         );
     }
 
