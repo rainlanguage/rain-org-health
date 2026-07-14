@@ -66,20 +66,25 @@ pub const STALE: &str = "stale";
 pub const CURRENT: &str = "current";
 pub const UNKNOWN: &str = "unknown";
 
-/// Extract the audited git tag (`vMAJOR.MINOR.PATCH`) encoded in a PDF filename
-/// per the naming convention. Returns `None` when the filename encodes no such
-/// tag (older date-only or short-commit-sha names) — the caller then flags
-/// `tag_convention_absent` and falls back to the PDF's own commit.
+/// Extract the audited git tag (`[sol-]vMAJOR.MINOR.PATCH`) encoded in a PDF
+/// filename per the naming convention. Returns the FULL tag so it resolves as a
+/// real git ref: a bare `v0.1.1` (as `rain.factory.v0.1.1-r2.0.…`) OR the org's
+/// Solidity-release form `sol-v0.1.12` (as `raindex.sol-v0.1.12.…`). Returns
+/// `None` when the filename encodes no such tag (older date-only or commit-sha
+/// names) — the caller then flags `tag_convention_absent` and falls back to the
+/// PDF's own commit.
 ///
-/// The `v` must sit on a non-alphanumeric boundary so `rev1.2.3` never matches,
-/// and greedy digit runs mean `v0.1.10` reads as `v0.1.10`, not `v0.1.1`. Any
-/// trailing audit-revision suffix (`-r2.0`) is deliberately NOT part of the tag.
+/// The tag must sit on a non-alphanumeric boundary so `rev1.2.3` never matches,
+/// and greedy digit runs mean `v0.1.10` reads as `v0.1.10`, not `v0.1.1`. The
+/// `sol-` prefix is captured so the returned tag matches the repo's actual tag
+/// (dropping it would yield a `v0.1.12` that does not resolve). Any trailing
+/// audit-revision suffix (`-r2.0`) is deliberately NOT part of the tag.
 pub fn parse_audited_tag(filename: &str) -> Option<String> {
     static RE: OnceLock<Regex> = OnceLock::new();
     let re = RE.get_or_init(|| {
-        Regex::new(r"(?:^|[^A-Za-z0-9])v(\d+\.\d+\.\d+)").expect("static tag regex")
+        Regex::new(r"(?:^|[^A-Za-z0-9])((?:sol-)?v\d+\.\d+\.\d+)").expect("static tag regex")
     });
-    re.captures(filename).map(|c| format!("v{}", &c[1]))
+    re.captures(filename).map(|c| c[1].to_string())
 }
 
 /// The audited anchor a Protofire PDF filename encodes: the ref the drift base is
@@ -360,6 +365,18 @@ mod tests {
         );
         // bare `audit/protofire/<tag>.pdf` form from the issue.
         assert_eq!(parse_audited_tag("v1.2.3.pdf"), Some("v1.2.3".into()));
+        // The org's Solidity-release tag scheme `sol-v<X.Y.Z>` — the WHOLE tag is
+        // returned (dropping `sol-` would yield a `v0.1.12` that resolves to no
+        // real ref, since raindex's tag is `sol-v0.1.12`).
+        assert_eq!(
+            parse_audited_tag("raindex.sol-v0.1.12.jun-2026.pdf"),
+            Some("sol-v0.1.12".into())
+        );
+        // greedy patch digits under the prefix: `sol-v0.1.10`, not `sol-v0.1.1`.
+        assert_eq!(
+            parse_audited_tag("raindex.sol-v0.1.10.jun-2026.pdf"),
+            Some("sol-v0.1.10".into())
+        );
     }
 
     #[test]
