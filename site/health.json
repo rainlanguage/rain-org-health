@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-07-13T19:21:48Z",
+  "generatedAt": "2026-07-14T01:08:44Z",
   "org": "rainlanguage",
-  "totalRepos": 99,
+  "totalRepos": 97,
   "reposWithFindings": 30,
   "reposWholeRepoAudited": 0,
-  "reposNeverAudited": 99,
+  "reposNeverAudited": 97,
   "reposExternallyAudited": 4,
-  "reposNeverExternallyAudited": 39,
+  "reposNeverExternallyAudited": 38,
   "summary": {
     "per-chain-etherscan-key": 11,
     "old-nix-installer": 10,
@@ -280,14 +280,6 @@
     },
     {
       "name": "issue-pr-cron",
-      "lastAudit": null
-    },
-    {
-      "name": "meta",
-      "lastAudit": null
-    },
-    {
-      "name": "metamorphic-metadata",
       "lastAudit": null
     },
     {
@@ -656,27 +648,6 @@
     },
     {
       "name": "foundry.template",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
-      "name": "metamorphic-metadata",
       "hasProtofireAudit": false,
       "externalAudit": "never",
       "auditPdfs": [],
@@ -1461,7 +1432,7 @@
       "commitsSinceAudit": 36,
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/v0.1.1...main",
-      "daysSinceAudit": 62
+      "daysSinceAudit": 63
     },
     {
       "name": "rain.vats",
@@ -1498,7 +1469,7 @@
       "commitsSinceAudit": 41,
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 54
+      "daysSinceAudit": 55
     },
     {
       "name": "rain.extrospection",
@@ -1535,7 +1506,7 @@
       "commitsSinceAudit": 15,
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 62
+      "daysSinceAudit": 63
     },
     {
       "name": "raindex",
@@ -1562,7 +1533,7 @@
       "commitsSinceAudit": 687,
       "sourceDriftTruncated": true,
       "compareUrl": "https://github.com/rainlanguage/raindex/compare/e686b4d...main",
-      "daysSinceAudit": 111
+      "daysSinceAudit": 112
     }
   ]
 }
