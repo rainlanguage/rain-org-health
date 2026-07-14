@@ -241,6 +241,9 @@ struct ProtofireResult {
     commits_since: Option<u64>,
     source_drift_truncated: bool,
     compare_url: Option<String>,
+    /// Index into `pdfs` of the ONE PDF the anchor/drift are computed against (the
+    /// newest under audit/protofire/); the panel shows only this one, not all (#62).
+    reference_pdf_index: Option<usize>,
 }
 
 /// Outcome of listing a repo directory via the contents API: the parsed
@@ -500,6 +503,7 @@ fn empty_protofire(state: &'static str) -> ProtofireResult {
         has_pdf: false,
         external_audit: state,
         pdfs: Vec::new(),
+        reference_pdf_index: None,
         audited_ref: None,
         anchor_kind: None,
         tag_convention_absent: false,
@@ -549,6 +553,8 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         .collect();
     pdfs.sort_by(|a, b| a.path.cmp(&b.path));
     let newest = newest_pdf_index(&pdfs).expect("non-empty");
+    // Index of the one PDF the anchor/drift reference (the newest); panel shows only it (#62).
+    let reference_pdf_index = Some(newest);
 
     // Classify the audited anchor the newest PDF's filename encodes: a `vX.Y.Z`
     // tag, a hex commit token that RESOLVES to a real commit, or neither. The
@@ -641,6 +647,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         has_pdf: true,
         external_audit,
         pdfs,
+        reference_pdf_index,
         audited_ref,
         anchor_kind,
         tag_convention_absent,
@@ -970,6 +977,7 @@ fn main() {
                         "path": pdf.path,
                         "lastCommitIso": pdf.last_commit_iso,
                     })).collect::<Vec<_>>(),
+                    "referencePdfIndex": p.reference_pdf_index,
                     "auditedRef": p.audited_ref,
                     "anchorKind": p.anchor_kind,
                     "tagConventionAbsent": p.tag_convention_absent,

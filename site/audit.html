@@ -327,8 +327,13 @@ function renderAudit() {
       const auditedLabel = r.auditedRef ? "audited " + r.auditedRef : "audited via PDF";
       const sub = el("div", "au-sub", auditedLabel + (r.auditedDate ? " · " + day(r.auditedDate) : ""));
       c1.append(sub);
+      // Show ONLY the referenced PDF (the one the anchor/drift are computed against,
+      // by index into auditPdfs); older PDFs are summarised, not listed (#62).
       if (r.auditPdfs && r.auditPdfs.length) {
-        c1.append(el("div", "au-sub", r.auditPdfs.map((p) => p.filename).join(", ")));
+        const i = typeof r.referencePdfIndex === "number" ? r.referencePdfIndex : 0;
+        const ref = r.auditPdfs[i] || r.auditPdfs[0];
+        const older = r.auditPdfs.length - 1;
+        c1.append(el("div", "au-sub", ref.filename + (older > 0 ? " · +" + older + " older" : "")));
       }
       if (r.anchorKind === "commit") c1.append(el("div", "au-flag", "commit-anchored"));
       else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
