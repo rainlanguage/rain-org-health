@@ -11,8 +11,9 @@ mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
 use protofire::{
-    changed_source_file_count, classify_anchor, classify_external_audit, days_between, is_stale,
-    newer_than, newest_pdf_index, source_drift, AuditAnchor, AuditPdf, CompareFile,
+    changed_source_file_count, classify_anchor, classify_external_audit, counts_as_source_drift,
+    days_between, is_stale, newer_than, newest_pdf_index, source_drift, AuditAnchor, AuditPdf,
+    CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -495,6 +496,83 @@ fn changed_sol_count<F: GhApi>(
     Some(changed_source_file_count(&base_tree, &head_tree))
 }
 
+/// Sum non-test Solidity LOC under a directory tree (skips `.git`). The pure
+/// counting half of `count_source_loc`, so it is testable against a fixture dir
+/// without cloning. Uses the SAME non-test-`.sol` predicate as the drift columns.
+fn sum_sol_loc(root: &std::path::Path) -> u64 {
+    fn walk(dir: &std::path::Path, root: &std::path::Path, acc: &mut u64) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            // file_type() does NOT follow symlinks (unlike Path::is_dir); skip links
+            // so a symlink cycle can't overflow the stack and a link can't read or
+            // traverse outside the clone.
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
+            if ft.is_symlink() {
+                continue;
+            }
+            let path = entry.path();
+            if ft.is_dir() {
+                if path.file_name().and_then(|n| n.to_str()) != Some(".git") {
+                    walk(&path, root, acc);
+                }
+            } else if ft.is_file() {
+                if let Some(rel) = path.strip_prefix(root).ok().and_then(|p| p.to_str()) {
+                    if counts_as_source_drift(rel) {
+                        if let Ok(content) = std::fs::read_to_string(&path) {
+                            *acc += content.lines().count() as u64;
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut loc = 0;
+    walk(root, root, &mut loc);
+    loc
+}
+
+/// Total non-test Solidity LOC at HEAD, counted from a shallow clone. #37 wants an
+/// accurate line count, not the tree API's byte size, so we shallow-clone the repo
+/// and count lines in every non-test `.sol` file. `None` on a failed clone
+/// (private/missing/network) — the repo's LOC is then unknown, not zero. Unlike the
+/// rest of the scan this is NOT clone-free; it is bounded to the repos that need a
+/// full-source count (never-audited Solidity projects).
+fn count_source_loc(org: &str, repo: &str) -> Option<u64> {
+    let dir = std::env::temp_dir().join(format!(
+        "rohloc-{}-{}",
+        repo.replace(['/', '.'], "-"),
+        std::process::id()
+    ));
+    let _ = std::fs::remove_dir_all(&dir);
+    let url = format!("https://github.com/{org}/{repo}");
+    // Bound the clone via `timeout` so one stalled network connection can't block a
+    // scan worker indefinitely (a non-zero exit — including the 124 timeout — is
+    // treated as a failed clone, i.e. unknown LOC).
+    let ok = Command::new("timeout")
+        .args([
+            "120",
+            "git",
+            "clone",
+            "--depth",
+            "1",
+            "--single-branch",
+            "--no-tags",
+            "--quiet",
+            &url,
+        ])
+        .arg(&dir)
+        .status()
+        .map(|s| s.success())
+        .unwrap_or(false);
+    let loc = ok.then(|| sum_sol_loc(&dir));
+    let _ = std::fs::remove_dir_all(&dir);
+    loc
+}
+
 /// A `ProtofireResult` for a repo with no usable PDF, carrying only the coverage
 /// `state`. `never` (genuinely absent) and `unknown` (fetch failed) share this
 /// shape; the caller decides which by whether the top-level listing FAILED.
@@ -673,6 +751,9 @@ struct RepoResult {
     last_audit: Option<LastAudit>,
     protofire: ProtofireResult,
     has_foundry: bool,
+    /// FULL non-test `.sol` LOC (#37), counted for never-audited Solidity repos;
+    /// `None` for audited/non-Solidity repos (audited repos use drift instead).
+    full_source_loc: Option<u64>,
 }
 
 /// Whether a repo belongs in the Protofire external-audit report. A Protofire
@@ -800,12 +881,23 @@ fn main() {
         let signals = detect_signals(&inputs);
         let last_audit = fetch_last_audit(&org, repo);
         let protofire = fetch_protofire_audit(&gh, &org, repo);
+        // #37: a never-audited Solidity repo's FULL non-test .sol LOC (via a shallow
+        // clone) quantifies the coverage gap; audited repos use their drift instead.
+        // Only CONFIRMED never-audited repos get a LOC count. `!has_pdf` also matches
+        // `unknown` (the audit fetch FAILED), and an errored lookup must not be
+        // presented as a confirmed coverage gap with a source-LOC magnitude (cf #52).
+        let full_source_loc = if has_foundry && protofire.external_audit == protofire::NEVER {
+            count_source_loc(&org, repo)
+        } else {
+            None
+        };
         RepoResult {
             name: repo.to_string(),
             signals,
             last_audit,
             protofire,
             has_foundry,
+            full_source_loc,
         }
     });
     // findings view (owned) so we can re-sort `results` for audit recency afterwards
@@ -986,6 +1078,7 @@ fn main() {
                     "latestTagIso": p.latest_tag_iso,
                     "isStale": if p.has_pdf { serde_json::Value::from(p.is_stale) } else { serde_json::Value::Null },
                     "sourceLocChangedSinceAudit": p.source_loc,
+                    "fullSourceLoc": r.full_source_loc,
                     "sourceLocAddedSinceAudit": p.source_loc_added,
                     "sourceLocRemovedSinceAudit": p.source_loc_removed,
                     "filesChangedSinceAudit": p.files_changed,
@@ -1118,6 +1211,34 @@ mod tests {
         assert!(in_protofire_report(true, true));
         // No PDF and no foundry.toml (docs/subgraph/tooling/.github) → excluded, not a gap.
         assert!(!in_protofire_report(false, false));
+    }
+
+    // ---- unaudited source LOC counting (#37) ----
+    #[test]
+    fn sum_sol_loc_counts_non_test_solidity_lines_only() {
+        let dir = std::env::temp_dir().join(format!("rohloc-unit-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("src")).unwrap();
+        std::fs::create_dir_all(dir.join("test")).unwrap();
+        std::fs::create_dir_all(dir.join(".git")).unwrap();
+        std::fs::write(dir.join("src/A.sol"), "line1\nline2\nline3\n").unwrap(); // 3 non-test .sol
+        std::fs::write(dir.join("deploy/D.sol"), "").ok(); // ensure parent exists next
+        std::fs::create_dir_all(dir.join("deploy")).unwrap();
+        std::fs::write(dir.join("deploy/D.sol"), "a\nb\n").unwrap(); // 2 non-test .sol (deploy/)
+        std::fs::write(dir.join("test/B.t.sol"), "x\ny\nz\nw\n").unwrap(); // .t.sol → excluded
+        std::fs::write(dir.join("test/Helper.sol"), "p\nq\n").unwrap(); // under test/ → excluded
+        std::fs::write(dir.join("README.md"), "not\nsol\n").unwrap(); // non-source → excluded
+        std::fs::write(dir.join(".git/config"), "junk\njunk\n").unwrap(); // .git → skipped
+                                                                          // A symlink to a real .sol must NOT be followed (else A.sol is counted twice);
+                                                                          // the total staying 5 proves symlinks are skipped, not traversed.
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(dir.join("src/A.sol"), dir.join("src/link.sol")).unwrap();
+        let loc = sum_sol_loc(&dir);
+        let _ = std::fs::remove_dir_all(&dir);
+        assert_eq!(
+            loc, 5,
+            "3 (src/A.sol) + 2 (deploy/D.sol); tests, README, .git, and the symlink excluded"
+        );
     }
 
     // ---- external-call coverage: fetch_protofire_audit / collect_audit_pdfs ----

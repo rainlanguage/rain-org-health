@@ -424,7 +424,11 @@ function renderAudit() {
       const c2 = el("div");
       c2.append(el("span", "au-status never", "never"));
       const c3 = el("div", "au-drift");
-      c3.append(el("span", "dim", "no external audit"));
+      if (typeof r.fullSourceLoc === "number") {
+        c3.append(el("span", "add", "+" + r.fullSourceLoc + " src LOC"), " unaudited");
+      } else {
+        c3.append(el("span", "dim", "no external audit"));
+      }
       row.append(c1, c2, c3);
       table.append(row);
     }
