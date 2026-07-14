@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-07-14T12:46:20Z",
+  "generatedAt": "2026-07-14T19:47:02Z",
   "org": "rainlanguage",
   "totalRepos": 92,
   "reposWithFindings": 27,
   "reposWholeRepoAudited": 0,
   "reposNeverAudited": 92,
-  "reposExternallyAudited": 9,
-  "reposNeverExternallyAudited": 28,
+  "reposExternallyAudited": 11,
+  "reposNeverExternallyAudited": 26,
   "summary": {
     "per-chain-etherscan-key": 10,
     "old-actions-checkout": 7,
@@ -673,52 +673,6 @@
       "daysSinceAudit": null
     },
     {
-      "name": "rain.lib.memkv",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 286,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
-      "name": "rain.lib.typecast",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 111,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
       "name": "rain.math.binary",
       "hasProtofireAudit": false,
       "externalAudit": "never",
@@ -1376,6 +1330,36 @@
       "daysSinceAudit": 135
     },
     {
+      "name": "rain.lib.memkv",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
+          "path": "audit/protofire/rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T17:58:40Z",
+          "auditDateIso": "2026-02-05T12:14:13Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "8000285775e554ae157393dc4e2068ef2ffa7e3a",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-02-05T12:14:13Z",
+      "latestTag": "sol-v0.1.1",
+      "latestTagIso": "2026-06-15T13:19:13Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 11,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 10,
+      "sourceLocRemovedSinceAudit": 1,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 20,
+      "sourceDriftTruncated": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/8000285775e554ae157393dc4e2068ef2ffa7e3a...main",
+      "daysSinceAudit": 159
+    },
+    {
       "name": "rain.datacontract",
       "hasProtofireAudit": true,
       "externalAudit": "stale",
@@ -1512,6 +1496,36 @@
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
       "daysSinceAudit": 166
+    },
+    {
+      "name": "rain.lib.typecast",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.typecast.fe4b2a4c05632e394b0643990d6de39658fb8fb5.jan-2026.pdf",
+          "path": "audit/protofire/rain.lib.typecast.fe4b2a4c05632e394b0643990d6de39658fb8fb5.jan-2026.pdf",
+          "lastCommitIso": "2026-07-14T18:00:01Z",
+          "auditDateIso": "2026-01-18T12:48:58Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "fe4b2a4c05632e394b0643990d6de39658fb8fb5",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-01-18T12:48:58Z",
+      "latestTag": "v0.1.0",
+      "latestTagIso": "2026-05-12T16:29:48Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 0,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 0,
+      "sourceLocRemovedSinceAudit": 0,
+      "filesChangedSinceAudit": 0,
+      "commitsSinceAudit": 12,
+      "sourceDriftTruncated": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
+      "daysSinceAudit": 177
     }
   ]
 }
