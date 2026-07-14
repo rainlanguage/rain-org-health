@@ -3,7 +3,7 @@ name: scan
 # any PR ever running the scan. PRs only change code/rendering; this keeps the data current.
 on:
   schedule:
-    - cron: "0 0 * * *" # daily 00:00 UTC
+    - cron: "17 * * * *" # hourly at :17 (offset off :00 to avoid clustering with other crons)
   workflow_dispatch: {}
 permissions:
   contents: write # commit the regenerated health.json back to the default branch
@@ -15,8 +15,10 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
-      - uses: DeterminateSystems/nix-installer-action@main
-      - uses: DeterminateSystems/magic-nix-cache-action@main
+      - uses: rainlanguage/rainix/.github/actions/nix-cachix-setup@main
+        with:
+          checkout: 'false'
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
       - name: Regenerate site/health.json
         env:
           # github.token reads the org's PUBLIC repos + search. Set a SCAN_TOKEN secret
