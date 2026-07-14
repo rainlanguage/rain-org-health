@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-07-14T05:04:17Z",
+  "generatedAt": "2026-07-14T05:44:14Z",
   "org": "rainlanguage",
-  "totalRepos": 93,
+  "totalRepos": 92,
   "reposWithFindings": 29,
   "reposWholeRepoAudited": 0,
-  "reposNeverAudited": 93,
-  "reposExternallyAudited": 5,
-  "reposNeverExternallyAudited": 33,
+  "reposNeverAudited": 92,
+  "reposExternallyAudited": 6,
+  "reposNeverExternallyAudited": 31,
   "summary": {
     "old-nix-installer": 10,
     "per-chain-etherscan-key": 10,
@@ -385,10 +385,6 @@
       "lastAudit": null
     },
     {
-      "name": "rain.interface.sale",
-      "lastAudit": null
-    },
-    {
       "name": "rain.interpreter.interface",
       "lastAudit": null
     },
@@ -606,29 +602,6 @@
       "daysSinceAudit": null
     },
     {
-      "name": "rain.deploy",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 310,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
       "name": "rain.dia",
       "hasProtofireAudit": false,
       "externalAudit": "never",
@@ -712,29 +685,6 @@
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": 2933,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
-      "name": "rain.interface.sale",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 40,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -1376,6 +1326,36 @@
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/v0.1.1...main",
       "daysSinceAudit": 63
+    },
+    {
+      "name": "rain.deploy",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.deploy.1af8ca2a981c2f67844f343e224f4c7b1969de1c.feb-2026.pdf",
+          "path": "audit/protofire/rain.deploy.1af8ca2a981c2f67844f343e224f4c7b1969de1c.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T05:18:25Z",
+          "auditDateIso": "2026-02-08T12:06:53Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "1af8ca2a981c2f67844f343e224f4c7b1969de1c",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-02-08T12:06:53Z",
+      "latestTag": "sol-v0.1.4",
+      "latestTagIso": "2026-06-29T12:21:00Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 250,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 207,
+      "sourceLocRemovedSinceAudit": 43,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 41,
+      "sourceDriftTruncated": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
+      "daysSinceAudit": 156
     },
     {
       "name": "rain.vats",
