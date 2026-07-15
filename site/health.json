@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-15T00:07:55Z",
+  "generatedAt": "2026-07-15T03:39:30Z",
   "org": "rainlanguage",
   "totalRepos": 92,
   "reposWithFindings": 27,
@@ -870,7 +870,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 474,
+      "fullSourceLoc": 568,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
