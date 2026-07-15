@@ -232,7 +232,7 @@
   .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .legend .key { display: inline-flex; align-items: center; gap: 6px; }
-  .legend .swatch { width: 12px; height: 12px; border-radius: 3px; border: 2px solid var(--ink-3); }
+  .legend .swatch { width: 22px; height: 14px; border-radius: 5px; border-width: 1.5px; border-style: solid; flex: none; }
   .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
   .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -480,13 +480,40 @@ function renderAudit() {
 //
 // Audit state is carried by BORDER STYLE as well as colour, and every node is
 // labelled with its repo name: identity is the label, never the colour.
-const AUDIT_STYLE = {
-  current: { color: "#15803d", border: "solid" },
-  stale: { color: "#b45309", border: "dashed" },
-  never: { color: "#b91c1c", border: "double" },
-  unknown: { color: "#6b7280", border: "dotted" },
-  na: { color: "#0369a1", border: "solid" },
-};
+// The page states status the same way everywhere: the accent as TEXT and BORDER
+// over a tinted ground, in the warm palette — never a saturated fill. These read
+// the live custom properties rather than restating hexes, so the graph follows
+// the theme toggle like every other panel, and a palette change lands here too.
+function tokens() {
+  const cs = getComputedStyle(document.documentElement);
+  const t = (n) => cs.getPropertyValue(n).trim();
+  return {
+    ink: t("--ink"),
+    ink3: t("--ink-3"),
+    border: t("--border"),
+    surface: t("--surface"),
+    surface2: t("--surface-2"),
+    clean: t("--clean"),
+    cleanBg: t("--clean-bg"),
+    debt: t("--debt"),
+    debtBg: t("--debt-bg"),
+    crit: t("--crit"),
+    bg: t("--bg"),
+  };
+}
+
+// Border STYLE carries the verdict alongside colour, and every node is labelled,
+// so identity never rests on colour alone.
+function auditStyle() {
+  const k = tokens();
+  return {
+    current: { line: k.clean, fill: k.cleanBg, border: "solid" },
+    stale: { line: k.debt, fill: k.debtBg, border: "dashed" },
+    never: { line: k.crit, fill: k.bg, border: "double" },
+    na: { line: k.ink3, fill: k.surface2, border: "solid" },
+    unknown: { line: k.ink3, fill: k.surface2, border: "dotted" },
+  };
+}
 const AUDIT_HELP = {
   current: "audited at the current tag",
   stale: "audited, source moved since",
@@ -502,17 +529,44 @@ const GRAPH_HELP_DEFAULT =
 
 function renderGraphLegend(present) {
   const box = $("graphlegend");
+  box.replaceChildren();
+  const st = auditStyle();
   for (const state of ["current", "stale", "never", "na", "unknown"]) {
     if (!present.has(state)) continue;
     const key = document.createElement("span");
     key.className = "key";
     const sw = document.createElement("span");
     sw.className = "swatch";
-    sw.style.background = AUDIT_STYLE[state].color;
-    sw.style.borderStyle = AUDIT_STYLE[state].border;
+    sw.style.background = st[state].fill;
+    sw.style.borderColor = st[state].line;
+    sw.style.borderStyle = st[state].border;
     key.append(sw, document.createTextNode(`${state} — ${AUDIT_HELP[state]}`));
     box.append(key);
   }
+}
+
+// The audited anchor + how far the source has moved since, per node. `stale`
+// alone does not distinguish a repo that drifted 1 line from one that drifted
+// 877, and that difference is the whole cost of the audit.
+//
+// Joined from `protofireAudits` by repo rather than duplicated into
+// `auditGraph`: it is the same fact, and two copies drift.
+function nodeSubtitle(audit, p) {
+  if (!p) return "";
+  if (audit === "never") {
+    return p.fullSourceLoc != null ? `never · ${p.fullSourceLoc} LOC` : "never audited";
+  }
+  if (audit === "unknown") return "audit lookup FAILED";
+  const anchor = p.auditedRef
+    ? p.anchorKind === "tag"
+      ? p.auditedRef
+      : p.auditedRef.slice(0, 7)
+    : "?";
+  const a = p.sourceLocAddedSinceAudit;
+  const r = p.sourceLocRemovedSinceAudit;
+  // A minus sign, not a hyphen: it is a quantity, and it sits beside a plus.
+  const drift = a != null && r != null ? ` · +${a}/\u2212${r}` : "";
+  return `${anchor}${drift}`;
 }
 
 function renderGraph() {
@@ -525,10 +579,27 @@ function renderGraph() {
   $("graphempty").remove();
   renderGraphLegend(new Set(g.nodes.map((n) => n.audit)));
 
+  // roh-scan computes; this only renders. Same fact, one source.
+  const pf = new Map((data.protofireAudits ?? []).map((r) => [r.name, r]));
   const elements = [
-    ...g.nodes.map((n) => ({ data: { id: n.repo, label: n.repo, audit: n.audit } })),
+    ...g.nodes.map((n) => {
+      const p = pf.get(n.repo);
+      const sub = nodeSubtitle(n.audit, p);
+      return {
+        data: {
+          id: n.repo,
+          label: sub ? `${n.repo}\n${sub}` : n.repo,
+          audit: n.audit,
+          blockedBy: n.blockedBy ?? [],
+        },
+      };
+    }),
     ...g.edges.map((e) => ({ data: { source: e.from, target: e.to } })),
   ];
+
+  let k = tokens();
+  let styleFor = auditStyle();
+  const st = (n) => styleFor[n.data("audit")] ?? styleFor.unknown;
 
   const cy = cytoscape({
     container: box,
@@ -536,21 +607,23 @@ function renderGraph() {
     // Labels render through cytoscape's own canvas text — never innerHTML.
     style: [
       { selector: "node", style: {
-          label: "data(label)", "font-size": 13, "text-valign": "center",
-          "background-color": (n) => AUDIT_STYLE[n.data("audit")]?.color ?? "#6b7280",
-          "border-style": (n) => AUDIT_STYLE[n.data("audit")]?.border ?? "solid",
-          "border-width": 2, "border-color": "#201d1a", color: "#fff",
-          "text-outline-width": 2,
-          "text-outline-color": (n) => AUDIT_STYLE[n.data("audit")]?.color ?? "#6b7280",
-          shape: "round-rectangle", width: "label", padding: "6px", height: 22,
+          label: "data(label)", "font-size": 10, "font-family": "inherit",
+          "text-wrap": "wrap", "text-valign": "center", "line-height": 1.35,
+          color: (n) => st(n).line,
+          "background-color": (n) => st(n).fill,
+          "border-color": (n) => st(n).line,
+          "border-style": (n) => st(n).border,
+          "border-width": 1.5,
+          shape: "round-rectangle", width: "label", height: "label", padding: "7px",
       }},
       { selector: "edge", style: {
-          width: 1, "line-color": "#c9c2b8", "target-arrow-color": "#c9c2b8",
-          "target-arrow-shape": "triangle", "curve-style": "bezier", opacity: 0.7,
+          width: 1, "line-color": k.border, "target-arrow-color": k.border,
+          "target-arrow-shape": "triangle", "arrow-scale": 0.8,
+          "curve-style": "bezier", opacity: 0.9,
       }},
-      { selector: ".faded", style: { opacity: 0.12 } },
-      { selector: ".inherits", style: { "line-color": "#b91c1c", "target-arrow-color": "#b91c1c", width: 2.5, opacity: 1 } },
-      { selector: ".carries", style: { "border-color": "#b91c1c", "border-width": 4 } },
+      { selector: ".faded", style: { opacity: 0.15 } },
+      { selector: ".inherits", style: { "line-color": k.crit, "target-arrow-color": k.crit, width: 1.75, opacity: 1 } },
+      { selector: ".carries", style: { "border-width": 3 } },
     ],
     layout: { name: "elk", nodeDimensionsIncludeLabels: true, elk: { algorithm: "layered", "elk.direction": "DOWN", "elk.spacing.nodeNode": 30, "elk.layered.spacing.nodeNodeBetweenLayers": 70, "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX", "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP" } },
     wheelSensitivity: 0.2,
@@ -608,6 +681,19 @@ function renderGraph() {
     }
     $("graphhelp").textContent = GRAPH_HELP_DEFAULT;
   }
+  // The other panels are CSS so they re-theme for free; cytoscape holds resolved
+  // values, so re-read the tokens and repaint when the toggle flips.
+  const repaint = () => {
+    k = tokens();
+    styleFor = auditStyle();
+    cy.style().update();
+    renderGraphLegend(new Set(g.nodes.map((n) => n.audit)));
+  };
+  new MutationObserver(repaint).observe(document.documentElement, {
+    attributes: true,
+    attributeFilter: ["data-theme"],
+  });
+
   sel.addEventListener("change", () => focus(sel.value));
   cy.ready(() => focus(roots[0]));
 
@@ -620,9 +706,13 @@ function renderGraph() {
     n.predecessors().addClass("inherits");
     n.addClass("carries");
     const above = n.predecessors("node").length;
+    const blocked = n.data("blockedBy") ?? [];
+    const ground = blocked.length
+      ? `standing on ${blocked.length} uncleared: ${blocked.join(", ")}`
+      : "ground beneath is clear";
     $("graphhelp").textContent =
-      `${n.data("label")} (${n.data("audit")}) — ${above} repo${above === 1 ? "" : "s"} inherit its findings; ` +
-      `${n.successors("node").length} beneath it. Click the background to reset.`;
+      `${n.id()} (${n.data("audit")}) — ${above} repo${above === 1 ? "" : "s"} inherit its findings; ` +
+      `${ground}. Click the background to reset.`;
   });
   cy.on("tap", (evt) => {
     if (evt.target === cy) {
