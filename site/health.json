@@ -1,5 +1,1037 @@
 {
-  "generatedAt": "2026-07-15T19:39:28Z",
+  "generatedAt": "2026-07-15T19:49:20Z",
+  "auditGraph": {
+    "nodes": [
+      {
+        "repo": "flow",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.datacontract",
+        "package": "rain-datacontract",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "rain.deploy",
+        "package": "rain-deploy",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.dia",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "rain.erc1820",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.erc4626.words",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "rain.extrospection",
+        "package": "rain-extrospection",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.deploy",
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "rain.factory",
+        "package": "rain-factory",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.sol.codegen",
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "rain.flare",
+        "package": "rain-flare",
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "rain.intorastring",
+        "package": "rain-intorastring",
+        "audit": "current",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "rain.lib.hash",
+        "package": "rain-lib-hash",
+        "audit": "current",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.lib.memkv",
+        "package": "rain-lib-memkv",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "rain.lib.typecast",
+        "package": "rain-lib-typecast",
+        "audit": "current",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.math.binary",
+        "package": "rain-math-binary",
+        "audit": "current",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.math.fixedpoint",
+        "package": "rain-math-fixedpoint",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.math.saturating",
+          "rain.solmem",
+          "rain.string"
+        ]
+      },
+      {
+        "repo": "rain.math.float",
+        "package": "rain-math-float",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string"
+        ]
+      },
+      {
+        "repo": "rain.math.saturating",
+        "package": "rain-math-saturating",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.merkle",
+        "package": null,
+        "audit": "na",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "rain.metadata",
+        "package": "rain-metadata",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.deploy"
+        ]
+      },
+      {
+        "repo": "rain.pyth",
+        "package": "rain-pyth",
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "rain.sol.binmaskflag",
+        "package": "rain-sol-binmaskflag",
+        "audit": "current",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.sol.codegen",
+        "package": "rain-sol-codegen",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.solmem",
+        "package": "rain-solmem",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.solver",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.string",
+        "package": "rain-string",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "rain.tier.interface",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.tofu.erc20-decimals",
+        "package": "rain-tofu-erc20-decimals",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "rain.vats",
+        "package": "rain-vats",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.factory",
+          "rain.flare",
+          "rain.lib.memkv",
+          "rain.math.fixedpoint",
+          "rain.math.float",
+          "rain.math.saturating",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "rain.verify",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.factory",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "rain.verify.interface",
+        "package": "rain-verify-interface",
+        "audit": "current",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "rain.will-overflow",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": []
+      },
+      {
+        "repo": "raindex",
+        "package": "raindex",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "raindex.interface",
+          "rainlang"
+        ]
+      },
+      {
+        "repo": "raindex.governance",
+        "package": "raindex-governance",
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.math.float",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "raindex.interface"
+        ]
+      },
+      {
+        "repo": "raindex.interface",
+        "package": "raindex-interface",
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.math.float",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string"
+        ]
+      },
+      {
+        "repo": "rainlang",
+        "package": "rainlang",
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals"
+        ]
+      },
+      {
+        "repo": "rainlang.interface",
+        "package": "rainlang-interface",
+        "audit": "stale",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.sol.codegen",
+          "rain.solmem"
+        ]
+      },
+      {
+        "repo": "spirit-kitty-rain",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": []
+      }
+    ],
+    "edges": [
+      {
+        "from": "rain.datacontract",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "rain.dia",
+        "to": "rainlang"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rainlang"
+      },
+      {
+        "from": "rain.extrospection",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.extrospection",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rain.extrospection",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.factory",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.factory",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.factory",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "rain.flare",
+        "to": "rainlang"
+      },
+      {
+        "from": "rain.intorastring",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.lib.memkv",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rain.lib.memkv",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.math.fixedpoint",
+        "to": "rain.math.saturating"
+      },
+      {
+        "from": "rain.math.fixedpoint",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.math.float",
+        "to": "rain.datacontract"
+      },
+      {
+        "from": "rain.math.float",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.math.float",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.math.float",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.math.float",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rainlang"
+      },
+      {
+        "from": "rain.metadata",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "rain.pyth",
+        "to": "rainlang"
+      },
+      {
+        "from": "rain.string",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.tofu.erc20-decimals",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.tofu.erc20-decimals",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.tofu.erc20-decimals",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.factory"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.flare"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.math.fixedpoint"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.verify.interface"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.factory"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rain.verify.interface"
+      },
+      {
+        "from": "rain.verify",
+        "to": "rainlang"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.string"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "raindex",
+        "to": "raindex.interface"
+      },
+      {
+        "from": "raindex",
+        "to": "rainlang"
+      },
+      {
+        "from": "raindex.governance",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "raindex.governance",
+        "to": "raindex.interface"
+      },
+      {
+        "from": "raindex.interface",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.datacontract"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.deploy"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.intorastring"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.lib.memkv"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.metadata"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.solmem"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.string"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.tofu.erc20-decimals"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.lib.hash"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.lib.typecast"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.math.binary"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.sol.codegen"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.solmem"
+      }
+    ]
+  },
   "org": "rainlanguage",
   "totalRepos": 92,
   "reposWithFindings": 27,
