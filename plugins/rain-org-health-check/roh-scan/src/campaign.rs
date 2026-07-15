@@ -61,6 +61,15 @@ pub struct Step {
     pub blocked_by: Vec<String>,
 }
 
+impl Step {
+    /// Whether this step is work. `ready` only says the ground beneath is solid;
+    /// a repo already audited at its current tag has nothing to do, so counting
+    /// it as campaign work pads the plan with rows nobody should action.
+    pub fn needs_audit(&self) -> bool {
+        self.ready && !is_cleared(self.audit)
+    }
+}
+
 #[derive(Debug, PartialEq, Eq)]
 pub enum CampaignError {
     /// The entrypoint is not a repo in the scan.
@@ -401,6 +410,54 @@ recursive_deps = false
         let steps = build_campaign("org/app", &nodes).unwrap();
         assert!(steps[0].ready, "leaf not ready");
         assert!(steps[1].ready, "consumer of a cleared leaf not ready");
+    }
+
+    /// `ready` is about the ground beneath, not about whether there is work: a
+    /// repo already current with cleared deps is DONE, and counting it as
+    /// campaign work pads the plan with rows nobody should action.
+    #[test]
+    fn an_already_current_leaf_is_ready_but_is_not_work() {
+        let nodes = vec![
+            node(
+                "org/app",
+                Some("app"),
+                &["lib"],
+                protofire::ExternalAudit::Never,
+            ),
+            node(
+                "org/lib",
+                Some("lib"),
+                &[],
+                protofire::ExternalAudit::Current,
+            ),
+        ];
+        let steps = build_campaign("org/app", &nodes).unwrap();
+        let lib = steps.iter().find(|s| s.repo == "org/lib").unwrap();
+        assert!(lib.ready, "a cleared leaf has solid ground");
+        assert!(
+            !lib.needs_audit(),
+            "an already-current repo counted as work"
+        );
+
+        let app = steps.iter().find(|s| s.repo == "org/app").unwrap();
+        assert!(
+            app.needs_audit(),
+            "an unaudited repo on cleared ground is work"
+        );
+    }
+
+    /// A stale leaf has nothing beneath it, so it is both ready AND work — this
+    /// is the row a campaign exists to surface first.
+    #[test]
+    fn a_stale_leaf_is_the_actionable_row() {
+        let nodes = vec![node(
+            "org/lib",
+            Some("lib"),
+            &[],
+            protofire::ExternalAudit::Stale,
+        )];
+        let steps = build_campaign("org/lib", &nodes).unwrap();
+        assert!(steps[0].needs_audit());
     }
 
     /// A cycle must fail loudly: any order picked from one is a guess, and a

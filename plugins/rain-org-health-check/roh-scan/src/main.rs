@@ -1061,7 +1061,15 @@ fn main() {
         match campaign::build_campaign(entry, &nodes) {
             Ok(steps) => {
                 for (n, step) in steps.iter().enumerate() {
-                    let mark = if step.ready { "READY " } else { "blocked" };
+                    // Three states, not two: `ready` alone would badge an
+                    // already-current repo as work.
+                    let mark = if step.needs_audit() {
+                        "AUDIT  "
+                    } else if step.ready {
+                        "done   "
+                    } else {
+                        "blocked"
+                    };
                     println!(
                         "  {:>2}. {mark} {:<30} audit={}",
                         n + 1,
@@ -1072,8 +1080,12 @@ fn main() {
                         println!("        blocked by: {}", step.blocked_by.join(", "));
                     }
                 }
-                let ready = steps.iter().filter(|s| s.ready).count();
-                println!("\n  {ready} / {} audit-ready", steps.len());
+                let work = steps.iter().filter(|s| s.needs_audit()).count();
+                let done = steps.iter().filter(|s| s.ready && !s.needs_audit()).count();
+                println!(
+                    "\n  {work} to audit now · {done} already current · {} blocked",
+                    steps.len() - work - done
+                );
             }
             // Loud, not silent: an unorderable graph must not read as "no work".
             Err(campaign::CampaignError::Cycle(c)) => {
