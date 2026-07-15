@@ -7,7 +7,7 @@
 //! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
 
 mod audit;
-mod campaign;
+mod graph;
 mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
@@ -861,17 +861,12 @@ where
 fn main() {
     let args: Vec<String> = std::env::args().skip(1).collect();
     let mut json_flag: Option<String> = None;
-    let mut campaign_entry: Option<String> = None;
     let mut repos_arg: Vec<String> = Vec::new();
     let mut i = 0;
     while i < args.len() {
         match args[i].as_str() {
             "--json" => {
                 json_flag = args.get(i + 1).cloned();
-                i += 2;
-            }
-            "--audit-campaign" => {
-                campaign_entry = args.get(i + 1).cloned();
                 i += 2;
             }
             r => {
@@ -888,18 +883,6 @@ fn main() {
         .ok()
         .and_then(|s| s.parse().ok())
         .unwrap_or(12);
-
-    // A campaign resolves deps across the scanned set, so a partial scan drops
-    // edges silently and would emit a confident wrong order. Refuse rather than
-    // plan from an incomplete graph.
-    if campaign_entry.is_some() && !campaign::campaign_scope_ok(!repos_arg.is_empty()) {
-        eprintln!(
-            "ERROR: --audit-campaign needs the full org scan; drop the explicit repo list.\n\
-             A dependency on an unscanned repo is indistinguishable from a third-party\n\
-             package, so a partial scan would silently order the campaign wrongly."
-        );
-        std::process::exit(2);
-    }
 
     let repos: Vec<String> = if !repos_arg.is_empty() {
         repos_arg
@@ -953,7 +936,7 @@ fn main() {
         RepoResult {
             name: repo.to_string(),
             package: foundry_package_name(&inputs.foundry),
-            deps: campaign::foundry_dependencies(&inputs.foundry),
+            deps: graph::foundry_dependencies(&inputs.foundry),
             signals,
             last_audit,
             protofire,
@@ -1044,64 +1027,6 @@ fn main() {
                 &b.name,
             ))
     });
-    // #71: an entrypoint turns the scan into an ORDERED plan. Printed before the
-    // coverage report because it is the actionable half: the first `ready` row is
-    // the one repo worth auditing next.
-    if let Some(entry) = campaign_entry.as_deref() {
-        let nodes: Vec<campaign::Node> = results
-            .iter()
-            .map(|r| campaign::Node {
-                repo: r.name.clone(),
-                package: r.package.clone(),
-                deps: r.deps.clone(),
-                audit: r.protofire.external_audit,
-            })
-            .collect();
-        println!("\n================ audit campaign: {entry} (leaves first) ============");
-        match campaign::build_campaign(entry, &nodes) {
-            Ok(steps) => {
-                for (n, step) in steps.iter().enumerate() {
-                    // Three states, not two: `ready` alone would badge an
-                    // already-current repo as work.
-                    let mark = if step.needs_audit() {
-                        "AUDIT  "
-                    } else if step.ready {
-                        "done   "
-                    } else {
-                        "blocked"
-                    };
-                    println!(
-                        "  {:>2}. {mark} {:<30} audit={}",
-                        n + 1,
-                        step.repo,
-                        step.audit.as_str()
-                    );
-                    if !step.ready {
-                        println!("        blocked by: {}", step.blocked_by.join(", "));
-                    }
-                }
-                let work = steps.iter().filter(|s| s.needs_audit()).count();
-                let done = steps.iter().filter(|s| s.ready && !s.needs_audit()).count();
-                println!(
-                    "\n  {work} to audit now · {done} already current · {} blocked",
-                    steps.len() - work - done
-                );
-            }
-            // Loud, not silent: an unorderable graph must not read as "no work".
-            Err(campaign::CampaignError::Cycle(c)) => {
-                eprintln!(
-                    "  ERROR: dependency cycle, refusing to guess an order: {}",
-                    c.join(" -> ")
-                );
-                std::process::exit(1);
-            }
-            Err(campaign::CampaignError::UnknownEntrypoint(e)) => {
-                eprintln!("  ERROR: {e} is not a scanned repo in this org");
-                std::process::exit(1);
-            }
-        }
-    }
-
     println!("\n============ external audit coverage (Protofire PDFs under audit/protofire/) ====");
     println!("  externally audited:       {externally_audited} / {protofire_total}");
     println!(
@@ -1157,16 +1082,20 @@ fn main() {
         // entrypoint's slice, so the dashboard can answer blast radius for any
         // node. Nodes carry the audit verdict so the graph shows WHERE the sand
         // is; edges are consumer -> dependency.
-        let graph_nodes: Vec<campaign::Node> = results
+        let graph_nodes: Vec<graph::Node> = results
             .iter()
-            .map(|r| campaign::Node {
+            .map(|r| graph::Node {
                 repo: r.name.clone(),
                 package: r.package.clone(),
                 deps: r.deps.clone(),
                 audit: r.protofire.external_audit,
             })
             .collect();
-        let graph_edges = campaign::graph_edges(&graph_nodes);
+        let graph_edges = graph::graph_edges(&graph_nodes);
+        // Per node: which repos beneath it are NOT cleared. Empty means the
+        // ground is solid, so a finding there is genuinely that repo's. The
+        // dashboard renders this; it does not compute it.
+        let blockers = graph::blockers(&graph_nodes);
         // Every Solidity repo is a node, including one with no first-party edge
         // either way. An isolated repo is not noise: unaudited with nothing
         // beneath it, it is an audit with ZERO blockers — the cheapest work on
@@ -1185,6 +1114,7 @@ fn main() {
                     "repo": n.repo,
                     "package": n.package,
                     "audit": n.audit.as_str(),
+                    "blockedBy": blockers.get(&n.repo).cloned().unwrap_or_default(),
                 })).collect::<Vec<_>>(),
                 "edges": graph_edges.iter().map(|e| json!({"from": e.from, "to": e.to})).collect::<Vec<_>>(),
             },
