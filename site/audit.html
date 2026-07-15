@@ -233,6 +233,9 @@
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .legend .key { display: inline-flex; align-items: center; gap: 6px; }
   .legend .swatch { width: 22px; height: 14px; border-radius: 5px; border-width: 1.5px; border-style: solid; flex: none; }
+  .graphsum { margin: 0 0 10px; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--debt); border-radius: 6px; padding: 8px 10px; line-height: 1.5; }
+  .graphsum b { font-weight: 600; }
+  .graphsum .none { color: var(--ink-2); }
   .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
   .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -255,7 +258,9 @@
   <h2>Dependency graph · blast radius</h2>
   <p class="graphhelp" id="graphhelp">
     Click a repo to trace what it carries — drag to pan, scroll to zoom. Solidity repos only; an arrow points from a consumer to the dependency it stands on.
+    Coverage is <strong>Protofire</strong> only: a repo audited by someone else still reads as uncovered here, because counting a PDF this scan cannot date would be a false coverage claim.
   </p>
+  <p class="graphsum" id="graphsum"></p>
   <div class="graphctl">
     <label for="graphroot">Focus</label>
     <select id="graphroot"></select>
@@ -515,17 +520,17 @@ function auditStyle() {
   };
 }
 const AUDIT_HELP = {
-  current: "audited at the current tag",
-  stale: "audited, source moved since",
-  never: "no audit on record",
+  current: "Protofire-audited at the current tag",
+  stale: "Protofire-audited, source moved since",
+  never: "no Protofire PDF — a repo may still be audited by someone else",
   unknown: "audit lookup FAILED — indeterminate, not a confirmed gap",
-  na: "audited but no tags to date it against",
+  na: "Protofire-audited but no tags to date it against",
 };
 // Below this the 11px labels stop being readable, so the graph stops carrying
 // identity and becomes decoration.
 const MIN_READABLE_ZOOM = 0.9;
 const GRAPH_HELP_DEFAULT =
-  "Click a repo to trace what it carries — drag to pan, scroll to zoom. Solidity repos only; an arrow points from a consumer to the dependency it stands on.";
+  "Click a repo to trace what it carries — drag to pan, scroll to zoom. Solidity repos only; an arrow points from a consumer to the dependency it stands on. Coverage is Protofire only.";
 
 function renderGraphLegend(present) {
   const box = $("graphlegend");
@@ -554,7 +559,9 @@ function renderGraphLegend(present) {
 function nodeSubtitle(audit, p) {
   if (!p) return "";
   if (audit === "never") {
-    return p.fullSourceLoc != null ? `never · ${p.fullSourceLoc} LOC` : "never audited";
+    return p.fullSourceLoc != null
+      ? `no protofire · ${p.fullSourceLoc} LOC`
+      : "no protofire audit";
   }
   if (audit === "unknown") return "audit lookup FAILED";
   const anchor = p.auditedRef
@@ -569,6 +576,62 @@ function nodeSubtitle(audit, p) {
   return `${anchor}${drift}`;
 }
 
+// What is worth auditing NOW: clear ground beneath, and not already current.
+// Ranked by how many repos inherit it — a counted fact, not an invented order.
+// The set is the answer; a numbered plan would imply precedence between repos
+// that are genuinely independent.
+function renderGraphSummary(nodes, pf) {
+  const box = $("graphsum");
+  box.replaceChildren();
+  const inheritors = new Map();
+  for (const n of nodes) {
+    for (const b of n.blockedBy ?? []) {
+      inheritors.set(b, (inheritors.get(b) ?? 0) + 1);
+    }
+  }
+  const ready = nodes
+    .filter((n) => (n.blockedBy ?? []).length === 0 && n.audit !== "current")
+    .sort(
+      (a, b) =>
+        (inheritors.get(b.repo) ?? 0) - (inheritors.get(a.repo) ?? 0) ||
+        a.repo.localeCompare(b.repo),
+    );
+
+  if (ready.length === 0) {
+    const p = document.createElement("span");
+    p.className = "none";
+    p.textContent =
+      "Nothing is unblocked: every uncovered repo stands on another that is uncovered too.";
+    box.append(p);
+    return;
+  }
+
+  const lead = document.createElement("b");
+  lead.textContent = `${ready.length} of ${nodes.length}`;
+  box.append(
+    lead,
+    document.createTextNode(
+      " Solidity repos have clear ground beneath and no current Protofire audit — auditing one now yields findings that are genuinely its own. Most inherited first: ",
+    ),
+  );
+
+  ready.slice(0, 3).forEach((n, i) => {
+    const p = pf.get(n.repo);
+    const count = inheritors.get(n.repo) ?? 0;
+    const drift =
+      p && p.sourceLocAddedSinceAudit != null
+        ? `+${p.sourceLocAddedSinceAudit}/\u2212${p.sourceLocRemovedSinceAudit}`
+        : p && p.fullSourceLoc != null
+          ? `${p.fullSourceLoc} LOC`
+          : "";
+    if (i > 0) box.append(document.createTextNode(", "));
+    const b = document.createElement("b");
+    b.textContent = n.repo;
+    box.append(b, document.createTextNode(` (${count} inherit${drift ? `, ${drift}` : ""})`));
+  });
+  box.append(document.createTextNode("."));
+}
+
 function renderGraph() {
   const g = data.auditGraph;
   const box = $("graph");
@@ -581,6 +644,8 @@ function renderGraph() {
 
   // roh-scan computes; this only renders. Same fact, one source.
   const pf = new Map((data.protofireAudits ?? []).map((r) => [r.name, r]));
+  renderGraphSummary(g.nodes, pf);
+
   const elements = [
     ...g.nodes.map((n) => {
       const p = pf.get(n.repo);
