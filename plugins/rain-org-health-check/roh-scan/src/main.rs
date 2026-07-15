@@ -7,6 +7,7 @@
 //! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
 
 mod audit;
+mod graph;
 mod protofire;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, LastAudit};
@@ -226,7 +227,7 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
 /// for the pure logic; this is the orchestrated result folded into `health.json`.
 struct ProtofireResult {
     has_pdf: bool,
-    external_audit: &'static str,
+    external_audit: protofire::ExternalAudit,
     pdfs: Vec<AuditPdf>,
     audited_ref: Option<String>,
     anchor_kind: Option<&'static str>,
@@ -595,7 +596,7 @@ fn count_source_loc(org: &str, repo: &str) -> Option<u64> {
 /// A `ProtofireResult` for a repo with no usable PDF, carrying only the coverage
 /// `state`. `never` (genuinely absent) and `unknown` (fetch failed) share this
 /// shape; the caller decides which by whether the top-level listing FAILED.
-fn empty_protofire(state: &'static str) -> ProtofireResult {
+fn empty_protofire(state: protofire::ExternalAudit) -> ProtofireResult {
     ProtofireResult {
         has_pdf: false,
         external_audit: state,
@@ -630,9 +631,9 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         // A failed top-level listing is coverage-indeterminate (`unknown`), NOT a
         // confirmed gap (`never`). No fetch error may become a coverage claim.
         return empty_protofire(if failed {
-            protofire::UNKNOWN
+            protofire::ExternalAudit::Unknown
         } else {
-            protofire::NEVER
+            protofire::ExternalAudit::Never
         });
     }
     // Resolve each PDF's commit date + sha, then order by path for stable output.
@@ -789,6 +790,13 @@ struct RepoResult {
     /// FULL non-test `.sol` LOC (#37), counted for never-audited Solidity repos;
     /// `None` for audited/non-Solidity repos (audited repos use drift instead).
     full_source_loc: Option<u64>,
+    /// This repo's soldeer `[package].name` — what consumers name it by, so it
+    /// is the audit graph's join key (#71).
+    package: Option<String>,
+    /// Soldeer package names from this repo's `[dependencies]` (#71).
+    deps: Vec<String>,
+    /// False when `foundry.toml` would not parse: deps unknown, not absent.
+    deps_known: bool,
 }
 
 /// Whether a repo belongs in the Protofire external-audit report. A Protofire
@@ -878,6 +886,12 @@ fn main() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(12);
 
+    // A partial scan cannot produce a trustworthy graph: deps resolve to repos
+    // across the SCANNED set, so an unscanned dependency is indistinguishable
+    // from a third-party package and gets dropped — the graph would then report
+    // falsely clear ground. Captured before `repos_arg` is consumed.
+    let partial_scan = !repos_arg.is_empty();
+
     let repos: Vec<String> = if !repos_arg.is_empty() {
         repos_arg
     } else {
@@ -921,13 +935,19 @@ fn main() {
         // Only CONFIRMED never-audited repos get a LOC count. `!has_pdf` also matches
         // `unknown` (the audit fetch FAILED), and an errored lookup must not be
         // presented as a confirmed coverage gap with a source-LOC magnitude (cf #52).
-        let full_source_loc = if has_foundry && protofire.external_audit == protofire::NEVER {
-            count_source_loc(&org, repo)
-        } else {
-            None
-        };
+        let full_source_loc =
+            if has_foundry && protofire.external_audit == protofire::ExternalAudit::Never {
+                count_source_loc(&org, repo)
+            } else {
+                None
+            };
         RepoResult {
             name: repo.to_string(),
+            package: foundry_package_name(&inputs.foundry),
+            // A manifest that will not parse leaves deps UNKNOWN — not none.
+            // Collapsing the two lets a broken manifest read as clear ground.
+            deps: graph::foundry_dependencies(&inputs.foundry).unwrap_or_default(),
+            deps_known: graph::foundry_dependencies(&inputs.foundry).is_ok(),
             signals,
             last_audit,
             protofire,
@@ -1054,7 +1074,8 @@ fn main() {
         };
         println!(
             "  {:<28} {:<8} audited {refd} {anchor_label} → latest {latest} · {drift}",
-            r.name, p.external_audit
+            r.name,
+            p.external_audit.as_str()
         );
     }
 
@@ -1068,8 +1089,69 @@ fn main() {
         //
         // `protofireAudits` is scan-cadence data (same producer/cadence as the rest of health.json),
         // so it belongs IN health.json — the dashboard already fetches it, no new artifact/fetch.
+        // #71: the first-party dependency DAG, for the whole org rather than one
+        // entrypoint's slice, so the dashboard can answer blast radius for any
+        // node. Nodes carry the audit verdict so the graph shows WHERE the sand
+        // is; edges are consumer -> dependency.
+        let graph_nodes: Vec<graph::Node> = results
+            .iter()
+            .map(|r| graph::Node {
+                repo: r.name.clone(),
+                package: r.package.clone(),
+                deps: r.deps.clone(),
+                deps_known: r.deps_known,
+                audit: r.protofire.external_audit,
+            })
+            .collect();
+        // Every Solidity repo is a node, including one with no first-party edge
+        // either way. An isolated repo is not noise: unaudited with nothing
+        // beneath it, it is an audit with ZERO blockers — the cheapest work on
+        // the board, and dropping it would hide it. Non-Solidity repos are not
+        // audit targets and stay out.
+        let solidity: std::collections::BTreeSet<&str> = results
+            .iter()
+            .filter(|r| r.has_foundry)
+            .map(|r| r.name.as_str())
+            .collect();
+
+        // A graph that looks complete and is not is worse than no graph, so each
+        // way of being untrustworthy omits it and says why.
+        let audit_graph = if partial_scan {
+            eprintln!(
+                "auditGraph omitted: a partial scan drops edges to unscanned repos, which would report falsely clear ground"
+            );
+            serde_json::Value::Null
+        } else {
+            match (
+                graph::graph_edges(&graph_nodes),
+                graph::blockers(&graph_nodes),
+            ) {
+                (Ok(edges), Ok(blockers)) => json!({
+                    "nodes": graph_nodes.iter().filter(|n| solidity.contains(n.repo.as_str())).map(|n| json!({
+                        "repo": n.repo,
+                        "package": n.package,
+                        "audit": n.audit.as_str(),
+                        "depsKnown": n.deps_known,
+                        "blockedBy": blockers.get(&n.repo).cloned().unwrap_or_default(),
+                    })).collect::<Vec<_>>(),
+                    "edges": edges.iter().map(|e| json!({"from": e.from, "to": e.to})).collect::<Vec<_>>(),
+                }),
+                // Two repos publishing one package makes every edge for it point
+                // at whichever landed last.
+                (Err(d), _) | (_, Err(d)) => {
+                    eprintln!(
+                        "::error::auditGraph omitted: package {:?} is published by {} — every edge for it would target an arbitrary one",
+                        d.package,
+                        d.repos.join(" and ")
+                    );
+                    serde_json::Value::Null
+                }
+            }
+        };
+
         let doc = json!({
             "generatedAt": now,
+            "auditGraph": audit_graph,
             "org": org,
             "totalRepos": total,
             "reposWithFindings": findings.len(),
@@ -1098,7 +1180,7 @@ fn main() {
                 json!({
                     "name": r.name,
                     "hasProtofireAudit": p.has_pdf,
-                    "externalAudit": p.external_audit,
+                    "externalAudit": p.external_audit.as_str(),
                     "auditPdfs": p.pdfs.iter().map(|pdf| json!({
                         "filename": pdf.filename,
                         "path": pdf.path,
@@ -1293,9 +1375,9 @@ mod tests {
             r.has_pdf,
             "a listed .pdf means the repo has a Protofire audit"
         );
-        assert_eq!(r.external_audit, protofire::NA);
-        assert_ne!(r.external_audit, protofire::NEVER);
-        assert_ne!(r.external_audit, protofire::UNKNOWN);
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Na);
+        assert_ne!(r.external_audit, protofire::ExternalAudit::Never);
+        assert_ne!(r.external_audit, protofire::ExternalAudit::Unknown);
     }
 
     #[test]
@@ -1304,7 +1386,7 @@ mod tests {
         let gh = FakeGh::new(vec![("contents/audit/protofire", FetchOutcome::NotFound)]);
         let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
         assert!(!r.has_pdf);
-        assert_eq!(r.external_audit, protofire::NEVER);
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Never);
     }
 
     #[test]
@@ -1315,10 +1397,10 @@ mod tests {
         let gh = FakeGh::new(vec![("contents/audit/protofire", FetchOutcome::Failed)]);
         let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
         assert!(!r.has_pdf);
-        assert_eq!(r.external_audit, protofire::UNKNOWN);
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Unknown);
         assert_ne!(
             r.external_audit,
-            protofire::NEVER,
+            protofire::ExternalAudit::Never,
             "a failed fetch must NEVER be reported as never-audited"
         );
         // The listing was fetched exactly once at this seam (retry lives in GhCli).
@@ -1497,21 +1579,32 @@ mod tests {
         let repos = repo_set(&["r0", "r1", "r2", "r3", "r4", "r5"]);
         let out = scan_repos(repos.clone(), 4, |r| {
             let state = if r == "r3" {
-                protofire::UNKNOWN
+                protofire::ExternalAudit::Unknown
             } else {
-                protofire::CURRENT
+                protofire::ExternalAudit::Current
             };
             (r.to_string(), state)
         });
         assert_eq!(out.len(), repos.len(), "every repo produced a result");
         for (name, state) in &out {
             if name == "r3" {
-                assert_eq!(*state, protofire::UNKNOWN, "only r3 is unknown");
+                assert_eq!(
+                    *state,
+                    protofire::ExternalAudit::Unknown,
+                    "only r3 is unknown"
+                );
             } else {
-                assert_eq!(*state, protofire::CURRENT, "{name} must stay current");
+                assert_eq!(
+                    *state,
+                    protofire::ExternalAudit::Current,
+                    "{name} must stay current"
+                );
             }
         }
-        let unknowns = out.iter().filter(|(_, s)| *s == protofire::UNKNOWN).count();
+        let unknowns = out
+            .iter()
+            .filter(|(_, s)| *s == protofire::ExternalAudit::Unknown)
+            .count();
         assert_eq!(unknowns, 1, "exactly one repo is unknown — no leakage");
     }
 

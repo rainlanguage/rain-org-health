@@ -228,6 +228,50 @@
            border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .nav a:hover { color: var(--ink); }
   .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .gsurface { position: relative; }
+  .gedges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+  .gedge { fill: none; stroke: var(--border); stroke-width: 1; }
+  .gnode { position: absolute; box-sizing: border-box; display: inline-flex; flex-direction: column;
+           align-items: center; gap: 1px; padding: 5px 8px; border-radius: 6px; border: 1.5px solid;
+           font-size: 11px; line-height: 1.3; white-space: nowrap; background: var(--surface); }
+  .gn-repo { font-weight: 600; }
+  .gn-meta { font-size: 10px; }
+  .gn-plain { color: var(--ink-2); }
+  .gn-warn { font-size: 9px; color: var(--crit); }
+  .gnode .gn-anchor { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+  .gnode .gn-anchor:hover { border-bottom-style: solid; }
+  .gnode .add { color: var(--clean); }
+  .gnode .del { color: var(--crit); }
+  .gnode.au-current { border-color: var(--clean); background: var(--clean-bg); color: var(--clean); }
+  .gnode.au-stale { border-color: var(--debt); background: var(--debt-bg); color: var(--debt); border-style: dashed; }
+  .gnode.au-never { border-color: var(--crit); background: var(--bg); color: var(--crit); }
+  .gnode.au-na { border-color: var(--ink-3); background: var(--surface-2); color: var(--ink-2); }
+  .gnode.au-unknown { border-color: var(--ink-3); background: var(--surface-2); color: var(--ink-2); border-style: dotted; }
+  .legend .swatch.au-current { border-color: var(--clean); background: var(--clean-bg); }
+  .legend .swatch.au-stale { border-color: var(--debt); background: var(--debt-bg); border-style: dashed; }
+  .legend .swatch.au-never { border-color: var(--crit); background: var(--bg); }
+  .legend .swatch.au-na { border-color: var(--ink-3); background: var(--surface-2); }
+  .legend .swatch.au-unknown { border-color: var(--ink-3); background: var(--surface-2); border-style: dotted; }
+  .graphbox { height: 760px; overflow: auto; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
+  .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 22px; height: 14px; border-radius: 5px; border-width: 1.5px; border-style: solid; flex: none; }
+  .graphsum { margin: 0 0 10px; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--debt); border-radius: 6px; padding: 8px 10px; line-height: 1.5; }
+  .graphsum b { font-weight: 600; }
+  .graphsum .none { color: var(--ink-2); }
+  .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
+  .gn { font-size: 10px; line-height: 1.35; text-align: center; white-space: nowrap; pointer-events: none; }
+  .gn a { pointer-events: auto; }
+  .gn-repo { display: block; font-weight: 600; }
+  .gn-meta { display: block; }
+  .gn-anchor { text-decoration: none; border-bottom: 1px dotted currentColor; }
+  .gn-anchor:hover { border-bottom-style: solid; }
+  .gn .add { color: var(--clean); }
+  .gn .del { color: var(--crit); }
+  .gn-plain { opacity: 0.85; }
+  .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
 </style>
 </head>
 <body>
@@ -244,6 +288,15 @@
     <a href="pipeline.html">Pipeline</a>
     <a href="metrics.html">Metrics</a>
   </nav>
+  <h2>Dependency graph · blast radius</h2>
+  <p class="graphhelp" id="graphhelp">
+    Click a repo to trace what it carries — drag to pan, scroll to zoom. Solidity repos only; an arrow points from a consumer to the dependency it stands on.
+    Coverage is <strong>Protofire</strong> only: a repo audited by someone else still reads as uncovered here, because counting a PDF this scan cannot date would be a false coverage claim.
+  </p>
+  <p class="graphsum" id="graphsum"></p>
+  <div id="graphlegend" class="legend"></div>
+  <div id="graph" class="graphbox"><div class="empty" id="graphempty">loading dependency graph…</div></div>
+
   <h2>External audit coverage · Protofire</h2>
   <div id="audit"><div class="empty" id="auditempty">loading external-audit coverage…</div></div>
   <footer>
@@ -251,6 +304,7 @@
     <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener">source</a>.
   </footer>
 </div>
+<script src="vendor/elk.bundled.js"></script>
 <script type="module">
 const $ = (id) => document.getElementById(id);
 // Theme toggle: default follows the OS; the button stamps data-theme to override.
@@ -260,6 +314,15 @@ $("theme").addEventListener("click", () => {
   document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
 });
 let data = null;
+// Shared by both panels: every string rendered here is cross-repo and
+// attacker-influenceable, so the DOM is built with createElement / textContent /
+// .href — never innerHTML with data (CLAUDE.md "Rendering untrusted data").
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+};
 // ---- External (Protofire) audit coverage panel ----
 // Consumes health.json's `protofireAudits` array + the reposNeverExternallyAudited
 // headline count (produced by roh-scan — the dashboard renders, never computes).
@@ -269,6 +332,8 @@ let data = null;
 // "Rendering untrusted data").
 function renderAudit() {
   const box = $("audit");
+  // Local on purpose: test/dashboard.test.js extracts this function's source and
+  // evals it standalone, so anything it closes over must be declared inside it.
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -449,6 +514,211 @@ function renderAudit() {
   );
   box.append(note);
 }
+// ---- Dependency graph (#71) ----
+// Consumes health.json's `auditGraph` (roh-scan computes; the dashboard only
+// renders). The graph, not a sorted list, is the artifact: a topological order is
+// one of many valid linearisations, so a numbered list invents precedence between
+// independent leaves. The graph states what depends on what, and answers the
+// question an order cannot — given a finding in X, who inherits it?
+//
+// Audit state is carried by BORDER STYLE as well as colour, and every node is
+// labelled with its repo name: identity is the label, never the colour.
+// ---- Dependency graph (#71) ----
+// Consumes health.json's `auditGraph` (roh-scan computes; this only renders).
+// The graph, not a sorted list, is the artifact: a topological order is one of
+// many valid linearisations, so a numbered list invents precedence between
+// independent leaves. It also answers what an order cannot — given a finding in
+// X, who inherits it?
+//
+// ELK lays out; the DOM paints. Nodes are divs and edges are one SVG, so the
+// page's own CSS governs every colour, the theme toggle works for free, and a
+// node can hold a real link and a two-tone diff. A canvas renderer would need
+// the palette re-implemented in JS and could hold neither.
+const AUDIT_HELP = {
+  current: "Protofire-audited at the current tag",
+  stale: "Protofire-audited, source moved since",
+  never: "no Protofire PDF — a repo may still be audited by someone else",
+  unknown: "audit lookup FAILED — indeterminate, not a confirmed gap",
+  na: "Protofire-audited but no tags to date it against",
+};
+const AUDIT_ORDER = ["current", "stale", "never", "na", "unknown"];
+const GRAPH_HELP_DEFAULT =
+  "Click a repo to trace what it carries. Solidity repos only; an arrow points from a consumer to the dependency it stands on. Coverage is Protofire only.";
+
+function renderGraphLegend(present) {
+  const box = $("graphlegend");
+  box.replaceChildren();
+  for (const state of AUDIT_ORDER) {
+    if (!present.has(state)) continue;
+    const key = el("span", "key");
+    key.append(el("span", `swatch au-${state}`), document.createTextNode(`${state} — ${AUDIT_HELP[state]}`));
+    box.append(key);
+  }
+}
+
+// The node body. Built with createElement/textContent/.href — repo names,
+// anchors and URLs are cross-repo strings, so escaping is by construction.
+function nodeEl(n, p) {
+  const box = el("div", `gnode au-${n.audit}`);
+  box.dataset.repo = n.repo;
+  box.append(el("span", "gn-repo", n.repo));
+
+  const meta = el("span", "gn-meta");
+  if (n.audit === "never") {
+    meta.classList.add("gn-plain");
+    meta.textContent = p && p.fullSourceLoc != null ? `no protofire · ${p.fullSourceLoc} LOC` : "no protofire audit";
+  } else if (n.audit === "unknown") {
+    meta.classList.add("gn-plain");
+    meta.textContent = "audit lookup FAILED";
+  } else {
+    const anchorText = p && p.auditedRef ? (p.anchorKind === "tag" ? p.auditedRef : p.auditedRef.slice(0, 7)) : "?";
+    if (p && typeof p.compareUrl === "string" && p.compareUrl) {
+      const a = el("a", "gn-anchor", anchorText);
+      a.href = p.compareUrl;
+      a.rel = "noopener";
+      a.title = `diff since the audited ${p.anchorKind === "tag" ? "tag" : "commit"}`;
+      meta.append(a);
+    } else {
+      // No compareUrl resolved ⇒ plain text, never a dead link.
+      meta.append(el("span", null, anchorText));
+    }
+    if (p && typeof p.sourceLocAddedSinceAudit === "number" && typeof p.sourceLocRemovedSinceAudit === "number") {
+      meta.append(
+        document.createTextNode(" · "),
+        el("span", "add", `+${p.sourceLocAddedSinceAudit}`),
+        document.createTextNode(" "),
+        el("span", "del", `\u2212${p.sourceLocRemovedSinceAudit}`),
+      );
+    }
+  }
+  box.append(meta);
+  if (n.depsKnown === false) {
+    // Its manifest would not parse, so its dependencies are unknown — the graph
+    // cannot claim its ground is clear, and must not look like it does.
+    box.append(el("span", "gn-warn", "manifest unreadable — deps unknown"));
+  }
+  return box;
+}
+
+// What is worth auditing NOW: clear ground beneath, not already current, and a
+// readable manifest. Ranked by how many repos inherit it — a counted fact, not
+// an invented order.
+function renderGraphSummary(nodes, pf) {
+  const box = $("graphsum");
+  box.replaceChildren();
+  const inheritors = new Map();
+  for (const n of nodes) for (const b of n.blockedBy ?? []) inheritors.set(b, (inheritors.get(b) ?? 0) + 1);
+
+  const ready = nodes
+    .filter((n) => (n.blockedBy ?? []).length === 0 && n.audit !== "current" && n.depsKnown !== false)
+    .sort((a, b) => (inheritors.get(b.repo) ?? 0) - (inheritors.get(a.repo) ?? 0) || a.repo.localeCompare(b.repo));
+
+  if (ready.length === 0) {
+    box.append(el("span", "none", "Nothing is unblocked: every uncovered repo stands on another that is uncovered too."));
+    return;
+  }
+  box.append(
+    el("b", null, `${ready.length} of ${nodes.length}`),
+    document.createTextNode(
+      " Solidity repos have clear ground beneath and no current Protofire audit — auditing one now yields findings that are genuinely its own. Most inherited first: ",
+    ),
+  );
+  ready.slice(0, 3).forEach((n, i) => {
+    const p = pf.get(n.repo);
+    const drift =
+      p && p.sourceLocAddedSinceAudit != null
+        ? `+${p.sourceLocAddedSinceAudit}/\u2212${p.sourceLocRemovedSinceAudit}`
+        : p && p.fullSourceLoc != null
+          ? `${p.fullSourceLoc} LOC`
+          : "";
+    if (i > 0) box.append(document.createTextNode(", "));
+    box.append(el("b", null, n.repo), document.createTextNode(` (${inheritors.get(n.repo) ?? 0} inherit${drift ? `, ${drift}` : ""})`));
+  });
+  box.append(document.createTextNode("."));
+}
+
+async function renderGraph() {
+  const g = data.auditGraph;
+  const box = $("graph");
+  if (!g || !g.nodes || g.nodes.length === 0) {
+    $("graphempty").textContent = "No dependency graph in health.json yet.";
+    return;
+  }
+  $("graphempty").remove();
+  const pf = new Map((data.protofireAudits ?? []).map((r) => [r.name, r]));
+  renderGraphLegend(new Set(g.nodes.map((n) => n.audit)));
+  renderGraphSummary(g.nodes, pf);
+
+  const surface = el("div", "gsurface");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("gedges");
+  surface.append(svg);
+  box.append(surface);
+
+  // Measure the real DOM: ELK needs each node's box, and the browser is the
+  // only thing that knows how wide this text actually renders. Measuring beats
+  // guessing from character counts, which is what makes labels overflow.
+  const els = new Map();
+  for (const n of g.nodes) {
+    const d = nodeEl(n, pf.get(n.repo));
+    d.style.visibility = "hidden";
+    surface.append(d);
+    els.set(n.repo, d);
+  }
+  const sized = g.nodes.map((n) => {
+    const r = els.get(n.repo).getBoundingClientRect();
+    return { id: n.repo, width: Math.ceil(r.width), height: Math.ceil(r.height) };
+  });
+
+  const laid = await new ELK().layout({
+    id: "root",
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": "DOWN",
+      "elk.spacing.nodeNode": "24",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "48",
+      // 151 edges cross between layers, and ELK reserves edgeEdgeBetweenLayers
+      // PER edge — at the default that stacks into ~250px of empty gap and the
+      // node spacing above looks ignored. These are the knobs that actually set
+      // the vertical rhythm of a graph this dense.
+      "elk.layered.spacing.edgeEdgeBetweenLayers": "2",
+      "elk.layered.spacing.edgeNodeBetweenLayers": "8",
+      "elk.spacing.edgeEdge": "3",
+      "elk.spacing.edgeNode": "8",
+      "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+      "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
+      "elk.edgeRouting": "POLYLINE",
+    },
+    children: sized,
+    edges: g.edges.map((e, i) => ({ id: `e${i}`, sources: [e.from], targets: [e.to] })),
+  });
+
+  const pos = new Map(laid.children.map((c) => [c.id, c]));
+  for (const [repo, d] of els) {
+    const c = pos.get(repo);
+    d.style.left = `${c.x}px`;
+    d.style.top = `${c.y}px`;
+    d.style.visibility = "";
+  }
+  surface.style.width = `${laid.width}px`;
+  surface.style.height = `${laid.height}px`;
+  svg.setAttribute("viewBox", `0 0 ${laid.width} ${laid.height}`);
+  svg.setAttribute("width", laid.width);
+  svg.setAttribute("height", laid.height);
+
+  for (const e of laid.edges ?? []) {
+    for (const sec of e.sections ?? []) {
+      const pts = [sec.startPoint, ...(sec.bendPoints ?? []), sec.endPoint];
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", pts.map((pt, i) => `${i ? "L" : "M"}${pt.x},${pt.y}`).join(" "));
+      path.classList.add("gedge");
+      path.dataset.from = e.sources[0];
+      path.dataset.to = e.targets[0];
+      svg.append(path);
+    }
+  }
+}
+
 async function load() {
   try {
     const r = await fetch("health.json", { cache: "no-store" });
@@ -463,6 +733,7 @@ async function load() {
     `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
     (isFinite(ago) ? ` (${ago}h ago)` : "");
   renderAudit();
+  renderGraph();
 }
 load();
 </script>
