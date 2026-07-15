@@ -61,11 +61,33 @@ pub struct CompareFile {
 /// - `unknown` — the `audit/protofire/` listing fetch FAILED, so coverage is
 ///   indeterminate. This is distinct from `never`: a failed fetch must never be
 ///   read as a confirmed coverage gap.
-pub const NEVER: &str = "never";
-pub const NA: &str = "na";
-pub const STALE: &str = "stale";
-pub const CURRENT: &str = "current";
-pub const UNKNOWN: &str = "unknown";
+///
+/// A closed set, as a type rather than free strings: every consumer must decide
+/// what each verdict means to it, and a sixth verdict added here should fail to
+/// compile at each site that has not decided, rather than silently falling into
+/// whatever the `else` arm happened to be.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+pub enum ExternalAudit {
+    Never,
+    Na,
+    Stale,
+    Current,
+    Unknown,
+}
+
+impl ExternalAudit {
+    /// The wire form: what `health.json` carries and the dashboard renders. The
+    /// only place these strings exist.
+    pub fn as_str(self) -> &'static str {
+        match self {
+            Self::Never => "never",
+            Self::Na => "na",
+            Self::Stale => "stale",
+            Self::Current => "current",
+            Self::Unknown => "unknown",
+        }
+    }
+}
 
 /// Extract the audited git tag (`[sol-]vMAJOR.MINOR.PATCH`) encoded in a PDF
 /// filename per the naming convention. Returns the FULL tag so it resolves as a
@@ -316,15 +338,15 @@ pub fn classify_external_audit(
     has_tags: bool,
     newer_tag_exists: bool,
     source_changed: Option<bool>,
-) -> &'static str {
+) -> ExternalAudit {
     if !has_pdf {
-        NEVER
+        ExternalAudit::Never
     } else if !has_tags {
-        NA
+        ExternalAudit::Na
     } else if is_stale(newer_tag_exists, source_changed) {
-        STALE
+        ExternalAudit::Stale
     } else {
-        CURRENT
+        ExternalAudit::Current
     }
 }
 
@@ -741,25 +763,37 @@ mod tests {
     // ---- classify_external_audit ----
     #[test]
     fn classification_taxonomy() {
-        assert_eq!(classify_external_audit(false, false, false, None), NEVER);
+        assert_eq!(
+            classify_external_audit(false, false, false, None),
+            ExternalAudit::Never
+        );
         assert_eq!(
             classify_external_audit(false, true, true, Some(true)),
-            NEVER
+            ExternalAudit::Never
         ); // no PDF dominates
-        assert_eq!(classify_external_audit(true, false, false, None), NA); // PDF but no tags
-        assert_eq!(classify_external_audit(true, true, true, Some(true)), STALE);
+        assert_eq!(
+            classify_external_audit(true, false, false, None),
+            ExternalAudit::Na
+        ); // PDF but no tags
+        assert_eq!(
+            classify_external_audit(true, true, true, Some(true)),
+            ExternalAudit::Stale
+        );
         assert_eq!(
             classify_external_audit(true, true, false, Some(false)),
-            CURRENT
+            ExternalAudit::Current
         );
         // The reported bug: a newer tag with zero Solidity drift renders CURRENT,
         // not STALE — the verdict follows the source, not the tag.
         assert_eq!(
             classify_external_audit(true, true, true, Some(false)),
-            CURRENT
+            ExternalAudit::Current
         );
         // Unmeasured drift still falls back to tag recency.
-        assert_eq!(classify_external_audit(true, true, true, None), STALE);
+        assert_eq!(
+            classify_external_audit(true, true, true, None),
+            ExternalAudit::Stale
+        );
     }
 
     // ---- days_between ----
