@@ -742,8 +742,15 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         .as_deref()
         .map(|t| newer_than(t, &audited_date))
         .unwrap_or(false);
-    let external_audit = classify_external_audit(true, has_tags, newer_tag_exists);
-    let stale = is_stale(newer_tag_exists, source_loc.unwrap_or(0));
+    // Did the audited Solidity actually change? Prefer the line drift; when a
+    // truncated compare leaves lines unknown, the tree-derived changed-file count
+    // still answers it. Both unknown -> None, and is_stale falls back to tag
+    // recency rather than treating unmeasured as zero.
+    let source_changed = source_loc
+        .map(|drift| drift > 0)
+        .or(files_changed.map(|files| files > 0));
+    let external_audit = classify_external_audit(true, has_tags, newer_tag_exists, source_changed);
+    let stale = is_stale(newer_tag_exists, source_changed);
 
     // The GitHub compare-view URL for the audited drift (base…default branch);
     // None when either ref is empty, so the panel links only when it resolves.

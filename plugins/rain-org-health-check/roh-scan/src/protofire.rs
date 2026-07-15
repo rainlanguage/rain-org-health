@@ -55,8 +55,9 @@ pub struct CompareFile {
 /// External-audit coverage status for a repo (the issue's taxonomy):
 /// - `never`   — no PDF under `audit/protofire/` (the primary coverage gap)
 /// - `na`      — has a PDF but the repo has no tags to compare against
-/// - `stale`   — has a PDF and a tag is newer than the audit
-/// - `current` — has a PDF and no tag is newer than the audit
+/// - `stale`   — has a PDF and the audited Solidity changed since it
+/// - `current` — has a PDF and the audited Solidity is unchanged since it (a
+///   newer tag with no Solidity in it does NOT make an audit stale)
 /// - `unknown` — the `audit/protofire/` listing fetch FAILED, so coverage is
 ///   indeterminate. This is distinct from `never`: a failed fetch must never be
 ///   read as a confirmed coverage gap.
@@ -287,23 +288,40 @@ pub fn newer_than(a_iso: &str, b_iso: &str) -> bool {
     a_iso > b_iso
 }
 
-/// Is the audit stale? True when a newer tag exists OR non-test source changed
-/// since the audit — either means the audited artifact no longer matches HEAD.
-pub fn is_stale(newer_tag_exists: bool, source_loc_drift: u64) -> bool {
-    newer_tag_exists || source_loc_drift > 0
+/// Is the audit stale? Stale means the audited SOURCE changed since the audit —
+/// NOT merely that a newer tag exists. Protofire audits the Solidity, so the
+/// non-test `.sol` drift is the whole question.
+///
+/// A newer tag alone proves nothing: the release machinery manufactures tags
+/// with no Solidity in them. `rainix-autopublish` bumps `[package].version` and
+/// tags every release, so a version bump, a CI change or a docs edit yields a
+/// newer tag whose Solidity diff is zero — the audit still covers exactly the
+/// contracts that are there, so it is CURRENT. Flagging those stale trains
+/// readers to ignore the column, which buries the genuinely stale ones.
+///
+/// `source_changed` is None when the drift could not be measured. Unknown is not
+/// zero: fall back to tag recency rather than reporting current on no evidence.
+pub fn is_stale(newer_tag_exists: bool, source_changed: Option<bool>) -> bool {
+    match source_changed {
+        Some(changed) => changed,
+        None => newer_tag_exists,
+    }
 }
 
-/// Coverage taxonomy from the three facts the classification turns on.
+/// Coverage taxonomy from the facts the classification turns on. Staleness is
+/// delegated to `is_stale` so the rendered verdict and the `is_stale` flag cannot
+/// disagree about what stale means.
 pub fn classify_external_audit(
     has_pdf: bool,
     has_tags: bool,
     newer_tag_exists: bool,
+    source_changed: Option<bool>,
 ) -> &'static str {
     if !has_pdf {
         NEVER
     } else if !has_tags {
         NA
-    } else if newer_tag_exists {
+    } else if is_stale(newer_tag_exists, source_changed) {
         STALE
     } else {
         CURRENT
@@ -705,21 +723,43 @@ mod tests {
 
     // ---- is_stale ----
     #[test]
-    fn stale_on_newer_tag_or_source_drift() {
-        assert!(is_stale(true, 0)); // newer tag alone
-        assert!(is_stale(false, 1)); // source drift alone
-        assert!(is_stale(true, 42)); // both
-        assert!(!is_stale(false, 0)); // neither
+    fn stale_iff_audited_source_changed() {
+        // The bug this pins: a newer tag with NO Solidity change is NOT stale.
+        // rainix-autopublish tags every release, so a version bump alone yields a
+        // newer tag the audit still covers exactly.
+        assert!(!is_stale(true, Some(false)));
+        assert!(!is_stale(false, Some(false)));
+        // Source actually changed -> stale, tag or no tag.
+        assert!(is_stale(true, Some(true)));
+        assert!(is_stale(false, Some(true)));
+        // Unknown is not zero: with no measurement, fall back to tag recency
+        // rather than claiming current on no evidence.
+        assert!(is_stale(true, None));
+        assert!(!is_stale(false, None));
     }
 
     // ---- classify_external_audit ----
     #[test]
     fn classification_taxonomy() {
-        assert_eq!(classify_external_audit(false, false, false), NEVER);
-        assert_eq!(classify_external_audit(false, true, true), NEVER); // no PDF dominates
-        assert_eq!(classify_external_audit(true, false, false), NA); // PDF but no tags
-        assert_eq!(classify_external_audit(true, true, true), STALE);
-        assert_eq!(classify_external_audit(true, true, false), CURRENT);
+        assert_eq!(classify_external_audit(false, false, false, None), NEVER);
+        assert_eq!(
+            classify_external_audit(false, true, true, Some(true)),
+            NEVER
+        ); // no PDF dominates
+        assert_eq!(classify_external_audit(true, false, false, None), NA); // PDF but no tags
+        assert_eq!(classify_external_audit(true, true, true, Some(true)), STALE);
+        assert_eq!(
+            classify_external_audit(true, true, false, Some(false)),
+            CURRENT
+        );
+        // The reported bug: a newer tag with zero Solidity drift renders CURRENT,
+        // not STALE — the verdict follows the source, not the tag.
+        assert_eq!(
+            classify_external_audit(true, true, true, Some(false)),
+            CURRENT
+        );
+        // Unmeasured drift still falls back to tag recency.
+        assert_eq!(classify_external_audit(true, true, true, None), STALE);
     }
 
     // ---- days_between ----
