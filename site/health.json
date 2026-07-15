@@ -1,12 +1,12 @@
 {
-  "generatedAt": "2026-07-15T09:23:58Z",
+  "generatedAt": "2026-07-15T11:52:28Z",
   "org": "rainlanguage",
   "totalRepos": 92,
   "reposWithFindings": 27,
   "reposWholeRepoAudited": 0,
   "reposNeverAudited": 92,
-  "reposExternallyAudited": 11,
-  "reposNeverExternallyAudited": 26,
+  "reposExternallyAudited": 12,
+  "reposNeverExternallyAudited": 25,
   "summary": {
     "per-chain-etherscan-key": 10,
     "old-actions-checkout": 7,
@@ -1018,29 +1018,6 @@
       "daysSinceAudit": null
     },
     {
-      "name": "rain.verify.interface",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 139,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
       "name": "rain.will-overflow",
       "hasProtofireAudit": false,
       "externalAudit": "never",
@@ -1440,7 +1417,7 @@
     {
       "name": "rain.intorastring",
       "hasProtofireAudit": true,
-      "externalAudit": "stale",
+      "externalAudit": "current",
       "auditPdfs": [
         {
           "filename": "rain.intorastring.8e5f0db1b84fc746b736368bd12f08fc5392bcfe.feb-2026.pdf",
@@ -1456,7 +1433,7 @@
       "auditedDate": "2026-02-04T18:01:59Z",
       "latestTag": "v0.1.0",
       "latestTagIso": "2026-05-12T19:17:05Z",
-      "isStale": true,
+      "isStale": false,
       "sourceLocChangedSinceAudit": 0,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 0,
@@ -1470,7 +1447,7 @@
     {
       "name": "rain.lib.hash",
       "hasProtofireAudit": true,
-      "externalAudit": "stale",
+      "externalAudit": "current",
       "auditPdfs": [
         {
           "filename": "rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
@@ -1486,7 +1463,7 @@
       "auditedDate": "2026-01-29T13:36:12Z",
       "latestTag": "v0.1.0",
       "latestTagIso": "2026-05-12T16:20:54Z",
-      "isStale": true,
+      "isStale": false,
       "sourceLocChangedSinceAudit": 0,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 0,
@@ -1500,7 +1477,7 @@
     {
       "name": "rain.lib.typecast",
       "hasProtofireAudit": true,
-      "externalAudit": "stale",
+      "externalAudit": "current",
       "auditPdfs": [
         {
           "filename": "rain.lib.typecast.fe4b2a4c05632e394b0643990d6de39658fb8fb5.jan-2026.pdf",
@@ -1516,7 +1493,7 @@
       "auditedDate": "2026-01-18T12:48:58Z",
       "latestTag": "v0.1.0",
       "latestTagIso": "2026-05-12T16:29:48Z",
-      "isStale": true,
+      "isStale": false,
       "sourceLocChangedSinceAudit": 0,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 0,
@@ -1526,6 +1503,36 @@
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
       "daysSinceAudit": 178
+    },
+    {
+      "name": "rain.verify.interface",
+      "hasProtofireAudit": true,
+      "externalAudit": "current",
+      "auditPdfs": [
+        {
+          "filename": "rain.verify.interface.f5f3bf39d6ab70cd177692a39b20eae6143899bf.feb-2026.pdf",
+          "path": "audit/protofire/rain.verify.interface.f5f3bf39d6ab70cd177692a39b20eae6143899bf.feb-2026.pdf",
+          "lastCommitIso": "2026-07-15T11:08:02Z",
+          "auditDateIso": "2026-02-02T12:01:08Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "f5f3bf39d6ab70cd177692a39b20eae6143899bf",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-02-02T12:01:08Z",
+      "latestTag": "v0.1.0",
+      "latestTagIso": "2026-05-14T09:33:30Z",
+      "isStale": false,
+      "sourceLocChangedSinceAudit": 0,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 0,
+      "sourceLocRemovedSinceAudit": 0,
+      "filesChangedSinceAudit": 0,
+      "commitsSinceAudit": 12,
+      "sourceDriftTruncated": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
+      "daysSinceAudit": 163
     }
   ]
 }
