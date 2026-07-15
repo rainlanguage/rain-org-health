@@ -238,6 +238,15 @@
   .graphsum .none { color: var(--ink-2); }
   .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
+  .gn { font-size: 10px; line-height: 1.35; text-align: center; white-space: nowrap; pointer-events: none; }
+  .gn a { pointer-events: auto; }
+  .gn-repo { display: block; font-weight: 600; }
+  .gn-meta { display: block; }
+  .gn-anchor { text-decoration: none; border-bottom: 1px dotted currentColor; }
+  .gn-anchor:hover { border-bottom-style: solid; }
+  .gn .add { color: var(--clean); }
+  .gn .del { color: var(--crit); }
+  .gn-plain { opacity: 0.85; }
   .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
 </style>
 </head>
@@ -278,6 +287,7 @@
 <script src="vendor/cytoscape.min.js"></script>
 <script src="vendor/elk.bundled.js"></script>
 <script src="vendor/cytoscape-elk.js"></script>
+<script src="vendor/cytoscape-node-html-label.min.js"></script>
 <script type="module">
 const $ = (id) => document.getElementById(id);
 // Theme toggle: default follows the OS; the button stamps data-theme to override.
@@ -632,6 +642,66 @@ function renderGraphSummary(nodes, pf) {
   box.append(document.createTextNode("."));
 }
 
+// The node body, built through the DOM and serialised — the repo name, anchor
+// and URL are cross-repo strings, so escaping is by construction (CLAUDE.md),
+// never string concatenation with data.
+function nodeHtml(n, p) {
+  const box = document.createElement("div");
+  box.className = "gn";
+
+  const repo = document.createElement("span");
+  repo.className = "gn-repo";
+  repo.textContent = n.repo;
+  box.append(repo);
+
+  const meta = document.createElement("span");
+  meta.className = "gn-meta";
+
+  if (n.audit === "never") {
+    meta.classList.add("gn-plain");
+    meta.textContent = p && p.fullSourceLoc != null ? `no protofire · ${p.fullSourceLoc} LOC` : "no protofire audit";
+    box.append(meta);
+    return box.outerHTML;
+  }
+  if (n.audit === "unknown") {
+    meta.classList.add("gn-plain");
+    meta.textContent = "audit lookup FAILED";
+    box.append(meta);
+    return box.outerHTML;
+  }
+
+  // The anchor links to the diff since the audit — the question the number
+  // provokes is "changed how?", and that is one click away rather than a
+  // hand-built compare URL.
+  const anchorText = p && p.auditedRef ? (p.anchorKind === "tag" ? p.auditedRef : p.auditedRef.slice(0, 7)) : "?";
+  if (p && typeof p.compareUrl === "string" && p.compareUrl) {
+    const a = document.createElement("a");
+    a.className = "gn-anchor";
+    a.href = p.compareUrl;
+    a.rel = "noopener";
+    a.title = `${n.repo}: diff since the audited ${p.anchorKind === "tag" ? "tag" : "commit"}`;
+    a.textContent = anchorText;
+    meta.append(a);
+  } else {
+    // No compareUrl resolved ⇒ plain text, never a dead link.
+    const span = document.createElement("span");
+    span.textContent = anchorText;
+    meta.append(span);
+  }
+
+  if (p && typeof p.sourceLocAddedSinceAudit === "number" && typeof p.sourceLocRemovedSinceAudit === "number") {
+    const add = document.createElement("span");
+    add.className = "add";
+    add.textContent = `+${p.sourceLocAddedSinceAudit}`;
+    const del = document.createElement("span");
+    del.className = "del";
+    del.textContent = `\u2212${p.sourceLocRemovedSinceAudit}`;
+    meta.append(document.createTextNode(" · "), add, document.createTextNode(" "), del);
+  }
+  box.append(meta);
+  return box.outerHTML;
+}
+
 function renderGraph() {
   const g = data.auditGraph;
   const box = $("graph");
@@ -653,7 +723,10 @@ function renderGraph() {
       return {
         data: {
           id: n.repo,
+          // Sizes the node: layout needs dimensions, and an HTML overlay cannot
+          // be measured until after. Hidden via text-opacity.
           label: sub ? `${n.repo}\n${sub}` : n.repo,
+          html: nodeHtml(n, p),
           audit: n.audit,
           blockedBy: n.blockedBy ?? [],
         },
@@ -673,13 +746,13 @@ function renderGraph() {
     style: [
       { selector: "node", style: {
           label: "data(label)", "font-size": 10, "font-family": "inherit",
-          "text-wrap": "wrap", "text-valign": "center", "line-height": 1.35,
-          color: (n) => st(n).line,
+          "font-weight": 600, "text-wrap": "wrap", "text-valign": "center",
+          "line-height": 1.4, "text-opacity": 0, color: (n) => st(n).line,
           "background-color": (n) => st(n).fill,
           "border-color": (n) => st(n).line,
           "border-style": (n) => st(n).border,
           "border-width": 1.5,
-          shape: "round-rectangle", width: "label", height: "label", padding: "7px",
+          shape: "round-rectangle", width: "label", height: "label", padding: "9px",
       }},
       { selector: "edge", style: {
           width: 1, "line-color": k.border, "target-arrow-color": k.border,
@@ -764,6 +837,20 @@ function renderGraph() {
 
   // Edges run consumer -> dependency, so a node's PREDECESSORS are the repos
   // standing on it: its blast radius.
+  // The visible body. `data.html` is built with createElement/textContent below
+  // and serialised here, so every value is escaped by construction — the repo
+  // name and anchor are cross-repo strings.
+  cy.nodeHtmlLabel([
+    {
+      query: "node",
+      valign: "center",
+      halign: "center",
+      valignBox: "center",
+      halignBox: "center",
+      tpl: (d) => d.html,
+    },
+  ]);
+
   cy.on("tap", "node", (evt) => {
     const n = evt.target;
     cy.elements().addClass("faded").removeClass("inherits carries");
