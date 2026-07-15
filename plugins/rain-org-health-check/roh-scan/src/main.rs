@@ -795,6 +795,8 @@ struct RepoResult {
     package: Option<String>,
     /// Soldeer package names from this repo's `[dependencies]` (#71).
     deps: Vec<String>,
+    /// False when `foundry.toml` would not parse: deps unknown, not absent.
+    deps_known: bool,
 }
 
 /// Whether a repo belongs in the Protofire external-audit report. A Protofire
@@ -884,6 +886,12 @@ fn main() {
         .and_then(|s| s.parse().ok())
         .unwrap_or(12);
 
+    // A partial scan cannot produce a trustworthy graph: deps resolve to repos
+    // across the SCANNED set, so an unscanned dependency is indistinguishable
+    // from a third-party package and gets dropped — the graph would then report
+    // falsely clear ground. Captured before `repos_arg` is consumed.
+    let partial_scan = !repos_arg.is_empty();
+
     let repos: Vec<String> = if !repos_arg.is_empty() {
         repos_arg
     } else {
@@ -936,7 +944,10 @@ fn main() {
         RepoResult {
             name: repo.to_string(),
             package: foundry_package_name(&inputs.foundry),
-            deps: graph::foundry_dependencies(&inputs.foundry),
+            // A manifest that will not parse leaves deps UNKNOWN — not none.
+            // Collapsing the two lets a broken manifest read as clear ground.
+            deps: graph::foundry_dependencies(&inputs.foundry).unwrap_or_default(),
+            deps_known: graph::foundry_dependencies(&inputs.foundry).is_ok(),
             signals,
             last_audit,
             protofire,
@@ -1088,14 +1099,10 @@ fn main() {
                 repo: r.name.clone(),
                 package: r.package.clone(),
                 deps: r.deps.clone(),
+                deps_known: r.deps_known,
                 audit: r.protofire.external_audit,
             })
             .collect();
-        let graph_edges = graph::graph_edges(&graph_nodes);
-        // Per node: which repos beneath it are NOT cleared. Empty means the
-        // ground is solid, so a finding there is genuinely that repo's. The
-        // dashboard renders this; it does not compute it.
-        let blockers = graph::blockers(&graph_nodes);
         // Every Solidity repo is a node, including one with no first-party edge
         // either way. An isolated repo is not noise: unaudited with nothing
         // beneath it, it is an audit with ZERO blockers — the cheapest work on
@@ -1107,17 +1114,44 @@ fn main() {
             .map(|r| r.name.as_str())
             .collect();
 
+        // A graph that looks complete and is not is worse than no graph, so each
+        // way of being untrustworthy omits it and says why.
+        let audit_graph = if partial_scan {
+            eprintln!(
+                "auditGraph omitted: a partial scan drops edges to unscanned repos, which would report falsely clear ground"
+            );
+            serde_json::Value::Null
+        } else {
+            match (
+                graph::graph_edges(&graph_nodes),
+                graph::blockers(&graph_nodes),
+            ) {
+                (Ok(edges), Ok(blockers)) => json!({
+                    "nodes": graph_nodes.iter().filter(|n| solidity.contains(n.repo.as_str())).map(|n| json!({
+                        "repo": n.repo,
+                        "package": n.package,
+                        "audit": n.audit.as_str(),
+                        "depsKnown": n.deps_known,
+                        "blockedBy": blockers.get(&n.repo).cloned().unwrap_or_default(),
+                    })).collect::<Vec<_>>(),
+                    "edges": edges.iter().map(|e| json!({"from": e.from, "to": e.to})).collect::<Vec<_>>(),
+                }),
+                // Two repos publishing one package makes every edge for it point
+                // at whichever landed last.
+                (Err(d), _) | (_, Err(d)) => {
+                    eprintln!(
+                        "::error::auditGraph omitted: package {:?} is published by {} — every edge for it would target an arbitrary one",
+                        d.package,
+                        d.repos.join(" and ")
+                    );
+                    serde_json::Value::Null
+                }
+            }
+        };
+
         let doc = json!({
             "generatedAt": now,
-            "auditGraph": {
-                "nodes": graph_nodes.iter().filter(|n| solidity.contains(n.repo.as_str())).map(|n| json!({
-                    "repo": n.repo,
-                    "package": n.package,
-                    "audit": n.audit.as_str(),
-                    "blockedBy": blockers.get(&n.repo).cloned().unwrap_or_default(),
-                })).collect::<Vec<_>>(),
-                "edges": graph_edges.iter().map(|e| json!({"from": e.from, "to": e.to})).collect::<Vec<_>>(),
-            },
+            "auditGraph": audit_graph,
             "org": org,
             "totalRepos": total,
             "reposWithFindings": findings.len(),

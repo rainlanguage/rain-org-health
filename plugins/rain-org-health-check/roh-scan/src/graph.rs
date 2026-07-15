@@ -41,10 +41,46 @@ pub struct Node {
     /// The soldeer `[package].name` this repo publishes, if any. This is what
     /// consumers name it by, so it is the graph's join key.
     pub package: Option<String>,
-    /// Soldeer package names from this repo's `[dependencies]`.
+    /// Soldeer package names from this repo's `[dependencies]`. Empty with
+    /// `deps_known == false` means the manifest would not parse, NOT that the
+    /// repo has no dependencies.
     pub deps: Vec<String>,
+    /// False when `foundry.toml` would not parse. Its dependencies are unknown,
+    /// so nothing may claim its ground is clear.
+    pub deps_known: bool,
     /// The verdict from `protofire::classify_external_audit`.
     pub audit: protofire::ExternalAudit,
+}
+
+/// Two repos publishing the same soldeer package name.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct DuplicatePackage {
+    pub package: String,
+    pub repos: Vec<String>,
+}
+
+/// package name -> the repo that publishes it.
+///
+/// Built once and validated: a `collect()` over duplicate keys keeps an
+/// arbitrary winner, and every edge and blocker for that package would then
+/// point at whichever repo happened to land last. Two repos publishing one
+/// package is an org-level error, so it is reported rather than resolved.
+pub fn package_index(nodes: &[Node]) -> Result<BTreeMap<&str, &Node>, DuplicatePackage> {
+    let mut idx: BTreeMap<&str, &Node> = BTreeMap::new();
+    for n in nodes {
+        let Some(pkg) = n.package.as_deref() else {
+            continue;
+        };
+        if let Some(prev) = idx.insert(pkg, n) {
+            let mut repos = vec![prev.repo.clone(), n.repo.clone()];
+            repos.sort();
+            return Err(DuplicatePackage {
+                package: pkg.to_string(),
+                repos,
+            });
+        }
+    }
+    Ok(idx)
 }
 
 /// One first-party dependency edge: `from` consumes `to`.
@@ -66,15 +102,24 @@ pub struct Edge {
 ///
 /// Returns every declared dependency name; mapping them to repos (and dropping
 /// third-party ones) is `build_campaign`'s job, since only it knows the org.
-pub fn foundry_dependencies(foundry: &str) -> Vec<String> {
-    let Ok(value) = foundry.parse::<toml::Value>() else {
-        return Vec::new();
-    };
+pub fn foundry_dependencies(foundry: &str) -> Result<Vec<String>, MalformedManifest> {
+    let value = foundry
+        .parse::<toml::Value>()
+        .map_err(|e| MalformedManifest(e.to_string()))?;
+    // No `[dependencies]` is a real, readable answer: the repo declares none.
+    // A manifest that will not parse is NOT that answer — it is "unknown", and
+    // collapsing the two would let a broken manifest read as clear ground and
+    // make the repo look actionable on false grounds.
     let Some(table) = value.get("dependencies").and_then(|d| d.as_table()) else {
-        return Vec::new();
+        return Ok(Vec::new());
     };
-    table.keys().cloned().collect()
+    Ok(table.keys().cloned().collect())
 }
+
+/// A `foundry.toml` that will not parse. Its dependencies are unknown, which is
+/// distinct from having none.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct MalformedManifest(pub String);
 
 /// Every first-party edge in the scan, for the whole org rather than one
 /// entrypoint's slice.
@@ -88,11 +133,8 @@ pub fn foundry_dependencies(foundry: &str) -> Vec<String> {
 ///
 /// Third-party deps name no repo here and are dropped, so an edge always joins
 /// two scanned repos.
-pub fn graph_edges(nodes: &[Node]) -> Vec<Edge> {
-    let by_package: BTreeMap<&str, &Node> = nodes
-        .iter()
-        .filter_map(|n| n.package.as_deref().map(|p| (p, n)))
-        .collect();
+pub fn graph_edges(nodes: &[Node]) -> Result<Vec<Edge>, DuplicatePackage> {
+    let by_package = package_index(nodes)?;
     let mut edges: Vec<Edge> = Vec::new();
     for node in nodes {
         for dep_pkg in &node.deps {
@@ -106,7 +148,7 @@ pub fn graph_edges(nodes: &[Node]) -> Vec<Edge> {
     }
     edges.sort_by(|a, b| (&a.from, &a.to).cmp(&(&b.from, &b.to)));
     edges.dedup();
-    edges
+    Ok(edges)
 }
 
 /// Every first-party repo beneath `repo`, transitively.
@@ -142,13 +184,10 @@ fn deps_beneath<'a>(
 /// Empty means the ground beneath is solid, so a finding there is genuinely that
 /// repo's. Walked transitively, not over direct deps: a cleared dependency
 /// standing on an unaudited one of its own is still sand.
-pub fn blockers(nodes: &[Node]) -> BTreeMap<String, Vec<String>> {
+pub fn blockers(nodes: &[Node]) -> Result<BTreeMap<String, Vec<String>>, DuplicatePackage> {
     let by_repo: BTreeMap<&str, &Node> = nodes.iter().map(|n| (n.repo.as_str(), n)).collect();
-    let by_package: BTreeMap<&str, &Node> = nodes
-        .iter()
-        .filter_map(|n| n.package.as_deref().map(|p| (p, n)))
-        .collect();
-    nodes
+    let by_package = package_index(nodes)?;
+    Ok(nodes
         .iter()
         .map(|n| {
             let mut b: Vec<String> = deps_beneath(&n.repo, &by_repo, &by_package)
@@ -158,7 +197,7 @@ pub fn blockers(nodes: &[Node]) -> BTreeMap<String, Vec<String>> {
             b.sort();
             (n.repo.clone(), b)
         })
-        .collect()
+        .collect())
 }
 
 #[cfg(test)]
@@ -175,6 +214,7 @@ mod tests {
             repo: repo.to_string(),
             package: package.map(str::to_string),
             deps: deps.iter().map(|d| d.to_string()).collect(),
+            deps_known: true,
             audit,
         }
     }
@@ -200,7 +240,7 @@ inline-form = { version = "0.1.0", url = "https://example.invalid/x.zip" }
 [soldeer]
 recursive_deps = false
 "#;
-        let mut deps = foundry_dependencies(foundry);
+        let mut deps = foundry_dependencies(foundry).expect("valid manifest");
         deps.sort();
         assert_eq!(
             deps,
@@ -214,10 +254,20 @@ recursive_deps = false
         );
     }
 
+    /// "declares none" is a real answer; "will not parse" is not. Collapsing
+    /// them lets a broken manifest read as clear ground and makes the repo look
+    /// actionable on false grounds.
     #[test]
-    fn no_dependencies_section_or_unparseable_yields_none() {
-        assert!(foundry_dependencies("[profile.default]\nsolc = \"0.8.25\"\n").is_empty());
-        assert!(foundry_dependencies("this is not toml {{{").is_empty());
+    fn no_dependencies_is_ok_empty_but_malformed_is_an_error() {
+        assert_eq!(
+            foundry_dependencies("[profile.default]\nsolc = \"0.8.25\"\n"),
+            Ok(Vec::new()),
+            "a manifest with no [dependencies] declares none"
+        );
+        assert!(
+            foundry_dependencies("this is not toml {{{").is_err(),
+            "a malformed manifest must not read as no dependencies"
+        );
     }
 
     /// Edges join scanned repos only: a third-party dep names no repo, and an
@@ -239,7 +289,7 @@ recursive_deps = false
             ),
         ];
         assert_eq!(
-            graph_edges(&nodes),
+            graph_edges(&nodes).unwrap(),
             vec![Edge {
                 from: "app".into(),
                 to: "lib".into()
@@ -256,9 +306,47 @@ recursive_deps = false
             node("b", Some("b"), &["core"], protofire::ExternalAudit::Never),
             node("core", Some("core"), &[], protofire::ExternalAudit::Stale),
         ];
-        let edges = graph_edges(&nodes);
+        let edges = graph_edges(&nodes).unwrap();
         assert_eq!(edges.len(), 2, "{edges:?}");
         assert!(edges.iter().all(|e| e.to == "core"));
+    }
+
+    /// Two repos publishing one package: a plain collect() keeps an arbitrary
+    /// winner and every edge for that package then points at whichever landed
+    /// last. Reported, not resolved.
+    #[test]
+    fn duplicate_package_names_are_an_error_not_an_arbitrary_winner() {
+        let nodes = vec![
+            node(
+                "first",
+                Some("shared"),
+                &[],
+                protofire::ExternalAudit::Never,
+            ),
+            node(
+                "second",
+                Some("shared"),
+                &[],
+                protofire::ExternalAudit::Never,
+            ),
+            node(
+                "app",
+                Some("app"),
+                &["shared"],
+                protofire::ExternalAudit::Never,
+            ),
+        ];
+        let err = package_index(&nodes).expect_err("duplicate package accepted");
+        assert_eq!(err.package, "shared");
+        assert_eq!(err.repos, vec!["first".to_string(), "second".to_string()]);
+        assert!(
+            graph_edges(&nodes).is_err(),
+            "edges built over a duplicate package"
+        );
+        assert!(
+            blockers(&nodes).is_err(),
+            "blockers built over a duplicate package"
+        );
     }
 
     /// Blockers are TRANSITIVE: a cleared direct dependency standing on an
@@ -280,11 +368,9 @@ recursive_deps = false
             ),
             node("core", Some("core"), &[], protofire::ExternalAudit::Never),
         ];
-        assert_eq!(blockers(&nodes)["app"], vec!["core".to_string()]);
-        assert!(
-            blockers(&nodes)["core"].is_empty(),
-            "a leaf has solid ground"
-        );
+        let b = blockers(&nodes).unwrap();
+        assert_eq!(b["app"], vec!["core".to_string()]);
+        assert!(b["core"].is_empty(), "a leaf has solid ground");
     }
 
     /// Only CURRENT clears. Each of the other four leaves the consumer above
@@ -308,7 +394,7 @@ recursive_deps = false
                 node("lib", Some("lib"), &[], audit),
             ];
             assert_eq!(
-                blockers(&nodes)["app"],
+                blockers(&nodes).unwrap()["app"],
                 vec!["lib".to_string()],
                 "{audit:?} did not block"
             );
@@ -326,6 +412,6 @@ recursive_deps = false
             &["forge-std"],
             protofire::ExternalAudit::Never,
         )];
-        assert!(blockers(&nodes)["app"].is_empty());
+        assert!(blockers(&nodes).unwrap()["app"].is_empty());
     }
 }
