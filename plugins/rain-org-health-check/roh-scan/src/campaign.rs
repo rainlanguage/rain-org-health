@@ -102,6 +102,46 @@ pub fn foundry_dependencies(foundry: &str) -> Vec<String> {
     table.keys().cloned().collect()
 }
 
+/// One first-party dependency edge: `from` consumes `to`.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Edge {
+    pub from: String,
+    pub to: String,
+}
+
+/// Every first-party edge in the scan, for the whole org rather than one
+/// entrypoint's slice.
+///
+/// The graph is the primary artifact, not a by-product of ordering. A
+/// topological order is only ONE of the many valid linearisations of it, so a
+/// numbered list invents precedence between independent leaves that a reader
+/// then believes; the graph states exactly what depends on what and no more. It
+/// also answers the question the order cannot: given a finding in X, who
+/// inherits it (#71)?
+///
+/// Third-party deps name no repo here and are dropped, so an edge always joins
+/// two scanned repos.
+pub fn graph_edges(nodes: &[Node]) -> Vec<Edge> {
+    let by_package: BTreeMap<&str, &Node> = nodes
+        .iter()
+        .filter_map(|n| n.package.as_deref().map(|p| (p, n)))
+        .collect();
+    let mut edges: Vec<Edge> = Vec::new();
+    for node in nodes {
+        for dep_pkg in &node.deps {
+            if let Some(dep) = by_package.get(dep_pkg.as_str()) {
+                edges.push(Edge {
+                    from: node.repo.clone(),
+                    to: dep.repo.clone(),
+                });
+            }
+        }
+    }
+    edges.sort_by(|a, b| (&a.from, &a.to).cmp(&(&b.from, &b.to)));
+    edges.dedup();
+    edges
+}
+
 /// Whether a campaign may be planned from this scan scope.
 ///
 /// The graph resolves a dependency to a repo only if that repo was scanned; an
@@ -288,6 +328,63 @@ recursive_deps = false
             !campaign_scope_ok(true),
             "explicit repo list must be refused"
         );
+    }
+
+    /// Edges join scanned repos only: a third-party dep names no repo, and an
+    /// edge to a node the graph does not contain would render as a dangling
+    /// reference.
+    #[test]
+    fn graph_edges_join_scanned_repos_and_drop_third_party() {
+        let nodes = vec![
+            node(
+                "org/app",
+                Some("app"),
+                &["lib", "forge-std"],
+                protofire::ExternalAudit::Never,
+            ),
+            node(
+                "org/lib",
+                Some("lib"),
+                &["@openzeppelin-contracts"],
+                protofire::ExternalAudit::Stale,
+            ),
+        ];
+        assert_eq!(
+            graph_edges(&nodes),
+            vec![Edge {
+                from: "org/app".into(),
+                to: "org/lib".into()
+            }]
+        );
+    }
+
+    /// Two repos depending on the same leaf yield two edges, not a merged one:
+    /// the fan-in IS the blast radius the graph exists to show.
+    #[test]
+    fn graph_edges_keep_every_consumer_of_a_shared_leaf() {
+        let nodes = vec![
+            node(
+                "org/a",
+                Some("a"),
+                &["core"],
+                protofire::ExternalAudit::Never,
+            ),
+            node(
+                "org/b",
+                Some("b"),
+                &["core"],
+                protofire::ExternalAudit::Never,
+            ),
+            node(
+                "org/core",
+                Some("core"),
+                &[],
+                protofire::ExternalAudit::Stale,
+            ),
+        ];
+        let edges = graph_edges(&nodes);
+        assert_eq!(edges.len(), 2, "{edges:?}");
+        assert!(edges.iter().all(|e| e.to == "org/core"));
     }
 
     /// The campaign's whole purpose: the leaf precedes the consumer.

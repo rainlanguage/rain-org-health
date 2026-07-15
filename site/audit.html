@@ -228,6 +228,14 @@
            border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .nav a:hover { color: var(--ink); }
   .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .graphbox { height: 760px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
+  .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 12px; height: 12px; border-radius: 3px; border: 2px solid var(--ink-3); }
+  .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
+  .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
 </style>
 </head>
 <body>
@@ -244,6 +252,17 @@
     <a href="pipeline.html">Pipeline</a>
     <a href="metrics.html">Metrics</a>
   </nav>
+  <h2>Dependency graph · blast radius</h2>
+  <p class="graphhelp" id="graphhelp">
+    Click a repo to trace what it carries — drag to pan, scroll to zoom. Solidity repos only; an arrow points from a consumer to the dependency it stands on.
+  </p>
+  <div class="graphctl">
+    <label for="graphroot">Focus</label>
+    <select id="graphroot"></select>
+  </div>
+  <div id="graphlegend" class="legend"></div>
+  <div id="graph" class="graphbox"><div class="empty" id="graphempty">loading dependency graph…</div></div>
+
   <h2>External audit coverage · Protofire</h2>
   <div id="audit"><div class="empty" id="auditempty">loading external-audit coverage…</div></div>
   <footer>
@@ -251,6 +270,9 @@
     <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener">source</a>.
   </footer>
 </div>
+<script src="vendor/cytoscape.min.js"></script>
+<script src="vendor/elk.bundled.js"></script>
+<script src="vendor/cytoscape-elk.js"></script>
 <script type="module">
 const $ = (id) => document.getElementById(id);
 // Theme toggle: default follows the OS; the button stamps data-theme to override.
@@ -449,6 +471,167 @@ function renderAudit() {
   );
   box.append(note);
 }
+// ---- Dependency graph (#71) ----
+// Consumes health.json's `auditGraph` (roh-scan computes; the dashboard only
+// renders). The graph, not a sorted list, is the artifact: a topological order is
+// one of many valid linearisations, so a numbered list invents precedence between
+// independent leaves. The graph states what depends on what, and answers the
+// question an order cannot — given a finding in X, who inherits it?
+//
+// Audit state is carried by BORDER STYLE as well as colour, and every node is
+// labelled with its repo name: identity is the label, never the colour.
+const AUDIT_STYLE = {
+  current: { color: "#15803d", border: "solid" },
+  stale: { color: "#b45309", border: "dashed" },
+  never: { color: "#b91c1c", border: "double" },
+  unknown: { color: "#6b7280", border: "dotted" },
+  na: { color: "#0369a1", border: "solid" },
+};
+const AUDIT_HELP = {
+  current: "audited at the current tag",
+  stale: "audited, source moved since",
+  never: "no audit on record",
+  unknown: "audit lookup FAILED — indeterminate, not a confirmed gap",
+  na: "audited but no tags to date it against",
+};
+// Below this the 11px labels stop being readable, so the graph stops carrying
+// identity and becomes decoration.
+const MIN_READABLE_ZOOM = 0.9;
+const GRAPH_HELP_DEFAULT =
+  "Click a repo to trace what it carries — drag to pan, scroll to zoom. Solidity repos only; an arrow points from a consumer to the dependency it stands on.";
+
+function renderGraphLegend(present) {
+  const box = $("graphlegend");
+  for (const state of ["current", "stale", "never", "na", "unknown"]) {
+    if (!present.has(state)) continue;
+    const key = document.createElement("span");
+    key.className = "key";
+    const sw = document.createElement("span");
+    sw.className = "swatch";
+    sw.style.background = AUDIT_STYLE[state].color;
+    sw.style.borderStyle = AUDIT_STYLE[state].border;
+    key.append(sw, document.createTextNode(`${state} — ${AUDIT_HELP[state]}`));
+    box.append(key);
+  }
+}
+
+function renderGraph() {
+  const g = data.auditGraph;
+  const box = $("graph");
+  if (!g || !g.nodes || g.nodes.length === 0) {
+    $("graphempty").textContent = "No dependency graph in health.json yet.";
+    return;
+  }
+  $("graphempty").remove();
+  renderGraphLegend(new Set(g.nodes.map((n) => n.audit)));
+
+  const elements = [
+    ...g.nodes.map((n) => ({ data: { id: n.repo, label: n.repo, audit: n.audit } })),
+    ...g.edges.map((e) => ({ data: { source: e.from, target: e.to } })),
+  ];
+
+  const cy = cytoscape({
+    container: box,
+    elements,
+    // Labels render through cytoscape's own canvas text — never innerHTML.
+    style: [
+      { selector: "node", style: {
+          label: "data(label)", "font-size": 13, "text-valign": "center",
+          "background-color": (n) => AUDIT_STYLE[n.data("audit")]?.color ?? "#6b7280",
+          "border-style": (n) => AUDIT_STYLE[n.data("audit")]?.border ?? "solid",
+          "border-width": 2, "border-color": "#201d1a", color: "#fff",
+          "text-outline-width": 2,
+          "text-outline-color": (n) => AUDIT_STYLE[n.data("audit")]?.color ?? "#6b7280",
+          shape: "round-rectangle", width: "label", padding: "6px", height: 22,
+      }},
+      { selector: "edge", style: {
+          width: 1, "line-color": "#c9c2b8", "target-arrow-color": "#c9c2b8",
+          "target-arrow-shape": "triangle", "curve-style": "bezier", opacity: 0.7,
+      }},
+      { selector: ".faded", style: { opacity: 0.12 } },
+      { selector: ".inherits", style: { "line-color": "#b91c1c", "target-arrow-color": "#b91c1c", width: 2.5, opacity: 1 } },
+      { selector: ".carries", style: { "border-color": "#b91c1c", "border-width": 4 } },
+    ],
+    layout: { name: "elk", nodeDimensionsIncludeLabels: true, elk: { algorithm: "layered", "elk.direction": "DOWN", "elk.spacing.nodeNode": 30, "elk.layered.spacing.nodeNodeBetweenLayers": 70, "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX", "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP" } },
+    wheelSensitivity: 0.2,
+    // Fitting 37 nodes to the viewport zooms to ~0.2, which shrinks the labels
+    // to a few pixels and leaves coloured confetti with no identity. Legibility
+    // wins over seeing everything at once: clamp the zoom and let the reader pan.
+    minZoom: 0.45,
+    maxZoom: 2.5,
+  });
+  // The whole org is 37 nodes / 151 edges — no legible static layout in a panel,
+  // and fitting it shrinks labels past readability. So the DATA is whole-org (any
+  // node's blast radius is answerable) while the default VIEW is one entrypoint's
+  // tree. Whole org stays one option away.
+  const ALL = "\u0000all";
+  const sel = $("graphroot");
+  let removed = cy.collection();
+  const subtreeSize = (id) => cy.getElementById(id).successors("node").length;
+  const roots = g.nodes
+    .map((n) => n.repo)
+    .sort((a, b) => subtreeSize(b) - subtreeSize(a) || a.localeCompare(b));
+  for (const repo of roots) {
+    const o = document.createElement("option");
+    o.value = repo;
+    o.textContent = `${repo} (${subtreeSize(repo) + 1} repos)`;
+    sel.append(o);
+  }
+  const allOpt = document.createElement("option");
+  allOpt.value = ALL;
+  allOpt.textContent = `whole org (${g.nodes.length} repos)`;
+  sel.append(allOpt);
+
+  function focus(root) {
+    cy.elements().removeClass("faded inherits carries");
+    const shown =
+      root === ALL
+        ? cy.elements()
+        : (() => {
+            const n = cy.getElementById(root);
+            const keep = n.union(n.successors());
+            return keep.union(keep.edgesWith(keep));
+          })();
+    // Remove rather than hide: a hidden element still takes part in the layout,
+    // so the focused nodes get positioned around a skeleton nobody can see and
+    // their edges trail off into empty space. Restore first so the previous
+    // focus's removals do not accumulate.
+    cy.batch(() => {
+      removed.restore();
+      removed = cy.elements().difference(shown).remove();
+    });
+    shown.layout({ name: "elk", nodeDimensionsIncludeLabels: true, elk: { algorithm: "layered", "elk.direction": "DOWN", "elk.spacing.nodeNode": 30, "elk.layered.spacing.nodeNodeBetweenLayers": 70, "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX", "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP" } }).run();
+    cy.fit(shown, 30);
+    if (cy.zoom() < MIN_READABLE_ZOOM) {
+      cy.zoom(MIN_READABLE_ZOOM);
+      cy.center(shown);
+    }
+    $("graphhelp").textContent = GRAPH_HELP_DEFAULT;
+  }
+  sel.addEventListener("change", () => focus(sel.value));
+  cy.ready(() => focus(roots[0]));
+
+  // Edges run consumer -> dependency, so a node's PREDECESSORS are the repos
+  // standing on it: its blast radius.
+  cy.on("tap", "node", (evt) => {
+    const n = evt.target;
+    cy.elements().addClass("faded").removeClass("inherits carries");
+    n.predecessors().union(n).union(n.successors()).removeClass("faded");
+    n.predecessors().addClass("inherits");
+    n.addClass("carries");
+    const above = n.predecessors("node").length;
+    $("graphhelp").textContent =
+      `${n.data("label")} (${n.data("audit")}) — ${above} repo${above === 1 ? "" : "s"} inherit its findings; ` +
+      `${n.successors("node").length} beneath it. Click the background to reset.`;
+  });
+  cy.on("tap", (evt) => {
+    if (evt.target === cy) {
+      cy.elements().removeClass("faded inherits carries");
+      $("graphhelp").textContent = GRAPH_HELP_DEFAULT;
+    }
+  });
+}
+
 async function load() {
   try {
     const r = await fetch("health.json", { cache: "no-store" });
@@ -463,6 +646,7 @@ async function load() {
     `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
     (isFinite(ago) ? ` (${ago}h ago)` : "");
   renderAudit();
+  renderGraph();
 }
 load();
 </script>

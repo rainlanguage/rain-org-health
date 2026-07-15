@@ -1153,8 +1153,41 @@ fn main() {
         //
         // `protofireAudits` is scan-cadence data (same producer/cadence as the rest of health.json),
         // so it belongs IN health.json — the dashboard already fetches it, no new artifact/fetch.
+        // #71: the first-party dependency DAG, for the whole org rather than one
+        // entrypoint's slice, so the dashboard can answer blast radius for any
+        // node. Nodes carry the audit verdict so the graph shows WHERE the sand
+        // is; edges are consumer -> dependency.
+        let graph_nodes: Vec<campaign::Node> = results
+            .iter()
+            .map(|r| campaign::Node {
+                repo: r.name.clone(),
+                package: r.package.clone(),
+                deps: r.deps.clone(),
+                audit: r.protofire.external_audit,
+            })
+            .collect();
+        let graph_edges = campaign::graph_edges(&graph_nodes);
+        // Every Solidity repo is a node, including one with no first-party edge
+        // either way. An isolated repo is not noise: unaudited with nothing
+        // beneath it, it is an audit with ZERO blockers — the cheapest work on
+        // the board, and dropping it would hide it. Non-Solidity repos are not
+        // audit targets and stay out.
+        let solidity: std::collections::BTreeSet<&str> = results
+            .iter()
+            .filter(|r| r.has_foundry)
+            .map(|r| r.name.as_str())
+            .collect();
+
         let doc = json!({
             "generatedAt": now,
+            "auditGraph": {
+                "nodes": graph_nodes.iter().filter(|n| solidity.contains(n.repo.as_str())).map(|n| json!({
+                    "repo": n.repo,
+                    "package": n.package,
+                    "audit": n.audit.as_str(),
+                })).collect::<Vec<_>>(),
+                "edges": graph_edges.iter().map(|e| json!({"from": e.from, "to": e.to})).collect::<Vec<_>>(),
+            },
             "org": org,
             "totalRepos": total,
             "reposWithFindings": findings.len(),
