@@ -407,7 +407,7 @@ function renderAudit() {
       const row = el("div", "au-row" + (r.externalAudit === "stale" ? " stale" : ""));
 
       const c1 = el("div", "au-repo");
-      c1.append(link(null, r.name, "https://github.com/" + data.org + "/" + r.name));
+      c1.append(link(null, r.name, "https://github.com/" + (r.org || data.org) + "/" + r.name));
       const auditedLabel = r.auditedRef ? "audited " + r.auditedRef : "audited via PDF";
       const sub = el("div", "au-sub", auditedLabel + (r.auditedDate ? " · " + day(r.auditedDate) : ""));
       c1.append(sub);
@@ -505,7 +505,7 @@ function renderAudit() {
     for (const r of never) {
       const row = el("div", "au-row");
       const c1 = el("div", "au-repo");
-      c1.append(link(null, r.name, "https://github.com/" + data.org + "/" + r.name));
+      c1.append(link(null, r.name, "https://github.com/" + (r.org || data.org) + "/" + r.name));
       c1.append(el("div", "au-sub", "no audit/protofire/ PDF"));
       const s2 = staleLine(r.name);
       if (s2) c1.append(s2);

@@ -255,6 +255,20 @@ Deno.test("audit report: a repo's stale dependency pins render on its own row", 
   );
 });
 
+Deno.test("audit report: a repo's link uses its own org, not the joined display org", () => {
+  const data = {
+    // data.org is the joined display string across orgs; a row must link via its
+    // OWN org so cross-org repos get correct GitHub URLs.
+    ...auditData([{ name: "issuer-repo", hasProtofireAudit: false, org: "S01-Issuer" }], 1),
+    org: "rainlanguage, S01-Issuer",
+  };
+  const link = auditBox(data).querySelectorAll("a").find((a) => (a.href || "").includes("issuer-repo"));
+  assert(
+    link && link.href === "https://github.com/S01-Issuer/issuer-repo",
+    `link should use the repo's own org: ${link && link.href}`,
+  );
+});
+
 Deno.test("audit report: a repo with no stale deps gets no stale line", () => {
   const data = {
     ...auditData([{ name: "clean", hasProtofireAudit: false }], 1),

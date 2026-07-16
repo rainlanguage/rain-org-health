@@ -24,7 +24,7 @@ jobs:
           # github.token reads the org's PUBLIC repos + search. Set a SCAN_TOKEN secret
           # (PAT with org read) only if private repos must be scanned.
           GH_TOKEN: ${{ secrets.SCAN_TOKEN || github.token }}
-          ORG: rainlanguage
+          ORGS: "rainlanguage cyclofinance S01-Issuer"
         run: nix run .#roh-scan
       - name: Commit if changed
         run: |
