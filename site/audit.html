@@ -228,7 +228,8 @@
            border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .nav a:hover { color: var(--ink); }
   .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
-  .gsurface { position: relative; }
+  .gsizer { position: relative; }
+  .gsurface { position: relative; transform-origin: 0 0; }
   .gedges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
   .gedge { fill: none; stroke: var(--border); stroke-width: 1; }
   .gnode { position: absolute; box-sizing: border-box; display: inline-flex; flex-direction: column;
@@ -252,7 +253,7 @@
   .legend .swatch.au-never { border-color: var(--crit); background: var(--bg); }
   .legend .swatch.au-na { border-color: var(--ink-3); background: var(--surface-2); }
   .legend .swatch.au-unknown { border-color: var(--ink-3); background: var(--surface-2); border-style: dotted; }
-  .graphbox { height: clamp(400px, 78vh, 760px); padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
+  .graphbox { height: clamp(400px, 78vh, 760px); overflow: auto; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
   .gnode.tr-off { opacity: 0.15; }
   .gnode.tr-root { outline: 2px solid var(--accent); outline-offset: 1px; }
   .gedge.tr-on { stroke: var(--accent); stroke-width: 1.6; }
@@ -285,7 +286,7 @@
   </nav>
   <h2>Dependency graph · blast radius</h2>
   <p class="graphhelp" id="graphhelp">
-    Tap a repo to trace what it carries — everything above it stands on it. Drag to pan, scroll or pinch to zoom, tap the background to clear.
+    Tap a repo to trace what it carries — everything above it stands on it. Scroll to pan, pinch or ctrl-scroll to zoom, tap the background to clear.
     Solidity repos only; an arrow points from a consumer to the dependency it stands on.
     Coverage is <strong>Protofire</strong> only: a repo audited by someone else still reads as uncovered here, because counting a PDF this scan cannot date would be a false coverage claim.
   </p>
@@ -301,7 +302,6 @@
   </footer>
 </div>
 <script src="vendor/elk.bundled.js"></script>
-<script src="vendor/panzoom.min.js"></script>
 <script type="module">
 const $ = (id) => document.getElementById(id);
 // Theme toggle: default follows the OS; the button stamps data-theme to override.
@@ -671,7 +671,9 @@ async function renderGraph() {
   const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
   svg.classList.add("gedges");
   surface.append(svg);
-  box.append(surface);
+  const sizer = el("div", "gsizer");
+  sizer.append(surface);
+  box.append(sizer);
 
   // Measure the real DOM: ELK needs each node's box, and the browser is the
   // only thing that knows how wide this text actually renders. Measuring beats
@@ -738,44 +740,19 @@ async function renderGraph() {
     }
   }
 
-  // The nodes are real elements, so transforming the one surface zooms text,
-  // borders and edges together and leaves the anchors clickable. canvas mode
-  // makes the whole box the drag surface, so empty space pans too. Panzoom sets
-  // overflow/cursor/touch-action on the box itself.
-  // Open on the whole graph rather than the top-left corner of a surface far
-  // wider than the box.
+  // clientWidth spans the padding box, so drop the 16px each side to land the
+  // graph inside the padding rather than under it.
   const fit = Math.min(1, (box.clientWidth - 32) / laid.width, (box.clientHeight - 32) / laid.height);
 
-  // The nodes are real elements, so transforming the one surface zooms text,
-  // borders and edges together and leaves the anchors clickable. canvas mode
-  // makes the whole box the drag surface, so empty space pans too. Panzoom binds
-  // drag and pinch itself and owns overflow/cursor/touch-action on the box.
-  // Losing pan/zoom is survivable; losing the graph is not. If the vendored
-  // script did not load, fall back to the box's own scrollbars.
-  if (typeof Panzoom !== "function") {
-    box.style.overflow = "auto";
-  } else {
-    const pz = Panzoom(surface, {
-      canvas: true,
-      // A phone viewport is a fraction of this graph's width, so the floor must
-      // admit the fit-to-box scale or the graph could never be seen whole.
-      minScale: Math.min(0.1, fit),
-      maxScale: 4,
-      cursor: "grab",
-      excludeClass: "gn-anchor",
-      pinchAndPan: true,
-      // Open on the whole graph. This has to be the start state rather than a
-      // zoom()/pan() call after construction: Panzoom re-applies startX/startY in
-      // a deferred task once it has accurate dimensions, so a fit applied straight
-      // afterwards is silently reset to 0,0 a macrotask later.
-      startScale: fit,
-      // Panzoom pivots on the surface's centre, so put the fitted graph's own
-      // top-left corner back against the box's.
-      startX: (laid.width / 2) * (1 - 1 / fit),
-      startY: (laid.height / 2) * (1 - 1 / fit),
-    });
-    box.addEventListener("wheel", pz.zoomWithWheel, { passive: false });
-  }
+  // Fit the whole graph into the box, once, as a plain static scale. Zoom and pan
+  // are the browser's own: it scrolls this box natively, and pinch (or ctrl-scroll)
+  // zooms the page, which keeps the point under the fingers fixed because the
+  // browser -- not this file -- is doing the arithmetic. A script that binds those
+  // gestures has to set touch-action: none, which suppresses the device's real
+  // pinch-zoom in order to reimplement it worse.
+  surface.style.transform = `scale(${fit})`;
+  sizer.style.width = `${laid.width * fit}px`;
+  sizer.style.height = `${laid.height * fit}px`;
 
   // A pan ends in a click, so only a gesture that stayed put counts as a trace.
   let downAt = null;
