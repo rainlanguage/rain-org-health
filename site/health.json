@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-16T11:54:47Z",
+  "generatedAt": "2026-07-16T12:56:40Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1330,7 +1330,7 @@
         "repo": "st0x.deploy",
         "org": "S01-Issuer",
         "package": "st0x-deploy",
-        "audit": "never",
+        "audit": "stale",
         "depsKnown": true,
         "blockedBy": [
           "rain.datacontract",
@@ -2584,8 +2584,8 @@
   "reposWithFindings": 32,
   "reposWholeRepoAudited": 0,
   "reposNeverAudited": 102,
-  "reposExternallyAudited": 24,
-  "reposNeverExternallyAudited": 16,
+  "reposExternallyAudited": 25,
+  "reposNeverExternallyAudited": 15,
   "summary": {
     "per-chain-etherscan-key": 11,
     "old-actions-checkout": 9,
@@ -3707,26 +3707,33 @@
     {
       "name": "st0x.deploy",
       "org": "S01-Issuer",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "st0x.deploy.v0.1.1.may-2026.pdf",
+          "path": "audit/protofire/st0x.deploy.v0.1.1.may-2026.pdf",
+          "lastCommitIso": "2026-07-16T12:46:26Z",
+          "auditDateIso": "2026-05-20T14:39:06Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "v0.1.1",
+      "anchorKind": "tag",
       "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 11430,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
+      "auditedDate": "2026-05-20T14:39:06Z",
+      "latestTag": "sol-v0.1.9",
+      "latestTagIso": "2026-07-15T16:38:33Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 2620,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 2515,
+      "sourceLocRemovedSinceAudit": 105,
+      "filesChangedSinceAudit": 139,
+      "commitsSinceAudit": 223,
       "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
+      "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
+      "daysSinceAudit": 57
     },
     {
       "name": "rain.math.float",
