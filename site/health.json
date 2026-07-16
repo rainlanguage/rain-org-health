@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-16T09:03:06Z",
+  "generatedAt": "2026-07-16T09:31:42Z",
   "auditGraph": {
     "nodes": [
       {
@@ -435,13 +435,6 @@
           "rain.sol.codegen",
           "rain.solmem"
         ]
-      },
-      {
-        "repo": "spirit-kitty-rain",
-        "package": null,
-        "audit": "never",
-        "depsKnown": true,
-        "blockedBy": []
       }
     ],
     "edges": [
@@ -1080,12 +1073,12 @@
     ]
   },
   "org": "rainlanguage",
-  "totalRepos": 93,
+  "totalRepos": 92,
   "reposWithFindings": 27,
   "reposWholeRepoAudited": 0,
-  "reposNeverAudited": 93,
+  "reposNeverAudited": 92,
   "reposExternallyAudited": 24,
-  "reposNeverExternallyAudited": 14,
+  "reposNeverExternallyAudited": 13,
   "summary": {
     "per-chain-etherscan-key": 10,
     "old-actions-checkout": 7,
@@ -1615,10 +1608,6 @@
       "lastAudit": null
     },
     {
-      "name": "spirit-kitty-rain",
-      "lastAudit": null
-    },
-    {
       "name": "sqlite-web",
       "lastAudit": null
     },
@@ -1931,29 +1920,6 @@
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": 3782,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
-      "name": "spirit-kitty-rain",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 228,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
