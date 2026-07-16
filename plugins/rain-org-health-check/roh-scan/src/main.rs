@@ -783,6 +783,9 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
 /// and the external (Protofire) audit situation.
 struct RepoResult {
     name: String,
+    /// The GitHub org this repo belongs to — carried per-repo so a multi-org scan
+    /// builds correct links and can attribute each node to its org.
+    org: String,
     signals: Vec<&'static str>,
     last_audit: Option<LastAudit>,
     protofire: ProtofireResult,
@@ -836,12 +839,13 @@ fn resolve_json_out(json_out_env: Option<String>, json_flag: Option<String>) -> 
 /// via a shared cursor) and return a result for EVERY repo. Each result is
 /// produced by `work` and carries its own repo identity, so completeness and the
 /// result SET are independent of `par` — `par=1` and `par=N` yield the same set.
-fn scan_repos<T, F>(repos: Vec<String>, par: usize, work: F) -> Vec<T>
+fn scan_repos<I, T, F>(items: Vec<I>, par: usize, work: F) -> Vec<T>
 where
-    F: Fn(&str) -> T + Sync,
+    I: Send + Sync,
+    F: Fn(&I) -> T + Sync,
     T: Send,
 {
-    let total = repos.len();
+    let total = items.len();
     if total == 0 {
         return Vec::new();
     }
@@ -852,10 +856,10 @@ where
         for _ in 0..nworkers {
             s.spawn(|| loop {
                 let idx = next.fetch_add(1, Ordering::Relaxed);
-                if idx >= repos.len() {
+                if idx >= items.len() {
                     break;
                 }
-                let out = work(&repos[idx]);
+                let out = work(&items[idx]);
                 results.lock().unwrap().push(out);
             });
         }
@@ -883,7 +887,15 @@ fn main() {
     // POPULATE by default: a bare run writes site/health.json (never print-and-discard);
     // JSON_OUT overrides the default; --json <path> overrides both.
     let json_out = resolve_json_out(std::env::var("JSON_OUT").ok(), json_flag);
-    let org = std::env::var("ORG").unwrap_or_else(|_| "rainlanguage".into());
+    // Multi-org: ORGS is a space-separated list; ORG stays as the single-org
+    // fallback. All orgs merge into one scan so the graph joins cross-org edges
+    // by package name — a consumer in one org standing on a dependency published
+    // in another shows up as inherited ground (#79-followup: S01-Issuer/cyclo).
+    let orgs: Vec<String> = std::env::var("ORGS")
+        .ok()
+        .map(|s| s.split_whitespace().map(str::to_string).collect::<Vec<_>>())
+        .filter(|v| !v.is_empty())
+        .unwrap_or_else(|| vec![std::env::var("ORG").unwrap_or_else(|_| "rainlanguage".into())]);
     let par: usize = std::env::var("PAR")
         .ok()
         .and_then(|s| s.parse().ok())
@@ -895,44 +907,56 @@ fn main() {
     // falsely clear ground. Captured before `repos_arg` is consumed.
     let partial_scan = !repos_arg.is_empty();
 
-    let repos: Vec<String> = if !repos_arg.is_empty() {
-        repos_arg
+    // Each item is (org, repo): the org is carried per-repo so cross-org scans
+    // build the right GitHub links and headers, and repo-name collisions across
+    // orgs (e.g. DefiLlama forks) stay distinct.
+    let repo_pairs: Vec<(String, String)> = if !repos_arg.is_empty() {
+        let o = orgs[0].clone();
+        repos_arg.into_iter().map(|r| (o.clone(), r)).collect()
     } else {
-        let mut v: Vec<String> = gh_stdout(&[
-            "repo",
-            "list",
-            &org,
-            "--no-archived",
-            "--limit",
-            "300",
-            "--json",
-            "name,isFork",
-            "-q",
-            ".[]|select(.isFork==false)|.name",
-        ])
-        .unwrap_or_default()
-        .lines()
-        .map(str::to_string)
-        .collect();
+        let mut v: Vec<(String, String)> = Vec::new();
+        for org in &orgs {
+            let names = gh_stdout(&[
+                "repo",
+                "list",
+                org,
+                "--no-archived",
+                "--limit",
+                "300",
+                "--json",
+                "name,isFork",
+                "-q",
+                ".[]|select(.isFork==false)|.name",
+            ])
+            .unwrap_or_default();
+            for name in names.lines() {
+                v.push((org.clone(), name.to_string()));
+            }
+        }
         v.sort();
         v
     };
-    let total = repos.len();
-    eprintln!("Scanning {total} {org} repos (parallel={par})...");
+    let total = repo_pairs.len();
+    eprintln!(
+        "Scanning {total} repos across {} org(s): {} (parallel={par})...",
+        orgs.len(),
+        orgs.join(", ")
+    );
 
     // One shared `gh` fetcher borrowed by every worker (`GhApi: Sync`). It retries
     // the secondary-rate-limit failure that `par` concurrent subprocesses provoke,
     // so a transient error surfaces as `unknown`, never a false `never`.
     let gh = GhCli::new();
-    let mut results: Vec<RepoResult> = scan_repos(repos, par, |repo| {
-        let inputs = fetch_inputs(&org, repo);
+    let mut results: Vec<RepoResult> = scan_repos(repo_pairs, par, |(org, repo)| {
+        let repo = repo.as_str();
+        let inputs = fetch_inputs(org, repo);
         // A repo counts toward the Protofire (Solidity-audit) report only if it is a
         // Foundry/Solidity project — proxied by a foundry.toml, which fetch_inputs
         // already retrieves, so this gate adds no extra request (#54).
         let has_foundry = !inputs.foundry.trim().is_empty();
         let signals = detect_signals(&inputs);
-        let last_audit = fetch_last_audit(&org, repo);
-        let protofire = fetch_protofire_audit(&gh, &org, repo);
+        let last_audit = fetch_last_audit(org, repo);
+        let protofire = fetch_protofire_audit(&gh, org, repo);
         // #37: a never-audited Solidity repo's FULL non-test .sol LOC (via a shallow
         // clone) quantifies the coverage gap; audited repos use their drift instead.
         // Only CONFIRMED never-audited repos get a LOC count. `!has_pdf` also matches
@@ -940,12 +964,13 @@ fn main() {
         // presented as a confirmed coverage gap with a source-LOC magnitude (cf #52).
         let full_source_loc =
             if has_foundry && protofire.external_audit == protofire::ExternalAudit::Never {
-                count_source_loc(&org, repo)
+                count_source_loc(org, repo)
             } else {
                 None
             };
         RepoResult {
             name: repo.to_string(),
+            org: org.clone(),
             package: foundry_package_name(&inputs.foundry),
             version: foundry_package_version(&inputs.foundry),
             // A manifest that will not parse leaves deps UNKNOWN — not none.
@@ -960,25 +985,25 @@ fn main() {
         }
     });
     // findings view (owned) so we can re-sort `results` for audit recency afterwards
-    let mut findings: Vec<(String, Vec<&'static str>)> = results
+    let mut findings: Vec<(String, String, Vec<&'static str>)> = results
         .iter()
         .filter(|r| !r.signals.is_empty())
-        .map(|r| (r.name.clone(), r.signals.clone()))
+        .map(|r| (r.name.clone(), r.org.clone(), r.signals.clone()))
         .collect();
-    findings.sort_by(|a, b| (b.1.len(), &a.0).cmp(&(a.1.len(), &b.0)));
+    findings.sort_by(|a, b| (b.2.len(), &a.0).cmp(&(a.2.len(), &b.0)));
 
     // text report
     println!("\n================ rain org health: per-repo findings ================");
     if findings.is_empty() {
         println!("  (no findings — all clean)");
     } else {
-        for (repo, sigs) in &findings {
+        for (repo, _org, sigs) in &findings {
             println!("  {:<30} {}", repo, sigs.join(" "));
         }
     }
     println!("\n================ org-wide summary (repos affected) =================");
     let mut counts: std::collections::HashMap<&str, usize> = std::collections::HashMap::new();
-    for (_, sigs) in &findings {
+    for (_, _, sigs) in &findings {
         for s in sigs {
             *counts.entry(s).or_insert(0) += 1;
         }
@@ -1108,6 +1133,12 @@ fn main() {
                 audit: r.protofire.external_audit,
             })
             .collect();
+        // repo -> org, so each graph node can be attributed to its org in a
+        // multi-org scan without threading org through the graph module.
+        let repo_org: std::collections::HashMap<&str, &str> = results
+            .iter()
+            .map(|r| (r.name.as_str(), r.org.as_str()))
+            .collect();
         // Every Solidity repo is a node, including one with no first-party edge
         // either way. An isolated repo is not noise: unaudited with nothing
         // beneath it, it is an audit with ZERO blockers — the cheapest work on
@@ -1134,6 +1165,7 @@ fn main() {
                 (Ok(edges), Ok(blockers)) => json!({
                     "nodes": graph_nodes.iter().filter(|n| solidity.contains(n.repo.as_str())).map(|n| json!({
                         "repo": n.repo,
+                        "org": repo_org.get(n.repo.as_str()).copied().unwrap_or(""),
                         "package": n.package,
                         "audit": n.audit.as_str(),
                         "depsKnown": n.deps_known,
@@ -1169,7 +1201,10 @@ fn main() {
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
-            "org": org,
+            // Every org scanned. `org` stays as a joined display string so any
+            // reader that has not moved to `orgs` still shows something sensible.
+            "orgs": orgs,
+            "org": orgs.join(", "),
             "totalRepos": total,
             "reposWithFindings": findings.len(),
             "reposWholeRepoAudited": audited,
@@ -1177,10 +1212,10 @@ fn main() {
             "reposExternallyAudited": externally_audited,
             "reposNeverExternallyAudited": protofire_total - externally_audited,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
-            "repos": findings.iter().map(|(r, sigs)| json!({"name": r, "signals": sigs})).collect::<Vec<_>>(),
+            "repos": findings.iter().map(|(r, org, sigs)| json!({"name": r, "org": org, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| match &r.last_audit {
-                None => json!({ "name": r.name, "lastAudit": serde_json::Value::Null }),
-                Some(a) => json!({ "name": r.name, "lastAudit": {
+                None => json!({ "name": r.name, "org": r.org, "lastAudit": serde_json::Value::Null }),
+                Some(a) => json!({ "name": r.name, "org": r.org, "lastAudit": {
                     "auditedAt": a.audited_at,
                     "auditedCommit": a.audited_commit,
                     "skillVersion": a.skill_version,
@@ -1196,6 +1231,7 @@ fn main() {
                 };
                 json!({
                     "name": r.name,
+                    "org": r.org,
                     "hasProtofireAudit": p.has_pdf,
                     "externalAudit": p.external_audit.as_str(),
                     "auditPdfs": p.pdfs.iter().map(|pdf| json!({
@@ -1627,7 +1663,8 @@ mod tests {
 
     #[test]
     fn scan_repos_empty_input_is_empty() {
-        let out: Vec<(String, &'static str)> = scan_repos(Vec::new(), 4, |r| (r.to_string(), "x"));
+        let out: Vec<(String, &'static str)> =
+            scan_repos(Vec::<String>::new(), 4, |r: &String| (r.to_string(), "x"));
         assert!(out.is_empty());
     }
 

@@ -284,7 +284,7 @@ function render() {
     const row = document.createElement("div");
     row.className = "repo";
     const a = document.createElement("a");
-    a.href = `https://github.com/${data.org}/${r.name}`;
+    a.href = `https://github.com/${r.org || data.org}/${r.name}`;
     a.textContent = r.name;
     a.rel = "noopener noreferrer";
     a.target = "_blank";
