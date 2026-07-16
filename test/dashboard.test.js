@@ -192,6 +192,36 @@ function fsmBox(hq) {
   return box;
 }
 
+const blastRadius = bind("audit.html", "blastRadius", [], []);
+const radius = (edges, root) => [...blastRadius(edges, root)].sort().join(",");
+
+Deno.test("graph blast radius: walks consumer->dependency edges backwards, root included", () => {
+  // c stands on b, b stands on a. So a carries b and c; c carries only itself.
+  const edges = [
+    { from: "b", to: "a" },
+    { from: "c", to: "b" },
+  ];
+  assert(radius(edges, "a") === "a,b,c", "a carries b and c, and itself");
+  assert(radius(edges, "b") === "b,c", "b carries c, and itself");
+  assert(radius(edges, "c") === "c", "nothing stands on c");
+});
+
+Deno.test("graph blast radius: a dependency cycle terminates", () => {
+  const edges = [
+    { from: "a", to: "b" },
+    { from: "b", to: "a" },
+  ];
+  assert(radius(edges, "a") === "a,b", "a cycle resolves to both repos, not a hang");
+});
+
+Deno.test("graph blast radius: an unrelated edge is not carried", () => {
+  const edges = [
+    { from: "b", to: "a" },
+    { from: "z", to: "y" },
+  ];
+  assert(radius(edges, "a") === "a,b", "y/z stand on nothing that stands on a");
+});
+
 function auditRow(over) {
   return {
     name: "r",

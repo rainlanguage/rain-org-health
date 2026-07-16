@@ -233,7 +233,7 @@
   .gedge { fill: none; stroke: var(--border); stroke-width: 1; }
   .gnode { position: absolute; box-sizing: border-box; display: inline-flex; flex-direction: column;
            align-items: center; gap: 1px; padding: 5px 8px; border-radius: 6px; border: 1.5px solid;
-           font-size: 11px; line-height: 1.3; white-space: nowrap; background: var(--surface); }
+           font-size: 11px; line-height: 1.3; white-space: nowrap; background: var(--surface); cursor: pointer; }
   .gn-repo { font-weight: 600; }
   .gn-meta { font-size: 10px; }
   .gn-plain { color: var(--ink-2); }
@@ -252,7 +252,11 @@
   .legend .swatch.au-never { border-color: var(--crit); background: var(--bg); }
   .legend .swatch.au-na { border-color: var(--ink-3); background: var(--surface-2); }
   .legend .swatch.au-unknown { border-color: var(--ink-3); background: var(--surface-2); border-style: dotted; }
-  .graphbox { height: 760px; overflow: auto; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
+  .graphbox { height: clamp(400px, 78vh, 760px); padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
+  .gnode.tr-off { opacity: 0.15; }
+  .gnode.tr-root { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .gedge.tr-on { stroke: var(--accent); stroke-width: 1.6; }
+  .gedge.tr-off { opacity: 0.1; }
   .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .legend .key { display: inline-flex; align-items: center; gap: 6px; }
@@ -262,15 +266,6 @@
   .graphsum .none { color: var(--ink-2); }
   .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
-  .gn { font-size: 10px; line-height: 1.35; text-align: center; white-space: nowrap; pointer-events: none; }
-  .gn a { pointer-events: auto; }
-  .gn-repo { display: block; font-weight: 600; }
-  .gn-meta { display: block; }
-  .gn-anchor { text-decoration: none; border-bottom: 1px dotted currentColor; }
-  .gn-anchor:hover { border-bottom-style: solid; }
-  .gn .add { color: var(--clean); }
-  .gn .del { color: var(--crit); }
-  .gn-plain { opacity: 0.85; }
   .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
 </style>
 </head>
@@ -290,7 +285,8 @@
   </nav>
   <h2>Dependency graph · blast radius</h2>
   <p class="graphhelp" id="graphhelp">
-    Click a repo to trace what it carries — drag to pan, scroll to zoom. Solidity repos only; an arrow points from a consumer to the dependency it stands on.
+    Tap a repo to trace what it carries — everything above it stands on it. Drag to pan, scroll or pinch to zoom, tap the background to clear.
+    Solidity repos only; an arrow points from a consumer to the dependency it stands on.
     Coverage is <strong>Protofire</strong> only: a repo audited by someone else still reads as uncovered here, because counting a PDF this scan cannot date would be a false coverage claim.
   </p>
   <p class="graphsum" id="graphsum"></p>
@@ -305,6 +301,7 @@
   </footer>
 </div>
 <script src="vendor/elk.bundled.js"></script>
+<script src="vendor/panzoom.min.js"></script>
 <script type="module">
 const $ = (id) => document.getElementById(id);
 // Theme toggle: default follows the OS; the button stamps data-theme to override.
@@ -637,6 +634,27 @@ function renderGraphSummary(nodes, pf) {
   box.append(document.createTextNode("."));
 }
 
+// An edge runs consumer -> dependency, so what a repo carries — everything that
+// transitively stands on it — is found by walking those edges backwards. The
+// root is included: a repo carries itself.
+function blastRadius(edges, root) {
+  const dependents = new Map();
+  for (const e of edges) {
+    if (!dependents.has(e.to)) dependents.set(e.to, []);
+    dependents.get(e.to).push(e.from);
+  }
+  const seen = new Set([root]);
+  const stack = [root];
+  while (stack.length) {
+    for (const consumer of dependents.get(stack.pop()) ?? []) {
+      if (seen.has(consumer)) continue;
+      seen.add(consumer);
+      stack.push(consumer);
+    }
+  }
+  return seen;
+}
+
 async function renderGraph() {
   const g = data.auditGraph;
   const box = $("graph");
@@ -706,6 +724,7 @@ async function renderGraph() {
   svg.setAttribute("width", laid.width);
   svg.setAttribute("height", laid.height);
 
+  const paths = [];
   for (const e of laid.edges ?? []) {
     for (const sec of e.sections ?? []) {
       const pts = [sec.startPoint, ...(sec.bendPoints ?? []), sec.endPoint];
@@ -715,8 +734,68 @@ async function renderGraph() {
       path.dataset.from = e.sources[0];
       path.dataset.to = e.targets[0];
       svg.append(path);
+      paths.push(path);
     }
   }
+
+  // The nodes are real elements, so transforming the one surface zooms text,
+  // borders and edges together and leaves the anchors clickable. canvas mode
+  // makes the whole box the drag surface, so empty space pans too. Panzoom sets
+  // overflow/cursor/touch-action on the box itself.
+  // Open on the whole graph rather than the top-left corner of a surface far
+  // wider than the box.
+  const fit = Math.min(1, (box.clientWidth - 32) / laid.width, (box.clientHeight - 32) / laid.height);
+
+  // The nodes are real elements, so transforming the one surface zooms text,
+  // borders and edges together and leaves the anchors clickable. canvas mode
+  // makes the whole box the drag surface, so empty space pans too. Panzoom binds
+  // drag and pinch itself and owns overflow/cursor/touch-action on the box.
+  // Losing pan/zoom is survivable; losing the graph is not. If the vendored
+  // script did not load, fall back to the box's own scrollbars.
+  if (typeof Panzoom !== "function") {
+    box.style.overflow = "auto";
+  } else {
+    const pz = Panzoom(surface, {
+      canvas: true,
+      origin: "0 0",
+      // A phone viewport is a fraction of this graph's width, so the floor must
+      // admit the fit-to-box scale or the graph could never be seen whole.
+      minScale: Math.min(0.1, fit),
+      maxScale: 4,
+      cursor: "grab",
+      excludeClass: "gn-anchor",
+      pinchAndPan: true,
+    });
+    box.addEventListener("wheel", pz.zoomWithWheel, { passive: false });
+    if (fit < 1) pz.zoom(fit);
+  }
+
+  // A pan ends in a click, so only a gesture that stayed put counts as a trace.
+  let downAt = null;
+  box.addEventListener("pointerdown", (ev) => {
+    downAt = { x: ev.clientX, y: ev.clientY };
+  });
+  box.addEventListener("click", (ev) => {
+    const moved = downAt && Math.abs(ev.clientX - downAt.x) + Math.abs(ev.clientY - downAt.y) > 4;
+    downAt = null;
+    if (moved || ev.target.closest("a")) return;
+    const target = ev.target.closest(".gnode");
+    if (!target) {
+      for (const d of els.values()) d.classList.remove("tr-off", "tr-root");
+      for (const path of paths) path.classList.remove("tr-on", "tr-off");
+      return;
+    }
+    const set = blastRadius(g.edges, target.dataset.repo);
+    for (const [repo, d] of els) {
+      d.classList.toggle("tr-off", !set.has(repo));
+      d.classList.toggle("tr-root", repo === target.dataset.repo);
+    }
+    for (const path of paths) {
+      const on = set.has(path.dataset.from) && set.has(path.dataset.to);
+      path.classList.toggle("tr-on", on);
+      path.classList.toggle("tr-off", !on);
+    }
+  });
 }
 
 async function load() {
