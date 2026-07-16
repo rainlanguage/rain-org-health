@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-16T20:14:33Z",
+  "generatedAt": "2026-07-16T21:20:23Z",
   "auditGraph": {
     "nodes": [
       {
@@ -724,6 +724,15 @@
             "latest": "0.1.8"
           }
         ]
+      },
+      {
+        "repo": "rain.sol.binmaskflag",
+        "org": "rainlanguage",
+        "package": "rain-sol-binmaskflag",
+        "audit": "current",
+        "depsKnown": true,
+        "blockedBy": [],
+        "staleDeps": []
       },
       {
         "repo": "rain.sol.codegen",
