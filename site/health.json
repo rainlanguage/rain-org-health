@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-16T07:52:43Z",
+  "generatedAt": "2026-07-16T09:03:06Z",
   "auditGraph": {
     "nodes": [
       {
@@ -293,6 +293,24 @@
           "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.math.fixedpoint",
+          "rain.math.float",
+          "rain.math.saturating",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string"
+        ]
+      },
+      {
+        "repo": "rain.vats.flare",
+        "package": "rain-vats-flare",
+        "audit": "never",
+        "depsKnown": true,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.factory",
           "rain.flare",
           "rain.lib.memkv",
           "rain.math.fixedpoint",
@@ -303,6 +321,7 @@
           "rain.solmem",
           "rain.string",
           "rain.tofu.erc20-decimals",
+          "rain.vats",
           "rainlang"
         ]
       },
@@ -804,10 +823,6 @@
       },
       {
         "from": "rain.vats",
-        "to": "rain.flare"
-      },
-      {
-        "from": "rain.vats",
         "to": "rain.math.fixedpoint"
       },
       {
@@ -820,6 +835,38 @@
       },
       {
         "from": "rain.vats",
+        "to": "rain.verify.interface"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.extrospection"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.factory"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.flare"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.math.fixedpoint"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.math.float"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.string"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.vats"
+      },
+      {
+        "from": "rain.vats.flare",
         "to": "rain.verify.interface"
       },
       {
@@ -1033,12 +1080,12 @@
     ]
   },
   "org": "rainlanguage",
-  "totalRepos": 92,
+  "totalRepos": 93,
   "reposWithFindings": 27,
   "reposWholeRepoAudited": 0,
-  "reposNeverAudited": 92,
+  "reposNeverAudited": 93,
   "reposExternallyAudited": 24,
-  "reposNeverExternallyAudited": 13,
+  "reposNeverExternallyAudited": 14,
   "summary": {
     "per-chain-etherscan-key": 10,
     "old-actions-checkout": 7,
@@ -1492,6 +1539,10 @@
       "lastAudit": null
     },
     {
+      "name": "rain.vats.flare",
+      "lastAudit": null
+    },
+    {
       "name": "rain.verify",
       "lastAudit": null
     },
@@ -1765,6 +1816,29 @@
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": 324,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.vats.flare",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 70,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -2081,6 +2155,48 @@
       "daysSinceAudit": 168
     },
     {
+      "name": "rain.vats",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "ethgild-v3.a9901296.2025-05.pdf",
+          "path": "audit/protofire/ethgild-v3.a9901296.2025-05.pdf",
+          "lastCommitIso": "2026-05-31T08:42:41Z",
+          "auditDateIso": "2025-05-24T14:58:47Z"
+        },
+        {
+          "filename": "ethgild-v3.b44855c2.2025-07.pdf",
+          "path": "audit/protofire/ethgild-v3.b44855c2.2025-07.pdf",
+          "lastCommitIso": "2026-05-31T08:42:41Z",
+          "auditDateIso": "2025-07-31T11:52:33Z"
+        },
+        {
+          "filename": "rain.vats.v0.1.5-r2.0.may-2026.pdf",
+          "path": "audit/protofire/rain.vats.v0.1.5-r2.0.may-2026.pdf",
+          "lastCommitIso": "2026-05-31T08:42:41Z",
+          "auditDateIso": "2026-05-20T14:18:51Z"
+        }
+      ],
+      "referencePdfIndex": 2,
+      "auditedRef": "v0.1.5",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-05-20T14:18:51Z",
+      "latestTag": "sol-v0.1.6",
+      "latestTagIso": "2026-06-01T03:59:52Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 173,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 66,
+      "sourceLocRemovedSinceAudit": 107,
+      "filesChangedSinceAudit": 9,
+      "commitsSinceAudit": 43,
+      "sourceDriftTruncated": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
+      "daysSinceAudit": 57
+    },
+    {
       "name": "rain.metadata",
       "hasProtofireAudit": true,
       "externalAudit": "stale",
@@ -2139,48 +2255,6 @@
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
       "daysSinceAudit": 179
-    },
-    {
-      "name": "rain.vats",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "ethgild-v3.a9901296.2025-05.pdf",
-          "path": "audit/protofire/ethgild-v3.a9901296.2025-05.pdf",
-          "lastCommitIso": "2026-05-31T08:42:41Z",
-          "auditDateIso": "2025-05-24T14:58:47Z"
-        },
-        {
-          "filename": "ethgild-v3.b44855c2.2025-07.pdf",
-          "path": "audit/protofire/ethgild-v3.b44855c2.2025-07.pdf",
-          "lastCommitIso": "2026-05-31T08:42:41Z",
-          "auditDateIso": "2025-07-31T11:52:33Z"
-        },
-        {
-          "filename": "rain.vats.v0.1.5-r2.0.may-2026.pdf",
-          "path": "audit/protofire/rain.vats.v0.1.5-r2.0.may-2026.pdf",
-          "lastCommitIso": "2026-05-31T08:42:41Z",
-          "auditDateIso": "2026-05-20T14:18:51Z"
-        }
-      ],
-      "referencePdfIndex": 2,
-      "auditedRef": "v0.1.5",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-05-20T14:18:51Z",
-      "latestTag": "sol-v0.1.6",
-      "latestTagIso": "2026-06-01T03:59:52Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 103,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 66,
-      "sourceLocRemovedSinceAudit": 37,
-      "filesChangedSinceAudit": 5,
-      "commitsSinceAudit": 41,
-      "sourceDriftTruncated": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 57
     },
     {
       "name": "rainlang.interface",
