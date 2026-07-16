@@ -14,9 +14,13 @@ as a Claude plugin (`.claude-plugin/`, `plugins/rain-org-health-check/`).
   `Cargo.toml`/`Cargo.lock` live at the repo root, so builds root there.
 - `site/` — the dashboard: `index.html` (inline CSS/JS) + `health.json`.
   Deployed by `pages.yml`. Nothing is fetched from a CDN or any third-party host
-  at runtime: a library the pages need is vendored into `site/vendor/`
-  (byte-identical to its published release, prettier-ignored) and loaded from
-  the same origin.
+  at runtime: a library the pages genuinely need (the ELK layout engine) is
+  vendored into `site/vendor/` (byte-identical to its published release,
+  prettier-ignored) and loaded from the same origin. Pan and zoom are not such a
+  need — the browser scrolls and pinch-zooms natively, and its zoom focuses
+  correctly because it is the thing reading the gesture. Binding those in JS
+  requires `touch-action: none`, which suppresses the real pinch-zoom to
+  reimplement it worse.
 - `flake.nix` — `packages.roh-scan`, `packages.screenshot`,
   `packages.default = roh-scan`; `devShells.default` composes rainix's devshell
   (so `pre-commit run --all-files` reproduces CI's static suite).
