@@ -192,34 +192,31 @@ function fsmBox(hq) {
   return box;
 }
 
-const blastRadius = bind("audit.html", "blastRadius", [], []);
-const radius = (edges, root) => [...blastRadius(edges, root)].sort().join(",");
+const standsOn = bind("audit.html", "standsOn", [], []);
+const ground = (edges, root) => [...standsOn(edges, root)].sort().join(",");
 
-Deno.test("graph blast radius: walks consumer->dependency edges backwards, root included", () => {
-  // c stands on b, b stands on a. So a carries b and c; c carries only itself.
+Deno.test("graph trace: follows consumer->dependency edges forward, root included", () => {
+  // c stands on b, b stands on a. So c stands on b and a; a stands on nothing.
   const edges = [
     { from: "b", to: "a" },
     { from: "c", to: "b" },
   ];
-  assert(radius(edges, "a") === "a,b,c", "a carries b and c, and itself");
-  assert(radius(edges, "b") === "b,c", "b carries c, and itself");
-  assert(radius(edges, "c") === "c", "nothing stands on c");
+  assert(ground(edges, "c") === "a,b,c", "c transitively stands on b and a");
+  assert(ground(edges, "b") === "a,b", "b stands on a");
+  assert(ground(edges, "a") === "a", "a is foundation: it stands on nothing");
 });
 
-Deno.test("graph blast radius: a dependency cycle terminates", () => {
+Deno.test("graph trace: a dependency cycle terminates", () => {
   const edges = [
     { from: "a", to: "b" },
     { from: "b", to: "a" },
   ];
-  assert(radius(edges, "a") === "a,b", "a cycle resolves to both repos, not a hang");
+  assert(ground(edges, "a") === "a,b", "a cycle resolves to both repos, not a hang");
 });
 
-Deno.test("graph blast radius: an unrelated edge is not carried", () => {
-  const edges = [
-    { from: "b", to: "a" },
-    { from: "z", to: "y" },
-  ];
-  assert(radius(edges, "a") === "a,b", "y/z stand on nothing that stands on a");
+Deno.test("graph trace: consumers are NOT traced, only dependencies", () => {
+  // b stands on a. Tracing a must not light b — b is above a, not beneath it.
+  assert(ground([{ from: "b", to: "a" }], "a") === "a", "a does not stand on its consumer");
 });
 
 function auditRow(over) {
