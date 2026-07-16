@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-16T03:41:53Z",
+  "generatedAt": "2026-07-16T06:34:11Z",
   "auditGraph": {
     "nodes": [
       {
@@ -392,7 +392,7 @@
       {
         "repo": "rainlang",
         "package": "rainlang",
-        "audit": "never",
+        "audit": "stale",
         "depsKnown": true,
         "blockedBy": [
           "rain.datacontract",
@@ -1037,8 +1037,8 @@
   "reposWithFindings": 27,
   "reposWholeRepoAudited": 0,
   "reposNeverAudited": 92,
-  "reposExternallyAudited": 23,
-  "reposNeverExternallyAudited": 14,
+  "reposExternallyAudited": 24,
+  "reposNeverExternallyAudited": 13,
   "summary": {
     "per-chain-etherscan-key": 10,
     "old-actions-checkout": 7,
@@ -1866,29 +1866,6 @@
       "daysSinceAudit": null
     },
     {
-      "name": "rainlang",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 12870,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
       "name": "spirit-kitty-rain",
       "hasProtofireAudit": false,
       "externalAudit": "never",
@@ -2462,6 +2439,36 @@
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
       "daysSinceAudit": 65
+    },
+    {
+      "name": "rainlang",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
+          "path": "audit/protofire/rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
+          "lastCommitIso": "2026-07-15T19:41:05Z",
+          "auditDateIso": "2026-03-08T19:12:56Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-03-08T19:12:56Z",
+      "latestTag": "sol-v0.1.8",
+      "latestTagIso": "2026-07-03T11:54:31Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": 134,
+      "commitsSinceAudit": 215,
+      "sourceDriftTruncated": true,
+      "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1...main",
+      "daysSinceAudit": 130
     },
     {
       "name": "rain.intorastring",
