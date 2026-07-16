@@ -757,7 +757,6 @@ async function renderGraph() {
   } else {
     const pz = Panzoom(surface, {
       canvas: true,
-      origin: "0 0",
       // A phone viewport is a fraction of this graph's width, so the floor must
       // admit the fit-to-box scale or the graph could never be seen whole.
       minScale: Math.min(0.1, fit),
@@ -765,9 +764,17 @@ async function renderGraph() {
       cursor: "grab",
       excludeClass: "gn-anchor",
       pinchAndPan: true,
+      // Open on the whole graph. This has to be the start state rather than a
+      // zoom()/pan() call after construction: Panzoom re-applies startX/startY in
+      // a deferred task once it has accurate dimensions, so a fit applied straight
+      // afterwards is silently reset to 0,0 a macrotask later.
+      startScale: fit,
+      // Panzoom pivots on the surface's centre, so put the fitted graph's own
+      // top-left corner back against the box's.
+      startX: (laid.width / 2) * (1 - 1 / fit),
+      startY: (laid.height / 2) * (1 - 1 / fit),
     });
     box.addEventListener("wheel", pz.zoomWithWheel, { passive: false });
-    if (fit < 1) pz.zoom(fit);
   }
 
   // A pan ends in a click, so only a gesture that stayed put counts as a trace.
