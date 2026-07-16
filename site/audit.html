@@ -286,7 +286,7 @@
   </nav>
   <h2>Dependency graph · blast radius</h2>
   <p class="graphhelp" id="graphhelp">
-    Tap a repo to trace what it carries — everything above it stands on it. Scroll to pan, pinch or ctrl-scroll to zoom, tap the background to clear.
+    Tap a repo to trace the ground it stands on — everything beneath it that an audit has to clear first. Scroll to pan, pinch or ctrl-scroll to zoom, tap the background to clear.
     Solidity repos only; an arrow points from a consumer to the dependency it stands on.
     Coverage is <strong>Protofire</strong> only: a repo audited by someone else still reads as uncovered here, because counting a PDF this scan cannot date would be a false coverage claim.
   </p>
@@ -634,22 +634,23 @@ function renderGraphSummary(nodes, pf) {
   box.append(document.createTextNode("."));
 }
 
-// An edge runs consumer -> dependency, so what a repo carries — everything that
-// transitively stands on it — is found by walking those edges backwards. The
-// root is included: a repo carries itself.
-function blastRadius(edges, root) {
-  const dependents = new Map();
+// An edge runs consumer -> dependency, so the ground a repo stands on —
+// everything it transitively depends on — is found by following those edges
+// forward. The root is included: a repo stands on itself. This is the direction
+// an audit is planned in, because the ground has to be cleared first.
+function standsOn(edges, root) {
+  const deps = new Map();
   for (const e of edges) {
-    if (!dependents.has(e.to)) dependents.set(e.to, []);
-    dependents.get(e.to).push(e.from);
+    if (!deps.has(e.from)) deps.set(e.from, []);
+    deps.get(e.from).push(e.to);
   }
   const seen = new Set([root]);
   const stack = [root];
   while (stack.length) {
-    for (const consumer of dependents.get(stack.pop()) ?? []) {
-      if (seen.has(consumer)) continue;
-      seen.add(consumer);
-      stack.push(consumer);
+    for (const dep of deps.get(stack.pop()) ?? []) {
+      if (seen.has(dep)) continue;
+      seen.add(dep);
+      stack.push(dep);
     }
   }
   return seen;
@@ -769,7 +770,7 @@ async function renderGraph() {
       for (const path of paths) path.classList.remove("tr-on", "tr-off");
       return;
     }
-    const set = blastRadius(g.edges, target.dataset.repo);
+    const set = standsOn(g.edges, target.dataset.repo);
     for (const [repo, d] of els) {
       d.classList.toggle("tr-off", !set.has(repo));
       d.classList.toggle("tr-root", repo === target.dataset.repo);
