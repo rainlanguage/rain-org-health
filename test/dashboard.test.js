@@ -219,6 +219,50 @@ Deno.test("graph trace: consumers are NOT traced, only dependencies", () => {
   assert(ground([{ from: "b", to: "a" }], "a") === "a", "a does not stand on its consumer");
 });
 
+Deno.test("audit report: a repo's stale dependency pins render on its own row", () => {
+  const data = {
+    ...auditData([
+      auditRow({
+        name: "consumer",
+        sourceLocAddedSinceAudit: 1,
+        sourceLocRemovedSinceAudit: 0,
+        filesChangedSinceAudit: 1,
+        commitsSinceAudit: 1,
+      }),
+      { name: "clean", hasProtofireAudit: false },
+    ], 1),
+    auditGraph: {
+      nodes: [
+        {
+          repo: "consumer",
+          staleDeps: [
+            { repo: "dep-a", pinned: "0.1.7", latest: "0.2.0" },
+            { repo: "dep-b", pinned: "0.1.2", latest: "0.1.5" },
+          ],
+        },
+        { repo: "clean", staleDeps: [] },
+      ],
+    },
+  };
+  const stale = collect(auditBox(data), "au-staledeps");
+  // Exactly the one repo with stale pins gets a line — on its own row, not a summary.
+  assert(stale.length === 1, `expected one stale row, got ${stale.length}`);
+  const t = textOf(stale[0]);
+  assert(t.includes("2 stale deps"), `count shown: ${t}`);
+  assert(
+    t.includes("dep-a 0.1.7→0.2.0") && t.includes("dep-b 0.1.2→0.1.5"),
+    `both pins listed pinned->latest: ${t}`,
+  );
+});
+
+Deno.test("audit report: a repo with no stale deps gets no stale line", () => {
+  const data = {
+    ...auditData([{ name: "clean", hasProtofireAudit: false }], 1),
+    auditGraph: { nodes: [{ repo: "clean", staleDeps: [] }] },
+  };
+  assert(collect(auditBox(data), "au-staledeps").length === 0, "no stale deps means no stale line on the row");
+});
+
 function auditRow(over) {
   return {
     name: "r",

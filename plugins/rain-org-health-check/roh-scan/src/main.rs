@@ -16,7 +16,7 @@ use protofire::{
     counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
     AuditAnchor, AuditPdf, CompareFile,
 };
-use signals::{detect_signals, foundry_package_name, RepoInputs};
+use signals::{detect_signals, foundry_package_name, foundry_package_version, RepoInputs};
 
 use serde_json::json;
 use std::process::Command;
@@ -793,8 +793,11 @@ struct RepoResult {
     /// This repo's soldeer `[package].name` — what consumers name it by, so it
     /// is the audit graph's join key (#71).
     package: Option<String>,
-    /// Soldeer package names from this repo's `[dependencies]` (#71).
-    deps: Vec<String>,
+    /// This repo's `[package].version` — the version its node represents, and
+    /// what a dependant's pin is judged stale against (#79).
+    version: Option<String>,
+    /// This repo's `[dependencies]`, each with its pinned version (#71, #79).
+    deps: Vec<graph::Dep>,
     /// False when `foundry.toml` would not parse: deps unknown, not absent.
     deps_known: bool,
 }
@@ -944,6 +947,7 @@ fn main() {
         RepoResult {
             name: repo.to_string(),
             package: foundry_package_name(&inputs.foundry),
+            version: foundry_package_version(&inputs.foundry),
             // A manifest that will not parse leaves deps UNKNOWN — not none.
             // Collapsing the two lets a broken manifest read as clear ground.
             deps: graph::foundry_dependencies(&inputs.foundry).unwrap_or_default(),
@@ -1098,6 +1102,7 @@ fn main() {
             .map(|r| graph::Node {
                 repo: r.name.clone(),
                 package: r.package.clone(),
+                version: r.version.clone(),
                 deps: r.deps.clone(),
                 deps_known: r.deps_known,
                 audit: r.protofire.external_audit,
@@ -1133,8 +1138,20 @@ fn main() {
                         "audit": n.audit.as_str(),
                         "depsKnown": n.deps_known,
                         "blockedBy": blockers.get(&n.repo).cloned().unwrap_or_default(),
+                        // The dependencies this repo pins below their current
+                        // version — what an audit should move to latest (#79).
+                        "staleDeps": edges.iter()
+                            .filter(|e| e.from == n.repo && e.stale)
+                            .map(|e| json!({"repo": e.to, "pinned": e.pinned, "latest": e.latest}))
+                            .collect::<Vec<_>>(),
                     })).collect::<Vec<_>>(),
-                    "edges": edges.iter().map(|e| json!({"from": e.from, "to": e.to})).collect::<Vec<_>>(),
+                    "edges": edges.iter().map(|e| json!({
+                        "from": e.from,
+                        "to": e.to,
+                        "stale": e.stale,
+                        "pinned": e.pinned,
+                        "latest": e.latest,
+                    })).collect::<Vec<_>>(),
                 }),
                 // Two repos publishing one package makes every edge for it point
                 // at whichever landed last.

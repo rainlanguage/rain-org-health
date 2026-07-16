@@ -256,8 +256,11 @@
   .graphbox { height: clamp(400px, 78vh, 760px); overflow: auto; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
   .gnode.tr-off { opacity: 0.15; }
   .gnode.tr-root { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .gedge.stale { stroke: var(--crit); stroke-width: 1.4; }
   .gedge.tr-on { stroke: var(--accent); stroke-width: 1.6; }
+  .gedge.tr-on.stale { stroke: var(--crit); }
   .gedge.tr-off { opacity: 0.1; }
+  .gn-stale { font-size: 9px; color: var(--crit); font-weight: 600; }
   .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .legend .key { display: inline-flex; align-items: center; gap: 6px; }
@@ -265,6 +268,8 @@
   .graphsum { margin: 0 0 10px; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--debt); border-radius: 6px; padding: 8px 10px; line-height: 1.5; }
   .graphsum b { font-weight: 600; }
   .graphsum .none { color: var(--ink-2); }
+  .au-staledeps { font-size: 12px; color: var(--crit); margin-top: 3px; }
+  .au-staledeps b { font-weight: 600; }
   .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
   .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -346,6 +351,23 @@ function renderAudit() {
   };
   const day = (iso) => (typeof iso === "string" ? iso.slice(0, 10) : "");
 
+  // Stale dependency pins per repo, from the graph scan (#79): a repo pinning a
+  // dependency below its current version resolves a different closure than the
+  // graph draws, so the audit should move it to latest. Shown on each repo's own
+  // row here rather than as one org-wide list.
+  const staleByRepo = new Map((data.auditGraph?.nodes ?? []).map((n) => [n.repo, n.staleDeps ?? []]));
+  const staleLine = (repo) => {
+    const sd = staleByRepo.get(repo) ?? [];
+    if (!sd.length) return null;
+    const line = el("div", "au-staledeps");
+    line.append(el("b", null, `⚠ ${sd.length} stale dep${sd.length > 1 ? "s" : ""}: `));
+    sd.forEach((d, i) => {
+      if (i > 0) line.append(", ");
+      line.append(`${d.repo} ${d.pinned}→${d.latest}`);
+    });
+    return line;
+  };
+
   box.textContent = "";
   const rows = data.protofireAudits || [];
   if (!rows.length) {
@@ -400,6 +422,8 @@ function renderAudit() {
       if (r.anchorKind === "commit") c1.append(el("div", "au-flag", "commit-anchored"));
       else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
         c1.append(el("div", "au-flag", "no tag in PDF name"));
+      const s1 = staleLine(r.name);
+      if (s1) c1.append(s1);
 
       const c2 = el("div");
       c2.append(el("span", "au-status " + r.externalAudit, r.externalAudit));
@@ -483,6 +507,8 @@ function renderAudit() {
       const c1 = el("div", "au-repo");
       c1.append(link(null, r.name, "https://github.com/" + data.org + "/" + r.name));
       c1.append(el("div", "au-sub", "no audit/protofire/ PDF"));
+      const s2 = staleLine(r.name);
+      if (s2) c1.append(s2);
       const c2 = el("div");
       c2.append(el("span", "au-status never", "never"));
       const c3 = el("div", "au-drift");
@@ -594,6 +620,12 @@ function nodeEl(n, p) {
     // cannot claim its ground is clear, and must not look like it does.
     box.append(el("span", "gn-warn", "manifest unreadable — deps unknown"));
   }
+  const stale = n.staleDeps ?? [];
+  if (stale.length) {
+    // Pins a dependency below its current version, so this repo's real closure
+    // differs from the one drawn — an audit should move it to latest (#79).
+    box.append(el("span", "gn-stale", `⚠ ${stale.length} stale dep${stale.length > 1 ? "s" : ""}`));
+  }
   return box;
 }
 
@@ -612,32 +644,27 @@ function renderGraphSummary(nodes, pf) {
 
   if (ready.length === 0) {
     box.append(el("span", "none", "Nothing is unblocked: every uncovered repo stands on another that is uncovered too."));
-    return;
+  } else {
+    box.append(
+      el("b", null, `${ready.length} of ${nodes.length}`),
+      document.createTextNode(
+        " Solidity repos have clear ground beneath and no current Protofire audit — auditing one now yields findings that are genuinely its own. Most inherited first: ",
+      ),
+    );
+    ready.slice(0, 3).forEach((n, i) => {
+      const p = pf.get(n.repo);
+      const drift =
+        p && p.sourceLocAddedSinceAudit != null
+          ? `+${p.sourceLocAddedSinceAudit}/\u2212${p.sourceLocRemovedSinceAudit}`
+          : p && p.fullSourceLoc != null
+            ? `${p.fullSourceLoc} LOC`
+            : "";
+      if (i > 0) box.append(document.createTextNode(", "));
+      box.append(el("b", null, n.repo), document.createTextNode(` (${inheritors.get(n.repo) ?? 0} inherit${drift ? `, ${drift}` : ""})`));
+    });
+    box.append(document.createTextNode("."));
   }
-  box.append(
-    el("b", null, `${ready.length} of ${nodes.length}`),
-    document.createTextNode(
-      " Solidity repos have clear ground beneath and no current Protofire audit — auditing one now yields findings that are genuinely its own. Most inherited first: ",
-    ),
-  );
-  ready.slice(0, 3).forEach((n, i) => {
-    const p = pf.get(n.repo);
-    const drift =
-      p && p.sourceLocAddedSinceAudit != null
-        ? `+${p.sourceLocAddedSinceAudit}/\u2212${p.sourceLocRemovedSinceAudit}`
-        : p && p.fullSourceLoc != null
-          ? `${p.fullSourceLoc} LOC`
-          : "";
-    if (i > 0) box.append(document.createTextNode(", "));
-    box.append(el("b", null, n.repo), document.createTextNode(` (${inheritors.get(n.repo) ?? 0} inherit${drift ? `, ${drift}` : ""})`));
-  });
-  box.append(document.createTextNode("."));
 }
-
-// An edge runs consumer -> dependency, so the ground a repo stands on —
-// everything it transitively depends on — is found by following those edges
-// forward. The root is included: a repo stands on itself. This is the direction
-// an audit is planned in, because the ground has to be cleared first.
 function standsOn(edges, root) {
   const deps = new Map();
   for (const e of edges) {
@@ -727,6 +754,10 @@ async function renderGraph() {
   svg.setAttribute("width", laid.width);
   svg.setAttribute("height", laid.height);
 
+  // A stale edge — the consumer pins the dependency below its current version —
+  // draws red, so a link the graph can't be trusted to represent is visible.
+  const staleEdges = new Set(g.edges.filter((e) => e.stale).map((e) => `${e.from} ${e.to}`));
+
   const paths = [];
   for (const e of laid.edges ?? []) {
     for (const sec of e.sections ?? []) {
@@ -734,6 +765,7 @@ async function renderGraph() {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", pts.map((pt, i) => `${i ? "L" : "M"}${pt.x},${pt.y}`).join(" "));
       path.classList.add("gedge");
+      if (staleEdges.has(`${e.sources[0]} ${e.targets[0]}`)) path.classList.add("stale");
       path.dataset.from = e.sources[0];
       path.dataset.to = e.targets[0];
       svg.append(path);
