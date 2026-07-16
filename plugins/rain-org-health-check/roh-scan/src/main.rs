@@ -1133,12 +1133,6 @@ fn main() {
                 audit: r.protofire.external_audit,
             })
             .collect();
-        // repo -> org, so each graph node can be attributed to its org in a
-        // multi-org scan without threading org through the graph module.
-        let repo_org: std::collections::HashMap<&str, &str> = results
-            .iter()
-            .map(|r| (r.name.as_str(), r.org.as_str()))
-            .collect();
         // Every Solidity repo is a node, including one with no first-party edge
         // either way. An isolated repo is not noise: unaudited with nothing
         // beneath it, it is an audit with ZERO blockers — the cheapest work on
@@ -1163,9 +1157,9 @@ fn main() {
                 graph::blockers(&graph_nodes),
             ) {
                 (Ok(edges), Ok(blockers)) => json!({
-                    "nodes": graph_nodes.iter().filter(|n| solidity.contains(n.repo.as_str())).map(|n| json!({
+                    "nodes": graph_nodes.iter().zip(results.iter()).filter(|(n, _)| solidity.contains(n.repo.as_str())).map(|(n, r)| json!({
                         "repo": n.repo,
-                        "org": repo_org.get(n.repo.as_str()).copied().unwrap_or(""),
+                        "org": r.org,
                         "package": n.package,
                         "audit": n.audit.as_str(),
                         "depsKnown": n.deps_known,
