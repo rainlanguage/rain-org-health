@@ -31,6 +31,18 @@ pub fn is_cleared(audit: protofire::ExternalAudit) -> bool {
     }
 }
 
+/// One declared dependency: the soldeer package name and the version this repo
+/// pins it at. The pin matters because the graph draws each dependency node at
+/// its CURRENT version, but a consumer may pin an older one whose own transitive
+/// dependencies differ — a stale pin (#79).
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub struct Dep {
+    pub package: String,
+    /// The version requirement as written in `[dependencies]`. Empty when the
+    /// manifest gives no parseable version (e.g. a git-only inline table).
+    pub version_req: String,
+}
+
 /// One repo in the org, as the graph needs it.
 #[derive(Clone, Debug)]
 pub struct Node {
@@ -41,10 +53,14 @@ pub struct Node {
     /// The soldeer `[package].name` this repo publishes, if any. This is what
     /// consumers name it by, so it is the graph's join key.
     pub package: Option<String>,
-    /// Soldeer package names from this repo's `[dependencies]`. Empty with
+    /// The `[package].version` this repo currently declares — the version the
+    /// node represents, and the "latest" a consumer's pin is judged stale
+    /// against. `None` when the repo publishes no versioned package.
+    pub version: Option<String>,
+    /// This repo's `[dependencies]`, each with the version it pins. Empty with
     /// `deps_known == false` means the manifest would not parse, NOT that the
     /// repo has no dependencies.
-    pub deps: Vec<String>,
+    pub deps: Vec<Dep>,
     /// False when `foundry.toml` would not parse. Its dependencies are unknown,
     /// so nothing may claim its ground is clear.
     pub deps_known: bool,
@@ -88,6 +104,13 @@ pub fn package_index(nodes: &[Node]) -> Result<BTreeMap<&str, &Node>, DuplicateP
 pub struct Edge {
     pub from: String,
     pub to: String,
+    /// True when `from` pins `to` at a version below `to`'s current version, so
+    /// the closure `from` actually resolves differs from the one drawn (#79).
+    pub stale: bool,
+    /// The version `from` pins `to` at, and `to`'s current version — carried so
+    /// the report can say "pins X, latest Y" without re-deriving.
+    pub pinned: String,
+    pub latest: String,
 }
 
 /// Extract the first-party dependency package names from a `foundry.toml`.
@@ -100,9 +123,10 @@ pub struct Edge {
 /// audit before something it depends on, which is the exact failure this module
 /// exists to prevent.
 ///
-/// Returns every declared dependency name; mapping them to repos (and dropping
-/// third-party ones) is `build_campaign`'s job, since only it knows the org.
-pub fn foundry_dependencies(foundry: &str) -> Result<Vec<String>, MalformedManifest> {
+/// Returns every declared dependency with its pinned version; mapping them to
+/// repos (and dropping third-party ones) is the graph builder's job, since only
+/// it knows the org.
+pub fn foundry_dependencies(foundry: &str) -> Result<Vec<Dep>, MalformedManifest> {
     let value = foundry
         .parse::<toml::Value>()
         .map_err(|e| MalformedManifest(e.to_string()))?;
@@ -113,7 +137,48 @@ pub fn foundry_dependencies(foundry: &str) -> Result<Vec<String>, MalformedManif
     let Some(table) = value.get("dependencies").and_then(|d| d.as_table()) else {
         return Ok(Vec::new());
     };
-    Ok(table.keys().cloned().collect())
+    // A dependency's value is either a bare version string (`dep = "0.1.2"`) or
+    // an inline table (`dep = { version = "0.1.2", url = "..." }`); a git-only
+    // table has no version, which is left empty rather than invented.
+    Ok(table
+        .iter()
+        .map(|(name, val)| {
+            let version_req = match val {
+                toml::Value::String(s) => s.clone(),
+                toml::Value::Table(t) => t
+                    .get("version")
+                    .and_then(|v| v.as_str())
+                    .unwrap_or("")
+                    .to_string(),
+                _ => String::new(),
+            };
+            Dep {
+                package: name.clone(),
+                version_req,
+            }
+        })
+        .collect())
+}
+
+/// Whether `pinned` is an earlier semver than `current` — the test for a stale
+/// dependency pin. Both are parsed as `major.minor.patch` (leading `=`/`^`/`~`/`v`
+/// and any pre-release/build suffix ignored). Returns `None` when either side has
+/// no parseable version, so an unknown is never reported as stale.
+pub fn version_behind(pinned: &str, current: &str) -> Option<bool> {
+    fn parse(s: &str) -> Option<(u64, u64, u64)> {
+        let s = s.trim().trim_start_matches(['=', '^', '~', 'v', ' ']);
+        let core = s
+            .split(['-', '+'])
+            .next()
+            .unwrap_or("")
+            .trim_end_matches('.');
+        let mut it = core.split('.');
+        let major = it.next()?.parse().ok()?;
+        let minor = it.next().unwrap_or("0").parse().ok()?;
+        let patch = it.next().unwrap_or("0").parse().ok()?;
+        Some((major, minor, patch))
+    }
+    Some(parse(pinned)? < parse(current)?)
 }
 
 /// A `foundry.toml` that will not parse. Its dependencies are unknown, which is
@@ -137,11 +202,19 @@ pub fn graph_edges(nodes: &[Node]) -> Result<Vec<Edge>, DuplicatePackage> {
     let by_package = package_index(nodes)?;
     let mut edges: Vec<Edge> = Vec::new();
     for node in nodes {
-        for dep_pkg in &node.deps {
-            if let Some(dep) = by_package.get(dep_pkg.as_str()) {
+        for dep in &node.deps {
+            if let Some(target) = by_package.get(dep.package.as_str()) {
+                let latest = target.version.clone().unwrap_or_default();
+                // Stale only when we can prove the pin is behind the target's
+                // current version; a missing or unparseable version is unknown,
+                // not stale.
+                let stale = version_behind(&dep.version_req, &latest).unwrap_or(false);
                 edges.push(Edge {
                     from: node.repo.clone(),
-                    to: dep.repo.clone(),
+                    to: target.repo.clone(),
+                    stale,
+                    pinned: dep.version_req.clone(),
+                    latest,
                 });
             }
         }
@@ -167,12 +240,12 @@ fn deps_beneath<'a>(
         let Some(node) = by_repo.get(cur) else {
             continue;
         };
-        for dep_pkg in &node.deps {
-            if let Some(dep) = by_package.get(dep_pkg.as_str()) {
-                if dep.repo != repo {
-                    out.insert(dep.repo.clone());
+        for dep in &node.deps {
+            if let Some(target) = by_package.get(dep.package.as_str()) {
+                if target.repo != repo {
+                    out.insert(target.repo.clone());
                 }
-                stack.push(&dep.repo);
+                stack.push(&target.repo);
             }
         }
     }
@@ -213,9 +286,34 @@ mod tests {
         Node {
             repo: repo.to_string(),
             package: package.map(str::to_string),
-            deps: deps.iter().map(|d| d.to_string()).collect(),
+            version: None,
+            deps: deps
+                .iter()
+                .map(|d| Dep {
+                    package: d.to_string(),
+                    version_req: String::new(),
+                })
+                .collect(),
             deps_known: true,
             audit,
+        }
+    }
+
+    /// Node carrying a version and version-pinned deps, for staleness tests.
+    fn node_v(repo: &str, package: &str, version: &str, deps: &[(&str, &str)]) -> Node {
+        Node {
+            repo: repo.to_string(),
+            package: Some(package.to_string()),
+            version: Some(version.to_string()),
+            deps: deps
+                .iter()
+                .map(|(p, v)| Dep {
+                    package: p.to_string(),
+                    version_req: v.to_string(),
+                })
+                .collect(),
+            deps_known: true,
+            audit: protofire::ExternalAudit::Never,
         }
     }
 
@@ -241,16 +339,22 @@ inline-form = { version = "0.1.0", url = "https://example.invalid/x.zip" }
 recursive_deps = false
 "#;
         let mut deps = foundry_dependencies(foundry).expect("valid manifest");
-        deps.sort();
+        deps.sort_by(|a, b| a.package.cmp(&b.package));
+        let named: Vec<(&str, &str)> = deps
+            .iter()
+            .map(|d| (d.package.as_str(), d.version_req.as_str()))
+            .collect();
         assert_eq!(
-            deps,
+            named,
             vec![
-                "@openzeppelin-contracts",
-                "forge-std",
-                "inline-form",
-                "rain-solmem",
-                "rainlang"
-            ]
+                ("@openzeppelin-contracts", "5.6.1"),
+                ("forge-std", "1.16.1"),
+                // the inline-table form still yields its version
+                ("inline-form", "0.1.0"),
+                ("rain-solmem", "0.1.3"),
+                ("rainlang", "0.1.5"),
+            ],
+            "every dependency keeps its pinned version, string and inline-table forms alike"
         );
     }
 
@@ -292,9 +396,51 @@ recursive_deps = false
             graph_edges(&nodes).unwrap(),
             vec![Edge {
                 from: "app".into(),
-                to: "lib".into()
+                to: "lib".into(),
+                stale: false,
+                pinned: String::new(),
+                latest: String::new(),
             }]
         );
+    }
+
+    /// A pin below the dependency's current version is a stale edge, carrying the
+    /// pinned and latest versions; a pin at the current version is not (#79).
+    #[test]
+    fn flags_a_stale_pin_and_carries_the_versions() {
+        let nodes = vec![
+            node_v(
+                "consumer",
+                "consumer",
+                "1.0.0",
+                &[("core", "0.1.7"), ("fresh", "0.2.0")],
+            ),
+            node_v("core", "core", "0.2.0", &[]),
+            node_v("fresh", "fresh", "0.2.0", &[]),
+        ];
+        let edges = graph_edges(&nodes).unwrap();
+        let core = edges.iter().find(|e| e.to == "core").unwrap();
+        assert!(core.stale, "consumer pins core 0.1.7 while core is 0.2.0");
+        assert_eq!(core.pinned, "0.1.7");
+        assert_eq!(core.latest, "0.2.0");
+        let fresh = edges.iter().find(|e| e.to == "fresh").unwrap();
+        assert!(!fresh.stale, "consumer pins fresh at its current 0.2.0");
+    }
+
+    #[test]
+    fn version_behind_only_flags_actually_older() {
+        assert_eq!(version_behind("0.1.7", "0.2.0"), Some(true));
+        assert_eq!(version_behind("0.1.7", "0.1.7"), Some(false));
+        assert_eq!(
+            version_behind("0.2.0", "0.1.7"),
+            Some(false),
+            "ahead is not stale"
+        );
+        // leading operators and a `v` prefix are tolerated on either side
+        assert_eq!(version_behind("^1.2.3", "v1.3.0"), Some(true));
+        // an unparseable version is unknown, never stale
+        assert_eq!(version_behind("", "0.2.0"), None);
+        assert_eq!(version_behind("main", "0.2.0"), None);
     }
 
     /// Two repos on the same leaf yield two edges, not a merged one: the fan-in

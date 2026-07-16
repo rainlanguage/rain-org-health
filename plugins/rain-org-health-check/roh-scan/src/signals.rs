@@ -24,6 +24,17 @@ fn re(pattern: &str) -> Regex {
 
 /// Extract the `[package] name = "..."` value from foundry.toml (section-scoped), if any.
 pub fn foundry_package_name(foundry: &str) -> Option<String> {
+    foundry_package_field(foundry, "name")
+}
+
+/// Extract the `[package] version = "..."` value — the version the repo currently
+/// publishes, which a dependant's pin is judged stale against (#79).
+pub fn foundry_package_version(foundry: &str) -> Option<String> {
+    foundry_package_field(foundry, "version")
+}
+
+/// The value of a scalar `key = "..."` under `[package]`, section-scoped.
+fn foundry_package_field(foundry: &str, key: &str) -> Option<String> {
     let mut in_package = false;
     for line in foundry.lines() {
         let t = line.trim();
@@ -32,7 +43,7 @@ pub fn foundry_package_name(foundry: &str) -> Option<String> {
             continue;
         }
         if in_package {
-            if let Some(rest) = t.strip_prefix("name") {
+            if let Some(rest) = t.strip_prefix(key) {
                 let rest = rest.trim_start();
                 if let Some(v) = rest.strip_prefix('=') {
                     let v = v.trim().trim_matches('"').trim_matches('\'');

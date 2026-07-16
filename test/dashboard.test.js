@@ -219,6 +219,33 @@ Deno.test("graph trace: consumers are NOT traced, only dependencies", () => {
   assert(ground([{ from: "b", to: "a" }], "a") === "a", "a does not stand on its consumer");
 });
 
+const stalePins = bind("audit.html", "stalePins", [], []);
+const pinLine = (p) => `${p.consumer}->${p.dep} ${p.pinned}/${p.latest}`;
+
+Deno.test("graph stale pins: flattens each node's staleDeps, sorted by consumer then dep", () => {
+  const nodes = [
+    { repo: "b", staleDeps: [{ repo: "a", pinned: "0.1.7", latest: "0.2.0" }] },
+    { repo: "a", staleDeps: [] },
+    {
+      repo: "c",
+      staleDeps: [
+        { repo: "b", pinned: "0.0.9", latest: "0.1.0" },
+        { repo: "a", pinned: "0.1.0", latest: "0.2.0" },
+      ],
+    },
+  ];
+  assert(
+    stalePins(nodes).map(pinLine).join(" | ") ===
+      "b->a 0.1.7/0.2.0 | c->a 0.1.0/0.2.0 | c->b 0.0.9/0.1.0",
+    "every stale pin surfaces with its pinned/latest, ordered consumer then dep",
+  );
+});
+
+Deno.test("graph stale pins: a node with no stale deps contributes nothing", () => {
+  const nodes = [{ repo: "a" }, { repo: "b", staleDeps: [] }];
+  assert(stalePins(nodes).length === 0, "nothing stale means an empty list, not a crash on missing staleDeps");
+});
+
 function auditRow(over) {
   return {
     name: "r",
