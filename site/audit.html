@@ -268,8 +268,8 @@
   .graphsum { margin: 0 0 10px; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--debt); border-radius: 6px; padding: 8px 10px; line-height: 1.5; }
   .graphsum b { font-weight: 600; }
   .graphsum .none { color: var(--ink-2); }
-  .graphstale { margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); color: var(--ink); }
-  .graphstale .st-count { color: var(--crit); }
+  .au-staledeps { font-size: 12px; color: var(--crit); margin-top: 3px; }
+  .au-staledeps b { font-weight: 600; }
   .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
   .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
@@ -351,6 +351,23 @@ function renderAudit() {
   };
   const day = (iso) => (typeof iso === "string" ? iso.slice(0, 10) : "");
 
+  // Stale dependency pins per repo, from the graph scan (#79): a repo pinning a
+  // dependency below its current version resolves a different closure than the
+  // graph draws, so the audit should move it to latest. Shown on each repo's own
+  // row here rather than as one org-wide list.
+  const staleByRepo = new Map((data.auditGraph?.nodes ?? []).map((n) => [n.repo, n.staleDeps ?? []]));
+  const staleLine = (repo) => {
+    const sd = staleByRepo.get(repo) ?? [];
+    if (!sd.length) return null;
+    const line = el("div", "au-staledeps");
+    line.append(el("b", null, `⚠ ${sd.length} stale dep${sd.length > 1 ? "s" : ""}: `));
+    sd.forEach((d, i) => {
+      if (i > 0) line.append(", ");
+      line.append(`${d.repo} ${d.pinned}→${d.latest}`);
+    });
+    return line;
+  };
+
   box.textContent = "";
   const rows = data.protofireAudits || [];
   if (!rows.length) {
@@ -405,6 +422,8 @@ function renderAudit() {
       if (r.anchorKind === "commit") c1.append(el("div", "au-flag", "commit-anchored"));
       else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
         c1.append(el("div", "au-flag", "no tag in PDF name"));
+      const s1 = staleLine(r.name);
+      if (s1) c1.append(s1);
 
       const c2 = el("div");
       c2.append(el("span", "au-status " + r.externalAudit, r.externalAudit));
@@ -488,6 +507,8 @@ function renderAudit() {
       const c1 = el("div", "au-repo");
       c1.append(link(null, r.name, "https://github.com/" + data.org + "/" + r.name));
       c1.append(el("div", "au-sub", "no audit/protofire/ PDF"));
+      const s2 = staleLine(r.name);
+      if (s2) c1.append(s2);
       const c2 = el("div");
       c2.append(el("span", "au-status never", "never"));
       const c3 = el("div", "au-drift");
@@ -643,46 +664,7 @@ function renderGraphSummary(nodes, pf) {
     });
     box.append(document.createTextNode("."));
   }
-  // Stale pins are a separate audit action: a repo depends on an older version
-  // than the graph draws, so its real closure differs -- move it to latest.
-  const pins = stalePins(nodes);
-  if (pins.length) {
-    const line = el("div", "graphstale");
-    line.append(
-      el("b", "st-count", `${pins.length} stale dependency pin${pins.length > 1 ? "s" : ""}`),
-      document.createTextNode(" \u2014 move to latest as part of audit: "),
-    );
-    pins.forEach((p, i) => {
-      if (i > 0) line.append(document.createTextNode(", "));
-      line.append(
-        el("b", null, p.consumer),
-        document.createTextNode(" pins "),
-        el("b", null, p.dep),
-        document.createTextNode(` ${p.pinned} (latest ${p.latest})`),
-      );
-    });
-    line.append(document.createTextNode("."));
-    box.append(line);
-  }
 }
-
-// Every stale dependency pin across the org, as flat records for the report: a
-// repo whose `staleDeps` names a dependency it pins below that dependency's
-// current version (#79). Sorted for a stable read: consumer, then dependency.
-function stalePins(nodes) {
-  const pins = [];
-  for (const n of nodes) {
-    for (const d of n.staleDeps ?? []) {
-      pins.push({ consumer: n.repo, dep: d.repo, pinned: d.pinned, latest: d.latest });
-    }
-  }
-  pins.sort((a, b) => a.consumer.localeCompare(b.consumer) || a.dep.localeCompare(b.dep));
-  return pins;
-}
-// An edge runs consumer -> dependency, so the ground a repo stands on —
-// everything it transitively depends on — is found by following those edges
-// forward. The root is included: a repo stands on itself. This is the direction
-// an audit is planned in, because the ground has to be cleared first.
 function standsOn(edges, root) {
   const deps = new Map();
   for (const e of edges) {
