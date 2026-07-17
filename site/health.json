@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-17T09:23:31Z",
+  "generatedAt": "2026-07-17T11:43:41Z",
   "auditGraph": {
     "nodes": [
       {
@@ -29,13 +29,7 @@
         "blockedBy": [
           "rain.solmem"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.deploy",
@@ -74,32 +68,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -107,29 +81,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rainlang",
@@ -175,32 +129,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -208,29 +142,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rainlang",
@@ -252,16 +166,6 @@
         "staleDeps": [
           {
             "repo": "rain.deploy",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.solmem",
             "pinned": "0.1.3",
             "latest": "0.1.4"
           }
@@ -288,12 +192,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.5"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
+            "latest": "0.1.4"
           }
         ]
       },
@@ -325,32 +229,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -358,29 +242,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rainlang",
@@ -398,13 +262,7 @@
         "blockedBy": [
           "rain.solmem"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.lib.hash",
@@ -424,18 +282,7 @@
         "blockedBy": [
           "rain.solmem"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.lib.typecast",
@@ -466,18 +313,7 @@
           "rain.solmem",
           "rain.string"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.math.saturating",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.math.float",
@@ -501,17 +337,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
           }
         ]
       },
@@ -552,32 +378,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -585,29 +391,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rainlang",
@@ -661,32 +447,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -694,29 +460,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rainlang",
@@ -770,13 +516,7 @@
         "blockedBy": [
           "rain.solmem"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.tier.interface",
@@ -807,11 +547,6 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
           }
         ]
@@ -838,32 +573,17 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.factory",
-            "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.math.fixedpoint",
             "pinned": "0.2.0",
-            "latest": "0.2.2"
+            "latest": "0.2.1"
           },
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.1.7"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.verify.interface",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
           }
         ]
       },
@@ -895,17 +615,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.factory",
-            "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.math.fixedpoint",
             "pinned": "0.2.0",
-            "latest": "0.2.2"
+            "latest": "0.2.1"
           },
           {
             "repo": "rain.math.float",
@@ -913,19 +628,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
             "repo": "rain.vats",
             "pinned": "0.1.7",
             "latest": "0.2.0"
-          },
-          {
-            "repo": "rain.verify.interface",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
           }
         ]
       },
@@ -958,37 +663,17 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.6"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -996,34 +681,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.verify.interface",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
           },
           {
             "repo": "rainlang",
@@ -1077,29 +737,9 @@
             "latest": "0.1.4"
           },
           {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -1107,34 +747,14 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "raindex.interface",
             "pinned": "0.1.1",
-            "latest": "0.1.4"
+            "latest": "0.1.3"
           },
           {
             "repo": "rainlang",
@@ -1167,7 +787,7 @@
           {
             "repo": "raindex.interface",
             "pinned": "0.1.2",
-            "latest": "0.1.4"
+            "latest": "0.1.3"
           }
         ]
       },
@@ -1220,32 +840,12 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
             "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.math.float",
@@ -1253,29 +853,9 @@
             "latest": "0.1.7"
           },
           {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           }
         ]
       },
@@ -1291,28 +871,8 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.lib.typecast",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
           }
         ]
@@ -1350,17 +910,17 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.5"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.6"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.math.fixedpoint",
             "pinned": "0.2.0",
-            "latest": "0.2.2"
+            "latest": "0.2.1"
           },
           {
             "repo": "rain.math.float",
@@ -1370,27 +930,12 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.2"
           },
           {
             "repo": "rain.vats",
             "pinned": "0.1.6",
             "latest": "0.2.0"
-          },
-          {
-            "repo": "rain.verify.interface",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
           }
         ]
       }
@@ -1399,9 +944,9 @@
       {
         "from": "rain.datacontract",
         "to": "rain.solmem",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "rain.dia",
@@ -1415,42 +960,42 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.dia",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.dia",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.dia",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "rain.dia",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "rain.dia",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rain.dia",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.dia",
@@ -1462,37 +1007,37 @@
       {
         "from": "rain.dia",
         "to": "rain.metadata",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.dia",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rain.dia",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "rain.dia",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rain.dia",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.dia",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.dia",
@@ -1513,42 +1058,42 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.erc4626.words",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.erc4626.words",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.erc4626.words",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "rain.erc4626.words",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "rain.erc4626.words",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rain.erc4626.words",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.erc4626.words",
@@ -1560,37 +1105,37 @@
       {
         "from": "rain.erc4626.words",
         "to": "rain.metadata",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.erc4626.words",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rain.erc4626.words",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "rain.erc4626.words",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rain.erc4626.words",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.erc4626.words",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.erc4626.words",
@@ -1609,16 +1154,16 @@
       {
         "from": "rain.extrospection",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.extrospection",
         "to": "rain.solmem",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "rain.factory",
@@ -1632,14 +1177,14 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.factory",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.flare",
@@ -1653,42 +1198,42 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.flare",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.flare",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.flare",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "rain.flare",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "rain.flare",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rain.flare",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.flare",
@@ -1700,37 +1245,37 @@
       {
         "from": "rain.flare",
         "to": "rain.metadata",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.flare",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rain.flare",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "rain.flare",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rain.flare",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.flare",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.flare",
@@ -1742,37 +1287,37 @@
       {
         "from": "rain.intorastring",
         "to": "rain.solmem",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "rain.lib.memkv",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.lib.memkv",
         "to": "rain.solmem",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "rain.math.fixedpoint",
         "to": "rain.math.saturating",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.math.fixedpoint",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.math.float",
@@ -1793,21 +1338,21 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rain.math.float",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "rain.math.float",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rain.math.float",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.merkle",
@@ -1821,42 +1366,42 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.merkle",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.merkle",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.merkle",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "rain.merkle",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "rain.merkle",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rain.merkle",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.merkle",
@@ -1868,37 +1413,37 @@
       {
         "from": "rain.merkle",
         "to": "rain.metadata",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.merkle",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rain.merkle",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "rain.merkle",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rain.merkle",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.merkle",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.merkle",
@@ -1926,42 +1471,42 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.pyth",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.pyth",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.pyth",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "rain.pyth",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "rain.pyth",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rain.pyth",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.pyth",
@@ -1973,37 +1518,37 @@
       {
         "from": "rain.pyth",
         "to": "rain.metadata",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.pyth",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rain.pyth",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "rain.pyth",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rain.pyth",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.pyth",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.pyth",
@@ -2015,9 +1560,9 @@
       {
         "from": "rain.string",
         "to": "rain.solmem",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "rain.tofu.erc20-decimals",
@@ -2031,35 +1576,35 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.tofu.erc20-decimals",
         "to": "rain.solmem",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "rain.vats",
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.vats",
         "to": "rain.factory",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.vats",
         "to": "rain.math.fixedpoint",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.2"
+        "latest": "0.2.1"
       },
       {
         "from": "rain.vats",
@@ -2071,30 +1616,30 @@
       {
         "from": "rain.vats",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.vats",
         "to": "rain.verify.interface",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.vats.flare",
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.vats.flare",
         "to": "rain.factory",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.vats.flare",
@@ -2108,7 +1653,7 @@
         "to": "rain.math.fixedpoint",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.2"
+        "latest": "0.2.1"
       },
       {
         "from": "rain.vats.flare",
@@ -2120,9 +1665,9 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.vats.flare",
@@ -2134,9 +1679,9 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.verify.interface",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.verify",
@@ -2150,49 +1695,49 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.6"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.verify",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.verify",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.verify",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "rain.verify",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "rain.verify",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rain.verify",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.verify",
@@ -2204,44 +1749,44 @@
       {
         "from": "rain.verify",
         "to": "rain.metadata",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.verify",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rain.verify",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "rain.verify",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rain.verify",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.verify",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.verify",
         "to": "rain.verify.interface",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rain.verify",
@@ -2260,37 +1805,37 @@
       {
         "from": "raindex",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "raindex",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "raindex",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "raindex",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "raindex",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "raindex",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "raindex",
@@ -2302,44 +1847,44 @@
       {
         "from": "raindex",
         "to": "rain.metadata",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.0"
       },
       {
         "from": "raindex",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "raindex",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "raindex",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "raindex",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "raindex",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "raindex",
         "to": "raindex.interface",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "raindex",
@@ -2360,7 +1905,7 @@
         "to": "raindex.interface",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "raindex.interface",
@@ -2388,42 +1933,42 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rainlang",
         "to": "rain.intorastring",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rainlang",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rainlang",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
-      },
-      {
-        "from": "rainlang",
-        "to": "rain.lib.typecast",
-        "stale": true,
-        "pinned": "0.1.0",
         "latest": "0.1.1"
       },
       {
         "from": "rainlang",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rainlang",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rainlang",
@@ -2435,72 +1980,72 @@
       {
         "from": "rainlang",
         "to": "rain.metadata",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
+        "latest": "0.1.4"
+      },
+      {
+        "from": "rainlang",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
         "latest": "0.1.3"
       },
       {
         "from": "rainlang",
-        "to": "rain.sol.codegen",
-        "stale": true,
-        "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "rainlang",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
-        "latest": "0.1.4"
-      },
-      {
-        "from": "rainlang",
         "to": "rain.string",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.0"
       },
       {
         "from": "rainlang",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rainlang.interface",
         "to": "rain.lib.hash",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rainlang.interface",
         "to": "rain.lib.typecast",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       },
       {
         "from": "rainlang.interface",
         "to": "rain.math.binary",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "rainlang.interface",
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "rainlang.interface",
         "to": "rain.solmem",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.3"
       },
       {
         "from": "st0x.deploy",
@@ -2514,21 +2059,21 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.5"
+        "latest": "0.1.4"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.6"
+        "latest": "0.1.5"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.math.fixedpoint",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.2"
+        "latest": "0.2.1"
       },
       {
         "from": "st0x.deploy",
@@ -2542,21 +2087,21 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.5"
-      },
-      {
-        "from": "st0x.deploy",
-        "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
         "latest": "0.1.4"
       },
       {
         "from": "st0x.deploy",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.3",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "st0x.deploy",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.1",
-        "latest": "0.1.2"
+        "latest": "0.1.1"
       },
       {
         "from": "st0x.deploy",
@@ -2568,9 +2113,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.verify.interface",
-        "stale": true,
+        "stale": false,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.0"
       }
     ]
   },
