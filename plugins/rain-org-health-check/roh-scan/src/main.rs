@@ -10,7 +10,9 @@ mod audit;
 mod graph;
 mod protofire;
 mod signals;
-use audit::{audit_sort_key, parse_last_audit, LastAudit};
+use audit::{
+    audit_sort_key, parse_last_audit, parse_runs_jsonl, source_changed_outside_audit, LastAudit,
+};
 use protofire::{
     anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
     counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
@@ -207,25 +209,51 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     }
 }
 
-/// Read `.audit/last-run.json` and return the whole-repo audit stamp if present.
-/// `None` when the repo has never had a whole-repo audit (no stamp, or only a
-/// PR-/path-scoped one — see the `scope` gate in `audit::parse_last_audit`).
+/// Read the audit skill's run stamp and return the whole-repo audit if present.
+/// Prefers the append-only `.audit/runs.jsonl` (the last whole-repo line); falls
+/// back to the single-object `.audit/last-run.json` for repos still on the earlier
+/// format. `None` when the repo has never had a whole-repo audit (no stamp, empty,
+/// or only a PR-/path-scoped one — see the `scope` gate in `audit`).
 fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
-    let body = gh_file(org, repo, ".audit/last-run.json");
-    if body.trim().is_empty() {
-        return None;
+    // Parse with no HEAD first: a scoped/malformed/absent stamp returns None here,
+    // so the extra `commits/HEAD` API call is skipped in those cases (org scale).
+    let runs = gh_file(org, repo, ".audit/runs.jsonl");
+    let mut audit = if runs.trim().is_empty() {
+        None
+    } else {
+        parse_runs_jsonl(&runs, None)
+    };
+    // Transition fallback: only if runs.jsonl yielded nothing, try the earlier
+    // single-object stamp. (Removable once every audited repo is on runs.jsonl.)
+    if audit.is_none() {
+        let legacy = gh_file(org, repo, ".audit/last-run.json");
+        if !legacy.trim().is_empty() {
+            audit = parse_last_audit(&legacy, None);
+        }
     }
-    // Parse first with no HEAD: a PR-/path-scoped or malformed stamp returns None
-    // here, so we skip the extra `commits/HEAD` API call in those cases (org scale).
-    let mut audit = parse_last_audit(&body, None)?;
-    // Confirmed a whole-repo stamp — now resolve HEAD to flag staleness.
+    let mut audit = audit?;
+    // Confirmed a whole-repo stamp — now resolve HEAD to flag staleness. Staleness
+    // is whether first-party SOURCE changed since `auditedCommit`, EXCLUDING
+    // `.audit/`: the run's own stamp commit advances HEAD while touching only
+    // `.audit/`, so a bare `HEAD != auditedCommit` check would mark every fresh
+    // audit stale. Compare the trees and ignore `.audit/`-only changes.
     let head = gh_stdout(&[
         "api",
         &format!("repos/{org}/{repo}/commits/HEAD"),
         "--jq",
         ".sha",
     ]);
-    audit.stale = head.as_deref().map(|h| h.trim() != audit.audited_commit);
+    audit.stale = match head.as_deref().map(str::trim) {
+        None => None,
+        Some(h) if h == audit.audited_commit => Some(false),
+        Some(h) => gh_stdout(&[
+            "api",
+            &format!("repos/{org}/{repo}/compare/{}...{h}", audit.audited_commit),
+            "--jq",
+            ".files[].filename",
+        ])
+        .map(|files| source_changed_outside_audit(files.lines())),
+    };
     Some(audit)
 }
 
