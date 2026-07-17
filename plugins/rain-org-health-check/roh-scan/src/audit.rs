@@ -23,8 +23,11 @@ pub struct LastAudit {
     pub audited_at: String,
     pub audited_commit: String,
     pub skill_version: String,
-    /// `Some(true)` if the audited commit is no longer the branch HEAD (audit is
-    /// stale); `Some(false)` if it still is; `None` if HEAD couldn't be resolved.
+    /// Whether first-party source has changed since the audit. `Some(true)` stale,
+    /// `Some(false)` current, `None` if it couldn't be determined. In production
+    /// this is set by `fetch_last_audit` from a `.audit/`-excluding tree compare
+    /// (see [`source_changed_outside_audit`]); the parse functions only fill a
+    /// naive SHA-equality preliminary when handed a `head_sha` (used by tests).
     pub stale: Option<bool>,
 }
 
@@ -72,6 +75,19 @@ pub fn parse_runs_jsonl(body: &str, head_sha: Option<&str>) -> Option<LastAudit>
         .filter(|line| !line.trim().is_empty())
         .filter_map(|line| parse_last_audit(line, head_sha))
         .next_back()
+}
+
+/// Whether the audit is stale given the files changed between `auditedCommit` and
+/// HEAD. Only changes **outside** `.audit/` count: the run's own stamp commit
+/// advances HEAD while touching only `.audit/runs.jsonl` / `.audit/scope.json`, so
+/// counting it would report every *fresh* audit as immediately stale. `true` iff
+/// any changed path is first-party source (not under `.audit/`).
+pub fn source_changed_outside_audit<'a>(changed_files: impl IntoIterator<Item = &'a str>) -> bool {
+    changed_files
+        .into_iter()
+        .map(str::trim)
+        .filter(|f| !f.is_empty())
+        .any(|f| !f.starts_with(".audit/"))
 }
 
 /// Sort key for audit recency: never-audited repos first, then oldest audit
@@ -230,5 +246,30 @@ mod tests {
         assert_eq!(parse_runs_jsonl("\n\n", None), None);
         let scoped = r#"{"scope":"pr:1","auditedAt":"2026-01-01T00:00:00Z","auditedCommit":"a"}"#;
         assert_eq!(parse_runs_jsonl(scoped, None), None);
+    }
+
+    #[test]
+    fn staleness_ignores_the_audit_stamp_commit() {
+        // The fresh audit's stamp commit touches only .audit/ — NOT stale (this is
+        // the case a bare auditedCommit != HEAD check gets wrong).
+        assert!(!source_changed_outside_audit([
+            ".audit/runs.jsonl",
+            ".audit/scope.json"
+        ]));
+        // A first-party source change alongside the stamp — stale.
+        assert!(source_changed_outside_audit([
+            ".audit/runs.jsonl",
+            "src/lib/Foo.sol"
+        ]));
+        // A non-.audit change on its own — stale.
+        assert!(source_changed_outside_audit(["README.md"]));
+        // Blank entries are skipped, not counted as source.
+        assert!(!source_changed_outside_audit([
+            "",
+            "  ",
+            ".audit/scope.json"
+        ]));
+        // No changes at all — not stale.
+        assert!(!source_changed_outside_audit(Vec::<&str>::new()));
     }
 }

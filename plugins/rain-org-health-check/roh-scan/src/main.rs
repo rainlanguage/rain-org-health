@@ -10,7 +10,9 @@ mod audit;
 mod graph;
 mod protofire;
 mod signals;
-use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
+use audit::{
+    audit_sort_key, parse_last_audit, parse_runs_jsonl, source_changed_outside_audit, LastAudit,
+};
 use protofire::{
     anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
     counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
@@ -230,14 +232,28 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
         }
     }
     let mut audit = audit?;
-    // Confirmed a whole-repo stamp — now resolve HEAD to flag staleness.
+    // Confirmed a whole-repo stamp — now resolve HEAD to flag staleness. Staleness
+    // is whether first-party SOURCE changed since `auditedCommit`, EXCLUDING
+    // `.audit/`: the run's own stamp commit advances HEAD while touching only
+    // `.audit/`, so a bare `HEAD != auditedCommit` check would mark every fresh
+    // audit stale. Compare the trees and ignore `.audit/`-only changes.
     let head = gh_stdout(&[
         "api",
         &format!("repos/{org}/{repo}/commits/HEAD"),
         "--jq",
         ".sha",
     ]);
-    audit.stale = head.as_deref().map(|h| h.trim() != audit.audited_commit);
+    audit.stale = match head.as_deref().map(str::trim) {
+        None => None,
+        Some(h) if h == audit.audited_commit => Some(false),
+        Some(h) => gh_stdout(&[
+            "api",
+            &format!("repos/{org}/{repo}/compare/{}...{h}", audit.audited_commit),
+            "--jq",
+            ".files[].filename",
+        ])
+        .map(|files| source_changed_outside_audit(files.lines())),
+    };
     Some(audit)
 }
 
