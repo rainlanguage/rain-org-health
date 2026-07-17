@@ -231,7 +231,12 @@
   .gsizer { position: relative; }
   .gsurface { position: relative; transform-origin: 0 0; }
   .gedges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
-  .gedge { fill: none; stroke: var(--border); stroke-width: 1; }
+  /* A current dependency is a fact the graph states at rest, so the default edge
+     is drawn in ink rather than the hairline `--border` used for panel chrome:
+     against `--surface` that border reads at ~1.2:1 and the link is invisible
+     until focus paints it. Ink clears the 3:1 non-text bar in both themes while
+     staying quieter than `--crit`/`--accent`, so stale and traced still dominate. */
+  .gedge { fill: none; stroke: var(--ink-3); stroke-width: 1; }
   .gnode { position: absolute; box-sizing: border-box; display: inline-flex; flex-direction: column;
            align-items: center; gap: 1px; padding: 5px 8px; border-radius: 6px; border: 1.5px solid;
            font-size: 11px; line-height: 1.3; white-space: nowrap; background: var(--surface); cursor: pointer; }

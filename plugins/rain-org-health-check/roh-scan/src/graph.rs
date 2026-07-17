@@ -160,11 +160,29 @@ pub fn foundry_dependencies(foundry: &str) -> Result<Vec<Dep>, MalformedManifest
         .collect())
 }
 
-/// Whether `pinned` is an earlier semver than `current` — the test for a stale
-/// dependency pin. Both are parsed as `major.minor.patch` (leading `=`/`^`/`~`/`v`
-/// and any pre-release/build suffix ignored). Returns `None` when either side has
-/// no parseable version, so an unknown is never reported as stale.
-pub fn version_behind(pinned: &str, current: &str) -> Option<bool> {
+/// How far a pin sits behind the dependency's current version.
+///
+/// The distance is the whole point: it decides whether the graph drawn from the
+/// target's CURRENT version still represents what the consumer actually builds
+/// against, which is the question a stale pin raises (#79).
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum Behind {
+    /// Behind only in patch. The dependency's own dependency set does not move
+    /// across a patch release, so the drawn graph remains faithful.
+    Patch,
+    /// Behind in minor: the target gained surface, and may have moved its own
+    /// dependencies with it.
+    Minor,
+    /// Behind in major: the target broke compatibility, so its dependency set is
+    /// the least likely to still match what is drawn.
+    Major,
+}
+
+/// How far `pinned` sits behind `current`, or `None` when the pin is current,
+/// ahead, or either side has no parseable version (an unknown is never reported
+/// as behind). Both are parsed as `major.minor.patch` (leading `=`/`^`/`~`/`v` and
+/// any pre-release/build suffix ignored).
+pub fn version_behind_by(pinned: &str, current: &str) -> Option<Behind> {
     fn parse(s: &str) -> Option<(u64, u64, u64)> {
         let s = s.trim().trim_start_matches(['=', '^', '~', 'v', ' ']);
         let core = s
@@ -178,7 +196,22 @@ pub fn version_behind(pinned: &str, current: &str) -> Option<bool> {
         let patch = it.next().unwrap_or("0").parse().ok()?;
         Some((major, minor, patch))
     }
-    Some(parse(pinned)? < parse(current)?)
+    let (pinned_major, pinned_minor, pinned_patch) = parse(pinned)?;
+    let (current_major, current_minor, current_patch) = parse(current)?;
+    // Compare most-significant first: the first component that differs names the
+    // distance. A pin ahead of current on any component is not behind at all.
+    match (
+        current_major.cmp(&pinned_major),
+        current_minor.cmp(&pinned_minor),
+        current_patch.cmp(&pinned_patch),
+    ) {
+        (std::cmp::Ordering::Greater, _, _) => Some(Behind::Major),
+        (std::cmp::Ordering::Less, _, _) => None,
+        (_, std::cmp::Ordering::Greater, _) => Some(Behind::Minor),
+        (_, std::cmp::Ordering::Less, _) => None,
+        (_, _, std::cmp::Ordering::Greater) => Some(Behind::Patch),
+        _ => None,
+    }
 }
 
 /// A `foundry.toml` that will not parse. Its dependencies are unknown, which is
@@ -206,9 +239,20 @@ pub fn graph_edges(nodes: &[Node]) -> Result<Vec<Edge>, DuplicatePackage> {
             if let Some(target) = by_package.get(dep.package.as_str()) {
                 let latest = target.version.clone().unwrap_or_default();
                 // Stale only when we can prove the pin is behind the target's
-                // current version; a missing or unparseable version is unknown,
-                // not stale.
-                let stale = version_behind(&dep.version_req, &latest).unwrap_or(false);
+                // current version by a minor or major; a missing or unparseable
+                // version is unknown, not stale.
+                //
+                // Patch drift is not flagged. A patch release does not move the
+                // target's own dependency set, so the graph drawn from `latest`
+                // still represents what the consumer builds against and there is
+                // nothing to warn about. Flagging it fires on nearly every edge in
+                // an org that publishes patches continuously, which spends the
+                // critical treatment on noise and buries the pins that do move the
+                // closure (#86).
+                let stale = matches!(
+                    version_behind_by(&dep.version_req, &latest),
+                    Some(Behind::Minor | Behind::Major)
+                );
                 edges.push(Edge {
                     from: node.repo.clone(),
                     to: target.repo.clone(),
@@ -428,19 +472,55 @@ recursive_deps = false
     }
 
     #[test]
-    fn version_behind_only_flags_actually_older() {
-        assert_eq!(version_behind("0.1.7", "0.2.0"), Some(true));
-        assert_eq!(version_behind("0.1.7", "0.1.7"), Some(false));
+    fn version_behind_by_grades_the_distance() {
+        assert_eq!(version_behind_by("1.2.3", "2.0.0"), Some(Behind::Major));
+        assert_eq!(version_behind_by("0.1.7", "0.2.0"), Some(Behind::Minor));
+        assert_eq!(version_behind_by("0.1.3", "0.1.4"), Some(Behind::Patch));
+        // The first component that differs names the distance: a major gap is
+        // major however far the lesser components sit apart.
+        assert_eq!(version_behind_by("1.9.9", "2.0.0"), Some(Behind::Major));
         assert_eq!(
-            version_behind("0.2.0", "0.1.7"),
-            Some(false),
-            "ahead is not stale"
+            version_behind_by("0.1.7", "0.1.7"),
+            None,
+            "current is behind nothing"
+        );
+        assert_eq!(
+            version_behind_by("0.2.0", "0.1.7"),
+            None,
+            "ahead is not behind"
+        );
+        assert_eq!(
+            version_behind_by("2.0.0", "1.9.9"),
+            None,
+            "ahead by a major is not behind"
         );
         // leading operators and a `v` prefix are tolerated on either side
-        assert_eq!(version_behind("^1.2.3", "v1.3.0"), Some(true));
-        // an unparseable version is unknown, never stale
-        assert_eq!(version_behind("", "0.2.0"), None);
-        assert_eq!(version_behind("main", "0.2.0"), None);
+        assert_eq!(version_behind_by("^1.2.3", "v1.3.0"), Some(Behind::Minor));
+        // an unparseable version is unknown, never behind
+        assert_eq!(version_behind_by("", "0.2.0"), None);
+        assert_eq!(version_behind_by("main", "0.2.0"), None);
+    }
+
+    /// Patch drift is not a stale edge: a patch release does not move the target's
+    /// own dependency set, so the graph drawn from `latest` still represents what
+    /// the consumer builds against. Reserving the flag for minor/major keeps it a
+    /// signal rather than a permanent state of every edge (#86).
+    #[test]
+    fn a_patch_behind_pin_is_not_stale() {
+        let nodes = vec![
+            node_v("consumer", "consumer", "1.0.0", &[("core", "0.1.3")]),
+            node_v("core", "core", "0.1.4", &[]),
+        ];
+        let edges = graph_edges(&nodes).unwrap();
+        let core = edges.iter().find(|e| e.to == "core").unwrap();
+        assert!(
+            !core.stale,
+            "0.1.3 against 0.1.4 is patch drift, not a stale pin"
+        );
+        // The versions are still carried, so the pin stays inspectable even when
+        // it is not flagged.
+        assert_eq!(core.pinned, "0.1.3");
+        assert_eq!(core.latest, "0.1.4");
     }
 
     /// Two repos on the same leaf yield two edges, not a merged one: the fan-in
