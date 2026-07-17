@@ -1,11 +1,17 @@
-//! Reads the audit skill's per-run stamp (`.audit/last-run.json`) so the scan can
-//! report when each repo was last *fully* audited. Pure parsing lives here and is
-//! unit-tested; the network fetch is in main.rs.
+//! Reads the audit skill's per-run stamp so the scan can report when each repo was
+//! last *fully* audited. Pure parsing lives here and is unit-tested; the network
+//! fetch is in main.rs.
+//!
+//! The stamp is an append-only `.audit/runs.jsonl` (JSON Lines) — one object per
+//! audit run, newest last — so the repo keeps its whole audit history rather than
+//! only the latest run. The recency is the LAST line whose scope is whole-repo.
+//! `.audit/last-run.json` (a single object) is the earlier format and is still
+//! read as a fallback during the transition.
 //!
 //! Accuracy hinges on the `scope` discriminator: the audit skill is also invoked
 //! PR-scoped (the vetter/producer run it against a PR's changed files), and those
-//! runs must NOT count as a whole-repo audit. So a stamp is honoured ONLY when
-//! `scope == "whole-repo"`; every other scope (or a missing/malformed stamp) means
+//! runs must NOT count as a whole-repo audit. So a line is honoured ONLY when
+//! `scope == "whole-repo"`; every other scope (or a missing/malformed line) means
 //! "not fully audited".
 
 /// The canonical scope string a whole-repo audit stamp must carry. Any other value
@@ -50,6 +56,22 @@ pub fn parse_last_audit(body: &str, head_sha: Option<&str>) -> Option<LastAudit>
         skill_version,
         stale,
     })
+}
+
+/// Parse `.audit/runs.jsonl` (append-only JSON Lines, one run per line, newest
+/// last) and return the LAST line that is a whole-repo stamp. Each line is parsed
+/// with [`parse_last_audit`], so the scope gate and required fields are identical
+/// to the single-object format; non-whole-repo lines (PR/paths scopes), blank
+/// lines, and malformed lines are skipped rather than aborting the read — a bad
+/// line must not erase a valid prior whole-repo audit. `None` when no line is a
+/// whole-repo stamp (empty/absent file, or only scoped runs).
+pub fn parse_runs_jsonl(body: &str, head_sha: Option<&str>) -> Option<LastAudit> {
+    // Scan from the back: the last whole-repo line is the current recency, and
+    // `next_back` stops at the first match rather than walking the whole history.
+    body.lines()
+        .filter(|line| !line.trim().is_empty())
+        .filter_map(|line| parse_last_audit(line, head_sha))
+        .next_back()
 }
 
 /// Sort key for audit recency: never-audited repos first, then oldest audit
@@ -145,5 +167,68 @@ mod tests {
         assert_eq!(parse_last_audit("", None), None);
         assert_eq!(parse_last_audit("not json", None), None);
         assert_eq!(parse_last_audit("{}", None), None);
+    }
+
+    // ---- runs.jsonl (append-only history) ----
+
+    fn line(commit: &str, at: &str) -> String {
+        format!(
+            r#"{{"scope":"whole-repo","auditedAt":"{at}","auditedCommit":"{commit}","skillVersion":"0.15.0"}}"#
+        )
+    }
+
+    #[test]
+    fn jsonl_takes_the_last_whole_repo_line() {
+        // Newest last: the second whole-repo run is the current recency.
+        let body = format!(
+            "{}\n{}\n",
+            line("old111", "2026-01-01T00:00:00Z"),
+            line("new222", "2026-06-01T00:00:00Z"),
+        );
+        let a = parse_runs_jsonl(&body, Some("new222")).expect("last whole-repo line");
+        assert_eq!(a.audited_commit, "new222");
+        assert_eq!(a.audited_at, "2026-06-01T00:00:00Z");
+        assert_eq!(
+            a.stale,
+            Some(false),
+            "staleness is vs the last line's commit"
+        );
+    }
+
+    #[test]
+    fn jsonl_skips_interleaved_scoped_and_blank_lines() {
+        // A PR-scoped run and a blank line between two whole-repo runs must not be
+        // mistaken for the latest whole-repo audit.
+        let body = format!(
+            "{}\n{}\n\n{}\n",
+            line("whole1", "2026-01-01T00:00:00Z"),
+            r#"{"scope":"pr:9","auditedAt":"2026-05-01T00:00:00Z","auditedCommit":"prc"}"#,
+            line("whole2", "2026-03-01T00:00:00Z"),
+        );
+        let a = parse_runs_jsonl(&body, None).unwrap();
+        assert_eq!(
+            a.audited_commit, "whole2",
+            "last WHOLE-REPO line, not the pr line"
+        );
+    }
+
+    #[test]
+    fn jsonl_malformed_trailing_line_does_not_erase_a_valid_audit() {
+        // A corrupt final line must fall back to the last good whole-repo line, not
+        // read as "never audited".
+        let body = format!(
+            "{}\n{{ this is not json\n",
+            line("good333", "2026-04-01T00:00:00Z")
+        );
+        let a = parse_runs_jsonl(&body, None).expect("the good line still counts");
+        assert_eq!(a.audited_commit, "good333");
+    }
+
+    #[test]
+    fn jsonl_only_scoped_or_empty_is_none() {
+        assert_eq!(parse_runs_jsonl("", None), None);
+        assert_eq!(parse_runs_jsonl("\n\n", None), None);
+        let scoped = r#"{"scope":"pr:1","auditedAt":"2026-01-01T00:00:00Z","auditedCommit":"a"}"#;
+        assert_eq!(parse_runs_jsonl(scoped, None), None);
     }
 }
