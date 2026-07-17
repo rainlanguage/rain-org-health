@@ -308,7 +308,7 @@
   <div id="audit"><div class="empty" id="auditempty">loading external-audit coverage…</div></div>
   <footer>
     Org-health dashboard — status, not severity; identity is the label, not the color.
-    <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener">source</a>.
+    <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
   </footer>
 </div>
 <script src="vendor/elk.bundled.js"></script>
@@ -597,7 +597,8 @@ function nodeEl(n, p) {
   if (org) {
     const a = el("a", "gn-repo gn-anchor", n.repo);
     a.href = `https://github.com/${org}/${n.repo}`;
-    a.rel = "noopener";
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
     a.title = `${org}/${n.repo} on GitHub`;
     box.append(a);
   } else {
@@ -616,7 +617,8 @@ function nodeEl(n, p) {
     if (p && typeof p.compareUrl === "string" && p.compareUrl) {
       const a = el("a", "gn-anchor", anchorText);
       a.href = p.compareUrl;
-      a.rel = "noopener";
+      a.rel = "noopener noreferrer";
+      a.target = "_blank";
       a.title = `diff since the audited ${p.anchorKind === "tag" ? "tag" : "commit"}`;
       meta.append(a);
     } else {
