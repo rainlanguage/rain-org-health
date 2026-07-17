@@ -219,6 +219,50 @@ Deno.test("graph trace: consumers are NOT traced, only dependencies", () => {
   assert(ground([{ from: "b", to: "a" }], "a") === "a", "a does not stand on its consumer");
 });
 
+// The node's name is the graph's handle on a repo, so it links there. The scan is
+// multi-org, so the org is per-node and only falls back to the scan's own.
+function graphNode(n, data) {
+  const el = (tag, cls, text) => {
+    const node = makeEl(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  return bind("audit.html", "nodeEl", ["el", "data"], [el, data])(n, null);
+}
+
+Deno.test("graph node: the repo name links to the repo, using the node's own org", () => {
+  const box = graphNode(
+    { repo: "cyclo.sol", org: "cyclofinance", audit: "never" },
+    { org: "rainlanguage" },
+  );
+  const [name] = collect(box, "gn-repo");
+  assert(name.tagName === "a", "the name is an anchor, not inert text");
+  assert(
+    name.href === "https://github.com/cyclofinance/cyclo.sol",
+    "links the node's OWN org, not the scan's: " + name.href,
+  );
+  assert(textOf(box).includes("cyclo.sol"), "still reads as the repo name");
+});
+
+Deno.test("graph node: the repo name falls back to the scan's org", () => {
+  const box = graphNode({ repo: "rainlang", audit: "never" }, { org: "rainlanguage" });
+  const [name] = collect(box, "gn-repo");
+  assert(
+    name.href === "https://github.com/rainlanguage/rainlang",
+    "a node with no org of its own uses the scan's: " + name.href,
+  );
+});
+
+Deno.test("graph node: with no org resolvable the name stays plain text", () => {
+  // Never a dead link — the same rule the audit anchor follows when no compareUrl
+  // resolves. A link to nowhere is worse than no link.
+  const box = graphNode({ repo: "orphan", audit: "never" }, {});
+  const [name] = collect(box, "gn-repo");
+  assert(name.tagName === "span", "no org anywhere -> plain span, not a broken href");
+  assert(name.href === undefined, "and carries no href at all");
+});
+
 Deno.test("audit report: a repo's stale dependency pins render on its own row", () => {
   const data = {
     ...auditData([
