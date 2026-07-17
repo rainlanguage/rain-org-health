@@ -53,9 +53,16 @@ pub struct Node {
     /// The soldeer `[package].name` this repo publishes, if any. This is what
     /// consumers name it by, so it is the graph's join key.
     pub package: Option<String>,
-    /// The `[package].version` this repo currently declares — the version the
-    /// node represents, and the "latest" a consumer's pin is judged stale
-    /// against. `None` when the repo publishes no versioned package.
+    /// The newest revision of this repo's package PUBLISHED to the soldeer
+    /// registry — the newest version a consumer can pin, and so the "latest" a
+    /// pin is judged stale against. `None` when the repo publishes no versioned
+    /// package, or the registry could not be reached: with no known ceiling,
+    /// nothing beneath it is stale.
+    ///
+    /// Deliberately not `[package].version` from HEAD. That field is the NEXT,
+    /// unreleased version — the org bumps it immediately after publishing — so
+    /// judging pins against it marks every consumer stale for failing to pin a
+    /// version that does not exist yet (#86).
     pub version: Option<String>,
     /// This repo's `[dependencies]`, each with the version it pins. Empty with
     /// `deps_known == false` means the manifest would not parse, NOT that the
@@ -104,11 +111,14 @@ pub fn package_index(nodes: &[Node]) -> Result<BTreeMap<&str, &Node>, DuplicateP
 pub struct Edge {
     pub from: String,
     pub to: String,
-    /// True when `from` pins `to` at a version below `to`'s current version, so
-    /// the closure `from` actually resolves differs from the one drawn (#79).
+    /// True when `from` pins `to` below `to`'s newest PUBLISHED revision, so the
+    /// closure `from` actually resolves may differ from the one drawn (#79). Any
+    /// gap counts: a release of any size is free to move `to`'s own dependencies,
+    /// so the size of the gap says nothing about whether the drawn graph still
+    /// holds.
     pub stale: bool,
-    /// The version `from` pins `to` at, and `to`'s current version — carried so
-    /// the report can say "pins X, latest Y" without re-deriving.
+    /// The version `from` pins `to` at, and `to`'s newest published revision —
+    /// carried so the report can say "pins X, latest Y" without re-deriving.
     pub pinned: String,
     pub latest: String,
 }

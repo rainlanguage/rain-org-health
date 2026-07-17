@@ -5,8 +5,8 @@
 use regex::Regex;
 use std::sync::OnceLock;
 
-/// The content a scan fetches for one repo. `soldeer_published` is the one network
-/// fact (Some(true/false) once the registry was queried, None if not applicable/unknown).
+/// The content a scan fetches for one repo. The soldeer registry lookup is the one
+/// network fact, and both `soldeer_*` fields come from that single query.
 #[derive(Default)]
 pub struct RepoInputs {
     /// All `.github/workflows/*.{yml,yaml}` file contents, concatenated.
@@ -16,6 +16,16 @@ pub struct RepoInputs {
     /// Registry lookup for the foundry `[package] name`: Some(true) published,
     /// Some(false) unpublished, None if there is no package name or it wasn't queried.
     pub soldeer_published: Option<bool>,
+    /// The newest revision the registry has for this repo's `[package] name` — the
+    /// newest version a consumer can actually pin, and so the ceiling a dependant's
+    /// pin is judged stale against (#79). `None` when unpublished, unqueried, or
+    /// the query failed; an unknown ceiling flags nobody.
+    ///
+    /// NOT `[package].version` from HEAD. Under the org's release lifecycle that
+    /// field is the NEXT, unreleased version — bumped straight after each publish —
+    /// so judging pins against it marks every consumer stale for failing to pin a
+    /// version that does not exist (#86).
+    pub soldeer_version: Option<String>,
 }
 
 fn re(pattern: &str) -> Regex {
@@ -25,12 +35,6 @@ fn re(pattern: &str) -> Regex {
 /// Extract the `[package] name = "..."` value from foundry.toml (section-scoped), if any.
 pub fn foundry_package_name(foundry: &str) -> Option<String> {
     foundry_package_field(foundry, "name")
-}
-
-/// Extract the `[package] version = "..."` value — the version the repo currently
-/// publishes, which a dependant's pin is judged stale against (#79).
-pub fn foundry_package_version(foundry: &str) -> Option<String> {
-    foundry_package_field(foundry, "version")
 }
 
 /// The value of a scalar `key = "..."` under `[package]`, section-scoped.
@@ -269,6 +273,7 @@ mod tests {
             workflows: "uses: rainlanguage/rainix/.github/workflows/rainix-sol-test.yaml@main\nuses: actions/checkout@v4".into(),
             foundry: "[profile.default]\nsrc = \"src\"".into(),
             soldeer_published: Some(true),
+            soldeer_version: Some("0.1.3".into()),
         };
         assert!(detect_signals(&clean).is_empty());
     }

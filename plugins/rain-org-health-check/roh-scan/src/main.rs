@@ -16,7 +16,7 @@ use protofire::{
     counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
     AuditAnchor, AuditPdf, CompareFile,
 };
-use signals::{detect_signals, foundry_package_name, foundry_package_version, RepoInputs};
+use signals::{detect_signals, foundry_package_name, RepoInputs};
 
 use serde_json::json;
 use std::process::Command;
@@ -190,14 +190,20 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     }
     let foundry = gh_file(org, repo, "foundry.toml");
 
-    // soldeer registry lookup, only when a package name exists
-    let soldeer_published =
-        foundry_package_name(&foundry).and_then(|pkg| soldeer_has_revision(&pkg));
+    // One soldeer registry lookup, only when a package name exists. It answers both
+    // questions the scan has about the package: whether it is published at all (a
+    // signal), and the newest revision that exists (the ceiling the graph judges a
+    // dependant's pin against). Derived together from the one query so the two can
+    // never disagree.
+    let revision = foundry_package_name(&foundry).and_then(|pkg| soldeer_latest_revision(&pkg));
+    let soldeer_published = revision.as_ref().map(|r| r.is_some());
+    let soldeer_version = revision.flatten();
 
     RepoInputs {
         workflows,
         foundry,
         soldeer_published,
+        soldeer_version,
     }
 }
 
@@ -796,8 +802,10 @@ struct RepoResult {
     /// This repo's soldeer `[package].name` — what consumers name it by, so it
     /// is the audit graph's join key (#71).
     package: Option<String>,
-    /// This repo's `[package].version` — the version its node represents, and
-    /// what a dependant's pin is judged stale against (#79).
+    /// The newest revision of this repo's package published to the soldeer
+    /// registry — the newest version a consumer can pin, and so what a dependant's
+    /// pin is judged stale against (#79). `None` when unpublished or unknown, which
+    /// flags nobody: there is no ceiling to be behind.
     version: Option<String>,
     /// This repo's `[dependencies]`, each with its pinned version (#71, #79).
     deps: Vec<graph::Dep>,
@@ -814,17 +822,39 @@ fn in_protofire_report(has_pdf: bool, has_foundry: bool) -> bool {
     has_pdf || has_foundry
 }
 
-/// Query the soldeer registry for a published revision. Some(true/false), None on error.
-fn soldeer_has_revision(pkg: &str) -> Option<bool> {
+/// The newest revision the soldeer registry holds for `pkg`.
+///
+/// `Some(Some(v))` — published, `v` is the newest revision.
+/// `Some(None)` — the registry answered and the package has no revisions.
+/// `None` — the query failed. Unknown, which is NOT the same as unpublished, and
+/// the two must not collapse: an unpublished package is a real finding, a failed
+/// lookup is an absence of information.
+fn soldeer_latest_revision(pkg: &str) -> Option<Option<String>> {
+    // `limit=1` returns the newest revision, which is the only one the scan needs:
+    // the newest version a consumer could pin.
     let url =
         format!("https://api.soldeer.xyz/api/v1/revision?project_name={pkg}&offset=0&limit=1");
     let out = Command::new("curl").args(["-fsSL", &url]).output().ok()?;
     if !out.status.success() {
         return None;
     }
-    let v: serde_json::Value = serde_json::from_slice(&out.stdout).ok()?;
-    let data = v.get("data")?;
-    Some(data.as_array().map(|a| !a.is_empty()).unwrap_or(false))
+    latest_revision_from_response(&out.stdout)
+}
+
+/// The newest revision in a soldeer `/revision` response body, split out from the
+/// fetch so the parse is a pure function of the bytes and testable without network.
+///
+/// Same tri-state as its caller: `Some(Some(v))` published, `Some(None)` answered
+/// with no revisions, `None` unreadable — an unreadable answer is not an empty one.
+fn latest_revision_from_response(body: &[u8]) -> Option<Option<String>> {
+    let v: serde_json::Value = serde_json::from_slice(body).ok()?;
+    let data = v.get("data")?.as_array()?;
+    Some(
+        data.first()
+            .and_then(|rev| rev.get("version"))
+            .and_then(|version| version.as_str())
+            .map(str::to_string),
+    )
 }
 
 /// Resolve where the dashboard JSON is written. A bare run POPULATES `site/health.json` (the scan
@@ -972,7 +1002,11 @@ fn main() {
             name: repo.to_string(),
             org: org.clone(),
             package: foundry_package_name(&inputs.foundry),
-            version: foundry_package_version(&inputs.foundry),
+            // The published revision, NOT `[package].version` from HEAD: that field
+            // is the next, unreleased version under the org's release lifecycle, so
+            // judging pins against it marks every consumer stale for not pinning a
+            // version that does not exist (#86).
+            version: inputs.soldeer_version.clone(),
             // A manifest that will not parse leaves deps UNKNOWN — not none.
             // Collapsing the two lets a broken manifest read as clear ground.
             deps: graph::foundry_dependencies(&inputs.foundry).unwrap_or_default(),
@@ -1267,6 +1301,41 @@ fn main() {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    /// The graph's staleness ceiling is the newest PUBLISHED revision, so the parse
+    /// must distinguish published / unpublished / unreadable. Collapsing the last
+    /// two would let a registry hiccup read as "no releases" and silently clear
+    /// every consumer beneath that package (#86).
+    #[test]
+    fn latest_revision_reads_published_unpublished_and_unreadable_apart() {
+        // published: the newest revision, which `limit=1` puts first
+        assert_eq!(
+            latest_revision_from_response(br#"{"data":[{"version":"0.1.3"}]}"#),
+            Some(Some("0.1.3".to_string()))
+        );
+        // answered, but the package has never been published
+        assert_eq!(
+            latest_revision_from_response(br#"{"data":[]}"#),
+            Some(None),
+            "an empty data array is a real answer: no revisions"
+        );
+        // unreadable answers are unknown, NOT "no revisions"
+        assert_eq!(
+            latest_revision_from_response(b"not json at all"),
+            None,
+            "malformed json is unknown, never an empty registry"
+        );
+        assert_eq!(
+            latest_revision_from_response(br#"{"error":"boom"}"#),
+            None,
+            "a response with no data array is unknown"
+        );
+        // a revision row without a version is not a version we can judge against
+        assert_eq!(
+            latest_revision_from_response(br#"{"data":[{"nope":1}]}"#),
+            Some(None)
+        );
+    }
 
     /// A scripted `GhApi` for network-free tests. The first route whose needle is
     /// a substring of the joined args decides the returned `FetchOutcome`; an
