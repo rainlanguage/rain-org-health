@@ -589,7 +589,20 @@ function renderGraphLegend(present) {
 function nodeEl(n, p) {
   const box = el("div", `gnode au-${n.audit}`);
   box.dataset.repo = n.repo;
-  box.append(el("span", "gn-repo", n.repo));
+  // The name links to the repo. `org` is per-node because the scan is multi-org,
+  // falling back to the scan's own org; with neither resolved the name stays plain
+  // text rather than becoming a dead link. Clicking it navigates instead of
+  // tracing — the graph's click handler ignores events originating in an anchor.
+  const org = n.org || (data && data.org);
+  if (org) {
+    const a = el("a", "gn-repo gn-anchor", n.repo);
+    a.href = `https://github.com/${org}/${n.repo}`;
+    a.rel = "noopener";
+    a.title = `${org}/${n.repo} on GitHub`;
+    box.append(a);
+  } else {
+    box.append(el("span", "gn-repo", n.repo));
+  }
 
   const meta = el("span", "gn-meta");
   if (n.audit === "never") {
