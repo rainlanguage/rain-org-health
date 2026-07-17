@@ -243,6 +243,14 @@ Deno.test("graph node: the repo name links to the repo, using the node's own org
     "links the node's OWN org, not the scan's: " + name.href,
   );
   assert(textOf(box).includes("cyclo.sol"), "still reads as the repo name");
+  // Leaving the dashboard would cost the reader their pan/zoom and trace, so an
+  // external link opens in a new tab — and _blank without noopener hands the
+  // opened page a live handle on window.opener.
+  assert(name.target === "_blank", "external links open in a new tab");
+  assert(
+    String(name.rel).includes("noopener"),
+    "a _blank link must carry noopener: " + name.rel,
+  );
 });
 
 Deno.test("graph node: the repo name falls back to the scan's org", () => {
