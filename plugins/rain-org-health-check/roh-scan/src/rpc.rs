@@ -13,6 +13,10 @@ sol! {
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
     function owner() external view returns (address);
     function implementation() external view returns (address);
+    function name() external view returns (string);
+    function symbol() external view returns (string);
+    function decimals() external view returns (uint8);
+    function asset() external view returns (address);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -63,6 +67,18 @@ pub fn owner_calldata() -> String {
 pub fn implementation_calldata() -> String {
     to_hex(implementationCall {}.abi_encode())
 }
+pub fn name_calldata() -> String {
+    to_hex(nameCall {}.abi_encode())
+}
+pub fn symbol_calldata() -> String {
+    to_hex(symbolCall {}.abi_encode())
+}
+pub fn decimals_calldata() -> String {
+    to_hex(decimalsCall {}.abi_encode())
+}
+pub fn asset_calldata() -> String {
+    to_hex(assetCall {}.abi_encode())
+}
 
 // ---- return decoders (from the `eth_call` result hex) ----
 
@@ -82,13 +98,29 @@ pub fn decode_uint(result_hex: &str) -> Option<u64> {
         .and_then(|r| r._0.try_into().ok())
 }
 
-/// Decode a single `address` return (`owner()` / `implementation()`) as
-/// lowercase `0x…`.
+/// Decode a single `address` return (`owner()` / `implementation()` / `asset()`)
+/// as lowercase `0x…`.
 pub fn decode_address(result_hex: &str) -> Option<String> {
     let bytes = result_bytes(result_hex)?;
     ownerCall::abi_decode_returns(&bytes, false)
         .ok()
         .map(|r| r._0.to_string().to_lowercase())
+}
+
+/// Decode a `string` return (`name()` / `symbol()`).
+pub fn decode_string(result_hex: &str) -> Option<String> {
+    let bytes = result_bytes(result_hex)?;
+    nameCall::abi_decode_returns(&bytes, false)
+        .ok()
+        .map(|r| r._0)
+}
+
+/// Decode a `uint8` return (`decimals()`).
+pub fn decode_u8(result_hex: &str) -> Option<u8> {
+    let bytes = result_bytes(result_hex)?;
+    decimalsCall::abi_decode_returns(&bytes, false)
+        .ok()
+        .map(|r| r._0)
 }
 
 /// Classify a JSON-RPC reply for a `bool`-returning call: `result` → True/False,
@@ -192,5 +224,23 @@ mod tests {
         assert_eq!(classify_bool(f), CallClass::False);
         assert_eq!(classify_bool(rev), CallClass::Reverted);
         assert_eq!(classify_bool(b"not json"), CallClass::Unknown);
+    }
+
+    #[test]
+    fn token_calldata_selectors_and_string_uint8_decoders() {
+        assert!(name_calldata().starts_with("0x06fdde03")); // name()
+        assert!(symbol_calldata().starts_with("0x95d89b41")); // symbol()
+        assert!(decimals_calldata().starts_with("0x313ce567")); // decimals()
+        assert!(asset_calldata().starts_with("0x38d52e0f")); // asset()
+        assert_eq!(
+            decode_u8("0x0000000000000000000000000000000000000000000000000000000000000012"),
+            Some(18)
+        );
+        // an ABI `string` return: offset(0x20) | len(6) | "wtNVDA" right-padded
+        let s = "0x\
+            0000000000000000000000000000000000000000000000000000000000000020\
+            0000000000000000000000000000000000000000000000000000000000000006\
+            77744e5644410000000000000000000000000000000000000000000000000000";
+        assert_eq!(decode_string(s).as_deref(), Some("wtNVDA"));
     }
 }

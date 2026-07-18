@@ -225,6 +225,123 @@ pub fn build_beacons(
     }))
 }
 
+/// Live on-chain reads for one token; each field is `None` if that read failed.
+#[derive(Default)]
+pub struct TokenLive {
+    pub name: Option<String>,
+    pub symbol: Option<String>,
+    pub decimals: Option<u8>,
+    pub asset: Option<String>,
+    pub unwrapped_deployed: Option<bool>,
+    pub legacy_deployed: Option<bool>,
+    pub receipt_deployed: Option<bool>,
+}
+
+/// Health of one registry token. Every token's on-chain `name`/`symbol`/`decimals`
+/// must match the registry EXACTLY (verbatim, not normalised). A *wrapped* token
+/// (one that declares an `unwrappedAddress`) additionally must have `asset()`
+/// pointing at that underlying and every linked address it declares (unwrapped /
+/// legacy / receipt) deployed — a *plain* collateral token (e.g. USDC, which
+/// declares no `unwrappedAddress`) is judged on identity alone. `ok` = all
+/// applicable checks confirmed; `mismatch` = an identity field differs; `wiring` =
+/// `asset()` or a declared linked address is wrong; `unknown` = a core read failed.
+#[allow(clippy::too_many_arguments)]
+pub fn token_health(
+    symbol: &str,
+    name: &str,
+    decimals: u64,
+    address: &str,
+    unwrapped: Option<&str>,
+    legacy: Option<&str>,
+    receipt: Option<&str>,
+    live: &TokenLive,
+) -> serde_json::Value {
+    let name_ok = live.name.as_deref().map(|n| n == name);
+    let symbol_ok = live.symbol.as_deref().map(|s| s == symbol);
+    let decimals_ok = live.decimals.map(|d| d as u64 == decimals);
+    // asset() is only meaningful for a wrapped token, checked against its unwrapped.
+    let asset_ok = match (live.asset.as_deref(), unwrapped) {
+        (Some(a), Some(u)) => Some(a.eq_ignore_ascii_case(u)),
+        _ => None,
+    };
+    let wrapped = unwrapped.is_some();
+    let bad = |o: Option<bool>| o == Some(false);
+    let ok = |o: Option<bool>| o == Some(true);
+    // A DECLARED linked address (Some) must be deployed; an undeclared one (None —
+    // newer wrapped tokens carry no legacy) is simply not applicable, so its
+    // deployed flag is ignored.
+    let link_bad = |addr: Option<&str>, dep: Option<bool>| addr.is_some() && dep == Some(false);
+    let link_pending = |addr: Option<&str>, dep: Option<bool>| addr.is_some() && dep != Some(true);
+
+    let identity_bad = bad(name_ok) || bad(symbol_ok) || bad(decimals_ok);
+    let identity_ok = ok(name_ok) && ok(symbol_ok) && ok(decimals_ok);
+    let wiring_bad = wrapped
+        && (asset_ok == Some(false)
+            || link_bad(unwrapped, live.unwrapped_deployed)
+            || link_bad(legacy, live.legacy_deployed)
+            || link_bad(receipt, live.receipt_deployed));
+    let wiring_pending = wrapped
+        && (asset_ok != Some(true)
+            || link_pending(unwrapped, live.unwrapped_deployed)
+            || link_pending(legacy, live.legacy_deployed)
+            || link_pending(receipt, live.receipt_deployed));
+
+    let status = if live.name.is_none() {
+        "unknown"
+    } else if identity_bad {
+        "mismatch"
+    } else if wiring_bad {
+        "wiring"
+    } else if !identity_ok || wiring_pending {
+        "unknown"
+    } else {
+        "ok"
+    };
+    json!({
+        "symbol": symbol,
+        "name": name,
+        "address": address,
+        "status": status,
+        "wrapped": wrapped,
+        "nameOk": name_ok,
+        "symbolOk": symbol_ok,
+        "decimalsOk": decimals_ok,
+        "assetOk": asset_ok,
+        "asset": live.asset,
+        "unwrapped": unwrapped,
+        "legacy": legacy,
+        "receipt": receipt,
+        "unwrappedDeployed": live.unwrapped_deployed,
+        "legacyDeployed": live.legacy_deployed,
+        "receiptDeployed": live.receipt_deployed,
+    })
+}
+
+/// Assemble the `deploymentTokens` document (sorted by symbol; `None` if empty).
+pub fn build_tokens(
+    org: &str,
+    repo: &str,
+    network: &str,
+    rpc_host: &str,
+    mut tokens: Vec<serde_json::Value>,
+) -> Option<serde_json::Value> {
+    if tokens.is_empty() {
+        return None;
+    }
+    tokens.sort_by(|a, b| a["symbol"].as_str().cmp(&b["symbol"].as_str()));
+    let total = tokens.len();
+    let ok = tokens.iter().filter(|t| t["status"] == "ok").count();
+    Some(json!({
+        "org": org,
+        "repo": repo,
+        "network": network,
+        "rpcHost": rpc_host,
+        "total": total,
+        "ok": ok,
+        "tokens": tokens,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -464,5 +581,215 @@ mod tests {
         assert_eq!(v["healthy"], 1);
         assert_eq!(v["targetVersion"], "0.1.1");
         assert_eq!(v["beacons"][0]["name"], "Alpha");
+    }
+
+    fn tl(
+        name: Option<&str>,
+        sym: Option<&str>,
+        dec: Option<u8>,
+        asset: Option<&str>,
+        dep: Option<bool>,
+    ) -> TokenLive {
+        TokenLive {
+            name: name.map(str::to_string),
+            symbol: sym.map(str::to_string),
+            decimals: dec,
+            asset: asset.map(str::to_string),
+            unwrapped_deployed: dep,
+            legacy_deployed: dep,
+            receipt_deployed: dep,
+        }
+    }
+
+    #[test]
+    fn token_ok_when_identity_and_wiring_confirmed() {
+        let live = tl(
+            Some("Wrapped NVIDIA"),
+            Some("wtNVDA"),
+            Some(18),
+            Some("0x7271"),
+            Some(true),
+        );
+        let t = token_health(
+            "wtNVDA",
+            "Wrapped NVIDIA",
+            18,
+            "0xfb5b",
+            Some("0x7271"),
+            None,
+            None,
+            &live,
+        );
+        assert_eq!(t["status"], "ok");
+        assert_eq!(t["nameOk"], true);
+        assert_eq!(t["assetOk"], true);
+    }
+
+    #[test]
+    fn token_mismatch_on_symbol() {
+        let live = tl(
+            Some("Wrapped NVIDIA"),
+            Some("wtWRONG"),
+            Some(18),
+            Some("0x7271"),
+            Some(true),
+        );
+        let t = token_health(
+            "wtNVDA",
+            "Wrapped NVIDIA",
+            18,
+            "0xfb5b",
+            Some("0x7271"),
+            None,
+            None,
+            &live,
+        );
+        assert_eq!(t["status"], "mismatch");
+        assert_eq!(t["symbolOk"], false);
+    }
+
+    #[test]
+    fn token_wiring_when_asset_or_linked_wrong() {
+        // asset() points at the wrong underlying
+        let bad_asset = tl(
+            Some("N"),
+            Some("wtNVDA"),
+            Some(18),
+            Some("0xbeef"),
+            Some(true),
+        );
+        assert_eq!(
+            token_health(
+                "wtNVDA",
+                "N",
+                18,
+                "0xfb5b",
+                Some("0x7271"),
+                None,
+                None,
+                &bad_asset
+            )["status"],
+            "wiring"
+        );
+        // a DECLARED linked address that isn't deployed on-chain
+        let mut nodep = tl(
+            Some("N"),
+            Some("wtNVDA"),
+            Some(18),
+            Some("0x7271"),
+            Some(true),
+        );
+        nodep.receipt_deployed = Some(false);
+        assert_eq!(
+            token_health(
+                "wtNVDA",
+                "N",
+                18,
+                "0xfb5b",
+                Some("0x7271"),
+                None,
+                Some("0xrec"),
+                &nodep
+            )["status"],
+            "wiring"
+        );
+    }
+
+    #[test]
+    fn token_undeclared_legacy_does_not_block_ok() {
+        // a wrapped token with NO legacy address (newer issuance): its legacy
+        // deploy flag is irrelevant and must not keep it out of `ok`.
+        let mut live = tl(
+            Some("N"),
+            Some("wtNVDA"),
+            Some(18),
+            Some("0x7271"),
+            Some(true),
+        );
+        live.legacy_deployed = None; // undeclared → unread
+        let t = token_health(
+            "wtNVDA",
+            "N",
+            18,
+            "0xfb5b",
+            Some("0x7271"),
+            None,
+            Some("0xrec"),
+            &live,
+        );
+        assert_eq!(t["status"], "ok");
+    }
+
+    #[test]
+    fn token_plain_collateral_is_judged_on_identity_only() {
+        // USDC-like: no unwrappedAddress, no asset(). Identity match alone = ok,
+        // never dragged to `unknown`/`wiring` by absent wiring.
+        let live = TokenLive {
+            name: Some("USD Coin".into()),
+            symbol: Some("USDC".into()),
+            decimals: Some(6),
+            ..Default::default()
+        };
+        let t = token_health("USDC", "USD Coin", 6, "0x8335", None, None, None, &live);
+        assert_eq!(t["status"], "ok");
+        assert_eq!(t["wrapped"], false);
+        // a plain token whose on-chain decimals disagree is still a mismatch
+        let bad = TokenLive {
+            decimals: Some(18),
+            ..live
+        };
+        assert_eq!(
+            token_health("USDC", "USD Coin", 6, "0x8335", None, None, None, &bad)["status"],
+            "mismatch"
+        );
+    }
+
+    #[test]
+    fn token_unknown_when_core_read_fails() {
+        let t = token_health(
+            "wtNVDA",
+            "N",
+            18,
+            "0xfb5b",
+            Some("0x7271"),
+            None,
+            None,
+            &TokenLive::default(),
+        );
+        assert_eq!(t["status"], "unknown");
+    }
+
+    #[test]
+    fn build_tokens_counts_ok_and_sorts_by_symbol() {
+        let ok = token_health(
+            "wtZ",
+            "Z",
+            18,
+            "0x2",
+            Some("0xu"),
+            None,
+            None,
+            &tl(Some("Z"), Some("wtZ"), Some(18), Some("0xu"), Some(true)),
+        );
+        let bad = token_health(
+            "wtA",
+            "A",
+            18,
+            "0x1",
+            Some("0xu"),
+            None,
+            None,
+            &tl(
+                Some("A"),
+                Some("wtWRONG"),
+                Some(18),
+                Some("0xu"),
+                Some(true),
+            ),
+        );
+        let v = build_tokens("o", "r", "base", "host", vec![ok, bad]).unwrap();
+        assert_eq!(v["total"], 2);
+        assert_eq!(v["ok"], 1);
+        assert_eq!(v["tokens"][0]["symbol"], "wtA");
     }
 }

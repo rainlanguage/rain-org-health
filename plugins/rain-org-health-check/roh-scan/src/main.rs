@@ -254,6 +254,16 @@ fn eth_get_code(session: usize, address: &str) -> Option<String> {
     curl_json(session, &payload).and_then(|b| rpc::result_hex(&b))
 }
 
+/// Whether `address` has deployed runtime code on Base (within `session`):
+/// `Some(true)` if `eth_getCode` returns non-empty bytecode, `Some(false)` for
+/// `0x` (an EOA / nothing there), `None` on RPC failure.
+fn code_deployed(session: usize, address: &str) -> Option<bool> {
+    eth_get_code(session, address).map(|code| {
+        let hex = code.strip_prefix("0x").unwrap_or(&code);
+        hex.chars().any(|c| c != '0')
+    })
+}
+
 /// `supportsInterface(<id>)` within `session` → the classified bool. An on-chain
 /// revert (the contract doesn't implement the function) is distinguished from an
 /// RPC failure so ERC-165 absence stays stable rather than flickering to
@@ -1517,12 +1527,68 @@ fn main() {
             }
         };
 
+        // Registry token wiring on Base (#90): for each token in the
+        // st0x.registry Base list, confirm the deployed wrapper's
+        // name()/symbol()/decimals() match the registry VERBATIM, its asset()
+        // points at the registry unwrappedAddress, and the linked
+        // unwrapped/legacy/receipt addresses are deployed. Best-effort — a failed
+        // read marks that token `unknown` rather than failing the scan.
+        let deployment_tokens = {
+            let (org, repo) = ("ST0x-Technology", "st0x.registry");
+            let raw = gh_file(org, repo, "token-lists/base.json");
+            let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
+            let tokens: Vec<serde_json::Value> = parsed
+                .as_ref()
+                .and_then(|v| v["tokens"].as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|t| {
+                            let address = t["address"].as_str()?;
+                            let name = t["name"].as_str()?;
+                            let symbol = t["symbol"].as_str()?;
+                            let decimals = t["decimals"].as_u64()?;
+                            // Registry extension addresses; a token may legitimately
+                            // omit one (plain collateral has no unwrapped; newer
+                            // wrapped tokens carry an empty legacy) — treat "" as
+                            // absent so it isn't probed or counted as a wiring gap.
+                            let ext = &t["extensions"];
+                            let nonempty = |k: &str| ext[k].as_str().filter(|s| !s.is_empty());
+                            let unwrapped = nonempty("unwrappedAddress");
+                            let legacy = nonempty("legacyAddress");
+                            let receipt = nonempty("receiptAddress");
+                            // One session per token so all its reads hit the same RPC.
+                            let s = rpc_session();
+                            let live = deployhealth::TokenLive {
+                                name: eth_call(s, address, &rpc::name_calldata())
+                                    .and_then(|h| rpc::decode_string(&h)),
+                                symbol: eth_call(s, address, &rpc::symbol_calldata())
+                                    .and_then(|h| rpc::decode_string(&h)),
+                                decimals: eth_call(s, address, &rpc::decimals_calldata())
+                                    .and_then(|h| rpc::decode_u8(&h)),
+                                asset: eth_call(s, address, &rpc::asset_calldata())
+                                    .and_then(|h| rpc::decode_address(&h)),
+                                unwrapped_deployed: unwrapped.and_then(|a| code_deployed(s, a)),
+                                legacy_deployed: legacy.and_then(|a| code_deployed(s, a)),
+                                receipt_deployed: receipt.and_then(|a| code_deployed(s, a)),
+                            };
+                            Some(deployhealth::token_health(
+                                symbol, name, decimals, address, unwrapped, legacy, receipt, &live,
+                            ))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            deployhealth::build_tokens(org, repo, "base", "mainnet.base.org", tokens)
+                .unwrap_or(serde_json::Value::Null)
+        };
+
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": deployment_beacons,
+            "deploymentTokens": deployment_tokens,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,

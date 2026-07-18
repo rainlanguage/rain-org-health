@@ -77,12 +77,12 @@
   .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
   .own-row.own-extra { background: var(--debt-bg); }
   .own-row.hlth-missing, .own-row.hlth-mismatch, .own-row.hlth-drift { background: var(--debt-bg); }
-  .own-row.hlth-behind { background: var(--debt-bg); }
+  .own-row.hlth-behind, .own-row.hlth-wiring { background: var(--debt-bg); }
   .own-row.hlth-unknown { opacity: 0.7; }
   .bcn-detail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .bcn-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .bcn-key { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
-             color: var(--ink-3); width: 40px; flex-shrink: 0; }
+             color: var(--ink-3); width: 68px; flex-shrink: 0; }
   .own-role { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
   .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
   .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
@@ -330,6 +330,91 @@ function renderDeployments(document, $, data) {
     }
     box.append(table);
   };
+  // Registry tokens: each wrapper's on-chain identity must match the registry and
+  // its asset() must point at the declared unwrapped underlying, with the linked
+  // unwrapped/legacy/receipt addresses all deployed.
+  const renderTokens = (t) => {
+    if (!t || !Array.isArray(t.tokens) || t.tokens.length === 0) return;
+    box.append(el("h2", null, `Tokens — ${t.network}`));
+    const tsub = el("div", "own-sub");
+    tsub.append(document.createTextNode("Each token in the "));
+    tsub.append(link("", `${t.org}/${t.repo}`, `https://github.com/${t.org}/${t.repo}`));
+    tsub.append(
+      document.createTextNode(
+        ` Base list, checked live on ${t.network}: name/symbol/decimals match the registry verbatim, asset() points at the declared unwrapped underlying, and the unwrapped/legacy/receipt addresses are deployed.`,
+      ),
+    );
+    box.append(tsub);
+    const allOk = t.ok === t.total;
+    const tb = el("div", `own-verify ${allOk ? "own-verify-ok" : "own-verify-drift"}`);
+    tb.append(
+      el("span", "own-verify-msg", `${t.ok} of ${t.total} tokens fully wired on ${t.network}.`),
+    );
+    tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
+    box.append(tb);
+    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const okChip = (label, v) => {
+      const sym = v === true ? "✓" : v === false ? "✗" : "—";
+      const cls = v === true ? "yes" : v === false ? "no" : "dim";
+      return el("span", `own-chip own-chip-${cls}`, label ? `${label} ${sym}` : sym);
+    };
+    const table = el("div", "own-table");
+    for (const tk of t.tokens) {
+      const st = tk.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", tk.symbol));
+      if (tk.name) rc.append(el("div", "own-note", tk.name));
+      if (tk.address) {
+        const note = el("div", "own-note");
+        note.append(explorerLink(tk.address));
+        rc.append(note);
+      }
+      const detail = el("div", "bcn-detail");
+      // identity: the three registry fields read back from the token contract.
+      const idl = el("div", "bcn-line");
+      idl.append(el("span", "bcn-key", "identity"));
+      idl.append(okChip("name", tk.nameOk));
+      idl.append(okChip("symbol", tk.symbolOk));
+      idl.append(okChip("decimals", tk.decimalsOk));
+      detail.append(idl);
+      // A plain collateral token (e.g. USDC) declares no unwrapped underlying, so
+      // it has no asset()/wiring to check — identity is the whole verdict.
+      if (tk.wrapped) {
+        // asset: what asset() returns NOW, and — when it isn't the declared
+        // unwrapped — what it SHOULD be, so a proposed re-wire can be checked.
+        const al = el("div", "bcn-line");
+        al.append(el("span", "bcn-key", "asset"));
+        al.append(okChip("", tk.assetOk));
+        if (tk.asset) al.append(explorerLink(tk.asset));
+        detail.append(al);
+        if (tk.assetOk === false && tk.unwrapped) {
+          const xl = el("div", "bcn-line");
+          xl.append(el("span", "bcn-key", "expected"));
+          xl.append(el("span", "own-chip own-chip-target", "unwrapped"));
+          xl.append(explorerLink(tk.unwrapped));
+          detail.append(xl);
+        }
+        // linked deploys — only the addresses the registry actually declares.
+        for (const [key, ok, addr] of [
+          ["unwrapped", tk.unwrappedDeployed, tk.unwrapped],
+          ["legacy", tk.legacyDeployed, tk.legacy],
+          ["receipt", tk.receiptDeployed, tk.receipt],
+        ]) {
+          if (!addr) continue;
+          const dl = el("div", "bcn-line");
+          dl.append(el("span", "bcn-key", key));
+          dl.append(okChip("", ok));
+          dl.append(explorerLink(addr));
+          detail.append(dl);
+        }
+      }
+      const stCls = st === "ok" ? "yes" : st === "unknown" ? "dim" : "no";
+      row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
+      table.append(row);
+    }
+    box.append(table);
+  };
   const owners = data.deploymentOwners;
   box.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
@@ -338,6 +423,7 @@ function renderDeployments(document, $, data) {
     );
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
+    renderTokens(data.deploymentTokens);
     return;
   }
   const sub = el("div", "own-sub");
@@ -403,6 +489,7 @@ function renderDeployments(document, $, data) {
   }
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
+  renderTokens(data.deploymentTokens);
 }
 let data = null;
 async function load() {
