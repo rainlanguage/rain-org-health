@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T15:17:44Z",
+  "generatedAt": "2026-07-18T15:26:16Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2326,6 +2326,87 @@
             "note": "owned by the token contract itself — the V2 beacon can no longer be upgraded"
           }
         ]
+      }
+    ]
+  },
+  "deploymentHealth": {
+    "org": "S01-Issuer",
+    "repo": "st0x.deploy",
+    "version": "0.1.1",
+    "network": "base",
+    "rpcHost": "mainnet.base.org",
+    "total": 10,
+    "healthy": 10,
+    "contracts": [
+      {
+        "name": "StoxCorporateActionsFacet",
+        "address": "0x51f78B77EdffDB62b8AeB753066C318a46D05D74",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxOffchainAssetReceiptVaultAuthorizerV1",
+        "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxOffchainAssetReceiptVaultBeaconSetDeployer",
+        "address": "0xd64246e6b25F745f005E6233e050C9B879E660Dc",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxOffchainAssetReceiptVaultPaymentMintAuthorizerV1",
+        "address": "0xeaD68E489Cb19453b294dc46a3A5710b0d46d17F",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxReceipt",
+        "address": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxReceiptVault",
+        "address": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxUnifiedDeployer",
+        "address": "0x81D0ecD58346bf2d484E7774f55EABc1AA3F4bcc",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxWrappedTokenVault",
+        "address": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxWrappedTokenVaultBeacon",
+        "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
+      },
+      {
+        "name": "StoxWrappedTokenVaultBeaconSetDeployer",
+        "address": "0xbe5f05C4576e6D3e7bCCb4E64f08fc4F46Adf0cA",
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true
       }
     ]
   },
