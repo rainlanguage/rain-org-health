@@ -82,7 +82,8 @@
   .bcn-detail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .bcn-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .bcn-key { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
-             color: var(--ink-3); width: 68px; flex-shrink: 0; }
+             color: var(--ink-3); width: 78px; flex-shrink: 0; }
+  .tok-val { font-size: 12px; word-break: break-word; }
   .own-role { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
   .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
   .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
@@ -353,6 +354,28 @@ function renderDeployments(document, $, data) {
     tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
     box.append(tb);
     const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    // The setAuthorizer migration target, stated once: what a pending Safe bundle
+    // rewires every receipt vault's authorizer() to, and how many are already there.
+    const auth = t.authoriser;
+    if (auth && auth.target) {
+      const allAt = t.atAuthoriserTarget === t.wrappedCount;
+      const ab = el("div", `own-verify ${allAt ? "own-verify-ok" : "own-verify-drift"}`);
+      const dep =
+        auth.targetDeployed === true
+          ? "deployed"
+          : auth.targetDeployed === false
+            ? "NOT deployed"
+            : "deploy state unknown";
+      ab.append(
+        el(
+          "span",
+          "own-verify-msg",
+          `Authoriser migration — ${t.atAuthoriserTarget} of ${t.wrappedCount} receipt vaults at the V4-clone target (${dep}); a setAuthorizer bundle rewires the rest.`,
+        ),
+      );
+      ab.append(el("span", "own-verify-src", `target ${auth.target}`));
+      box.append(ab);
+    }
     const okChip = (label, v) => {
       const sym = v === true ? "✓" : v === false ? "✗" : "—";
       const cls = v === true ? "yes" : v === false ? "no" : "dim";
@@ -378,6 +401,25 @@ function renderDeployments(document, $, data) {
       idl.append(okChip("symbol", tk.symbolOk));
       idl.append(okChip("decimals", tk.decimalsOk));
       detail.append(idl);
+      // For any identity field that disagrees, show the on-chain value NOW next to
+      // the registry value it SHOULD be, so the actual difference is visible.
+      const fmt = (v) => (v === null || v === undefined ? "—" : `“${v}”`);
+      const idDiff = (key, ok, live, expected) => {
+        if (ok !== false) return;
+        const now = el("div", "bcn-line");
+        now.append(el("span", "bcn-key", key));
+        now.append(el("span", "own-chip own-chip-no", "on-chain"));
+        now.append(el("span", "tok-val", fmt(live)));
+        detail.append(now);
+        const exp = el("div", "bcn-line");
+        exp.append(el("span", "bcn-key", ""));
+        exp.append(el("span", "own-chip own-chip-target", "registry"));
+        exp.append(el("span", "tok-val", fmt(expected)));
+        detail.append(exp);
+      };
+      idDiff("name", tk.nameOk, tk.liveName, tk.name);
+      idDiff("symbol", tk.symbolOk, tk.liveSymbol, tk.symbol);
+      idDiff("decimals", tk.decimalsOk, tk.liveDecimals, tk.decimals);
       // A plain collateral token (e.g. USDC) declares no unwrapped underlying, so
       // it has no asset()/wiring to check — identity is the whole verdict.
       if (tk.wrapped) {
@@ -407,6 +449,27 @@ function renderDeployments(document, $, data) {
           dl.append(okChip("", ok));
           dl.append(explorerLink(addr));
           detail.append(dl);
+        }
+        // authoriser: what authorizer() on the receipt vault resolves to NOW, and
+        // — when it isn't yet the V4-clone target — the target the setAuthorizer
+        // bundle sets, so the proposed transaction can be checked per vault.
+        const authFor = {
+          target: ["V4 clone ✓", "yes"],
+          current: ["current prod authoriser", "no"],
+          none: ["unset", "no"],
+          foreign: ["foreign", "no"],
+        }[tk.authoriserLabel] || ["—", "dim"];
+        const anl = el("div", "bcn-line");
+        anl.append(el("span", "bcn-key", "authoriser"));
+        anl.append(el("span", `own-chip own-chip-${authFor[1]}`, authFor[0]));
+        if (tk.authoriser) anl.append(explorerLink(tk.authoriser));
+        detail.append(anl);
+        if (tk.atAuthoriserTarget === false && tk.authoriserTarget) {
+          const atl = el("div", "bcn-line");
+          atl.append(el("span", "bcn-key", "target"));
+          atl.append(el("span", "own-chip own-chip-target", "V4 clone"));
+          atl.append(explorerLink(tk.authoriserTarget));
+          detail.append(atl);
         }
       }
       const stCls = st === "ok" ? "yes" : st === "unknown" ? "dim" : "no";

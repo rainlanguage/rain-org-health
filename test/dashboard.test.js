@@ -1092,6 +1092,8 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
 Deno.test("deployments: tokens check registry identity + asset wiring, flag mismatch/wiring", () => {
   const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
   const WRONG = "0xbeef000000000000000000000000000000000002";
+  const CUR = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"; // current prod authoriser
+  const TGT = "0x315b16faa6ee413fabca877d3851b3818369f0cd"; // V4-clone target
   const data = {
     deploymentOwners: null,
     deploymentHealth: null,
@@ -1103,8 +1105,11 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       rpcHost: "mainnet.base.org",
       total: 4,
       ok: 2,
+      wrappedCount: 3,
+      atAuthoriserTarget: 1,
+      authoriser: { current: CUR, target: TGT, targetDeployed: true },
       tokens: [
-        // fully wired: identity matches and asset() points at the unwrapped underlying
+        // fully wired AND already at the V4-clone authoriser target
         {
           symbol: "wtNVDA",
           name: "Wrapped NVIDIA Corporation ST0x",
@@ -1122,8 +1127,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           unwrappedDeployed: true,
           legacyDeployed: true,
           receiptDeployed: true,
+          authoriser: TGT,
+          authoriserLabel: "target",
+          authoriserTarget: TGT,
+          atAuthoriserTarget: true,
         },
-        // asset() points at the wrong underlying → wiring, with the expected target shown
+        // asset() points at the wrong underlying → wiring; authoriser still at current
         {
           symbol: "wtAMZN",
           name: "Wrapped Amazon ST0x",
@@ -1141,8 +1150,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           unwrappedDeployed: true,
           legacyDeployed: true,
           receiptDeployed: true,
+          authoriser: CUR,
+          authoriserLabel: "current",
+          authoriserTarget: TGT,
+          atAuthoriserTarget: false,
         },
-        // on-chain symbol disagrees with the registry → mismatch
+        // on-chain symbol disagrees with the registry → mismatch; authoriser at current
         {
           symbol: "wtTSLA",
           name: "Wrapped Tesla ST0x",
@@ -1160,8 +1173,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           unwrappedDeployed: true,
           legacyDeployed: true,
           receiptDeployed: true,
+          authoriser: CUR,
+          authoriserLabel: "current",
+          authoriserTarget: TGT,
+          atAuthoriserTarget: false,
         },
-        // plain collateral (USDC): no unwrapped/asset — judged on identity alone
+        // plain collateral (USDC): no unwrapped/asset/authoriser — identity alone
         {
           symbol: "USDC",
           name: "USD Coin",
@@ -1179,6 +1196,10 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           unwrappedDeployed: null,
           legacyDeployed: null,
           receiptDeployed: null,
+          authoriser: null,
+          authoriserLabel: "n/a",
+          authoriserTarget: null,
+          atAuthoriserTarget: null,
         },
       ],
     },
@@ -1199,12 +1220,6 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     chips.includes("mismatch"),
     "the symbol-mismatch token shows mismatch",
   );
-  // the wiring token surfaces BOTH the actual asset and the expected unwrapped, for
-  // checking a proposed re-wire: an expected-unwrapped chip + both addresses linked
-  assert(
-    collect(box, "own-chip-target").length === 1,
-    "one expected-unwrapped chip (only the drifting token)",
-  );
   const addrs = collect(box, "own-addr").map((a) => a.textContent);
   assert(addrs.includes(WRONG), "the actual (wrong) asset address is shown");
   assert(addrs.includes(UNWRAP), "the expected unwrapped address is shown");
@@ -1220,10 +1235,49 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     ),
     "USDC shows no spurious wiring addresses",
   );
-  // not-all-ok summary + the flagged rows
+  // Authoriser provenance: the migrated vault shows the V4 clone confirmed; the
+  // two pre-migration vaults show the current authoriser NOW + the V4-clone target
+  // (address linked), so the setAuthorizer bundle can be checked per vault.
   assert(
-    collect(box, "own-verify-drift").length === 1,
-    "a not-all-wired summary banner",
+    chips.includes("V4 clone ✓"),
+    "the migrated vault confirms the V4 clone",
+  );
+  assert(
+    chips.filter((c) => c === "current prod authoriser").length === 2,
+    "two vaults still show the current prod authoriser",
+  );
+  assert(
+    chips.filter((c) => c === "V4 clone").length === 2,
+    "two → target lines point at the V4 clone",
+  );
+  assert(addrs.includes(TGT), "the V4-clone target address is linked");
+  assert(addrs.includes(CUR), "the current authoriser address is linked");
+  // a mismatched identity field shows the on-chain value NOW next to the registry value
+  assert(
+    chips.includes("on-chain"),
+    "a mismatched identity field shows its on-chain value",
+  );
+  assert(
+    chips.includes("registry"),
+    "…next to the registry value it should be",
+  );
+  // exactly one expected-unwrapped target chip (the wiring token)
+  assert(
+    chips.filter((c) => c === "unwrapped").length === 1,
+    "one expected-unwrapped target chip (the wiring token)",
+  );
+  // section-level migration banner states the target + progress
+  const banners = collect(box, "own-verify").map((b) => textOf(b));
+  assert(
+    banners.some((m) =>
+      m.includes("Authoriser migration") && m.includes("1 of 3")
+    ),
+    "the authoriser migration banner states progress + target",
+  );
+  // not-all-ok summaries + the flagged rows (wiring banner + authoriser banner)
+  assert(
+    collect(box, "own-verify-drift").length === 2,
+    "not-all-wired banner + authoriser-migration banner",
   );
   assert(collect(box, "hlth-wiring").length === 1, "the wiring row is flagged");
   assert(

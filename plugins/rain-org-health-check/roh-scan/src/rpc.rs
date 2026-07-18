@@ -17,6 +17,7 @@ sol! {
     function symbol() external view returns (string);
     function decimals() external view returns (uint8);
     function asset() external view returns (address);
+    function authorizer() external view returns (address);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -78,6 +79,9 @@ pub fn decimals_calldata() -> String {
 }
 pub fn asset_calldata() -> String {
     to_hex(assetCall {}.abi_encode())
+}
+pub fn authorizer_calldata() -> String {
+    to_hex(authorizerCall {}.abi_encode())
 }
 
 // ---- return decoders (from the `eth_call` result hex) ----
@@ -232,6 +236,7 @@ mod tests {
         assert!(symbol_calldata().starts_with("0x95d89b41")); // symbol()
         assert!(decimals_calldata().starts_with("0x313ce567")); // decimals()
         assert!(asset_calldata().starts_with("0x38d52e0f")); // asset()
+        assert!(authorizer_calldata().starts_with("0xd09edf31")); // authorizer()
         assert_eq!(
             decode_u8("0x0000000000000000000000000000000000000000000000000000000000000012"),
             Some(18)

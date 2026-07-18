@@ -235,6 +235,26 @@ pub struct TokenLive {
     pub unwrapped_deployed: Option<bool>,
     pub legacy_deployed: Option<bool>,
     pub receipt_deployed: Option<bool>,
+    /// `authorizer()` read from the token's receipt vault (its `unwrappedAddress`,
+    /// where the setter lives); `None` for a plain token or a failed read.
+    pub authoriser: Option<String>,
+}
+
+/// The registry-declared facts about one token plus the authoriser addresses it
+/// is checked against — grouped so `token_health` isn't a wall of positional args.
+#[derive(Clone, Copy)]
+pub struct TokenSpec<'a> {
+    pub symbol: &'a str,
+    pub name: &'a str,
+    pub decimals: u64,
+    pub address: &'a str,
+    pub unwrapped: Option<&'a str>,
+    pub legacy: Option<&'a str>,
+    pub receipt: Option<&'a str>,
+    /// The current prod authoriser a receipt vault should point at today.
+    pub auth_current: Option<&'a str>,
+    /// The V4-clone authoriser the pending `setAuthorizer` bundle rewires to.
+    pub auth_target: Option<&'a str>,
 }
 
 /// Health of one registry token. Every token's on-chain `name`/`symbol`/`decimals`
@@ -245,17 +265,24 @@ pub struct TokenLive {
 /// declares no `unwrappedAddress`) is judged on identity alone. `ok` = all
 /// applicable checks confirmed; `mismatch` = an identity field differs; `wiring` =
 /// `asset()` or a declared linked address is wrong; `unknown` = a core read failed.
-#[allow(clippy::too_many_arguments)]
-pub fn token_health(
-    symbol: &str,
-    name: &str,
-    decimals: u64,
-    address: &str,
-    unwrapped: Option<&str>,
-    legacy: Option<&str>,
-    receipt: Option<&str>,
-    live: &TokenLive,
-) -> serde_json::Value {
+///
+/// The authoriser (read from the receipt vault) is resolved to WHO it is — the
+/// `current` prod authoriser, the V4-clone `target`, `none`, or `foreign` — and
+/// reported NOW vs. target so a proposed `setAuthorizer` migration can be checked.
+/// It does NOT affect `status`: sitting at the current authoriser pre-migration is
+/// correct, not an error.
+pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
+    let TokenSpec {
+        symbol,
+        name,
+        decimals,
+        address,
+        unwrapped,
+        legacy,
+        receipt,
+        auth_current,
+        auth_target,
+    } = *spec;
     let name_ok = live.name.as_deref().map(|n| n == name);
     let symbol_ok = live.symbol.as_deref().map(|s| s == symbol);
     let decimals_ok = live.decimals.map(|d| d as u64 == decimals);
@@ -297,6 +324,23 @@ pub fn token_health(
     } else {
         "ok"
     };
+
+    // Authoriser (receipt-vault only): resolve who it actually is, and whether it
+    // already sits at the V4-clone target the pending setAuthorizer bundle sets.
+    let zero = "0x0000000000000000000000000000000000000000";
+    let authoriser_label = match live.authoriser.as_deref() {
+        _ if !wrapped => "n/a",
+        None => "unknown",
+        Some(a) if auth_target.is_some_and(|t| a.eq_ignore_ascii_case(t)) => "target",
+        Some(a) if auth_current.is_some_and(|c| a.eq_ignore_ascii_case(c)) => "current",
+        Some(a) if a.eq_ignore_ascii_case(zero) => "none",
+        Some(_) => "foreign",
+    };
+    let at_auth_target = match (live.authoriser.as_deref(), auth_target) {
+        (Some(a), Some(t)) => Some(a.eq_ignore_ascii_case(t)),
+        _ => None,
+    };
+
     json!({
         "symbol": symbol,
         "name": name,
@@ -306,6 +350,11 @@ pub fn token_health(
         "nameOk": name_ok,
         "symbolOk": symbol_ok,
         "decimalsOk": decimals_ok,
+        // The live on-chain values, so a mismatch can show what it IS now next to
+        // what the registry says it SHOULD be — not just a red ✗.
+        "liveName": live.name,
+        "liveSymbol": live.symbol,
+        "liveDecimals": live.decimals,
         "assetOk": asset_ok,
         "asset": live.asset,
         "unwrapped": unwrapped,
@@ -314,15 +363,25 @@ pub fn token_health(
         "unwrappedDeployed": live.unwrapped_deployed,
         "legacyDeployed": live.legacy_deployed,
         "receiptDeployed": live.receipt_deployed,
+        // Authoriser provenance — for reviewing the setAuthorizer migration: what
+        // it is NOW (resolved to current / target / none / foreign) vs. the target.
+        "authoriser": live.authoriser,
+        "authoriserLabel": authoriser_label,
+        "authoriserTarget": auth_target,
+        "atAuthoriserTarget": at_auth_target,
     })
 }
 
 /// Assemble the `deploymentTokens` document (sorted by symbol; `None` if empty).
+/// `authoriser` is the section-level authoriser summary (current + target
+/// addresses and whether the target is deployed), so the page can state the
+/// migration target once and count how many vaults already sit at it.
 pub fn build_tokens(
     org: &str,
     repo: &str,
     network: &str,
     rpc_host: &str,
+    authoriser: serde_json::Value,
     mut tokens: Vec<serde_json::Value>,
 ) -> Option<serde_json::Value> {
     if tokens.is_empty() {
@@ -331,6 +390,13 @@ pub fn build_tokens(
     tokens.sort_by(|a, b| a["symbol"].as_str().cmp(&b["symbol"].as_str()));
     let total = tokens.len();
     let ok = tokens.iter().filter(|t| t["status"] == "ok").count();
+    // How many wrapped tokens already sit at the authoriser target vs. total
+    // wrapped — so the page can show migration progress.
+    let wrapped = tokens.iter().filter(|t| t["wrapped"] == true).count();
+    let at_target = tokens
+        .iter()
+        .filter(|t| t["atAuthoriserTarget"] == true)
+        .count();
     Some(json!({
         "org": org,
         "repo": repo,
@@ -338,6 +404,9 @@ pub fn build_tokens(
         "rpcHost": rpc_host,
         "total": total,
         "ok": ok,
+        "authoriser": authoriser,
+        "wrappedCount": wrapped,
+        "atAuthoriserTarget": at_target,
         "tokens": tokens,
     }))
 }
@@ -598,6 +667,28 @@ mod tests {
             unwrapped_deployed: dep,
             legacy_deployed: dep,
             receipt_deployed: dep,
+            authoriser: None,
+        }
+    }
+
+    // A minimal wrapped-token spec (no legacy/receipt/authoriser targets).
+    fn spec<'a>(
+        symbol: &'a str,
+        name: &'a str,
+        decimals: u64,
+        address: &'a str,
+        unwrapped: Option<&'a str>,
+    ) -> TokenSpec<'a> {
+        TokenSpec {
+            symbol,
+            name,
+            decimals,
+            address,
+            unwrapped,
+            legacy: None,
+            receipt: None,
+            auth_current: None,
+            auth_target: None,
         }
     }
 
@@ -611,13 +702,7 @@ mod tests {
             Some(true),
         );
         let t = token_health(
-            "wtNVDA",
-            "Wrapped NVIDIA",
-            18,
-            "0xfb5b",
-            Some("0x7271"),
-            None,
-            None,
+            &spec("wtNVDA", "Wrapped NVIDIA", 18, "0xfb5b", Some("0x7271")),
             &live,
         );
         assert_eq!(t["status"], "ok");
@@ -635,17 +720,14 @@ mod tests {
             Some(true),
         );
         let t = token_health(
-            "wtNVDA",
-            "Wrapped NVIDIA",
-            18,
-            "0xfb5b",
-            Some("0x7271"),
-            None,
-            None,
+            &spec("wtNVDA", "Wrapped NVIDIA", 18, "0xfb5b", Some("0x7271")),
             &live,
         );
         assert_eq!(t["status"], "mismatch");
         assert_eq!(t["symbolOk"], false);
+        // the live on-chain values ride along so the page can show the diff
+        assert_eq!(t["liveSymbol"], "wtWRONG");
+        assert_eq!(t["liveName"], "Wrapped NVIDIA");
     }
 
     #[test]
@@ -660,13 +742,7 @@ mod tests {
         );
         assert_eq!(
             token_health(
-                "wtNVDA",
-                "N",
-                18,
-                "0xfb5b",
-                Some("0x7271"),
-                None,
-                None,
+                &spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271")),
                 &bad_asset
             )["status"],
             "wiring"
@@ -680,19 +756,9 @@ mod tests {
             Some(true),
         );
         nodep.receipt_deployed = Some(false);
-        assert_eq!(
-            token_health(
-                "wtNVDA",
-                "N",
-                18,
-                "0xfb5b",
-                Some("0x7271"),
-                None,
-                Some("0xrec"),
-                &nodep
-            )["status"],
-            "wiring"
-        );
+        let mut s = spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271"));
+        s.receipt = Some("0xrec");
+        assert_eq!(token_health(&s, &nodep)["status"], "wiring");
     }
 
     #[test]
@@ -707,17 +773,9 @@ mod tests {
             Some(true),
         );
         live.legacy_deployed = None; // undeclared → unread
-        let t = token_health(
-            "wtNVDA",
-            "N",
-            18,
-            "0xfb5b",
-            Some("0x7271"),
-            None,
-            Some("0xrec"),
-            &live,
-        );
-        assert_eq!(t["status"], "ok");
+        let mut s = spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271"));
+        s.receipt = Some("0xrec");
+        assert_eq!(token_health(&s, &live)["status"], "ok");
     }
 
     #[test]
@@ -730,16 +788,17 @@ mod tests {
             decimals: Some(6),
             ..Default::default()
         };
-        let t = token_health("USDC", "USD Coin", 6, "0x8335", None, None, None, &live);
+        let t = token_health(&spec("USDC", "USD Coin", 6, "0x8335", None), &live);
         assert_eq!(t["status"], "ok");
         assert_eq!(t["wrapped"], false);
-        // a plain token whose on-chain decimals disagree is still a mismatch
+        assert_eq!(t["authoriserLabel"], "n/a"); // no receipt vault, no authoriser
+                                                 // a plain token whose on-chain decimals disagree is still a mismatch
         let bad = TokenLive {
             decimals: Some(18),
             ..live
         };
         assert_eq!(
-            token_health("USDC", "USD Coin", 6, "0x8335", None, None, None, &bad)["status"],
+            token_health(&spec("USDC", "USD Coin", 6, "0x8335", None), &bad)["status"],
             "mismatch"
         );
     }
@@ -747,38 +806,61 @@ mod tests {
     #[test]
     fn token_unknown_when_core_read_fails() {
         let t = token_health(
-            "wtNVDA",
-            "N",
-            18,
-            "0xfb5b",
-            Some("0x7271"),
-            None,
-            None,
+            &spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271")),
             &TokenLive::default(),
         );
         assert_eq!(t["status"], "unknown");
     }
 
     #[test]
+    fn token_authoriser_resolved_now_vs_target_without_affecting_status() {
+        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+        let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+        let mut s = spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271"));
+        s.auth_current = Some(cur);
+        s.auth_target = Some(tgt);
+        let base = || {
+            tl(
+                Some("N"),
+                Some("wtNVDA"),
+                Some(18),
+                Some("0x7271"),
+                Some(true),
+            )
+        };
+
+        // pre-migration: at the current prod authoriser → labelled `current`, NOT
+        // at target, and the token is still `ok` (this is the correct pre-state).
+        let mut at_current = base();
+        at_current.authoriser = Some(cur.to_string());
+        let t = token_health(&s, &at_current);
+        assert_eq!(t["authoriserLabel"], "current");
+        assert_eq!(t["atAuthoriserTarget"], false);
+        assert_eq!(t["authoriserTarget"], tgt);
+        assert_eq!(t["status"], "ok");
+
+        // migrated: at the V4 clone → `target`, atAuthoriserTarget true.
+        let mut at_target = base();
+        at_target.authoriser = Some(tgt.to_string());
+        let t2 = token_health(&s, &at_target);
+        assert_eq!(t2["authoriserLabel"], "target");
+        assert_eq!(t2["atAuthoriserTarget"], true);
+
+        // an unexpected authoriser → `foreign`; a failed read → `unknown`.
+        let mut foreign = base();
+        foreign.authoriser = Some("0xdead000000000000000000000000000000000001".into());
+        assert_eq!(token_health(&s, &foreign)["authoriserLabel"], "foreign");
+        assert_eq!(token_health(&s, &base())["authoriserLabel"], "unknown");
+    }
+
+    #[test]
     fn build_tokens_counts_ok_and_sorts_by_symbol() {
         let ok = token_health(
-            "wtZ",
-            "Z",
-            18,
-            "0x2",
-            Some("0xu"),
-            None,
-            None,
+            &spec("wtZ", "Z", 18, "0x2", Some("0xu")),
             &tl(Some("Z"), Some("wtZ"), Some(18), Some("0xu"), Some(true)),
         );
         let bad = token_health(
-            "wtA",
-            "A",
-            18,
-            "0x1",
-            Some("0xu"),
-            None,
-            None,
+            &spec("wtA", "A", 18, "0x1", Some("0xu")),
             &tl(
                 Some("A"),
                 Some("wtWRONG"),
@@ -787,7 +869,7 @@ mod tests {
                 Some(true),
             ),
         );
-        let v = build_tokens("o", "r", "base", "host", vec![ok, bad]).unwrap();
+        let v = build_tokens("o", "r", "base", "host", json!(null), vec![ok, bad]).unwrap();
         assert_eq!(v["total"], 2);
         assert_eq!(v["ok"], 1);
         assert_eq!(v["tokens"][0]["symbol"], "wtA");

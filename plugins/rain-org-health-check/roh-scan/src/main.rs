@@ -1531,10 +1531,29 @@ fn main() {
         // st0x.registry Base list, confirm the deployed wrapper's
         // name()/symbol()/decimals() match the registry VERBATIM, its asset()
         // points at the registry unwrappedAddress, and the linked
-        // unwrapped/legacy/receipt addresses are deployed. Best-effort — a failed
-        // read marks that token `unknown` rather than failing the scan.
+        // unwrapped/legacy/receipt addresses are deployed. Also resolve each
+        // receipt vault's live authorizer() against the current prod authoriser
+        // and the V4-clone target, so a proposed setAuthorizer migration can be
+        // reviewed. Best-effort — a failed read marks that token `unknown`.
         let deployment_tokens = {
             let (org, repo) = ("ST0x-Technology", "st0x.registry");
+            // Authoriser targets live in st0x.deploy: the current prod authoriser
+            // every receipt vault points at today, and the V4 clone the pending
+            // setAuthorizer migration rewires them to. Read once for the list.
+            let (dorg, drepo) = ("S01-Issuer", "st0x.deploy");
+            let auth_lib = gh_file(dorg, drepo, "src/lib/LibAuthoriserInvariants.sol");
+            let v4_lib = gh_file(dorg, drepo, "src/generated/LibProdDeployV4.sol");
+            let auth_current = owners::parse_address_constant(&auth_lib, "STOX_PROD_AUTHORISER");
+            let auth_target =
+                owners::parse_address_constant(&v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
+            let auth_target_deployed = auth_target
+                .as_deref()
+                .and_then(|a| code_deployed(rpc_session(), a));
+            let auth_summary = json!({
+                "current": auth_current,
+                "target": auth_target,
+                "targetDeployed": auth_target_deployed,
+            });
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
             let tokens: Vec<serde_json::Value> = parsed
@@ -1570,15 +1589,28 @@ fn main() {
                                 unwrapped_deployed: unwrapped.and_then(|a| code_deployed(s, a)),
                                 legacy_deployed: legacy.and_then(|a| code_deployed(s, a)),
                                 receipt_deployed: receipt.and_then(|a| code_deployed(s, a)),
+                                // authorizer() lives on the receipt vault (the unwrapped).
+                                authoriser: unwrapped
+                                    .and_then(|rv| eth_call(s, rv, &rpc::authorizer_calldata()))
+                                    .and_then(|h| rpc::decode_address(&h)),
                             };
-                            Some(deployhealth::token_health(
-                                symbol, name, decimals, address, unwrapped, legacy, receipt, &live,
-                            ))
+                            let spec = deployhealth::TokenSpec {
+                                symbol,
+                                name,
+                                decimals,
+                                address,
+                                unwrapped,
+                                legacy,
+                                receipt,
+                                auth_current: auth_current.as_deref(),
+                                auth_target: auth_target.as_deref(),
+                            };
+                            Some(deployhealth::token_health(&spec, &live))
                         })
                         .collect()
                 })
                 .unwrap_or_default();
-            deployhealth::build_tokens(org, repo, "base", "mainnet.base.org", tokens)
+            deployhealth::build_tokens(org, repo, "base", "mainnet.base.org", auth_summary, tokens)
                 .unwrap_or(serde_json::Value::Null)
         };
 
