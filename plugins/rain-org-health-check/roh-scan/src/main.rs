@@ -7,6 +7,7 @@
 //! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
 
 mod audit;
+mod deployhealth;
 mod graph;
 mod owners;
 mod protofire;
@@ -180,6 +181,34 @@ fn gh_file(org: &str, repo: &str, path: &str) -> String {
 fn eth_call(rpc_url: &str, to: &str, data: &str) -> Option<String> {
     let payload = format!(
         r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+    );
+    let out = Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "-X",
+            "POST",
+            rpc_url,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            &payload,
+        ])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    owners::eth_call_result(&out.stdout)
+}
+
+/// `eth_getCode` for an address via curl → the runtime bytecode hex (`0x…`, or
+/// `0x` when there is no code), or `None` on any failure/timeout. Same best-effort
+/// contract as `eth_call`.
+fn eth_get_code(rpc_url: &str, address: &str) -> Option<String> {
+    let payload = format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getCode","params":["{address}","latest"]}}"#
     );
     let out = Command::new("curl")
         .args([
@@ -1317,10 +1346,49 @@ fn main() {
                 .unwrap_or(serde_json::Value::Null)
         };
 
+        // On-chain health of the pinned 0.1.1 suite on Base (#84): for each
+        // generated pointer file, confirm the contract is deployed at its pinned
+        // address and the live code matches BOTH the RUNTIME_CODE bytes and the
+        // BYTECODE_HASH keccak. Best-effort — a failed eth_getCode marks that one
+        // contract `unknown` rather than failing the scan.
+        let deployment_health = {
+            let (org, repo, version) = ("S01-Issuer", "st0x.deploy", "0.1.1");
+            const BASE_RPC: &str = "https://mainnet.base.org";
+            let dir = format!("src/generated/{}", version.replace('.', "_"));
+            match gh_contents_entries(&gh, org, repo, &dir) {
+                ContentsListing::Found(entries) => {
+                    let contracts: Vec<_> = entries
+                        .iter()
+                        .filter(|(t, _, name)| t == "file" && name.ends_with(".pointers.sol"))
+                        .map(|(_, path, name)| {
+                            let src = gh_file(org, repo, path);
+                            let cname = name.strip_suffix(".pointers.sol").unwrap_or(name);
+                            let addr = owners::parse_address_constant(&src, "DEPLOYED_ADDRESS");
+                            let runtime = deployhealth::parse_hex_constant(&src, "RUNTIME_CODE");
+                            let hash = deployhealth::parse_bytes32_constant(&src, "BYTECODE_HASH");
+                            let onchain = addr.as_deref().and_then(|a| eth_get_code(BASE_RPC, a));
+                            deployhealth::contract_health(cname, addr, runtime, hash, onchain)
+                        })
+                        .collect();
+                    deployhealth::build_health(
+                        org,
+                        repo,
+                        version,
+                        "base",
+                        "mainnet.base.org",
+                        contracts,
+                    )
+                    .unwrap_or(serde_json::Value::Null)
+                }
+                _ => serde_json::Value::Null,
+            }
+        };
+
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
+            "deploymentHealth": deployment_health,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,

@@ -13,3 +13,4 @@ path = "src/main.rs"
 regex = "1"
 toml = "0.8"
 serde_json = { version = "1", features = ["preserve_order"] }
+tiny-keccak = { version = "2", features = ["keccak"] }

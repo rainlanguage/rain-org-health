@@ -76,7 +76,9 @@
   .own-row:last-child { border-bottom: 0; }
   .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
   .own-row.own-extra { background: var(--debt-bg); }
-  .own-role { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .own-row.hlth-missing, .own-row.hlth-mismatch { background: var(--debt-bg); }
+  .own-row.hlth-unknown { opacity: 0.7; }
+  .own-role { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
   .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
   .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
   .own-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
@@ -199,12 +201,59 @@ function renderDeployments(document, $, data) {
   };
   const box = $("deployments");
   box.textContent = "";
+  // On-chain health of a pinned suite: each contract deployed at its pinned
+  // address with the live runtime code AND keccak codehash both matching.
+  const renderHealth = (health) => {
+    if (!health || !Array.isArray(health.contracts) || health.contracts.length === 0) return;
+    box.append(el("h2", null, `${health.version} suite — ${health.network} health`));
+    const hsub = el("div", "own-sub");
+    hsub.append(document.createTextNode(`Each pinned ${health.version} contract from `));
+    hsub.append(link("", `${health.org}/${health.repo}`, `https://github.com/${health.org}/${health.repo}`));
+    hsub.append(
+      document.createTextNode(
+        `, checked live on ${health.network}: deployed at its pinned address with the runtime code and keccak codehash both matching the pins.`,
+      ),
+    );
+    box.append(hsub);
+    const allHealthy = health.healthy === health.total;
+    const hb = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
+    hb.append(
+      el("span", "own-verify-msg", `${health.healthy} of ${health.total} contracts healthy on ${health.network}.`),
+    );
+    hb.append(el("span", "own-verify-src", `via ${health.rpcHost}`));
+    box.append(hb);
+    const chipFor = (label, v) =>
+      el(
+        "span",
+        `own-chip own-chip-${v === true ? "yes" : v === false ? "no" : "dim"}`,
+        `${label} ${v === true ? "✓" : v === false ? "✗" : "—"}`,
+      );
+    const table = el("div", "own-table");
+    for (const c of health.contracts) {
+      const st = c.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", c.name));
+      const ac = el("div", "own-ac");
+      if (c.address) ac.append(link("own-addr", c.address, `https://basescan.org/address/${c.address}`));
+      else ac.append(el("span", "own-addr own-missing", "— no pin"));
+      const tail = el("div", "own-prov");
+      const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
+      tail.append(el("span", `own-chip own-chip-${stCls}`, st));
+      tail.append(chipFor("code", c.codeMatch));
+      tail.append(chipFor("keccak", c.hashMatch));
+      row.append(rc, ac, tail);
+      table.append(row);
+    }
+    box.append(table);
+  };
   const owners = data.deploymentOwners;
   box.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
     box.append(
       el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
     );
+    renderHealth(data.deploymentHealth);
     return;
   }
   const sub = el("div", "own-sub");
@@ -268,6 +317,7 @@ function renderDeployments(document, $, data) {
     grp.append(table);
     box.append(grp);
   }
+  renderHealth(data.deploymentHealth);
 }
 let data = null;
 async function load() {
