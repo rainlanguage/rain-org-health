@@ -8,6 +8,7 @@
 
 mod audit;
 mod graph;
+mod owners;
 mod protofire;
 mod signals;
 use audit::{
@@ -1254,9 +1255,24 @@ fn main() {
             }
         };
 
+        // st0x.deploy's owner / privileged-address constants (#88), for the
+        // Deployments page's "known owners" view. A one-off targeted read — the
+        // pins live in a handful of libraries in one repo, not per-repo — so it is
+        // fetched here rather than in the per-repo scan. `null` if unreachable.
+        let deployment_owners = {
+            let (org, repo) = ("S01-Issuer", "st0x.deploy");
+            let safe = gh_file(org, repo, "src/lib/LibSafeInvariants.sol");
+            let auth = gh_file(org, repo, "src/lib/LibAuthoriserInvariants.sol");
+            let v4 = gh_file(org, repo, "src/generated/LibProdDeployV4.sol");
+            let overrides = gh_file(org, repo, "src/lib/LibProdDeployV2BaseOverrides.sol");
+            owners::build_owners(org, repo, &safe, &auth, &v4, &overrides)
+                .unwrap_or(serde_json::Value::Null)
+        };
+
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
+            "deploymentOwners": deployment_owners,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,
