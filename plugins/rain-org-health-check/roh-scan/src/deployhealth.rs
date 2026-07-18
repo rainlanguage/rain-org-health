@@ -131,39 +131,59 @@ pub fn build_health(
     }))
 }
 
-/// Health of one production beacon: is it owned by the expected Safe and pointing
-/// at the expected implementation? `drift` if either the owner or the impl
-/// disagrees; `healthy` when both match; `unknown` if a live read failed.
+/// Health of one production beacon, resolving BOTH what its `owner()` and
+/// `implementation()` actually ARE — not just whether they match a constant:
+/// - owner is labelled `safe` (the current, correct token-owner Safe), `legacy`
+///   (the pre-migration deploy EOA), `foreign` (anything else), or `unknown`.
+/// - impl is resolved to a version: the `target_version` when it equals the
+///   target impl, `V1` when it's the pre-Zoltu impl, else `unknown`.
+/// - status: `healthy` only when Safe-owned AND at the target version; `behind`
+///   when Safe-owned but the impl isn't the target (e.g. still V1); `drift` when
+///   the owner isn't the Safe; `unknown` when a live read failed.
+#[allow(clippy::too_many_arguments)]
 pub fn beacon_health(
     name: &str,
     address: Option<String>,
-    expected_owner: &str,
-    expected_impl: Option<String>,
+    safe_owner: &str,
+    legacy_owner: &str,
+    target_impl: Option<&str>,
+    v1_impl: Option<&str>,
+    target_version: &str,
     live_owner: Option<String>,
     live_impl: Option<String>,
 ) -> serde_json::Value {
-    let owner_ok = live_owner
-        .as_deref()
-        .map(|o| o.eq_ignore_ascii_case(expected_owner));
-    let impl_ok = match (live_impl.as_deref(), expected_impl.as_deref()) {
-        (Some(l), Some(e)) => Some(l.eq_ignore_ascii_case(e)),
-        _ => None,
+    let owner_label = match live_owner.as_deref() {
+        None => "unknown",
+        Some(o) if o.eq_ignore_ascii_case(safe_owner) => "safe",
+        Some(o) if o.eq_ignore_ascii_case(legacy_owner) => "legacy",
+        Some(_) => "foreign",
     };
-    let status = if owner_ok == Some(false) || impl_ok == Some(false) {
-        "drift"
-    } else if owner_ok == Some(true) && impl_ok == Some(true) {
-        "healthy"
-    } else {
+    let (impl_version, at_target): (&str, Option<bool>) = match live_impl.as_deref() {
+        None => ("unknown", None),
+        Some(l) if target_impl.is_some_and(|t| l.eq_ignore_ascii_case(t)) => {
+            (target_version, Some(true))
+        }
+        Some(l) if v1_impl.is_some_and(|v| l.eq_ignore_ascii_case(v)) => ("V1", Some(false)),
+        Some(_) => ("unknown", Some(false)),
+    };
+    let status = if live_owner.is_none() || live_impl.is_none() {
         "unknown"
+    } else if owner_label != "safe" {
+        "drift"
+    } else if at_target != Some(true) {
+        "behind"
+    } else {
+        "healthy"
     };
     json!({
         "name": name,
         "address": address,
         "owner": live_owner,
-        "ownerOk": owner_ok,
+        "ownerLabel": owner_label,
         "implementation": live_impl,
-        "expectedImpl": expected_impl,
-        "implOk": impl_ok,
+        "implVersion": impl_version,
+        "targetVersion": target_version,
+        "atTarget": at_target,
         "status": status,
     })
 }
@@ -174,7 +194,8 @@ pub fn build_beacons(
     repo: &str,
     network: &str,
     rpc_host: &str,
-    expected_owner: &str,
+    safe_owner: &str,
+    target_version: &str,
     mut beacons: Vec<serde_json::Value>,
 ) -> Option<serde_json::Value> {
     if beacons.is_empty() {
@@ -188,7 +209,8 @@ pub fn build_beacons(
         "repo": repo,
         "network": network,
         "rpcHost": rpc_host,
-        "expectedOwner": expected_owner,
+        "safeOwner": safe_owner,
+        "targetVersion": target_version,
         "total": total,
         "healthy": healthy,
         "beacons": beacons,
@@ -332,77 +354,85 @@ mod tests {
     }
 
     const SAFE: &str = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
-    const IMPL: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd";
+    const LEGACY: &str = "0x8e4bdeec7ceb9570d440676345da1dce10329f5b";
+    const TARGET: &str = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286"; // 0.1.1 impl
+    const V1: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd"; // pre-Zoltu impl
 
-    #[test]
-    fn beacon_healthy_when_safe_owned_and_impl_matches() {
-        // live reads are checksummed; the compare is case-insensitive.
-        let b = beacon_health(
+    fn bh(owner: Option<&str>, imp: Option<&str>) -> serde_json::Value {
+        beacon_health(
             "Receipt beacon",
             Some("0x86e9".into()),
             SAFE,
-            Some(IMPL.into()),
-            Some("0xE70d821f3462a074e63b42d0AaC6523faAe1d611".into()),
-            Some("0xE7573879D73455Dc92cB4087Fa8177594387CbCD".into()),
-        );
-        assert_eq!(b["status"], "healthy");
-        assert_eq!(b["ownerOk"], true);
-        assert_eq!(b["implOk"], true);
+            LEGACY,
+            Some(TARGET),
+            Some(V1),
+            "0.1.1",
+            owner.map(str::to_string),
+            imp.map(str::to_string),
+        )
     }
 
     #[test]
-    fn beacon_drifts_on_a_foreign_owner_or_impl() {
-        let bad_owner = beacon_health(
-            "B",
-            Some("0x1".into()),
-            SAFE,
-            Some(IMPL.into()),
-            Some("0xdead000000000000000000000000000000000001".into()),
-            Some(IMPL.into()),
+    fn beacon_healthy_only_when_safe_owned_and_at_target() {
+        // live reads are checksummed; the compare is case-insensitive.
+        let b = bh(
+            Some("0xE70d821f3462a074e63b42d0AaC6523faAe1d611"),
+            Some(TARGET),
         );
-        assert_eq!(bad_owner["status"], "drift");
-        assert_eq!(bad_owner["ownerOk"], false);
-        let bad_impl = beacon_health(
-            "B",
-            Some("0x1".into()),
-            SAFE,
-            Some(IMPL.into()),
-            Some(SAFE.into()),
-            Some("0xbeef000000000000000000000000000000000002".into()),
+        assert_eq!(b["status"], "healthy");
+        assert_eq!(b["ownerLabel"], "safe");
+        assert_eq!(b["implVersion"], "0.1.1");
+        assert_eq!(b["atTarget"], true);
+    }
+
+    #[test]
+    fn beacon_behind_when_safe_owned_but_still_on_v1() {
+        let b = bh(Some(SAFE), Some(V1));
+        assert_eq!(b["status"], "behind");
+        assert_eq!(b["ownerLabel"], "safe");
+        assert_eq!(b["implVersion"], "V1");
+        assert_eq!(b["atTarget"], false);
+    }
+
+    #[test]
+    fn beacon_labels_legacy_and_foreign_owners_and_drifts() {
+        let legacy = bh(Some(LEGACY), Some(TARGET));
+        assert_eq!(legacy["ownerLabel"], "legacy");
+        assert_eq!(legacy["status"], "drift");
+        let foreign = bh(
+            Some("0xdead000000000000000000000000000000000001"),
+            Some(TARGET),
         );
-        assert_eq!(bad_impl["status"], "drift");
-        assert_eq!(bad_impl["implOk"], false);
+        assert_eq!(foreign["ownerLabel"], "foreign");
+        assert_eq!(foreign["status"], "drift");
     }
 
     #[test]
     fn beacon_unknown_when_a_live_read_fails() {
-        let b = beacon_health("B", Some("0x1".into()), SAFE, Some(IMPL.into()), None, None);
+        let b = bh(None, None);
         assert_eq!(b["status"], "unknown");
-        assert!(b["ownerOk"].is_null());
+        assert_eq!(b["ownerLabel"], "unknown");
+        assert_eq!(b["implVersion"], "unknown");
     }
 
     #[test]
-    fn build_beacons_counts_and_sorts() {
-        let ok = beacon_health(
-            "Zeta",
-            Some("0x2".into()),
-            SAFE,
-            Some(IMPL.into()),
-            Some(SAFE.into()),
-            Some(IMPL.into()),
-        );
-        let bad = beacon_health(
+    fn build_beacons_counts_sorts_and_carries_target() {
+        let ok = bh(Some(SAFE), Some(TARGET)); // healthy
+        let behind = beacon_health(
             "Alpha",
             Some("0x1".into()),
             SAFE,
-            Some(IMPL.into()),
-            None,
-            None,
+            LEGACY,
+            Some(TARGET),
+            Some(V1),
+            "0.1.1",
+            Some(SAFE.into()),
+            Some(V1.into()),
         );
-        let v = build_beacons("o", "r", "base", "host", SAFE, vec![ok, bad]).unwrap();
+        let v = build_beacons("o", "r", "base", "host", SAFE, "0.1.1", vec![ok, behind]).unwrap();
         assert_eq!(v["total"], 2);
         assert_eq!(v["healthy"], 1);
-        assert_eq!(v["expectedOwner"], SAFE);
+        assert_eq!(v["targetVersion"], "0.1.1");
         assert_eq!(v["beacons"][0]["name"], "Alpha");
     }
 }

@@ -845,25 +845,31 @@ Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak ch
   assert(chips.filter((l) => l === "erc165 ✗").length === 1, "one erc165 ✗ (nonconformant)");
 });
 
-Deno.test("deployments: beacons show owner + impl checks and flag drift", () => {
+Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and flag behind-target", () => {
   const data = {
     deploymentOwners: null,
     deploymentHealth: null,
     deploymentBeacons: {
       org: "S01-Issuer", repo: "st0x.deploy", network: "base", rpcHost: "mainnet.base.org",
-      expectedOwner: "0xe70d821f3462a074e63b42d0aac6523faae1d611", total: 2, healthy: 1,
+      safeOwner: "0xe70d821f3462a074e63b42d0aac6523faae1d611", targetVersion: "0.1.1", total: 2, healthy: 0,
       beacons: [
-        { name: "Receipt beacon", address: "0x86e93c39B095be0B0054C8488E26466Ee027D79a", ownerOk: true, implOk: true, status: "healthy" },
-        { name: "Vault beacon", address: "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A", ownerOk: false, implOk: true, status: "drift" },
+        { name: "Receipt beacon", address: "0x86e93c39B095be0B0054C8488E26466Ee027D79a", owner: "0xe70d821f3462a074e63b42d0aac6523faae1d611", ownerLabel: "safe", implementation: "0xe7573879d73455dc92cb4087fa8177594387cbcd", implVersion: "V1", targetVersion: "0.1.1", atTarget: false, status: "behind" },
+        { name: "Vault beacon", address: "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A", owner: "0x8e4bdeec7ceb9570d440676345da1dce10329f5b", ownerLabel: "legacy", implementation: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286", implVersion: "0.1.1", targetVersion: "0.1.1", atTarget: true, status: "drift" },
       ],
     },
   };
   const box = deploymentsBox(data);
   const chips = collect(box, "own-chip").map((c) => c.textContent);
-  assert(chips.filter((l) => l === "owner ✓").length === 1, "one owner ✓");
-  assert(chips.filter((l) => l === "owner ✗").length === 1, "one owner ✗ (drifted beacon)");
-  assert(chips.filter((l) => l === "impl ✓").length === 2, "two impl ✓");
-  assert(chips.includes("drift"), "the drifted beacon shows its status pill");
-  assert(collect(box, "own-verify-drift").length === 1, "a not-all-healthy beacon banner");
-  assert(collect(box, "hlth-drift").length === 1, "the drifted beacon row is flagged");
+  // owners labelled by identity, not a bare tick
+  assert(chips.includes("Safe"), "owner labelled Safe");
+  assert(chips.includes("legacy EOA"), "owner labelled legacy EOA");
+  // impl labelled by version + behind-target
+  assert(chips.some((l) => l.includes("V1") && l.includes("behind")), "impl shows V1 behind target: " + chips.join(","));
+  assert(chips.some((l) => l.includes("0.1.1") && l.includes("target")), "impl shows 0.1.1 (target)");
+  // statuses
+  assert(chips.includes("behind"), "a behind status");
+  assert(chips.includes("drift"), "a drift status (legacy owner)");
+  assert(collect(box, "own-verify-drift").length === 1, "not-all-healthy beacon banner");
+  // the actual addresses are shown (beacon + owner + impl per beacon)
+  assert(collect(box, "own-addr").length >= 6, "owner + impl + beacon addresses rendered");
 });

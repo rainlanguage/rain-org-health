@@ -77,7 +77,12 @@
   .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
   .own-row.own-extra { background: var(--debt-bg); }
   .own-row.hlth-missing, .own-row.hlth-mismatch, .own-row.hlth-drift { background: var(--debt-bg); }
+  .own-row.hlth-behind { background: var(--debt-bg); }
   .own-row.hlth-unknown { opacity: 0.7; }
+  .bcn-detail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .bcn-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .bcn-key { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
+             color: var(--ink-3); width: 40px; flex-shrink: 0; }
   .own-role { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
   .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
   .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
@@ -262,37 +267,60 @@ function renderDeployments(document, $, data) {
       el(
         "div",
         "own-sub",
-        "Each production beacon should be Safe-owned and pointing at its pinned implementation — owner() and implementation() read live on-chain.",
+        `Each production beacon should be Safe-owned and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
       ),
     );
     const allHealthy = b.healthy === b.total;
     const banner = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
     banner.append(
-      el("span", "own-verify-msg", `${b.healthy} of ${b.total} beacons healthy on ${b.network}.`),
-    );
-    if (b.expectedOwner) banner.append(el("span", "own-verify-src", `owner = Safe ${b.expectedOwner}`));
-    box.append(banner);
-    const chip = (label, ok) =>
       el(
         "span",
-        `own-chip own-chip-${ok === true ? "yes" : ok === false ? "no" : "dim"}`,
-        `${label} ${ok === true ? "✓" : ok === false ? "✗" : "—"}`,
-      );
+        "own-verify-msg",
+        `${b.healthy} of ${b.total} beacons Safe-owned & at ${b.targetVersion} on ${b.network}.`,
+      ),
+    );
+    if (b.safeOwner) banner.append(el("span", "own-verify-src", `Safe = ${b.safeOwner}`));
+    box.append(banner);
+    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const detailLine = (key, chipText, chipCls, addr) => {
+      const line = el("div", "bcn-line");
+      line.append(el("span", "bcn-key", key));
+      line.append(el("span", `own-chip own-chip-${chipCls}`, chipText));
+      if (addr) line.append(explorerLink(addr));
+      return line;
+    };
     const table = el("div", "own-table");
     for (const bc of b.beacons) {
       const st = bc.status || "unknown";
       const row = el("div", `own-row hlth-${st}`);
       const rc = el("div", "own-rc");
       rc.append(el("div", "own-role", bc.name));
-      const ac = el("div", "own-ac");
-      if (bc.address) ac.append(link("own-addr", bc.address, `https://basescan.org/address/${bc.address}`));
-      else ac.append(el("span", "own-addr own-missing", "— no pin"));
-      const tail = el("div", "own-prov");
+      if (bc.address) {
+        const note = el("div", "own-note");
+        note.append(explorerLink(bc.address));
+        rc.append(note);
+      }
+      const detail = el("div", "bcn-detail");
+      // owner: who it actually is
+      const own =
+        bc.ownerLabel === "safe"
+          ? ["Safe", "yes"]
+          : bc.ownerLabel === "legacy"
+            ? ["legacy EOA", "no"]
+            : bc.ownerLabel === "foreign"
+              ? ["foreign", "no"]
+              : ["—", "dim"];
+      detail.append(detailLine("owner", own[0], own[1], bc.owner));
+      // impl: which version it actually is
+      const imp =
+        bc.atTarget === true
+          ? [`${bc.implVersion} (target)`, "yes"]
+          : bc.atTarget === false
+            ? [`${bc.implVersion} · behind ${bc.targetVersion}`, "no"]
+            : ["unknown", "dim"];
+      detail.append(detailLine("impl", imp[0], imp[1], bc.implementation));
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
-      tail.append(el("span", `own-chip own-chip-${stCls}`, st));
-      tail.append(chip("owner", bc.ownerOk));
-      tail.append(chip("impl", bc.implOk));
-      row.append(rc, ac, tail);
+      row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
       table.append(row);
     }
     box.append(table);
