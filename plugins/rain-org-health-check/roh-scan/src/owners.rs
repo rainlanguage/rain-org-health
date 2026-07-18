@@ -40,59 +40,6 @@ pub fn parse_uint_constant(src: &str, name: &str) -> Option<u64> {
         .and_then(|m| m.as_str().parse().ok())
 }
 
-/// The `result` hex string from a JSON-RPC `eth_call` response body, or `None` if
-/// the response is an error / unparseable. Split from the fetch so decoding is a
-/// pure function of the bytes (mirrors `latest_revision_from_response` in main).
-pub fn eth_call_result(body: &[u8]) -> Option<String> {
-    let v: serde_json::Value = serde_json::from_slice(body).ok()?;
-    v.get("result")?.as_str().map(str::to_string)
-}
-
-/// Decode an `eth_call` return that is a single dynamic `address[]` — a 32-byte
-/// offset word, a 32-byte length word, then one 32-byte word per address. Returns
-/// the addresses as lowercase `0x…` (Safe `getOwners()` returns them
-/// unchecksummed). `None` if the hex is malformed or truncated.
-pub fn decode_address_array(result_hex: &str) -> Option<Vec<String>> {
-    let h = result_hex.strip_prefix("0x").unwrap_or(result_hex);
-    if h.len() < 128 || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return None;
-    }
-    // The RPC controls the length word, so confirm the payload is exactly the
-    // claimed size (offset 0x20, then 128 + len*64 hex) BEFORE allocating — a
-    // short response with a huge length must degrade to None, not OOM. checked_*
-    // rejects an overflowing length rather than wrapping.
-    let offset = usize::from_str_radix(&h[..64], 16).ok()?;
-    if offset != 32 {
-        return None;
-    }
-    let len = usize::from_str_radix(&h[64..128], 16).ok()?;
-    let expected_len = 128usize.checked_add(len.checked_mul(64)?)?;
-    if h.len() != expected_len {
-        return None;
-    }
-    let mut out = Vec::with_capacity(len);
-    for i in 0..len {
-        let word = h.get(128 + i * 64..128 + i * 64 + 64)?;
-        // an address is the low 20 bytes (last 40 hex) of its 32-byte word
-        out.push(format!("0x{}", &word[24..]));
-    }
-    Some(out)
-}
-
-/// Decode an `eth_call` return that is a single `uint256` small enough to fit a
-/// `u64` (the Safe threshold). `None` if malformed or larger than `u64`.
-pub fn decode_uint(result_hex: &str) -> Option<u64> {
-    let h = result_hex.strip_prefix("0x").unwrap_or(result_hex);
-    if h.len() != 64 || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return None;
-    }
-    // the high 48 hex digits must be zero for the value to fit u64
-    if h[..48].bytes().any(|b| b != b'0') {
-        return None;
-    }
-    u64::from_str_radix(&h[48..], 16).ok()
-}
-
 /// On-chain readback of a Safe, for the declared-vs-actual provenance view. Each
 /// field is `None` when its RPC call failed, so the dashboard can show "on-chain
 /// unavailable" without dropping the declared constants.
@@ -425,63 +372,7 @@ mod tests {
         assert_eq!(v["groups"][1]["title"], "Safe signers (3-of-3)");
     }
 
-    // ---- on-chain decode + declared-vs-actual verification ----
-
-    #[test]
-    fn decodes_a_getowners_address_array() {
-        // offset | length(2) | addr1 | addr2, each in a left-padded 32-byte word.
-        let hex = "0x\
-            0000000000000000000000000000000000000000000000000000000000000020\
-            0000000000000000000000000000000000000000000000000000000000000002\
-            0000000000000000000000004746095b1ea1a84446d34448f44e74d3d51f92f2\
-            000000000000000000000000cec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d";
-        assert_eq!(
-            decode_address_array(hex).unwrap(),
-            vec![
-                "0x4746095b1ea1a84446d34448f44e74d3d51f92f2".to_string(),
-                "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d".to_string(),
-            ]
-        );
-    }
-
-    #[test]
-    fn malformed_address_array_is_none() {
-        assert_eq!(decode_address_array("0x1234"), None);
-        assert_eq!(decode_address_array("not hex"), None);
-    }
-
-    #[test]
-    fn address_array_rejects_a_lying_length_before_allocating() {
-        let off32 = format!("{:064x}", 32u64);
-        // Length claims 2^40 words but the payload is empty → None (no giant Vec).
-        let huge = format!("{:064x}", 1u64 << 40);
-        assert_eq!(decode_address_array(&format!("0x{off32}{huge}")), None);
-        // A non-0x20 offset is rejected too.
-        let off64 = format!("{:064x}", 64u64);
-        let zero = format!("{:064x}", 0u64);
-        assert_eq!(decode_address_array(&format!("0x{off64}{zero}")), None);
-    }
-
-    #[test]
-    fn decodes_a_uint_threshold_and_rejects_oversize() {
-        let three = "0x0000000000000000000000000000000000000000000000000000000000000003";
-        assert_eq!(decode_uint(three), Some(3));
-        // a value that overflows u64 (high bits set) is rejected, not truncated.
-        let big = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
-        assert_eq!(decode_uint(big), None);
-    }
-
-    #[test]
-    fn extracts_eth_call_result_and_rejects_errors() {
-        assert_eq!(
-            eth_call_result(br#"{"jsonrpc":"2.0","id":1,"result":"0xabc"}"#),
-            Some("0xabc".to_string())
-        );
-        assert_eq!(
-            eth_call_result(br#"{"jsonrpc":"2.0","id":1,"error":{"code":-32000}}"#),
-            None
-        );
-    }
+    // ---- declared-vs-actual verification ----
 
     fn onchain(owners: Option<Vec<&str>>, threshold: Option<u64>) -> OnChainSafe {
         OnChainSafe {

@@ -11,6 +11,7 @@ mod deployhealth;
 mod graph;
 mod owners;
 mod protofire;
+mod rpc;
 mod signals;
 use audit::{
     audit_sort_key, parse_last_audit, parse_runs_jsonl, source_changed_outside_audit, LastAudit,
@@ -175,90 +176,85 @@ fn gh_file(org: &str, repo: &str, path: &str) -> String {
     }
 }
 
-/// A read-only `eth_call` via curl (roh already shells curl for the soldeer
-/// registry) — returns the `result` hex, or `None` on any failure/timeout. The
-/// scan must survive an RPC hiccup, so callers degrade to constants-only.
-fn eth_call(rpc_url: &str, to: &str, data: &str) -> Option<String> {
-    let payload = format!(
-        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
-    );
-    let out = Command::new("curl")
-        .args([
-            "-fsS",
-            "-m",
-            "25",
-            "-X",
-            "POST",
-            rpc_url,
-            "-H",
-            "content-type: application/json",
-            "-d",
-            &payload,
-        ])
-        .output()
-        .ok()?;
-    if !out.status.success() {
-        return None;
+/// Keyless public Base RPC endpoints (each verified live, chainId 0x2105). A
+/// burst of calls throttles any single one, so `curl_json` spreads load across
+/// the whole set and falls through on failure rather than hammering one — the
+/// single-RPC version is what left the ERC-165 probes rate-limited to `unknown`.
+const BASE_RPCS: &[&str] = &[
+    "https://mainnet.base.org",
+    "https://base-rpc.publicnode.com",
+    "https://base.drpc.org",
+    "https://1rpc.io/base",
+    "https://base.meowrpc.com",
+    "https://base-mainnet.public.blastapi.io",
+];
+
+/// Round-robin cursor so each call starts at a different endpoint — spreads the
+/// scan's calls evenly instead of always hammering the first RPC.
+static RPC_CURSOR: AtomicUsize = AtomicUsize::new(0);
+
+/// POST a JSON-RPC `payload` to Base, starting at a rotating endpoint and falling
+/// through to the next on failure, so no single RPC gets the whole burst. Returns
+/// the first successful body. A revert is HTTP 200 with an `error` body, so it
+/// returns from the first endpoint reached. `None` only if every endpoint fails.
+fn curl_json(payload: &str) -> Option<Vec<u8>> {
+    let start = RPC_CURSOR.fetch_add(1, Ordering::Relaxed);
+    for i in 0..BASE_RPCS.len() {
+        let rpc = BASE_RPCS[(start + i) % BASE_RPCS.len()];
+        if let Ok(o) = Command::new("curl")
+            .args([
+                "-fsS",
+                "-m",
+                "25",
+                "-X",
+                "POST",
+                rpc,
+                "-H",
+                "content-type: application/json",
+                "-d",
+                payload,
+            ])
+            .output()
+        {
+            if o.status.success() {
+                return Some(o.stdout);
+            }
+        }
     }
-    owners::eth_call_result(&out.stdout)
+    None
 }
 
-/// `eth_getCode` for an address via curl → the runtime bytecode hex (`0x…`, or
-/// `0x` when there is no code), or `None` on any failure/timeout. Same best-effort
-/// contract as `eth_call`.
-fn eth_get_code(rpc_url: &str, address: &str) -> Option<String> {
+/// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
+fn eth_call_payload(to: &str, data: &str) -> String {
+    format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+    )
+}
+
+/// A read-only `eth_call` on Base — the `result` hex, or `None` on failure. The
+/// scan must survive an RPC hiccup, so callers degrade gracefully.
+fn eth_call(to: &str, data: &str) -> Option<String> {
+    curl_json(&eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
+}
+
+/// `eth_getCode` for an address → the runtime bytecode hex (`0x…`, or `0x` when
+/// there is no code), or `None` on failure.
+fn eth_get_code(address: &str) -> Option<String> {
     let payload = format!(
         r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getCode","params":["{address}","latest"]}}"#
     );
-    let out = Command::new("curl")
-        .args([
-            "-fsS",
-            "-m",
-            "25",
-            "-X",
-            "POST",
-            rpc_url,
-            "-H",
-            "content-type: application/json",
-            "-d",
-            &payload,
-        ])
-        .output()
-        .ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    owners::eth_call_result(&out.stdout)
+    curl_json(&payload).and_then(|b| rpc::result_hex(&b))
 }
 
-/// `supportsInterface(bytes4)` for `id_hex` (4 bytes, no `0x`) → the classified
-/// bool. An on-chain revert (the contract doesn't implement the function) is
-/// distinguished from an RPC failure so ERC-165 absence stays stable rather than
-/// flickering to `unknown`. JSON-RPC reverts return HTTP 200 with an `error`
-/// body, so `curl -fsS` still succeeds and `parse_bool_result` sees the revert.
-fn supports_interface(rpc_url: &str, address: &str, id_hex: &str) -> deployhealth::CallClass {
-    // selector 01ffc9a7 + the 4-byte interface id, left-aligned in a 32-byte word.
-    let data = format!("0x01ffc9a7{id_hex}{}", "0".repeat(56));
-    let payload = format!(
-        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{address}","data":"{data}"}},"latest"]}}"#
-    );
-    match Command::new("curl")
-        .args([
-            "-fsS",
-            "-m",
-            "25",
-            "-X",
-            "POST",
-            rpc_url,
-            "-H",
-            "content-type: application/json",
-            "-d",
-            &payload,
-        ])
-        .output()
-    {
-        Ok(o) if o.status.success() => deployhealth::parse_bool_result(&o.stdout),
-        _ => deployhealth::CallClass::Unknown,
+/// `supportsInterface(<id>)` → the classified bool. An on-chain revert (the
+/// contract doesn't implement the function) is distinguished from an RPC failure
+/// so ERC-165 absence stays stable rather than flickering to `unknown` — reverts
+/// come back HTTP 200 with an `error` body, which `classify_bool` reads.
+fn supports_interface(address: &str, interface_id: [u8; 4]) -> rpc::CallClass {
+    let data = rpc::supports_interface_calldata(interface_id);
+    match curl_json(&eth_call_payload(address, &data)) {
+        Some(body) => rpc::classify_bool(&body),
+        None => rpc::CallClass::Unknown,
     }
 }
 
@@ -1357,14 +1353,12 @@ fn main() {
             // show declared-constant vs on-chain provenance. Best-effort: on any
             // RPC failure the fields stay None and the section falls back to
             // constants-only.
-            const BASE_RPC: &str = "https://mainnet.base.org";
             let onchain =
                 owners::parse_address_constant(&safe, "STOX_TOKEN_OWNER_SAFE").map(|safe_addr| {
-                    let owners_live = eth_call(BASE_RPC, &safe_addr, "0xa0e67e2b") // getOwners()
-                        .and_then(|hex| owners::decode_address_array(&hex));
-                    let threshold_live =
-                        eth_call(BASE_RPC, &safe_addr, "0xe75235b8") // getThreshold()
-                            .and_then(|hex| owners::decode_uint(&hex));
+                    let owners_live = eth_call(&safe_addr, &rpc::get_owners_calldata())
+                        .and_then(|hex| rpc::decode_owners(&hex));
+                    let threshold_live = eth_call(&safe_addr, &rpc::get_threshold_calldata())
+                        .and_then(|hex| rpc::decode_uint(&hex));
                     owners::OnChainSafe {
                         network: "base".into(),
                         safe: safe_addr,
@@ -1384,7 +1378,6 @@ fn main() {
         // contract `unknown` rather than failing the scan.
         let deployment_health = {
             let (org, repo, version) = ("S01-Issuer", "st0x.deploy", "0.1.1");
-            const BASE_RPC: &str = "https://mainnet.base.org";
             let dir = format!("src/generated/{}", version.replace('.', "_"));
             match gh_contents_entries(&gh, org, repo, &dir) {
                 ContentsListing::Found(entries) => {
@@ -1397,14 +1390,14 @@ fn main() {
                             let addr = owners::parse_address_constant(&src, "DEPLOYED_ADDRESS");
                             let runtime = deployhealth::parse_hex_constant(&src, "RUNTIME_CODE");
                             let hash = deployhealth::parse_bytes32_constant(&src, "BYTECODE_HASH");
-                            let onchain = addr.as_deref().and_then(|a| eth_get_code(BASE_RPC, a));
+                            let onchain = addr.as_deref().and_then(eth_get_code);
                             // ERC-165 conformance: supportsInterface(0x01ffc9a7) must
                             // be true and supportsInterface(0xffffffff) false, both on
                             // Base. Absent (both revert) is fine for e.g. a beacon.
                             let erc165 = match addr.as_deref() {
                                 Some(a) => deployhealth::erc165_status(
-                                    supports_interface(BASE_RPC, a, "01ffc9a7"),
-                                    supports_interface(BASE_RPC, a, "ffffffff"),
+                                    supports_interface(a, [0x01, 0xff, 0xc9, 0xa7]),
+                                    supports_interface(a, [0xff, 0xff, 0xff, 0xff]),
                                 ),
                                 None => "unknown",
                             };
@@ -1427,11 +1420,76 @@ fn main() {
             }
         };
 
+        // The 3 production beacons on Base (#84): each should be owned by the
+        // token-owner Safe and point at its pinned implementation. owner() +
+        // implementation() are read live and checked against the constants.
+        let deployment_beacons = {
+            let (org, repo) = ("S01-Issuer", "st0x.deploy");
+            let v1 = gh_file(org, repo, "src/lib/LibProdDeployV1.sol");
+            let safe_lib = gh_file(org, repo, "src/lib/LibSafeInvariants.sol");
+            // (label, beacon-address constant, expected-implementation constant)
+            let spec = [
+                (
+                    "Receipt beacon",
+                    "STOX_RECEIPT_BEACON_V1",
+                    "STOX_RECEIPT_IMPLEMENTATION",
+                ),
+                (
+                    "Receipt-vault beacon",
+                    "STOX_RECEIPT_VAULT_BEACON_V1",
+                    "STOX_RECEIPT_VAULT_IMPLEMENTATION",
+                ),
+                (
+                    "Wrapped-token-vault beacon",
+                    "STOX_WRAPPED_TOKEN_VAULT_BEACON_V1",
+                    "STOX_WRAPPED_TOKEN_VAULT_IMPLEMENTATION",
+                ),
+            ];
+            match owners::parse_address_constant(&safe_lib, "STOX_TOKEN_OWNER_SAFE") {
+                Some(expected_owner) => {
+                    let beacons: Vec<_> = spec
+                        .iter()
+                        .map(|(label, beacon_const, impl_const)| {
+                            let addr = owners::parse_address_constant(&v1, beacon_const);
+                            let expected_impl = owners::parse_address_constant(&v1, impl_const);
+                            let live_owner = addr
+                                .as_deref()
+                                .and_then(|a| eth_call(a, &rpc::owner_calldata()))
+                                .and_then(|hex| rpc::decode_address(&hex));
+                            let live_impl = addr
+                                .as_deref()
+                                .and_then(|a| eth_call(a, &rpc::implementation_calldata()))
+                                .and_then(|hex| rpc::decode_address(&hex));
+                            deployhealth::beacon_health(
+                                label,
+                                addr,
+                                &expected_owner,
+                                expected_impl,
+                                live_owner,
+                                live_impl,
+                            )
+                        })
+                        .collect();
+                    deployhealth::build_beacons(
+                        org,
+                        repo,
+                        "base",
+                        "mainnet.base.org",
+                        &expected_owner,
+                        beacons,
+                    )
+                    .unwrap_or(serde_json::Value::Null)
+                }
+                None => serde_json::Value::Null,
+            }
+        };
+
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
             "deploymentHealth": deployment_health,
+            "deploymentBeacons": deployment_beacons,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,

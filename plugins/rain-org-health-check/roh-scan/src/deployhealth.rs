@@ -7,35 +7,9 @@
 //! chain: a `RUNTIME_CODE` that disagrees with its own `BYTECODE_HASH`, or either
 //! disagreeing with the deployed code, is a finding.
 
+use crate::rpc::{keccak256_hex, CallClass};
 use regex::Regex;
 use serde_json::json;
-use tiny_keccak::{Hasher, Keccak};
-
-/// keccak256 of the bytes represented by `hex` (with or without `0x`), as a
-/// lowercase `0x…` string. Ethereum's codehash is Keccak-256 (the pre-NIST
-/// variant), which is what `Keccak::v256` computes. `None` if `hex` isn't valid
-/// even-length hex.
-pub fn keccak256_hex(hex: &str) -> Option<String> {
-    let h = hex.strip_prefix("0x").unwrap_or(hex);
-    if !h.len().is_multiple_of(2) || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
-        return None;
-    }
-    let bytes: Vec<u8> = (0..h.len())
-        .step_by(2)
-        .map(|i| u8::from_str_radix(&h[i..i + 2], 16))
-        .collect::<Result<_, _>>()
-        .ok()?;
-    let mut k = Keccak::v256();
-    k.update(&bytes);
-    let mut out = [0u8; 32];
-    k.finalize(&mut out);
-    let mut s = String::with_capacity(66);
-    s.push_str("0x");
-    for b in out {
-        s.push_str(&format!("{b:02x}"));
-    }
-    Some(s)
-}
 
 /// Parse a `bytes constant NAME = hex"…";` payload (the declaration may wrap
 /// across lines) → the lowercase hex, no `0x`. `None` if absent.
@@ -60,45 +34,6 @@ pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
     re.captures(src)
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_lowercase())
-}
-
-/// The outcome of one `supportsInterface(bytes4)` call: a decoded bool, an
-/// on-chain revert (the contract doesn't implement the function), or an
-/// undetermined result (RPC failure / malformed reply).
-#[derive(Debug, PartialEq, Eq, Clone, Copy)]
-pub enum CallClass {
-    True,
-    False,
-    Reverted,
-    Unknown,
-}
-
-/// Classify a JSON-RPC `eth_call` reply for a `bool`-returning function. A
-/// `result` word of all zeroes is `False`, `…01` is `True`; an `error` object
-/// (execution reverted) is `Reverted`; anything else is `Unknown`. Kept pure so
-/// the revert-vs-failure distinction is unit-tested without a node.
-pub fn parse_bool_result(body: &[u8]) -> CallClass {
-    let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) else {
-        return CallClass::Unknown;
-    };
-    if v.get("error").is_some() {
-        return CallClass::Reverted;
-    }
-    match v.get("result").and_then(|r| r.as_str()) {
-        Some(r) => {
-            let h = r.strip_prefix("0x").unwrap_or(r);
-            if h.is_empty() || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
-                CallClass::Unknown
-            } else if h.bytes().all(|b| b == b'0') {
-                CallClass::False
-            } else if h.trim_start_matches('0') == "1" {
-                CallClass::True
-            } else {
-                CallClass::Unknown
-            }
-        }
-        None => CallClass::Unknown,
-    }
 }
 
 /// ERC-165 conformance from the two required probes: `supportsInterface(0x01ffc9a7)`
@@ -196,20 +131,73 @@ pub fn build_health(
     }))
 }
 
+/// Health of one production beacon: is it owned by the expected Safe and pointing
+/// at the expected implementation? `drift` if either the owner or the impl
+/// disagrees; `healthy` when both match; `unknown` if a live read failed.
+pub fn beacon_health(
+    name: &str,
+    address: Option<String>,
+    expected_owner: &str,
+    expected_impl: Option<String>,
+    live_owner: Option<String>,
+    live_impl: Option<String>,
+) -> serde_json::Value {
+    let owner_ok = live_owner
+        .as_deref()
+        .map(|o| o.eq_ignore_ascii_case(expected_owner));
+    let impl_ok = match (live_impl.as_deref(), expected_impl.as_deref()) {
+        (Some(l), Some(e)) => Some(l.eq_ignore_ascii_case(e)),
+        _ => None,
+    };
+    let status = if owner_ok == Some(false) || impl_ok == Some(false) {
+        "drift"
+    } else if owner_ok == Some(true) && impl_ok == Some(true) {
+        "healthy"
+    } else {
+        "unknown"
+    };
+    json!({
+        "name": name,
+        "address": address,
+        "owner": live_owner,
+        "ownerOk": owner_ok,
+        "implementation": live_impl,
+        "expectedImpl": expected_impl,
+        "implOk": impl_ok,
+        "status": status,
+    })
+}
+
+/// Assemble the `deploymentBeacons` document (sorted by name; `None` if empty).
+pub fn build_beacons(
+    org: &str,
+    repo: &str,
+    network: &str,
+    rpc_host: &str,
+    expected_owner: &str,
+    mut beacons: Vec<serde_json::Value>,
+) -> Option<serde_json::Value> {
+    if beacons.is_empty() {
+        return None;
+    }
+    beacons.sort_by(|a, b| a["name"].as_str().cmp(&b["name"].as_str()));
+    let total = beacons.len();
+    let healthy = beacons.iter().filter(|b| b["status"] == "healthy").count();
+    Some(json!({
+        "org": org,
+        "repo": repo,
+        "network": network,
+        "rpcHost": rpc_host,
+        "expectedOwner": expected_owner,
+        "total": total,
+        "healthy": healthy,
+        "beacons": beacons,
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn keccak256_of_empty_is_the_known_vector() {
-        assert_eq!(
-            keccak256_hex("0x").unwrap(),
-            "0xc5d2460186f7233c927e7db2dcc703c0e500b653ca82273b7bfad8045d85a470"
-        );
-        assert_eq!(keccak256_hex(""), keccak256_hex("0x"));
-        assert_eq!(keccak256_hex("xyz"), None, "invalid hex");
-        assert_eq!(keccak256_hex("0xabc"), None, "odd length");
-    }
 
     #[test]
     fn parses_runtime_hex_and_bytecode_hash() {
@@ -331,18 +319,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_bool_result_classifies_true_false_revert_unknown() {
-        let t = br#"{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000001"}"#;
-        let f = br#"{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#;
-        let rev = br#"{"jsonrpc":"2.0","id":1,"error":{"code":3,"message":"execution reverted"}}"#;
-        assert_eq!(parse_bool_result(t), CallClass::True);
-        assert_eq!(parse_bool_result(f), CallClass::False);
-        assert_eq!(parse_bool_result(rev), CallClass::Reverted);
-        assert_eq!(parse_bool_result(b"not json"), CallClass::Unknown);
-        assert_eq!(parse_bool_result(br#"{"result":"0x"}"#), CallClass::Unknown);
-    }
-
-    #[test]
     fn erc165_status_maps_the_two_probes() {
         use CallClass::*;
         assert_eq!(erc165_status(True, False), "conformant");
@@ -353,5 +329,80 @@ mod tests {
         // either probe undetermined -> unknown
         assert_eq!(erc165_status(Unknown, False), "unknown");
         assert_eq!(erc165_status(True, Unknown), "unknown");
+    }
+
+    const SAFE: &str = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
+    const IMPL: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd";
+
+    #[test]
+    fn beacon_healthy_when_safe_owned_and_impl_matches() {
+        // live reads are checksummed; the compare is case-insensitive.
+        let b = beacon_health(
+            "Receipt beacon",
+            Some("0x86e9".into()),
+            SAFE,
+            Some(IMPL.into()),
+            Some("0xE70d821f3462a074e63b42d0AaC6523faAe1d611".into()),
+            Some("0xE7573879D73455Dc92cB4087Fa8177594387CbCD".into()),
+        );
+        assert_eq!(b["status"], "healthy");
+        assert_eq!(b["ownerOk"], true);
+        assert_eq!(b["implOk"], true);
+    }
+
+    #[test]
+    fn beacon_drifts_on_a_foreign_owner_or_impl() {
+        let bad_owner = beacon_health(
+            "B",
+            Some("0x1".into()),
+            SAFE,
+            Some(IMPL.into()),
+            Some("0xdead000000000000000000000000000000000001".into()),
+            Some(IMPL.into()),
+        );
+        assert_eq!(bad_owner["status"], "drift");
+        assert_eq!(bad_owner["ownerOk"], false);
+        let bad_impl = beacon_health(
+            "B",
+            Some("0x1".into()),
+            SAFE,
+            Some(IMPL.into()),
+            Some(SAFE.into()),
+            Some("0xbeef000000000000000000000000000000000002".into()),
+        );
+        assert_eq!(bad_impl["status"], "drift");
+        assert_eq!(bad_impl["implOk"], false);
+    }
+
+    #[test]
+    fn beacon_unknown_when_a_live_read_fails() {
+        let b = beacon_health("B", Some("0x1".into()), SAFE, Some(IMPL.into()), None, None);
+        assert_eq!(b["status"], "unknown");
+        assert!(b["ownerOk"].is_null());
+    }
+
+    #[test]
+    fn build_beacons_counts_and_sorts() {
+        let ok = beacon_health(
+            "Zeta",
+            Some("0x2".into()),
+            SAFE,
+            Some(IMPL.into()),
+            Some(SAFE.into()),
+            Some(IMPL.into()),
+        );
+        let bad = beacon_health(
+            "Alpha",
+            Some("0x1".into()),
+            SAFE,
+            Some(IMPL.into()),
+            None,
+            None,
+        );
+        let v = build_beacons("o", "r", "base", "host", SAFE, vec![ok, bad]).unwrap();
+        assert_eq!(v["total"], 2);
+        assert_eq!(v["healthy"], 1);
+        assert_eq!(v["expectedOwner"], SAFE);
+        assert_eq!(v["beacons"][0]["name"], "Alpha");
     }
 }
