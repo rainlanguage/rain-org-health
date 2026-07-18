@@ -185,22 +185,30 @@ const BASE_RPCS: &[&str] = &[
     "https://base-rpc.publicnode.com",
     "https://base.drpc.org",
     "https://1rpc.io/base",
-    "https://base.meowrpc.com",
     "https://base-mainnet.public.blastapi.io",
 ];
 
-/// Round-robin cursor so each call starts at a different endpoint — spreads the
-/// scan's calls evenly instead of always hammering the first RPC.
+/// Rotates the endpoint each new session starts at, so different verdicts spread
+/// across the RPC set instead of all hammering the first one.
 static RPC_CURSOR: AtomicUsize = AtomicUsize::new(0);
 
-/// POST a JSON-RPC `payload` to Base, starting at a rotating endpoint and falling
-/// through to the next on failure, so no single RPC gets the whole burst. Returns
-/// the first successful body. A revert is HTTP 200 with an `error` body, so it
-/// returns from the first endpoint reached. `None` only if every endpoint fails.
-fn curl_json(payload: &str) -> Option<Vec<u8>> {
-    let start = RPC_CURSOR.fetch_add(1, Ordering::Relaxed);
+/// A per-entity starting endpoint. All the calls that make up ONE verdict — a
+/// beacon's `owner()` + `implementation()`, a contract's two ERC-165 probes, the
+/// Safe's `getOwners()` + `getThreshold()` — share a `session` so they hit the
+/// SAME rpc and can't disagree with themselves (a flaky endpoint answering one
+/// probe but not the other is what produced bogus "nonconformant" verdicts).
+/// Each new session rotates the start, spreading load across the set.
+fn rpc_session() -> usize {
+    RPC_CURSOR.fetch_add(1, Ordering::Relaxed)
+}
+
+/// POST a JSON-RPC `payload` to Base, trying `BASE_RPCS` from `session` and
+/// falling through on failure. Returns the first successful body. A revert is
+/// HTTP 200 with an `error` body, so it returns from the first endpoint reached.
+/// `None` only if every endpoint fails.
+fn curl_json(session: usize, payload: &str) -> Option<Vec<u8>> {
     for i in 0..BASE_RPCS.len() {
-        let rpc = BASE_RPCS[(start + i) % BASE_RPCS.len()];
+        let rpc = BASE_RPCS[(session + i) % BASE_RPCS.len()];
         if let Ok(o) = Command::new("curl")
             .args([
                 "-fsS",
@@ -231,28 +239,29 @@ fn eth_call_payload(to: &str, data: &str) -> String {
     )
 }
 
-/// A read-only `eth_call` on Base — the `result` hex, or `None` on failure. The
-/// scan must survive an RPC hiccup, so callers degrade gracefully.
-fn eth_call(to: &str, data: &str) -> Option<String> {
-    curl_json(&eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
+/// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
+/// on failure. The scan must survive an RPC hiccup, so callers degrade gracefully.
+fn eth_call(session: usize, to: &str, data: &str) -> Option<String> {
+    curl_json(session, &eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
 }
 
-/// `eth_getCode` for an address → the runtime bytecode hex (`0x…`, or `0x` when
-/// there is no code), or `None` on failure.
-fn eth_get_code(address: &str) -> Option<String> {
+/// `eth_getCode` for an address (within `session`) → the runtime bytecode hex
+/// (`0x…`, or `0x` when there is no code), or `None` on failure.
+fn eth_get_code(session: usize, address: &str) -> Option<String> {
     let payload = format!(
         r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getCode","params":["{address}","latest"]}}"#
     );
-    curl_json(&payload).and_then(|b| rpc::result_hex(&b))
+    curl_json(session, &payload).and_then(|b| rpc::result_hex(&b))
 }
 
-/// `supportsInterface(<id>)` → the classified bool. An on-chain revert (the
-/// contract doesn't implement the function) is distinguished from an RPC failure
-/// so ERC-165 absence stays stable rather than flickering to `unknown` — reverts
-/// come back HTTP 200 with an `error` body, which `classify_bool` reads.
-fn supports_interface(address: &str, interface_id: [u8; 4]) -> rpc::CallClass {
+/// `supportsInterface(<id>)` within `session` → the classified bool. An on-chain
+/// revert (the contract doesn't implement the function) is distinguished from an
+/// RPC failure so ERC-165 absence stays stable rather than flickering to
+/// `unknown` — reverts come back HTTP 200 with an `error` body, read by
+/// `classify_bool`.
+fn supports_interface(session: usize, address: &str, interface_id: [u8; 4]) -> rpc::CallClass {
     let data = rpc::supports_interface_calldata(interface_id);
-    match curl_json(&eth_call_payload(address, &data)) {
+    match curl_json(session, &eth_call_payload(address, &data)) {
         Some(body) => rpc::classify_bool(&body),
         None => rpc::CallClass::Unknown,
     }
@@ -1355,9 +1364,10 @@ fn main() {
             // constants-only.
             let onchain =
                 owners::parse_address_constant(&safe, "STOX_TOKEN_OWNER_SAFE").map(|safe_addr| {
-                    let owners_live = eth_call(&safe_addr, &rpc::get_owners_calldata())
+                    let s = rpc_session();
+                    let owners_live = eth_call(s, &safe_addr, &rpc::get_owners_calldata())
                         .and_then(|hex| rpc::decode_owners(&hex));
-                    let threshold_live = eth_call(&safe_addr, &rpc::get_threshold_calldata())
+                    let threshold_live = eth_call(s, &safe_addr, &rpc::get_threshold_calldata())
                         .and_then(|hex| rpc::decode_uint(&hex));
                     owners::OnChainSafe {
                         network: "base".into(),
@@ -1390,14 +1400,17 @@ fn main() {
                             let addr = owners::parse_address_constant(&src, "DEPLOYED_ADDRESS");
                             let runtime = deployhealth::parse_hex_constant(&src, "RUNTIME_CODE");
                             let hash = deployhealth::parse_bytes32_constant(&src, "BYTECODE_HASH");
-                            let onchain = addr.as_deref().and_then(eth_get_code);
+                            // One RPC session per contract, so getCode + both ERC-165
+                            // probes hit the same endpoint and can't disagree.
+                            let s = rpc_session();
+                            let onchain = addr.as_deref().and_then(|a| eth_get_code(s, a));
                             // ERC-165 conformance: supportsInterface(0x01ffc9a7) must
                             // be true and supportsInterface(0xffffffff) false, both on
                             // Base. Absent (both revert) is fine for e.g. a beacon.
                             let erc165 = match addr.as_deref() {
                                 Some(a) => deployhealth::erc165_status(
-                                    supports_interface(a, [0x01, 0xff, 0xc9, 0xa7]),
-                                    supports_interface(a, [0xff, 0xff, 0xff, 0xff]),
+                                    supports_interface(s, a, [0x01, 0xff, 0xc9, 0xa7]),
+                                    supports_interface(s, a, [0xff, 0xff, 0xff, 0xff]),
                                 ),
                                 None => "unknown",
                             };
@@ -1427,44 +1440,63 @@ fn main() {
             let (org, repo) = ("S01-Issuer", "st0x.deploy");
             let v1 = gh_file(org, repo, "src/lib/LibProdDeployV1.sol");
             let safe_lib = gh_file(org, repo, "src/lib/LibSafeInvariants.sol");
-            // (label, beacon-address constant, expected-implementation constant)
+            let safe_owner = owners::parse_address_constant(&safe_lib, "STOX_TOKEN_OWNER_SAFE");
+            // The pre-migration deploy EOA — a beacon still owned by this hasn't
+            // been handed to the Safe.
+            let legacy_owner = owners::parse_address_constant(&v1, "BEACON_INITIAL_OWNER");
+            // (label, beacon addr const, V1-impl const, 0.1.1-target pointer file).
+            // The 0.1.1 target impl is that contract's DEPLOYED_ADDRESS in the
+            // generated 0_1_1 dir; the V1 impl is the pre-Zoltu one in LibProdDeployV1.
             let spec = [
                 (
                     "Receipt beacon",
                     "STOX_RECEIPT_BEACON_V1",
                     "STOX_RECEIPT_IMPLEMENTATION",
+                    "src/generated/0_1_1/StoxReceipt.pointers.sol",
                 ),
                 (
                     "Receipt-vault beacon",
                     "STOX_RECEIPT_VAULT_BEACON_V1",
                     "STOX_RECEIPT_VAULT_IMPLEMENTATION",
+                    "src/generated/0_1_1/StoxReceiptVault.pointers.sol",
                 ),
                 (
                     "Wrapped-token-vault beacon",
                     "STOX_WRAPPED_TOKEN_VAULT_BEACON_V1",
                     "STOX_WRAPPED_TOKEN_VAULT_IMPLEMENTATION",
+                    "src/generated/0_1_1/StoxWrappedTokenVault.pointers.sol",
                 ),
             ];
-            match owners::parse_address_constant(&safe_lib, "STOX_TOKEN_OWNER_SAFE") {
-                Some(expected_owner) => {
+            match (safe_owner, legacy_owner) {
+                (Some(safe), Some(legacy)) => {
                     let beacons: Vec<_> = spec
                         .iter()
-                        .map(|(label, beacon_const, impl_const)| {
+                        .map(|(label, beacon_const, v1_impl_const, target_file)| {
                             let addr = owners::parse_address_constant(&v1, beacon_const);
-                            let expected_impl = owners::parse_address_constant(&v1, impl_const);
+                            let v1_impl = owners::parse_address_constant(&v1, v1_impl_const);
+                            let target_impl = owners::parse_address_constant(
+                                &gh_file(org, repo, target_file),
+                                "DEPLOYED_ADDRESS",
+                            );
+                            // One session per beacon so owner() + implementation()
+                            // hit the same RPC and can't disagree.
+                            let s = rpc_session();
                             let live_owner = addr
                                 .as_deref()
-                                .and_then(|a| eth_call(a, &rpc::owner_calldata()))
+                                .and_then(|a| eth_call(s, a, &rpc::owner_calldata()))
                                 .and_then(|hex| rpc::decode_address(&hex));
                             let live_impl = addr
                                 .as_deref()
-                                .and_then(|a| eth_call(a, &rpc::implementation_calldata()))
+                                .and_then(|a| eth_call(s, a, &rpc::implementation_calldata()))
                                 .and_then(|hex| rpc::decode_address(&hex));
                             deployhealth::beacon_health(
                                 label,
                                 addr,
-                                &expected_owner,
-                                expected_impl,
+                                &safe,
+                                &legacy,
+                                target_impl.as_deref(),
+                                v1_impl.as_deref(),
+                                "0.1.1",
                                 live_owner,
                                 live_impl,
                             )
@@ -1475,12 +1507,13 @@ fn main() {
                         repo,
                         "base",
                         "mainnet.base.org",
-                        &expected_owner,
+                        &safe,
+                        "0.1.1",
                         beacons,
                     )
                     .unwrap_or(serde_json::Value::Null)
                 }
-                None => serde_json::Value::Null,
+                _ => serde_json::Value::Null,
             }
         };
 
