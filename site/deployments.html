@@ -1,0 +1,138 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>rain org health — deployments</title>
+<style>
+  :root {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --crit: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+      --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+      --border: #332f24; --accent: #60a5fa;
+      --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+      --clean: #4ade80; --clean-bg: #12241a;
+      --crit: #f87171;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+    --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+    --border: #332f24; --accent: #60a5fa;
+    --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+    --clean: #4ade80; --clean-bg: #12241a;
+    --crit: #f87171;
+  }
+  :root[data-theme="light"] {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --crit: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 4px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .meta { color: var(--ink-3); font-size: 13px; }
+  .theme-btn {
+    margin-left: auto; background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
+    font-size: 13px; cursor: pointer;
+  }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
+       margin: 32px 0 12px; font-weight: 600; }
+  .empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
+  footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
+  footer a { color: var(--ink-3); }
+  .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
+  .nav a { padding: 8px 13px; color: var(--ink-2); text-decoration: none; font-size: 13.5px;
+           border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav a:hover { color: var(--ink); }
+  .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>rain org health</h1>
+    <span class="meta" id="meta">loading…</span>
+    <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
+  </header>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="repositories.html">Repositories</a>
+    <a href="audit.html">Audit</a>
+    <a href="pipeline.html">Pipeline</a>
+    <a href="metrics.html">Metrics</a>
+    <a href="deployments.html" class="active">Deployments</a>
+  </nav>
+  <div id="deployments">loading…</div>
+  <footer>
+    Org-health dashboard — status, not severity; identity is the label, not the color.
+    <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
+  </footer>
+</div>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+// Theme toggle: default follows the OS; the button stamps data-theme to override.
+$("theme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+});
+// Renders the deployments view into #deployments. Kept a top-level function with
+// locally-declared helpers so test/dashboard.test.js can extract and eval it standalone.
+function renderDeployments(document, $, data) {
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const box = $("deployments");
+  box.textContent = "";
+  box.append(el("h2", null, "Base deployments"));
+  box.append(
+    el(
+      "div",
+      "empty",
+      "On-chain deployment tracking for Base is being built — no data yet.",
+    ),
+  );
+}
+let data = null;
+async function load() {
+  try {
+    const r = await fetch("health.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    data = await r.json();
+  } catch (e) {
+    $("meta").textContent = "could not load health.json";
+    $("deployments").textContent = "";
+    return;
+  }
+  const ago = Math.round((Date.now() - new Date(data.generatedAt).getTime()) / 3.6e6);
+  $("meta").textContent =
+    `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
+    (isFinite(ago) ? ` (${ago}h ago)` : "");
+  renderDeployments(document, $, data);
+}
+load();
+</script>
+</body>
+</html>
