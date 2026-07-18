@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T16:31:42Z",
+  "generatedAt": "2026-07-18T17:05:37Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2360,7 +2360,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "nonconformant"
+        "erc165": "conformant"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultPaymentMintAuthorizerV1",
@@ -2376,7 +2376,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "nonconformant"
+        "erc165": "conformant"
       },
       {
         "name": "StoxReceiptVault",
@@ -2392,7 +2392,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "nonconformant"
+        "erc165": "conformant"
       },
       {
         "name": "StoxWrappedTokenVault",
@@ -2425,39 +2425,46 @@
     "repo": "st0x.deploy",
     "network": "base",
     "rpcHost": "mainnet.base.org",
-    "expectedOwner": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+    "safeOwner": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+    "targetVersion": "0.1.1",
     "total": 3,
-    "healthy": 2,
+    "healthy": 0,
     "beacons": [
       {
         "name": "Receipt beacon",
         "address": "0x86e93c39B095be0B0054C8488E26466Ee027D79a",
         "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-        "ownerOk": true,
+        "ownerLabel": "safe",
         "implementation": "0xe7573879d73455dc92cb4087fa8177594387cbcd",
-        "expectedImpl": "0xE7573879D73455Dc92cB4087Fa8177594387CbCD",
-        "implOk": true,
-        "status": "healthy"
+        "implVersion": "V1",
+        "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
+        "targetVersion": "0.1.1",
+        "atTarget": false,
+        "status": "behind"
       },
       {
         "name": "Receipt-vault beacon",
         "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
-        "owner": null,
-        "ownerOk": null,
+        "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+        "ownerLabel": "safe",
         "implementation": "0x8effce5ebb047f215df1d8522c32c7c9de239f39",
-        "expectedImpl": "0x8EFfCe5Ebb047F215dF1d8522c32c7C9DE239f39",
-        "implOk": true,
-        "status": "unknown"
+        "implVersion": "V1",
+        "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
+        "targetVersion": "0.1.1",
+        "atTarget": false,
+        "status": "behind"
       },
       {
         "name": "Wrapped-token-vault beacon",
         "address": "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
         "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-        "ownerOk": true,
+        "ownerLabel": "safe",
         "implementation": "0x80a79767f2d7c24a0577f791ec2af74a7c9a1ed1",
-        "expectedImpl": "0x80A79767F2d7c24A0577f791eC2Af74a7c9A1eD1",
-        "implOk": true,
-        "status": "healthy"
+        "implVersion": "V1",
+        "targetImpl": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
+        "targetVersion": "0.1.1",
+        "atTarget": false,
+        "status": "behind"
       }
     ]
   },
