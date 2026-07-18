@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T16:15:37Z",
+  "generatedAt": "2026-07-18T16:31:42Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2352,7 +2352,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "conformant"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultBeaconSetDeployer",
@@ -2360,7 +2360,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "nonconformant"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultPaymentMintAuthorizerV1",
@@ -2368,7 +2368,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "conformant"
       },
       {
         "name": "StoxReceipt",
@@ -2376,7 +2376,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "nonconformant"
       },
       {
         "name": "StoxReceiptVault",
@@ -2392,7 +2392,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "conformant"
+        "erc165": "nonconformant"
       },
       {
         "name": "StoxWrappedTokenVault",
@@ -2400,7 +2400,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "absent"
       },
       {
         "name": "StoxWrappedTokenVaultBeacon",
@@ -2408,7 +2408,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "absent"
       },
       {
         "name": "StoxWrappedTokenVaultBeaconSetDeployer",
@@ -2416,7 +2416,48 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "conformant"
+      }
+    ]
+  },
+  "deploymentBeacons": {
+    "org": "S01-Issuer",
+    "repo": "st0x.deploy",
+    "network": "base",
+    "rpcHost": "mainnet.base.org",
+    "expectedOwner": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+    "total": 3,
+    "healthy": 2,
+    "beacons": [
+      {
+        "name": "Receipt beacon",
+        "address": "0x86e93c39B095be0B0054C8488E26466Ee027D79a",
+        "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+        "ownerOk": true,
+        "implementation": "0xe7573879d73455dc92cb4087fa8177594387cbcd",
+        "expectedImpl": "0xE7573879D73455Dc92cB4087Fa8177594387CbCD",
+        "implOk": true,
+        "status": "healthy"
+      },
+      {
+        "name": "Receipt-vault beacon",
+        "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
+        "owner": null,
+        "ownerOk": null,
+        "implementation": "0x8effce5ebb047f215df1d8522c32c7c9de239f39",
+        "expectedImpl": "0x8EFfCe5Ebb047F215dF1d8522c32c7C9DE239f39",
+        "implOk": true,
+        "status": "unknown"
+      },
+      {
+        "name": "Wrapped-token-vault beacon",
+        "address": "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
+        "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+        "ownerOk": true,
+        "implementation": "0x80a79767f2d7c24a0577f791ec2af74a7c9a1ed1",
+        "expectedImpl": "0x80A79767F2d7c24A0577f791eC2Af74a7c9A1eD1",
+        "implOk": true,
+        "status": "healthy"
       }
     ]
   },
