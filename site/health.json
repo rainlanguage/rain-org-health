@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T13:53:31Z",
+  "generatedAt": "2026-07-18T14:10:59Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2166,6 +2166,147 @@
         "stale": false,
         "pinned": "0.1.0",
         "latest": "0.1.0"
+      }
+    ]
+  },
+  "deploymentOwners": {
+    "repo": "st0x.deploy",
+    "org": "S01-Issuer",
+    "threshold": 3,
+    "signerCount": 6,
+    "groups": [
+      {
+        "id": "safe",
+        "title": "Upgrade authority — token-owner Safe",
+        "note": "3-of-6 Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role.",
+        "entries": [
+          {
+            "role": "Base Safe",
+            "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+            "network": "base",
+            "status": "active",
+            "note": "beacon owner + authoriser admin"
+          },
+          {
+            "role": "Ethereum Safe",
+            "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "network": "ethereum",
+            "status": "active",
+            "note": "same policy, per-chain address"
+          }
+        ]
+      },
+      {
+        "id": "signers",
+        "title": "Safe signers (3-of-6)",
+        "note": "The same EOAs govern the Safe on both chains.",
+        "entries": [
+          {
+            "role": "Signer 1",
+            "address": "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2",
+            "network": "",
+            "status": "active",
+            "note": ""
+          },
+          {
+            "role": "Signer 2",
+            "address": "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d",
+            "network": "",
+            "status": "active",
+            "note": ""
+          },
+          {
+            "role": "Signer 3",
+            "address": "0x8D5901d8aE48101B59400235ad8614A2e0510466",
+            "network": "",
+            "status": "active",
+            "note": ""
+          },
+          {
+            "role": "Signer 4",
+            "address": "0xC1C89b7f5448F447d59f920456A9610f6b2544bC",
+            "network": "",
+            "status": "active",
+            "note": ""
+          },
+          {
+            "role": "Signer 5",
+            "address": "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
+            "network": "",
+            "status": "active",
+            "note": ""
+          },
+          {
+            "role": "Signer 6",
+            "address": "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2",
+            "network": "",
+            "status": "active",
+            "note": ""
+          }
+        ]
+      },
+      {
+        "id": "authoriser",
+        "title": "Operational access — authoriser",
+        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser.",
+        "entries": [
+          {
+            "role": "Live authoriser clone",
+            "address": "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456",
+            "network": "base",
+            "status": "active",
+            "note": "the authorizer() target vaults point at"
+          },
+          {
+            "role": "Authoriser implementation",
+            "address": "0x2B4A510c3619d5E888095BFE9f95902D32dA5556",
+            "network": "base",
+            "status": "active",
+            "note": "implementation behind the clone"
+          },
+          {
+            "role": "V4 pending-swap clone",
+            "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+            "network": "base",
+            "status": "pending",
+            "note": "the V4 upgrade rewires every vault onto this"
+          },
+          {
+            "role": "Service grantee",
+            "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+            "network": "",
+            "status": "active",
+            "note": "external service EOA granted deposit / withdraw / certify"
+          }
+        ]
+      },
+      {
+        "id": "historical",
+        "title": "Historical & bricked",
+        "note": "Defined in the constants but not live control of production.",
+        "entries": [
+          {
+            "role": "Deploy-time initial owner",
+            "address": "0x8E4bdeec7CEB9570D440676345dA1dCe10329f5b",
+            "network": "",
+            "status": "migrated",
+            "note": "held the beacons at deploy; ownership since migrated to the Safe"
+          },
+          {
+            "role": "V2 receipt beacon owner",
+            "address": "0xbAB0E6b7B5dDA86FB8ba81c00aEA0Ceb8b73686b",
+            "network": "base",
+            "status": "bricked",
+            "note": "owned by the token contract itself — the V2 beacon can no longer be upgraded"
+          },
+          {
+            "role": "V2 vault beacon owner",
+            "address": "0xc95dB340A7a100881626475d41BFf70857Aa920D",
+            "network": "base",
+            "status": "bricked",
+            "note": "owned by the token contract itself — the V2 beacon can no longer be upgraded"
+          }
+        ]
       }
     ]
   },
