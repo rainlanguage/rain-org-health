@@ -844,3 +844,26 @@ Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak ch
   assert(chips.filter((l) => l === "erc165 —").length === 1, "one erc165 — (absent)");
   assert(chips.filter((l) => l === "erc165 ✗").length === 1, "one erc165 ✗ (nonconformant)");
 });
+
+Deno.test("deployments: beacons show owner + impl checks and flag drift", () => {
+  const data = {
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      org: "S01-Issuer", repo: "st0x.deploy", network: "base", rpcHost: "mainnet.base.org",
+      expectedOwner: "0xe70d821f3462a074e63b42d0aac6523faae1d611", total: 2, healthy: 1,
+      beacons: [
+        { name: "Receipt beacon", address: "0x86e93c39B095be0B0054C8488E26466Ee027D79a", ownerOk: true, implOk: true, status: "healthy" },
+        { name: "Vault beacon", address: "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A", ownerOk: false, implOk: true, status: "drift" },
+      ],
+    },
+  };
+  const box = deploymentsBox(data);
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  assert(chips.filter((l) => l === "owner ✓").length === 1, "one owner ✓");
+  assert(chips.filter((l) => l === "owner ✗").length === 1, "one owner ✗ (drifted beacon)");
+  assert(chips.filter((l) => l === "impl ✓").length === 2, "two impl ✓");
+  assert(chips.includes("drift"), "the drifted beacon shows its status pill");
+  assert(collect(box, "own-verify-drift").length === 1, "a not-all-healthy beacon banner");
+  assert(collect(box, "hlth-drift").length === 1, "the drifted beacon row is flagged");
+});

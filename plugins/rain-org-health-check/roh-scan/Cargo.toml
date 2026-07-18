@@ -13,4 +13,7 @@ path = "src/main.rs"
 regex = "1"
 toml = "0.8"
 serde_json = { version = "1", features = ["preserve_order"] }
-tiny-keccak = { version = "2", features = ["keccak"] }
+# ABI encode/decode + keccak for the on-chain reads (typed via the sol! macro,
+# no async provider — the curl transport + RPC fallback stay hand-rolled).
+alloy-sol-types = "0.8"
+alloy-primitives = "0.8"
