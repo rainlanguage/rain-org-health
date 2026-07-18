@@ -116,6 +116,7 @@
   .own-chip-yes { color: var(--clean); border-color: var(--clean); }
   .own-chip-no { color: var(--crit); border-color: var(--crit); }
   .own-chip-dim { color: var(--ink-3); border-color: var(--border); }
+  .own-chip-target { color: var(--accent); border-color: var(--accent); }
   @media (max-width: 620px) {
     .own-row { grid-template-columns: 1fr; gap: 5px; }
     .own-prov { justify-content: flex-start; }
@@ -311,14 +312,18 @@ function renderDeployments(document, $, data) {
               ? ["foreign", "no"]
               : ["—", "dim"];
       detail.append(detailLine("owner", own[0], own[1], bc.owner));
-      // impl: which version it actually is
-      const imp =
-        bc.atTarget === true
-          ? [`${bc.implVersion} (target)`, "yes"]
-          : bc.atTarget === false
-            ? [`${bc.implVersion} · behind ${bc.targetVersion}`, "no"]
-            : ["unknown", "dim"];
-      detail.append(detailLine("impl", imp[0], imp[1], bc.implementation));
+      // impl: what it points at NOW, and — when it isn't already there — what it
+      // SHOULD point at, so a proposed upgradeTo(...) can be checked against both.
+      if (bc.atTarget === true) {
+        detail.append(detailLine("impl", `${bc.implVersion} ✓`, "yes", bc.implementation));
+      } else {
+        const nowLabel = bc.atTarget === false ? bc.implVersion : "unknown";
+        const nowCls = bc.atTarget === false ? "no" : "dim";
+        detail.append(detailLine("now", nowLabel, nowCls, bc.implementation));
+        if (bc.targetImpl) {
+          detail.append(detailLine("target", bc.targetVersion, "target", bc.targetImpl));
+        }
+      }
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
       table.append(row);

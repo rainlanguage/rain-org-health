@@ -180,8 +180,11 @@ pub fn beacon_health(
         "address": address,
         "owner": live_owner,
         "ownerLabel": owner_label,
+        // What it points at NOW, and what it SHOULD point at (the target-version
+        // impl) — so a proposed upgradeTo(...) can be checked against both.
         "implementation": live_impl,
         "implVersion": impl_version,
+        "targetImpl": target_impl,
         "targetVersion": target_version,
         "atTarget": at_target,
         "status": status,
@@ -392,6 +395,9 @@ mod tests {
         assert_eq!(b["ownerLabel"], "safe");
         assert_eq!(b["implVersion"], "V1");
         assert_eq!(b["atTarget"], false);
+        // both the current (V1) and the should-be (target) impl are surfaced.
+        assert_eq!(b["implementation"], V1);
+        assert_eq!(b["targetImpl"], TARGET);
     }
 
     #[test]
