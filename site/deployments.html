@@ -75,6 +75,7 @@
              padding: 11px 14px; border-bottom: 1px solid var(--border); }
   .own-row:last-child { border-bottom: 0; }
   .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
+  .own-row.own-extra { background: var(--debt-bg); }
   .own-role { font-size: 14px; font-weight: 600; color: var(--ink); }
   .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
   .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
@@ -105,11 +106,9 @@
   .own-prov { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end; }
   .own-chip { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
               border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
-  .own-chip-constant { color: var(--ink-2); }
-  .own-chip-match { color: var(--clean); border-color: var(--clean); }
-  .own-chip-missing { color: var(--crit); border-color: var(--crit); }
-  .own-chip-unverified { color: var(--ink-3); }
-  .own-chip-extra { color: var(--crit); border-color: var(--crit); background: var(--debt-bg); }
+  .own-chip-yes { color: var(--clean); border-color: var(--clean); }
+  .own-chip-no { color: var(--crit); border-color: var(--crit); }
+  .own-chip-dim { color: var(--ink-3); border-color: var(--border); }
   @media (max-width: 620px) {
     .own-row { grid-template-columns: 1fr; gap: 5px; }
     .own-prov { justify-content: flex-start; }
@@ -238,21 +237,28 @@ function renderDeployments(document, $, data) {
         ac.append(el("span", "own-addr own-missing", "— not found"));
       }
       if (e.network) ac.append(el("span", "own-net", e.network));
-      // Where a row was checked on-chain, show its two provenances side by side —
-      // the constant and the getOwners() result; otherwise a plain status pill.
+      // Where a row was checked on-chain, show its two provenances side by side as
+      // independent ✓/✗ per source — the declared constant and the getOwners()
+      // result; otherwise a plain status pill.
       let tail;
       if (e.onChain) {
+        const oc = e.onChain;
         tail = el("div", "own-prov");
-        tail.append(el("span", "own-chip own-chip-constant", "constant"));
-        const label =
-          e.onChain === "match"
-            ? "on-chain ✓"
-            : e.onChain === "missing"
-              ? "on-chain ✗"
-              : e.onChain === "extra"
-                ? "unexpected"
-                : "on-chain —";
-        tail.append(el("span", `own-chip own-chip-${e.onChain}`, label));
+        // constant source: present unless this owner was only seen on-chain.
+        tail.append(
+          oc === "extra"
+            ? el("span", "own-chip own-chip-no", "constant ✗")
+            : el("span", "own-chip own-chip-yes", "constant ✓"),
+        );
+        // on-chain source: present for match/extra, absent for missing, unknown
+        // when the RPC didn't answer.
+        tail.append(
+          oc === "missing"
+            ? el("span", "own-chip own-chip-no", "on-chain ✗")
+            : oc === "unverified"
+              ? el("span", "own-chip own-chip-dim", "on-chain —")
+              : el("span", "own-chip own-chip-yes", "on-chain ✓"),
+        );
       } else {
         tail = el("span", `own-status own-status-${status}`, status);
       }
