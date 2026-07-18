@@ -657,3 +657,114 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
   );
   assert(collect(detail, "li").length === 2, "renders exactly the 2 issues");
 });
+
+// ---- deployments.html: known owners ----
+
+// renderDeployments takes (document, $, data) as its own params, so bind with no
+// injected free vars and call the returned function with the stubs.
+function deploymentsBox(data) {
+  const box = makeEl("div");
+  const document = {
+    createElement: (t) => makeEl(t),
+    createTextNode: (t) => t,
+  };
+  const $ = (id) => (id === "deployments" ? box : makeEl("div"));
+  bind("deployments.html", "renderDeployments", [], [])(document, $, data);
+  return box;
+}
+
+const OWNERS = {
+  deploymentOwners: {
+    repo: "st0x.deploy",
+    org: "S01-Issuer",
+    threshold: 3,
+    signerCount: 6,
+    groups: [
+      {
+        id: "safe",
+        title: "Upgrade authority — token-owner Safe",
+        note: "n",
+        entries: [
+          { role: "Base Safe", address: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611", network: "base", status: "active", note: "beacon owner" },
+          { role: "Ethereum Safe", address: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329", network: "ethereum", status: "active", note: "" },
+        ],
+      },
+      {
+        id: "signers",
+        title: "Safe signers (3-of-6)",
+        note: "",
+        entries: [1, 2, 3, 4, 5, 6].map((i) => ({
+          role: "Signer " + i,
+          address: "0x" + String(i).repeat(40).slice(0, 40),
+          network: "",
+          status: "active",
+          note: "",
+        })),
+      },
+      {
+        id: "authoriser",
+        title: "Operational access — authoriser",
+        note: "",
+        entries: [
+          { role: "V4 pending-swap clone", address: "0x315b16faa6eE413faBCa877d3851B3818369f0cD", network: "base", status: "pending", note: "swap" },
+        ],
+      },
+      {
+        id: "historical",
+        title: "Historical & bricked",
+        note: "",
+        entries: [
+          { role: "V2 receipt beacon owner", address: "0xbAB0E6b7B5dDA86FB8ba81c00aEA0Ceb8b73686b", network: "base", status: "bricked", note: "dead" },
+        ],
+      },
+    ],
+  },
+};
+
+Deno.test("deployments: renders every owner group, six signers, and per-entry status pills", () => {
+  const box = deploymentsBox(OWNERS);
+  assert(collect(box, "own-group").length === 4, "four owner groups");
+  const signers = collect(box, "own-role").filter((r) => (r.textContent || "").startsWith("Signer "));
+  assert(signers.length === 6, "six signer rows, got " + signers.length);
+  assert(collect(box, "own-status-pending").length === 1, "one pending status pill");
+  assert(collect(box, "own-status-bricked").length === 1, "one bricked status pill");
+});
+
+Deno.test("deployments: addresses link to the network's explorer (base default, ethereum→etherscan)", () => {
+  const box = deploymentsBox(OWNERS);
+  const addrs = collect(box, "own-addr");
+  const baseSafe = addrs.find((a) => a.textContent === "0xe70d821f3462a074e63b42d0AaC6523faAe1d611");
+  assert(baseSafe, "base safe address rendered");
+  assert(
+    baseSafe.href === "https://basescan.org/address/0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+    "base-network address links to basescan, got " + baseSafe.href,
+  );
+  const ethSafe = addrs.find((a) => a.textContent === "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329");
+  assert(
+    ethSafe && ethSafe.href === "https://etherscan.io/address/0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+    "ethereum-network address links to etherscan, got " + (ethSafe && ethSafe.href),
+  );
+});
+
+Deno.test("deployments: an unresolved address renders as not-found, not dropped", () => {
+  const data = {
+    deploymentOwners: {
+      repo: "st0x.deploy", org: "S01-Issuer", threshold: 3, signerCount: 6,
+      groups: [{ id: "safe", title: "t", note: "", entries: [
+        { role: "Ethereum Safe", address: null, network: "ethereum", status: "active", note: "" },
+      ] }],
+    },
+  };
+  const box = deploymentsBox(data);
+  const missing = collect(box, "own-missing");
+  assert(missing.length === 1, "one not-found placeholder");
+  assert((missing[0].textContent || "").includes("not found"), "labels it not found");
+  // The row survives even though its address didn't resolve.
+  assert(collect(box, "own-role").length === 1, "the role row is still rendered");
+});
+
+Deno.test("deployments: no owner data shows an empty state and no groups", () => {
+  const box = deploymentsBox({ deploymentOwners: null });
+  assert(collect(box, "empty").length === 1, "empty-state message shown");
+  assert(collect(box, "own-group").length === 0, "no owner groups rendered");
+});

@@ -64,6 +64,36 @@
            border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .nav a:hover { color: var(--ink); }
   .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  /* ---- Known owners ---- */
+  .own-sub { color: var(--ink-3); font-size: 13px; margin: 0 0 4px; line-height: 1.55; max-width: 78ch; }
+  .own-sub a { color: var(--ink-2); }
+  .own-group { margin: 22px 0; }
+  .own-grouphead { font-size: 14.5px; font-weight: 650; color: var(--ink); margin: 0 0 2px; }
+  .own-groupnote { color: var(--ink-3); font-size: 12.5px; margin: 0 0 9px; line-height: 1.55; max-width: 78ch; }
+  .own-table { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; }
+  .own-row { display: grid; grid-template-columns: 210px 1fr auto; gap: 8px 16px; align-items: start;
+             padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  .own-row:last-child { border-bottom: 0; }
+  .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
+  .own-role { font-size: 14px; font-weight: 600; color: var(--ink); }
+  .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
+  .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
+  .own-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
+              color: var(--ink-2); text-decoration: none; word-break: break-all; }
+  a.own-addr:hover { color: var(--accent); text-decoration: underline; }
+  .own-missing { color: var(--crit); font-style: italic; }
+  .own-net { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3);
+             border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }
+  .own-status { display: inline-flex; align-items: center; font-size: 11px; text-transform: uppercase;
+                letter-spacing: 0.04em; font-weight: 650; border-radius: 6px; padding: 3px 7px;
+                white-space: nowrap; border: 1px solid var(--border); color: var(--ink-3); }
+  .own-status-active { color: var(--clean); border-color: var(--clean); }
+  .own-status-pending { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
+  .own-status-migrated { color: var(--ink-3); border-color: var(--border); }
+  .own-status-bricked { color: var(--crit); border-color: var(--crit); }
+  @media (max-width: 620px) {
+    .own-row { grid-template-columns: 1fr; gap: 5px; }
+  }
 </style>
 </head>
 <body>
@@ -104,16 +134,63 @@ function renderDeployments(document, $, data) {
     if (text !== undefined) n.textContent = text;
     return n;
   };
+  const link = (cls, text, href) => {
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    return a;
+  };
+  // A privileged address is the same on every chain except where the constant is
+  // network-specific; Base is the home network, so it is the default explorer.
+  const explorer = (address, network) =>
+    (network === "ethereum" ? "https://etherscan.io/address/" : "https://basescan.org/address/") +
+    address;
   const box = $("deployments");
   box.textContent = "";
-  box.append(el("h2", null, "Base deployments"));
-  box.append(
-    el(
-      "div",
-      "empty",
-      "On-chain deployment tracking for Base is being built — no data yet.",
+  const owners = data.deploymentOwners;
+  box.append(el("h2", null, "Known owners"));
+  if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
+    box.append(
+      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
+    );
+    return;
+  }
+  const sub = el("div", "own-sub");
+  sub.append(document.createTextNode("Privileged addresses read from the "));
+  sub.append(
+    link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
+  );
+  sub.append(
+    document.createTextNode(
+      ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
     ),
   );
+  box.append(sub);
+  for (const g of owners.groups) {
+    const grp = el("div", "own-group");
+    grp.append(el("div", "own-grouphead", g.title));
+    if (g.note) grp.append(el("div", "own-groupnote", g.note));
+    const table = el("div", "own-table");
+    for (const e of g.entries || []) {
+      const status = e.status || "active";
+      const row = el("div", `own-row own-${status}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", e.role));
+      if (e.note) rc.append(el("div", "own-note", e.note));
+      const ac = el("div", "own-ac");
+      if (e.address) {
+        ac.append(link("own-addr", e.address, explorer(e.address, e.network)));
+      } else {
+        ac.append(el("span", "own-addr own-missing", "— not found"));
+      }
+      if (e.network) ac.append(el("span", "own-net", e.network));
+      row.append(rc, ac, el("span", `own-status own-status-${status}`, status));
+      table.append(row);
+    }
+    grp.append(table);
+    box.append(grp);
+  }
 }
 let data = null;
 async function load() {
