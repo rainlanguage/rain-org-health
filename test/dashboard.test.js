@@ -817,3 +817,26 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
   const banner = collect(box, "own-verify-drift")[0];
   assert(textOf(banner).includes("3 (constant) · 2 (on-chain)"), "threshold mismatch shown: " + textOf(banner));
 });
+
+Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak checks", () => {
+  const data = {
+    deploymentOwners: null, // health must render even without owners
+    deploymentHealth: {
+      org: "S01-Issuer", repo: "st0x.deploy", version: "0.1.1", network: "base",
+      rpcHost: "mainnet.base.org", total: 3, healthy: 2,
+      contracts: [
+        { name: "StoxReceipt", address: "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286", status: "healthy", codeMatch: true, hashMatch: true },
+        { name: "StoxReceiptVault", address: "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748", status: "healthy", codeMatch: true, hashMatch: true },
+        { name: "StoxGone", address: "0xdead000000000000000000000000000000000001", status: "missing", codeMatch: false, hashMatch: false },
+      ],
+    },
+  };
+  const box = deploymentsBox(data);
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  assert(chips.filter((l) => l === "code ✓").length === 2, "two code ✓");
+  assert(chips.filter((l) => l === "keccak ✓").length === 2, "two keccak ✓");
+  assert(chips.filter((l) => l === "code ✗").length === 1, "one code ✗ (missing contract)");
+  assert(chips.includes("missing"), "the unhealthy contract shows its status pill");
+  assert(collect(box, "own-verify-drift").length === 1, "a not-all-healthy summary banner");
+  assert(collect(box, "hlth-missing").length === 1, "the missing contract's row is flagged");
+});
