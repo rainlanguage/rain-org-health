@@ -158,15 +158,20 @@ pub fn beacon_health(
         Some(o) if o.eq_ignore_ascii_case(legacy_owner) => "legacy",
         Some(_) => "foreign",
     };
-    let (impl_version, at_target): (&str, Option<bool>) = match live_impl.as_deref() {
-        None => ("unknown", None),
-        Some(l) if target_impl.is_some_and(|t| l.eq_ignore_ascii_case(t)) => {
-            (target_version, Some(true))
-        }
-        Some(l) if v1_impl.is_some_and(|v| l.eq_ignore_ascii_case(v)) => ("V1", Some(false)),
-        Some(_) => ("unknown", Some(false)),
+    let impl_version = match live_impl.as_deref() {
+        None => "unknown",
+        Some(l) if target_impl.is_some_and(|t| l.eq_ignore_ascii_case(t)) => target_version,
+        Some(l) if v1_impl.is_some_and(|v| l.eq_ignore_ascii_case(v)) => "V1",
+        Some(_) => "unknown",
     };
-    let status = if live_owner.is_none() || live_impl.is_none() {
+    // `atTarget` is only determinable when BOTH the live impl and the target are
+    // known — otherwise `null`, so a missing target can't masquerade as "behind".
+    let at_target = match (live_impl.as_deref(), target_impl) {
+        (Some(l), Some(t)) => Some(l.eq_ignore_ascii_case(t)),
+        _ => None,
+    };
+    // Without a readable target we can't assert "behind"; stay `unknown`.
+    let status = if live_owner.is_none() || live_impl.is_none() || target_impl.is_none() {
         "unknown"
     } else if owner_label != "safe" {
         "drift"
@@ -419,6 +424,25 @@ mod tests {
         assert_eq!(b["status"], "unknown");
         assert_eq!(b["ownerLabel"], "unknown");
         assert_eq!(b["implVersion"], "unknown");
+    }
+
+    #[test]
+    fn beacon_unknown_when_target_impl_unavailable() {
+        // Owner + impl read fine, but the target pointer couldn't be read — we
+        // can't assert "behind" without it, so stay unknown / atTarget null.
+        let b = beacon_health(
+            "Receipt beacon",
+            Some("0x86e9".into()),
+            SAFE,
+            LEGACY,
+            None,
+            Some(V1),
+            "0.1.1",
+            Some(SAFE.into()),
+            Some(V1.into()),
+        );
+        assert_eq!(b["status"], "unknown");
+        assert!(b["atTarget"].is_null());
     }
 
     #[test]
