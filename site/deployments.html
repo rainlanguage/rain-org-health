@@ -91,8 +91,28 @@
   .own-status-pending { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
   .own-status-migrated { color: var(--ink-3); border-color: var(--border); }
   .own-status-bricked { color: var(--crit); border-color: var(--crit); }
+  .own-verify { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
+                border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px;
+                margin: 0 0 10px; font-size: 12.5px; line-height: 1.5; }
+  .own-verify-ok { background: var(--clean-bg); border-color: var(--clean); }
+  .own-verify-drift { background: var(--debt-bg); border-color: var(--crit); }
+  .own-verify-down { background: var(--surface); color: var(--ink-3); }
+  .own-verify-msg { font-weight: 600; color: var(--ink); }
+  .own-verify-ok .own-verify-msg::before { content: "✓ "; color: var(--clean); font-weight: 700; }
+  .own-verify-drift .own-verify-msg::before { content: "⚠ "; color: var(--crit); font-weight: 700; }
+  .own-verify-thr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-2); }
+  .own-verify-src { color: var(--ink-3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  .own-prov { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end; }
+  .own-chip { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
+              border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
+  .own-chip-constant { color: var(--ink-2); }
+  .own-chip-match { color: var(--clean); border-color: var(--clean); }
+  .own-chip-missing { color: var(--crit); border-color: var(--crit); }
+  .own-chip-unverified { color: var(--ink-3); }
+  .own-chip-extra { color: var(--crit); border-color: var(--crit); background: var(--debt-bg); }
   @media (max-width: 620px) {
     .own-row { grid-template-columns: 1fr; gap: 5px; }
+    .own-prov { justify-content: flex-start; }
   }
 </style>
 </head>
@@ -146,6 +166,38 @@ function renderDeployments(document, $, data) {
   const explorer = (address, network) =>
     (network === "ethereum" ? "https://etherscan.io/address/" : "https://basescan.org/address/") +
     address;
+  // Declared-vs-on-chain verdict banner for a group that carries a verification.
+  const verifyBanner = (v) => {
+    let cls, msg;
+    if (!v.reachable) {
+      cls = "down";
+      msg = "On-chain check unavailable (RPC unreachable) — showing declared constants only.";
+    } else if (v.match) {
+      cls = "ok";
+      msg =
+        `Declared roster matches the live Safe — ${v.onChainCount} of ${v.onChainCount} ` +
+        `owners confirmed by getOwners() on ${v.network}.`;
+    } else {
+      cls = "drift";
+      msg = "Drift — the declared roster differs from the live Safe; see the flagged rows.";
+    }
+    const b = el("div", `own-verify own-verify-${cls}`);
+    b.append(el("span", "own-verify-msg", msg));
+    const t = v.threshold;
+    if (t) {
+      b.append(
+        el(
+          "span",
+          "own-verify-thr",
+          t.onChain == null
+            ? `threshold ${t.declared} (constant)`
+            : `threshold ${t.declared} (constant) · ${t.onChain} (on-chain)${t.match ? " ✓" : " ✗"}`,
+        ),
+      );
+    }
+    if (v.safe) b.append(el("span", "own-verify-src", `Safe ${v.safe} · via ${v.rpcHost}`));
+    return b;
+  };
   const box = $("deployments");
   box.textContent = "";
   const owners = data.deploymentOwners;
@@ -171,6 +223,7 @@ function renderDeployments(document, $, data) {
     const grp = el("div", "own-group");
     grp.append(el("div", "own-grouphead", g.title));
     if (g.note) grp.append(el("div", "own-groupnote", g.note));
+    if (g.verification) grp.append(verifyBanner(g.verification));
     const table = el("div", "own-table");
     for (const e of g.entries || []) {
       const status = e.status || "active";
@@ -185,7 +238,25 @@ function renderDeployments(document, $, data) {
         ac.append(el("span", "own-addr own-missing", "— not found"));
       }
       if (e.network) ac.append(el("span", "own-net", e.network));
-      row.append(rc, ac, el("span", `own-status own-status-${status}`, status));
+      // Where a row was checked on-chain, show its two provenances side by side —
+      // the constant and the getOwners() result; otherwise a plain status pill.
+      let tail;
+      if (e.onChain) {
+        tail = el("div", "own-prov");
+        tail.append(el("span", "own-chip own-chip-constant", "constant"));
+        const label =
+          e.onChain === "match"
+            ? "on-chain ✓"
+            : e.onChain === "missing"
+              ? "on-chain ✗"
+              : e.onChain === "extra"
+                ? "unexpected"
+                : "on-chain —";
+        tail.append(el("span", `own-chip own-chip-${e.onChain}`, label));
+      } else {
+        tail = el("span", `own-status own-status-${status}`, status);
+      }
+      row.append(rc, ac, tail);
       table.append(row);
     }
     grp.append(table);

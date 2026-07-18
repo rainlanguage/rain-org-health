@@ -693,12 +693,22 @@ const OWNERS = {
         id: "signers",
         title: "Safe signers (3-of-6)",
         note: "",
+        verification: {
+          reachable: true,
+          network: "base",
+          safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+          rpcHost: "mainnet.base.org",
+          onChainCount: 6,
+          match: true,
+          threshold: { declared: 3, onChain: 3, match: true },
+        },
         entries: [1, 2, 3, 4, 5, 6].map((i) => ({
           role: "Signer " + i,
           address: "0x" + String(i).repeat(40).slice(0, 40),
           network: "",
           status: "active",
           note: "",
+          onChain: "match",
         })),
       },
       {
@@ -767,4 +777,40 @@ Deno.test("deployments: no owner data shows an empty state and no groups", () =>
   const box = deploymentsBox({ deploymentOwners: null });
   assert(collect(box, "empty").length === 1, "empty-state message shown");
   assert(collect(box, "own-group").length === 0, "no owner groups rendered");
+});
+
+Deno.test("deployments: verified signers show constant + on-chain provenance side by side", () => {
+  const box = deploymentsBox(OWNERS);
+  assert(collect(box, "own-verify-ok").length === 1, "an on-chain-verified banner");
+  // each of the six signers renders BOTH a 'constant' chip and an 'on-chain ✓' chip
+  assert(collect(box, "own-chip-constant").length === 6, "six constant chips");
+  const matches = collect(box, "own-chip-match");
+  assert(matches.length === 6, "six on-chain-match chips, got " + matches.length);
+  assert(matches[0].textContent.includes("on-chain"), "match chip labelled on-chain");
+});
+
+Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and an unexpected row", () => {
+  const data = {
+    deploymentOwners: {
+      repo: "st0x.deploy", org: "S01-Issuer", threshold: 3, signerCount: 2,
+      groups: [{
+        id: "signers", title: "Safe signers", note: "",
+        verification: {
+          reachable: true, network: "base", safe: "0xe70dSafe", rpcHost: "mainnet.base.org",
+          onChainCount: 2, match: false, threshold: { declared: 3, onChain: 2, match: false },
+        },
+        entries: [
+          { role: "Signer 1", address: "0x1111111111111111111111111111111111111111", network: "", status: "active", note: "", onChain: "match" },
+          { role: "Signer 2", address: "0x2222222222222222222222222222222222222222", network: "", status: "active", note: "", onChain: "missing" },
+          { role: "Unexpected on-chain owner", address: "0xdead000000000000000000000000000000000001", network: "base", status: "extra", note: "not declared", onChain: "extra" },
+        ],
+      }],
+    },
+  };
+  const box = deploymentsBox(data);
+  assert(collect(box, "own-verify-drift").length === 1, "a drift banner");
+  assert(collect(box, "own-chip-missing").length === 1, "one missing chip");
+  assert(collect(box, "own-chip-extra").length === 1, "one unexpected chip");
+  const banner = collect(box, "own-verify-drift")[0];
+  assert(textOf(banner).includes("3 (constant) · 2 (on-chain)"), "threshold mismatch shown: " + textOf(banner));
 });

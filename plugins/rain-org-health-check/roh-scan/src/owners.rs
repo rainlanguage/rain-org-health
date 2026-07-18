@@ -40,6 +40,58 @@ pub fn parse_uint_constant(src: &str, name: &str) -> Option<u64> {
         .and_then(|m| m.as_str().parse().ok())
 }
 
+/// The `result` hex string from a JSON-RPC `eth_call` response body, or `None` if
+/// the response is an error / unparseable. Split from the fetch so decoding is a
+/// pure function of the bytes (mirrors `latest_revision_from_response` in main).
+pub fn eth_call_result(body: &[u8]) -> Option<String> {
+    let v: serde_json::Value = serde_json::from_slice(body).ok()?;
+    v.get("result")?.as_str().map(str::to_string)
+}
+
+/// Decode an `eth_call` return that is a single dynamic `address[]` — a 32-byte
+/// offset word, a 32-byte length word, then one 32-byte word per address. Returns
+/// the addresses as lowercase `0x…` (Safe `getOwners()` returns them
+/// unchecksummed). `None` if the hex is malformed or truncated.
+pub fn decode_address_array(result_hex: &str) -> Option<Vec<String>> {
+    let h = result_hex.strip_prefix("0x").unwrap_or(result_hex);
+    if h.len() < 128 || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return None;
+    }
+    let len = usize::from_str_radix(&h[64..128], 16).ok()?;
+    let mut out = Vec::with_capacity(len);
+    for i in 0..len {
+        let word = h.get(128 + i * 64..128 + i * 64 + 64)?;
+        // an address is the low 20 bytes (last 40 hex) of its 32-byte word
+        out.push(format!("0x{}", &word[24..]));
+    }
+    Some(out)
+}
+
+/// Decode an `eth_call` return that is a single `uint256` small enough to fit a
+/// `u64` (the Safe threshold). `None` if malformed or larger than `u64`.
+pub fn decode_uint(result_hex: &str) -> Option<u64> {
+    let h = result_hex.strip_prefix("0x").unwrap_or(result_hex);
+    if h.len() != 64 || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
+        return None;
+    }
+    // the high 48 hex digits must be zero for the value to fit u64
+    if h[..48].bytes().any(|b| b != b'0') {
+        return None;
+    }
+    u64::from_str_radix(&h[48..], 16).ok()
+}
+
+/// On-chain readback of a Safe, for the declared-vs-actual provenance view. Each
+/// field is `None` when its RPC call failed, so the dashboard can show "on-chain
+/// unavailable" without dropping the declared constants.
+pub struct OnChainSafe {
+    pub network: String,
+    pub safe: String,
+    pub rpc_host: String,
+    pub owners: Option<Vec<String>>,
+    pub threshold: Option<u64>,
+}
+
 fn entry(
     role: &str,
     address: Option<String>,
@@ -75,6 +127,7 @@ pub fn build_owners(
     auth_lib: &str,
     v4_lib: &str,
     overrides: &str,
+    onchain: Option<&OnChainSafe>,
 ) -> Option<serde_json::Value> {
     let addr = parse_address_constant;
 
@@ -83,18 +136,67 @@ pub fn build_owners(
     let eth_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
     let threshold = parse_uint_constant(safe_lib, "STOX_TOKEN_OWNER_SAFE_THRESHOLD").unwrap_or(3);
 
-    // Read the signer roster from the constants rather than assuming its size:
-    // walk STOX_TOKEN_OWNER_SAFE_OWNER_1, _2, … and stop at the first index that
-    // isn't defined, so the count tracks the actual Safe if the roster ever
-    // changes. The `..=64` is a belt-and-braces bound, far above any real multisig.
+    // The live owner set (lowercased — getOwners returns unchecksummed) for the
+    // declared-vs-actual comparison, or None when the RPC didn't answer.
+    let onchain_owners: Option<Vec<String>> = onchain
+        .and_then(|o| o.owners.as_ref())
+        .map(|v| v.iter().map(|a| a.to_lowercase()).collect());
+
+    // Read the declared roster from the constants (walk _1, _2, … until an index
+    // is undefined, so the count tracks the actual Safe), and record for each
+    // whether it is present in the live getOwners() set.
     let mut signers: Vec<serde_json::Value> = Vec::new();
+    let mut declared_lower: Vec<String> = Vec::new();
     for i in 1..=64 {
-        match addr(safe_lib, &format!("STOX_TOKEN_OWNER_SAFE_OWNER_{i}")) {
-            Some(a) => signers.push(entry(&format!("Signer {i}"), Some(a), "", "active", "")),
-            None => break,
-        }
+        let Some(a) = addr(safe_lib, &format!("STOX_TOKEN_OWNER_SAFE_OWNER_{i}")) else {
+            break;
+        };
+        let al = a.to_lowercase();
+        let on_chain = match &onchain_owners {
+            None => "unverified",
+            Some(set) if set.contains(&al) => "match",
+            Some(_) => "missing",
+        };
+        declared_lower.push(al);
+        signers.push(json!({
+            "role": format!("Signer {i}"), "address": a, "network": "",
+            "status": "active", "note": "", "onChain": on_chain,
+        }));
     }
     let signer_count = signers.len();
+
+    // Any live owner NOT in the declared set is unexpected — surface the drift
+    // rather than hide it.
+    if let Some(set) = &onchain_owners {
+        for oc in set.iter().filter(|oc| !declared_lower.contains(oc)) {
+            signers.push(json!({
+                "role": "Unexpected on-chain owner", "address": oc, "network": "base",
+                "status": "extra", "onChain": "extra",
+                "note": "present in the live Safe getOwners() but not in the declared constants",
+            }));
+        }
+    }
+
+    // Provenance verdict for the roster + threshold: the declared set matches the
+    // live set iff they are the same size and every declared owner is on-chain.
+    let verification = onchain.map(|o| {
+        let signer_match = onchain_owners
+            .as_ref()
+            .map(|set| set.len() == signer_count && declared_lower.iter().all(|d| set.contains(d)));
+        json!({
+            "reachable": o.owners.is_some(),
+            "network": o.network,
+            "safe": o.safe,
+            "rpcHost": o.rpc_host,
+            "onChainCount": o.owners.as_ref().map(|v| v.len()),
+            "match": signer_match,
+            "threshold": {
+                "declared": threshold,
+                "onChain": o.threshold,
+                "match": o.threshold.map(|t| t == threshold),
+            },
+        })
+    });
 
     let safe = json!({
         "id": "safe",
@@ -109,7 +211,8 @@ pub fn build_owners(
     let signers_group = json!({
         "id": "signers",
         "title": format!("Safe signers ({threshold}-of-{signer_count})"),
-        "note": "The same EOAs govern the Safe on both chains.",
+        "note": "Declared in the st0x.deploy constants and checked against the live Safe getOwners() on Base.",
+        "verification": verification,
         "entries": signers,
     });
 
@@ -240,6 +343,7 @@ mod tests {
             AUTH_LIB,
             V4_LIB,
             OVERRIDES,
+            None,
         )
         .expect("anchor resolves");
         assert_eq!(v["repo"], "st0x.deploy");
@@ -270,7 +374,7 @@ mod tests {
     fn build_owners_is_none_without_the_anchor() {
         // Repo unreachable / anchor constant moved → no owners doc at all.
         assert_eq!(
-            build_owners("o", "r", "", AUTH_LIB, V4_LIB, OVERRIDES),
+            build_owners("o", "r", "", AUTH_LIB, V4_LIB, OVERRIDES, None),
             None
         );
     }
@@ -280,7 +384,7 @@ mod tests {
         // The Ethereum Safe missing from the source surfaces as a null address in
         // its row rather than vanishing.
         let safe_no_eth = "address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;";
-        let v = build_owners("o", "r", safe_no_eth, AUTH_LIB, V4_LIB, OVERRIDES).unwrap();
+        let v = build_owners("o", "r", safe_no_eth, AUTH_LIB, V4_LIB, OVERRIDES, None).unwrap();
         let eth = &v["groups"][0]["entries"][1];
         assert_eq!(eth["role"], "Ethereum Safe");
         assert!(eth["address"].is_null());
@@ -296,9 +400,128 @@ mod tests {
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0x2222222222222222222222222222222222222222;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x3333333333333333333333333333333333333333;
         ";
-        let v = build_owners("o", "r", three, AUTH_LIB, V4_LIB, OVERRIDES).unwrap();
+        let v = build_owners("o", "r", three, AUTH_LIB, V4_LIB, OVERRIDES, None).unwrap();
         assert_eq!(v["signerCount"], 3);
         assert_eq!(v["groups"][1]["entries"].as_array().unwrap().len(), 3);
         assert_eq!(v["groups"][1]["title"], "Safe signers (3-of-3)");
+    }
+
+    // ---- on-chain decode + declared-vs-actual verification ----
+
+    #[test]
+    fn decodes_a_getowners_address_array() {
+        // offset | length(2) | addr1 | addr2, each in a left-padded 32-byte word.
+        let hex = "0x\
+            0000000000000000000000000000000000000000000000000000000000000020\
+            0000000000000000000000000000000000000000000000000000000000000002\
+            0000000000000000000000004746095b1ea1a84446d34448f44e74d3d51f92f2\
+            000000000000000000000000cec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d";
+        assert_eq!(
+            decode_address_array(hex).unwrap(),
+            vec![
+                "0x4746095b1ea1a84446d34448f44e74d3d51f92f2".to_string(),
+                "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d".to_string(),
+            ]
+        );
+    }
+
+    #[test]
+    fn malformed_address_array_is_none() {
+        assert_eq!(decode_address_array("0x1234"), None);
+        assert_eq!(decode_address_array("not hex"), None);
+    }
+
+    #[test]
+    fn decodes_a_uint_threshold_and_rejects_oversize() {
+        let three = "0x0000000000000000000000000000000000000000000000000000000000000003";
+        assert_eq!(decode_uint(three), Some(3));
+        // a value that overflows u64 (high bits set) is rejected, not truncated.
+        let big = "0xffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff";
+        assert_eq!(decode_uint(big), None);
+    }
+
+    #[test]
+    fn extracts_eth_call_result_and_rejects_errors() {
+        assert_eq!(
+            eth_call_result(br#"{"jsonrpc":"2.0","id":1,"result":"0xabc"}"#),
+            Some("0xabc".to_string())
+        );
+        assert_eq!(
+            eth_call_result(br#"{"jsonrpc":"2.0","id":1,"error":{"code":-32000}}"#),
+            None
+        );
+    }
+
+    fn onchain(owners: Option<Vec<&str>>, threshold: Option<u64>) -> OnChainSafe {
+        OnChainSafe {
+            network: "base".into(),
+            safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into(),
+            rpc_host: "mainnet.base.org".into(),
+            owners: owners.map(|v| v.into_iter().map(str::to_string).collect()),
+            threshold,
+        }
+    }
+
+    // The SAFE_LIB roster, lowercased as getOwners returns it.
+    const LIVE_ROSTER: [&str; 6] = [
+        "0x4746095b1ea1a84446d34448f44e74d3d51f92f2",
+        "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d",
+        "0x8d5901d8ae48101b59400235ad8614a2e0510466",
+        "0xc1c89b7f5448f447d59f920456a9610f6b2544bc",
+        "0xab92b327c97a6e7461cbd76e2a789e5e106ff87e",
+        "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2",
+    ];
+
+    #[test]
+    fn onchain_match_marks_every_signer_verified() {
+        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
+        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let sg = &v["groups"][1];
+        assert_eq!(sg["verification"]["match"], true);
+        assert_eq!(sg["verification"]["reachable"], true);
+        assert_eq!(sg["verification"]["threshold"]["match"], true);
+        let entries = sg["entries"].as_array().unwrap();
+        assert_eq!(entries.len(), 6);
+        assert!(entries.iter().all(|e| e["onChain"] == "match"));
+    }
+
+    #[test]
+    fn onchain_drift_flags_missing_and_extra_owners() {
+        // Live set drops signer 6 and adds an owner not in the constants; on-chain
+        // threshold (2) also differs from the declared 3.
+        let mut live: Vec<&str> = LIVE_ROSTER[..5].to_vec();
+        live.push("0xdeadbeef00000000000000000000000000000001");
+        let oc = onchain(Some(live), Some(2));
+        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let sg = &v["groups"][1];
+        assert_eq!(sg["verification"]["match"], false);
+        assert_eq!(sg["verification"]["threshold"]["match"], false);
+        let entries = sg["entries"].as_array().unwrap();
+        let s6 = entries.iter().find(|e| e["role"] == "Signer 6").unwrap();
+        assert_eq!(s6["onChain"], "missing", "declared but absent on-chain");
+        let extra = entries.iter().find(|e| e["status"] == "extra").unwrap();
+        assert_eq!(
+            extra["address"],
+            "0xdeadbeef00000000000000000000000000000001"
+        );
+        assert_eq!(extra["onChain"], "extra");
+    }
+
+    #[test]
+    fn unreachable_rpc_leaves_signers_unverified() {
+        let oc = onchain(None, None); // RPC failed
+        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let sg = &v["groups"][1];
+        assert_eq!(sg["verification"]["reachable"], false);
+        assert!(sg["verification"]["match"].is_null());
+        let entries = sg["entries"].as_array().unwrap();
+        assert!(entries.iter().all(|e| e["onChain"] == "unverified"));
+        assert_eq!(entries.len(), 6, "still shows the declared roster");
+    }
+
+    #[test]
+    fn no_onchain_omits_verification() {
+        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, None).unwrap();
+        assert!(v["groups"][1]["verification"].is_null());
     }
 }
