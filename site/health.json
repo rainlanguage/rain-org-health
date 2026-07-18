@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T14:10:59Z",
+  "generatedAt": "2026-07-18T14:54:07Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2199,49 +2199,68 @@
       {
         "id": "signers",
         "title": "Safe signers (3-of-6)",
-        "note": "The same EOAs govern the Safe on both chains.",
+        "note": "Declared in the st0x.deploy constants and checked against the live Safe getOwners() on Base.",
+        "verification": {
+          "reachable": true,
+          "network": "base",
+          "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+          "rpcHost": "mainnet.base.org",
+          "onChainCount": 6,
+          "match": true,
+          "threshold": {
+            "declared": 3,
+            "onChain": 3,
+            "match": true
+          }
+        },
         "entries": [
           {
             "role": "Signer 1",
             "address": "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2",
             "network": "",
             "status": "active",
-            "note": ""
+            "note": "",
+            "onChain": "match"
           },
           {
             "role": "Signer 2",
             "address": "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d",
             "network": "",
             "status": "active",
-            "note": ""
+            "note": "",
+            "onChain": "match"
           },
           {
             "role": "Signer 3",
             "address": "0x8D5901d8aE48101B59400235ad8614A2e0510466",
             "network": "",
             "status": "active",
-            "note": ""
+            "note": "",
+            "onChain": "match"
           },
           {
             "role": "Signer 4",
             "address": "0xC1C89b7f5448F447d59f920456A9610f6b2544bC",
             "network": "",
             "status": "active",
-            "note": ""
+            "note": "",
+            "onChain": "match"
           },
           {
             "role": "Signer 5",
             "address": "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
             "network": "",
             "status": "active",
-            "note": ""
+            "note": "",
+            "onChain": "match"
           },
           {
             "role": "Signer 6",
             "address": "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2",
             "network": "",
             "status": "active",
-            "note": ""
+            "note": "",
+            "onChain": "match"
           }
         ]
       },
