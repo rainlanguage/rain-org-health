@@ -170,7 +170,7 @@ function renderDeployments(document, $, data) {
     let cls, msg;
     if (!v.reachable) {
       cls = "down";
-      msg = "On-chain check unavailable (RPC unreachable) — showing declared constants only.";
+      msg = "On-chain check incomplete — an RPC call didn't return; treat as unverified.";
     } else if (v.match) {
       cls = "ok";
       msg =

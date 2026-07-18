@@ -57,7 +57,19 @@ pub fn decode_address_array(result_hex: &str) -> Option<Vec<String>> {
     if h.len() < 128 || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
         return None;
     }
+    // The RPC controls the length word, so confirm the payload is exactly the
+    // claimed size (offset 0x20, then 128 + len*64 hex) BEFORE allocating — a
+    // short response with a huge length must degrade to None, not OOM. checked_*
+    // rejects an overflowing length rather than wrapping.
+    let offset = usize::from_str_radix(&h[..64], 16).ok()?;
+    if offset != 32 {
+        return None;
+    }
     let len = usize::from_str_radix(&h[64..128], 16).ok()?;
+    let expected_len = 128usize.checked_add(len.checked_mul(64)?)?;
+    if h.len() != expected_len {
+        return None;
+    }
     let mut out = Vec::with_capacity(len);
     for i in 0..len {
         let word = h.get(128 + i * 64..128 + i * 64 + 64)?;
@@ -183,17 +195,24 @@ pub fn build_owners(
         let signer_match = onchain_owners
             .as_ref()
             .map(|set| set.len() == signer_count && declared_lower.iter().all(|d| set.contains(d)));
+        let threshold_match = o.threshold.map(|t| t == threshold);
+        // The verdict needs BOTH calls: a threshold mismatch — or a threshold RPC
+        // that didn't answer — must not read as verified. So `reachable` means both
+        // answered, and `match` requires the roster AND the threshold to agree.
+        let reachable = signer_match.is_some() && threshold_match.is_some();
         json!({
-            "reachable": o.owners.is_some(),
+            "reachable": reachable,
             "network": o.network,
             "safe": o.safe,
             "rpcHost": o.rpc_host,
             "onChainCount": o.owners.as_ref().map(|v| v.len()),
-            "match": signer_match,
+            "match": signer_match
+                .zip(threshold_match)
+                .map(|(owners, thr)| owners && thr),
             "threshold": {
                 "declared": threshold,
                 "onChain": o.threshold,
-                "match": o.threshold.map(|t| t == threshold),
+                "match": threshold_match,
             },
         })
     });
@@ -432,6 +451,18 @@ mod tests {
     }
 
     #[test]
+    fn address_array_rejects_a_lying_length_before_allocating() {
+        let off32 = format!("{:064x}", 32u64);
+        // Length claims 2^40 words but the payload is empty → None (no giant Vec).
+        let huge = format!("{:064x}", 1u64 << 40);
+        assert_eq!(decode_address_array(&format!("0x{off32}{huge}")), None);
+        // A non-0x20 offset is rejected too.
+        let off64 = format!("{:064x}", 64u64);
+        let zero = format!("{:064x}", 0u64);
+        assert_eq!(decode_address_array(&format!("0x{off64}{zero}")), None);
+    }
+
+    #[test]
     fn decodes_a_uint_threshold_and_rejects_oversize() {
         let three = "0x0000000000000000000000000000000000000000000000000000000000000003";
         assert_eq!(decode_uint(three), Some(3));
@@ -523,5 +554,41 @@ mod tests {
     fn no_onchain_omits_verification() {
         let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, None).unwrap();
         assert!(v["groups"][1]["verification"].is_null());
+    }
+
+    #[test]
+    fn threshold_mismatch_alone_fails_the_verdict() {
+        // Roster fully matches but the on-chain threshold differs: the overall
+        // verdict must be false — never a green "verified" — even though every
+        // signer row is a match.
+        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(4));
+        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let sg = &v["groups"][1];
+        assert_eq!(sg["verification"]["reachable"], true);
+        assert_eq!(
+            sg["verification"]["match"], false,
+            "threshold drift fails the verdict"
+        );
+        assert_eq!(sg["verification"]["threshold"]["match"], false);
+        let entries = sg["entries"].as_array().unwrap();
+        assert!(
+            entries.iter().all(|e| e["onChain"] == "match"),
+            "roster itself is fine"
+        );
+    }
+
+    #[test]
+    fn partial_rpc_is_not_reachable() {
+        // Owners answered but the threshold call didn't: not reachable and no
+        // verdict, so the page shows "incomplete" rather than a green banner.
+        let oc = onchain(Some(LIVE_ROSTER.to_vec()), None);
+        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let sg = &v["groups"][1];
+        assert_eq!(
+            sg["verification"]["reachable"], false,
+            "one call missing => not reachable"
+        );
+        assert!(sg["verification"]["match"].is_null());
+        assert!(sg["verification"]["threshold"]["onChain"].is_null());
     }
 }
