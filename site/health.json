@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-18T15:45:09Z",
+  "generatedAt": "2026-07-18T16:15:37Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2384,7 +2384,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "conformant"
       },
       {
         "name": "StoxUnifiedDeployer",
@@ -2392,7 +2392,7 @@
         "status": "healthy",
         "codeMatch": true,
         "hashMatch": true,
-        "erc165": "unknown"
+        "erc165": "conformant"
       },
       {
         "name": "StoxWrappedTokenVault",
