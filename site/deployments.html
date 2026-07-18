@@ -242,6 +242,13 @@ function renderDeployments(document, $, data) {
       tail.append(el("span", `own-chip own-chip-${stCls}`, st));
       tail.append(chipFor("code", c.codeMatch));
       tail.append(chipFor("keccak", c.hashMatch));
+      // ERC-165 conformance is a string status, not a bool: conformant / non-
+      // conformant (a spec violation) / absent (no supportsInterface) / unknown.
+      const e165 = c.erc165 || "unknown";
+      const e165cls = e165 === "conformant" ? "yes" : e165 === "nonconformant" ? "no" : "dim";
+      const e165sym =
+        e165 === "conformant" ? "✓" : e165 === "nonconformant" ? "✗" : e165 === "absent" ? "—" : "?";
+      tail.append(el("span", `own-chip own-chip-${e165cls}`, `erc165 ${e165sym}`));
       row.append(rc, ac, tail);
       table.append(row);
     }

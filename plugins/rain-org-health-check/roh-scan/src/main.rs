@@ -231,6 +231,37 @@ fn eth_get_code(rpc_url: &str, address: &str) -> Option<String> {
     owners::eth_call_result(&out.stdout)
 }
 
+/// `supportsInterface(bytes4)` for `id_hex` (4 bytes, no `0x`) → the classified
+/// bool. An on-chain revert (the contract doesn't implement the function) is
+/// distinguished from an RPC failure so ERC-165 absence stays stable rather than
+/// flickering to `unknown`. JSON-RPC reverts return HTTP 200 with an `error`
+/// body, so `curl -fsS` still succeeds and `parse_bool_result` sees the revert.
+fn supports_interface(rpc_url: &str, address: &str, id_hex: &str) -> deployhealth::CallClass {
+    // selector 01ffc9a7 + the 4-byte interface id, left-aligned in a 32-byte word.
+    let data = format!("0x01ffc9a7{id_hex}{}", "0".repeat(56));
+    let payload = format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{address}","data":"{data}"}},"latest"]}}"#
+    );
+    match Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "-X",
+            "POST",
+            rpc_url,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            &payload,
+        ])
+        .output()
+    {
+        Ok(o) if o.status.success() => deployhealth::parse_bool_result(&o.stdout),
+        _ => deployhealth::CallClass::Unknown,
+    }
+}
+
 fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     // workflows: list, then concat every *.yml/*.yaml body
     let mut workflows = String::new();
@@ -1367,7 +1398,19 @@ fn main() {
                             let runtime = deployhealth::parse_hex_constant(&src, "RUNTIME_CODE");
                             let hash = deployhealth::parse_bytes32_constant(&src, "BYTECODE_HASH");
                             let onchain = addr.as_deref().and_then(|a| eth_get_code(BASE_RPC, a));
-                            deployhealth::contract_health(cname, addr, runtime, hash, onchain)
+                            // ERC-165 conformance: supportsInterface(0x01ffc9a7) must
+                            // be true and supportsInterface(0xffffffff) false, both on
+                            // Base. Absent (both revert) is fine for e.g. a beacon.
+                            let erc165 = match addr.as_deref() {
+                                Some(a) => deployhealth::erc165_status(
+                                    supports_interface(BASE_RPC, a, "01ffc9a7"),
+                                    supports_interface(BASE_RPC, a, "ffffffff"),
+                                ),
+                                None => "unknown",
+                            };
+                            deployhealth::contract_health(
+                                cname, addr, runtime, hash, onchain, erc165,
+                            )
                         })
                         .collect();
                     deployhealth::build_health(
