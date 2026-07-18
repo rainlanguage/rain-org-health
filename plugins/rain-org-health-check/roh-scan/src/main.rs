@@ -174,6 +174,34 @@ fn gh_file(org: &str, repo: &str, path: &str) -> String {
     }
 }
 
+/// A read-only `eth_call` via curl (roh already shells curl for the soldeer
+/// registry) — returns the `result` hex, or `None` on any failure/timeout. The
+/// scan must survive an RPC hiccup, so callers degrade to constants-only.
+fn eth_call(rpc_url: &str, to: &str, data: &str) -> Option<String> {
+    let payload = format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+    );
+    let out = Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "-X",
+            "POST",
+            rpc_url,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            &payload,
+        ])
+        .output()
+        .ok()?;
+    if !out.status.success() {
+        return None;
+    }
+    owners::eth_call_result(&out.stdout)
+}
+
 fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     // workflows: list, then concat every *.yml/*.yaml body
     let mut workflows = String::new();
@@ -1265,7 +1293,27 @@ fn main() {
             let auth = gh_file(org, repo, "src/lib/LibAuthoriserInvariants.sol");
             let v4 = gh_file(org, repo, "src/generated/LibProdDeployV4.sol");
             let overrides = gh_file(org, repo, "src/lib/LibProdDeployV2BaseOverrides.sol");
-            owners::build_owners(org, repo, &safe, &auth, &v4, &overrides)
+            // Read the live Base Safe (getOwners + getThreshold) so the page can
+            // show declared-constant vs on-chain provenance. Best-effort: on any
+            // RPC failure the fields stay None and the section falls back to
+            // constants-only.
+            const BASE_RPC: &str = "https://mainnet.base.org";
+            let onchain =
+                owners::parse_address_constant(&safe, "STOX_TOKEN_OWNER_SAFE").map(|safe_addr| {
+                    let owners_live = eth_call(BASE_RPC, &safe_addr, "0xa0e67e2b") // getOwners()
+                        .and_then(|hex| owners::decode_address_array(&hex));
+                    let threshold_live =
+                        eth_call(BASE_RPC, &safe_addr, "0xe75235b8") // getThreshold()
+                            .and_then(|hex| owners::decode_uint(&hex));
+                    owners::OnChainSafe {
+                        network: "base".into(),
+                        safe: safe_addr,
+                        rpc_host: "mainnet.base.org".into(),
+                        owners: owners_live,
+                        threshold: threshold_live,
+                    }
+                });
+            owners::build_owners(org, repo, &safe, &auth, &v4, &overrides, onchain.as_ref())
                 .unwrap_or(serde_json::Value::Null)
         };
 
