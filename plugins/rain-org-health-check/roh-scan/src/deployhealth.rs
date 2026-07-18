@@ -62,16 +62,71 @@ pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
         .map(|m| m.as_str().to_lowercase())
 }
 
+/// The outcome of one `supportsInterface(bytes4)` call: a decoded bool, an
+/// on-chain revert (the contract doesn't implement the function), or an
+/// undetermined result (RPC failure / malformed reply).
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum CallClass {
+    True,
+    False,
+    Reverted,
+    Unknown,
+}
+
+/// Classify a JSON-RPC `eth_call` reply for a `bool`-returning function. A
+/// `result` word of all zeroes is `False`, `…01` is `True`; an `error` object
+/// (execution reverted) is `Reverted`; anything else is `Unknown`. Kept pure so
+/// the revert-vs-failure distinction is unit-tested without a node.
+pub fn parse_bool_result(body: &[u8]) -> CallClass {
+    let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) else {
+        return CallClass::Unknown;
+    };
+    if v.get("error").is_some() {
+        return CallClass::Reverted;
+    }
+    match v.get("result").and_then(|r| r.as_str()) {
+        Some(r) => {
+            let h = r.strip_prefix("0x").unwrap_or(r);
+            if h.is_empty() || !h.bytes().all(|b| b.is_ascii_hexdigit()) {
+                CallClass::Unknown
+            } else if h.bytes().all(|b| b == b'0') {
+                CallClass::False
+            } else if h.trim_start_matches('0') == "1" {
+                CallClass::True
+            } else {
+                CallClass::Unknown
+            }
+        }
+        None => CallClass::Unknown,
+    }
+}
+
+/// ERC-165 conformance from the two required probes: `supportsInterface(0x01ffc9a7)`
+/// (must be `True`) and `supportsInterface(0xffffffff)` (must be `False`).
+/// `absent` = both revert (the contract simply doesn't implement ERC-165);
+/// `nonconformant` = it answers but breaks the spec; `unknown` = a probe failed.
+pub fn erc165_status(supports_165: CallClass, rejects_invalid: CallClass) -> &'static str {
+    use CallClass::*;
+    match (supports_165, rejects_invalid) {
+        (Unknown, _) | (_, Unknown) => "unknown",
+        (True, False) => "conformant",
+        (Reverted, Reverted) => "absent",
+        _ => "nonconformant",
+    }
+}
+
 /// Health of one contract given its pins and the live `eth_getCode` result.
 /// `onchain` is `Some("0x…")` (deployed), `Some("0x")` (no code), or `None` (the
 /// RPC call failed). A contract is `healthy` only when BOTH the exact runtime
-/// bytes AND the keccak codehash match their pins.
+/// bytes AND the keccak codehash match their pins. `erc165` is the separate
+/// conformance verdict (informational — a beacon legitimately has none).
 pub fn contract_health(
     name: &str,
     address: Option<String>,
     runtime_pin: Option<String>,
     hash_pin: Option<String>,
     onchain: Option<String>,
+    erc165: &str,
 ) -> serde_json::Value {
     let (status, code_match, hash_match): (&str, Option<bool>, Option<bool>) =
         match onchain.as_deref() {
@@ -105,6 +160,7 @@ pub fn contract_health(
         "status": status,
         "codeMatch": code_match,
         "hashMatch": hash_match,
+        "erc165": erc165,
     })
 }
 
@@ -183,10 +239,12 @@ mod tests {
             Some(code.to_string()),
             Some(hash),
             Some(format!("0x{code}")),
+            "conformant",
         );
         assert_eq!(h["status"], "healthy");
         assert_eq!(h["codeMatch"], true);
         assert_eq!(h["hashMatch"], true);
+        assert_eq!(h["erc165"], "conformant");
     }
 
     #[test]
@@ -197,6 +255,7 @@ mod tests {
             Some("6080".into()),
             Some("0xdeadbeef".into()),
             Some("0x".into()),
+            "absent",
         );
         assert_eq!(h["status"], "missing");
         assert_eq!(h["codeMatch"], false);
@@ -214,6 +273,7 @@ mod tests {
             Some(code.to_string()),
             Some(hash),
             Some("0xdead".into()),
+            "conformant",
         );
         assert_eq!(h["status"], "mismatch");
         assert_eq!(h["codeMatch"], false);
@@ -228,6 +288,7 @@ mod tests {
             Some("6080".into()),
             Some("0xdeadbeef".into()),
             None,
+            "unknown",
         );
         assert_eq!(h["status"], "unknown");
         assert!(h["codeMatch"].is_null());
@@ -242,6 +303,7 @@ mod tests {
             Some("6080".into()),
             Some(keccak256_hex("6080").unwrap()),
             Some("0x6080".into()),
+            "conformant",
         );
         let bad = contract_health(
             "Alpha",
@@ -249,6 +311,7 @@ mod tests {
             Some("6080".into()),
             Some("0xbad".into()),
             Some("0x".into()),
+            "absent",
         );
         let v = build_health("o", "r", "0.1.1", "base", "host", vec![ok, bad]).unwrap();
         assert_eq!(v["total"], 2);
@@ -265,5 +328,30 @@ mod tests {
             build_health("o", "r", "0.1.1", "base", "host", vec![]),
             None
         );
+    }
+
+    #[test]
+    fn parse_bool_result_classifies_true_false_revert_unknown() {
+        let t = br#"{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000001"}"#;
+        let f = br#"{"jsonrpc":"2.0","id":1,"result":"0x0000000000000000000000000000000000000000000000000000000000000000"}"#;
+        let rev = br#"{"jsonrpc":"2.0","id":1,"error":{"code":3,"message":"execution reverted"}}"#;
+        assert_eq!(parse_bool_result(t), CallClass::True);
+        assert_eq!(parse_bool_result(f), CallClass::False);
+        assert_eq!(parse_bool_result(rev), CallClass::Reverted);
+        assert_eq!(parse_bool_result(b"not json"), CallClass::Unknown);
+        assert_eq!(parse_bool_result(br#"{"result":"0x"}"#), CallClass::Unknown);
+    }
+
+    #[test]
+    fn erc165_status_maps_the_two_probes() {
+        use CallClass::*;
+        assert_eq!(erc165_status(True, False), "conformant");
+        assert_eq!(erc165_status(Reverted, Reverted), "absent");
+        // implements it but doesn't reject the invalid id — a spec violation
+        assert_eq!(erc165_status(True, True), "nonconformant");
+        assert_eq!(erc165_status(False, False), "nonconformant");
+        // either probe undetermined -> unknown
+        assert_eq!(erc165_status(Unknown, False), "unknown");
+        assert_eq!(erc165_status(True, Unknown), "unknown");
     }
 }
