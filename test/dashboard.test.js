@@ -211,12 +211,18 @@ Deno.test("graph trace: a dependency cycle terminates", () => {
     { from: "a", to: "b" },
     { from: "b", to: "a" },
   ];
-  assert(ground(edges, "a") === "a,b", "a cycle resolves to both repos, not a hang");
+  assert(
+    ground(edges, "a") === "a,b",
+    "a cycle resolves to both repos, not a hang",
+  );
 });
 
 Deno.test("graph trace: consumers are NOT traced, only dependencies", () => {
   // b stands on a. Tracing a must not light b — b is above a, not beneath it.
-  assert(ground([{ from: "b", to: "a" }], "a") === "a", "a does not stand on its consumer");
+  assert(
+    ground([{ from: "b", to: "a" }], "a") === "a",
+    "a does not stand on its consumer",
+  );
 });
 
 // The node's name is the graph's handle on a repo, so it links there. The scan is
@@ -254,7 +260,9 @@ Deno.test("graph node: the repo name links to the repo, using the node's own org
 });
 
 Deno.test("graph node: the repo name falls back to the scan's org", () => {
-  const box = graphNode({ repo: "rainlang", audit: "never" }, { org: "rainlanguage" });
+  const box = graphNode({ repo: "rainlang", audit: "never" }, {
+    org: "rainlanguage",
+  });
   const [name] = collect(box, "gn-repo");
   assert(
     name.href === "https://github.com/rainlanguage/rainlang",
@@ -267,7 +275,10 @@ Deno.test("graph node: with no org resolvable the name stays plain text", () => 
   // resolves. A link to nowhere is worse than no link.
   const box = graphNode({ repo: "orphan", audit: "never" }, {});
   const [name] = collect(box, "gn-repo");
-  assert(name.tagName === "span", "no org anywhere -> plain span, not a broken href");
+  assert(
+    name.tagName === "span",
+    "no org anywhere -> plain span, not a broken href",
+  );
   assert(name.href === undefined, "and carries no href at all");
 });
 
@@ -311,10 +322,16 @@ Deno.test("audit report: a repo's link uses its own org, not the joined display 
   const data = {
     // data.org is the joined display string across orgs; a row must link via its
     // OWN org so cross-org repos get correct GitHub URLs.
-    ...auditData([{ name: "issuer-repo", hasProtofireAudit: false, org: "S01-Issuer" }], 1),
+    ...auditData([{
+      name: "issuer-repo",
+      hasProtofireAudit: false,
+      org: "S01-Issuer",
+    }], 1),
     org: "rainlanguage, S01-Issuer",
   };
-  const link = auditBox(data).querySelectorAll("a").find((a) => (a.href || "").includes("issuer-repo"));
+  const link = auditBox(data).querySelectorAll("a").find((a) =>
+    (a.href || "").includes("issuer-repo")
+  );
   assert(
     link && link.href === "https://github.com/S01-Issuer/issuer-repo",
     `link should use the repo's own org: ${link && link.href}`,
@@ -326,7 +343,10 @@ Deno.test("audit report: a repo with no stale deps gets no stale line", () => {
     ...auditData([{ name: "clean", hasProtofireAudit: false }], 1),
     auditGraph: { nodes: [{ repo: "clean", staleDeps: [] }] },
   };
-  assert(collect(auditBox(data), "au-staledeps").length === 0, "no stale deps means no stale line on the row");
+  assert(
+    collect(auditBox(data), "au-staledeps").length === 0,
+    "no stale deps means no stale line on the row",
+  );
 });
 
 function auditRow(over) {
@@ -685,8 +705,20 @@ const OWNERS = {
         title: "Upgrade authority — token-owner Safe",
         note: "n",
         entries: [
-          { role: "Base Safe", address: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611", network: "base", status: "active", note: "beacon owner" },
-          { role: "Ethereum Safe", address: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329", network: "ethereum", status: "active", note: "" },
+          {
+            role: "Base Safe",
+            address: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+            network: "base",
+            status: "active",
+            note: "beacon owner",
+          },
+          {
+            role: "Ethereum Safe",
+            address: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            network: "ethereum",
+            status: "active",
+            note: "",
+          },
         ],
       },
       {
@@ -716,7 +748,13 @@ const OWNERS = {
         title: "Operational access — authoriser",
         note: "",
         entries: [
-          { role: "V4 pending-swap clone", address: "0x315b16faa6eE413faBCa877d3851B3818369f0cD", network: "base", status: "pending", note: "swap" },
+          {
+            role: "V4 pending-swap clone",
+            address: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+            network: "base",
+            status: "pending",
+            note: "swap",
+          },
         ],
       },
       {
@@ -724,7 +762,13 @@ const OWNERS = {
         title: "Historical & bricked",
         note: "",
         entries: [
-          { role: "V2 receipt beacon owner", address: "0xbAB0E6b7B5dDA86FB8ba81c00aEA0Ceb8b73686b", network: "base", status: "bricked", note: "dead" },
+          {
+            role: "V2 receipt beacon owner",
+            address: "0xbAB0E6b7B5dDA86FB8ba81c00aEA0Ceb8b73686b",
+            network: "base",
+            status: "bricked",
+            note: "dead",
+          },
         ],
       },
     ],
@@ -734,43 +778,79 @@ const OWNERS = {
 Deno.test("deployments: renders every owner group, six signers, and per-entry status pills", () => {
   const box = deploymentsBox(OWNERS);
   assert(collect(box, "own-group").length === 4, "four owner groups");
-  const signers = collect(box, "own-role").filter((r) => (r.textContent || "").startsWith("Signer "));
+  const signers = collect(box, "own-role").filter((r) =>
+    (r.textContent || "").startsWith("Signer ")
+  );
   assert(signers.length === 6, "six signer rows, got " + signers.length);
-  assert(collect(box, "own-status-pending").length === 1, "one pending status pill");
-  assert(collect(box, "own-status-bricked").length === 1, "one bricked status pill");
+  assert(
+    collect(box, "own-status-pending").length === 1,
+    "one pending status pill",
+  );
+  assert(
+    collect(box, "own-status-bricked").length === 1,
+    "one bricked status pill",
+  );
 });
 
 Deno.test("deployments: addresses link to the network's explorer (base default, ethereum→etherscan)", () => {
   const box = deploymentsBox(OWNERS);
   const addrs = collect(box, "own-addr");
-  const baseSafe = addrs.find((a) => a.textContent === "0xe70d821f3462a074e63b42d0AaC6523faAe1d611");
+  const baseSafe = addrs.find((a) =>
+    a.textContent === "0xe70d821f3462a074e63b42d0AaC6523faAe1d611"
+  );
   assert(baseSafe, "base safe address rendered");
   assert(
-    baseSafe.href === "https://basescan.org/address/0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+    baseSafe.href ===
+      "https://basescan.org/address/0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
     "base-network address links to basescan, got " + baseSafe.href,
   );
-  const ethSafe = addrs.find((a) => a.textContent === "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329");
+  const ethSafe = addrs.find((a) =>
+    a.textContent === "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329"
+  );
   assert(
-    ethSafe && ethSafe.href === "https://etherscan.io/address/0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-    "ethereum-network address links to etherscan, got " + (ethSafe && ethSafe.href),
+    ethSafe &&
+      ethSafe.href ===
+        "https://etherscan.io/address/0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+    "ethereum-network address links to etherscan, got " +
+      (ethSafe && ethSafe.href),
   );
 });
 
 Deno.test("deployments: an unresolved address renders as not-found, not dropped", () => {
   const data = {
     deploymentOwners: {
-      repo: "st0x.deploy", org: "S01-Issuer", threshold: 3, signerCount: 6,
-      groups: [{ id: "safe", title: "t", note: "", entries: [
-        { role: "Ethereum Safe", address: null, network: "ethereum", status: "active", note: "" },
-      ] }],
+      repo: "st0x.deploy",
+      org: "S01-Issuer",
+      threshold: 3,
+      signerCount: 6,
+      groups: [{
+        id: "safe",
+        title: "t",
+        note: "",
+        entries: [
+          {
+            role: "Ethereum Safe",
+            address: null,
+            network: "ethereum",
+            status: "active",
+            note: "",
+          },
+        ],
+      }],
     },
   };
   const box = deploymentsBox(data);
   const missing = collect(box, "own-missing");
   assert(missing.length === 1, "one not-found placeholder");
-  assert((missing[0].textContent || "").includes("not found"), "labels it not found");
+  assert(
+    (missing[0].textContent || "").includes("not found"),
+    "labels it not found",
+  );
   // The row survives even though its address didn't resolve.
-  assert(collect(box, "own-role").length === 1, "the role row is still rendered");
+  assert(
+    collect(box, "own-role").length === 1,
+    "the role row is still rendered",
+  );
 });
 
 Deno.test("deployments: no owner data shows an empty state and no groups", () => {
@@ -781,27 +861,67 @@ Deno.test("deployments: no owner data shows an empty state and no groups", () =>
 
 Deno.test("deployments: verified signers show constant + on-chain provenance side by side", () => {
   const box = deploymentsBox(OWNERS);
-  assert(collect(box, "own-verify-ok").length === 1, "an on-chain-verified banner");
+  assert(
+    collect(box, "own-verify-ok").length === 1,
+    "an on-chain-verified banner",
+  );
   // each of the six signers renders BOTH a 'constant ✓' and an 'on-chain ✓' chip
   const labels = collect(box, "own-chip").map((c) => c.textContent);
-  assert(labels.filter((l) => l === "constant ✓").length === 6, "six constant ✓ chips");
-  assert(labels.filter((l) => l === "on-chain ✓").length === 6, "six on-chain ✓ chips");
+  assert(
+    labels.filter((l) => l === "constant ✓").length === 6,
+    "six constant ✓ chips",
+  );
+  assert(
+    labels.filter((l) => l === "on-chain ✓").length === 6,
+    "six on-chain ✓ chips",
+  );
 });
 
 Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and an unexpected row", () => {
   const data = {
     deploymentOwners: {
-      repo: "st0x.deploy", org: "S01-Issuer", threshold: 3, signerCount: 2,
+      repo: "st0x.deploy",
+      org: "S01-Issuer",
+      threshold: 3,
+      signerCount: 2,
       groups: [{
-        id: "signers", title: "Safe signers", note: "",
+        id: "signers",
+        title: "Safe signers",
+        note: "",
         verification: {
-          reachable: true, network: "base", safe: "0xe70dSafe", rpcHost: "mainnet.base.org",
-          onChainCount: 2, match: false, threshold: { declared: 3, onChain: 2, match: false },
+          reachable: true,
+          network: "base",
+          safe: "0xe70dSafe",
+          rpcHost: "mainnet.base.org",
+          onChainCount: 2,
+          match: false,
+          threshold: { declared: 3, onChain: 2, match: false },
         },
         entries: [
-          { role: "Signer 1", address: "0x1111111111111111111111111111111111111111", network: "", status: "active", note: "", onChain: "match" },
-          { role: "Signer 2", address: "0x2222222222222222222222222222222222222222", network: "", status: "active", note: "", onChain: "missing" },
-          { role: "Unexpected on-chain owner", address: "0xdead000000000000000000000000000000000001", network: "base", status: "extra", note: "not declared", onChain: "extra" },
+          {
+            role: "Signer 1",
+            address: "0x1111111111111111111111111111111111111111",
+            network: "",
+            status: "active",
+            note: "",
+            onChain: "match",
+          },
+          {
+            role: "Signer 2",
+            address: "0x2222222222222222222222222222222222222222",
+            network: "",
+            status: "active",
+            note: "",
+            onChain: "missing",
+          },
+          {
+            role: "Unexpected on-chain owner",
+            address: "0xdead000000000000000000000000000000000001",
+            network: "base",
+            status: "extra",
+            note: "not declared",
+            onChain: "extra",
+          },
         ],
       }],
     },
@@ -810,24 +930,62 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
   assert(collect(box, "own-verify-drift").length === 1, "a drift banner");
   const labels = collect(box, "own-chip").map((c) => c.textContent);
   // the declared-but-absent signer reads on-chain ✗
-  assert(labels.filter((l) => l === "on-chain ✗").length === 1, "one on-chain ✗ (missing signer)");
+  assert(
+    labels.filter((l) => l === "on-chain ✗").length === 1,
+    "one on-chain ✗ (missing signer)",
+  );
   // the on-chain-only owner reads constant ✗ (its on-chain source is still ✓)
-  assert(labels.filter((l) => l === "constant ✗").length === 1, "one constant ✗ (unexpected owner)");
-  assert(collect(box, "own-extra").length === 1, "the unexpected owner is its own flagged row");
+  assert(
+    labels.filter((l) => l === "constant ✗").length === 1,
+    "one constant ✗ (unexpected owner)",
+  );
+  assert(
+    collect(box, "own-extra").length === 1,
+    "the unexpected owner is its own flagged row",
+  );
   const banner = collect(box, "own-verify-drift")[0];
-  assert(textOf(banner).includes("3 (constant) · 2 (on-chain)"), "threshold mismatch shown: " + textOf(banner));
+  assert(
+    textOf(banner).includes("3 (constant) · 2 (on-chain)"),
+    "threshold mismatch shown: " + textOf(banner),
+  );
 });
 
 Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak checks", () => {
   const data = {
     deploymentOwners: null, // health must render even without owners
     deploymentHealth: {
-      org: "S01-Issuer", repo: "st0x.deploy", version: "0.1.1", network: "base",
-      rpcHost: "mainnet.base.org", total: 3, healthy: 2,
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      version: "0.1.1",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      total: 3,
+      healthy: 2,
       contracts: [
-        { name: "StoxReceipt", address: "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286", status: "healthy", codeMatch: true, hashMatch: true, erc165: "conformant" },
-        { name: "StoxReceiptVault", address: "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748", status: "healthy", codeMatch: true, hashMatch: true, erc165: "absent" },
-        { name: "StoxGone", address: "0xdead000000000000000000000000000000000001", status: "missing", codeMatch: false, hashMatch: false, erc165: "nonconformant" },
+        {
+          name: "StoxReceipt",
+          address: "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
+          status: "healthy",
+          codeMatch: true,
+          hashMatch: true,
+          erc165: "conformant",
+        },
+        {
+          name: "StoxReceiptVault",
+          address: "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
+          status: "healthy",
+          codeMatch: true,
+          hashMatch: true,
+          erc165: "absent",
+        },
+        {
+          name: "StoxGone",
+          address: "0xdead000000000000000000000000000000000001",
+          status: "missing",
+          codeMatch: false,
+          hashMatch: false,
+          erc165: "nonconformant",
+        },
       ],
     },
   };
@@ -835,14 +993,35 @@ Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak ch
   const chips = collect(box, "own-chip").map((c) => c.textContent);
   assert(chips.filter((l) => l === "code ✓").length === 2, "two code ✓");
   assert(chips.filter((l) => l === "keccak ✓").length === 2, "two keccak ✓");
-  assert(chips.filter((l) => l === "code ✗").length === 1, "one code ✗ (missing contract)");
-  assert(chips.includes("missing"), "the unhealthy contract shows its status pill");
-  assert(collect(box, "own-verify-drift").length === 1, "a not-all-healthy summary banner");
-  assert(collect(box, "hlth-missing").length === 1, "the missing contract's row is flagged");
+  assert(
+    chips.filter((l) => l === "code ✗").length === 1,
+    "one code ✗ (missing contract)",
+  );
+  assert(
+    chips.includes("missing"),
+    "the unhealthy contract shows its status pill",
+  );
+  assert(
+    collect(box, "own-verify-drift").length === 1,
+    "a not-all-healthy summary banner",
+  );
+  assert(
+    collect(box, "hlth-missing").length === 1,
+    "the missing contract's row is flagged",
+  );
   // ERC-165 conformance chip per contract: conformant ✓ / absent — / nonconformant ✗
-  assert(chips.filter((l) => l === "erc165 ✓").length === 1, "one erc165 ✓ (conformant)");
-  assert(chips.filter((l) => l === "erc165 —").length === 1, "one erc165 — (absent)");
-  assert(chips.filter((l) => l === "erc165 ✗").length === 1, "one erc165 ✗ (nonconformant)");
+  assert(
+    chips.filter((l) => l === "erc165 ✓").length === 1,
+    "one erc165 ✓ (conformant)",
+  );
+  assert(
+    chips.filter((l) => l === "erc165 —").length === 1,
+    "one erc165 — (absent)",
+  );
+  assert(
+    chips.filter((l) => l === "erc165 ✗").length === 1,
+    "one erc165 ✗ (nonconformant)",
+  );
 });
 
 Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and flag behind-target", () => {
@@ -851,11 +1030,39 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
     deploymentOwners: null,
     deploymentHealth: null,
     deploymentBeacons: {
-      org: "S01-Issuer", repo: "st0x.deploy", network: "base", rpcHost: "mainnet.base.org",
-      safeOwner: "0xe70d821f3462a074e63b42d0aac6523faae1d611", targetVersion: "0.1.1", total: 2, healthy: 0,
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      safeOwner: "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+      targetVersion: "0.1.1",
+      total: 2,
+      healthy: 0,
       beacons: [
-        { name: "Receipt beacon", address: "0x86e93c39B095be0B0054C8488E26466Ee027D79a", owner: "0xe70d821f3462a074e63b42d0aac6523faae1d611", ownerLabel: "safe", implementation: "0xe7573879d73455dc92cb4087fa8177594387cbcd", implVersion: "V1", targetImpl: TARGET, targetVersion: "0.1.1", atTarget: false, status: "behind" },
-        { name: "Vault beacon", address: "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A", owner: "0x8e4bdeec7ceb9570d440676345da1dce10329f5b", ownerLabel: "legacy", implementation: TARGET, implVersion: "0.1.1", targetImpl: TARGET, targetVersion: "0.1.1", atTarget: true, status: "drift" },
+        {
+          name: "Receipt beacon",
+          address: "0x86e93c39B095be0B0054C8488E26466Ee027D79a",
+          owner: "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+          ownerLabel: "safe",
+          implementation: "0xe7573879d73455dc92cb4087fa8177594387cbcd",
+          implVersion: "V1",
+          targetImpl: TARGET,
+          targetVersion: "0.1.1",
+          atTarget: false,
+          status: "behind",
+        },
+        {
+          name: "Vault beacon",
+          address: "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
+          owner: "0x8e4bdeec7ceb9570d440676345da1dce10329f5b",
+          ownerLabel: "legacy",
+          implementation: TARGET,
+          implVersion: "0.1.1",
+          targetImpl: TARGET,
+          targetVersion: "0.1.1",
+          atTarget: true,
+          status: "drift",
+        },
       ],
     },
   };
@@ -868,10 +1075,159 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
   assert(chips.includes("V1"), "now impl labelled V1: " + chips.join(","));
   assert(collect(box, "own-chip-target").length >= 1, "a target-impl chip");
   const addrs = collect(box, "own-addr").map((a) => a.textContent);
-  assert(addrs.includes(TARGET), "the target impl address is shown for checking a proposed upgrade");
+  assert(
+    addrs.includes(TARGET),
+    "the target impl address is shown for checking a proposed upgrade",
+  );
   assert(chips.includes("0.1.1 ✓"), "the at-target beacon confirms 0.1.1");
   // statuses
   assert(chips.includes("behind"), "a behind status");
   assert(chips.includes("drift"), "a drift status (legacy owner)");
-  assert(collect(box, "own-verify-drift").length === 1, "not-all-healthy beacon banner");
+  assert(
+    collect(box, "own-verify-drift").length === 1,
+    "not-all-healthy beacon banner",
+  );
+});
+
+Deno.test("deployments: tokens check registry identity + asset wiring, flag mismatch/wiring", () => {
+  const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
+  const WRONG = "0xbeef000000000000000000000000000000000002";
+  const data = {
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: null,
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      total: 4,
+      ok: 2,
+      tokens: [
+        // fully wired: identity matches and asset() points at the unwrapped underlying
+        {
+          symbol: "wtNVDA",
+          name: "Wrapped NVIDIA Corporation ST0x",
+          address: "0xFb5B41acdbA20a3230F84BE995173CFb98b8D6E7",
+          status: "ok",
+          wrapped: true,
+          nameOk: true,
+          symbolOk: true,
+          decimalsOk: true,
+          assetOk: true,
+          asset: UNWRAP,
+          unwrapped: UNWRAP,
+          legacy: "0xaaa1",
+          receipt: "0xbbb1",
+          unwrappedDeployed: true,
+          legacyDeployed: true,
+          receiptDeployed: true,
+        },
+        // asset() points at the wrong underlying → wiring, with the expected target shown
+        {
+          symbol: "wtAMZN",
+          name: "Wrapped Amazon ST0x",
+          address: "0xAAAA000000000000000000000000000000000001",
+          status: "wiring",
+          wrapped: true,
+          nameOk: true,
+          symbolOk: true,
+          decimalsOk: true,
+          assetOk: false,
+          asset: WRONG,
+          unwrapped: UNWRAP,
+          legacy: "0xaaa2",
+          receipt: "0xbbb2",
+          unwrappedDeployed: true,
+          legacyDeployed: true,
+          receiptDeployed: true,
+        },
+        // on-chain symbol disagrees with the registry → mismatch
+        {
+          symbol: "wtTSLA",
+          name: "Wrapped Tesla ST0x",
+          address: "0xBBBB000000000000000000000000000000000003",
+          status: "mismatch",
+          wrapped: true,
+          nameOk: true,
+          symbolOk: false,
+          decimalsOk: true,
+          assetOk: true,
+          asset: UNWRAP,
+          unwrapped: UNWRAP,
+          legacy: "0xaaa3",
+          receipt: "0xbbb3",
+          unwrappedDeployed: true,
+          legacyDeployed: true,
+          receiptDeployed: true,
+        },
+        // plain collateral (USDC): no unwrapped/asset — judged on identity alone
+        {
+          symbol: "USDC",
+          name: "USD Coin",
+          address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          status: "ok",
+          wrapped: false,
+          nameOk: true,
+          symbolOk: true,
+          decimalsOk: true,
+          assetOk: null,
+          asset: null,
+          unwrapped: null,
+          legacy: null,
+          receipt: null,
+          unwrappedDeployed: null,
+          legacyDeployed: null,
+          receiptDeployed: null,
+        },
+      ],
+    },
+  };
+  const box = deploymentsBox(data);
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  // identity chips read the three registry fields back off the token contract
+  assert(chips.includes("name ✓"), "name identity chip");
+  assert(chips.includes("symbol ✗"), "the mismatched token's symbol chip is ✗");
+  assert(chips.includes("decimals ✓"), "decimals identity chip");
+  // per-token status pills
+  assert(
+    chips.filter((c) => c === "ok").length === 2,
+    "the wired token and USDC both show ok",
+  );
+  assert(chips.includes("wiring"), "the bad-asset token shows wiring");
+  assert(
+    chips.includes("mismatch"),
+    "the symbol-mismatch token shows mismatch",
+  );
+  // the wiring token surfaces BOTH the actual asset and the expected unwrapped, for
+  // checking a proposed re-wire: an expected-unwrapped chip + both addresses linked
+  assert(
+    collect(box, "own-chip-target").length === 1,
+    "one expected-unwrapped chip (only the drifting token)",
+  );
+  const addrs = collect(box, "own-addr").map((a) => a.textContent);
+  assert(addrs.includes(WRONG), "the actual (wrong) asset address is shown");
+  assert(addrs.includes(UNWRAP), "the expected unwrapped address is shown");
+  // the plain token renders identity but NO asset line (it has no asset() to check)
+  const usdcAsset = addrs.includes(
+    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+  );
+  assert(usdcAsset, "USDC's own address is still linked");
+  assert(
+    !addrs.some((a) =>
+      (a || "").startsWith("0x8335") &&
+      a !== "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
+    ),
+    "USDC shows no spurious wiring addresses",
+  );
+  // not-all-ok summary + the flagged rows
+  assert(
+    collect(box, "own-verify-drift").length === 1,
+    "a not-all-wired summary banner",
+  );
+  assert(collect(box, "hlth-wiring").length === 1, "the wiring row is flagged");
+  assert(
+    collect(box, "hlth-mismatch").length === 1,
+    "the mismatch row is flagged",
+  );
 });
