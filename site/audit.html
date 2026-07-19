@@ -777,7 +777,7 @@ async function renderGraph() {
 
   // A stale edge — the consumer pins the dependency below its current version —
   // draws red, so a link the graph can't be trusted to represent is visible.
-  const staleEdges = new Set(g.edges.filter((e) => e.stale).map((e) => `${e.from} ${e.to}`));
+  const staleEdges = new Set(g.edges.filter((e) => e.stale).map((e) => `${e.from}\u0000${e.to}`));
 
   const paths = [];
   for (const e of laid.edges ?? []) {
@@ -786,7 +786,7 @@ async function renderGraph() {
       const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
       path.setAttribute("d", pts.map((pt, i) => `${i ? "L" : "M"}${pt.x},${pt.y}`).join(" "));
       path.classList.add("gedge");
-      if (staleEdges.has(`${e.sources[0]} ${e.targets[0]}`)) path.classList.add("stale");
+      if (staleEdges.has(`${e.sources[0]}\u0000${e.targets[0]}`)) path.classList.add("stale");
       path.dataset.from = e.sources[0];
       path.dataset.to = e.targets[0];
       svg.append(path);
