@@ -90,6 +90,24 @@ pub fn source_changed_outside_audit<'a>(changed_files: impl IntoIterator<Item = 
         .any(|f| !f.starts_with(".audit/"))
 }
 
+/// The same question, comment-aware: is there real CODE change outside `.audit/`?
+///
+/// A NatSpec or whitespace edit does not change what the audit covered, so it
+/// must not mark the audit stale — the same rule the external-audit drift uses.
+/// Each input is `(path, patch)`; a file whose diff GitHub omitted has `None` and
+/// counts as changed, because unclassifiable churn must never read as unchanged.
+pub fn code_changed_outside_audit(files: &[(String, Option<String>)]) -> bool {
+    files.iter().any(|(path, patch)| {
+        // Reuse the path rule rather than restating it, so "outside `.audit/`"
+        // has exactly one definition and cannot drift between the two checks.
+        source_changed_outside_audit([path.as_str()])
+            && match patch {
+                None => true,
+                Some(p) => crate::commentloc::patch_drift(p).code_changed(),
+            }
+    })
+}
+
 /// Sort key for audit recency: never-audited repos first, then oldest audit
 /// first, name as the final tiebreak — so the most overdue repos sort to the top.
 pub fn audit_sort_key(last_audit: Option<&LastAudit>, name: &str) -> (u8, String, String) {
@@ -102,6 +120,41 @@ pub fn audit_sort_key(last_audit: Option<&LastAudit>, name: &str) -> (u8, String
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn f(path: &str, patch: Option<&str>) -> (String, Option<String>) {
+        (path.to_string(), patch.map(str::to_string))
+    }
+
+    /// A NatSpec-only edit must not mark a fresh audit stale.
+    #[test]
+    fn comment_only_change_does_not_make_the_audit_stale() {
+        let patch = "@@ -1,2 +1,2 @@\n-    /// Old.\n+    /// New.\n     uint256 x;";
+        assert!(!code_changed_outside_audit(&[f("src/A.sol", Some(patch))]));
+        // …while the filename-only predicate would have called it stale.
+        assert!(source_changed_outside_audit(["src/A.sol"]));
+    }
+
+    #[test]
+    fn real_code_change_still_makes_it_stale() {
+        let patch = "@@ -1 +1 @@\n-    a = 1;\n+    a = 2;";
+        assert!(code_changed_outside_audit(&[f("src/A.sol", Some(patch))]));
+    }
+
+    /// The stamp commit touches only `.audit/`; that must stay excluded.
+    #[test]
+    fn audit_dir_only_changes_are_still_ignored() {
+        let patch = "@@ -0,0 +1 @@\n+{\"scope\":\"whole-repo\"}";
+        assert!(!code_changed_outside_audit(&[f(
+            ".audit/runs.jsonl",
+            Some(patch)
+        )]));
+    }
+
+    /// An omitted diff cannot be cleared, so it counts as changed.
+    #[test]
+    fn an_unavailable_patch_counts_as_changed() {
+        assert!(code_changed_outside_audit(&[f("src/A.sol", None)]));
+    }
 
     const WHOLE: &str = r#"{
         "scope": "whole-repo",

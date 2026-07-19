@@ -50,6 +50,10 @@ pub struct CompareFile {
     pub filename: String,
     pub additions: u64,
     pub deletions: u64,
+    /// The unified diff for this file, when GitHub returned one. `None` for a
+    /// diff too large to include — those lines cannot be classified, so the
+    /// file's churn falls to CODE rather than being assumed comment-only.
+    pub patch: Option<String>,
 }
 
 /// External-audit coverage status for a repo (the issue's taxonomy):
@@ -257,6 +261,36 @@ pub fn source_drift(files: &[CompareFile]) -> (u64, u64, u64) {
     (added, removed, n)
 }
 
+/// Split non-test source drift into CODE and COMMENT churn, so a NatSpec-only
+/// change is visible as comment churn and does NOT read as source change.
+///
+/// Returns `(drift, fully_classified)`. A file whose patch GitHub omitted (too
+/// large) cannot be classified line-by-line, so its whole churn is charged to
+/// CODE — the safe direction, since the alternative would show a drifted repo as
+/// current — and `fully_classified` goes false so the caller can report the
+/// comment split as a lower bound rather than a fact.
+pub fn source_drift_split(files: &[CompareFile]) -> (crate::commentloc::LineDrift, bool) {
+    let mut total = crate::commentloc::LineDrift::default();
+    let mut fully_classified = true;
+    for f in files {
+        if !counts_as_source_drift(&f.filename) {
+            continue;
+        }
+        match &f.patch {
+            Some(p) => total.add(&crate::commentloc::patch_drift(p)),
+            None => {
+                // Unclassifiable churn counts as code, never as comment.
+                if f.additions > 0 || f.deletions > 0 {
+                    fully_classified = false;
+                }
+                total.code_added += f.additions;
+                total.code_removed += f.deletions;
+            }
+        }
+    }
+    (total, fully_classified)
+}
+
 /// Count non-test Solidity files that differ between two git trees — the accurate
 /// drift-file count when a `compare` diff is TRUNCATED at GitHub's 300-file cap.
 /// A large repo whose `.sol` sorts past the cap otherwise reads as a false zero
@@ -386,6 +420,75 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn cf(name: &str, add: u64, del: u64, patch: Option<&str>) -> CompareFile {
+        CompareFile {
+            filename: name.to_string(),
+            additions: add,
+            deletions: del,
+            patch: patch.map(str::to_string),
+        }
+    }
+
+    /// The whole point: a NatSpec-only edit is comment churn, so the audited
+    /// source did NOT change and the repo must not read stale.
+    #[test]
+    fn a_comment_only_change_is_not_source_change() {
+        let patch =
+            "@@ -1,2 +1,2 @@\n-    /// Old wording.\n+    /// New wording.\n     uint256 x;";
+        let (d, classified) = source_drift_split(&[cf("src/A.sol", 1, 1, Some(patch))]);
+        assert_eq!(d.comment_added, 1);
+        assert_eq!(d.comment_removed, 1);
+        assert!(
+            !d.code_changed(),
+            "comment churn must not read as source change"
+        );
+        assert!(classified);
+        // and therefore the audit stays CURRENT
+        assert!(!is_stale(true, Some(d.code_changed())));
+        assert_eq!(
+            classify_external_audit(true, true, true, Some(d.code_changed())),
+            ExternalAudit::Current
+        );
+    }
+
+    /// A real code edit still marks it stale, and comment churn alongside is
+    /// counted separately rather than masking the code change.
+    #[test]
+    fn code_change_still_marks_stale_with_comments_counted_apart() {
+        let patch =
+            "@@ -1,3 +1,3 @@\n-    /// Doc.\n+    /// Doc reworded.\n-    a = 1;\n+    a = 2;";
+        let (d, _) = source_drift_split(&[cf("src/A.sol", 2, 2, Some(patch))]);
+        assert_eq!(d.comment_added, 1);
+        assert_eq!(d.code_added, 1);
+        assert!(d.code_changed());
+        assert!(is_stale(false, Some(d.code_changed())));
+    }
+
+    /// Test files never contribute — same predicate the LOC totals use.
+    #[test]
+    fn test_files_are_excluded_from_the_split() {
+        let patch = "@@ -1 +1 @@\n+    a = 1;";
+        let (d, _) = source_drift_split(&[cf("test/src/A.t.sol", 1, 0, Some(patch))]);
+        assert_eq!(d, crate::commentloc::LineDrift::default());
+        assert!(!d.code_changed());
+    }
+
+    /// An omitted patch cannot be classified, so its churn is charged to CODE
+    /// (keeping the repo stale) and the split is flagged as not fully classified —
+    /// never silently reported as comment-only.
+    #[test]
+    fn unclassifiable_churn_counts_as_code_and_is_flagged() {
+        let (d, classified) = source_drift_split(&[cf("src/A.sol", 40, 3, None)]);
+        assert_eq!(d.code_added, 40);
+        assert_eq!(d.code_removed, 3);
+        assert_eq!(d.comment_added, 0);
+        assert!(d.code_changed(), "unmeasured must not read as unchanged");
+        assert!(
+            !classified,
+            "caller must be told the split is not authoritative"
+        );
+    }
 
     // ---- parse_audited_tag ----
     #[test]
@@ -622,31 +725,37 @@ mod tests {
                 filename: "src/A.sol".into(),
                 additions: 10,
                 deletions: 5,
+                patch: None,
             }, // +10 / −5  counts (src/ Solidity)
             CompareFile {
                 filename: "deploy/D.sol".into(),
                 additions: 2,
                 deletions: 1,
+                patch: None,
             }, // +2 / −1   counts (deploy/ Solidity is audited surface)
             CompareFile {
                 filename: "test/A.t.sol".into(),
                 additions: 99,
                 deletions: 99,
+                patch: None,
             }, // excluded (test) — symmetric so a leak inflates BOTH counts
             CompareFile {
                 filename: "src/B.rs".into(),
                 additions: 3,
                 deletions: 2,
+                patch: None,
             }, // excluded (.rs — not Solidity, not audited surface)
             CompareFile {
                 filename: "README.md".into(),
                 additions: 40,
                 deletions: 40,
+                patch: None,
             }, // excluded (non-source)
             CompareFile {
                 filename: "src/C.ts".into(),
                 additions: 1,
                 deletions: 0,
+                patch: None,
             }, // excluded (.ts — not Solidity)
         ];
         let (added, removed, files_n) = source_drift(&files);

@@ -6,7 +6,12 @@
 //!   roh-scan [--json <path>] [repo ...]
 //! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
 
+// `json!` nests one macro expansion per key; the health.json documents are
+// wide enough to exceed the default 128-deep limit.
+#![recursion_limit = "512"]
+
 mod audit;
+mod commentloc;
 mod deployhealth;
 mod graph;
 mod mutation;
@@ -14,9 +19,7 @@ mod owners;
 mod protofire;
 mod rpc;
 mod signals;
-use audit::{
-    audit_sort_key, parse_last_audit, parse_runs_jsonl, source_changed_outside_audit, LastAudit,
-};
+use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
     anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
     counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
@@ -425,13 +428,30 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
     audit.stale = match head.as_deref().map(str::trim) {
         None => None,
         Some(h) if h == audit.audited_commit => Some(false),
+        // Fetch the FILES with their diffs, not just names: a NatSpec-only edit
+        // must not mark a fresh audit stale, which a filename-only check cannot
+        // tell apart from a real code change.
         Some(h) => gh_stdout(&[
             "api",
             &format!("repos/{org}/{repo}/compare/{}...{h}", audit.audited_commit),
-            "--jq",
-            ".files[].filename",
         ])
-        .map(|files| source_changed_outside_audit(files.lines())),
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+        .map(|v| {
+            let files: Vec<(String, Option<String>)> = v["files"]
+                .as_array()
+                .map(|arr| {
+                    arr.iter()
+                        .map(|f| {
+                            (
+                                f["filename"].as_str().unwrap_or("").to_string(),
+                                f["patch"].as_str().map(str::to_string),
+                            )
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            audit::code_changed_outside_audit(&files)
+        }),
     };
     Some(audit)
 }
@@ -455,6 +475,14 @@ struct ProtofireResult {
     files_changed: Option<u64>,
     commits_since: Option<u64>,
     source_drift_truncated: bool,
+    /// Comment-vs-code split of the source drift. `None` when the patches were
+    /// unavailable (truncated/omitted), in which case the drift is unclassified.
+    comment_loc_added: Option<u64>,
+    comment_loc_removed: Option<u64>,
+    code_loc_added: Option<u64>,
+    code_loc_removed: Option<u64>,
+    /// False when some churn could not be classified and was charged to code.
+    drift_fully_classified: bool,
     compare_url: Option<String>,
     /// Index into `pdfs` of the ONE PDF the anchor/drift are computed against (the
     /// newest under audit/protofire/); the panel shows only this one, not all (#62).
@@ -670,6 +698,8 @@ fn fetch_compare<F: GhApi>(
                     filename: f["filename"].as_str().unwrap_or("").to_string(),
                     additions: f["additions"].as_u64().unwrap_or(0),
                     deletions: f["deletions"].as_u64().unwrap_or(0),
+                    // Present unless the diff was too large for GitHub to inline.
+                    patch: f["patch"].as_str().map(str::to_string),
                 })
                 .collect()
         })
@@ -822,6 +852,11 @@ fn empty_protofire(state: protofire::ExternalAudit) -> ProtofireResult {
         latest_tag: None,
         latest_tag_iso: None,
         is_stale: false,
+        comment_loc_added: None,
+        comment_loc_removed: None,
+        code_loc_added: None,
+        code_loc_removed: None,
+        drift_fully_classified: false,
         source_loc: None,
         source_loc_added: None,
         source_loc_removed: None,
@@ -911,6 +946,8 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         files_changed,
         commits_since,
         source_drift_truncated,
+        // Comment-vs-code split of the same drift, when the patches were available.
+        line_split,
     ) = match &cmp {
         // Compare truncated at GitHub's 300-file cap: its per-file +/− misses any
         // `.sol` sorted beyond the cap (a false zero for large repos like raindex).
@@ -924,9 +961,11 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             changed_sol_count(gh, org, repo, &base, &default_branch),
             Some(*total),
             true,
+            None,
         ),
         Some((base_date, files, total, _)) => {
             let (added, removed, n) = source_drift(files);
+            let split = protofire::source_drift_split(files);
             // Keep +/− separate; the combined `source_loc` is derived as the sum for
             // sorting, the staleness check, and JSON back-compat.
             (
@@ -937,6 +976,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
                 Some(n),
                 Some(*total),
                 false,
+                Some(split),
             )
         }
         // Compare unavailable → date the audit by the PDF's own commit, drift unknown.
@@ -948,6 +988,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             None,
             None,
             false,
+            None,
         ),
     };
 
@@ -960,8 +1001,15 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
     // truncated compare leaves lines unknown, the tree-derived changed-file count
     // still answers it. Both unknown -> None, and is_stale falls back to tag
     // recency rather than treating unmeasured as zero.
-    let source_changed = source_loc
-        .map(|drift| drift > 0)
+    // Comment and whitespace churn is not source change: an audit covers the
+    // contracts that are there, and rewording NatSpec changes none of them. So
+    // prefer the CODE-only verdict; fall back to total LOC, then changed-file
+    // count, only where the lines could not be classified (truncated/absent
+    // patch) — unmeasured must never read as unchanged.
+    let source_changed = line_split
+        .as_ref()
+        .map(|(d, _)| d.code_changed())
+        .or(source_loc.map(|drift| drift > 0))
         .or(files_changed.map(|files| files > 0));
     let external_audit = classify_external_audit(true, has_tags, newer_tag_exists, source_changed);
     let stale = is_stale(newer_tag_exists, source_changed);
@@ -988,6 +1036,11 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         files_changed,
         commits_since,
         source_drift_truncated,
+        comment_loc_added: line_split.as_ref().map(|(d, _)| d.comment_added),
+        comment_loc_removed: line_split.as_ref().map(|(d, _)| d.comment_removed),
+        code_loc_added: line_split.as_ref().map(|(d, _)| d.code_added),
+        code_loc_removed: line_split.as_ref().map(|(d, _)| d.code_removed),
+        drift_fully_classified: line_split.as_ref().map(|(_, ok)| *ok).unwrap_or(false),
         compare_url,
     }
 }
@@ -1908,6 +1961,13 @@ fn main() {
                     "filesChangedSinceAudit": p.files_changed,
                     "commitsSinceAudit": p.commits_since,
                     "sourceDriftTruncated": p.source_drift_truncated,
+                    // Comment churn counted apart from code: a NatSpec-only edit
+                    // shows here and leaves the audit CURRENT.
+                    "commentLocAddedSinceAudit": p.comment_loc_added,
+                    "commentLocRemovedSinceAudit": p.comment_loc_removed,
+                    "codeLocAddedSinceAudit": p.code_loc_added,
+                    "codeLocRemovedSinceAudit": p.code_loc_removed,
+                    "driftFullyClassified": p.drift_fully_classified,
                     "compareUrl": p.compare_url,
                     "daysSinceAudit": days,
                 })
