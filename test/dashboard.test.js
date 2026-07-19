@@ -1208,12 +1208,13 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       ],
       // cross-check vs the migration's authoritative vault set, BOTH directions:
       // one governed vault (tIBHG) is in the bundle but not the registry, and one
-      // registry token (wtGHOST) is in the registry but not the bundle.
+      // registry token (USDC — plain collateral, no vault) is in the registry but
+      // not the bundle.
       reconcile: {
         source: "S01-Issuer/st0x.deploy",
         function: "LibTokenInvariants.productionReceiptVaults()",
         governedCount: 4,
-        registryVaultCount: 4,
+        registryTokenCount: 4,
         extraVaults: [
           {
             address: "0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF",
@@ -1228,10 +1229,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
         ],
         missingFromMigration: [
           {
-            symbol: "wtGHOST",
-            name: "Wrapped Ghost ST0x",
-            address: "0xC0C0000000000000000000000000000000000005",
-            receiptVault: "0xD0D0000000000000000000000000000000000006",
+            symbol: "USDC",
+            name: "USD Coin",
+            address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            receiptVault: null,
+            wrapped: false,
+            reason: "no receipt vault (collateral)",
           },
         ],
       },
@@ -1314,15 +1317,22 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   );
   assert(collect(box, "hlth-wiring").length === 1, "the wiring row is flagged");
   assert(
-    collect(box, "hlth-mismatch").length === 2,
-    "the mismatch token row + the not-migrated registry row are flagged",
+    collect(box, "hlth-mismatch").length === 1,
+    "only the identity-mismatch token row is red-flagged",
   );
   // registry→migration (per token): each registry wrapped token confirms it is in
-  // the setAuthorizer bundle.
+  // the setAuthorizer bundle, and the plain token (USDC) shows it has no vault.
   const tokVals = collect(box, "tok-val").map((v) => v.textContent);
   assert(
     tokVals.filter((v) => v === "in setAuthorizer bundle").length === 3,
     "all three registry wrapped tokens show they are in the migration bundle",
+  );
+  assert(
+    tokVals.some((v) =>
+      (v || "").includes("no receipt vault (collateral)") &&
+      (v || "").includes("not in the migration")
+    ),
+    "USDC (plain) shows it has no receipt vault and is out of the migration",
   );
   // Migration-set cross-check, BOTH directions.
   assert(
@@ -1331,11 +1341,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   );
   assert(
     banners.some((m) =>
-      m.includes("4 governed vaults vs 4 registry vaults") &&
-      m.includes("1 governed not in the registry") &&
-      m.includes("1 registry not in the migration")
+      m.includes("4 governed receipt vaults") &&
+      m.includes("4 registry tokens") &&
+      m.includes("1 governed vault(s) not in the registry") &&
+      m.includes("1 registry token(s) not in the migration")
     ),
-    "the cross-check banner reconciles both directions",
+    "the cross-check banner reconciles both directions at the entry level",
   );
   const roles = collect(box, "own-role").map((r) => r.textContent);
   const notes = collect(box, "own-note").map((n) => n.textContent);
@@ -1350,25 +1361,26 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     "the extra vault carries an unlisted pill",
   );
   assert(
-    collect(box, "hlth-extra").length === 1,
-    "the extra (unlisted) vault row is flagged",
-  );
-  assert(
     addrs.includes("0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF"),
     "the unlisted vault address is linked for cross-checking the Safe tx",
   );
-  // registry→migration: the registry token not in the bundle (wtGHOST) is surfaced.
+  // registry→migration: USDC (in registry, no governed vault) is surfaced as a row
+  // with a `collateral` pill (expected, not a red gap).
   assert(
-    roles.includes("wtGHOST"),
-    "the not-migrated registry token is surfaced",
+    roles.filter((r) => r === "USDC").length >= 1,
+    "USDC is surfaced in the migration cross-check",
   );
   assert(
-    notes.some((n) => (n || "").includes("not in migration set")),
-    "the not-migrated registry token is labelled",
+    notes.some((n) => (n || "").includes("no receipt vault (collateral)")),
+    "USDC is labelled as collateral with no vault",
   );
-  assert(chips.includes("unmigrated"), "the not-migrated token carries a pill");
   assert(
-    addrs.includes("0xD0D0000000000000000000000000000000000006"),
-    "the not-migrated token's receipt vault is linked",
+    chips.includes("collateral"),
+    "the collateral token carries a collateral pill",
+  );
+  // tIBHG (extra vault) + USDC (collateral, no-vault) both use the non-red extra style.
+  assert(
+    collect(box, "hlth-extra").length === 2,
+    "the unlisted governed vault and the collateral token are both flagged (not red)",
   );
 });

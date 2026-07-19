@@ -430,7 +430,7 @@ function renderDeployments(document, $, data) {
         el(
           "span",
           "own-verify-msg",
-          `${rec.governedCount} governed vaults vs ${rec.registryVaultCount} registry vaults — ${extra.length} governed not in the registry, ${missing.length} registry not in the migration. The bundle has one setAuthorizer per governed vault.`,
+          `${rec.governedCount} governed receipt vaults · ${rec.registryTokenCount} registry tokens — ${extra.length} governed vault(s) not in the registry, ${missing.length} registry token(s) not in the migration. The bundle has one setAuthorizer per governed vault.`,
         ),
       );
       box.append(rb);
@@ -458,21 +458,26 @@ function renderDeployments(document, $, data) {
           el(
             "span",
             "own-verify-msg",
-            `${missing.length} registry token(s) are NOT in the migration set — they will not be migrated.`,
+            `${missing.length} registry token(s) have no governed receipt vault — not in the setAuthorizer bundle (a plain collateral token like USDC is expected; a wrapped token here is a gap).`,
           ),
         );
         box.append(mb);
         const mtable = el("div", "own-table");
         for (const m of missing) {
-          const row = el("div", "own-row hlth-mismatch");
+          // A wrapped token that isn't governed is a real gap (red); a plain
+          // collateral token with no vault is expected (dim).
+          const row = el("div", `own-row ${m.wrapped ? "hlth-mismatch" : "hlth-extra"}`);
           const rc = el("div", "own-rc");
           rc.append(el("div", "own-role", m.symbol || "(unknown)"));
           if (m.name) rc.append(el("div", "own-note", m.name));
           const note = el("div", "own-note");
           note.append(explorerLink(m.receiptVault || m.address));
           rc.append(note);
-          rc.append(el("div", "own-note", "not in migration set"));
-          row.append(rc, el("div", "bcn-detail"), el("span", "own-chip own-chip-no", "unmigrated"));
+          rc.append(el("div", "own-note", m.reason || "not in migration set"));
+          const pill = m.wrapped
+            ? el("span", "own-chip own-chip-no", "unmigrated")
+            : el("span", "own-chip own-chip-dim", "collateral");
+          row.append(rc, el("div", "bcn-detail"), pill);
           mtable.append(row);
         }
         box.append(mtable);
@@ -551,11 +556,20 @@ function renderDeployments(document, $, data) {
         // — when it isn't yet the V4-clone target — the target the setAuthorizer
         // bundle sets, so the proposed transaction can be checked per vault.
         authRows(detail, tk);
-        // registry→migration: is this token's receipt vault in the setAuthorizer
-        // bundle at all? A `✗` means a registry token that WON'T be migrated.
-        if (tk.inMigrationSet === true || tk.inMigrationSet === false) {
-          const ml = el("div", "bcn-line");
-          ml.append(el("span", "bcn-key", "migration"));
+      }
+      // registry→migration membership, shown on EVERY registry entry so the
+      // reconcile is visible per token: a wrapped token shows whether its receipt
+      // vault is in the setAuthorizer bundle; a plain token (USDC) has no receipt
+      // vault, so it is out of scope — shown, not silently dropped.
+      {
+        const ml = el("div", "bcn-line");
+        ml.append(el("span", "bcn-key", "migration"));
+        if (!tk.wrapped) {
+          ml.append(el("span", "own-chip own-chip-dim", "—"));
+          ml.append(
+            el("span", "tok-val", "no receipt vault (collateral) — not in the migration"),
+          );
+        } else {
           ml.append(okChip("", tk.inMigrationSet));
           ml.append(
             el(
@@ -564,8 +578,8 @@ function renderDeployments(document, $, data) {
               tk.inMigrationSet ? "in setAuthorizer bundle" : "NOT in bundle — will not be migrated",
             ),
           );
-          detail.append(ml);
         }
+        detail.append(ml);
       }
       const stCls = st === "ok" ? "yes" : st === "unknown" ? "dim" : "no";
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
