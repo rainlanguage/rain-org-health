@@ -42,9 +42,9 @@ pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
 /// the AUTHORITATIVE set the setAuthorizer migration operates on, cross-checked
 /// against the registry so a governed vault missing from the registry is surfaced.
 pub fn parse_receipt_vault_list(src: &str) -> Vec<String> {
-    let (Ok(const_re), Ok(body_re), Ok(assign_re)) = (
+    let (Ok(const_re), Ok(open_re), Ok(assign_re)) = (
         Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
-        Regex::new(r"(?s)function\s+productionReceiptVaults\s*\([^)]*\)[^{]*\{(.*?)\}"),
+        Regex::new(r"(?s)function\s+productionReceiptVaults\s*\([^)]*\)[^{]*\{"),
         Regex::new(r"vaults\[\d+\]\s*=\s*(\w+)\s*;"),
     ) else {
         return Vec::new();
@@ -53,11 +53,33 @@ pub fn parse_receipt_vault_list(src: &str) -> Vec<String> {
         .captures_iter(src)
         .map(|c| (c[1].to_string(), c[2].to_lowercase()))
         .collect();
-    let Some(body) = body_re.captures(src).map(|c| c[1].to_string()) else {
+    // The function body is the brace-depth-matched span after the signature's
+    // opening `{`, so assignments after a nested block (`unchecked { … }`, a
+    // conditional) stay in scope. Unbalanced braces ⇒ empty list, which the
+    // reconcile doc surfaces as governedCount 0 + missingFromMigration rows.
+    let Some(open) = open_re.find(src).map(|m| m.end()) else {
+        return Vec::new();
+    };
+    let mut depth = 1usize;
+    let mut end = None;
+    for (i, c) in src[open..].char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    end = Some(open + i);
+                    break;
+                }
+            }
+            _ => {}
+        }
+    }
+    let Some(end) = end else {
         return Vec::new();
     };
     assign_re
-        .captures_iter(&body)
+        .captures_iter(&src[open..end])
         .filter_map(|c| consts.get(&c[1]).cloned())
         .collect()
 }
@@ -1008,6 +1030,41 @@ mod tests {
         );
         // a constant defined but NOT listed in the function is excluded
         assert!(!got.iter().any(|a| a.contains("dead")));
+    }
+
+    #[test]
+    fn parse_receipt_vault_list_keeps_assignments_after_nested_blocks() {
+        let src = r#"
+    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
+    address internal constant IBHG_RECEIPT_VAULT = address(0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF);
+    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
+        vaults = new address[](2);
+        unchecked {
+            vaults[0] = NVDA_RECEIPT_VAULT;
+        }
+        vaults[1] = IBHG_RECEIPT_VAULT;
+    }
+    function afterwards() internal pure returns (address[] memory vaults) {
+        vaults[0] = NVDA_RECEIPT_VAULT;
+    }
+"#;
+        // an assignment AFTER a nested block's close is still inside the
+        // depth-matched body; one in a later function is not
+        assert_eq!(
+            parse_receipt_vault_list(src),
+            vec![
+                "0x7271a3c91bb6070ed09333b84a815949d4f16d14".to_string(),
+                "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf".to_string(),
+            ]
+        );
+        // unbalanced braces after the signature ⇒ empty (fail-safe), never a
+        // truncated-but-plausible list
+        assert_eq!(
+            parse_receipt_vault_list(
+                "function productionReceiptVaults() internal { vaults[0] = NVDA_RECEIPT_VAULT;"
+            ),
+            Vec::<String>::new()
+        );
     }
 
     #[test]
