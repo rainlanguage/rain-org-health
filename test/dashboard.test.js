@@ -1103,8 +1103,8 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       repo: "st0x.registry",
       network: "base",
       rpcHost: "mainnet.base.org",
-      total: 4,
-      ok: 2,
+      total: 3,
+      ok: 1,
       wrappedCount: 3,
       atAuthoriserTarget: 1,
       authoriser: { current: CUR, target: TGT, targetDeployed: true },
@@ -1181,30 +1181,10 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           atAuthoriserTarget: false,
           inMigrationSet: true,
         },
-        // plain collateral (USDC): no unwrapped/asset/authoriser — identity alone
-        {
-          symbol: "USDC",
-          name: "USD Coin",
-          address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          status: "ok",
-          wrapped: false,
-          nameOk: true,
-          symbolOk: true,
-          decimalsOk: true,
-          assetOk: null,
-          asset: null,
-          unwrapped: null,
-          legacy: null,
-          receipt: null,
-          unwrappedDeployed: null,
-          legacyDeployed: null,
-          receiptDeployed: null,
-          authoriser: null,
-          authoriserLabel: "n/a",
-          authoriserTarget: null,
-          atAuthoriserTarget: null,
-          inMigrationSet: null,
-        },
+        // NOTE: USDC is deliberately NOT here. The main list is the intersection
+        // (registry tokens the migration governs); a registry token with no governed
+        // receipt vault is a reconciliation discrepancy and belongs in
+        // reconcile.missingFromMigration below.
       ],
       // cross-check vs the migration's authoritative vault set, BOTH directions:
       // one governed vault (tIBHG) is in the bundle but not the registry, and one
@@ -1248,8 +1228,8 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   assert(chips.includes("decimals ✓"), "decimals identity chip");
   // per-token status pills
   assert(
-    chips.filter((c) => c === "ok").length === 2,
-    "the wired token and USDC both show ok",
+    chips.filter((c) => c === "ok").length === 1,
+    "the fully-wired token shows ok",
   );
   assert(chips.includes("wiring"), "the bad-asset token shows wiring");
   assert(
@@ -1259,17 +1239,11 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   const addrs = collect(box, "own-addr").map((a) => a.textContent);
   assert(addrs.includes(WRONG), "the actual (wrong) asset address is shown");
   assert(addrs.includes(UNWRAP), "the expected unwrapped address is shown");
-  // the plain token renders identity but NO asset line (it has no asset() to check)
-  const usdcAsset = addrs.includes(
-    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  );
-  assert(usdcAsset, "USDC's own address is still linked");
+  // the main list is the intersection: USDC is NOT a row here (only in the
+  // cross-check below), so it contributes no main-list status pill.
   assert(
-    !addrs.some((a) =>
-      (a || "").startsWith("0x8335") &&
-      a !== "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-    ),
-    "USDC shows no spurious wiring addresses",
+    collect(box, "own-table")[0].children.length === 3,
+    "the main token table holds only the three governed tokens",
   );
   // Authoriser provenance: the migrated vault shows the V4 clone confirmed; the
   // two pre-migration vaults show the current authoriser NOW + the V4-clone target
@@ -1320,19 +1294,19 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     collect(box, "hlth-mismatch").length === 1,
     "only the identity-mismatch token row is red-flagged",
   );
-  // registry→migration (per token): each registry wrapped token confirms it is in
-  // the setAuthorizer bundle, and the plain token (USDC) shows it has no vault.
+  // registry→migration (per token): every token in the main list confirms it is in
+  // the setAuthorizer bundle (the main list IS the intersection).
   const tokVals = collect(box, "tok-val").map((v) => v.textContent);
   assert(
     tokVals.filter((v) => v === "in setAuthorizer bundle").length === 3,
-    "all three registry wrapped tokens show they are in the migration bundle",
+    "all three main-list tokens show they are in the migration bundle",
   );
   assert(
-    tokVals.some((v) =>
+    !tokVals.some((v) =>
       (v || "").includes("no receipt vault (collateral)") &&
       (v || "").includes("not in the migration")
     ),
-    "USDC (plain) shows it has no receipt vault and is out of the migration",
+    "no not-in-migration token appears in the main list — those live in the cross-check",
   );
   // Migration-set cross-check, BOTH directions.
   assert(

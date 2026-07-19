@@ -1582,6 +1582,17 @@ fn main() {
                             let unwrapped = nonempty("unwrappedAddress");
                             let legacy = nonempty("legacyAddress");
                             let receipt = nonempty("receiptAddress");
+                            // The main list is the INTERSECTION: registry tokens the
+                            // migration actually governs. A registry token with no
+                            // governed receipt vault (plain collateral like USDC, or a
+                            // wrapped token the migration misses) is a reconciliation
+                            // discrepancy — it belongs in reconcile.missingFromMigration,
+                            // not here — so skip it (and its probes) entirely.
+                            let in_migration =
+                                unwrapped.map(|u| governed.contains(&u.to_lowercase()));
+                            if in_migration != Some(true) {
+                                return None;
+                            }
                             // One session per token so all its reads hit the same RPC.
                             let s = rpc_session();
                             let live = deployhealth::TokenLive {
