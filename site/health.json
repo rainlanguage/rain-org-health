@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-19T17:28:37Z",
+  "generatedAt": "2026-07-19T17:50:19Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2473,8 +2473,8 @@
     "repo": "st0x.registry",
     "network": "base",
     "rpcHost": "mainnet.base.org",
-    "total": 22,
-    "ok": 18,
+    "total": 21,
+    "ok": 17,
     "authoriser": {
       "current": "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456",
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -2482,32 +2482,35 @@
     },
     "wrappedCount": 21,
     "atAuthoriserTarget": 0,
+    "reconcile": {
+      "source": "S01-Issuer/st0x.deploy",
+      "function": "LibTokenInvariants.productionReceiptVaults()",
+      "governedCount": 22,
+      "registryTokenCount": 22,
+      "extraVaults": [
+        {
+          "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
+          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
+          "symbol": "tIBHG",
+          "deployed": true,
+          "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
+          "authoriserLabel": "current",
+          "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+          "atAuthoriserTarget": false
+        }
+      ],
+      "missingFromMigration": [
+        {
+          "symbol": "USDC",
+          "name": "USD Coin",
+          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+          "receiptVault": null,
+          "wrapped": false,
+          "reason": "no receipt vault (collateral)"
+        }
+      ]
+    },
     "tokens": [
-      {
-        "symbol": "USDC",
-        "name": "USD Coin",
-        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-        "status": "ok",
-        "wrapped": false,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "USD Coin",
-        "liveSymbol": "USDC",
-        "liveDecimals": 6,
-        "assetOk": null,
-        "asset": null,
-        "unwrapped": null,
-        "legacy": null,
-        "receipt": null,
-        "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "n/a",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null
-      },
       {
         "symbol": "wtAMZN",
         "name": "Wrapped Amazon.com Inc ST0x",
@@ -2531,7 +2534,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtARKK",
@@ -2556,7 +2560,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtASML",
@@ -2581,7 +2586,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtBMNR",
@@ -2606,7 +2612,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtCEG",
@@ -2631,7 +2638,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtCOIN",
@@ -2656,7 +2664,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtCRCL",
@@ -2681,7 +2690,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtDRAM",
@@ -2706,7 +2716,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtIAU",
@@ -2731,7 +2742,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtMSTR",
@@ -2756,7 +2768,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtNVDA",
@@ -2781,7 +2794,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtPPLT",
@@ -2806,7 +2820,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtQQQM",
@@ -2831,7 +2846,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtSGOV",
@@ -2856,7 +2872,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtSIVR",
@@ -2881,7 +2898,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtSKHY",
@@ -2906,7 +2924,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtSPCX",
@@ -2931,7 +2950,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtSPYM",
@@ -2956,7 +2976,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtTSLA",
@@ -2981,7 +3002,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtTSM",
@@ -3006,7 +3028,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       },
       {
         "symbol": "wtVWO",
@@ -3031,7 +3054,8 @@
         "authoriser": "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456",
         "authoriserLabel": "current",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
       }
     ]
   },
