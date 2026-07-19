@@ -1554,6 +1554,13 @@ fn main() {
                 "target": auth_target,
                 "targetDeployed": auth_target_deployed,
             });
+            // The migration's AUTHORITATIVE governed set —
+            // LibTokenInvariants.productionReceiptVaults(), the exact list the
+            // setAuthorizer bundle operates on. Read up front so each token can be
+            // cross-checked BOTH ways: registry→migration (is this token governed?)
+            // and migration→registry (is this governed vault in the registry?).
+            let tok_lib = gh_file(dorg, drepo, "src/lib/LibTokenInvariants.sol");
+            let governed = deployhealth::parse_receipt_vault_list(&tok_lib);
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
             let tokens: Vec<serde_json::Value> = parsed
@@ -1604,19 +1611,19 @@ fn main() {
                                 receipt,
                                 auth_current: auth_current.as_deref(),
                                 auth_target: auth_target.as_deref(),
+                                // registry→migration: is this token's receipt vault
+                                // in the governed set the bundle will setAuthorizer?
+                                in_migration: unwrapped
+                                    .map(|u| governed.contains(&u.to_lowercase())),
                             };
                             Some(deployhealth::token_health(&spec, &live))
                         })
                         .collect()
                 })
                 .unwrap_or_default();
-            // Cross-check the registry against the migration's AUTHORITATIVE vault
-            // set — LibTokenInvariants.productionReceiptVaults(), the exact list the
-            // setAuthorizer bundle operates on. Surface governed vaults the registry
-            // doesn't list (so the whole bundle is reviewable), and registry vaults
-            // the migration doesn't cover.
-            let tok_lib = gh_file(dorg, drepo, "src/lib/LibTokenInvariants.sol");
-            let governed = deployhealth::parse_receipt_vault_list(&tok_lib);
+            // Cross-check both directions. `governed` (parsed above) is the exact
+            // migration set; the registry receipt-vault set is each token's
+            // unwrappedAddress.
             let registry_vaults: std::collections::HashSet<String> = parsed
                 .as_ref()
                 .and_then(|v| v["tokens"].as_array())
@@ -1631,7 +1638,8 @@ fn main() {
                         .collect()
                 })
                 .unwrap_or_default();
-            // Governed vaults with no registry token → probe identity + authoriser.
+            // migration→registry: governed vaults with no registry token → probe
+            // identity + authoriser so the whole bundle is reviewable.
             let extra_vaults: Vec<serde_json::Value> = governed
                 .iter()
                 .filter(|a| !registry_vaults.contains(*a))
@@ -1655,16 +1663,35 @@ fn main() {
                     )
                 })
                 .collect();
-            // Registry vaults the migration list doesn't cover (should be empty).
-            let missing_from_migration: Vec<String> = registry_vaults
-                .iter()
-                .filter(|a| !governed.contains(*a))
-                .cloned()
-                .collect();
+            // registry→migration: registry tokens whose receipt vault the migration
+            // doesn't cover (should be empty) — carried WITH identity, symmetric to
+            // extraVaults, so a real gap surfaces as a full row not a bare address.
+            let missing_from_migration: Vec<serde_json::Value> = parsed
+                .as_ref()
+                .and_then(|v| v["tokens"].as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|t| {
+                            let unwrapped = t["extensions"]["unwrappedAddress"]
+                                .as_str()
+                                .filter(|s| !s.is_empty())?;
+                            (!governed.contains(&unwrapped.to_lowercase())).then(|| {
+                                json!({
+                                    "symbol": t["symbol"],
+                                    "name": t["name"],
+                                    "address": t["address"],
+                                    "receiptVault": unwrapped,
+                                })
+                            })
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
             let reconcile = json!({
                 "source": format!("{dorg}/{drepo}"),
                 "function": "LibTokenInvariants.productionReceiptVaults()",
                 "governedCount": governed.len(),
+                "registryVaultCount": registry_vaults.len(),
                 "extraVaults": extra_vaults,
                 "missingFromMigration": missing_from_migration,
             });

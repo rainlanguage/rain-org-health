@@ -281,6 +281,10 @@ pub struct TokenSpec<'a> {
     pub auth_current: Option<&'a str>,
     /// The V4-clone authoriser the pending `setAuthorizer` bundle rewires to.
     pub auth_target: Option<&'a str>,
+    /// Whether this token's receipt vault is in the migration's governed set
+    /// (`productionReceiptVaults`): `Some(true/false)` for a wrapped token,
+    /// `None` for a plain token that has no vault to govern.
+    pub in_migration: Option<bool>,
 }
 
 /// Resolve a live authoriser address against the current prod authoriser and the
@@ -358,6 +362,7 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         receipt,
         auth_current,
         auth_target,
+        in_migration,
     } = *spec;
     let name_ok = live.name.as_deref().map(|n| n == name);
     let symbol_ok = live.symbol.as_deref().map(|s| s == symbol);
@@ -437,6 +442,9 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         "authoriserLabel": authoriser_label,
         "authoriserTarget": auth_target,
         "atAuthoriserTarget": at_auth_target,
+        // Registry→migration cross-check: is this token's receipt vault in the
+        // migration's governed set? A wrapped token with `false` won't be migrated.
+        "inMigrationSet": in_migration,
     })
 }
 
@@ -762,6 +770,7 @@ mod tests {
             receipt: None,
             auth_current: None,
             auth_target: None,
+            in_migration: unwrapped.map(|_| true),
         }
     }
 
@@ -924,6 +933,26 @@ mod tests {
         foreign.authoriser = Some("0xdead000000000000000000000000000000000001".into());
         assert_eq!(token_health(&s, &foreign)["authoriserLabel"], "foreign");
         assert_eq!(token_health(&s, &base())["authoriserLabel"], "unknown");
+    }
+
+    #[test]
+    fn token_carries_migration_membership_both_directions() {
+        // a wrapped token NOT in the migration set is flagged (won't be migrated)
+        let mut s = spec("wtX", "X", 18, "0xaddr", Some("0xunw"));
+        s.in_migration = Some(false);
+        let live = tl(Some("X"), Some("wtX"), Some(18), Some("0xunw"), Some(true));
+        assert_eq!(token_health(&s, &live)["inMigrationSet"], false);
+        // a plain token has no vault → not applicable (null)
+        let plain = token_health(
+            &spec("USDC", "USD Coin", 6, "0x8335", None),
+            &TokenLive {
+                name: Some("USD Coin".into()),
+                symbol: Some("USDC".into()),
+                decimals: Some(6),
+                ..Default::default()
+            },
+        );
+        assert_eq!(plain["inMigrationSet"], serde_json::Value::Null);
     }
 
     #[test]

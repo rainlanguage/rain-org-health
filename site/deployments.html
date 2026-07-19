@@ -425,13 +425,12 @@ function renderDeployments(document, $, data) {
           `${rec.source} · ${rec.function} — the authoritative vault set the setAuthorizer bundle operates on.`,
         ),
       );
-      const inReg = (rec.governedCount || 0) - extra.length;
       const rb = el("div", "own-verify own-verify-drift");
       rb.append(
         el(
           "span",
           "own-verify-msg",
-          `${rec.governedCount} governed receipt vaults — ${inReg} in the registry, ${extra.length} NOT listed. The bundle has one setAuthorizer per governed vault.`,
+          `${rec.governedCount} governed vaults vs ${rec.registryVaultCount} registry vaults — ${extra.length} governed not in the registry, ${missing.length} registry not in the migration. The bundle has one setAuthorizer per governed vault.`,
         ),
       );
       box.append(rb);
@@ -459,18 +458,21 @@ function renderDeployments(document, $, data) {
           el(
             "span",
             "own-verify-msg",
-            `${missing.length} registry vault(s) are NOT in the migration set — they will not be migrated.`,
+            `${missing.length} registry token(s) are NOT in the migration set — they will not be migrated.`,
           ),
         );
         box.append(mb);
         const mtable = el("div", "own-table");
-        for (const a of missing) {
+        for (const m of missing) {
           const row = el("div", "own-row hlth-mismatch");
           const rc = el("div", "own-rc");
+          rc.append(el("div", "own-role", m.symbol || "(unknown)"));
+          if (m.name) rc.append(el("div", "own-note", m.name));
           const note = el("div", "own-note");
-          note.append(explorerLink(a));
+          note.append(explorerLink(m.receiptVault || m.address));
           rc.append(note);
-          row.append(rc);
+          rc.append(el("div", "own-note", "not in migration set"));
+          row.append(rc, el("div", "bcn-detail"), el("span", "own-chip own-chip-no", "unmigrated"));
           mtable.append(row);
         }
         box.append(mtable);
@@ -549,6 +551,21 @@ function renderDeployments(document, $, data) {
         // — when it isn't yet the V4-clone target — the target the setAuthorizer
         // bundle sets, so the proposed transaction can be checked per vault.
         authRows(detail, tk);
+        // registry→migration: is this token's receipt vault in the setAuthorizer
+        // bundle at all? A `✗` means a registry token that WON'T be migrated.
+        if (tk.inMigrationSet === true || tk.inMigrationSet === false) {
+          const ml = el("div", "bcn-line");
+          ml.append(el("span", "bcn-key", "migration"));
+          ml.append(okChip("", tk.inMigrationSet));
+          ml.append(
+            el(
+              "span",
+              "tok-val",
+              tk.inMigrationSet ? "in setAuthorizer bundle" : "NOT in bundle — will not be migrated",
+            ),
+          );
+          detail.append(ml);
+        }
       }
       const stCls = st === "ok" ? "yes" : st === "unknown" ? "dim" : "no";
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));

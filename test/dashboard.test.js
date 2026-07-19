@@ -1131,6 +1131,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           authoriserLabel: "target",
           authoriserTarget: TGT,
           atAuthoriserTarget: true,
+          inMigrationSet: true,
         },
         // asset() points at the wrong underlying → wiring; authoriser still at current
         {
@@ -1154,6 +1155,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           authoriserLabel: "current",
           authoriserTarget: TGT,
           atAuthoriserTarget: false,
+          inMigrationSet: true,
         },
         // on-chain symbol disagrees with the registry → mismatch; authoriser at current
         {
@@ -1177,6 +1179,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           authoriserLabel: "current",
           authoriserTarget: TGT,
           atAuthoriserTarget: false,
+          inMigrationSet: true,
         },
         // plain collateral (USDC): no unwrapped/asset/authoriser — identity alone
         {
@@ -1200,19 +1203,22 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           authoriserLabel: "n/a",
           authoriserTarget: null,
           atAuthoriserTarget: null,
+          inMigrationSet: null,
         },
       ],
-      // cross-check vs the migration's authoritative vault set: one governed vault
-      // (wtIBHG) is in the setAuthorizer bundle but not in the registry.
+      // cross-check vs the migration's authoritative vault set, BOTH directions:
+      // one governed vault (tIBHG) is in the bundle but not the registry, and one
+      // registry token (wtGHOST) is in the registry but not the bundle.
       reconcile: {
         source: "S01-Issuer/st0x.deploy",
         function: "LibTokenInvariants.productionReceiptVaults()",
         governedCount: 4,
+        registryVaultCount: 4,
         extraVaults: [
           {
             address: "0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF",
-            name: "Wrapped iShares iBonds 2027 Term High Yield ST0x",
-            symbol: "wtIBHG",
+            name: "iShares iBonds 2027 Term High Yield ST0x",
+            symbol: "tIBHG",
             deployed: true,
             authoriser: CUR,
             authoriserLabel: "current",
@@ -1220,7 +1226,14 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
             atAuthoriserTarget: false,
           },
         ],
-        missingFromMigration: [],
+        missingFromMigration: [
+          {
+            symbol: "wtGHOST",
+            name: "Wrapped Ghost ST0x",
+            address: "0xC0C0000000000000000000000000000000000005",
+            receiptVault: "0xD0D0000000000000000000000000000000000006",
+          },
+        ],
       },
     },
   };
@@ -1294,31 +1307,40 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     ),
     "the authoriser migration banner states progress + target",
   );
-  // not-all-ok summaries (wiring banner + authoriser banner + cross-check banner)
+  // not-all-ok summaries: wired + authoriser + cross-check(governed) + cross-check(missing)
   assert(
-    collect(box, "own-verify-drift").length === 3,
-    "not-all-wired + authoriser-migration + migration-cross-check banners",
+    collect(box, "own-verify-drift").length === 4,
+    "wired + authoriser + cross-check-governed + cross-check-missing banners",
   );
   assert(collect(box, "hlth-wiring").length === 1, "the wiring row is flagged");
   assert(
-    collect(box, "hlth-mismatch").length === 1,
-    "the mismatch row is flagged",
+    collect(box, "hlth-mismatch").length === 2,
+    "the mismatch token row + the not-migrated registry row are flagged",
   );
-  // Migration-set cross-check: the governed vault not in the registry (wtIBHG) is
-  // surfaced with its authoriser + target so the full setAuthorizer bundle shows.
+  // registry→migration (per token): each registry wrapped token confirms it is in
+  // the setAuthorizer bundle.
+  const tokVals = collect(box, "tok-val").map((v) => v.textContent);
+  assert(
+    tokVals.filter((v) => v === "in setAuthorizer bundle").length === 3,
+    "all three registry wrapped tokens show they are in the migration bundle",
+  );
+  // Migration-set cross-check, BOTH directions.
   assert(
     collect(box, "tok-h3").length === 1,
     "a migration-set cross-check heading",
   );
   assert(
     banners.some((m) =>
-      m.includes("4 governed receipt vaults") && m.includes("1 NOT listed")
+      m.includes("4 governed vaults vs 4 registry vaults") &&
+      m.includes("1 governed not in the registry") &&
+      m.includes("1 registry not in the migration")
     ),
-    "the cross-check banner reconciles governed vs registry counts",
+    "the cross-check banner reconciles both directions",
   );
   const roles = collect(box, "own-role").map((r) => r.textContent);
-  assert(roles.includes("wtIBHG"), "the unlisted governed vault is surfaced");
   const notes = collect(box, "own-note").map((n) => n.textContent);
+  // migration→registry: the governed vault not in the registry (tIBHG) is surfaced.
+  assert(roles.includes("tIBHG"), "the unlisted governed vault is surfaced");
   assert(
     notes.some((n) => (n || "").includes("not in registry")),
     "the extra vault is labelled not-in-registry",
@@ -1334,5 +1356,19 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   assert(
     addrs.includes("0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF"),
     "the unlisted vault address is linked for cross-checking the Safe tx",
+  );
+  // registry→migration: the registry token not in the bundle (wtGHOST) is surfaced.
+  assert(
+    roles.includes("wtGHOST"),
+    "the not-migrated registry token is surfaced",
+  );
+  assert(
+    notes.some((n) => (n || "").includes("not in migration set")),
+    "the not-migrated registry token is labelled",
+  );
+  assert(chips.includes("unmigrated"), "the not-migrated token carries a pill");
+  assert(
+    addrs.includes("0xD0D0000000000000000000000000000000000006"),
+    "the not-migrated token's receipt vault is linked",
   );
 });
