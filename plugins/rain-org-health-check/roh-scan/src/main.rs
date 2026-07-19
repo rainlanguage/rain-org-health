@@ -1663,9 +1663,11 @@ fn main() {
                     )
                 })
                 .collect();
-            // registry→migration: registry tokens whose receipt vault the migration
-            // doesn't cover (should be empty) — carried WITH identity, symmetric to
-            // extraVaults, so a real gap surfaces as a full row not a bare address.
+            // registry→migration: EVERY registry token that has no governed receipt
+            // vault — carried WITH identity, symmetric to extraVaults. Two reasons:
+            // plain collateral with no receipt vault at all (e.g. USDC — expected,
+            // but shown so the reconcile is complete), or a wrapped token whose
+            // receipt vault the migration doesn't cover (a real gap).
             let missing_from_migration: Vec<serde_json::Value> = parsed
                 .as_ref()
                 .and_then(|v| v["tokens"].as_array())
@@ -1674,24 +1676,39 @@ fn main() {
                         .filter_map(|t| {
                             let unwrapped = t["extensions"]["unwrappedAddress"]
                                 .as_str()
-                                .filter(|s| !s.is_empty())?;
-                            (!governed.contains(&unwrapped.to_lowercase())).then(|| {
-                                json!({
-                                    "symbol": t["symbol"],
-                                    "name": t["name"],
-                                    "address": t["address"],
-                                    "receiptVault": unwrapped,
-                                })
-                            })
+                                .filter(|s| !s.is_empty());
+                            let governed_vault =
+                                unwrapped.is_some_and(|u| governed.contains(&u.to_lowercase()));
+                            if governed_vault {
+                                return None;
+                            }
+                            let reason = if unwrapped.is_none() {
+                                "no receipt vault (collateral)"
+                            } else {
+                                "receipt vault not in migration set"
+                            };
+                            Some(json!({
+                                "symbol": t["symbol"],
+                                "name": t["name"],
+                                "address": t["address"],
+                                "receiptVault": unwrapped,
+                                "wrapped": unwrapped.is_some(),
+                                "reason": reason,
+                            }))
                         })
                         .collect()
                 })
                 .unwrap_or_default();
+            let registry_token_count = parsed
+                .as_ref()
+                .and_then(|v| v["tokens"].as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
             let reconcile = json!({
                 "source": format!("{dorg}/{drepo}"),
                 "function": "LibTokenInvariants.productionReceiptVaults()",
                 "governedCount": governed.len(),
-                "registryVaultCount": registry_vaults.len(),
+                "registryTokenCount": registry_token_count,
                 "extraVaults": extra_vaults,
                 "missingFromMigration": missing_from_migration,
             });
