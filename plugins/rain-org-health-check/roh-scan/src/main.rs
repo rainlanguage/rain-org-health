@@ -9,6 +9,7 @@
 mod audit;
 mod deployhealth;
 mod graph;
+mod mutation;
 mod owners;
 mod protofire;
 mod rpc;
@@ -379,6 +380,17 @@ fn open_audit_issues(
     ok_orgs
         .contains(org)
         .then(|| counts.get(&format!("{org}/{repo}")).copied().unwrap_or(0))
+}
+
+/// The newest adversarial-mutation run recorded for a repo, from the skill's
+/// `audit/mutation-test-scans.json`. Absent/malformed ⇒ `None` (never run, as far
+/// as this scan can tell) rather than a fabricated entry.
+fn fetch_last_mutation(org: &str, repo: &str) -> Option<mutation::LastMutation> {
+    let src = gh_file(org, repo, "audit/mutation-test-scans.json");
+    if src.trim().is_empty() {
+        return None;
+    }
+    mutation::parse_mutation_scans(&src)
 }
 
 fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
@@ -989,6 +1001,7 @@ struct RepoResult {
     org: String,
     signals: Vec<&'static str>,
     last_audit: Option<LastAudit>,
+    last_mutation: Option<mutation::LastMutation>,
     protofire: ProtofireResult,
     has_foundry: bool,
     /// FULL non-test `.sol` LOC (#37), counted for never-audited Solidity repos;
@@ -1181,6 +1194,7 @@ fn main() {
         let has_foundry = !inputs.foundry.trim().is_empty();
         let signals = detect_signals(&inputs);
         let last_audit = fetch_last_audit(org, repo);
+        let last_mutation = fetch_last_mutation(org, repo);
         let protofire = fetch_protofire_audit(&gh, org, repo);
         // #37: a never-audited Solidity repo's FULL non-test .sol LOC (via a shallow
         // clone) quantifies the coverage gap; audited repos use their drift instead.
@@ -1208,6 +1222,7 @@ fn main() {
             deps_known: graph::foundry_dependencies(&inputs.foundry).is_ok(),
             signals,
             last_audit,
+            last_mutation,
             protofire,
             has_foundry,
             full_source_loc,
@@ -1407,6 +1422,13 @@ fn main() {
                             "stale": a.stale,
                         })),
                         "openAuditIssues": open_audit_issues(&audit_issue_counts, &audit_issue_orgs, &r.org, &n.repo),
+                        // Newest adversarial-mutation run for this repo (commit + when).
+                        "lastMutation": r.last_mutation.as_ref().map_or(serde_json::Value::Null, |m| json!({
+                            "timestamp": m.timestamp,
+                            "commit": m.commit,
+                            "skillVersion": m.skill_version,
+                            "scope": m.scope,
+                        })),
                         "blockedBy": blockers.get(&n.repo).cloned().unwrap_or_default(),
                         // The dependencies this repo pins below their current
                         // version — what an audit should move to latest (#79).
@@ -1836,9 +1858,16 @@ fn main() {
                 // Open findings from the audit skill, alongside the run stamp: a
                 // repo can be freshly audited AND still carry open findings.
                 let open = open_audit_issues(&audit_issue_counts, &audit_issue_orgs, &r.org, &r.name);
+                // The newest adversarial-mutation run: when, and at which commit.
+                let mutation = r.last_mutation.as_ref().map_or(serde_json::Value::Null, |m| json!({
+                    "timestamp": m.timestamp,
+                    "commit": m.commit,
+                    "skillVersion": m.skill_version,
+                    "scope": m.scope,
+                }));
                 match &r.last_audit {
-                    None => json!({ "name": r.name, "org": r.org, "lastAudit": serde_json::Value::Null, "openAuditIssues": open }),
-                    Some(a) => json!({ "name": r.name, "org": r.org, "openAuditIssues": open, "lastAudit": {
+                    None => json!({ "name": r.name, "org": r.org, "lastAudit": serde_json::Value::Null, "openAuditIssues": open, "lastMutation": mutation }),
+                    Some(a) => json!({ "name": r.name, "org": r.org, "openAuditIssues": open, "lastMutation": mutation, "lastAudit": {
                         "auditedAt": a.audited_at,
                         "auditedCommit": a.audited_commit,
                         "skillVersion": a.skill_version,

@@ -369,6 +369,87 @@ Deno.test("audit report: each row carries the audit skill's run + open findings"
   );
 });
 
+Deno.test("graph node: shows the newest adversarial-mutation run and its commit", () => {
+  const box = graphNode({
+    repo: "rain.math.binary",
+    org: "rainlanguage",
+    audit: "current",
+    depsKnown: true,
+    staleDeps: [],
+    lastAudit: null,
+    lastMutation: {
+      timestamp: "2026-07-18T01:50:46Z",
+      commit: "208336a29fc53b74226e385594f02703336974d5",
+      skillVersion: "0.27.0",
+      scope: "change-only",
+    },
+  }, null);
+  const t = textOf(box);
+  assert(
+    t.includes("mutation 2026-07-18"),
+    "shows the mutation run date: " + t,
+  );
+  assert(
+    t.includes("@208336a"),
+    "shows the commit it ran against, abbreviated: " + t,
+  );
+});
+
+Deno.test("graph node: a repo with no mutation run says so rather than going blank", () => {
+  const box = graphNode({
+    repo: "unmutated",
+    org: "o",
+    audit: "never",
+    depsKnown: true,
+    staleDeps: [],
+    lastAudit: null,
+  }, null);
+  assert(
+    textOf(box).includes("no mutation run"),
+    "says the mutation skill has never run: " + textOf(box),
+  );
+});
+
+Deno.test("audit report: each row carries the newest mutation run + commit", () => {
+  const data = {
+    ...auditData([
+      auditRow({ name: "mutated-repo" }),
+      { name: "unmutated-repo", hasProtofireAudit: false },
+    ], 1),
+    audits: [
+      {
+        name: "mutated-repo",
+        org: "testorg",
+        lastAudit: null,
+        openAuditIssues: 0,
+        lastMutation: {
+          timestamp: "2026-07-18T01:50:46Z",
+          commit: "208336a29fc53b74226e385594f02703336974d5",
+          skillVersion: "0.27.0",
+          scope: "change-only",
+        },
+      },
+      {
+        name: "unmutated-repo",
+        org: "testorg",
+        lastAudit: null,
+        openAuditIssues: 0,
+      },
+    ],
+  };
+  const t = textOf(auditBox(data));
+  assert(
+    t.includes("mutation 2026-07-18"),
+    "row shows the mutation run date: " + t,
+  );
+  assert(t.includes("v0.27.0"), "row shows the mutation skill version");
+  assert(t.includes("@208336a"), "row shows the commit it ran against");
+  assert(
+    t.includes("mutation test: never run"),
+    "a repo with no mutation record says so: " + t,
+  );
+});
+
 Deno.test("audit report: a repo's stale dependency pins render on its own row", () => {
   const data = {
     ...auditData([
