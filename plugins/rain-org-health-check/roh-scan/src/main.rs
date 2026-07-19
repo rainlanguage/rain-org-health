@@ -318,6 +318,69 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
 /// back to the single-object `.audit/last-run.json` for repos still on the earlier
 /// format. `None` when the repo has never had a whole-repo audit (no stamp, empty,
 /// or only a PR-/path-scoped one — see the `scope` gate in `audit`).
+/// Open `audit`-labelled issue counts, keyed `org/repo` — the audit skill files
+/// each finding as an issue labelled `audit`, so this is the outstanding-findings
+/// backlog per repo, alongside WHEN the repo was last audited.
+///
+/// One search per ORG rather than a listing per repo (~40 calls → 3). The second
+/// return is the set of orgs whose search actually succeeded: a repo in a
+/// succeeded org with no hits genuinely has ZERO open findings, whereas a repo in
+/// a FAILED org is unknown — reporting that as zero would claim a clean audit
+/// backlog the scan never saw (the false-`never` trap of issue #52).
+fn fetch_open_audit_issues(
+    orgs: &[String],
+) -> (
+    std::collections::BTreeMap<String, usize>,
+    std::collections::BTreeSet<String>,
+) {
+    let mut counts = std::collections::BTreeMap::new();
+    let mut ok_orgs = std::collections::BTreeSet::new();
+    for org in orgs {
+        let Some(raw) = gh_stdout(&[
+            "search",
+            "issues",
+            "--owner",
+            org,
+            "--label",
+            "audit",
+            "--state",
+            "open",
+            "--limit",
+            "1000",
+            "--json",
+            "repository",
+        ]) else {
+            eprintln!("::warning::open audit issue search failed for {org}; counts left unknown");
+            continue;
+        };
+        let Ok(serde_json::Value::Array(hits)) = serde_json::from_str::<serde_json::Value>(&raw)
+        else {
+            eprintln!("::warning::open audit issue search for {org} was not a JSON array");
+            continue;
+        };
+        ok_orgs.insert(org.clone());
+        for hit in hits {
+            if let Some(name) = hit["repository"]["name"].as_str() {
+                *counts.entry(format!("{org}/{name}")).or_insert(0usize) += 1;
+            }
+        }
+    }
+    (counts, ok_orgs)
+}
+
+/// The open-audit-issue count for one repo: `Some(n)` when its org was searched
+/// successfully (absent ⇒ a genuine 0), `None` when that search failed.
+fn open_audit_issues(
+    counts: &std::collections::BTreeMap<String, usize>,
+    ok_orgs: &std::collections::BTreeSet<String>,
+    org: &str,
+    repo: &str,
+) -> Option<usize> {
+    ok_orgs
+        .contains(org)
+        .then(|| counts.get(&format!("{org}/{repo}")).copied().unwrap_or(0))
+}
+
 fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
     // Parse with no HEAD first: a scoped/malformed/absent stamp returns None here,
     // so the extra `commits/HEAD` API call is skipped in those cases (org scale).
@@ -1284,6 +1347,11 @@ fn main() {
         //
         // `protofireAudits` is scan-cadence data (same producer/cadence as the rest of health.json),
         // so it belongs IN health.json — the dashboard already fetches it, no new artifact/fetch.
+        // The audit skill's own backlog: open `audit`-labelled issues per repo,
+        // reported next to WHEN the repo was last audited so a stamp isn't read as
+        // "done" while its findings are still open. One search per org.
+        let (audit_issue_counts, audit_issue_orgs) = fetch_open_audit_issues(&orgs);
+
         // #71: the first-party dependency DAG, for the whole org rather than one
         // entrypoint's slice, so the dashboard can answer blast radius for any
         // node. Nodes carry the audit verdict so the graph shows WHERE the sand
@@ -1329,6 +1397,16 @@ fn main() {
                         "package": n.package,
                         "audit": n.audit.as_str(),
                         "depsKnown": n.deps_known,
+                        // When the audit skill last ran whole-repo here, and how
+                        // many of its findings are still open — so the graph shows
+                        // recency and outstanding work, not just a verdict.
+                        "lastAudit": r.last_audit.as_ref().map_or(serde_json::Value::Null, |a| json!({
+                            "auditedAt": a.audited_at,
+                            "auditedCommit": a.audited_commit,
+                            "skillVersion": a.skill_version,
+                            "stale": a.stale,
+                        })),
+                        "openAuditIssues": open_audit_issues(&audit_issue_counts, &audit_issue_orgs, &r.org, &n.repo),
                         "blockedBy": blockers.get(&n.repo).cloned().unwrap_or_default(),
                         // The dependencies this repo pins below their current
                         // version — what an audit should move to latest (#79).
@@ -1754,14 +1832,19 @@ fn main() {
             "reposNeverExternallyAudited": protofire_total - externally_audited,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, org, sigs)| json!({"name": r, "org": org, "signals": sigs})).collect::<Vec<_>>(),
-            "audits": results.iter().map(|r| match &r.last_audit {
-                None => json!({ "name": r.name, "org": r.org, "lastAudit": serde_json::Value::Null }),
-                Some(a) => json!({ "name": r.name, "org": r.org, "lastAudit": {
-                    "auditedAt": a.audited_at,
-                    "auditedCommit": a.audited_commit,
-                    "skillVersion": a.skill_version,
-                    "stale": a.stale,
-                }}),
+            "audits": results.iter().map(|r| {
+                // Open findings from the audit skill, alongside the run stamp: a
+                // repo can be freshly audited AND still carry open findings.
+                let open = open_audit_issues(&audit_issue_counts, &audit_issue_orgs, &r.org, &r.name);
+                match &r.last_audit {
+                    None => json!({ "name": r.name, "org": r.org, "lastAudit": serde_json::Value::Null, "openAuditIssues": open }),
+                    Some(a) => json!({ "name": r.name, "org": r.org, "openAuditIssues": open, "lastAudit": {
+                        "auditedAt": a.audited_at,
+                        "auditedCommit": a.audited_commit,
+                        "skillVersion": a.skill_version,
+                        "stale": a.stale,
+                    }}),
+                }
             }).collect::<Vec<_>>(),
             "protofireAudits": pf_view.iter().map(|r| {
                 let p = &r.protofire;
