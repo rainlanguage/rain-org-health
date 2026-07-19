@@ -1554,6 +1554,13 @@ fn main() {
                 "target": auth_target,
                 "targetDeployed": auth_target_deployed,
             });
+            // The migration's AUTHORITATIVE governed set —
+            // LibTokenInvariants.productionReceiptVaults(), the exact list the
+            // setAuthorizer bundle operates on. Read up front so each token can be
+            // cross-checked BOTH ways: registry→migration (is this token governed?)
+            // and migration→registry (is this governed vault in the registry?).
+            let tok_lib = gh_file(dorg, drepo, "src/lib/LibTokenInvariants.sol");
+            let governed = deployhealth::parse_receipt_vault_list(&tok_lib);
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
             let tokens: Vec<serde_json::Value> = parsed
@@ -1575,6 +1582,17 @@ fn main() {
                             let unwrapped = nonempty("unwrappedAddress");
                             let legacy = nonempty("legacyAddress");
                             let receipt = nonempty("receiptAddress");
+                            // The main list is the INTERSECTION: registry tokens the
+                            // migration actually governs. A registry token with no
+                            // governed receipt vault (plain collateral like USDC, or a
+                            // wrapped token the migration misses) is a reconciliation
+                            // discrepancy — it belongs in reconcile.missingFromMigration,
+                            // not here — so skip it (and its probes) entirely.
+                            let in_migration =
+                                unwrapped.map(|u| governed.contains(&u.to_lowercase()));
+                            if in_migration != Some(true) {
+                                return None;
+                            }
                             // One session per token so all its reads hit the same RPC.
                             let s = rpc_session();
                             let live = deployhealth::TokenLive {
@@ -1604,14 +1622,117 @@ fn main() {
                                 receipt,
                                 auth_current: auth_current.as_deref(),
                                 auth_target: auth_target.as_deref(),
+                                // registry→migration: is this token's receipt vault
+                                // in the governed set the bundle will setAuthorizer?
+                                in_migration: unwrapped
+                                    .map(|u| governed.contains(&u.to_lowercase())),
                             };
                             Some(deployhealth::token_health(&spec, &live))
                         })
                         .collect()
                 })
                 .unwrap_or_default();
-            deployhealth::build_tokens(org, repo, "base", "mainnet.base.org", auth_summary, tokens)
-                .unwrap_or(serde_json::Value::Null)
+            // Cross-check both directions. `governed` (parsed above) is the exact
+            // migration set; the registry receipt-vault set is each token's
+            // unwrappedAddress.
+            let registry_vaults: std::collections::HashSet<String> = parsed
+                .as_ref()
+                .and_then(|v| v["tokens"].as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|t| {
+                            t["extensions"]["unwrappedAddress"]
+                                .as_str()
+                                .filter(|s| !s.is_empty())
+                                .map(str::to_lowercase)
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            // migration→registry: governed vaults with no registry token → probe
+            // identity + authoriser so the whole bundle is reviewable.
+            let extra_vaults: Vec<serde_json::Value> = governed
+                .iter()
+                .filter(|a| !registry_vaults.contains(*a))
+                .map(|addr| {
+                    let s = rpc_session();
+                    let name = eth_call(s, addr, &rpc::name_calldata())
+                        .and_then(|h| rpc::decode_string(&h));
+                    let symbol = eth_call(s, addr, &rpc::symbol_calldata())
+                        .and_then(|h| rpc::decode_string(&h));
+                    let deployed = code_deployed(s, addr);
+                    let auth = eth_call(s, addr, &rpc::authorizer_calldata())
+                        .and_then(|h| rpc::decode_address(&h));
+                    deployhealth::extra_vault(
+                        addr,
+                        name,
+                        symbol,
+                        deployed,
+                        auth.as_deref(),
+                        auth_current.as_deref(),
+                        auth_target.as_deref(),
+                    )
+                })
+                .collect();
+            // registry→migration: EVERY registry token that has no governed receipt
+            // vault — carried WITH identity, symmetric to extraVaults. Two reasons:
+            // plain collateral with no receipt vault at all (e.g. USDC — expected,
+            // but shown so the reconcile is complete), or a wrapped token whose
+            // receipt vault the migration doesn't cover (a real gap).
+            let missing_from_migration: Vec<serde_json::Value> = parsed
+                .as_ref()
+                .and_then(|v| v["tokens"].as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|t| {
+                            let unwrapped = t["extensions"]["unwrappedAddress"]
+                                .as_str()
+                                .filter(|s| !s.is_empty());
+                            let governed_vault =
+                                unwrapped.is_some_and(|u| governed.contains(&u.to_lowercase()));
+                            if governed_vault {
+                                return None;
+                            }
+                            let reason = if unwrapped.is_none() {
+                                "no receipt vault (collateral)"
+                            } else {
+                                "receipt vault not in migration set"
+                            };
+                            Some(json!({
+                                "symbol": t["symbol"],
+                                "name": t["name"],
+                                "address": t["address"],
+                                "receiptVault": unwrapped,
+                                "wrapped": unwrapped.is_some(),
+                                "reason": reason,
+                            }))
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            let registry_token_count = parsed
+                .as_ref()
+                .and_then(|v| v["tokens"].as_array())
+                .map(|a| a.len())
+                .unwrap_or(0);
+            let reconcile = json!({
+                "source": format!("{dorg}/{drepo}"),
+                "function": "LibTokenInvariants.productionReceiptVaults()",
+                "governedCount": governed.len(),
+                "registryTokenCount": registry_token_count,
+                "extraVaults": extra_vaults,
+                "missingFromMigration": missing_from_migration,
+            });
+            deployhealth::build_tokens(
+                org,
+                repo,
+                "base",
+                "mainnet.base.org",
+                auth_summary,
+                reconcile,
+                tokens,
+            )
+            .unwrap_or(serde_json::Value::Null)
         };
 
         let doc = json!({

@@ -1103,8 +1103,8 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       repo: "st0x.registry",
       network: "base",
       rpcHost: "mainnet.base.org",
-      total: 4,
-      ok: 2,
+      total: 3,
+      ok: 1,
       wrappedCount: 3,
       atAuthoriserTarget: 1,
       authoriser: { current: CUR, target: TGT, targetDeployed: true },
@@ -1131,6 +1131,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           authoriserLabel: "target",
           authoriserTarget: TGT,
           atAuthoriserTarget: true,
+          inMigrationSet: true,
         },
         // asset() points at the wrong underlying → wiring; authoriser still at current
         {
@@ -1154,6 +1155,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           authoriserLabel: "current",
           authoriserTarget: TGT,
           atAuthoriserTarget: false,
+          inMigrationSet: true,
         },
         // on-chain symbol disagrees with the registry → mismatch; authoriser at current
         {
@@ -1177,31 +1179,45 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           authoriserLabel: "current",
           authoriserTarget: TGT,
           atAuthoriserTarget: false,
+          inMigrationSet: true,
         },
-        // plain collateral (USDC): no unwrapped/asset/authoriser — identity alone
-        {
-          symbol: "USDC",
-          name: "USD Coin",
-          address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          status: "ok",
-          wrapped: false,
-          nameOk: true,
-          symbolOk: true,
-          decimalsOk: true,
-          assetOk: null,
-          asset: null,
-          unwrapped: null,
-          legacy: null,
-          receipt: null,
-          unwrappedDeployed: null,
-          legacyDeployed: null,
-          receiptDeployed: null,
-          authoriser: null,
-          authoriserLabel: "n/a",
-          authoriserTarget: null,
-          atAuthoriserTarget: null,
-        },
+        // NOTE: USDC is deliberately NOT here. The main list is the intersection
+        // (registry tokens the migration governs); a registry token with no governed
+        // receipt vault is a reconciliation discrepancy and belongs in
+        // reconcile.missingFromMigration below.
       ],
+      // cross-check vs the migration's authoritative vault set, BOTH directions:
+      // one governed vault (tIBHG) is in the bundle but not the registry, and one
+      // registry token (USDC — plain collateral, no vault) is in the registry but
+      // not the bundle.
+      reconcile: {
+        source: "S01-Issuer/st0x.deploy",
+        function: "LibTokenInvariants.productionReceiptVaults()",
+        governedCount: 4,
+        registryTokenCount: 4,
+        extraVaults: [
+          {
+            address: "0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF",
+            name: "iShares iBonds 2027 Term High Yield ST0x",
+            symbol: "tIBHG",
+            deployed: true,
+            authoriser: CUR,
+            authoriserLabel: "current",
+            authoriserTarget: TGT,
+            atAuthoriserTarget: false,
+          },
+        ],
+        missingFromMigration: [
+          {
+            symbol: "USDC",
+            name: "USD Coin",
+            address: "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+            receiptVault: null,
+            wrapped: false,
+            reason: "no receipt vault (collateral)",
+          },
+        ],
+      },
     },
   };
   const box = deploymentsBox(data);
@@ -1212,8 +1228,8 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   assert(chips.includes("decimals ✓"), "decimals identity chip");
   // per-token status pills
   assert(
-    chips.filter((c) => c === "ok").length === 2,
-    "the wired token and USDC both show ok",
+    chips.filter((c) => c === "ok").length === 1,
+    "the fully-wired token shows ok",
   );
   assert(chips.includes("wiring"), "the bad-asset token shows wiring");
   assert(
@@ -1223,17 +1239,11 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   const addrs = collect(box, "own-addr").map((a) => a.textContent);
   assert(addrs.includes(WRONG), "the actual (wrong) asset address is shown");
   assert(addrs.includes(UNWRAP), "the expected unwrapped address is shown");
-  // the plain token renders identity but NO asset line (it has no asset() to check)
-  const usdcAsset = addrs.includes(
-    "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-  );
-  assert(usdcAsset, "USDC's own address is still linked");
+  // the main list is the intersection: USDC is NOT a row here (only in the
+  // cross-check below), so it contributes no main-list status pill.
   assert(
-    !addrs.some((a) =>
-      (a || "").startsWith("0x8335") &&
-      a !== "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913"
-    ),
-    "USDC shows no spurious wiring addresses",
+    collect(box, "own-table")[0].children.length === 3,
+    "the main token table holds only the three governed tokens",
   );
   // Authoriser provenance: the migrated vault shows the V4 clone confirmed; the
   // two pre-migration vaults show the current authoriser NOW + the V4-clone target
@@ -1243,12 +1253,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     "the migrated vault confirms the V4 clone",
   );
   assert(
-    chips.filter((c) => c === "current prod authoriser").length === 2,
-    "two vaults still show the current prod authoriser",
+    chips.filter((c) => c === "current prod authoriser").length === 3,
+    "two registry vaults + the extra governed vault show the current prod authoriser",
   );
   assert(
-    chips.filter((c) => c === "V4 clone").length === 2,
-    "two → target lines point at the V4 clone",
+    chips.filter((c) => c === "V4 clone").length === 3,
+    "three → target lines point at the V4 clone (two registry + the extra vault)",
   );
   assert(addrs.includes(TGT), "the V4-clone target address is linked");
   assert(addrs.includes(CUR), "the current authoriser address is linked");
@@ -1274,14 +1284,77 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     ),
     "the authoriser migration banner states progress + target",
   );
-  // not-all-ok summaries + the flagged rows (wiring banner + authoriser banner)
+  // not-all-ok summaries: wired + authoriser + cross-check(governed) + cross-check(missing)
   assert(
-    collect(box, "own-verify-drift").length === 2,
-    "not-all-wired banner + authoriser-migration banner",
+    collect(box, "own-verify-drift").length === 4,
+    "wired + authoriser + cross-check-governed + cross-check-missing banners",
   );
   assert(collect(box, "hlth-wiring").length === 1, "the wiring row is flagged");
   assert(
     collect(box, "hlth-mismatch").length === 1,
-    "the mismatch row is flagged",
+    "only the identity-mismatch token row is red-flagged",
+  );
+  // registry→migration (per token): every token in the main list confirms it is in
+  // the setAuthorizer bundle (the main list IS the intersection).
+  const tokVals = collect(box, "tok-val").map((v) => v.textContent);
+  assert(
+    tokVals.filter((v) => v === "in setAuthorizer bundle").length === 3,
+    "all three main-list tokens show they are in the migration bundle",
+  );
+  assert(
+    !tokVals.some((v) =>
+      (v || "").includes("no receipt vault (collateral)") &&
+      (v || "").includes("not in the migration")
+    ),
+    "no not-in-migration token appears in the main list — those live in the cross-check",
+  );
+  // Migration-set cross-check, BOTH directions.
+  assert(
+    collect(box, "tok-h3").length === 1,
+    "a migration-set cross-check heading",
+  );
+  assert(
+    banners.some((m) =>
+      m.includes("4 governed receipt vaults") &&
+      m.includes("4 registry tokens") &&
+      m.includes("1 governed vault(s) not in the registry") &&
+      m.includes("1 registry token(s) not in the migration")
+    ),
+    "the cross-check banner reconciles both directions at the entry level",
+  );
+  const roles = collect(box, "own-role").map((r) => r.textContent);
+  const notes = collect(box, "own-note").map((n) => n.textContent);
+  // migration→registry: the governed vault not in the registry (tIBHG) is surfaced.
+  assert(roles.includes("tIBHG"), "the unlisted governed vault is surfaced");
+  assert(
+    notes.some((n) => (n || "").includes("not in registry")),
+    "the extra vault is labelled not-in-registry",
+  );
+  assert(
+    chips.includes("unlisted"),
+    "the extra vault carries an unlisted pill",
+  );
+  assert(
+    addrs.includes("0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF"),
+    "the unlisted vault address is linked for cross-checking the Safe tx",
+  );
+  // registry→migration: USDC (in registry, no governed vault) is surfaced as a row
+  // with a `collateral` pill (expected, not a red gap).
+  assert(
+    roles.filter((r) => r === "USDC").length >= 1,
+    "USDC is surfaced in the migration cross-check",
+  );
+  assert(
+    notes.some((n) => (n || "").includes("no receipt vault (collateral)")),
+    "USDC is labelled as collateral with no vault",
+  );
+  assert(
+    chips.includes("collateral"),
+    "the collateral token carries a collateral pill",
+  );
+  // tIBHG (extra vault) + USDC (collateral, no-vault) both use the non-red extra style.
+  assert(
+    collect(box, "hlth-extra").length === 2,
+    "the unlisted governed vault and the collateral token are both flagged (not red)",
   );
 });
