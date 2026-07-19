@@ -270,6 +270,7 @@
   .gn-skill { font-size: 9px; color: var(--ink-2); }
   .gn-open { color: var(--debt); font-weight: 600; }
   .au-open { color: var(--debt); font-weight: 600; }
+  .au-mut-commit { font-family: ui-monospace, monospace; color: var(--ink-2); }
   .au-sub .ok, .gn-skill .ok { color: var(--clean); }
   .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
@@ -404,6 +405,23 @@ function renderAudit() {
     }
     return line;
   };
+  // The adversarial-mutation skill's newest run for a repo, as a row sub-line:
+  // when it ran and the commit it ran against.
+  const mutationLine = (repo, org) => {
+    const a = skillByRepo.get(`${org || data.org}/${repo}`);
+    const m = a && a.lastMutation;
+    const line = el("div", "au-sub" + (m && m.timestamp ? "" : " dim"));
+    line.append(
+      m && m.timestamp
+        ? `mutation ${day(m.timestamp)}${m.skillVersion ? ` (v${m.skillVersion})` : ""}`
+        : "mutation test: never run",
+    );
+    if (m && m.commit) {
+      line.append(" · ");
+      line.append(el("span", "au-mut-commit", `@${m.commit.slice(0, 7)}`));
+    }
+    return line;
+  };
 
   box.textContent = "";
   const rows = data.protofireAudits || [];
@@ -460,6 +478,7 @@ function renderAudit() {
       else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
         c1.append(el("div", "au-flag", "no tag in PDF name"));
       c1.append(skillLine(r.name, r.org));
+      c1.append(mutationLine(r.name, r.org));
       const s1 = staleLine(r.name);
       if (s1) c1.append(s1);
 
@@ -546,6 +565,7 @@ function renderAudit() {
       c1.append(link(null, r.name, "https://github.com/" + (r.org || data.org) + "/" + r.name));
       c1.append(el("div", "au-sub", "no audit/protofire/ PDF"));
       c1.append(skillLine(r.name, r.org));
+      c1.append(mutationLine(r.name, r.org));
       const s2 = staleLine(r.name);
       if (s2) c1.append(s2);
       const c2 = el("div");
@@ -697,6 +717,17 @@ function nodeEl(n, p) {
     skill.append(el("span", n.openAuditIssues > 0 ? "gn-open" : "ok", `${n.openAuditIssues} open`));
   }
   box.append(skill);
+  // The adversarial-mutation skill's newest run: when, and the commit it was run
+  // against — a third signal, separate from the Protofire verdict and the audit
+  // skill's own recency.
+  const mut = n.lastMutation;
+  const mutLine = el("span", "gn-skill" + (mut ? "" : " gn-plain"));
+  mutLine.append(
+    mut && mut.timestamp
+      ? `mutation ${mut.timestamp.slice(0, 10)}${mut.commit ? ` @${mut.commit.slice(0, 7)}` : ""}`
+      : "no mutation run",
+  );
+  box.append(mutLine);
   return box;
 }
 
