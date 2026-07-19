@@ -266,6 +266,11 @@
   .gedge.tr-on.stale { stroke: var(--crit); }
   .gedge.tr-off { opacity: 0.1; }
   .gn-stale { font-size: 9px; color: var(--crit); font-weight: 600; }
+  /* The audit skill's own recency + open-findings backlog on a graph node. */
+  .gn-skill { font-size: 9px; color: var(--ink-2); }
+  .gn-open { color: var(--debt); font-weight: 600; }
+  .au-open { color: var(--debt); font-weight: 600; }
+  .au-sub .ok, .gn-skill .ok { color: var(--clean); }
   .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .legend .key { display: inline-flex; align-items: center; gap: 6px; }
@@ -374,6 +379,32 @@ function renderAudit() {
     return line;
   };
 
+  // The audit SKILL's own run + open findings per repo — a different signal from
+  // the external protofire audit these rows are built from. Keyed org/repo because
+  // the scan is multi-org. A stamp alone can read as "done" while its findings are
+  // still open, so recency and backlog are always shown together.
+  const skillByRepo = new Map(
+    (data.audits ?? []).map((a) => [`${a.org || data.org}/${a.name}`, a]),
+  );
+  const skillLine = (repo, org) => {
+    const a = skillByRepo.get(`${org || data.org}/${repo}`);
+    const la = a && a.lastAudit;
+    const line = el("div", "au-sub" + (la && la.auditedAt ? "" : " dim"));
+    line.append(
+      la && la.auditedAt
+        ? `audit skill ${day(la.auditedAt)}${la.skillVersion ? ` (v${la.skillVersion})` : ""}${la.stale ? " · stale" : ""}`
+        : "audit skill: never run",
+    );
+    // Absent count ⇒ the issue search failed for that org; say nothing rather
+    // than claim a clean backlog the scan never saw.
+    const open = a && a.openAuditIssues;
+    if (typeof open === "number") {
+      line.append(" · ");
+      line.append(el("span", open > 0 ? "au-open" : "ok", `${open} open`));
+    }
+    return line;
+  };
+
   box.textContent = "";
   const rows = data.protofireAudits || [];
   if (!rows.length) {
@@ -428,6 +459,7 @@ function renderAudit() {
       if (r.anchorKind === "commit") c1.append(el("div", "au-flag", "commit-anchored"));
       else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
         c1.append(el("div", "au-flag", "no tag in PDF name"));
+      c1.append(skillLine(r.name, r.org));
       const s1 = staleLine(r.name);
       if (s1) c1.append(s1);
 
@@ -513,6 +545,7 @@ function renderAudit() {
       const c1 = el("div", "au-repo");
       c1.append(link(null, r.name, "https://github.com/" + (r.org || data.org) + "/" + r.name));
       c1.append(el("div", "au-sub", "no audit/protofire/ PDF"));
+      c1.append(skillLine(r.name, r.org));
       const s2 = staleLine(r.name);
       if (s2) c1.append(s2);
       const c2 = el("div");
@@ -647,6 +680,23 @@ function nodeEl(n, p) {
     // differs from the one drawn — an audit should move it to latest (#79).
     box.append(el("span", "gn-stale", `⚠ ${stale.length} stale dep${stale.length > 1 ? "s" : ""}`));
   }
+  // The audit SKILL's own recency + backlog, distinct from the protofire verdict
+  // the node's colour carries: when it last ran whole-repo here, and how many of
+  // its findings are still open. A fresh stamp with open findings is not "done".
+  const la = n.lastAudit;
+  const skill = el("span", "gn-skill" + (la && la.auditedAt ? "" : " gn-plain"));
+  skill.append(
+    la && la.auditedAt
+      ? `skill ${la.auditedAt.slice(0, 10)}${la.stale ? " · stale" : ""}`
+      : "no audit-skill run",
+  );
+  // Absent count ⇒ that org's issue search failed; stay silent rather than
+  // showing a zero backlog the scan never confirmed.
+  if (typeof n.openAuditIssues === "number") {
+    skill.append(" · ");
+    skill.append(el("span", n.openAuditIssues > 0 ? "gn-open" : "ok", `${n.openAuditIssues} open`));
+  }
+  box.append(skill);
   return box;
 }
 

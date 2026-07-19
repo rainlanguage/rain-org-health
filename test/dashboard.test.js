@@ -282,6 +282,93 @@ Deno.test("graph node: with no org resolvable the name stays plain text", () => 
   assert(name.href === undefined, "and carries no href at all");
 });
 
+Deno.test("graph node: shows the audit skill's last run and open-findings backlog", () => {
+  const box = graphNode({
+    repo: "rain.math.binary",
+    org: "rainlanguage",
+    audit: "current",
+    depsKnown: true,
+    staleDeps: [],
+    lastAudit: {
+      auditedAt: "2026-07-17T16:34:10Z",
+      skillVersion: "0.14.0",
+      stale: true,
+    },
+    openAuditIssues: 7,
+  }, null);
+  const t = textOf(box);
+  assert(
+    t.includes("skill 2026-07-17"),
+    "shows the last audit-skill run date: " + t,
+  );
+  assert(t.includes("stale"), "flags a stamp whose source has since changed");
+  assert(t.includes("7 open"), "shows the open audit-issue backlog: " + t);
+});
+
+Deno.test("graph node: a never-run skill says so, and an unknown backlog is not a zero", () => {
+  // openAuditIssues absent = that org's issue search failed. Rendering "0 open"
+  // would claim a clean backlog the scan never saw.
+  const box = graphNode({
+    repo: "unscanned",
+    org: "o",
+    audit: "never",
+    depsKnown: true,
+    staleDeps: [],
+    lastAudit: null,
+  }, null);
+  const t = textOf(box);
+  assert(
+    t.includes("no audit-skill run"),
+    "says the skill has never run: " + t,
+  );
+  assert(
+    !t.includes("open"),
+    "an absent count renders nothing, not zero: " + t,
+  );
+});
+
+Deno.test("audit report: each row carries the audit skill's run + open findings", () => {
+  const data = {
+    ...auditData([
+      auditRow({ name: "audited-repo" }),
+      { name: "never-repo", hasProtofireAudit: false },
+    ], 1),
+    audits: [
+      {
+        name: "audited-repo",
+        org: "testorg",
+        openAuditIssues: 7,
+        lastAudit: {
+          auditedAt: "2026-07-17T16:34:10Z",
+          skillVersion: "0.14.0",
+          stale: true,
+        },
+      },
+      {
+        name: "never-repo",
+        org: "testorg",
+        lastAudit: null,
+        openAuditIssues: 0,
+      },
+    ],
+  };
+  const t = textOf(auditBox(data));
+  // The externally-audited row shows the SKILL's own run, version and backlog —
+  // a separate signal from the protofire audit the row is built from.
+  assert(
+    t.includes("audit skill 2026-07-17"),
+    "row shows the skill run date: " + t,
+  );
+  assert(t.includes("v0.14.0"), "row shows the skill version");
+  assert(t.includes("7 open"), "row shows the open-findings backlog");
+  // A repo the skill never ran on says so, on its row, rather than silently blank.
+  assert(t.includes("audit skill: never run"), "never-run repo says so: " + t);
+  assert(
+    t.includes("0 open"),
+    "a searched org with no findings shows a real zero",
+  );
+});
+
 Deno.test("audit report: a repo's stale dependency pins render on its own row", () => {
   const data = {
     ...auditData([
