@@ -1202,6 +1202,26 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           atAuthoriserTarget: null,
         },
       ],
+      // cross-check vs the migration's authoritative vault set: one governed vault
+      // (wtIBHG) is in the setAuthorizer bundle but not in the registry.
+      reconcile: {
+        source: "S01-Issuer/st0x.deploy",
+        function: "LibTokenInvariants.productionReceiptVaults()",
+        governedCount: 4,
+        extraVaults: [
+          {
+            address: "0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF",
+            name: "Wrapped iShares iBonds 2027 Term High Yield ST0x",
+            symbol: "wtIBHG",
+            deployed: true,
+            authoriser: CUR,
+            authoriserLabel: "current",
+            authoriserTarget: TGT,
+            atAuthoriserTarget: false,
+          },
+        ],
+        missingFromMigration: [],
+      },
     },
   };
   const box = deploymentsBox(data);
@@ -1243,12 +1263,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     "the migrated vault confirms the V4 clone",
   );
   assert(
-    chips.filter((c) => c === "current prod authoriser").length === 2,
-    "two vaults still show the current prod authoriser",
+    chips.filter((c) => c === "current prod authoriser").length === 3,
+    "two registry vaults + the extra governed vault show the current prod authoriser",
   );
   assert(
-    chips.filter((c) => c === "V4 clone").length === 2,
-    "two → target lines point at the V4 clone",
+    chips.filter((c) => c === "V4 clone").length === 3,
+    "three → target lines point at the V4 clone (two registry + the extra vault)",
   );
   assert(addrs.includes(TGT), "the V4-clone target address is linked");
   assert(addrs.includes(CUR), "the current authoriser address is linked");
@@ -1274,14 +1294,45 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     ),
     "the authoriser migration banner states progress + target",
   );
-  // not-all-ok summaries + the flagged rows (wiring banner + authoriser banner)
+  // not-all-ok summaries (wiring banner + authoriser banner + cross-check banner)
   assert(
-    collect(box, "own-verify-drift").length === 2,
-    "not-all-wired banner + authoriser-migration banner",
+    collect(box, "own-verify-drift").length === 3,
+    "not-all-wired + authoriser-migration + migration-cross-check banners",
   );
   assert(collect(box, "hlth-wiring").length === 1, "the wiring row is flagged");
   assert(
     collect(box, "hlth-mismatch").length === 1,
     "the mismatch row is flagged",
+  );
+  // Migration-set cross-check: the governed vault not in the registry (wtIBHG) is
+  // surfaced with its authoriser + target so the full setAuthorizer bundle shows.
+  assert(
+    collect(box, "tok-h3").length === 1,
+    "a migration-set cross-check heading",
+  );
+  assert(
+    banners.some((m) =>
+      m.includes("4 governed receipt vaults") && m.includes("1 NOT listed")
+    ),
+    "the cross-check banner reconciles governed vs registry counts",
+  );
+  const roles = collect(box, "own-role").map((r) => r.textContent);
+  assert(roles.includes("wtIBHG"), "the unlisted governed vault is surfaced");
+  const notes = collect(box, "own-note").map((n) => n.textContent);
+  assert(
+    notes.some((n) => (n || "").includes("not in registry")),
+    "the extra vault is labelled not-in-registry",
+  );
+  assert(
+    chips.includes("unlisted"),
+    "the extra vault carries an unlisted pill",
+  );
+  assert(
+    collect(box, "hlth-extra").length === 1,
+    "the extra (unlisted) vault row is flagged",
+  );
+  assert(
+    addrs.includes("0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF"),
+    "the unlisted vault address is linked for cross-checking the Safe tx",
   );
 });

@@ -36,6 +36,32 @@ pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
         .map(|m| m.as_str().to_lowercase())
 }
 
+/// Parse `LibTokenInvariants.productionReceiptVaults()` → the ordered list of
+/// receipt-vault addresses it assigns (lowercased), resolving each
+/// `vaults[i] = NAME;` to its `address ... constant NAME = address(0x…);`. This is
+/// the AUTHORITATIVE set the setAuthorizer migration operates on, cross-checked
+/// against the registry so a governed vault missing from the registry is surfaced.
+pub fn parse_receipt_vault_list(src: &str) -> Vec<String> {
+    let (Ok(const_re), Ok(body_re), Ok(assign_re)) = (
+        Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
+        Regex::new(r"(?s)function\s+productionReceiptVaults\s*\([^)]*\)[^{]*\{(.*?)\}"),
+        Regex::new(r"vaults\[\d+\]\s*=\s*(\w+)\s*;"),
+    ) else {
+        return Vec::new();
+    };
+    let consts: std::collections::HashMap<String, String> = const_re
+        .captures_iter(src)
+        .map(|c| (c[1].to_string(), c[2].to_lowercase()))
+        .collect();
+    let Some(body) = body_re.captures(src).map(|c| c[1].to_string()) else {
+        return Vec::new();
+    };
+    assign_re
+        .captures_iter(&body)
+        .filter_map(|c| consts.get(&c[1]).cloned())
+        .collect()
+}
+
 /// ERC-165 conformance from the two required probes: `supportsInterface(0x01ffc9a7)`
 /// (must be `True`) and `supportsInterface(0xffffffff)` (must be `False`).
 /// `absent` = both revert (the contract simply doesn't implement ERC-165);
@@ -257,6 +283,56 @@ pub struct TokenSpec<'a> {
     pub auth_target: Option<&'a str>,
 }
 
+/// Resolve a live authoriser address against the current prod authoriser and the
+/// V4-clone target → (`label`, `atTarget`). `label`: `target` (already migrated),
+/// `current` (the pre-migration authoriser), `none` (address(0)), `foreign`
+/// (something else), or `unknown` (unread).
+pub fn resolve_authoriser(
+    live: Option<&str>,
+    current: Option<&str>,
+    target: Option<&str>,
+) -> (&'static str, Option<bool>) {
+    let zero = "0x0000000000000000000000000000000000000000";
+    let label = match live {
+        None => "unknown",
+        Some(a) if target.is_some_and(|t| a.eq_ignore_ascii_case(t)) => "target",
+        Some(a) if current.is_some_and(|c| a.eq_ignore_ascii_case(c)) => "current",
+        Some(a) if a.eq_ignore_ascii_case(zero) => "none",
+        Some(_) => "foreign",
+    };
+    let at_target = match (live, target) {
+        (Some(a), Some(t)) => Some(a.eq_ignore_ascii_case(t)),
+        _ => None,
+    };
+    (label, at_target)
+}
+
+/// A governed receipt vault that is in the migration set
+/// (`productionReceiptVaults`) but NOT matched to any registry token — surfaced
+/// with its on-chain identity and authoriser now-vs-target so the setAuthorizer
+/// bundle can be reviewed in full even for vaults the registry doesn't list.
+pub fn extra_vault(
+    address: &str,
+    name: Option<String>,
+    symbol: Option<String>,
+    deployed: Option<bool>,
+    live_authoriser: Option<&str>,
+    auth_current: Option<&str>,
+    auth_target: Option<&str>,
+) -> serde_json::Value {
+    let (label, at_target) = resolve_authoriser(live_authoriser, auth_current, auth_target);
+    json!({
+        "address": address,
+        "name": name,
+        "symbol": symbol,
+        "deployed": deployed,
+        "authoriser": live_authoriser,
+        "authoriserLabel": label,
+        "authoriserTarget": auth_target,
+        "atAuthoriserTarget": at_target,
+    })
+}
+
 /// Health of one registry token. Every token's on-chain `name`/`symbol`/`decimals`
 /// must match the registry EXACTLY (verbatim, not normalised). A *wrapped* token
 /// (one that declares an `unwrappedAddress`) additionally must have `asset()`
@@ -327,18 +403,10 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
 
     // Authoriser (receipt-vault only): resolve who it actually is, and whether it
     // already sits at the V4-clone target the pending setAuthorizer bundle sets.
-    let zero = "0x0000000000000000000000000000000000000000";
-    let authoriser_label = match live.authoriser.as_deref() {
-        _ if !wrapped => "n/a",
-        None => "unknown",
-        Some(a) if auth_target.is_some_and(|t| a.eq_ignore_ascii_case(t)) => "target",
-        Some(a) if auth_current.is_some_and(|c| a.eq_ignore_ascii_case(c)) => "current",
-        Some(a) if a.eq_ignore_ascii_case(zero) => "none",
-        Some(_) => "foreign",
-    };
-    let at_auth_target = match (live.authoriser.as_deref(), auth_target) {
-        (Some(a), Some(t)) => Some(a.eq_ignore_ascii_case(t)),
-        _ => None,
+    let (authoriser_label, at_auth_target) = if wrapped {
+        resolve_authoriser(live.authoriser.as_deref(), auth_current, auth_target)
+    } else {
+        ("n/a", None)
     };
 
     json!({
@@ -382,6 +450,7 @@ pub fn build_tokens(
     network: &str,
     rpc_host: &str,
     authoriser: serde_json::Value,
+    reconcile: serde_json::Value,
     mut tokens: Vec<serde_json::Value>,
 ) -> Option<serde_json::Value> {
     if tokens.is_empty() {
@@ -407,6 +476,10 @@ pub fn build_tokens(
         "authoriser": authoriser,
         "wrappedCount": wrapped,
         "atAuthoriserTarget": at_target,
+        // Cross-check of the registry against the migration's authoritative vault
+        // set (productionReceiptVaults): extra governed vaults not in the registry,
+        // and registry vaults not governed by the migration.
+        "reconcile": reconcile,
         "tokens": tokens,
     }))
 }
@@ -869,9 +942,75 @@ mod tests {
                 Some(true),
             ),
         );
-        let v = build_tokens("o", "r", "base", "host", json!(null), vec![ok, bad]).unwrap();
+        let v = build_tokens(
+            "o",
+            "r",
+            "base",
+            "host",
+            json!(null),
+            json!(null),
+            vec![ok, bad],
+        )
+        .unwrap();
         assert_eq!(v["total"], 2);
         assert_eq!(v["ok"], 1);
         assert_eq!(v["tokens"][0]["symbol"], "wtA");
+    }
+
+    #[test]
+    fn parse_receipt_vault_list_resolves_named_constants_in_order() {
+        let src = r#"
+    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
+    address internal constant IBHG_RECEIPT_VAULT = address(0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF);
+    address internal constant UNUSED_RECEIPT_VAULT = address(0xdeaD00000000000000000000000000000000BEEF);
+    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
+        vaults = new address[](2);
+        vaults[0] = NVDA_RECEIPT_VAULT;
+        vaults[1] = IBHG_RECEIPT_VAULT;
+    }
+"#;
+        let got = parse_receipt_vault_list(src);
+        assert_eq!(
+            got,
+            vec![
+                "0x7271a3c91bb6070ed09333b84a815949d4f16d14".to_string(),
+                "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf".to_string(),
+            ]
+        );
+        // a constant defined but NOT listed in the function is excluded
+        assert!(!got.iter().any(|a| a.contains("dead")));
+    }
+
+    #[test]
+    fn resolve_authoriser_labels_current_target_none_foreign_unknown() {
+        let cur = Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456");
+        let tgt = Some("0x315b16faa6ee413fabca877d3851b3818369f0cd");
+        assert_eq!(resolve_authoriser(cur, cur, tgt), ("current", Some(false)));
+        assert_eq!(resolve_authoriser(tgt, cur, tgt), ("target", Some(true)));
+        assert_eq!(
+            resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), cur, tgt),
+            ("none", Some(false))
+        );
+        assert_eq!(resolve_authoriser(Some("0xdead"), cur, tgt).0, "foreign");
+        assert_eq!(resolve_authoriser(None, cur, tgt), ("unknown", None));
+    }
+
+    #[test]
+    fn extra_vault_carries_identity_and_authoriser_target() {
+        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+        let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+        let v = extra_vault(
+            "0x3c0f",
+            Some("Wrapped iShares iBonds ST0x".into()),
+            Some("wtIBHG".into()),
+            Some(true),
+            Some(cur),
+            Some(cur),
+            Some(tgt),
+        );
+        assert_eq!(v["symbol"], "wtIBHG");
+        assert_eq!(v["authoriserLabel"], "current");
+        assert_eq!(v["atAuthoriserTarget"], false);
+        assert_eq!(v["authoriserTarget"], tgt);
     }
 }

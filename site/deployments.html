@@ -77,13 +77,14 @@
   .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
   .own-row.own-extra { background: var(--debt-bg); }
   .own-row.hlth-missing, .own-row.hlth-mismatch, .own-row.hlth-drift { background: var(--debt-bg); }
-  .own-row.hlth-behind, .own-row.hlth-wiring { background: var(--debt-bg); }
+  .own-row.hlth-behind, .own-row.hlth-wiring, .own-row.hlth-extra { background: var(--debt-bg); }
   .own-row.hlth-unknown { opacity: 0.7; }
   .bcn-detail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .bcn-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .bcn-key { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
              color: var(--ink-3); width: 78px; flex-shrink: 0; }
   .tok-val { font-size: 12px; word-break: break-word; }
+  .tok-h3 { font-size: 15px; font-weight: 650; margin: 22px 0 2px; }
   .own-role { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
   .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
   .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
@@ -381,6 +382,100 @@ function renderDeployments(document, $, data) {
       const cls = v === true ? "yes" : v === false ? "no" : "dim";
       return el("span", `own-chip own-chip-${cls}`, label ? `${label} ${sym}` : sym);
     };
+    // The resolved-authoriser chip: what authorizer() actually is right now.
+    const authChip = (lbl) => {
+      const m = {
+        target: ["V4 clone ✓", "yes"],
+        current: ["current prod authoriser", "no"],
+        none: ["unset", "no"],
+        foreign: ["foreign", "no"],
+      }[lbl] || ["—", "dim"];
+      return el("span", `own-chip own-chip-${m[1]}`, m[0]);
+    };
+    // The authoriser rows (now + → target) shared by registry tokens and the extra
+    // governed vaults: what authorizer() is NOW, and the target it should become.
+    const authRows = (detail, o) => {
+      const anl = el("div", "bcn-line");
+      anl.append(el("span", "bcn-key", "authoriser"));
+      anl.append(authChip(o.authoriserLabel));
+      if (o.authoriser) anl.append(explorerLink(o.authoriser));
+      detail.append(anl);
+      if (o.atAuthoriserTarget === false && o.authoriserTarget) {
+        const atl = el("div", "bcn-line");
+        atl.append(el("span", "bcn-key", "target"));
+        atl.append(el("span", "own-chip own-chip-target", "V4 clone"));
+        atl.append(explorerLink(o.authoriserTarget));
+        detail.append(atl);
+      }
+    };
+    // Cross-check the registry against the migration's authoritative vault set:
+    // governed vaults the registry doesn't list (surfaced with their authoriser so
+    // the whole setAuthorizer bundle is reviewable), and any registry vault the
+    // migration misses.
+    const renderReconcile = (rec) => {
+      if (!rec) return;
+      const extra = Array.isArray(rec.extraVaults) ? rec.extraVaults : [];
+      const missing = Array.isArray(rec.missingFromMigration) ? rec.missingFromMigration : [];
+      if (!extra.length && !missing.length) return;
+      box.append(el("h3", "tok-h3", "Migration set cross-check"));
+      box.append(
+        el(
+          "div",
+          "own-sub",
+          `${rec.source} · ${rec.function} — the authoritative vault set the setAuthorizer bundle operates on.`,
+        ),
+      );
+      const inReg = (rec.governedCount || 0) - extra.length;
+      const rb = el("div", "own-verify own-verify-drift");
+      rb.append(
+        el(
+          "span",
+          "own-verify-msg",
+          `${rec.governedCount} governed receipt vaults — ${inReg} in the registry, ${extra.length} NOT listed. The bundle has one setAuthorizer per governed vault.`,
+        ),
+      );
+      box.append(rb);
+      if (extra.length) {
+        const etable = el("div", "own-table");
+        for (const v of extra) {
+          const row = el("div", "own-row hlth-extra");
+          const rc = el("div", "own-rc");
+          rc.append(el("div", "own-role", v.symbol || "(unknown)"));
+          if (v.name) rc.append(el("div", "own-note", v.name));
+          const note = el("div", "own-note");
+          note.append(explorerLink(v.address));
+          rc.append(note);
+          rc.append(el("div", "own-note", "not in registry"));
+          const detail = el("div", "bcn-detail");
+          authRows(detail, v);
+          row.append(rc, detail, el("span", "own-chip own-chip-no", "unlisted"));
+          etable.append(row);
+        }
+        box.append(etable);
+      }
+      if (missing.length) {
+        const mb = el("div", "own-verify own-verify-drift");
+        mb.append(
+          el(
+            "span",
+            "own-verify-msg",
+            `${missing.length} registry vault(s) are NOT in the migration set — they will not be migrated.`,
+          ),
+        );
+        box.append(mb);
+        const mtable = el("div", "own-table");
+        for (const a of missing) {
+          const row = el("div", "own-row hlth-mismatch");
+          const rc = el("div", "own-rc");
+          const note = el("div", "own-note");
+          note.append(explorerLink(a));
+          rc.append(note);
+          row.append(rc);
+          mtable.append(row);
+        }
+        box.append(mtable);
+      }
+    };
     const table = el("div", "own-table");
     for (const tk of t.tokens) {
       const st = tk.status || "unknown";
@@ -453,30 +548,14 @@ function renderDeployments(document, $, data) {
         // authoriser: what authorizer() on the receipt vault resolves to NOW, and
         // — when it isn't yet the V4-clone target — the target the setAuthorizer
         // bundle sets, so the proposed transaction can be checked per vault.
-        const authFor = {
-          target: ["V4 clone ✓", "yes"],
-          current: ["current prod authoriser", "no"],
-          none: ["unset", "no"],
-          foreign: ["foreign", "no"],
-        }[tk.authoriserLabel] || ["—", "dim"];
-        const anl = el("div", "bcn-line");
-        anl.append(el("span", "bcn-key", "authoriser"));
-        anl.append(el("span", `own-chip own-chip-${authFor[1]}`, authFor[0]));
-        if (tk.authoriser) anl.append(explorerLink(tk.authoriser));
-        detail.append(anl);
-        if (tk.atAuthoriserTarget === false && tk.authoriserTarget) {
-          const atl = el("div", "bcn-line");
-          atl.append(el("span", "bcn-key", "target"));
-          atl.append(el("span", "own-chip own-chip-target", "V4 clone"));
-          atl.append(explorerLink(tk.authoriserTarget));
-          detail.append(atl);
-        }
+        authRows(detail, tk);
       }
       const stCls = st === "ok" ? "yes" : st === "unknown" ? "dim" : "no";
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
       table.append(row);
     }
     box.append(table);
+    renderReconcile(t.reconcile);
   };
   const owners = data.deploymentOwners;
   box.append(el("h2", null, "Known owners"));

@@ -1610,8 +1610,74 @@ fn main() {
                         .collect()
                 })
                 .unwrap_or_default();
-            deployhealth::build_tokens(org, repo, "base", "mainnet.base.org", auth_summary, tokens)
-                .unwrap_or(serde_json::Value::Null)
+            // Cross-check the registry against the migration's AUTHORITATIVE vault
+            // set — LibTokenInvariants.productionReceiptVaults(), the exact list the
+            // setAuthorizer bundle operates on. Surface governed vaults the registry
+            // doesn't list (so the whole bundle is reviewable), and registry vaults
+            // the migration doesn't cover.
+            let tok_lib = gh_file(dorg, drepo, "src/lib/LibTokenInvariants.sol");
+            let governed = deployhealth::parse_receipt_vault_list(&tok_lib);
+            let registry_vaults: std::collections::HashSet<String> = parsed
+                .as_ref()
+                .and_then(|v| v["tokens"].as_array())
+                .map(|arr| {
+                    arr.iter()
+                        .filter_map(|t| {
+                            t["extensions"]["unwrappedAddress"]
+                                .as_str()
+                                .filter(|s| !s.is_empty())
+                                .map(str::to_lowercase)
+                        })
+                        .collect()
+                })
+                .unwrap_or_default();
+            // Governed vaults with no registry token → probe identity + authoriser.
+            let extra_vaults: Vec<serde_json::Value> = governed
+                .iter()
+                .filter(|a| !registry_vaults.contains(*a))
+                .map(|addr| {
+                    let s = rpc_session();
+                    let name = eth_call(s, addr, &rpc::name_calldata())
+                        .and_then(|h| rpc::decode_string(&h));
+                    let symbol = eth_call(s, addr, &rpc::symbol_calldata())
+                        .and_then(|h| rpc::decode_string(&h));
+                    let deployed = code_deployed(s, addr);
+                    let auth = eth_call(s, addr, &rpc::authorizer_calldata())
+                        .and_then(|h| rpc::decode_address(&h));
+                    deployhealth::extra_vault(
+                        addr,
+                        name,
+                        symbol,
+                        deployed,
+                        auth.as_deref(),
+                        auth_current.as_deref(),
+                        auth_target.as_deref(),
+                    )
+                })
+                .collect();
+            // Registry vaults the migration list doesn't cover (should be empty).
+            let missing_from_migration: Vec<String> = registry_vaults
+                .iter()
+                .filter(|a| !governed.contains(*a))
+                .cloned()
+                .collect();
+            let reconcile = json!({
+                "source": format!("{dorg}/{drepo}"),
+                "function": "LibTokenInvariants.productionReceiptVaults()",
+                "governedCount": governed.len(),
+                "extraVaults": extra_vaults,
+                "missingFromMigration": missing_from_migration,
+            });
+            deployhealth::build_tokens(
+                org,
+                repo,
+                "base",
+                "mainnet.base.org",
+                auth_summary,
+                reconcile,
+                tokens,
+            )
+            .unwrap_or(serde_json::Value::Null)
         };
 
         let doc = json!({
