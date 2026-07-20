@@ -520,22 +520,8 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
             &format!("repos/{org}/{repo}/compare/{}...{h}", audit.audited_commit),
         ])
         .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
-        .map(|v| {
-            let listed: Vec<(String, String, u64, u64)> = v["files"]
-                .as_array()
-                .map(|arr| {
-                    arr.iter()
-                        .map(|f| {
-                            (
-                                f["filename"].as_str().unwrap_or("").to_string(),
-                                f["status"].as_str().unwrap_or("").to_string(),
-                                f["additions"].as_u64().unwrap_or(0),
-                                f["deletions"].as_u64().unwrap_or(0),
-                            )
-                        })
-                        .collect()
-                })
-                .unwrap_or_default();
+        .and_then(|v| {
+            let (listed, compare_truncated) = audit::parse_compare_files(&v);
             // Non-source paths keep the old filename-only meaning (any change
             // outside `.audit/` counts); Solidity gets the comment-aware verdict.
             let versions = fetch_source_versions(org, repo, &audit.audited_commit, h, &listed);
@@ -551,7 +537,7 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
                     (path.clone(), drift)
                 })
                 .collect();
-            audit::code_changed_outside_audit(&classified)
+            audit::stale_verdict(compare_truncated, &classified)
         }),
     };
     Some(audit)
@@ -804,7 +790,7 @@ fn fetch_compare<F: GhApi>(
                 .collect()
         })
         .unwrap_or_default();
-    let truncated = files.len() >= 300;
+    let truncated = files.len() >= audit::COMPARE_FILE_CAP;
     Some((base_date, files, total, truncated))
 }
 

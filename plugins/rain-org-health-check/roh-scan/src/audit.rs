@@ -108,6 +108,61 @@ pub fn code_changed_outside_audit(
     })
 }
 
+/// GitHub returns at most this many files in a `compare` response. Both drift
+/// paths test the same cap, so it is defined once — they are reading one API
+/// limit, not two independently-chosen thresholds.
+pub const COMPARE_FILE_CAP: usize = 300;
+
+/// A `compare` response's file list as `(path, status, additions, deletions)`,
+/// paired with whether GitHub truncated it.
+///
+/// Truncation is derived here rather than at the call site so it cannot be
+/// dropped while the parse survives — the two facts come from one response and
+/// are only sound together. A list at the cap counts as truncated: a response
+/// of exactly 300 cannot be told apart from one that was cut, so the ambiguous
+/// case resolves to unknown rather than complete.
+pub fn parse_compare_files(v: &serde_json::Value) -> (Vec<(String, String, u64, u64)>, bool) {
+    let files: Vec<(String, String, u64, u64)> = v["files"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .map(|f| {
+                    (
+                        f["filename"].as_str().unwrap_or("").to_string(),
+                        f["status"].as_str().unwrap_or("").to_string(),
+                        f["additions"].as_u64().unwrap_or(0),
+                        f["deletions"].as_u64().unwrap_or(0),
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let truncated = files.len() >= COMPARE_FILE_CAP;
+    (files, truncated)
+}
+
+/// The audit-skill staleness verdict, `None` meaning unknown.
+///
+/// GitHub caps a `compare` file list at 300 entries. Seeing no code change in a
+/// truncated list proves nothing — the changed files may be the ones that were
+/// cut — so that case is unknown rather than `false`. Reporting it clean would
+/// be a false all-clear on exactly the repos with the most churn.
+///
+/// Finding code change is still decisive under truncation: a shorter list cannot
+/// un-find drift that is already visible.
+pub fn stale_verdict(
+    compare_truncated: bool,
+    files: &[(String, Option<crate::commentloc::LineDrift>)],
+) -> Option<bool> {
+    if code_changed_outside_audit(files) {
+        Some(true)
+    } else if compare_truncated {
+        None
+    } else {
+        Some(false)
+    }
+}
+
 /// Sort key for audit recency: never-audited repos first, then oldest audit
 /// first, name as the final tiebreak — so the most overdue repos sort to the top.
 pub fn audit_sort_key(last_audit: Option<&LastAudit>, name: &str) -> (u8, String, String) {
@@ -128,6 +183,98 @@ mod tests {
             comment_added,
             comment_removed: 0,
         })
+    }
+
+    fn compare_json(n: usize) -> serde_json::Value {
+        let files: Vec<_> = (0..n)
+            .map(|i| {
+                serde_json::json!({
+                    "filename": format!("src/F{i}.sol"),
+                    "status": "modified", "additions": 1, "deletions": 0
+                })
+            })
+            .collect();
+        serde_json::json!({ "files": files })
+    }
+
+    /// Pinned to the literal documented limit, not to the constant itself: every
+    /// other test sizes its fixture from `COMPARE_FILE_CAP`, so they all move
+    /// with it and none of them would notice a wrong value.
+    #[test]
+    fn the_compare_cap_matches_githubs_documented_limit() {
+        assert_eq!(
+            COMPARE_FILE_CAP, 300,
+            "GitHub caps compare responses at 300 files; a different value here \
+             either truncates early or misses real truncation"
+        );
+    }
+
+    /// A file list at GitHub's cap is indistinguishable from one that was cut,
+    /// so the boundary resolves to truncated — the fail-safe direction.
+    #[test]
+    fn a_compare_file_list_at_the_cap_reads_as_truncated() {
+        let (files, truncated) = parse_compare_files(&compare_json(COMPARE_FILE_CAP));
+        assert_eq!(files.len(), COMPARE_FILE_CAP);
+        assert!(truncated, "exactly-at-cap must not read as a complete list");
+
+        let (files, truncated) = parse_compare_files(&compare_json(COMPARE_FILE_CAP - 1));
+        assert_eq!(files.len(), COMPARE_FILE_CAP - 1);
+        assert!(!truncated, "a short list is complete");
+    }
+
+    /// An absent or malformed file list is empty and NOT truncated — "no files
+    /// reported" must not masquerade as "too many files to report".
+    #[test]
+    fn an_absent_compare_file_list_is_empty_and_not_truncated() {
+        let (files, truncated) = parse_compare_files(&serde_json::json!({}));
+        assert!(files.is_empty());
+        assert!(!truncated);
+    }
+
+    /// The parse carries through the fields the classifier needs.
+    #[test]
+    fn parse_compare_files_keeps_path_status_and_line_counts() {
+        let v = serde_json::json!({"files":[
+            {"filename":"src/A.sol","status":"added","additions":7,"deletions":2}
+        ]});
+        let (files, _) = parse_compare_files(&v);
+        assert_eq!(
+            files[0],
+            ("src/A.sol".to_string(), "added".to_string(), 7, 2)
+        );
+    }
+
+    /// A truncated compare that shows no code change is UNKNOWN, never clean —
+    /// the files GitHub cut at 300 may be the ones that changed.
+    #[test]
+    fn a_truncated_compare_with_no_visible_code_change_is_unknown_not_clean() {
+        let comment_only = vec![(
+            "src/A.sol".to_string(),
+            Some(crate::commentloc::LineDrift {
+                comment_added: 3,
+                ..Default::default()
+            }),
+        )];
+        assert_eq!(stale_verdict(false, &comment_only), Some(false));
+        assert_eq!(
+            stale_verdict(true, &comment_only),
+            None,
+            "an incomplete file list must not report a repo audited-current"
+        );
+    }
+
+    /// Truncation cannot un-find drift that is already visible.
+    #[test]
+    fn visible_code_change_stays_stale_even_when_the_compare_is_truncated() {
+        let code = vec![(
+            "src/A.sol".to_string(),
+            Some(crate::commentloc::LineDrift {
+                code_added: 1,
+                ..Default::default()
+            }),
+        )];
+        assert_eq!(stale_verdict(true, &code), Some(true));
+        assert_eq!(stale_verdict(false, &code), Some(true));
     }
 
     /// A NatSpec-only edit must not mark a fresh audit stale.
