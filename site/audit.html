@@ -256,6 +256,7 @@
   .gnode.au-stale { border-color: var(--debt); background: var(--debt-bg); color: var(--debt); border-style: dashed; }
   .gnode.au-never { border-color: var(--crit); background: var(--bg); color: var(--crit); }
   .gnode.au-na { border-color: var(--ink-3); background: var(--surface-2); color: var(--ink-2); }
+  .gn-cmt { color: var(--ink-3); }
   .gnode.au-unknown { border-color: var(--ink-3); background: var(--surface-2); color: var(--ink-2); border-style: dotted; }
   .legend .swatch.au-current { border-color: var(--clean); background: var(--clean-bg); }
   .legend .swatch.au-stale { border-color: var(--debt); background: var(--debt-bg); border-style: dashed; }
@@ -707,13 +708,28 @@ function nodeEl(n, p) {
       // No compareUrl resolved ⇒ plain text, never a dead link.
       meta.append(el("span", null, anchorText));
     }
-    if (p && typeof p.sourceLocAddedSinceAudit === "number" && typeof p.sourceLocRemovedSinceAudit === "number") {
+    // The node leads with CODE drift, matching the row beside it. The
+    // undifferentiated total contradicted that row: a repo whose only churn is
+    // NatSpec reads `current` while its node showed a non-zero figure. Comment
+    // churn follows in its own muted span so the node still shows the repo
+    // moved. Without a split (older scan data) the old total is shown
+    // unlabelled rather than passed off as a code figure.
+    const nodeSplit = p && typeof p.codeLocAddedSinceAudit === "number" &&
+      typeof p.codeLocRemovedSinceAudit === "number";
+    const nodeAdd = nodeSplit ? p.codeLocAddedSinceAudit : p && p.sourceLocAddedSinceAudit;
+    const nodeDel = nodeSplit ? p.codeLocRemovedSinceAudit : p && p.sourceLocRemovedSinceAudit;
+    if (typeof nodeAdd === "number" && typeof nodeDel === "number") {
       meta.append(
-        document.createTextNode(" · "),
-        el("span", "add", `+${p.sourceLocAddedSinceAudit}`),
-        document.createTextNode(" "),
-        el("span", "del", `\u2212${p.sourceLocRemovedSinceAudit}`),
+        " · ",
+        el("span", "add", `+${nodeAdd}`),
+        " ",
+        el("span", "del", `\u2212${nodeDel}`),
       );
+      const cAdd = (p && p.commentLocAddedSinceAudit) || 0;
+      const cDel = (p && p.commentLocRemovedSinceAudit) || 0;
+      if (nodeSplit && (cAdd || cDel)) {
+        meta.append(el("span", "gn-cmt", ` +${cAdd} \u2212${cDel} cmt`));
+      }
     }
   }
   box.append(meta);
