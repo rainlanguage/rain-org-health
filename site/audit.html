@@ -662,7 +662,7 @@ function renderGraphLegend(present) {
   for (const state of AUDIT_ORDER) {
     if (!present.has(state)) continue;
     const key = el("span", "key");
-    key.append(el("span", `swatch au-${state}`), document.createTextNode(`${state} — ${AUDIT_HELP[state]}`));
+    key.append(el("span", `swatch au-${state}`), `${state} — ${AUDIT_HELP[state]}`);
     box.append(key);
   }
 }
@@ -793,9 +793,7 @@ function renderGraphSummary(nodes, pf) {
   } else {
     box.append(
       el("b", null, `${ready.length} of ${nodes.length}`),
-      document.createTextNode(
-        " Solidity repos have clear ground beneath and no current Protofire audit — auditing one now yields findings that are genuinely its own. Most inherited first: ",
-      ),
+      " Solidity repos have clear ground beneath and no current Protofire audit — auditing one now yields findings that are genuinely its own. Most inherited first: ",
     );
     ready.slice(0, 3).forEach((n, i) => {
       const p = pf.get(n.repo);
@@ -805,10 +803,10 @@ function renderGraphSummary(nodes, pf) {
           : p && p.fullSourceLoc != null
             ? `${p.fullSourceLoc} LOC`
             : "";
-      if (i > 0) box.append(document.createTextNode(", "));
-      box.append(el("b", null, n.repo), document.createTextNode(` (${inheritors.get(n.repo) ?? 0} inherit${drift ? `, ${drift}` : ""})`));
+      if (i > 0) box.append(", ");
+      box.append(el("b", null, n.repo), ` (${inheritors.get(n.repo) ?? 0} inherit${drift ? `, ${drift}` : ""})`);
     });
-    box.append(document.createTextNode("."));
+    box.append(".");
   }
 }
 function standsOn(edges, root) {
