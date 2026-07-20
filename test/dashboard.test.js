@@ -607,6 +607,105 @@ Deno.test("audit enumerated drift shows +added / -removed and file + commit coun
   assert(textOf(cell).includes("36 commits"), "shows the commit count");
 });
 
+Deno.test("audit drift: comment LOC is counted apart and does not read as code drift", () => {
+  // A NatSpec-only edit: zero code churn, real comment churn, still CURRENT.
+  const box = auditBox(auditData([
+    auditRow({
+      name: "comments-only",
+      externalAudit: "current",
+      sourceLocAddedSinceAudit: 3,
+      sourceLocRemovedSinceAudit: 1,
+      codeLocAddedSinceAudit: 0,
+      codeLocRemovedSinceAudit: 0,
+      commentLocAddedSinceAudit: 3,
+      commentLocRemovedSinceAudit: 1,
+      driftFullyClassified: true,
+      filesChangedSinceAudit: 1,
+      commitsSinceAudit: 1,
+    }),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes("+0 / −0 code LOC"),
+    "headline diffstat is code-only: " + t,
+  );
+  assert(t.includes("+3 / −1 comment"), "comment churn shown separately: " + t);
+  assert(
+    t.includes("comments only"),
+    "a comment-only drift is marked as such, not stale: " + t,
+  );
+  // and it is NOT presented as a stale row
+  assert(collect(box, "stale").length === 0, "comment-only drift is not stale");
+});
+
+Deno.test("audit drift: code churn still shows as code LOC alongside comment churn", () => {
+  const box = auditBox(auditData([
+    auditRow({
+      name: "mixed",
+      externalAudit: "stale",
+      sourceLocAddedSinceAudit: 5,
+      sourceLocRemovedSinceAudit: 2,
+      codeLocAddedSinceAudit: 4,
+      codeLocRemovedSinceAudit: 1,
+      commentLocAddedSinceAudit: 1,
+      commentLocRemovedSinceAudit: 1,
+      driftFullyClassified: true,
+      filesChangedSinceAudit: 2,
+      commitsSinceAudit: 3,
+    }),
+  ]));
+  const t = textOf(box);
+  assert(t.includes("+4 / −1 code LOC"), "code figure excludes comments: " + t);
+  assert(t.includes("+1 / −1 comment"), "comment figure shown apart: " + t);
+  assert(!t.includes("comments only"), "real code churn is not comments-only");
+});
+
+Deno.test("audit drift: an unclassifiable diff is disclosed, not passed off as classified", () => {
+  const box = auditBox(auditData([
+    auditRow({
+      name: "toobig",
+      externalAudit: "stale",
+      sourceLocAddedSinceAudit: 40,
+      sourceLocRemovedSinceAudit: 3,
+      codeLocAddedSinceAudit: 40,
+      codeLocRemovedSinceAudit: 3,
+      commentLocAddedSinceAudit: 0,
+      commentLocRemovedSinceAudit: 0,
+      driftFullyClassified: false,
+      filesChangedSinceAudit: 1,
+      commitsSinceAudit: 1,
+    }),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes("some diffs unclassified"),
+    "says the split is incomplete: " + t,
+  );
+});
+
+Deno.test("audit drift: without a split, the old undifferentiated src LOC is shown", () => {
+  // Back-compat with health.json produced before the split existed.
+  const box = auditBox(auditData([
+    auditRow({
+      name: "legacy",
+      externalAudit: "stale",
+      sourceLocAddedSinceAudit: 7,
+      sourceLocRemovedSinceAudit: 2,
+      filesChangedSinceAudit: 1,
+      commitsSinceAudit: 1,
+    }),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes("+7 / −2 src LOC"),
+    "falls back to src LOC, not a fake code figure: " + t,
+  );
+  assert(
+    !t.includes("comment"),
+    "no comment figure invented when absent: " + t,
+  );
+});
+
 Deno.test("audit up-to-date marker only when current AND zero drift", () => {
   const upToDate = auditBox(auditData([
     auditRow({

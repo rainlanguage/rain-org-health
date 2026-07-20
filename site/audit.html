@@ -270,6 +270,8 @@
   .gn-skill { font-size: 9px; color: var(--ink-2); }
   .gn-open { color: var(--debt); font-weight: 600; }
   .au-open { color: var(--debt); font-weight: 600; }
+  /* Comment churn: counted, but not a staleness signal — deliberately muted. */
+  .au-commentloc { color: var(--ink-3); }
   .au-mut-commit { font-family: ui-monospace, monospace; color: var(--ink-2); }
   .au-sub .ok, .gn-skill .ok { color: var(--clean); }
   .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
@@ -514,18 +516,40 @@ function renderAudit() {
           return el("span");
         };
         if (typeof r.sourceLocAddedSinceAudit === "number" && typeof r.sourceLocRemovedSinceAudit === "number") {
-          // +added / −removed src LOC: additions green (--clean), deletions red (--crit).
-          const combined = r.sourceLocAddedSinceAudit + r.sourceLocRemovedSinceAudit;
+          // The headline diffstat is CODE only — comment churn is counted apart
+          // because it does not change what the audit covered, and so does not
+          // make the repo stale. Without a split (older scan data) fall back to
+          // the undifferentiated src LOC rather than implying a code figure.
+          const hasSplit = typeof r.codeLocAddedSinceAudit === "number" &&
+            typeof r.codeLocRemovedSinceAudit === "number";
+          const codeAdd = hasSplit ? r.codeLocAddedSinceAudit : r.sourceLocAddedSinceAudit;
+          const codeDel = hasSplit ? r.codeLocRemovedSinceAudit : r.sourceLocRemovedSinceAudit;
+          const commentAdd = r.commentLocAddedSinceAudit || 0;
+          const commentDel = r.commentLocRemovedSinceAudit || 0;
+          // +added / −removed: additions green (--clean), deletions red (--crit).
           const diffstat = mkNode();
           diffstat.append(
-            el("span", "add", "+" + r.sourceLocAddedSinceAudit),
+            el("span", "add", "+" + codeAdd),
             " / ",
-            el("span", "del", "−" + r.sourceLocRemovedSinceAudit),
-            " src LOC"
+            el("span", "del", "−" + codeDel),
+            hasSplit ? " code LOC" : " src LOC"
           );
-          c3.append(diffstat, " · " + (r.filesChangedSinceAudit || 0) + " files" + commitsTail);
-          if (r.externalAudit === "current" && combined === 0) {
-            c3.append(" ", el("span", "ok", "· up to date"));
+          c3.append(diffstat);
+          if (hasSplit && (commentAdd || commentDel)) {
+            c3.append(" · ");
+            c3.append(el("span", "au-commentloc", "+" + commentAdd + " / −" + commentDel + " comment"));
+          }
+          c3.append(" · " + (r.filesChangedSinceAudit || 0) + " files" + commitsTail);
+          // Some file's diff was too large to classify, so its churn was charged
+          // to code: say so rather than presenting the split as complete.
+          if (hasSplit && r.driftFullyClassified === false) {
+            c3.append(" ", el("span", "dim", "· some diffs unclassified"));
+          }
+          if (r.externalAudit === "current" && codeAdd + codeDel === 0) {
+            c3.append(
+              " ",
+              el("span", "ok", hasSplit && (commentAdd || commentDel) ? "· comments only" : "· up to date"),
+            );
           }
         } else if (r.sourceDriftTruncated && typeof r.filesChangedSinceAudit === "number") {
           // The compare exceeded the 300-file cap, so the tree blob-sha diff gives

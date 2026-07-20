@@ -6,7 +6,13 @@
 //!   roh-scan [--json <path>] [repo ...]
 //! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
 
+// `json!` nests one macro expansion per key; the health.json documents are
+// wide enough to exceed the default 128-deep limit.
+#![recursion_limit = "512"]
+
 mod audit;
+mod blobs;
+mod commentloc;
 mod deployhealth;
 mod graph;
 mod mutation;
@@ -14,9 +20,7 @@ mod owners;
 mod protofire;
 mod rpc;
 mod signals;
-use audit::{
-    audit_sort_key, parse_last_audit, parse_runs_jsonl, source_changed_outside_audit, LastAudit,
-};
+use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
     anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
     counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
@@ -382,6 +386,96 @@ fn open_audit_issues(
         .then(|| counts.get(&format!("{org}/{repo}")).copied().unwrap_or(0))
 }
 
+/// Fetch a set of blobs from one repo, batching them into GraphQL queries.
+///
+/// A want absent from the returned map is unknown — the path did not exist at
+/// that ref, the object was not a text blob, GitHub truncated it, or the query
+/// itself failed. Callers charge unknowns to code, so no failure here can read
+/// as "unchanged".
+fn gh_blobs(
+    org: &str,
+    repo: &str,
+    wants: &[blobs::Want],
+) -> std::collections::BTreeMap<blobs::Want, String> {
+    let mut out = std::collections::BTreeMap::new();
+    for chunk in wants.chunks(blobs::BATCH) {
+        let query = blobs::blob_query(org, repo, chunk);
+        let Some(raw) = gh_stdout(&["api", "graphql", "-f", &format!("query={query}")]) else {
+            eprintln!(
+                "::warning::blob batch failed for {org}/{repo} ({} files); \
+                 their drift is charged to code and reported unclassified",
+                chunk.len()
+            );
+            continue;
+        };
+        let (fetched, errors) = blobs::parse_blob_response(&raw, chunk);
+        // A rate-limited or unpermitted query answers HTTP 200 with an errors
+        // array, so `gh` succeeds and the blobs simply go missing. Without this
+        // the drift just reads unclassified with nothing saying why.
+        for e in &errors {
+            eprintln!("::warning::blob batch for {org}/{repo} returned a GraphQL error: {e}");
+        }
+        out.extend(fetched);
+    }
+    out
+}
+
+/// Fetch both versions of every changed non-test Solidity file in a compare, so
+/// the drift can be split into code vs comment by lexing.
+///
+/// A file that the compare says was ADDED has no base version, and one that was
+/// REMOVED has no head version; those are passed as an empty string rather than
+/// `None`, because absence there is a fact, not a failed lookup. Only a genuine
+/// fetch failure yields `None`, which the split charges to code.
+fn fetch_source_versions(
+    org: &str,
+    repo: &str,
+    base: &str,
+    head: &str,
+    files: &[(String, String, u64, u64)],
+) -> Vec<protofire::SourceVersions> {
+    let sources: Vec<_> = files
+        .iter()
+        .filter(|(path, _, _, _)| protofire::counts_as_source_drift(path))
+        .collect();
+
+    // One want per version we actually have to read, so an added file costs no
+    // base lookup and a removed file costs no head lookup.
+    let mut wants: Vec<blobs::Want> = Vec::new();
+    for (path, status, _, _) in &sources {
+        if *status != "added" {
+            wants.push((base.to_string(), path.clone()));
+        }
+        if *status != "removed" {
+            wants.push((head.to_string(), path.clone()));
+        }
+    }
+    wants.sort();
+    wants.dedup();
+    let fetched = gh_blobs(org, repo, &wants);
+
+    sources
+        .into_iter()
+        .map(
+            |(path, status, additions, deletions)| protofire::SourceVersions {
+                path: path.clone(),
+                base: if status == "added" {
+                    Some(String::new())
+                } else {
+                    fetched.get(&(base.to_string(), path.clone())).cloned()
+                },
+                head: if status == "removed" {
+                    Some(String::new())
+                } else {
+                    fetched.get(&(head.to_string(), path.clone())).cloned()
+                },
+                additions: *additions,
+                deletions: *deletions,
+            },
+        )
+        .collect()
+}
+
 /// The newest adversarial-mutation run recorded for a repo, from the skill's
 /// `audit/mutation-test-scans.json`. Absent/malformed ⇒ `None` (never run, as far
 /// as this scan can tell) rather than a fabricated entry.
@@ -425,13 +519,33 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
     audit.stale = match head.as_deref().map(str::trim) {
         None => None,
         Some(h) if h == audit.audited_commit => Some(false),
+        // Classify each changed file by lexing both versions: a NatSpec-only edit
+        // must not mark a fresh audit stale, which a filename-only check cannot
+        // tell apart from a real code change.
         Some(h) => gh_stdout(&[
             "api",
             &format!("repos/{org}/{repo}/compare/{}...{h}", audit.audited_commit),
-            "--jq",
-            ".files[].filename",
         ])
-        .map(|files| source_changed_outside_audit(files.lines())),
+        .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
+        .and_then(|v| {
+            let (listed, compare_truncated) = audit::parse_compare_files(&v);
+            // Non-source paths keep the old filename-only meaning (any change
+            // outside `.audit/` counts); Solidity gets the comment-aware verdict.
+            let versions = fetch_source_versions(org, repo, &audit.audited_commit, h, &listed);
+            let classified: Vec<(String, Option<commentloc::LineDrift>)> = listed
+                .iter()
+                .map(|(path, _, _, _)| {
+                    let drift = versions.iter().find(|v| &v.path == path).and_then(|v| {
+                        match (&v.base, &v.head) {
+                            (Some(b), Some(hd)) => commentloc::file_drift(b, hd),
+                            _ => None,
+                        }
+                    });
+                    (path.clone(), drift)
+                })
+                .collect();
+            audit::stale_verdict(compare_truncated, &classified)
+        }),
     };
     Some(audit)
 }
@@ -455,6 +569,14 @@ struct ProtofireResult {
     files_changed: Option<u64>,
     commits_since: Option<u64>,
     source_drift_truncated: bool,
+    /// Comment-vs-code split of the source drift. `None` when the patches were
+    /// unavailable (truncated/omitted), in which case the drift is unclassified.
+    comment_loc_added: Option<u64>,
+    comment_loc_removed: Option<u64>,
+    code_loc_added: Option<u64>,
+    code_loc_removed: Option<u64>,
+    /// False when some churn could not be classified and was charged to code.
+    drift_fully_classified: bool,
     compare_url: Option<String>,
     /// Index into `pdfs` of the ONE PDF the anchor/drift are computed against (the
     /// newest under audit/protofire/); the panel shows only this one, not all (#62).
@@ -670,11 +792,12 @@ fn fetch_compare<F: GhApi>(
                     filename: f["filename"].as_str().unwrap_or("").to_string(),
                     additions: f["additions"].as_u64().unwrap_or(0),
                     deletions: f["deletions"].as_u64().unwrap_or(0),
+                    status: f["status"].as_str().unwrap_or("").to_string(),
                 })
                 .collect()
         })
         .unwrap_or_default();
-    let truncated = files.len() >= 300;
+    let truncated = files.len() >= audit::COMPARE_FILE_CAP;
     Some((base_date, files, total, truncated))
 }
 
@@ -822,6 +945,11 @@ fn empty_protofire(state: protofire::ExternalAudit) -> ProtofireResult {
         latest_tag: None,
         latest_tag_iso: None,
         is_stale: false,
+        comment_loc_added: None,
+        comment_loc_removed: None,
+        code_loc_added: None,
+        code_loc_removed: None,
+        drift_fully_classified: false,
         source_loc: None,
         source_loc_added: None,
         source_loc_removed: None,
@@ -911,6 +1039,8 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         files_changed,
         commits_since,
         source_drift_truncated,
+        // Comment-vs-code split of the same drift, when the patches were available.
+        line_split,
     ) = match &cmp {
         // Compare truncated at GitHub's 300-file cap: its per-file +/− misses any
         // `.sol` sorted beyond the cap (a false zero for large repos like raindex).
@@ -924,9 +1054,30 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             changed_sol_count(gh, org, repo, &base, &default_branch),
             Some(*total),
             true,
+            None,
         ),
         Some((base_date, files, total, _)) => {
             let (added, removed, n) = source_drift(files);
+            // Lexing both versions of each changed .sol is what makes the
+            // comment/code split possible; a diff hunk cannot answer it.
+            let versions = fetch_source_versions(
+                org,
+                repo,
+                &base,
+                &default_branch,
+                &files
+                    .iter()
+                    .map(|f| {
+                        (
+                            f.filename.clone(),
+                            f.status.clone(),
+                            f.additions,
+                            f.deletions,
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            );
+            let split = protofire::source_drift_split(&versions);
             // Keep +/− separate; the combined `source_loc` is derived as the sum for
             // sorting, the staleness check, and JSON back-compat.
             (
@@ -937,6 +1088,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
                 Some(n),
                 Some(*total),
                 false,
+                Some(split),
             )
         }
         // Compare unavailable → date the audit by the PDF's own commit, drift unknown.
@@ -948,6 +1100,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             None,
             None,
             false,
+            None,
         ),
     };
 
@@ -960,8 +1113,15 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
     // truncated compare leaves lines unknown, the tree-derived changed-file count
     // still answers it. Both unknown -> None, and is_stale falls back to tag
     // recency rather than treating unmeasured as zero.
-    let source_changed = source_loc
-        .map(|drift| drift > 0)
+    // Comment and whitespace churn is not source change: an audit covers the
+    // contracts that are there, and rewording NatSpec changes none of them. So
+    // prefer the CODE-only verdict; fall back to total LOC, then changed-file
+    // count, only where the lines could not be classified (truncated/absent
+    // patch) — unmeasured must never read as unchanged.
+    let source_changed = line_split
+        .as_ref()
+        .map(|(d, _)| d.code_changed())
+        .or(source_loc.map(|drift| drift > 0))
         .or(files_changed.map(|files| files > 0));
     let external_audit = classify_external_audit(true, has_tags, newer_tag_exists, source_changed);
     let stale = is_stale(newer_tag_exists, source_changed);
@@ -988,6 +1148,11 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         files_changed,
         commits_since,
         source_drift_truncated,
+        comment_loc_added: line_split.as_ref().map(|(d, _)| d.comment_added),
+        comment_loc_removed: line_split.as_ref().map(|(d, _)| d.comment_removed),
+        code_loc_added: line_split.as_ref().map(|(d, _)| d.code_added),
+        code_loc_removed: line_split.as_ref().map(|(d, _)| d.code_removed),
+        drift_fully_classified: line_split.as_ref().map(|(_, ok)| *ok).unwrap_or(false),
         compare_url,
     }
 }
@@ -1908,6 +2073,13 @@ fn main() {
                     "filesChangedSinceAudit": p.files_changed,
                     "commitsSinceAudit": p.commits_since,
                     "sourceDriftTruncated": p.source_drift_truncated,
+                    // Comment churn counted apart from code: a NatSpec-only edit
+                    // shows here and leaves the audit CURRENT.
+                    "commentLocAddedSinceAudit": p.comment_loc_added,
+                    "commentLocRemovedSinceAudit": p.comment_loc_removed,
+                    "codeLocAddedSinceAudit": p.code_loc_added,
+                    "codeLocRemovedSinceAudit": p.code_loc_removed,
+                    "driftFullyClassified": p.drift_fully_classified,
                     "compareUrl": p.compare_url,
                     "daysSinceAudit": days,
                 })
