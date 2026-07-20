@@ -237,6 +237,70 @@ function graphNode(n, data) {
   return bind("audit.html", "nodeEl", ["el", "data"], [el, data])(n, null);
 }
 
+// A node with its protofire record attached, so the drift figures render.
+function graphNodeP(n, p, data) {
+  const el = (tag, cls, text) => {
+    const node = makeEl(tag);
+    if (cls) node.className = cls;
+    if (text !== undefined) node.textContent = text;
+    return node;
+  };
+  return bind("audit.html", "nodeEl", ["el", "data"], [el, data])(n, p);
+}
+
+Deno.test("graph node: leads with code drift, not the undifferentiated total", () => {
+  // rain.math.binary: +8/-2 of NatSpec and no code change. The node must not
+  // show a non-zero figure while the row beside it reads CURRENT.
+  const box = graphNodeP({ repo: "rain.math.binary", audit: "current" }, {
+    auditedRef: "c7ebb6cb99e1648d18594f888331bd584c6a911d",
+    anchorKind: "commit",
+    sourceLocAddedSinceAudit: 7,
+    sourceLocRemovedSinceAudit: 1,
+    codeLocAddedSinceAudit: 0,
+    codeLocRemovedSinceAudit: 0,
+    commentLocAddedSinceAudit: 8,
+    commentLocRemovedSinceAudit: 2,
+  }, { org: "rainlanguage" });
+  const t = textOf(box);
+  assert(t.includes("+0"), "code additions should read +0, got: " + t);
+  assert(
+    !t.includes("+7"),
+    "the undifferentiated total must not be the headline figure: " + t,
+  );
+  assert(t.includes("cmt"), "comment churn should still be shown: " + t);
+  assert(t.includes("8"), "comment additions should appear: " + t);
+});
+
+Deno.test("graph node: pre-split scan data falls back to the old total", () => {
+  // No codeLoc* fields (older health.json): show the undifferentiated figure
+  // rather than fabricating a code number or rendering nothing.
+  const box = graphNodeP({ repo: "legacy", audit: "stale" }, {
+    auditedRef: "v0.1.0",
+    anchorKind: "tag",
+    sourceLocAddedSinceAudit: 42,
+    sourceLocRemovedSinceAudit: 3,
+  }, { org: "rainlanguage" });
+  const t = textOf(box);
+  assert(t.includes("+42"), "expected the legacy total, got: " + t);
+  assert(!t.includes("cmt"), "no comment figure without a split: " + t);
+});
+
+Deno.test("graph node: a code-only change shows no comment figure", () => {
+  const box = graphNodeP({ repo: "codeonly", audit: "stale" }, {
+    auditedRef: "v0.1.0",
+    anchorKind: "tag",
+    sourceLocAddedSinceAudit: 5,
+    sourceLocRemovedSinceAudit: 5,
+    codeLocAddedSinceAudit: 5,
+    codeLocRemovedSinceAudit: 5,
+    commentLocAddedSinceAudit: 0,
+    commentLocRemovedSinceAudit: 0,
+  }, { org: "rainlanguage" });
+  const t = textOf(box);
+  assert(t.includes("+5"), "expected code additions: " + t);
+  assert(!t.includes("cmt"), "zero comment churn should not render: " + t);
+});
+
 Deno.test("graph node: the repo name links to the repo, using the node's own org", () => {
   const box = graphNode(
     { repo: "cyclo.sol", org: "cyclofinance", audit: "never" },
