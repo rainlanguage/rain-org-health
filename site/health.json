@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-20T00:16:19Z",
+  "generatedAt": "2026-07-20T04:10:25Z",
   "auditGraph": {
     "nodes": [
       {
@@ -847,7 +847,7 @@
         "repo": "raindex",
         "org": "rainlanguage",
         "package": "raindex",
-        "audit": "current",
+        "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
         "openAuditIssues": 0,
@@ -1127,7 +1127,7 @@
           "auditedAt": "2026-07-17T16:34:10Z",
           "auditedCommit": "336405eb3411369b578b2739708b42ef927e4215",
           "skillVersion": "0.14.0",
-          "stale": null
+          "stale": true
         },
         "openAuditIssues": 0,
         "lastMutation": {
@@ -4193,7 +4193,7 @@
         "auditedAt": "2026-07-17T16:34:10Z",
         "auditedCommit": "336405eb3411369b578b2739708b42ef927e4215",
         "skillVersion": "0.14.0",
-        "stale": null
+        "stale": true
       }
     }
   ],
@@ -4619,6 +4619,43 @@
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
       "daysSinceAudit": 231
+    },
+    {
+      "name": "raindex",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "raindex.e686b4d.apr-2026.pdf",
+          "path": "audit/protofire/raindex.e686b4d.apr-2026.pdf",
+          "lastCommitIso": "2026-06-02T15:52:40Z",
+          "auditDateIso": "2026-03-24T18:40:27Z"
+        },
+        {
+          "filename": "raindex.sol-v0.1.12.jun-2026.pdf",
+          "path": "audit/protofire/raindex.sol-v0.1.12.jun-2026.pdf",
+          "lastCommitIso": "2026-07-14T08:55:44Z",
+          "auditDateIso": "2026-06-15T23:31:39Z"
+        }
+      ],
+      "referencePdfIndex": 1,
+      "auditedRef": "sol-v0.1.12",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-06-15T23:31:39Z",
+      "latestTag": "sol-v0.1.13",
+      "latestTagIso": "2026-07-03T13:10:34Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 560,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 556,
+      "sourceLocRemovedSinceAudit": 4,
+      "filesChangedSinceAudit": 63,
+      "commitsSinceAudit": 130,
+      "sourceDriftTruncated": false,
+      "compareUrl": "https://github.com/rainlanguage/raindex/compare/sol-v0.1.12...main",
+      "daysSinceAudit": 35
     },
     {
       "name": "rain.factory",
@@ -5262,19 +5299,19 @@
       "auditedRef": "fe4b2a4c05632e394b0643990d6de39658fb8fb5",
       "anchorKind": "commit",
       "tagConventionAbsent": true,
-      "auditedDate": "2026-07-14T18:00:01Z",
+      "auditedDate": "2026-01-18T12:48:58Z",
       "latestTag": "v0.1.0",
       "latestTagIso": "2026-05-12T16:29:48Z",
       "isStale": false,
-      "sourceLocChangedSinceAudit": null,
+      "sourceLocChangedSinceAudit": 0,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
+      "sourceLocAddedSinceAudit": 0,
+      "sourceLocRemovedSinceAudit": 0,
+      "filesChangedSinceAudit": 0,
+      "commitsSinceAudit": 12,
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
-      "daysSinceAudit": 6
+      "daysSinceAudit": 183
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -5337,43 +5374,6 @@
       "sourceDriftTruncated": false,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
       "daysSinceAudit": 168
-    },
-    {
-      "name": "raindex",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "current",
-      "auditPdfs": [
-        {
-          "filename": "raindex.e686b4d.apr-2026.pdf",
-          "path": "audit/protofire/raindex.e686b4d.apr-2026.pdf",
-          "lastCommitIso": "2026-06-02T15:52:40Z",
-          "auditDateIso": "2026-03-24T18:40:27Z"
-        },
-        {
-          "filename": "raindex.sol-v0.1.12.jun-2026.pdf",
-          "path": "audit/protofire/raindex.sol-v0.1.12.jun-2026.pdf",
-          "lastCommitIso": "2026-07-14T08:55:44Z",
-          "auditDateIso": "2026-06-15T23:31:39Z"
-        }
-      ],
-      "referencePdfIndex": 1,
-      "auditedRef": "sol-v0.1.12",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-07-14T08:55:44Z",
-      "latestTag": "sol-v0.1.13",
-      "latestTagIso": "2026-07-03T13:10:34Z",
-      "isStale": false,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "compareUrl": "https://github.com/rainlanguage/raindex/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 6
     }
   ]
 }
