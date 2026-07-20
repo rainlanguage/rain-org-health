@@ -215,12 +215,10 @@ function renderDeployments(document, $, data) {
     if (!health || !Array.isArray(health.contracts) || health.contracts.length === 0) return;
     box.append(el("h2", null, `${health.version} suite — ${health.network} health`));
     const hsub = el("div", "own-sub");
-    hsub.append(document.createTextNode(`Each pinned ${health.version} contract from `));
+    hsub.append(`Each pinned ${health.version} contract from `);
     hsub.append(link("", `${health.org}/${health.repo}`, `https://github.com/${health.org}/${health.repo}`));
     hsub.append(
-      document.createTextNode(
-        `, checked live on ${health.network}: deployed at its pinned address with the runtime code and keccak codehash both matching the pins.`,
-      ),
+      `, checked live on ${health.network}: deployed at its pinned address with the runtime code and keccak codehash both matching the pins.`,
     );
     box.append(hsub);
     const allHealthy = health.healthy === health.total;
@@ -339,12 +337,10 @@ function renderDeployments(document, $, data) {
     if (!t || !Array.isArray(t.tokens) || t.tokens.length === 0) return;
     box.append(el("h2", null, `Tokens — ${t.network}`));
     const tsub = el("div", "own-sub");
-    tsub.append(document.createTextNode("Each token in the "));
+    tsub.append("Each token in the ");
     tsub.append(link("", `${t.org}/${t.repo}`, `https://github.com/${t.org}/${t.repo}`));
     tsub.append(
-      document.createTextNode(
-        ` Base list, checked live on ${t.network}: name/symbol/decimals match the registry verbatim, asset() points at the declared unwrapped underlying, and the unwrapped/legacy/receipt addresses are deployed.`,
-      ),
+      ` Base list, checked live on ${t.network}: name/symbol/decimals match the registry verbatim, asset() points at the declared unwrapped underlying, and the unwrapped/legacy/receipt addresses are deployed.`,
     );
     box.append(tsub);
     const allOk = t.ok === t.total;
@@ -600,14 +596,12 @@ function renderDeployments(document, $, data) {
     return;
   }
   const sub = el("div", "own-sub");
-  sub.append(document.createTextNode("Privileged addresses read from the "));
+  sub.append("Privileged addresses read from the ");
   sub.append(
     link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
   );
   sub.append(
-    document.createTextNode(
-      ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
-    ),
+    ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
   );
   box.append(sub);
   for (const g of owners.groups) {

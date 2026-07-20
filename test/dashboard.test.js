@@ -583,11 +583,16 @@ Deno.test("audit report: a repo with no stale deps gets no stale line", () => {
 
 Deno.test("audit row: an unknown verdict renders as unknown, never as current", () => {
   const box = auditBox(
-    auditData([auditRow({ name: "unfetchable-repo", externalAudit: "unknown" })]),
+    auditData([
+      auditRow({ name: "unfetchable-repo", externalAudit: "unknown" }),
+    ]),
   );
   const statuses = collect(box, "au-status");
   const text = statuses.map((s) => s._text).join(" ");
-  assert(text.includes("unknown"), "the unknown verdict must be shown: " + text);
+  assert(
+    text.includes("unknown"),
+    "the unknown verdict must be shown: " + text,
+  );
   assert(
     !text.includes("current"),
     "a scan that established nothing must not render clean: " + text,
@@ -1722,5 +1727,28 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   assert(
     collect(box, "hlth-extra").length === 2,
     "the unlisted governed vault and the collateral token are both flagged (not red)",
+  );
+});
+
+// A render function reaching for the global `document` removes its branch from
+// the reachable-under-test set: the harness injects `el` and a document stub per
+// bind, so anything a test does not inject throws when that line is reached, and
+// the paths that avoid it stay green. That is how the graph node's diffstat drifted
+// from the row beside it while the suite passed. `append()` accepts strings, so
+// `createTextNode` is never needed — this pins that, rather than trusting review.
+Deno.test("site: no render code calls document.createTextNode", () => {
+  const offenders = [];
+  for (const f of Deno.readDirSync(new URL("../site", import.meta.url))) {
+    if (!f.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(
+      new URL("../site/" + f.name, import.meta.url),
+    );
+    const n = (src.match(/document\.createTextNode/g) || []).length;
+    if (n) offenders.push(`${f.name} (${n})`);
+  }
+  assert(
+    offenders.length === 0,
+    "append() takes strings; pass the string instead of createTextNode — " +
+      offenders.join(", "),
   );
 });
