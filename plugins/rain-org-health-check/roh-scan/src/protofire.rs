@@ -50,10 +50,10 @@ pub struct CompareFile {
     pub filename: String,
     pub additions: u64,
     pub deletions: u64,
-    /// The unified diff for this file, when GitHub returned one. `None` for a
-    /// diff too large to include — those lines cannot be classified, so the
-    /// file's churn falls to CODE rather than being assumed comment-only.
-    pub patch: Option<String>,
+    /// GitHub's change status (`added` / `removed` / `modified` / …). Needed so a
+    /// file that genuinely has no base (or head) version is not mistaken for one
+    /// whose content could not be fetched.
+    pub status: String,
 }
 
 /// External-audit coverage status for a repo (the issue's taxonomy):
@@ -261,25 +261,41 @@ pub fn source_drift(files: &[CompareFile]) -> (u64, u64, u64) {
     (added, removed, n)
 }
 
-/// Split non-test source drift into CODE and COMMENT churn, so a NatSpec-only
-/// change is visible as comment churn and does NOT read as source change.
+/// Both versions of one changed file. `None` on a side means the content could
+/// NOT be retrieved; a genuinely added/removed file is passed as `Some("")` by
+/// the caller, so absence here always means "unknown", never "empty".
+#[derive(Debug, Clone)]
+pub struct SourceVersions {
+    pub path: String,
+    pub base: Option<String>,
+    pub head: Option<String>,
+    /// GitHub's own counts, used only as the fallback when classification fails.
+    pub additions: u64,
+    pub deletions: u64,
+}
+
+/// Split non-test source drift into CODE and COMMENT churn by lexing both
+/// versions of each file, so a NatSpec-only change is visible as comment churn
+/// and does NOT read as source change.
 ///
-/// Returns `(drift, fully_classified)`. A file whose patch GitHub omitted (too
-/// large) cannot be classified line-by-line, so its whole churn is charged to
-/// CODE — the safe direction, since the alternative would show a drifted repo as
-/// current — and `fully_classified` goes false so the caller can report the
-/// comment split as a lower bound rather than a fact.
-pub fn source_drift_split(files: &[CompareFile]) -> (crate::commentloc::LineDrift, bool) {
+/// Returns `(drift, fully_classified)`. A file whose content could not be fetched
+/// or lexed has its whole churn charged to CODE — the safe direction, since the
+/// alternative would show a drifted repo as current — and `fully_classified` goes
+/// false so the caller can report the split as a lower bound rather than a fact.
+pub fn source_drift_split(files: &[SourceVersions]) -> (crate::commentloc::LineDrift, bool) {
     let mut total = crate::commentloc::LineDrift::default();
     let mut fully_classified = true;
     for f in files {
-        if !counts_as_source_drift(&f.filename) {
+        if !counts_as_source_drift(&f.path) {
             continue;
         }
-        match &f.patch {
-            Some(p) => total.add(&crate::commentloc::patch_drift(p)),
+        let classified = match (&f.base, &f.head) {
+            (Some(b), Some(h)) => crate::commentloc::file_drift(b, h),
+            _ => None,
+        };
+        match classified {
+            Some(d) => total.add(&d),
             None => {
-                // Unclassifiable churn counts as code, never as comment.
                 if f.additions > 0 || f.deletions > 0 {
                     fully_classified = false;
                 }
@@ -421,12 +437,19 @@ fn days_from_civil(y: i64, m: i64, d: i64) -> i64 {
 mod tests {
     use super::*;
 
-    fn cf(name: &str, add: u64, del: u64, patch: Option<&str>) -> CompareFile {
-        CompareFile {
-            filename: name.to_string(),
+    fn sv(
+        path: &str,
+        base: Option<&str>,
+        head: Option<&str>,
+        add: u64,
+        del: u64,
+    ) -> SourceVersions {
+        SourceVersions {
+            path: path.to_string(),
+            base: base.map(str::to_string),
+            head: head.map(str::to_string),
             additions: add,
             deletions: del,
-            patch: patch.map(str::to_string),
         }
     }
 
@@ -434,11 +457,10 @@ mod tests {
     /// source did NOT change and the repo must not read stale.
     #[test]
     fn a_comment_only_change_is_not_source_change() {
-        let patch =
-            "@@ -1,2 +1,2 @@\n-    /// Old wording.\n+    /// New wording.\n     uint256 x;";
-        let (d, classified) = source_drift_split(&[cf("src/A.sol", 1, 1, Some(patch))]);
-        assert_eq!(d.comment_added, 1);
-        assert_eq!(d.comment_removed, 1);
+        let base = "contract C {\n    /// Old wording.\n    uint256 x;\n}";
+        let head = "contract C {\n    /// New wording.\n    uint256 x;\n}";
+        let (d, classified) = source_drift_split(&[sv("src/A.sol", Some(base), Some(head), 1, 1)]);
+        assert!(d.comment_added > 0 && d.comment_removed > 0);
         assert!(
             !d.code_changed(),
             "comment churn must not read as source change"
@@ -452,34 +474,34 @@ mod tests {
         );
     }
 
-    /// A real code edit still marks it stale, and comment churn alongside is
-    /// counted separately rather than masking the code change.
+    /// A real code edit still marks it stale, with comments counted apart.
     #[test]
     fn code_change_still_marks_stale_with_comments_counted_apart() {
-        let patch =
-            "@@ -1,3 +1,3 @@\n-    /// Doc.\n+    /// Doc reworded.\n-    a = 1;\n+    a = 2;";
-        let (d, _) = source_drift_split(&[cf("src/A.sol", 2, 2, Some(patch))]);
-        assert_eq!(d.comment_added, 1);
-        assert_eq!(d.code_added, 1);
-        assert!(d.code_changed());
+        let base = "contract C {\n    /// Doc.\n    uint256 x = 1;\n}";
+        let head = "contract C {\n    /// Doc reworded.\n    uint256 x = 2;\n}";
+        let (d, _) = source_drift_split(&[sv("src/A.sol", Some(base), Some(head), 2, 2)]);
+        assert!(d.comment_added > 0, "comment churn counted");
+        assert!(d.code_changed(), "code churn still detected");
         assert!(is_stale(false, Some(d.code_changed())));
     }
 
     /// Test files never contribute — same predicate the LOC totals use.
     #[test]
     fn test_files_are_excluded_from_the_split() {
-        let patch = "@@ -1 +1 @@\n+    a = 1;";
-        let (d, _) = source_drift_split(&[cf("test/src/A.t.sol", 1, 0, Some(patch))]);
+        let base = "contract T {\n    uint256 x = 1;\n}";
+        let head = "contract T {\n    uint256 x = 2;\n}";
+        let (d, _) = source_drift_split(&[sv("test/src/A.t.sol", Some(base), Some(head), 1, 1)]);
         assert_eq!(d, crate::commentloc::LineDrift::default());
         assert!(!d.code_changed());
     }
 
-    /// An omitted patch cannot be classified, so its churn is charged to CODE
-    /// (keeping the repo stale) and the split is flagged as not fully classified —
-    /// never silently reported as comment-only.
+    /// Content that could not be fetched cannot be classified, so its churn is
+    /// charged to CODE (keeping the repo stale) and the split is flagged — never
+    /// silently reported as comment-only.
     #[test]
     fn unclassifiable_churn_counts_as_code_and_is_flagged() {
-        let (d, classified) = source_drift_split(&[cf("src/A.sol", 40, 3, None)]);
+        let (d, classified) =
+            source_drift_split(&[sv("src/A.sol", None, Some("contract C {}"), 40, 3)]);
         assert_eq!(d.code_added, 40);
         assert_eq!(d.code_removed, 3);
         assert_eq!(d.comment_added, 0);
@@ -488,6 +510,17 @@ mod tests {
             !classified,
             "caller must be told the split is not authoritative"
         );
+    }
+
+    /// A newly ADDED file is classifiable: the caller passes an empty base, so its
+    /// comments and code are counted properly rather than lumped into code.
+    #[test]
+    fn an_added_file_is_still_split() {
+        let head = "contract C {\n    /// Doc.\n    uint256 x = 1;\n}";
+        let (d, classified) = source_drift_split(&[sv("src/A.sol", Some(""), Some(head), 3, 0)]);
+        assert!(classified);
+        assert!(d.code_added > 0);
+        assert!(d.comment_added > 0);
     }
 
     // ---- parse_audited_tag ----
@@ -725,37 +758,37 @@ mod tests {
                 filename: "src/A.sol".into(),
                 additions: 10,
                 deletions: 5,
-                patch: None,
+                status: String::new(),
             }, // +10 / −5  counts (src/ Solidity)
             CompareFile {
                 filename: "deploy/D.sol".into(),
                 additions: 2,
                 deletions: 1,
-                patch: None,
+                status: String::new(),
             }, // +2 / −1   counts (deploy/ Solidity is audited surface)
             CompareFile {
                 filename: "test/A.t.sol".into(),
                 additions: 99,
                 deletions: 99,
-                patch: None,
+                status: String::new(),
             }, // excluded (test) — symmetric so a leak inflates BOTH counts
             CompareFile {
                 filename: "src/B.rs".into(),
                 additions: 3,
                 deletions: 2,
-                patch: None,
+                status: String::new(),
             }, // excluded (.rs — not Solidity, not audited surface)
             CompareFile {
                 filename: "README.md".into(),
                 additions: 40,
                 deletions: 40,
-                patch: None,
+                status: String::new(),
             }, // excluded (non-source)
             CompareFile {
                 filename: "src/C.ts".into(),
                 additions: 1,
                 deletions: 0,
-                patch: None,
+                status: String::new(),
             }, // excluded (.ts — not Solidity)
         ];
         let (added, removed, files_n) = source_drift(&files);

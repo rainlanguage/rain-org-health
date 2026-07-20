@@ -388,6 +388,73 @@ fn open_audit_issues(
 /// The newest adversarial-mutation run recorded for a repo, from the skill's
 /// `audit/mutation-test-scans.json`. Absent/malformed ⇒ `None` (never run, as far
 /// as this scan can tell) rather than a fabricated entry.
+/// A file's content at a specific ref, base64-decoded. `None` when the fetch
+/// fails OR the path does not exist there — callers distinguish the two by
+/// consulting the compare status, since "added file" must not read as "unknown".
+fn gh_file_at(org: &str, repo: &str, path: &str, git_ref: &str) -> Option<String> {
+    let raw = gh_stdout(&[
+        "api",
+        &format!("repos/{org}/{repo}/contents/{path}?ref={git_ref}"),
+        "--jq",
+        ".content",
+    ])?;
+    let b64: String = raw.split_whitespace().collect();
+    if b64.is_empty() {
+        return None;
+    }
+    use std::io::Write;
+    let mut child = Command::new("base64")
+        .arg("-d")
+        .stdin(std::process::Stdio::piped())
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .ok()?;
+    if let Some(mut si) = child.stdin.take() {
+        let _ = si.write_all(b64.as_bytes());
+    }
+    let out = child.wait_with_output().ok()?;
+    out.status
+        .success()
+        .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
+/// Fetch both versions of every changed non-test Solidity file in a compare, so
+/// the drift can be split into code vs comment by lexing.
+///
+/// A file that the compare says was ADDED has no base version, and one that was
+/// REMOVED has no head version; those are passed as an empty string rather than
+/// `None`, because absence there is a fact, not a failed lookup. Only a genuine
+/// fetch failure yields `None`, which the split charges to code.
+fn fetch_source_versions(
+    org: &str,
+    repo: &str,
+    base: &str,
+    head: &str,
+    files: &[(String, String, u64, u64)],
+) -> Vec<protofire::SourceVersions> {
+    files
+        .iter()
+        .filter(|(path, _, _, _)| protofire::counts_as_source_drift(path))
+        .map(
+            |(path, status, additions, deletions)| protofire::SourceVersions {
+                path: path.clone(),
+                base: if status == "added" {
+                    Some(String::new())
+                } else {
+                    gh_file_at(org, repo, path, base)
+                },
+                head: if status == "removed" {
+                    Some(String::new())
+                } else {
+                    gh_file_at(org, repo, path, head)
+                },
+                additions: *additions,
+                deletions: *deletions,
+            },
+        )
+        .collect()
+}
+
 fn fetch_last_mutation(org: &str, repo: &str) -> Option<mutation::LastMutation> {
     let src = gh_file(org, repo, "audit/mutation-test-scans.json");
     if src.trim().is_empty() {
@@ -428,7 +495,7 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
     audit.stale = match head.as_deref().map(str::trim) {
         None => None,
         Some(h) if h == audit.audited_commit => Some(false),
-        // Fetch the FILES with their diffs, not just names: a NatSpec-only edit
+        // Classify each changed file by lexing both versions: a NatSpec-only edit
         // must not mark a fresh audit stale, which a filename-only check cannot
         // tell apart from a real code change.
         Some(h) => gh_stdout(&[
@@ -437,20 +504,37 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
         ])
         .and_then(|raw| serde_json::from_str::<serde_json::Value>(&raw).ok())
         .map(|v| {
-            let files: Vec<(String, Option<String>)> = v["files"]
+            let listed: Vec<(String, String, u64, u64)> = v["files"]
                 .as_array()
                 .map(|arr| {
                     arr.iter()
                         .map(|f| {
                             (
                                 f["filename"].as_str().unwrap_or("").to_string(),
-                                f["patch"].as_str().map(str::to_string),
+                                f["status"].as_str().unwrap_or("").to_string(),
+                                f["additions"].as_u64().unwrap_or(0),
+                                f["deletions"].as_u64().unwrap_or(0),
                             )
                         })
                         .collect()
                 })
                 .unwrap_or_default();
-            audit::code_changed_outside_audit(&files)
+            // Non-source paths keep the old filename-only meaning (any change
+            // outside `.audit/` counts); Solidity gets the comment-aware verdict.
+            let versions = fetch_source_versions(org, repo, &audit.audited_commit, h, &listed);
+            let classified: Vec<(String, Option<commentloc::LineDrift>)> = listed
+                .iter()
+                .map(|(path, _, _, _)| {
+                    let drift = versions.iter().find(|v| &v.path == path).and_then(|v| {
+                        match (&v.base, &v.head) {
+                            (Some(b), Some(hd)) => commentloc::file_drift(b, hd),
+                            _ => None,
+                        }
+                    });
+                    (path.clone(), drift)
+                })
+                .collect();
+            audit::code_changed_outside_audit(&classified)
         }),
     };
     Some(audit)
@@ -698,8 +782,7 @@ fn fetch_compare<F: GhApi>(
                     filename: f["filename"].as_str().unwrap_or("").to_string(),
                     additions: f["additions"].as_u64().unwrap_or(0),
                     deletions: f["deletions"].as_u64().unwrap_or(0),
-                    // Present unless the diff was too large for GitHub to inline.
-                    patch: f["patch"].as_str().map(str::to_string),
+                    status: f["status"].as_str().unwrap_or("").to_string(),
                 })
                 .collect()
         })
@@ -965,7 +1048,26 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         ),
         Some((base_date, files, total, _)) => {
             let (added, removed, n) = source_drift(files);
-            let split = protofire::source_drift_split(files);
+            // Lexing both versions of each changed .sol is what makes the
+            // comment/code split possible; a diff hunk cannot answer it.
+            let versions = fetch_source_versions(
+                org,
+                repo,
+                &base,
+                &default_branch,
+                &files
+                    .iter()
+                    .map(|f| {
+                        (
+                            f.filename.clone(),
+                            f.status.clone(),
+                            f.additions,
+                            f.deletions,
+                        )
+                    })
+                    .collect::<Vec<_>>(),
+            );
+            let split = protofire::source_drift_split(&versions);
             // Keep +/− separate; the combined `source_loc` is derived as the sum for
             // sorting, the staleness check, and JSON back-compat.
             (

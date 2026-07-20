@@ -10,6 +10,11 @@ name = "roh-scan"
 path = "src/main.rs"
 
 [dependencies]
+# Real Solidity lexing for the comment/code drift split: a hand-rolled line
+# classifier cannot tell a block-comment body from a wrapped expression.
+solang-parser = "0.3"
+# Line diff of the comment-stripped sources, to report exact added/removed code.
+similar = "2"
 regex = "1"
 toml = "0.8"
 serde_json = { version = "1", features = ["preserve_order"] }
