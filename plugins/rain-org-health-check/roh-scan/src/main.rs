@@ -23,8 +23,8 @@ mod signals;
 use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
     anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
-    counts_as_source_drift, days_between, is_stale, newer_than, newest_pdf_index, source_drift,
-    AuditAnchor, AuditPdf, CompareFile,
+    counts_as_source_drift, days_between, is_stale, newest_pdf_index, source_drift, AuditAnchor,
+    AuditPdf, CompareFile,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -562,7 +562,8 @@ struct ProtofireResult {
     audited_date: String,
     latest_tag: Option<String>,
     latest_tag_iso: Option<String>,
-    is_stale: bool,
+    /// `None` when the scan could establish neither drift nor tag recency.
+    is_stale: Option<bool>,
     source_loc: Option<u64>,
     source_loc_added: Option<u64>,
     source_loc_removed: Option<u64>,
@@ -944,7 +945,7 @@ fn empty_protofire(state: protofire::ExternalAudit) -> ProtofireResult {
         audited_date: String::new(),
         latest_tag: None,
         latest_tag_iso: None,
-        is_stale: false,
+        is_stale: None,
         comment_loc_added: None,
         comment_loc_removed: None,
         code_loc_added: None,
@@ -1105,10 +1106,11 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
     };
 
     let has_tags = latest_tag.is_some();
-    let newer_tag_exists = latest_tag_iso
-        .as_deref()
-        .map(|t| newer_than(t, &audited_date))
-        .unwrap_or(false);
+    // None when the latest tag's date is unknown. A failed tag lookup is not
+    // evidence that no newer tag exists, so it must not collapse to `false` —
+    // paired with unmeasurable drift that is what reported a broken scan clean.
+    // None when the tag date is unreadable; see protofire::newer_tag_exists.
+    let newer_tag_exists = protofire::newer_tag_exists(latest_tag_iso.as_deref(), &audited_date);
     // Did the audited Solidity actually change? Prefer the line drift; when a
     // truncated compare leaves lines unknown, the tree-derived changed-file count
     // still answers it. Both unknown -> None, and is_stale falls back to tag
@@ -1465,13 +1467,13 @@ fn main() {
         let (pa, pb) = (&a.protofire, &b.protofire);
         (
             pa.has_pdf,
-            std::cmp::Reverse(pa.is_stale),
+            std::cmp::Reverse(protofire::staleness_rank(pa.is_stale)),
             std::cmp::Reverse(pa.source_loc.unwrap_or(0)),
             &a.name,
         )
             .cmp(&(
                 pb.has_pdf,
-                std::cmp::Reverse(pb.is_stale),
+                std::cmp::Reverse(protofire::staleness_rank(pb.is_stale)),
                 std::cmp::Reverse(pb.source_loc.unwrap_or(0)),
                 &b.name,
             ))
@@ -2065,7 +2067,7 @@ fn main() {
                     "auditedDate": if p.audited_date.is_empty() { serde_json::Value::Null } else { serde_json::Value::from(p.audited_date.clone()) },
                     "latestTag": p.latest_tag,
                     "latestTagIso": p.latest_tag_iso,
-                    "isStale": if p.has_pdf { serde_json::Value::from(p.is_stale) } else { serde_json::Value::Null },
+                    "isStale": match (p.has_pdf, p.is_stale) { (true, Some(b)) => serde_json::Value::from(b), _ => serde_json::Value::Null },
                     "sourceLocChangedSinceAudit": p.source_loc,
                     "fullSourceLoc": r.full_source_loc,
                     "sourceLocAddedSinceAudit": p.source_loc_added,

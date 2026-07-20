@@ -62,9 +62,12 @@ pub struct CompareFile {
 /// - `stale`   — has a PDF and the audited Solidity changed since it
 /// - `current` — has a PDF and the audited Solidity is unchanged since it (a
 ///   newer tag with no Solidity in it does NOT make an audit stale)
-/// - `unknown` — the `audit/protofire/` listing fetch FAILED, so coverage is
-///   indeterminate. This is distinct from `never`: a failed fetch must never be
-///   read as a confirmed coverage gap.
+/// - `unknown` — the scan could not establish the verdict, so it is
+///   indeterminate. Two causes: the `audit/protofire/` listing fetch FAILED (is
+///   there a PDF at all?), or the repo has a PDF but neither its drift nor its
+///   tag recency could be read (is it still current?). Distinct from both
+///   `never` and `current`: a failed lookup is neither a confirmed coverage gap
+///   nor a clean bill of health.
 ///
 /// A closed set, as a type rather than free strings: every consumer must decide
 /// what each verdict means to it, and a sixth verdict added here should fail to
@@ -371,12 +374,38 @@ pub fn newer_than(a_iso: &str, b_iso: &str) -> bool {
 /// contracts that are there, so it is CURRENT. Flagging those stale trains
 /// readers to ignore the column, which buries the genuinely stale ones.
 ///
-/// `source_changed` is None when the drift could not be measured. Unknown is not
-/// zero: fall back to tag recency rather than reporting current on no evidence.
-pub fn is_stale(newer_tag_exists: bool, source_changed: Option<bool>) -> bool {
-    match source_changed {
-        Some(changed) => changed,
-        None => newer_tag_exists,
+/// Both inputs are `None` when that fact could not be established, and the
+/// result is `None` when neither could — a scan that learned nothing about a
+/// repo must not answer "current". Reporting no evidence as clean is the one
+/// failure that empties the stale list precisely when the scan is broken.
+///
+/// Measured drift decides on its own. Only when drift is unmeasurable does tag
+/// recency stand in for it, and only when the tag is genuinely known: a failed
+/// tag lookup is not "no newer tag".
+pub fn is_stale(newer_tag_exists: Option<bool>, source_changed: Option<bool>) -> Option<bool> {
+    source_changed.or(newer_tag_exists)
+}
+
+/// Whether a tag newer than the audit anchor exists, `None` when the latest
+/// tag's date could not be read.
+///
+/// The `Option` is the whole point, so this is not inlined at the call site: a
+/// failed tag lookup is not evidence that no newer tag exists, and collapsing
+/// it to `false` is what let a scan which learned nothing report every audited
+/// repo `current`.
+pub fn newer_tag_exists(latest_tag_iso: Option<&str>, audited_date: &str) -> Option<bool> {
+    latest_tag_iso.map(|t| newer_than(t, audited_date))
+}
+
+/// Sort rank for the audited-repos list: stale first, then unknown, then
+/// current. Unknown outranks current because a verdict the scan could not
+/// establish still needs a human look, and ranks below stale because confirmed
+/// drift needs one more.
+pub fn staleness_rank(is_stale: Option<bool>) -> u8 {
+    match is_stale {
+        Some(true) => 2,
+        None => 1,
+        Some(false) => 0,
     }
 }
 
@@ -386,17 +415,19 @@ pub fn is_stale(newer_tag_exists: bool, source_changed: Option<bool>) -> bool {
 pub fn classify_external_audit(
     has_pdf: bool,
     has_tags: bool,
-    newer_tag_exists: bool,
+    newer_tag_exists: Option<bool>,
     source_changed: Option<bool>,
 ) -> ExternalAudit {
     if !has_pdf {
         ExternalAudit::Never
     } else if !has_tags {
         ExternalAudit::Na
-    } else if is_stale(newer_tag_exists, source_changed) {
-        ExternalAudit::Stale
     } else {
-        ExternalAudit::Current
+        match is_stale(newer_tag_exists, source_changed) {
+            Some(true) => ExternalAudit::Stale,
+            Some(false) => ExternalAudit::Current,
+            None => ExternalAudit::Unknown,
+        }
     }
 }
 
@@ -467,9 +498,9 @@ mod tests {
         );
         assert!(classified);
         // and therefore the audit stays CURRENT
-        assert!(!is_stale(true, Some(d.code_changed())));
+        assert_eq!(is_stale(Some(true), Some(d.code_changed())), Some(false));
         assert_eq!(
-            classify_external_audit(true, true, true, Some(d.code_changed())),
+            classify_external_audit(true, true, Some(true), Some(d.code_changed())),
             ExternalAudit::Current
         );
     }
@@ -482,7 +513,7 @@ mod tests {
         let (d, _) = source_drift_split(&[sv("src/A.sol", Some(base), Some(head), 2, 2)]);
         assert!(d.comment_added > 0, "comment churn counted");
         assert!(d.code_changed(), "code churn still detected");
-        assert!(is_stale(false, Some(d.code_changed())));
+        assert_eq!(is_stale(Some(false), Some(d.code_changed())), Some(true));
     }
 
     /// Test files never contribute — same predicate the LOC totals use.
@@ -891,49 +922,103 @@ mod tests {
         // The bug this pins: a newer tag with NO Solidity change is NOT stale.
         // rainix-autopublish tags every release, so a version bump alone yields a
         // newer tag the audit still covers exactly.
-        assert!(!is_stale(true, Some(false)));
-        assert!(!is_stale(false, Some(false)));
+        assert_eq!(is_stale(Some(true), Some(false)), Some(false));
+        assert_eq!(is_stale(Some(false), Some(false)), Some(false));
         // Source actually changed -> stale, tag or no tag.
-        assert!(is_stale(true, Some(true)));
-        assert!(is_stale(false, Some(true)));
+        assert_eq!(is_stale(Some(true), Some(true)), Some(true));
+        assert_eq!(is_stale(Some(false), Some(true)), Some(true));
         // Unknown is not zero: with no measurement, fall back to tag recency
         // rather than claiming current on no evidence.
-        assert!(is_stale(true, None));
-        assert!(!is_stale(false, None));
+        assert_eq!(is_stale(Some(true), None), Some(true));
+        assert_eq!(is_stale(Some(false), None), Some(false));
+    }
+
+    /// A scan that established neither fact answers UNKNOWN. Collapsing that to
+    /// "not stale" empties the stale list exactly when the scan is broken — the
+    /// failure mode a rate-limited run actually produced.
+    #[test]
+    fn no_evidence_at_all_is_unknown_never_current() {
+        assert_eq!(
+            is_stale(None, None),
+            None,
+            "an unknown tag plus unmeasurable drift is not evidence of currency"
+        );
+        // A known fact on either side is still decisive.
+        assert_eq!(is_stale(None, Some(true)), Some(true));
+        assert_eq!(is_stale(None, Some(false)), Some(false));
+        assert_eq!(is_stale(Some(true), None), Some(true));
+    }
+
+    /// An unreadable latest tag is unknown, NOT "no newer tag". Pinned here
+    /// because collapsing it at the call site is invisible to every other test.
+    #[test]
+    fn an_unreadable_latest_tag_is_unknown_not_absent() {
+        assert_eq!(
+            newer_tag_exists(None, "2026-01-01T00:00:00Z"),
+            None,
+            "a failed tag lookup must not read as 'no newer tag exists'"
+        );
+        assert_eq!(
+            newer_tag_exists(Some("2026-06-01T00:00:00Z"), "2026-01-01T00:00:00Z"),
+            Some(true)
+        );
+        assert_eq!(
+            newer_tag_exists(Some("2025-06-01T00:00:00Z"), "2026-01-01T00:00:00Z"),
+            Some(false)
+        );
+    }
+
+    /// The verdict a rate-limited scan actually produced: every fact unknown,
+    /// rendered `current`. It must classify UNKNOWN.
+    #[test]
+    fn a_scan_that_established_nothing_classifies_unknown_not_current() {
+        assert_eq!(
+            classify_external_audit(true, true, None, None),
+            ExternalAudit::Unknown
+        );
+    }
+
+    /// Unknown sorts between stale and current: it needs a look, but less than
+    /// confirmed drift. Ranking it with `current` would bury a failed lookup at
+    /// the bottom of the list.
+    #[test]
+    fn unknown_outranks_current_but_not_stale() {
+        assert!(staleness_rank(Some(true)) > staleness_rank(None));
+        assert!(staleness_rank(None) > staleness_rank(Some(false)));
     }
 
     // ---- classify_external_audit ----
     #[test]
     fn classification_taxonomy() {
         assert_eq!(
-            classify_external_audit(false, false, false, None),
+            classify_external_audit(false, false, Some(false), None),
             ExternalAudit::Never
         );
         assert_eq!(
-            classify_external_audit(false, true, true, Some(true)),
+            classify_external_audit(false, true, Some(true), Some(true)),
             ExternalAudit::Never
         ); // no PDF dominates
         assert_eq!(
-            classify_external_audit(true, false, false, None),
+            classify_external_audit(true, false, Some(false), None),
             ExternalAudit::Na
         ); // PDF but no tags
         assert_eq!(
-            classify_external_audit(true, true, true, Some(true)),
+            classify_external_audit(true, true, Some(true), Some(true)),
             ExternalAudit::Stale
         );
         assert_eq!(
-            classify_external_audit(true, true, false, Some(false)),
+            classify_external_audit(true, true, Some(false), Some(false)),
             ExternalAudit::Current
         );
         // The reported bug: a newer tag with zero Solidity drift renders CURRENT,
         // not STALE — the verdict follows the source, not the tag.
         assert_eq!(
-            classify_external_audit(true, true, true, Some(false)),
+            classify_external_audit(true, true, Some(true), Some(false)),
             ExternalAudit::Current
         );
         // Unmeasured drift still falls back to tag recency.
         assert_eq!(
-            classify_external_audit(true, true, true, None),
+            classify_external_audit(true, true, Some(true), None),
             ExternalAudit::Stale
         );
     }

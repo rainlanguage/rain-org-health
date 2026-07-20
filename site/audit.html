@@ -201,6 +201,10 @@
   .au-status.current { color: var(--clean); border: 1px solid var(--clean); background: transparent; }
   .au-status.na { color: var(--ink-3); border: 1px solid var(--border); background: transparent; }
   .au-status.never { color: var(--crit); border: 1px solid var(--crit); background: transparent; }
+  /* Dotted, matching the graph node and swatch: an indeterminate verdict, not a
+     confirmed gap. Deliberately not green — a scan that learned nothing must not
+     read as clean. */
+  .au-status.unknown { color: var(--ink-2); border: 1px dotted var(--ink-3); background: transparent; }
   .au-drift { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
   .au-drift .add { font-weight: 650; color: var(--clean); font-variant-numeric: tabular-nums; }
   .au-drift .del { font-weight: 650; color: var(--crit); font-variant-numeric: tabular-nums; }
