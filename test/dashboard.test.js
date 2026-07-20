@@ -52,6 +52,14 @@ function makeEl(tag) {
       contains(c) {
         return this._s.has(c);
       },
+      // Two-arg form (`toggle(c, force)`) is what the render code uses to drive
+      // a control's on/off state, so it must set-or-clear rather than flip.
+      toggle(c, force) {
+        const on = force === undefined ? !this._s.has(c) : !!force;
+        if (on) this._s.add(c);
+        else this._s.delete(c);
+        return on;
+      },
     },
     // Adopt one node, spreading a document fragment's children (like the real DOM).
     _adopt(n) {
@@ -92,6 +100,18 @@ function makeEl(tag) {
     },
     querySelector(sel) {
       return el.querySelectorAll(sel)[0] || null;
+    },
+    // Attributes the render code sets for accessibility (role, aria-pressed).
+    // Stored rather than ignored so a test can assert the state a control
+    // announces, not just the class it happens to carry.
+    attrs: {},
+    setAttribute(k, v) {
+      el.attrs[k] = String(v);
+    },
+    getAttribute(k) {
+      return Object.prototype.hasOwnProperty.call(el.attrs, k)
+        ? el.attrs[k]
+        : null;
     },
     addEventListener(type, fn) {
       (el._ev[type] = el._ev[type] || []).push(fn);
@@ -1750,5 +1770,277 @@ Deno.test("site: no render code calls document.createTextNode", () => {
     offenders.length === 0,
     "append() takes strings; pass the string instead of createTextNode — " +
       offenders.join(", "),
+  );
+});
+
+// ---------------------------------------------------------------------------
+// Renderers that had no coverage at all. A global at least throws when reached;
+// an untested renderer just drifts — which is how the graph node came to
+// contradict the row beside it.
+// ---------------------------------------------------------------------------
+
+// Bind a renderer to a stub `$` returning one box, plus whatever else it closes
+// over. Returns [invoke, box].
+function boxBind(file, name, extraParams, extraValues, boxId) {
+  const box = makeEl("div");
+  const $ = (id) => (id === boxId ? box : makeEl("div"));
+  const el = (tag, cls, text) => {
+    const n = makeEl(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const fn = bind(
+    file,
+    name,
+    ["$", "el", ...extraParams],
+    [$, el, ...extraValues],
+  );
+  return [fn, box];
+}
+
+const AUDIT_ORDER_REAL = ["current", "stale", "never", "na", "unknown"];
+const AUDIT_HELP_REAL = {
+  current: "Protofire-audited at the current tag",
+  stale: "Protofire-audited, source moved since",
+  never: "no Protofire PDF — a repo may still be audited by someone else",
+  unknown: "audit lookup FAILED — indeterminate, not a confirmed gap",
+  na: "Protofire-audited but no tags to date it against",
+};
+
+Deno.test("graph legend: shows only the states actually present", () => {
+  const [render, box] = boxBind(
+    "audit.html",
+    "renderGraphLegend",
+    ["AUDIT_ORDER", "AUDIT_HELP"],
+    [AUDIT_ORDER_REAL, AUDIT_HELP_REAL],
+    "graphlegend",
+  );
+  render(new Set(["stale", "current"]));
+  const t = textOf(box);
+  assert(t.includes("stale"), "present state missing: " + t);
+  assert(t.includes("current"), "present state missing: " + t);
+  // A key for a state no repo is in would claim the graph shows something it
+  // does not.
+  assert(!t.includes("no Protofire PDF"), "absent state was listed: " + t);
+  assert(!t.includes("indeterminate"), "absent state was listed: " + t);
+});
+
+Deno.test("graph legend: follows AUDIT_ORDER, not the caller's set order", () => {
+  const [render, box] = boxBind(
+    "audit.html",
+    "renderGraphLegend",
+    ["AUDIT_ORDER", "AUDIT_HELP"],
+    [AUDIT_ORDER_REAL, AUDIT_HELP_REAL],
+    "graphlegend",
+  );
+  // Insertion order deliberately reversed against AUDIT_ORDER.
+  render(new Set(["unknown", "never", "current"]));
+  const t = textOf(box);
+  const order = ["current", "never", "unknown"].map((s) => t.indexOf(s));
+  assert(
+    order[0] < order[1] && order[1] < order[2],
+    "legend order should be stable regardless of Set order: " + t,
+  );
+});
+
+function summaryBind() {
+  return boxBind("audit.html", "renderGraphSummary", [], [], "graphsum");
+}
+
+Deno.test("graph summary: a current audit is not ready-to-audit work", () => {
+  const [render, box] = summaryBind();
+  render([{ repo: "done", audit: "current", blockedBy: [] }], new Map());
+  assert(
+    textOf(box).includes("Nothing is unblocked"),
+    "an already-current repo must not be offered as work: " + textOf(box),
+  );
+});
+
+Deno.test("graph summary: a repo with unknown deps is not called clear ground", () => {
+  const [render, box] = summaryBind();
+  render(
+    [{ repo: "unreadable", audit: "never", blockedBy: [], depsKnown: false }],
+    new Map(),
+  );
+  assert(
+    textOf(box).includes("Nothing is unblocked"),
+    "cannot claim clear ground when the manifest would not parse: " +
+      textOf(box),
+  );
+});
+
+Deno.test("graph summary: orders by how many repos inherit the gap", () => {
+  const [render, box] = summaryBind();
+  const nodes = [
+    { repo: "few", audit: "never", blockedBy: [] },
+    { repo: "many", audit: "never", blockedBy: [] },
+    { repo: "c1", audit: "never", blockedBy: ["many"] },
+    { repo: "c2", audit: "never", blockedBy: ["many"] },
+    { repo: "c3", audit: "never", blockedBy: ["few"] },
+  ];
+  render(nodes, new Map());
+  const t = textOf(box);
+  assert(
+    t.indexOf("many") < t.indexOf("few"),
+    "the most-inherited gap should lead: " + t,
+  );
+  assert(t.includes("2 inherit"), "inheritor count should be shown: " + t);
+});
+
+Deno.test("graph summary: leads with code drift, not the undifferentiated total", () => {
+  const [render, box] = summaryBind();
+  const pf = new Map([["natspec-only", {
+    sourceLocAddedSinceAudit: 7,
+    sourceLocRemovedSinceAudit: 1,
+    codeLocAddedSinceAudit: 0,
+    codeLocRemovedSinceAudit: 0,
+  }]]);
+  render([{ repo: "natspec-only", audit: "stale", blockedBy: [] }], pf);
+  const t = textOf(box);
+  assert(t.includes("+0"), "expected code drift, got: " + t);
+  assert(
+    !t.includes("+7"),
+    "the undifferentiated total contradicts the rows and nodes: " + t,
+  );
+});
+
+Deno.test("graph summary: pre-split data falls back to the old total", () => {
+  const [render, box] = summaryBind();
+  const pf = new Map([["legacy", {
+    sourceLocAddedSinceAudit: 42,
+    sourceLocRemovedSinceAudit: 3,
+  }]]);
+  render([{ repo: "legacy", audit: "stale", blockedBy: [] }], pf);
+  assert(
+    textOf(box).includes("+42"),
+    "legacy scan data should still show its figure: " + textOf(box),
+  );
+});
+
+// --- metrics.html -----------------------------------------------------------
+// startupMin and median are bound from the page too, so these exercise the real
+// arithmetic rather than a reimplementation of it in the test.
+const startupMinReal = bind("metrics.html", "startupMin", [], []);
+const medianReal = bind("metrics.html", "median", [], []);
+
+function pmBind(name, boxId, pmMode, extraParams = [], extraValues = []) {
+  const box = makeEl("div");
+  const $ = (id) => (id === boxId ? box : makeEl("div"));
+  const document = { createElement: (t) => makeEl(t) };
+  const fn = bind(
+    "metrics.html",
+    name,
+    ["$", "document", "pmMode", "startupMin", "median", ...extraParams],
+    [$, document, pmMode, startupMinReal, medianReal, ...extraValues],
+  );
+  return [fn, box];
+}
+
+Deno.test("metrics tiles: latest skips a trailing run with no value", () => {
+  const [render, box] = pmBind("renderPmTiles", "pmtiles", "pct");
+  // The newest run has no startup figure. Taking runs[last] blindly would
+  // report "—" and hide the last real measurement.
+  render([{ startupPct: 10 }, { startupPct: 20 }, { startupPct: null }]);
+  const t = textOf(box);
+  assert(
+    t.includes("20.0%"),
+    "latest should be the newest run WITH a value: " + t,
+  );
+  assert(!t.includes("—"), "a trailing gap should not blank the tile: " + t);
+});
+
+Deno.test("metrics tiles: median ignores gaps and counts every run", () => {
+  const [render, box] = pmBind("renderPmTiles", "pmtiles", "pct");
+  render([{ startupPct: 10 }, { startupPct: null }, { startupPct: 20 }]);
+  const t = textOf(box);
+  // Median over [10, 20] is 15 — a gap counted as 0 would give 10.
+  assert(t.includes("15.0%"), "median should skip gaps, not zero them: " + t);
+  // …but the run count is every run, gaps included.
+  assert(t.includes("3"), "runs recorded should count all runs: " + t);
+});
+
+Deno.test("metrics controls: absent startup data renders no toggle", () => {
+  const [render, box] = pmBind("renderPmControls", "pmcontrols", "pct", [
+    "pmRuns",
+    "renderPmTiles",
+    "renderPmChart",
+  ], [[], () => {}, () => {}]);
+  // No run carries startupMs, so absolute mode is unavailable and offering the
+  // switch would produce an empty chart.
+  render([{ startupPct: 5 }, { startupPct: 6 }]);
+  assert(
+    collect(box, "pm-toggle").length === 0,
+    "no toggle should render without absolute data",
+  );
+});
+
+Deno.test("metrics controls: the active mode is announced, not just styled", () => {
+  const [render, box] = pmBind("renderPmControls", "pmcontrols", "abs", [
+    "pmRuns",
+    "renderPmTiles",
+    "renderPmChart",
+  ], [[], () => {}, () => {}]);
+  render([{ startupPct: 5, startupMs: 60000 }]);
+  const buttons = collect(box, "pm-toggle")[0].children;
+  assert(
+    buttons.length === 2,
+    "expected two mode buttons, got " + buttons.length,
+  );
+  const pressed = buttons.filter((b) =>
+    b.getAttribute("aria-pressed") === "true"
+  );
+  assert(
+    pressed.length === 1 && pressed[0]._text.includes("absolute"),
+    "exactly the active mode should read aria-pressed=true",
+  );
+});
+
+// --- repositories.html ------------------------------------------------------
+function repoSummaryBind(summary) {
+  const box = makeEl("div");
+  const $ = (id) => (id === "summary" ? box : makeEl("div"));
+  const document = { createElement: (t) => makeEl(t) };
+  const fn = bind(
+    "repositories.html",
+    "renderSummary",
+    ["$", "document", "data", "activeSignal", "setSignal"],
+    [$, document, { summary }, null, () => {}],
+  );
+  return [fn, box];
+}
+
+Deno.test("repo summary: bar width is proportional to the largest signal", () => {
+  const [render, box] = repoSummaryBind({ big: 10, half: 5 });
+  render();
+  const fills = collect(box, "fill");
+  assert(fills.length === 2, "expected a bar per signal, got " + fills.length);
+  assert(
+    fills[0].style.width === "100%",
+    "largest should fill: " + fills[0].style.width,
+  );
+  assert(
+    fills[1].style.width === "50%",
+    "half the count should be half the bar: " + fills[1].style.width,
+  );
+});
+
+Deno.test("repo summary: each row carries its signal and count", () => {
+  const [render, box] = repoSummaryBind({ "old-actions-checkout": 7 });
+  render();
+  const row = collect(box, "srow")[0];
+  assert(
+    row.dataset.sig === "old-actions-checkout",
+    "the row must carry its signal for filtering: " + row.dataset.sig,
+  );
+  assert(textOf(row).includes("7"), "count should render: " + textOf(row));
+});
+
+Deno.test("repo summary: no debt renders an empty state, not a blank panel", () => {
+  const [render, box] = repoSummaryBind({});
+  render();
+  assert(
+    String(box.innerHTML).includes("No modernization debt"),
+    "an empty summary should say so: " + box.innerHTML,
   );
 });

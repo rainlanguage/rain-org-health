@@ -797,8 +797,15 @@ function renderGraphSummary(nodes, pf) {
     );
     ready.slice(0, 3).forEach((n, i) => {
       const p = pf.get(n.repo);
-      const drift =
-        p && p.sourceLocAddedSinceAudit != null
+      // Code drift, matching the rows and nodes. The undifferentiated total
+      // here said a repo had moved when its only churn was NatSpec — the same
+      // contradiction the node carried. Pre-split data falls back to the old
+      // total, and a never-audited repo has no drift to show, only its size.
+      const sumSplit = p && typeof p.codeLocAddedSinceAudit === "number" &&
+        typeof p.codeLocRemovedSinceAudit === "number";
+      const drift = sumSplit
+        ? `+${p.codeLocAddedSinceAudit}/\u2212${p.codeLocRemovedSinceAudit}`
+        : p && p.sourceLocAddedSinceAudit != null
           ? `+${p.sourceLocAddedSinceAudit}/\u2212${p.sourceLocRemovedSinceAudit}`
           : p && p.fullSourceLoc != null
             ? `${p.fullSourceLoc} LOC`
