@@ -11,6 +11,7 @@
 #![recursion_limit = "512"]
 
 mod audit;
+mod blobs;
 mod commentloc;
 mod deployhealth;
 mod graph;
@@ -385,37 +386,31 @@ fn open_audit_issues(
         .then(|| counts.get(&format!("{org}/{repo}")).copied().unwrap_or(0))
 }
 
-/// The newest adversarial-mutation run recorded for a repo, from the skill's
-/// `audit/mutation-test-scans.json`. Absent/malformed ⇒ `None` (never run, as far
-/// as this scan can tell) rather than a fabricated entry.
-/// A file's content at a specific ref, base64-decoded. `None` when the fetch
-/// fails OR the path does not exist there — callers distinguish the two by
-/// consulting the compare status, since "added file" must not read as "unknown".
-fn gh_file_at(org: &str, repo: &str, path: &str, git_ref: &str) -> Option<String> {
-    let raw = gh_stdout(&[
-        "api",
-        &format!("repos/{org}/{repo}/contents/{path}?ref={git_ref}"),
-        "--jq",
-        ".content",
-    ])?;
-    let b64: String = raw.split_whitespace().collect();
-    if b64.is_empty() {
-        return None;
+/// Fetch a set of blobs from one repo, batching them into GraphQL queries.
+///
+/// A want absent from the returned map is unknown — the path did not exist at
+/// that ref, the object was not a text blob, GitHub truncated it, or the query
+/// itself failed. Callers charge unknowns to code, so no failure here can read
+/// as "unchanged".
+fn gh_blobs(
+    org: &str,
+    repo: &str,
+    wants: &[blobs::Want],
+) -> std::collections::BTreeMap<blobs::Want, String> {
+    let mut out = std::collections::BTreeMap::new();
+    for chunk in wants.chunks(blobs::BATCH) {
+        let query = blobs::blob_query(org, repo, chunk);
+        let Some(raw) = gh_stdout(&["api", "graphql", "-f", &format!("query={query}")]) else {
+            eprintln!(
+                "::warning::blob batch failed for {org}/{repo} ({} files); \
+                 their drift is charged to code and reported unclassified",
+                chunk.len()
+            );
+            continue;
+        };
+        out.extend(blobs::parse_blob_response(&raw, chunk));
     }
-    use std::io::Write;
-    let mut child = Command::new("base64")
-        .arg("-d")
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-        .ok()?;
-    if let Some(mut si) = child.stdin.take() {
-        let _ = si.write_all(b64.as_bytes());
-    }
-    let out = child.wait_with_output().ok()?;
-    out.status
-        .success()
-        .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
+    out
 }
 
 /// Fetch both versions of every changed non-test Solidity file in a compare, so
@@ -432,21 +427,40 @@ fn fetch_source_versions(
     head: &str,
     files: &[(String, String, u64, u64)],
 ) -> Vec<protofire::SourceVersions> {
-    files
+    let sources: Vec<_> = files
         .iter()
         .filter(|(path, _, _, _)| protofire::counts_as_source_drift(path))
+        .collect();
+
+    // One want per version we actually have to read, so an added file costs no
+    // base lookup and a removed file costs no head lookup.
+    let mut wants: Vec<blobs::Want> = Vec::new();
+    for (path, status, _, _) in &sources {
+        if *status != "added" {
+            wants.push((base.to_string(), path.clone()));
+        }
+        if *status != "removed" {
+            wants.push((head.to_string(), path.clone()));
+        }
+    }
+    wants.sort();
+    wants.dedup();
+    let fetched = gh_blobs(org, repo, &wants);
+
+    sources
+        .into_iter()
         .map(
             |(path, status, additions, deletions)| protofire::SourceVersions {
                 path: path.clone(),
                 base: if status == "added" {
                     Some(String::new())
                 } else {
-                    gh_file_at(org, repo, path, base)
+                    fetched.get(&(base.to_string(), path.clone())).cloned()
                 },
                 head: if status == "removed" {
                     Some(String::new())
                 } else {
-                    gh_file_at(org, repo, path, head)
+                    fetched.get(&(head.to_string(), path.clone())).cloned()
                 },
                 additions: *additions,
                 deletions: *deletions,
@@ -455,6 +469,9 @@ fn fetch_source_versions(
         .collect()
 }
 
+/// The newest adversarial-mutation run recorded for a repo, from the skill's
+/// `audit/mutation-test-scans.json`. Absent/malformed ⇒ `None` (never run, as far
+/// as this scan can tell) rather than a fabricated entry.
 fn fetch_last_mutation(org: &str, repo: &str) -> Option<mutation::LastMutation> {
     let src = gh_file(org, repo, "audit/mutation-test-scans.json");
     if src.trim().is_empty() {
