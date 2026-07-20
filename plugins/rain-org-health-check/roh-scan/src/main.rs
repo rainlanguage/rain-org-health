@@ -408,7 +408,14 @@ fn gh_blobs(
             );
             continue;
         };
-        out.extend(blobs::parse_blob_response(&raw, chunk));
+        let (fetched, errors) = blobs::parse_blob_response(&raw, chunk);
+        // A rate-limited or unpermitted query answers HTTP 200 with an errors
+        // array, so `gh` succeeds and the blobs simply go missing. Without this
+        // the drift just reads unclassified with nothing saying why.
+        for e in &errors {
+            eprintln!("::warning::blob batch for {org}/{repo} returned a GraphQL error: {e}");
+        }
+        out.extend(fetched);
     }
     out
 }

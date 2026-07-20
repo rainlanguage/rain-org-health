@@ -65,17 +65,37 @@ pub fn blob_query(org: &str, repo: &str, wants: &[Want]) -> String {
     q
 }
 
-/// Map a batch's response back onto its wants.
+/// Map a batch's response back onto its wants, plus any GraphQL error messages
+/// the payload carried.
 ///
 /// A want is absent from the result when the path does not exist at that ref,
 /// when the object is not a text blob, or when GitHub truncated it. Absence
 /// means "unknown", which callers charge to code — so no failure mode here can
 /// present as "this file did not change".
-pub fn parse_blob_response(json: &str, wants: &[Want]) -> BTreeMap<Want, String> {
+///
+/// GitHub answers a rate-limited or unpermitted query with HTTP 200, a null
+/// `data`, and an `errors` array. That parses to an empty map, which is the
+/// safe direction but tells an operator nothing about why a repo's drift went
+/// unclassified — so the messages are returned for the caller to log rather
+/// than dropped. Returning them keeps this function pure and testable.
+pub fn parse_blob_response(json: &str, wants: &[Want]) -> (BTreeMap<Want, String>, Vec<String>) {
     let mut out = BTreeMap::new();
     let Ok(v) = serde_json::from_str::<serde_json::Value>(json) else {
-        return out;
+        return (out, vec!["response was not JSON".to_string()]);
     };
+    let errors: Vec<String> = v["errors"]
+        .as_array()
+        .map(|a| {
+            a.iter()
+                .map(|e| {
+                    e["message"]
+                        .as_str()
+                        .unwrap_or("unspecified GraphQL error")
+                        .to_string()
+                })
+                .collect()
+        })
+        .unwrap_or_default();
     let repo = &v["data"]["repository"];
     for (i, want) in wants.iter().enumerate() {
         let node = &repo[alias(i)];
@@ -86,7 +106,7 @@ pub fn parse_blob_response(json: &str, wants: &[Want]) -> BTreeMap<Want, String>
             out.insert(want.clone(), text.to_string());
         }
     }
-    out
+    (out, errors)
 }
 
 #[cfg(test)]
@@ -128,7 +148,7 @@ mod tests {
     #[test]
     fn a_response_maps_each_alias_back_to_its_own_want() {
         let wants = vec![w("abc", "src/A.sol"), w("def", "src/B.sol")];
-        let got = parse_blob_response(
+        let (got, _) = parse_blob_response(
             r#"{"data":{"repository":{
                  "b0":{"text":"contract A {}","isTruncated":false},
                  "b1":{"text":"contract B {}","isTruncated":false}}}}"#,
@@ -147,7 +167,7 @@ mod tests {
     #[test]
     fn a_path_absent_at_that_ref_is_absent_from_the_map_not_empty() {
         let wants = vec![w("abc", "src/Gone.sol")];
-        let got = parse_blob_response(r#"{"data":{"repository":{"b0":null}}}"#, &wants);
+        let (got, _) = parse_blob_response(r#"{"data":{"repository":{"b0":null}}}"#, &wants);
         assert!(
             !got.contains_key(&wants[0]),
             "a missing blob must read as unknown, never as an empty file"
@@ -157,7 +177,7 @@ mod tests {
     #[test]
     fn a_truncated_blob_is_dropped_rather_than_read_as_a_shorter_file() {
         let wants = vec![w("abc", "src/Huge.sol")];
-        let got = parse_blob_response(
+        let (got, _) = parse_blob_response(
             r#"{"data":{"repository":{"b0":{"text":"contract H {","isTruncated":true}}}}"#,
             &wants,
         );
@@ -170,9 +190,18 @@ mod tests {
     #[test]
     fn a_malformed_or_errored_response_yields_no_blobs_rather_than_panicking() {
         let wants = vec![w("abc", "src/A.sol")];
-        assert!(parse_blob_response("not json", &wants).is_empty());
+        let (got, errs) = parse_blob_response("not json", &wants);
+        assert!(got.is_empty());
         assert!(
-            parse_blob_response(r#"{"errors":[{"message":"rate limited"}]}"#, &wants).is_empty()
+            !errs.is_empty(),
+            "unparseable payload must be reported, not silently empty"
+        );
+        let (got, errs) = parse_blob_response(r#"{"errors":[{"message":"rate limited"}]}"#, &wants);
+        assert!(got.is_empty());
+        assert_eq!(
+            errs,
+            vec!["rate limited".to_string()],
+            "a 200-with-errors payload must surface why drift went unclassified"
         );
     }
 }
