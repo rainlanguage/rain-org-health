@@ -517,6 +517,41 @@ Deno.test("audit report: a repo with no stale deps gets no stale line", () => {
   );
 });
 
+Deno.test("audit row: an unknown verdict renders as unknown, never as current", () => {
+  const box = auditBox(
+    auditData([auditRow({ name: "unfetchable-repo", externalAudit: "unknown" })]),
+  );
+  const statuses = collect(box, "au-status");
+  const text = statuses.map((s) => s._text).join(" ");
+  assert(text.includes("unknown"), "the unknown verdict must be shown: " + text);
+  assert(
+    !text.includes("current"),
+    "a scan that established nothing must not render clean: " + text,
+  );
+  // The badge carries the state as a class, so it is styleable and not silently
+  // indistinguishable from a confirmed verdict.
+  assert(
+    statuses.some((s) => s.className.split(" ").includes("unknown")),
+    "unknown needs its own class for the dotted treatment",
+  );
+});
+
+Deno.test("audit row: an unknown verdict is not counted as stale", () => {
+  const box = auditBox(auditData([
+    auditRow({ name: "a", externalAudit: "unknown" }),
+    auditRow({ name: "b", externalAudit: "stale" }),
+  ]));
+  // Exactly one repo is confirmed stale; the indeterminate one must not pad
+  // that count, or a broken scan would read as a worsening audit backlog.
+  const staleBadges = collect(box, "au-status").filter((s) =>
+    s.className.split(" ").includes("stale")
+  );
+  assert(
+    staleBadges.length === 1,
+    "expected 1 stale badge, got " + staleBadges.length,
+  );
+});
+
 function auditRow(over) {
   return {
     name: "r",
