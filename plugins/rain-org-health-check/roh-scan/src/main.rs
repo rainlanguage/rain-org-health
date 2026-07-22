@@ -193,6 +193,52 @@ const BASE_RPCS: &[&str] = &[
     "https://base-mainnet.public.blastapi.io",
 ];
 
+/// Keyless public Ethereum mainnet endpoints (chainId 0x1). Ethereum carries
+/// its own production deployment at addresses that differ from Base's, so a
+/// read answered by the wrong chain's endpoint reports a live contract as not
+/// deployed — a silent downgrade, not an error. Hence the chain travels with
+/// the session rather than being implied by the caller.
+const ETHEREUM_RPCS: &[&str] = &[
+    "https://ethereum-rpc.publicnode.com",
+    "https://eth.drpc.org",
+    "https://1rpc.io/eth",
+    "https://eth.llamarpc.com",
+    "https://rpc.mevblocker.io",
+];
+
+/// The chains the scan reads production state from.
+#[derive(Clone, Copy, PartialEq, Eq, Debug)]
+enum Chain {
+    Base,
+    Ethereum,
+}
+
+impl Chain {
+    fn rpcs(self) -> &'static [&'static str] {
+        match self {
+            Chain::Base => BASE_RPCS,
+            Chain::Ethereum => ETHEREUM_RPCS,
+        }
+    }
+
+    /// The host reported alongside a verdict, so a reader can tell which chain
+    /// (and which endpoint set) answered.
+    fn rpc_host(self) -> &'static str {
+        match self {
+            Chain::Base => "mainnet.base.org",
+            Chain::Ethereum => "ethereum-rpc.publicnode.com",
+        }
+    }
+}
+
+/// One entity's RPC context: which chain to ask, and where in that chain's set
+/// to start asking.
+#[derive(Clone, Copy)]
+struct Session {
+    chain: Chain,
+    cursor: usize,
+}
+
 /// Rotates the endpoint each new session starts at, so different verdicts spread
 /// across the RPC set instead of all hammering the first one.
 static RPC_CURSOR: AtomicUsize = AtomicUsize::new(0);
@@ -203,17 +249,21 @@ static RPC_CURSOR: AtomicUsize = AtomicUsize::new(0);
 /// SAME rpc and can't disagree with themselves (a flaky endpoint answering one
 /// probe but not the other is what produced bogus "nonconformant" verdicts).
 /// Each new session rotates the start, spreading load across the set.
-fn rpc_session() -> usize {
-    RPC_CURSOR.fetch_add(1, Ordering::Relaxed)
+fn rpc_session(chain: Chain) -> Session {
+    Session {
+        chain,
+        cursor: RPC_CURSOR.fetch_add(1, Ordering::Relaxed),
+    }
 }
 
 /// POST a JSON-RPC `payload` to Base, trying `BASE_RPCS` from `session` and
 /// falling through on failure. Returns the first successful body. A revert is
 /// HTTP 200 with an `error` body, so it returns from the first endpoint reached.
 /// `None` only if every endpoint fails.
-fn curl_json(session: usize, payload: &str) -> Option<Vec<u8>> {
-    for i in 0..BASE_RPCS.len() {
-        let rpc = BASE_RPCS[(session + i) % BASE_RPCS.len()];
+fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
+    let rpcs = session.chain.rpcs();
+    for i in 0..rpcs.len() {
+        let rpc = rpcs[(session.cursor + i) % rpcs.len()];
         if let Ok(o) = Command::new("curl")
             .args([
                 "-fsS",
@@ -246,13 +296,13 @@ fn eth_call_payload(to: &str, data: &str) -> String {
 
 /// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
 /// on failure. The scan must survive an RPC hiccup, so callers degrade gracefully.
-fn eth_call(session: usize, to: &str, data: &str) -> Option<String> {
+fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
     curl_json(session, &eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
 }
 
 /// `eth_getCode` for an address (within `session`) → the runtime bytecode hex
 /// (`0x…`, or `0x` when there is no code), or `None` on failure.
-fn eth_get_code(session: usize, address: &str) -> Option<String> {
+fn eth_get_code(session: Session, address: &str) -> Option<String> {
     let payload = format!(
         r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getCode","params":["{address}","latest"]}}"#
     );
@@ -262,7 +312,7 @@ fn eth_get_code(session: usize, address: &str) -> Option<String> {
 /// Whether `address` has deployed runtime code on Base (within `session`):
 /// `Some(true)` if `eth_getCode` returns non-empty bytecode, `Some(false)` for
 /// `0x` (an EOA / nothing there), `None` on RPC failure.
-fn code_deployed(session: usize, address: &str) -> Option<bool> {
+fn code_deployed(session: Session, address: &str) -> Option<bool> {
     eth_get_code(session, address).map(|code| {
         let hex = code.strip_prefix("0x").unwrap_or(&code);
         hex.chars().any(|c| c != '0')
@@ -274,7 +324,7 @@ fn code_deployed(session: usize, address: &str) -> Option<bool> {
 /// RPC failure so ERC-165 absence stays stable rather than flickering to
 /// `unknown` — reverts come back HTTP 200 with an `error` body, read by
 /// `classify_bool`.
-fn supports_interface(session: usize, address: &str, interface_id: [u8; 4]) -> rpc::CallClass {
+fn supports_interface(session: Session, address: &str, interface_id: [u8; 4]) -> rpc::CallClass {
     let data = rpc::supports_interface_calldata(interface_id);
     match curl_json(session, &eth_call_payload(address, &data)) {
         Some(body) => rpc::classify_bool(&body),
@@ -1641,7 +1691,7 @@ fn main() {
             // constants-only.
             let onchain =
                 owners::parse_address_constant(&safe, "STOX_TOKEN_OWNER_SAFE").map(|safe_addr| {
-                    let s = rpc_session();
+                    let s = rpc_session(Chain::Base);
                     let owners_live = eth_call(s, &safe_addr, &rpc::get_owners_calldata())
                         .and_then(|hex| rpc::decode_owners(&hex));
                     let threshold_live = eth_call(s, &safe_addr, &rpc::get_threshold_calldata())
@@ -1679,7 +1729,7 @@ fn main() {
                             let hash = deployhealth::parse_bytes32_constant(&src, "BYTECODE_HASH");
                             // One RPC session per contract, so getCode + both ERC-165
                             // probes hit the same endpoint and can't disagree.
-                            let s = rpc_session();
+                            let s = rpc_session(Chain::Base);
                             let onchain = addr.as_deref().and_then(|a| eth_get_code(s, a));
                             // ERC-165 conformance: supportsInterface(0x01ffc9a7) must
                             // be true and supportsInterface(0xffffffff) false, both on
@@ -1757,7 +1807,7 @@ fn main() {
                             );
                             // One session per beacon so owner() + implementation()
                             // hit the same RPC and can't disagree.
-                            let s = rpc_session();
+                            let s = rpc_session(Chain::Base);
                             let live_owner = addr
                                 .as_deref()
                                 .and_then(|a| eth_call(s, a, &rpc::owner_calldata()))
@@ -1794,6 +1844,121 @@ fn main() {
             }
         };
 
+        // Ethereum's IN-USE beacons: the chain bootstrapped at 0.1.1, so its
+        // production tokens run on the 0.1.1 generation — a different address
+        // set from Base's V1-generation beacons, held by a different Safe.
+        // Reading one chain's addresses against the other's endpoints would
+        // report live contracts as missing, so the session carries the chain.
+        let deployment_beacons_ethereum = {
+            let (org, repo) = ("S01-Issuer", "st0x.deploy");
+            let safe_lib = gh_file(org, repo, "src/lib/LibSafeInvariants.sol");
+            let safe_owner =
+                owners::parse_address_constant(&safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
+            let v1 = gh_file(org, repo, "src/lib/LibProdDeployV1.sol");
+            let legacy_owner = owners::parse_address_constant(&v1, "BEACON_INITIAL_OWNER");
+            // Only the wrapped-token-vault beacon has a generated address pin.
+            // The receipt and receipt-vault beacons are created inside the
+            // 0.1.1 beacon-set deployer's constructor and exist nowhere as a
+            // constant, so the in-use pair is resolved live from its getters.
+            let deployer = owners::parse_address_constant(
+                &gh_file(
+                    org,
+                    repo,
+                    "src/generated/0_1_1/StoxOffchainAssetReceiptVaultBeaconSetDeployer.pointers.sol",
+                ),
+                "DEPLOYED_ADDRESS",
+            );
+            let ds = rpc_session(Chain::Ethereum);
+            let resolve = |calldata: String| {
+                deployer
+                    .as_deref()
+                    .and_then(|d| eth_call(ds, d, &calldata))
+                    .and_then(|hex| rpc::decode_address(&hex))
+            };
+            let spec = [
+                (
+                    "Receipt beacon",
+                    resolve(rpc::receipt_beacon_calldata()),
+                    "src/generated/0_1_1/StoxReceipt.pointers.sol",
+                ),
+                (
+                    "Receipt-vault beacon",
+                    resolve(rpc::receipt_vault_beacon_calldata()),
+                    "src/generated/0_1_1/StoxReceiptVault.pointers.sol",
+                ),
+                (
+                    "Wrapped-token-vault beacon",
+                    owners::parse_address_constant(
+                        &gh_file(
+                            org,
+                            repo,
+                            "src/generated/0_1_1/StoxWrappedTokenVaultBeacon.pointers.sol",
+                        ),
+                        "DEPLOYED_ADDRESS",
+                    ),
+                    "src/generated/0_1_1/StoxWrappedTokenVault.pointers.sol",
+                ),
+            ];
+            match (safe_owner, legacy_owner) {
+                (Some(safe), Some(legacy)) => {
+                    let beacons: Vec<_> = spec
+                        .into_iter()
+                        .map(|(label, addr, target_file)| {
+                            let target_impl = owners::parse_address_constant(
+                                &gh_file(org, repo, target_file),
+                                "DEPLOYED_ADDRESS",
+                            );
+                            let s = rpc_session(Chain::Ethereum);
+                            let live_owner = addr
+                                .as_deref()
+                                .and_then(|a| eth_call(s, a, &rpc::owner_calldata()))
+                                .and_then(|hex| rpc::decode_address(&hex));
+                            let live_impl = addr
+                                .as_deref()
+                                .and_then(|a| eth_call(s, a, &rpc::implementation_calldata()))
+                                .and_then(|hex| rpc::decode_address(&hex));
+                            // No previous generation to fall back to: Ethereum
+                            // has no V1 deploy, so an impl that is not the
+                            // 0.1.1 target is simply unrecognised.
+                            deployhealth::beacon_health(
+                                label,
+                                addr,
+                                &safe,
+                                &legacy,
+                                target_impl.as_deref(),
+                                None,
+                                "0.1.1",
+                                live_owner,
+                                live_impl,
+                            )
+                        })
+                        .collect();
+                    deployhealth::build_beacons(
+                        org,
+                        repo,
+                        "ethereum",
+                        Chain::Ethereum.rpc_host(),
+                        &safe,
+                        "0.1.1",
+                        beacons,
+                    )
+                    .unwrap_or(serde_json::Value::Null)
+                }
+                _ => serde_json::Value::Null,
+            }
+        };
+
+        // One block per chain. Base and Ethereum run on different beacon
+        // generations owned by different Safes, so a single block could only
+        // ever describe one of them. A chain whose read failed is dropped
+        // rather than emitted as null, so the dashboard never renders an
+        // empty section that reads as "this chain has no beacons".
+        let beacon_sets: Vec<serde_json::Value> =
+            [deployment_beacons, deployment_beacons_ethereum]
+                .into_iter()
+                .filter(|b| !b.is_null())
+                .collect();
+
         // Registry token wiring on Base (#90): for each token in the
         // st0x.registry Base list, confirm the deployed wrapper's
         // name()/symbol()/decimals() match the registry VERBATIM, its asset()
@@ -1815,7 +1980,7 @@ fn main() {
                 owners::parse_address_constant(&v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
             let auth_target_deployed = auth_target
                 .as_deref()
-                .and_then(|a| code_deployed(rpc_session(), a));
+                .and_then(|a| code_deployed(rpc_session(Chain::Base), a));
             let auth_summary = json!({
                 "current": auth_current,
                 "target": auth_target,
@@ -1862,7 +2027,7 @@ fn main() {
                                 return None;
                             }
                             // One session per token so all its reads hit the same RPC.
-                            let s = rpc_session();
+                            let s = rpc_session(Chain::Base);
                             let live = deployhealth::TokenLive {
                                 name: eth_call(s, address, &rpc::name_calldata())
                                     .and_then(|h| rpc::decode_string(&h)),
@@ -1923,7 +2088,7 @@ fn main() {
                 .iter()
                 .filter(|a| !registry_vaults.contains(*a))
                 .map(|addr| {
-                    let s = rpc_session();
+                    let s = rpc_session(Chain::Base);
                     let name = eth_call(s, addr, &rpc::name_calldata())
                         .and_then(|h| rpc::decode_string(&h));
                     let symbol = eth_call(s, addr, &rpc::symbol_calldata())
@@ -2012,7 +2177,7 @@ fn main() {
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
             "deploymentHealth": deployment_health,
-            "deploymentBeacons": deployment_beacons,
+            "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.

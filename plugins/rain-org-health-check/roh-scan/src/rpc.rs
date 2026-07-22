@@ -18,6 +18,8 @@ sol! {
     function decimals() external view returns (uint8);
     function asset() external view returns (address);
     function authorizer() external view returns (address);
+    function iReceiptBeacon() external view returns (address);
+    function iOffchainAssetReceiptVaultBeacon() external view returns (address);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -67,6 +69,15 @@ pub fn owner_calldata() -> String {
 }
 pub fn implementation_calldata() -> String {
     to_hex(implementationCall {}.abi_encode())
+}
+/// Ethereum's receipt and receipt-vault beacons have no generated address pin —
+/// they are created in the 0.1.1 beacon-set deployer's constructor and only
+/// readable from these two getters, so the in-use set is resolved live.
+pub fn receipt_beacon_calldata() -> String {
+    to_hex(iReceiptBeaconCall {}.abi_encode())
+}
+pub fn receipt_vault_beacon_calldata() -> String {
+    to_hex(iOffchainAssetReceiptVaultBeaconCall {}.abi_encode())
 }
 pub fn name_calldata() -> String {
     to_hex(nameCall {}.abi_encode())

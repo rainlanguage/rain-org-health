@@ -261,7 +261,7 @@ function renderDeployments(document, $, data) {
     box.append(table);
   };
   // Production beacons: each should be Safe-owned and point at its pinned impl.
-  const renderBeacons = (b) => {
+  const renderBeaconSet = (b) => {
     if (!b || !Array.isArray(b.beacons) || b.beacons.length === 0) return;
     box.append(el("h2", null, `Beacons — ${b.network}`));
     box.append(
@@ -329,6 +329,12 @@ function renderDeployments(document, $, data) {
       table.append(row);
     }
     box.append(table);
+  };
+  // One section per chain. Base and Ethereum run on different beacon
+  // generations owned by different Safes, so they are separate blocks rather
+  // than one merged table whose rows would silently mix chains.
+  const renderBeacons = (b) => {
+    for (const set of Array.isArray(b) ? b : b ? [b] : []) renderBeaconSet(set);
   };
   // Registry tokens: each wrapper's on-chain identity must match the registry and
   // its asset() must point at the declared unwrapped underlying, with the linked
