@@ -2044,3 +2044,120 @@ Deno.test("repo summary: no debt renders an empty state, not a blank panel", () 
     "an empty summary should say so: " + box.innerHTML,
   );
 });
+
+// The producer runs every 4 hours, so a date-only axis label cannot identify
+// which of six daily runs a point is. These render the REAL chart and assert on
+// its emitted axis markup — asserting on the formatter alone would pass even if
+// the chart never called it, which is exactly how a renderer drifts from its
+// helper unnoticed.
+function pmChart(runs, pmMode = "pct") {
+  const wrap = makeEl("div");
+  const svg = makeEl("svg");
+  const nodes = {
+    pmwrap: wrap,
+    pmsvg: svg,
+    pmtip: makeEl("div"),
+    pmcursor: makeEl("div"),
+  };
+  const $ = (id) => nodes[id] || makeEl("div");
+  const parseRunId = bind("metrics.html", "parseRunId", [], []);
+  const MON = [
+    "Jan",
+    "Feb",
+    "Mar",
+    "Apr",
+    "May",
+    "Jun",
+    "Jul",
+    "Aug",
+    "Sep",
+    "Oct",
+    "Nov",
+    "Dec",
+  ];
+  const fmtDayTime = bind("metrics.html", "fmtDayTime", ["MON", "parseRunId"], [
+    MON,
+    parseRunId,
+  ]);
+  const fmtRunTime = bind("metrics.html", "fmtRunTime", ["MON", "parseRunId"], [
+    MON,
+    parseRunId,
+  ]);
+  const startupMin = bind("metrics.html", "startupMin", [], []);
+  const plotMin = (r) => startupMin(r);
+  bind(
+    "metrics.html",
+    "renderPmChart",
+    [
+      "$",
+      "pmMode",
+      "parseRunId",
+      "fmtDayTime",
+      "fmtRunTime",
+      "startupMin",
+      "plotMin",
+    ],
+    [$, pmMode, parseRunId, fmtDayTime, fmtRunTime, startupMin, plotMin],
+  )(runs);
+  return String(wrap.innerHTML);
+}
+
+const RUN_A = {
+  runId: "20260720T010001Z",
+  startupPct: 4.3,
+  startupMs: 590693,
+  toolCalls: 529,
+  startupToolCalls: 23,
+  numTurns: 66,
+  outcome: "ok",
+};
+const RUN_B = {
+  runId: "20260720T170002Z",
+  startupPct: 61.5,
+  startupMs: 700000,
+  toolCalls: 431,
+  startupToolCalls: 200,
+  numTurns: 128,
+  outcome: "ok",
+};
+
+Deno.test("metrics chart: the axis shows an absolute time, not just a date", () => {
+  const svg = pmChart([RUN_A, RUN_B]);
+  assert(
+    svg.includes("Jul 20"),
+    "expected the date in the axis: " + svg.slice(-400),
+  );
+  assert(
+    svg.includes("01:00"),
+    "expected the first run's time: " + svg.slice(-400),
+  );
+  assert(
+    svg.includes("17:00"),
+    "expected the last run's time: " + svg.slice(-400),
+  );
+  assert(svg.includes("UTC"), "expected an explicit zone: " + svg.slice(-400));
+});
+
+Deno.test("metrics chart: two runs on the same day get distinct axis labels", () => {
+  const svg = pmChart([RUN_A, RUN_B]);
+  // Before absolute times both endpoints rendered as the bare date "Jul 20".
+  const labels = [...svg.matchAll(/<text[^>]*>([^<]*Jul 20[^<]*)<\/text>/g)]
+    .map((m) => m[1]);
+  assert(
+    labels.length >= 2,
+    "expected two dated axis labels, got: " + JSON.stringify(labels),
+  );
+  assert(
+    labels[0] !== labels[1],
+    "same-day endpoints must not share a label: " + JSON.stringify(labels),
+  );
+});
+
+Deno.test("metrics chart: a single run still gets an absolute axis label", () => {
+  const svg = pmChart([RUN_A]);
+  assert(
+    svg.includes("01:00"),
+    "single-run axis should carry its time: " + svg.slice(-400),
+  );
+  assert(svg.includes("UTC"), "single-run axis should carry the zone");
+});

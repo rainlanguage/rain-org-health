@@ -285,6 +285,15 @@ function parseRunId(id) {
   return m ? new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : null;
 }
 function fmtDay(id) { const d = parseRunId(id); return d ? `${MON[d.getUTCMonth()]} ${d.getUTCDate()}` : ""; }
+// Axis label: date AND time. The producer runs every 4 hours, so a date alone
+// cannot say which of six daily runs a point is. The zone is spelled out
+// because the schedule is defined in UTC and readers are not.
+function fmtDayTime(id) {
+  const d = parseRunId(id);
+  if (!d) return "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${MON[d.getUTCMonth()]} ${d.getUTCDate()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`;
+}
 function fmtRunTime(id) {
   const d = parseRunId(id);
   if (!d) return id || "";
@@ -475,9 +484,9 @@ function renderPmChart(runs) {
     endlabel = `<text class="pm-endlabel" x="${(l.x + 6).toFixed(1)}" y="${(l.y + 3).toFixed(1)}">${lbl}</text>`;
   }
   const xlabels = runs.length >= 2
-    ? `<text x="${PADL}" y="${VBH - 7}" text-anchor="start">${fmtDay(runs[0].runId)}</text>` +
-      `<text x="${VBW - PADR}" y="${VBH - 7}" text-anchor="end">${fmtDay(runs[runs.length - 1].runId)}</text>`
-    : `<text x="${PADL + plotW / 2}" y="${VBH - 7}" text-anchor="middle">${fmtDay(runs[0].runId)}</text>`;
+    ? `<text x="${PADL}" y="${VBH - 7}" text-anchor="start">${fmtDayTime(runs[0].runId)}</text>` +
+      `<text x="${VBW - PADR}" y="${VBH - 7}" text-anchor="end">${fmtDayTime(runs[runs.length - 1].runId)}</text>`
+    : `<text x="${PADL + plotW / 2}" y="${VBH - 7}" text-anchor="middle">${fmtDayTime(runs[0].runId)}</text>`;
   const cursor = `<line class="pm-cursor" id="pmcursor" x1="0" y1="${PADT}" x2="0" y2="${VBH - PADB}"/>`;
   const aria = abs
     ? "Producer startup time in minutes per run over time"
