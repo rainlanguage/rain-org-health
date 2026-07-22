@@ -2288,3 +2288,43 @@ Deno.test("metrics chart: two series carry a legend, one series does not", () =>
   const pct = pmChart([RUN_LONG, RUN_LONG2], "pct");
   assert(!pct.includes("pm-legend"), "a single series needs no legend box");
 });
+
+// An empty token set must EXPLAIN itself. The registry section silently
+// vanished from prod for days because the governed-vault parser stopped
+// matching an upstream refactor, the intersection emptied, and both the
+// scanner and the page treated "nothing to show" as "show nothing" — so the
+// outage looked like a feature that had never existed.
+Deno.test("deployments: an empty token set reports why, it does not vanish", () => {
+  const box = deploymentsBox({
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      tokens: [],
+      reconcile: {
+        governedCount: 0,
+        registryTokenCount: 23,
+        function: "LibTokenInvariants.productionReceiptVaults()",
+        extraVaults: [],
+        missingFromMigration: [],
+      },
+    },
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Tokens"),
+    "the heading must still render: " + t.slice(0, 200),
+  );
+  assert(
+    t.includes("0 governed"),
+    "the governed count identifies the cause: " + t,
+  );
+  assert(
+    t.includes("23 registry"),
+    "the registry count shows the other side: " + t,
+  );
+  assert(
+    t.includes("unavailable, not empty"),
+    "must distinguish broken from genuinely empty: " + t,
+  );
+});

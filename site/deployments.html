@@ -334,7 +334,22 @@ function renderDeployments(document, $, data) {
   // its asset() must point at the declared unwrapped underlying, with the linked
   // unwrapped/legacy/receipt addresses all deployed.
   const renderTokens = (t) => {
-    if (!t || !Array.isArray(t.tokens) || t.tokens.length === 0) return;
+    if (!t || !Array.isArray(t.tokens)) return;
+    // No intersection between the registry and the governed set. Say so, with
+    // the counts that identify why — an empty section that simply vanishes
+    // reads as "this feature does not exist" rather than "this broke".
+    if (t.tokens.length === 0) {
+      box.append(el("h2", null, `Tokens — ${t.network}`));
+      const rc = t.reconcile || {};
+      box.append(
+        el(
+          "div",
+          "own-sub",
+          `No registry token resolved to a governed receipt vault: ${rc.governedCount ?? "?"} governed vault(s) from ${rc.function ?? "the migration set"}, ${rc.registryTokenCount ?? "?"} registry token(s). A governed count of 0 means that list could not be read — the section is unavailable, not empty.`,
+        ),
+      );
+      return;
+    }
     box.append(el("h2", null, `Tokens — ${t.network}`));
     const tsub = el("div", "own-sub");
     tsub.append("Each token in the ");

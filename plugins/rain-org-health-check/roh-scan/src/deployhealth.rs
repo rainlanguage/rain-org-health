@@ -41,11 +41,56 @@ pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
 /// `vaults[i] = NAME;` to its `address ... constant NAME = address(0x…);`. This is
 /// the AUTHORITATIVE set the setAuthorizer migration operates on, cross-checked
 /// against the registry so a governed vault missing from the registry is surfaced.
+/// The brace-depth-matched body of a named function, so assignments after a
+/// nested block (`unchecked { … }`, a loop, a conditional) stay in scope.
+/// `None` when the function is absent or its braces are unbalanced.
+fn function_body<'a>(src: &'a str, name: &str) -> Option<&'a str> {
+    let re = Regex::new(&format!(
+        r"(?s)function\s+{}\s*\([^)]*\)[^{{]*\{{",
+        regex::escape(name)
+    ))
+    .ok()?;
+    let open = re.find(src).map(|m| m.end())?;
+    let mut depth = 1usize;
+    for (i, c) in src[open..].char_indices() {
+        match c {
+            '{' => depth += 1,
+            '}' => {
+                depth -= 1;
+                if depth == 0 {
+                    return Some(&src[open..open + i]);
+                }
+            }
+            _ => {}
+        }
+    }
+    None
+}
+
+/// The receipt vaults the setAuthorizer bundle governs.
+///
+/// Read from `productionTokensBase()` — the token table is the source of truth,
+/// and `productionReceiptVaults()` is now derived from it by a loop, so there
+/// are no per-vault assignments left to scrape there. An earlier revision did
+/// list `vaults[N] = CONST;` directly; that shape is still accepted, so a repo
+/// on either one parses rather than silently yielding nothing.
+///
+/// An empty result is meaningful, not a shrug: it means neither shape matched,
+/// and the reconcile doc surfaces it as `governedCount 0` rather than letting
+/// the section vanish.
 pub fn parse_receipt_vault_list(src: &str) -> Vec<String> {
-    let (Ok(const_re), Ok(open_re), Ok(assign_re)) = (
+    let (Ok(const_re), Ok(assign_re), Ok(instance_re)) = (
         Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
-        Regex::new(r"(?s)function\s+productionReceiptVaults\s*\([^)]*\)[^{]*\{"),
         Regex::new(r"vaults\[\d+\]\s*=\s*(\w+)\s*;"),
+        // tokens[N] = TokenInstance("SYM", receipt, receiptVault, wrappedVault);
+        // The governed address is the receipt VAULT — struct field three — but
+        // the leading string literal is NOT captured, so it is capture group
+        // TWO. Off by one here yields the wrapped vault: real addresses, right
+        // count, entirely the wrong set, and every reconcile row would read as
+        // a mismatch.
+        Regex::new(
+            r#"tokens\[\d+\]\s*=\s*TokenInstance\(\s*"[^"]*"\s*,\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\)"#,
+        ),
     ) else {
         return Vec::new();
     };
@@ -53,35 +98,23 @@ pub fn parse_receipt_vault_list(src: &str) -> Vec<String> {
         .captures_iter(src)
         .map(|c| (c[1].to_string(), c[2].to_lowercase()))
         .collect();
-    // The function body is the brace-depth-matched span after the signature's
-    // opening `{`, so assignments after a nested block (`unchecked { … }`, a
-    // conditional) stay in scope. Unbalanced braces ⇒ empty list, which the
-    // reconcile doc surfaces as governedCount 0 + missingFromMigration rows.
-    let Some(open) = open_re.find(src).map(|m| m.end()) else {
-        return Vec::new();
-    };
-    let mut depth = 1usize;
-    let mut end = None;
-    for (i, c) in src[open..].char_indices() {
-        match c {
-            '{' => depth += 1,
-            '}' => {
-                depth -= 1;
-                if depth == 0 {
-                    end = Some(open + i);
-                    break;
-                }
-            }
-            _ => {}
+
+    if let Some(body) = function_body(src, "productionTokensBase") {
+        let from_table: Vec<String> = instance_re
+            .captures_iter(body)
+            .filter_map(|c| consts.get(&c[2]).cloned())
+            .collect();
+        if !from_table.is_empty() {
+            return from_table;
         }
     }
-    let Some(end) = end else {
-        return Vec::new();
-    };
-    assign_re
-        .captures_iter(&src[open..end])
-        .filter_map(|c| consts.get(&c[1]).cloned())
-        .collect()
+    match function_body(src, "productionReceiptVaults") {
+        Some(body) => assign_re
+            .captures_iter(body)
+            .filter_map(|c| consts.get(&c[1]).cloned())
+            .collect(),
+        None => Vec::new(),
+    }
 }
 
 /// ERC-165 conformance from the two required probes: `supportsInterface(0x01ffc9a7)`
@@ -483,9 +516,13 @@ pub fn build_tokens(
     reconcile: serde_json::Value,
     mut tokens: Vec<serde_json::Value>,
 ) -> Option<serde_json::Value> {
-    if tokens.is_empty() {
-        return None;
-    }
+    // An empty token list is REPORTED, not swallowed. It means the registry and
+    // the governed set did not intersect — almost always because the governed
+    // set failed to parse after an upstream refactor — and the reconcile
+    // counts carried below are exactly what identify that. Returning None here
+    // made the whole section disappear from the dashboard, taking its own
+    // diagnosis with it, so the outage looked like a missing feature.
+
     tokens.sort_by(|a, b| a["symbol"].as_str().cmp(&b["symbol"].as_str()));
     let total = tokens.len();
     let ok = tokens.iter().filter(|t| t["status"] == "ok").count();
@@ -1006,6 +1043,84 @@ mod tests {
         assert_eq!(v["total"], 2);
         assert_eq!(v["ok"], 1);
         assert_eq!(v["tokens"][0]["symbol"], "wtA");
+    }
+
+    /// The shape st0x.deploy actually ships today: `productionReceiptVaults()`
+    /// derives from the `productionTokensBase()` table in a loop, so there are
+    /// no per-vault assignments to scrape. Scraping the derivation instead of
+    /// the table is what silently emptied the governed set and made the whole
+    /// registry section disappear from the dashboard.
+    #[test]
+    fn parse_receipt_vault_list_reads_the_token_table_shape() {
+        let src = r#"
+    address internal constant MSTR_RECEIPT = address(0x1111111111111111111111111111111111111111);
+    address internal constant MSTR_RECEIPT_VAULT = address(0x2222222222222222222222222222222222222222);
+    address internal constant MSTR_WRAPPED_TOKEN_VAULT = address(0x3333333333333333333333333333333333333333);
+    address internal constant TSLA_RECEIPT = address(0x4444444444444444444444444444444444444444);
+    address internal constant TSLA_RECEIPT_VAULT = address(0x5555555555555555555555555555555555555555);
+    address internal constant TSLA_WRAPPED_TOKEN_VAULT = address(0x6666666666666666666666666666666666666666);
+    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
+        tokens = new TokenInstance[](2);
+        tokens[0] = TokenInstance("MSTR", MSTR_RECEIPT, MSTR_RECEIPT_VAULT, MSTR_WRAPPED_TOKEN_VAULT);
+        tokens[1] = TokenInstance("TSLA", TSLA_RECEIPT, TSLA_RECEIPT_VAULT, TSLA_WRAPPED_TOKEN_VAULT);
+    }
+    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
+        TokenInstance[] memory tokens = productionTokensBase();
+        vaults = new address[](tokens.length);
+        for (uint256 i = 0; i < tokens.length; i++) {
+            vaults[i] = tokens[i].receiptVault;
+        }
+    }
+"#;
+        assert_eq!(
+            parse_receipt_vault_list(src),
+            vec![
+                "0x2222222222222222222222222222222222222222".to_string(),
+                "0x5555555555555555555555555555555555555555".to_string(),
+            ]
+        );
+    }
+
+    /// The governed address is the receipt VAULT — the third struct field.
+    /// Taking the receipt (second) or the wrapped vault (fourth) would yield a
+    /// plausible-looking list of real addresses that simply are not the ones
+    /// the setAuthorizer bundle operates on, so the field index is pinned.
+    #[test]
+    fn parse_receipt_vault_list_takes_the_vault_not_the_receipt_or_wrapper() {
+        let src = r#"
+    address internal constant A_RECEIPT = address(0xaaaa000000000000000000000000000000000001);
+    address internal constant A_RECEIPT_VAULT = address(0xbbbb000000000000000000000000000000000002);
+    address internal constant A_WRAPPED_TOKEN_VAULT = address(0xcccc000000000000000000000000000000000003);
+    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
+        tokens = new TokenInstance[](1);
+        tokens[0] = TokenInstance("A", A_RECEIPT, A_RECEIPT_VAULT, A_WRAPPED_TOKEN_VAULT);
+    }
+"#;
+        let got = parse_receipt_vault_list(src);
+        assert_eq!(
+            got,
+            vec!["0xbbbb000000000000000000000000000000000002".to_string()]
+        );
+        assert!(
+            !got.iter().any(|a| a.starts_with("0xaaaa")),
+            "took the receipt"
+        );
+        assert!(
+            !got.iter().any(|a| a.starts_with("0xcccc")),
+            "took the wrapped vault"
+        );
+    }
+
+    /// Neither shape present ⇒ empty, which the reconcile doc reports as
+    /// governedCount 0. It must not panic or invent addresses from constants
+    /// that no table lists.
+    #[test]
+    fn parse_receipt_vault_list_is_empty_when_no_known_shape_matches() {
+        let src = r#"
+    address internal constant STRAY_RECEIPT_VAULT = address(0xdead00000000000000000000000000000000beef);
+    function somethingElse() internal pure returns (uint256) { return 1; }
+"#;
+        assert!(parse_receipt_vault_list(src).is_empty());
     }
 
     #[test]
