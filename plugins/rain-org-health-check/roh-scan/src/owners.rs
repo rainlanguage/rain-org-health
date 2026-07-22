@@ -72,6 +72,10 @@ fn entry(
 
 /// An address constant that resolved to the zero address — a pin declared but
 /// not yet hydrated. Distinct from `None` (the constant is absent entirely).
+///
+/// This is a fact about the SOURCE, not the chain. With no address there is
+/// nothing to look up, so an unhydrated pin cannot imply the contract is
+/// undeployed — it frequently is deployed, and the pin is simply behind.
 fn is_unhydrated(pin: Option<&String>) -> bool {
     pin.is_some_and(|a| a.trim_start_matches("0x").chars().all(|c| c == '0'))
 }
@@ -254,7 +258,7 @@ pub fn build_owners(
                 if v4_clone_ethereum.is_none() { "unknown" }
                 else if is_unhydrated(v4_clone_ethereum.as_ref()) { "pending" }
                 else { "active" },
-                if is_unhydrated(v4_clone_ethereum.as_ref()) { "pin declared, clone not yet deployed" }
+                if is_unhydrated(v4_clone_ethereum.as_ref()) { "pin not yet hydrated — this says nothing about whether the clone exists" }
                 else { "the Ethereum bootstrap's authoriser clone" }),
             entry("Service grantee", addr(auth_lib, "GRANTEE_SERVICE_1C66"), "", "active", "external service EOA granted deposit / withdraw / certify"),
         ],
@@ -500,10 +504,17 @@ mod tests {
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "ethereum")
             .expect("the ethereum row must exist even unhydrated");
         assert_eq!(eth["status"], "pending");
+        let note = eth["note"].as_str().unwrap();
         assert!(
-            eth["note"].as_str().unwrap().contains("not yet deployed"),
-            "an unhydrated pin must say so: {}",
-            eth["note"]
+            note.contains("not yet hydrated"),
+            "an unhydrated pin must say so: {note}"
+        );
+        // The scan reads the PIN. With no address it has nothing to look up, so
+        // it must not report on the clone's existence either way — the Ethereum
+        // clone was live for some time before this pin caught up.
+        assert!(
+            !note.contains("not yet deployed"),
+            "must not claim anything about deployment: {note}"
         );
     }
 
