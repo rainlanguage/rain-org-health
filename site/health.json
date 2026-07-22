@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-22T20:43:11Z",
+  "generatedAt": "2026-07-22T20:58:33Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4846,19 +4846,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:39:06Z",
-      "latestTag": "sol-v0.1.19",
-      "latestTagIso": "2026-07-22T20:31:09Z",
+      "latestTag": "sol-v0.1.20",
+      "latestTagIso": "2026-07-22T20:49:14Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 2876,
+      "sourceLocChangedSinceAudit": 2916,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 2771,
+      "sourceLocAddedSinceAudit": 2811,
       "sourceLocRemovedSinceAudit": 105,
       "filesChangedSinceAudit": 155,
-      "commitsSinceAudit": 266,
+      "commitsSinceAudit": 278,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 3893,
+      "commentLocAddedSinceAudit": 3921,
       "commentLocRemovedSinceAudit": 237,
-      "codeLocAddedSinceAudit": 4057,
+      "codeLocAddedSinceAudit": 4068,
       "codeLocRemovedSinceAudit": 234,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
