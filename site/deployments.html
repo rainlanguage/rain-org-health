@@ -338,33 +338,40 @@ function renderDeployments(document, $, data) {
     // No intersection between the registry and the governed set. Say so, with
     // the counts that identify why — an empty section that simply vanishes
     // reads as "this feature does not exist" rather than "this broke".
-    if (t.tokens.length === 0) {
+    const noTokens = t.tokens.length === 0;
+    if (noTokens) {
       box.append(el("h2", null, `Tokens — ${t.network}`));
       const rc = t.reconcile || {};
+      // Zero governed vaults and a non-empty-but-disjoint governed set are
+      // different failures: the first is an unreadable list, the second a real
+      // reconciliation gap whose breakdown is the thing worth reading.
+      const cause = (rc.governedCount ?? 0) === 0
+        ? "A governed count of 0 means that list could not be read — the section is unavailable, not empty."
+        : "The two sets are disjoint — the cross-check below names every vault and token on each side.";
       box.append(
         el(
           "div",
           "own-sub",
-          `No registry token resolved to a governed receipt vault: ${rc.governedCount ?? "?"} governed vault(s) from ${rc.function ?? "the migration set"}, ${rc.registryTokenCount ?? "?"} registry token(s). A governed count of 0 means that list could not be read — the section is unavailable, not empty.`,
+          `No registry token resolved to a governed receipt vault: ${rc.governedCount ?? "?"} governed vault(s) from ${rc.function ?? "the migration set"}, ${rc.registryTokenCount ?? "?"} registry token(s). ${cause}`,
         ),
       );
-      return;
+    } else {
+      box.append(el("h2", null, `Tokens — ${t.network}`));
+      const tsub = el("div", "own-sub");
+      tsub.append("Each token in the ");
+      tsub.append(link("", `${t.org}/${t.repo}`, `https://github.com/${t.org}/${t.repo}`));
+      tsub.append(
+        ` Base list, checked live on ${t.network}: name/symbol/decimals match the registry verbatim, asset() points at the declared unwrapped underlying, and the unwrapped/legacy/receipt addresses are deployed.`,
+      );
+      box.append(tsub);
+      const allOk = t.ok === t.total;
+      const tb = el("div", `own-verify ${allOk ? "own-verify-ok" : "own-verify-drift"}`);
+      tb.append(
+        el("span", "own-verify-msg", `${t.ok} of ${t.total} tokens fully wired on ${t.network}.`),
+      );
+      tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
+      box.append(tb);
     }
-    box.append(el("h2", null, `Tokens — ${t.network}`));
-    const tsub = el("div", "own-sub");
-    tsub.append("Each token in the ");
-    tsub.append(link("", `${t.org}/${t.repo}`, `https://github.com/${t.org}/${t.repo}`));
-    tsub.append(
-      ` Base list, checked live on ${t.network}: name/symbol/decimals match the registry verbatim, asset() points at the declared unwrapped underlying, and the unwrapped/legacy/receipt addresses are deployed.`,
-    );
-    box.append(tsub);
-    const allOk = t.ok === t.total;
-    const tb = el("div", `own-verify ${allOk ? "own-verify-ok" : "own-verify-drift"}`);
-    tb.append(
-      el("span", "own-verify-msg", `${t.ok} of ${t.total} tokens fully wired on ${t.network}.`),
-    );
-    tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
-    box.append(tb);
     const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
     // The setAuthorizer migration target, stated once: what a pending Safe bundle
     // rewires every receipt vault's authorizer() to, and how many are already there.
@@ -425,6 +432,20 @@ function renderDeployments(document, $, data) {
     // migration misses.
     const renderReconcile = (rec) => {
       if (!rec) return;
+      // A short governed list reads exactly like a smaller-but-valid one, so a
+      // partial parse is stated outright rather than left to be inferred from
+      // counts that look plausible.
+      const declared = rec.governedDeclared;
+      if (typeof declared === "number" && declared > (rec.governedCount ?? 0)) {
+        box.append(el("h3", "tok-h3", "Migration set parse"));
+        box.append(
+          el(
+            "div",
+            "own-verify own-verify-drift",
+            `${declared} governed vault entries declared in ${rec.function ?? "the migration set"}, ${rec.governedCount ?? 0} resolved to an address — the governed set is INCOMPLETE, so every cross-check below is drawn from a partial list.`,
+          ),
+        );
+      }
       const extra = Array.isArray(rec.extraVaults) ? rec.extraVaults : [];
       const missing = Array.isArray(rec.missingFromMigration) ? rec.missingFromMigration : [];
       if (!extra.length && !missing.length) return;
@@ -494,6 +515,13 @@ function renderDeployments(document, $, data) {
         box.append(mtable);
       }
     };
+    // Deferred to here rather than run from the empty-token branch above: the
+    // helpers this renderer closes over are declared between that branch and
+    // this line, so calling it earlier reaches them in their dead zone.
+    if (noTokens) {
+      renderReconcile(t.reconcile);
+      return;
+    }
     const table = el("div", "own-table");
     for (const tk of t.tokens) {
       const st = tk.status || "unknown";

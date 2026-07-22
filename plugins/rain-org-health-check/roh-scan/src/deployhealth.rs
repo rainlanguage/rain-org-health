@@ -78,7 +78,20 @@ fn function_body<'a>(src: &'a str, name: &str) -> Option<&'a str> {
 /// An empty result is meaningful, not a shrug: it means neither shape matched,
 /// and the reconcile doc surfaces it as `governedCount 0` rather than letting
 /// the section vanish.
-pub fn parse_receipt_vault_list(src: &str) -> Vec<String> {
+///
+/// A PARTIAL result is meaningful for the same reason and is harder to see: a
+/// list short by two entries looks exactly like a governed set that is genuinely
+/// two smaller. `declared` carries how many entries the matched shape listed, so
+/// the caller can report the shortfall instead of shipping a truncated set as
+/// though it were whole.
+pub struct GovernedVaults {
+    /// The receipt vault addresses that resolved, lowercased, in source order.
+    pub addresses: Vec<String>,
+    /// How many entries the matched shape listed, resolvable or not.
+    pub declared: usize,
+}
+
+pub fn parse_receipt_vault_list(src: &str) -> GovernedVaults {
     let (Ok(const_re), Ok(assign_re), Ok(instance_re)) = (
         Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
         Regex::new(r"vaults\[\d+\]\s*=\s*(\w+)\s*;"),
@@ -92,28 +105,47 @@ pub fn parse_receipt_vault_list(src: &str) -> Vec<String> {
             r#"tokens\[\d+\]\s*=\s*TokenInstance\(\s*"[^"]*"\s*,\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\)"#,
         ),
     ) else {
-        return Vec::new();
+        return GovernedVaults {
+            addresses: Vec::new(),
+            declared: 0,
+        };
     };
     let consts: std::collections::HashMap<String, String> = const_re
         .captures_iter(src)
         .map(|c| (c[1].to_string(), c[2].to_lowercase()))
         .collect();
 
+    // The token table wins whenever it lists any entry at all — including the
+    // case where NONE of them resolve. Falling through to the legacy shape then
+    // would answer a question nobody asked (this repo is plainly on the table
+    // shape) and would bury the drift under a stale-but-parsable list.
     if let Some(body) = function_body(src, "productionTokensBase") {
-        let from_table: Vec<String> = instance_re
-            .captures_iter(body)
-            .filter_map(|c| consts.get(&c[2]).cloned())
-            .collect();
-        if !from_table.is_empty() {
-            return from_table;
+        let entries: Vec<_> = instance_re.captures_iter(body).collect();
+        if !entries.is_empty() {
+            return GovernedVaults {
+                addresses: entries
+                    .iter()
+                    .filter_map(|c| consts.get(&c[2]).cloned())
+                    .collect(),
+                declared: entries.len(),
+            };
         }
     }
     match function_body(src, "productionReceiptVaults") {
-        Some(body) => assign_re
-            .captures_iter(body)
-            .filter_map(|c| consts.get(&c[1]).cloned())
-            .collect(),
-        None => Vec::new(),
+        Some(body) => {
+            let entries: Vec<_> = assign_re.captures_iter(body).collect();
+            GovernedVaults {
+                addresses: entries
+                    .iter()
+                    .filter_map(|c| consts.get(&c[1]).cloned())
+                    .collect(),
+                declared: entries.len(),
+            }
+        }
+        None => GovernedVaults {
+            addresses: Vec::new(),
+            declared: 0,
+        },
     }
 }
 
@@ -1073,7 +1105,7 @@ mod tests {
     }
 "#;
         assert_eq!(
-            parse_receipt_vault_list(src),
+            parse_receipt_vault_list(src).addresses,
             vec![
                 "0x2222222222222222222222222222222222222222".to_string(),
                 "0x5555555555555555555555555555555555555555".to_string(),
@@ -1096,7 +1128,7 @@ mod tests {
         tokens[0] = TokenInstance("A", A_RECEIPT, A_RECEIPT_VAULT, A_WRAPPED_TOKEN_VAULT);
     }
 "#;
-        let got = parse_receipt_vault_list(src);
+        let got = parse_receipt_vault_list(src).addresses;
         assert_eq!(
             got,
             vec!["0xbbbb000000000000000000000000000000000002".to_string()]
@@ -1111,6 +1143,73 @@ mod tests {
         );
     }
 
+    /// A table entry naming a constant that is not declared resolves to
+    /// nothing, and a silently shorter list is indistinguishable from a
+    /// genuinely smaller governed set. `declared` keeps the shortfall visible.
+    #[test]
+    fn parse_receipt_vault_list_counts_entries_it_could_not_resolve() {
+        let src = r#"
+    address internal constant MSTR_RECEIPT_VAULT = address(0x2222222222222222222222222222222222222222);
+    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
+        tokens = new TokenInstance[](2);
+        tokens[0] = TokenInstance("MSTR", MSTR_RECEIPT, MSTR_RECEIPT_VAULT, MSTR_WRAPPED_TOKEN_VAULT);
+        tokens[1] = TokenInstance("TSLA", TSLA_RECEIPT, TSLA_RECEIPT_VAULT, TSLA_WRAPPED_TOKEN_VAULT);
+    }
+"#;
+        let got = parse_receipt_vault_list(src);
+        assert_eq!(
+            got.addresses,
+            vec!["0x2222222222222222222222222222222222222222".to_string()]
+        );
+        assert_eq!(got.declared, 2, "both table entries must still be counted");
+    }
+
+    /// The legacy shape drops entries the same way, so it reports the same way.
+    #[test]
+    fn parse_receipt_vault_list_counts_unresolved_legacy_assignments() {
+        let src = r#"
+    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
+    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
+        vaults = new address[](3);
+        vaults[0] = NVDA_RECEIPT_VAULT;
+        vaults[1] = RENAMED_RECEIPT_VAULT;
+        vaults[2] = ALSO_RENAMED_RECEIPT_VAULT;
+    }
+"#;
+        let got = parse_receipt_vault_list(src);
+        assert_eq!(got.addresses.len(), 1);
+        assert_eq!(got.declared, 3);
+    }
+
+    /// A table whose entries ALL fail to resolve must report the drift, not
+    /// fall through to a legacy function that a table-shaped repo only still
+    /// carries as a derivation. Falling through would answer with a list that
+    /// looks whole.
+    #[test]
+    fn parse_receipt_vault_list_does_not_fall_back_when_the_table_matched() {
+        let src = r#"
+    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
+    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
+        tokens = new TokenInstance[](1);
+        tokens[0] = TokenInstance("MSTR", GONE_RECEIPT, GONE_RECEIPT_VAULT, GONE_WRAPPED);
+    }
+    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
+        vaults = new address[](1);
+        vaults[0] = NVDA_RECEIPT_VAULT;
+    }
+"#;
+        let got = parse_receipt_vault_list(src);
+        assert!(
+            got.addresses.is_empty(),
+            "fell through to the legacy shape: {:?}",
+            got.addresses
+        );
+        assert_eq!(
+            got.declared, 1,
+            "the table entry must be reported as declared"
+        );
+    }
+
     /// Neither shape present ⇒ empty, which the reconcile doc reports as
     /// governedCount 0. It must not panic or invent addresses from constants
     /// that no table lists.
@@ -1120,7 +1219,7 @@ mod tests {
     address internal constant STRAY_RECEIPT_VAULT = address(0xdead00000000000000000000000000000000beef);
     function somethingElse() internal pure returns (uint256) { return 1; }
 "#;
-        assert!(parse_receipt_vault_list(src).is_empty());
+        assert!(parse_receipt_vault_list(src).addresses.is_empty());
     }
 
     #[test]
@@ -1135,7 +1234,7 @@ mod tests {
         vaults[1] = IBHG_RECEIPT_VAULT;
     }
 "#;
-        let got = parse_receipt_vault_list(src);
+        let got = parse_receipt_vault_list(src).addresses;
         assert_eq!(
             got,
             vec![
@@ -1166,7 +1265,7 @@ mod tests {
         // an assignment AFTER a nested block's close is still inside the
         // depth-matched body; one in a later function is not
         assert_eq!(
-            parse_receipt_vault_list(src),
+            parse_receipt_vault_list(src).addresses,
             vec![
                 "0x7271a3c91bb6070ed09333b84a815949d4f16d14".to_string(),
                 "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf".to_string(),
@@ -1177,7 +1276,8 @@ mod tests {
         assert_eq!(
             parse_receipt_vault_list(
                 "function productionReceiptVaults() internal { vaults[0] = NVDA_RECEIPT_VAULT;"
-            ),
+            )
+            .addresses,
             Vec::<String>::new()
         );
     }
