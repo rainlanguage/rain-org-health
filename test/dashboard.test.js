@@ -2084,7 +2084,9 @@ function pmChart(runs, pmMode = "pct") {
     parseRunId,
   ]);
   const startupMin = bind("metrics.html", "startupMin", [], []);
-  const plotMin = (r) => startupMin(r);
+  const plotMin = bind("metrics.html", "plotMin", [], []);
+  const totalMin = bind("metrics.html", "totalMin", [], []);
+  const niceStep = bind("metrics.html", "niceStep", [], []);
   bind(
     "metrics.html",
     "renderPmChart",
@@ -2096,8 +2098,20 @@ function pmChart(runs, pmMode = "pct") {
       "fmtRunTime",
       "startupMin",
       "plotMin",
+      "totalMin",
+      "niceStep",
     ],
-    [$, pmMode, parseRunId, fmtDayTime, fmtRunTime, startupMin, plotMin],
+    [
+      $,
+      pmMode,
+      parseRunId,
+      fmtDayTime,
+      fmtRunTime,
+      startupMin,
+      plotMin,
+      totalMin,
+      niceStep,
+    ],
   )(runs);
   return String(wrap.innerHTML);
 }
@@ -2206,4 +2220,71 @@ Deno.test("metrics controls: with absolute data the toggle opens on absolute", (
     pressed.length === 1 && pressed[0]._text.includes("absolute"),
     "absolute should be the pressed mode on open",
   );
+});
+
+// Startup is a PART of total run time, so the two share the minutes axis and
+// total is never below startup. These pin the properties that would silently
+// mislead: a total clipped by a startup-only scale, and a "total" line in
+// proportion mode where it would be a flat, meaningless 100%.
+const RUN_LONG = {
+  runId: "20260720T010001Z",
+  startupPct: 4.3,
+  startupMs: 590693,
+  durationMs: 1611124,
+  toolCalls: 529,
+  startupToolCalls: 23,
+  numTurns: 66,
+  outcome: "ok",
+};
+const RUN_LONG2 = {
+  runId: "20260720T170002Z",
+  startupPct: 61.5,
+  startupMs: 700000,
+  durationMs: 4200000,
+  toolCalls: 431,
+  startupToolCalls: 200,
+  numTurns: 128,
+  outcome: "ok",
+};
+
+Deno.test("metrics chart: absolute mode plots total run time alongside startup", () => {
+  const svg = pmChart([RUN_LONG, RUN_LONG2], "abs");
+  assert(
+    svg.includes("pm-total"),
+    "expected a total-run series: " + svg.slice(0, 300),
+  );
+  assert(svg.includes("pm-line"), "startup series should still be drawn");
+});
+
+Deno.test("metrics chart: proportion mode omits total, which would be a flat 100%", () => {
+  const svg = pmChart([RUN_LONG, RUN_LONG2], "pct");
+  assert(
+    !svg.includes("pm-total"),
+    "total as a proportion is always 100% and says nothing — it must not render",
+  );
+});
+
+Deno.test("metrics chart: the y scale covers total, so it is never clipped", () => {
+  // 4200000ms = 70min total vs 11.7min startup. A startup-only scale would top
+  // out near 12 and push the total line off the plot.
+  const svg = pmChart([RUN_LONG, RUN_LONG2], "abs");
+  const ticks = [...svg.matchAll(/text-anchor="end">([\d.]+)<\/text>/g)].map((
+    m,
+  ) => parseFloat(m[1]));
+  const top = Math.max(...ticks);
+  assert(
+    top >= 70,
+    "y axis must reach the largest total (70m), got top tick " + top,
+  );
+});
+
+Deno.test("metrics chart: two series carry a legend, one series does not", () => {
+  const wrap = pmChart([RUN_LONG, RUN_LONG2], "abs");
+  assert(wrap.includes("pm-legend"), "two series require a legend");
+  assert(
+    wrap.includes("total run") && wrap.includes("startup"),
+    "legend must name both series",
+  );
+  const pct = pmChart([RUN_LONG, RUN_LONG2], "pct");
+  assert(!pct.includes("pm-legend"), "a single series needs no legend box");
 });

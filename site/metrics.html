@@ -111,6 +111,16 @@
   .pm-area { fill: var(--pm-fill); stroke: none; }
   .pm-area.deg { fill: var(--pm-fill-deg); }
   .pm-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  /* Total run time. Deliberately NOT a new hue — on this chart hue encodes
+     whether a run errored, so a categorical colour here would collide with that
+     meaning. Identity comes from position, the dash, and the legend. */
+  .pm-total { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 4 3;
+              stroke-linejoin: round; stroke-linecap: round; }
+  .pm-legend { display: flex; gap: 14px; align-items: center; margin: 0 2px 6px;
+               font-size: 12px; color: var(--ink-3); }
+  .pm-legend .k { display: inline-flex; align-items: center; gap: 6px; }
+  .pm-legend .sw { width: 18px; height: 0; border-top: 2px solid var(--ink); flex: none; }
+  .pm-legend .sw.total { border-top: 1.5px dashed var(--ink-3); }
   .pm-line.deg { stroke: var(--crit); }
   .pm-dot { fill: var(--ink); }
   .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
@@ -335,6 +345,11 @@ function plotMin(r) {
   if (r.outcome === "error" && typeof r.durationMs === "number") return r.durationMs / 60000;
   return null;
 }
+// Total wall-clock of a run, in minutes. Startup is a PART of this, so the two
+// share the minutes axis and total is never below startup.
+function totalMin(r) {
+  return typeof r.durationMs === "number" ? r.durationMs / 60000 : null;
+}
 // Round a per-gridline span up to a tidy 1/1.5/2/3/5/10 × 10ⁿ step, so the
 // minutes axis lands on human numbers (…0 15 30 45) instead of 0 11.4 22.8….
 function niceStep(v) {
@@ -415,7 +430,8 @@ function renderPmChart(runs) {
   // minutes axis to a tidy ceiling over the runs that carry a value.
   let ymax, gridVals, fmtY;
   if (abs) {
-    const vv = runs.map(valOf).filter((v) => v != null);
+    // Scale over BOTH series — scaling on startup alone would clip every total.
+    const vv = runs.map(valOf).concat(runs.map(totalMin)).filter((v) => v != null);
     const step = niceStep(Math.max(1, ...vv) / 4);
     ymax = step * 4;
     gridVals = [0, step, step * 2, step * 3, step * 4];
@@ -478,6 +494,25 @@ function renderPmChart(runs) {
       start = end + 1; // next run shares this boundary point, keeping the line continuous
     }
   }
+  // Total run time, absolute mode only: as a proportion it would be a flat 100%
+  // line, which says nothing. Identity is carried by position (total is always
+  // at or above startup, being its superset), a dashed stroke and the legend —
+  // never by hue, because hue on this chart already means "this run errored".
+  let totalLine = "";
+  if (abs) {
+    const tsegs = [];
+    let tseg = [];
+    runs.forEach((r, i) => {
+      const tv = totalMin(r);
+      if (tv == null) { if (tseg.length) { tsegs.push(tseg); tseg = []; } return; }
+      tseg.push({ x: +xOf(i).toFixed(1), y: +yOf(tv).toFixed(1) });
+    });
+    if (tseg.length) tsegs.push(tseg);
+    totalLine = tsegs
+      .filter((t) => t.length >= 2)
+      .map((t) => `<polyline class="pm-total" points="${t.map((q) => `${q.x},${q.y}`).join(" ")}"/>`)
+      .join("");
+  }
   const dots = real.map((p) => {
     return `<circle class="pm-dot${isDeg(p) ? " deg" : ""}" cx="${p.x}" cy="${p.y}" r="${p === real[real.length - 1] ? 4 : 3}"/>`;
   }).join("");
@@ -493,14 +528,20 @@ function renderPmChart(runs) {
     : `<text x="${PADL + plotW / 2}" y="${VBH - 7}" text-anchor="middle">${fmtDayTime(runs[0].runId)}</text>`;
   const cursor = `<line class="pm-cursor" id="pmcursor" x1="0" y1="${PADT}" x2="0" y2="${VBH - PADB}"/>`;
   const aria = abs
-    ? "Producer startup time in minutes per run over time"
+    ? "Producer run time in minutes per run over time: total wall clock, and the startup portion within it"
     : "Producer startup overhead percent per run over time";
 
+  // A legend is mandatory once two series share the plot, so identity is never
+  // carried by the mark alone. Proportion mode has one series and gets none.
+  const legend = abs
+    ? `<div class="pm-legend"><span class="k"><span class="sw"></span>startup</span>` +
+      `<span class="k"><span class="sw total"></span>total run</span></div>`
+    : "";
   const wrap = $("pmwrap");
-  wrap.innerHTML =
+  wrap.innerHTML = legend +
     `<svg class="pm-chart" id="pmsvg" viewBox="0 0 ${VBW} ${VBH}" preserveAspectRatio="xMidYMid meet"` +
     ` role="img" aria-label="${aria}">` +
-    grid + cursor + area + line + dots + endlabel + xlabels + `</svg>` +
+    grid + cursor + area + totalLine + line + dots + endlabel + xlabels + `</svg>` +
     `<div class="pm-tip" id="pmtip"></div>`;
 
   const svg = $("pmsvg"), tip = $("pmtip"), cur = $("pmcursor");
@@ -534,6 +575,9 @@ function renderPmChart(runs) {
       head = `<b>${r.startupPct.toFixed(1)}%</b> startup overhead` + (minsTxt ? ` · ${minsTxt}` : "");
     tip.innerHTML =
       `${head}<br>` +
+      (typeof r.durationMs === "number"
+        ? `of ${(r.durationMs / 60000).toFixed(1)}m total run<br>`
+        : "") +
       `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns<br>` +
       `${fmtRunTime(r.runId)} · <span class="${deg ? "deg" : ""}">${r.outcome || "ok"}</span>${cost}`;
     tip.style.opacity = 1;
