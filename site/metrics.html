@@ -277,7 +277,11 @@ const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","
 // wall-clock minutes that startup took (startupMs, present only from the
 // metric's backfill onward). pmRuns caches the parsed runs so the toggle can
 // re-render both views without re-fetching.
-let pmMode = "pct";
+// Absolute minutes by default: a percentage answers "what share of the run
+// was startup" but not "how long did I wait", and the second is the question
+// the chart gets opened for. renderPmControls downgrades this to "pct" when
+// no run carries an absolute time, and it runs before the tiles and chart.
+let pmMode = "abs";
 let pmRuns = [];
 
 function parseRunId(id) {

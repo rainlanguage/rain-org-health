@@ -2161,3 +2161,49 @@ Deno.test("metrics chart: a single run still gets an absolute axis label", () =>
   );
   assert(svg.includes("UTC"), "single-run axis should carry the zone");
 });
+
+// The chart opens on absolute minutes. A percentage answers "what share of the
+// run was startup"; the question the chart gets opened for is "how long did I
+// wait". The fallback matters more than the default: with no absolute data an
+// "abs" chart would render empty, so renderPmControls downgrades to "pct" —
+// and it runs before the tiles and chart, which is what makes that safe.
+Deno.test("metrics: the chart opens on absolute minutes", () => {
+  const src = Deno.readTextFileSync(
+    new URL("../site/metrics.html", import.meta.url),
+  );
+  assert(
+    /let pmMode = "abs";/.test(src),
+    "expected the initial mode to be absolute",
+  );
+});
+
+Deno.test("metrics controls: no absolute data downgrades the mode to proportion", () => {
+  // Runs with startupPct but no startupMs — absolute mode has nothing to plot.
+  const [render, box] = pmBind("renderPmControls", "pmcontrols", "abs", [
+    "pmRuns",
+    "renderPmTiles",
+    "renderPmChart",
+  ], [[], () => {}, () => {}]);
+  render([{ startupPct: 5 }, { startupPct: 6 }]);
+  assert(
+    collect(box, "pm-toggle").length === 0,
+    "no toggle should render when absolute data is absent",
+  );
+});
+
+Deno.test("metrics controls: with absolute data the toggle opens on absolute", () => {
+  const [render, box] = pmBind("renderPmControls", "pmcontrols", "abs", [
+    "pmRuns",
+    "renderPmTiles",
+    "renderPmChart",
+  ], [[], () => {}, () => {}]);
+  render([{ startupPct: 5, startupMs: 60000 }]);
+  const buttons = collect(box, "pm-toggle")[0].children;
+  const pressed = buttons.filter((b) =>
+    b.getAttribute("aria-pressed") === "true"
+  );
+  assert(
+    pressed.length === 1 && pressed[0]._text.includes("absolute"),
+    "absolute should be the pressed mode on open",
+  );
+});
