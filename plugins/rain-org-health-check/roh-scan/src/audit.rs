@@ -1,11 +1,17 @@
-//! Reads the audit skill's per-run stamp (`.audit/last-run.json`) so the scan can
-//! report when each repo was last *fully* audited. Pure parsing lives here and is
-//! unit-tested; the network fetch is in main.rs.
+//! Reads the audit skill's per-run stamp so the scan can report when each repo was
+//! last *fully* audited. Pure parsing lives here and is unit-tested; the network
+//! fetch is in main.rs.
+//!
+//! The stamp is an append-only `.audit/runs.jsonl` (JSON Lines) — one object per
+//! audit run, newest last — so the repo keeps its whole audit history rather than
+//! only the latest run. The recency is the LAST line whose scope is whole-repo.
+//! `.audit/last-run.json` (a single object) is the earlier format and is still
+//! read as a fallback during the transition.
 //!
 //! Accuracy hinges on the `scope` discriminator: the audit skill is also invoked
 //! PR-scoped (the vetter/producer run it against a PR's changed files), and those
-//! runs must NOT count as a whole-repo audit. So a stamp is honoured ONLY when
-//! `scope == "whole-repo"`; every other scope (or a missing/malformed stamp) means
+//! runs must NOT count as a whole-repo audit. So a line is honoured ONLY when
+//! `scope == "whole-repo"`; every other scope (or a missing/malformed line) means
 //! "not fully audited".
 
 /// The canonical scope string a whole-repo audit stamp must carry. Any other value
@@ -17,8 +23,11 @@ pub struct LastAudit {
     pub audited_at: String,
     pub audited_commit: String,
     pub skill_version: String,
-    /// `Some(true)` if the audited commit is no longer the branch HEAD (audit is
-    /// stale); `Some(false)` if it still is; `None` if HEAD couldn't be resolved.
+    /// Whether first-party source has changed since the audit. `Some(true)` stale,
+    /// `Some(false)` current, `None` if it couldn't be determined. In production
+    /// this is set by `fetch_last_audit` from a `.audit/`-excluding tree compare
+    /// (see [`source_changed_outside_audit`]); the parse functions only fill a
+    /// naive SHA-equality preliminary when handed a `head_sha` (used by tests).
     pub stale: Option<bool>,
 }
 
@@ -52,6 +61,108 @@ pub fn parse_last_audit(body: &str, head_sha: Option<&str>) -> Option<LastAudit>
     })
 }
 
+/// Parse `.audit/runs.jsonl` (append-only JSON Lines, one run per line, newest
+/// last) and return the LAST line that is a whole-repo stamp. Each line is parsed
+/// with [`parse_last_audit`], so the scope gate and required fields are identical
+/// to the single-object format; non-whole-repo lines (PR/paths scopes), blank
+/// lines, and malformed lines are skipped rather than aborting the read — a bad
+/// line must not erase a valid prior whole-repo audit. `None` when no line is a
+/// whole-repo stamp (empty/absent file, or only scoped runs).
+pub fn parse_runs_jsonl(body: &str, head_sha: Option<&str>) -> Option<LastAudit> {
+    // Scan from the back: the last whole-repo line is the current recency, and
+    // `next_back` stops at the first match rather than walking the whole history.
+    body.lines()
+        .filter(|line| !line.trim().is_empty())
+        .filter_map(|line| parse_last_audit(line, head_sha))
+        .next_back()
+}
+
+/// Whether the audit is stale given the files changed between `auditedCommit` and
+/// HEAD. Only changes **outside** `.audit/` count: the run's own stamp commit
+/// advances HEAD while touching only `.audit/runs.jsonl` / `.audit/scope.json`, so
+/// counting it would report every *fresh* audit as immediately stale. `true` iff
+/// any changed path is first-party source (not under `.audit/`).
+pub fn source_changed_outside_audit<'a>(changed_files: impl IntoIterator<Item = &'a str>) -> bool {
+    changed_files
+        .into_iter()
+        .map(str::trim)
+        .filter(|f| !f.is_empty())
+        .any(|f| !f.starts_with(".audit/"))
+}
+
+/// The same question, comment-aware: is there real CODE change outside `.audit/`?
+///
+/// A NatSpec or whitespace edit does not change what the audit covered, so it
+/// must not mark the audit stale — the same rule the external-audit drift uses.
+/// Each input is `(path, drift)`; `None` means the file could not be classified
+/// and counts as changed, because unclassifiable churn must never read as
+/// unchanged.
+pub fn code_changed_outside_audit(
+    files: &[(String, Option<crate::commentloc::LineDrift>)],
+) -> bool {
+    files.iter().any(|(path, drift)| {
+        // Reuse the path rule rather than restating it, so "outside `.audit/`"
+        // has exactly one definition and cannot drift between the two checks.
+        source_changed_outside_audit([path.as_str()])
+            && drift.map(|d| d.code_changed()).unwrap_or(true)
+    })
+}
+
+/// GitHub returns at most this many files in a `compare` response. Both drift
+/// paths test the same cap, so it is defined once — they are reading one API
+/// limit, not two independently-chosen thresholds.
+pub const COMPARE_FILE_CAP: usize = 300;
+
+/// A `compare` response's file list as `(path, status, additions, deletions)`,
+/// paired with whether GitHub truncated it.
+///
+/// Truncation is derived here rather than at the call site so it cannot be
+/// dropped while the parse survives — the two facts come from one response and
+/// are only sound together. A list at the cap counts as truncated: a response
+/// of exactly 300 cannot be told apart from one that was cut, so the ambiguous
+/// case resolves to unknown rather than complete.
+pub fn parse_compare_files(v: &serde_json::Value) -> (Vec<(String, String, u64, u64)>, bool) {
+    let files: Vec<(String, String, u64, u64)> = v["files"]
+        .as_array()
+        .map(|arr| {
+            arr.iter()
+                .map(|f| {
+                    (
+                        f["filename"].as_str().unwrap_or("").to_string(),
+                        f["status"].as_str().unwrap_or("").to_string(),
+                        f["additions"].as_u64().unwrap_or(0),
+                        f["deletions"].as_u64().unwrap_or(0),
+                    )
+                })
+                .collect()
+        })
+        .unwrap_or_default();
+    let truncated = files.len() >= COMPARE_FILE_CAP;
+    (files, truncated)
+}
+
+/// The audit-skill staleness verdict, `None` meaning unknown.
+///
+/// GitHub caps a `compare` file list at 300 entries. Seeing no code change in a
+/// truncated list proves nothing — the changed files may be the ones that were
+/// cut — so that case is unknown rather than `false`. Reporting it clean would
+/// be a false all-clear on exactly the repos with the most churn.
+///
+/// Finding code change is still decisive under truncation: a shorter list cannot
+/// un-find drift that is already visible.
+pub fn stale_verdict(
+    compare_truncated: bool,
+    files: &[(String, Option<crate::commentloc::LineDrift>)],
+) -> Option<bool> {
+    if code_changed_outside_audit(files) {
+        Some(true)
+    } else if compare_truncated {
+        None
+    } else {
+        Some(false)
+    }
+}
+
 /// Sort key for audit recency: never-audited repos first, then oldest audit
 /// first, name as the final tiebreak — so the most overdue repos sort to the top.
 pub fn audit_sort_key(last_audit: Option<&LastAudit>, name: &str) -> (u8, String, String) {
@@ -64,6 +175,139 @@ pub fn audit_sort_key(last_audit: Option<&LastAudit>, name: &str) -> (u8, String
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    fn d(code_added: u64, comment_added: u64) -> Option<crate::commentloc::LineDrift> {
+        Some(crate::commentloc::LineDrift {
+            code_added,
+            code_removed: 0,
+            comment_added,
+            comment_removed: 0,
+        })
+    }
+
+    fn compare_json(n: usize) -> serde_json::Value {
+        let files: Vec<_> = (0..n)
+            .map(|i| {
+                serde_json::json!({
+                    "filename": format!("src/F{i}.sol"),
+                    "status": "modified", "additions": 1, "deletions": 0
+                })
+            })
+            .collect();
+        serde_json::json!({ "files": files })
+    }
+
+    /// Pinned to the literal documented limit, not to the constant itself: every
+    /// other test sizes its fixture from `COMPARE_FILE_CAP`, so they all move
+    /// with it and none of them would notice a wrong value.
+    #[test]
+    fn the_compare_cap_matches_githubs_documented_limit() {
+        assert_eq!(
+            COMPARE_FILE_CAP, 300,
+            "GitHub caps compare responses at 300 files; a different value here \
+             either truncates early or misses real truncation"
+        );
+    }
+
+    /// A file list at GitHub's cap is indistinguishable from one that was cut,
+    /// so the boundary resolves to truncated — the fail-safe direction.
+    #[test]
+    fn a_compare_file_list_at_the_cap_reads_as_truncated() {
+        let (files, truncated) = parse_compare_files(&compare_json(COMPARE_FILE_CAP));
+        assert_eq!(files.len(), COMPARE_FILE_CAP);
+        assert!(truncated, "exactly-at-cap must not read as a complete list");
+
+        let (files, truncated) = parse_compare_files(&compare_json(COMPARE_FILE_CAP - 1));
+        assert_eq!(files.len(), COMPARE_FILE_CAP - 1);
+        assert!(!truncated, "a short list is complete");
+    }
+
+    /// An absent or malformed file list is empty and NOT truncated — "no files
+    /// reported" must not masquerade as "too many files to report".
+    #[test]
+    fn an_absent_compare_file_list_is_empty_and_not_truncated() {
+        let (files, truncated) = parse_compare_files(&serde_json::json!({}));
+        assert!(files.is_empty());
+        assert!(!truncated);
+    }
+
+    /// The parse carries through the fields the classifier needs.
+    #[test]
+    fn parse_compare_files_keeps_path_status_and_line_counts() {
+        let v = serde_json::json!({"files":[
+            {"filename":"src/A.sol","status":"added","additions":7,"deletions":2}
+        ]});
+        let (files, _) = parse_compare_files(&v);
+        assert_eq!(
+            files[0],
+            ("src/A.sol".to_string(), "added".to_string(), 7, 2)
+        );
+    }
+
+    /// A truncated compare that shows no code change is UNKNOWN, never clean —
+    /// the files GitHub cut at 300 may be the ones that changed.
+    #[test]
+    fn a_truncated_compare_with_no_visible_code_change_is_unknown_not_clean() {
+        let comment_only = vec![(
+            "src/A.sol".to_string(),
+            Some(crate::commentloc::LineDrift {
+                comment_added: 3,
+                ..Default::default()
+            }),
+        )];
+        assert_eq!(stale_verdict(false, &comment_only), Some(false));
+        assert_eq!(
+            stale_verdict(true, &comment_only),
+            None,
+            "an incomplete file list must not report a repo audited-current"
+        );
+    }
+
+    /// Truncation cannot un-find drift that is already visible.
+    #[test]
+    fn visible_code_change_stays_stale_even_when_the_compare_is_truncated() {
+        let code = vec![(
+            "src/A.sol".to_string(),
+            Some(crate::commentloc::LineDrift {
+                code_added: 1,
+                ..Default::default()
+            }),
+        )];
+        assert_eq!(stale_verdict(true, &code), Some(true));
+        assert_eq!(stale_verdict(false, &code), Some(true));
+    }
+
+    /// A NatSpec-only edit must not mark a fresh audit stale.
+    #[test]
+    fn comment_only_change_does_not_make_the_audit_stale() {
+        assert!(!code_changed_outside_audit(&[(
+            "src/A.sol".into(),
+            d(0, 3)
+        )]));
+        // …while the filename-only predicate would have called it stale.
+        assert!(source_changed_outside_audit(["src/A.sol"]));
+    }
+
+    #[test]
+    fn real_code_change_still_makes_it_stale() {
+        assert!(code_changed_outside_audit(&[("src/A.sol".into(), d(2, 0))]));
+    }
+
+    /// The stamp commit touches only `.audit/`; that must stay excluded even when
+    /// its own content is unclassifiable.
+    #[test]
+    fn audit_dir_only_changes_are_still_ignored() {
+        assert!(!code_changed_outside_audit(&[(
+            ".audit/runs.jsonl".into(),
+            None
+        )]));
+    }
+
+    /// An unclassifiable file outside `.audit/` counts as changed.
+    #[test]
+    fn an_unclassifiable_file_counts_as_changed() {
+        assert!(code_changed_outside_audit(&[("src/A.sol".into(), None)]));
+    }
 
     const WHOLE: &str = r#"{
         "scope": "whole-repo",
@@ -145,5 +389,93 @@ mod tests {
         assert_eq!(parse_last_audit("", None), None);
         assert_eq!(parse_last_audit("not json", None), None);
         assert_eq!(parse_last_audit("{}", None), None);
+    }
+
+    // ---- runs.jsonl (append-only history) ----
+
+    fn line(commit: &str, at: &str) -> String {
+        format!(
+            r#"{{"scope":"whole-repo","auditedAt":"{at}","auditedCommit":"{commit}","skillVersion":"0.15.0"}}"#
+        )
+    }
+
+    #[test]
+    fn jsonl_takes_the_last_whole_repo_line() {
+        // Newest last: the second whole-repo run is the current recency.
+        let body = format!(
+            "{}\n{}\n",
+            line("old111", "2026-01-01T00:00:00Z"),
+            line("new222", "2026-06-01T00:00:00Z"),
+        );
+        let a = parse_runs_jsonl(&body, Some("new222")).expect("last whole-repo line");
+        assert_eq!(a.audited_commit, "new222");
+        assert_eq!(a.audited_at, "2026-06-01T00:00:00Z");
+        assert_eq!(
+            a.stale,
+            Some(false),
+            "staleness is vs the last line's commit"
+        );
+    }
+
+    #[test]
+    fn jsonl_skips_interleaved_scoped_and_blank_lines() {
+        // A PR-scoped run and a blank line between two whole-repo runs must not be
+        // mistaken for the latest whole-repo audit.
+        let body = format!(
+            "{}\n{}\n\n{}\n",
+            line("whole1", "2026-01-01T00:00:00Z"),
+            r#"{"scope":"pr:9","auditedAt":"2026-05-01T00:00:00Z","auditedCommit":"prc"}"#,
+            line("whole2", "2026-03-01T00:00:00Z"),
+        );
+        let a = parse_runs_jsonl(&body, None).unwrap();
+        assert_eq!(
+            a.audited_commit, "whole2",
+            "last WHOLE-REPO line, not the pr line"
+        );
+    }
+
+    #[test]
+    fn jsonl_malformed_trailing_line_does_not_erase_a_valid_audit() {
+        // A corrupt final line must fall back to the last good whole-repo line, not
+        // read as "never audited".
+        let body = format!(
+            "{}\n{{ this is not json\n",
+            line("good333", "2026-04-01T00:00:00Z")
+        );
+        let a = parse_runs_jsonl(&body, None).expect("the good line still counts");
+        assert_eq!(a.audited_commit, "good333");
+    }
+
+    #[test]
+    fn jsonl_only_scoped_or_empty_is_none() {
+        assert_eq!(parse_runs_jsonl("", None), None);
+        assert_eq!(parse_runs_jsonl("\n\n", None), None);
+        let scoped = r#"{"scope":"pr:1","auditedAt":"2026-01-01T00:00:00Z","auditedCommit":"a"}"#;
+        assert_eq!(parse_runs_jsonl(scoped, None), None);
+    }
+
+    #[test]
+    fn staleness_ignores_the_audit_stamp_commit() {
+        // The fresh audit's stamp commit touches only .audit/ — NOT stale (this is
+        // the case a bare auditedCommit != HEAD check gets wrong).
+        assert!(!source_changed_outside_audit([
+            ".audit/runs.jsonl",
+            ".audit/scope.json"
+        ]));
+        // A first-party source change alongside the stamp — stale.
+        assert!(source_changed_outside_audit([
+            ".audit/runs.jsonl",
+            "src/lib/Foo.sol"
+        ]));
+        // A non-.audit change on its own — stale.
+        assert!(source_changed_outside_audit(["README.md"]));
+        // Blank entries are skipped, not counted as source.
+        assert!(!source_changed_outside_audit([
+            "",
+            "  ",
+            ".audit/scope.json"
+        ]));
+        // No changes at all — not stale.
+        assert!(!source_changed_outside_audit(Vec::<&str>::new()));
     }
 }

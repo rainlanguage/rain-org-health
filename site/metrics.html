@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>rain org health — overview</title>
+<title>rain org health — metrics</title>
 <style>
   :root {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -239,15 +239,18 @@
     <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
   </header>
   <nav class="nav">
-    <a href="index.html" class="active">Overview</a>
+    <a href="index.html">Overview</a>
     <a href="repositories.html">Repositories</a>
     <a href="audit.html">Audit</a>
     <a href="pipeline.html">Pipeline</a>
-    <a href="metrics.html">Metrics</a>
+    <a href="metrics.html" class="active">Metrics</a>
     <a href="deployments.html">Deployments</a>
   </nav>
-  <div class="tiles" id="tiles"></div>
-  <div id="auditglance"></div>
+  <h2>Producer run metrics</h2>
+  <div class="tiles" id="pmtiles"></div>
+  <div class="pm-controls" id="pmcontrols"></div>
+  <div class="pm-chart-wrap" id="pmwrap"><div class="pm-empty" id="pmempty">loading run metrics…</div></div>
+  <div class="pm-note" id="pmnote"></div>
   <footer>
     Org-health dashboard — status, not severity; identity is the label, not the color.
     <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
@@ -255,74 +258,372 @@
 </div>
 <script type="module">
 const $ = (id) => document.getElementById(id);
+// runs.jsonl fields are cross-repo data. Every node below is built with
+// createElement/createElementNS + textContent/setAttribute — never innerHTML
+// string-building — so data renders inert by construction and there is no
+// hand-rolled escaper to keep correct at every sink (CLAUDE.md "Rendering
+// untrusted data").
+const SVGNS = "http://www.w3.org/2000/svg";
+function svgEl(tag, attrs, text) {
+  const n = document.createElementNS(SVGNS, tag);
+  for (const [k, v] of Object.entries(attrs)) n.setAttribute(k, String(v));
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+function htmlEl(tag, cls, text) {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+}
+const RUNS_JSONL_URL =
+  "https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl";
+function runsJsonlLink() {
+  const a = htmlEl("a", "", "runs.jsonl");
+  a.href = RUNS_JSONL_URL;
+  a.rel = "noopener";
+  a.target = "_blank";
+  return a;
+}
 // Theme toggle: default follows the OS; the button stamps data-theme to override.
 $("theme").addEventListener("click", () => {
   const cur = document.documentElement.getAttribute("data-theme");
   const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
 });
-let data = null;
-async function load() {
-  try {
-    const r = await fetch("health.json", { cache: "no-store" });
-    if (!r.ok) throw new Error(r.status);
-    data = await r.json();
-  } catch (e) {
-    $("meta").textContent = "could not load health.json";
-    return;
-  }
-  const ago = Math.round((Date.now() - new Date(data.generatedAt).getTime()) / 3.6e6);
-  $("meta").textContent =
-    `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
-    (isFinite(ago) ? ` (${ago}h ago)` : "");
-  const signalCount = Object.keys(data.summary || {}).length;
-  const clean = data.totalRepos - data.reposWithFindings;
-  const tiles = [
-    [data.totalRepos, "repos scanned"],
-    [data.reposWithFindings, "with debt"],
-    [clean, "clean"],
-    [signalCount, "distinct signals"],
-    [data.reposExternallyAudited, "externally audited"],
-    [data.reposNeverExternallyAudited, "never audited"],
-  ];
-  const box = $("tiles");
+$("meta").textContent = "producer run metrics · issue-pr-cron";
+// ---- Producer run metrics: live time-series of startup overhead ----
+// Data is issue-pr-cron's public metrics/runs.jsonl (one JSON object per run),
+// fetched cross-origin from raw. Startup overhead = share of a run's tool calls
+// spent recovering state before the first GitHub mutation; lower is better.
+const PM_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/metrics/runs.jsonl";
+const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
+
+// The chart reads startup two ways: "pct" = proportion of a run's tool calls
+// spent before its first mutation (startupPct, always present); "abs" = the
+// wall-clock minutes that startup took (startupMs, present only from the
+// metric's backfill onward). pmRuns caches the parsed runs so the toggle can
+// re-render both views without re-fetching.
+let pmMode = "pct";
+let pmRuns = [];
+
+function parseRunId(id) {
+  const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(id || "");
+  return m ? new Date(`${m[1]}-${m[2]}-${m[3]}T${m[4]}:${m[5]}:${m[6]}Z`) : null;
+}
+function fmtDay(id) { const d = parseRunId(id); return d ? `${MON[d.getUTCMonth()]} ${d.getUTCDate()}` : ""; }
+function fmtRunTime(id) {
+  const d = parseRunId(id);
+  if (!d) return id || "";
+  const p = (n) => String(n).padStart(2, "0");
+  return `${MON[d.getUTCMonth()]} ${d.getUTCDate()} ${p(d.getUTCHours())}:${p(d.getUTCMinutes())} UTC`;
+}
+function fmtAgo(d) {
+  if (!d) return "";
+  const h = (Date.now() - d.getTime()) / 3.6e6;
+  if (h < 1) return `${Math.max(1, Math.round(h * 60))}m ago`;
+  if (h < 48) return `${Math.round(h)}h ago`;
+  return `${Math.round(h / 24)}d ago`;
+}
+function median(a) {
+  if (!a.length) return null;
+  const s = [...a].sort((x, y) => x - y), m = Math.floor(s.length / 2);
+  return s.length % 2 ? s[m] : (s[m - 1] + s[m]) / 2;
+}
+// Recorded startup time in minutes, or null when the run has no wall-clock
+// startup value: startupMs is null (no mutation was reached) or absent (an old
+// rotated-out record). This is what the STAT TILES average, so it stays strict
+// — a run that never mutated contributes no startup time.
+function startupMin(r) {
+  return typeof r.startupMs === "number" ? r.startupMs / 60000 : null;
+}
+// Minutes at which to PLOT a run on the absolute axis — position is time, colour
+// (below) is error-ness; they are independent. A run that reached a first
+// mutation has startupMs. A run that errored before mutating has no startupMs,
+// but its whole run was pre-mutation time that then died, so durationMs IS that
+// time — plot it there (near the baseline for a fast death, higher for a slow
+// one). A non-errored run without startupMs is genuinely missing data
+// (durationMs would be total run time, not startup) → gap.
+function plotMin(r) {
+  if (typeof r.startupMs === "number") return r.startupMs / 60000;
+  if (r.outcome === "error" && typeof r.durationMs === "number") return r.durationMs / 60000;
+  return null;
+}
+// Round a per-gridline span up to a tidy 1/1.5/2/3/5/10 × 10ⁿ step, so the
+// minutes axis lands on human numbers (…0 15 30 45) instead of 0 11.4 22.8….
+function niceStep(v) {
+  if (!(v > 0)) return 1;
+  const pow = Math.pow(10, Math.floor(Math.log10(v)));
+  const n = v / pow;
+  const s = n <= 1 ? 1 : n <= 1.5 ? 1.5 : n <= 2 ? 2 : n <= 3 ? 3 : n <= 5 ? 5 : 10;
+  return s * pow;
+}
+// The proportion ↔ absolute toggle. Absolute is offered only when some run
+// actually carries a wall-clock value; with none (all rotated out) the panel
+// stays on %, since an all-gaps minutes chart would say nothing.
+function renderPmControls(runs) {
+  const box = $("pmcontrols");
   box.textContent = "";
+  if (!runs.some((r) => startupMin(r) != null)) { pmMode = "pct"; return; }
+  const group = document.createElement("div");
+  group.className = "pm-toggle";
+  group.setAttribute("role", "group");
+  group.setAttribute("aria-label", "Startup metric units");
+  for (const [m, label] of [["pct", "proportion (%)"], ["abs", "absolute (min)"]]) {
+    const b = document.createElement("button");
+    b.type = "button";
+    b.textContent = label;
+    b.classList.toggle("on", pmMode === m);
+    b.setAttribute("aria-pressed", pmMode === m ? "true" : "false");
+    b.addEventListener("click", () => {
+      if (pmMode === m) return;
+      pmMode = m;
+      renderPmControls(pmRuns);
+      renderPmTiles(pmRuns);
+      renderPmChart(pmRuns);
+    });
+    group.append(b);
+  }
+  box.append(group);
+}
+
+function renderPmTiles(runs) {
+  const abs = pmMode === "abs";
+  const valOf = (r) => (abs ? startupMin(r) : r.startupPct);
+  // Latest = the most recent run that HAS a value (in abs mode the newest run
+  // may be a gap); median is over the runs that have a value.
+  let latest = null;
+  for (let i = runs.length - 1; i >= 0 && latest == null; i--) latest = valOf(runs[i]);
+  const med = median(runs.map(valOf).filter((v) => v != null));
+  const fmt = (v) => (v == null ? "—" : abs ? v.toFixed(1) + " min" : v.toFixed(1) + "%");
+  const tiles = [
+    [fmt(latest), "latest startup"],
+    [fmt(med), "median startup"],
+    [String(runs.length), "runs recorded"],
+  ];
+  const box = $("pmtiles");
+  box.innerHTML = "";
   for (const [n, l] of tiles) {
     const t = document.createElement("div");
     t.className = "tile";
     const num = document.createElement("div");
     num.className = "n";
-    num.textContent = n == null ? "—" : String(n);
+    num.textContent = n;
     const lab = document.createElement("div");
     lab.className = "l";
     lab.textContent = l;
     t.append(num, lab);
     box.appendChild(t);
   }
-  const neverN = data.reposNeverExternallyAudited || 0;
-  const g = $("auditglance");
-  g.textContent = "";
-  const alarm = document.createElement(neverN > 0 ? "a" : "div");
-  alarm.className = "au-alarm " + (neverN > 0 ? "bad" : "ok");
-  if (neverN > 0) {
-    alarm.href = "audit.html";
-    alarm.style.textDecoration = "none";
-    alarm.style.color = "inherit";
-    alarm.style.cursor = "pointer";
-  }
-  const an = document.createElement("span");
-  an.className = "an";
-  an.textContent = String(neverN);
-  const atxt = document.createElement("span");
-  atxt.className = "atxt";
-  atxt.textContent =
-    neverN > 0
-      ? "repos never externally audited — the Protofire coverage gap. Open the Audit page →"
-      : "every repo externally audited.";
-  alarm.append(an, atxt);
-  g.append(alarm);
 }
-load();
+
+function renderPmChart(runs) {
+  const abs = pmMode === "abs";
+  const VBW = 720, VBH = 210, PADL = abs ? 34 : 30, PADR = 46, PADT = 14, PADB = 24;
+  const plotW = VBW - PADL - PADR, plotH = VBH - PADT - PADB;
+  // Value in the active unit. In abs mode null = a gap (a non-errored run with
+  // no recorded startup time); errored runs plot at their time-to-death.
+  const valOf = (r) => (abs ? plotMin(r) : r.startupPct);
+
+  // Y scale + gridlines. Proportion is a fixed 0–100%; absolute autoscales the
+  // minutes axis to a tidy ceiling over the runs that carry a value.
+  let ymax, gridVals, fmtY;
+  if (abs) {
+    const vv = runs.map(valOf).filter((v) => v != null);
+    const step = niceStep(Math.max(1, ...vv) / 4);
+    ymax = step * 4;
+    gridVals = [0, step, step * 2, step * 3, step * 4];
+    fmtY = (g) => (g % 1 === 0 ? String(g) : g.toFixed(1));
+  } else {
+    ymax = 100;
+    gridVals = [0, 25, 50, 75, 100];
+    fmtY = (g) => String(g);
+  }
+  const yOf = (v) => PADT + (1 - Math.max(0, Math.min(ymax, v)) / ymax) * plotH;
+  const by = yOf(0);
+
+  const times = runs.map((r) => { const d = parseRunId(r.runId); return d ? d.getTime() : null; });
+  const timed = times.every((t) => t != null);
+  let xOf;
+  if (runs.length === 1) xOf = () => PADL + plotW / 2;
+  else if (timed) { const mn = Math.min(...times), mx = Math.max(...times), sp = (mx - mn) || 1; xOf = (i) => PADL + ((times[i] - mn) / sp) * plotW; }
+  else xOf = (i) => PADL + (i / (runs.length - 1)) * plotW;
+  // One entry per run; y == null marks a gap — no dot, and the line breaks.
+  const pts = runs.map((r, i) => {
+    const v = valOf(r);
+    return { x: +xOf(i).toFixed(1), y: v == null ? null : +yOf(v).toFixed(1), v, run: r };
+  });
+  // Contiguous stretches of real points — line + area draw per stretch so a gap
+  // stays a gap instead of being bridged across the missing runs.
+  const segs = [];
+  let seg = [];
+  for (const p of pts) {
+    if (p.y == null) { if (seg.length) { segs.push(seg); seg = []; } }
+    else seg.push(p);
+  }
+  if (seg.length) segs.push(seg);
+  const real = pts.filter((p) => p.y != null);
+
+  const grid = [];
+  for (const g of gridVals) {
+    const gy = +yOf(g).toFixed(1);
+    grid.push(
+      svgEl("line", { class: "pm-axis-line", x1: PADL, y1: gy, x2: VBW - PADR, y2: gy, opacity: g === 0 ? 0.5 : 0.22 }),
+      svgEl("text", { x: PADL - 6, y: +(gy + 3).toFixed(1), "text-anchor": "end" }, fmtY(g)),
+    );
+  }
+
+  // Colour is error-ness (position is time/percent — independent). A sub-segment,
+  // and the shading beneath it, turns red when BOTH its endpoints errored, so a run
+  // of consecutive error runs reads as a red stretch; a lone error is just a red dot.
+  // Split each contiguous stretch into maximal runs of same error-ness so each colour
+  // draws as ONE path (no anti-alias seams within a colour; a seam only at a colour change).
+  const isDeg = (p) => p.run.outcome && p.run.outcome !== "ok";
+  const area = [], line = [];
+  for (const s of segs) {
+    if (s.length < 2) continue;
+    const pairDeg = (i) => isDeg(s[i]) && isDeg(s[i + 1]); // sub-segment s[i]→s[i+1]
+    let start = 0;
+    while (start < s.length - 1) {
+      const deg = pairDeg(start);
+      let end = start;
+      while (end + 1 <= s.length - 2 && pairDeg(end + 1) === deg) end++;
+      const run = s.slice(start, end + 2); // points spanned: s[start]..s[end+1]
+      const k = deg ? " deg" : "";
+      area.push(svgEl("path", {
+        class: `pm-area${k}`,
+        d: `M ${run[0].x} ${by} ${run.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${run[run.length - 1].x} ${by} Z`,
+      }));
+      line.push(svgEl("path", {
+        class: `pm-line${k}`,
+        d: `M ${run.map((p) => `${p.x} ${p.y}`).join(" L ")}`,
+      }));
+      start = end + 1; // next run shares this boundary point, keeping the line continuous
+    }
+  }
+  const dots = real.map((p) =>
+    svgEl("circle", {
+      class: `pm-dot${isDeg(p) ? " deg" : ""}`,
+      cx: p.x, cy: p.y, r: p === real[real.length - 1] ? 4 : 3,
+    })
+  );
+  const endlabel = [];
+  if (real.length) {
+    const l = real[real.length - 1];
+    const lbl = abs ? l.v.toFixed(1) + "m" : l.v.toFixed(0) + "%";
+    endlabel.push(svgEl("text", { class: "pm-endlabel", x: +(l.x + 6).toFixed(1), y: +(l.y + 3).toFixed(1) }, lbl));
+  }
+  const xlabels = runs.length >= 2
+    ? [
+        svgEl("text", { x: PADL, y: VBH - 7, "text-anchor": "start" }, fmtDay(runs[0].runId)),
+        svgEl("text", { x: VBW - PADR, y: VBH - 7, "text-anchor": "end" }, fmtDay(runs[runs.length - 1].runId)),
+      ]
+    : [svgEl("text", { x: PADL + plotW / 2, y: VBH - 7, "text-anchor": "middle" }, fmtDay(runs[0].runId))];
+  const cursor = svgEl("line", { class: "pm-cursor", id: "pmcursor", x1: 0, y1: PADT, x2: 0, y2: VBH - PADB });
+  const aria = abs
+    ? "Producer startup time in minutes per run over time"
+    : "Producer startup overhead percent per run over time";
+
+  const wrap = $("pmwrap");
+  const chart = svgEl("svg", {
+    class: "pm-chart", id: "pmsvg", viewBox: `0 0 ${VBW} ${VBH}`,
+    preserveAspectRatio: "xMidYMid meet", role: "img", "aria-label": aria,
+  });
+  chart.append(...grid, cursor, ...area, ...line, ...dots, ...endlabel, ...xlabels);
+  const tipBox = htmlEl("div", "pm-tip");
+  tipBox.id = "pmtip";
+  wrap.replaceChildren(chart, tipBox);
+
+  const svg = $("pmsvg"), tip = $("pmtip"), cur = $("pmcursor");
+  svg.addEventListener("mousemove", (e) => {
+    const rr = svg.getBoundingClientRect();
+    if (!rr.width) return;
+    const relX = ((e.clientX - rr.left) / rr.width) * VBW;
+    let best = 0, bd = Infinity;
+    pts.forEach((p, i) => { const d = Math.abs(p.x - relX); if (d < bd) { bd = d; best = i; } });
+    const p = pts[best], r = p.run, deg = r.outcome && r.outcome !== "ok";
+    // Anchor the cursor + tip on the run's plotted point; a gap run has no y, so
+    // fall back to the baseline for the vertical anchor.
+    const anchorY = p.y == null ? by : p.y;
+    cur.setAttribute("x1", p.x); cur.setAttribute("x2", p.x); cur.style.opacity = 1;
+    const wr = wrap.getBoundingClientRect();
+    tip.style.left = (rr.left - wr.left + (p.x / VBW) * rr.width) + "px";
+    tip.style.top = (rr.top - wr.top + (anchorY / VBH) * rr.height - 10) + "px";
+    const cost = typeof r.costUsd === "number" ? ` · $${r.costUsd.toFixed(2)}` : "";
+    const mins = startupMin(r), minsTxt = mins == null ? null : mins.toFixed(1) + " min";
+    const pm = plotMin(r);
+    // Lead line shows the active unit; the complementary measure trails it. Only
+    // the durationMs-fallback case — an error run with no startupMs — reads as
+    // time-before-erroring; an error run that DID reach a first mutation has a
+    // real startupMs and gets the normal startup-time phrasing (still red).
+    const head = [];
+    if (abs && r.outcome === "error" && typeof r.startupMs !== "number")
+      head.push(htmlEl("b", "", pm == null ? "—" : pm.toFixed(1) + " min"), " before erroring");
+    else if (abs)
+      head.push(htmlEl("b", "", minsTxt || "—"), ` startup time · ${r.startupPct.toFixed(1)}% of calls`);
+    else
+      head.push(
+        htmlEl("b", "", `${r.startupPct.toFixed(1)}%`),
+        ` startup overhead${minsTxt ? ` · ${minsTxt}` : ""}`,
+      );
+    tip.replaceChildren(
+      ...head,
+      htmlEl("br"),
+      `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
+      htmlEl("br"),
+      `${fmtRunTime(r.runId)} · `,
+      htmlEl("span", deg ? "deg" : "", r.outcome || "ok"),
+      cost,
+    );
+    tip.style.opacity = 1;
+  });
+  svg.addEventListener("mouseleave", () => { tip.style.opacity = 0; cur.style.opacity = 0; });
+}
+
+async function loadMetrics() {
+  const empty = $("pmempty");
+  let runs = [];
+  try {
+    const res = await fetch(PM_URL, { cache: "no-store" });
+    if (!res.ok) throw new Error(res.status);
+    const text = await res.text();
+    runs = text.split("\n").map((l) => l.trim()).filter(Boolean)
+      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .filter((r) => r && r.role === "producer" && typeof r.startupPct === "number")
+      .sort((a, b) => (a.runId || "").localeCompare(b.runId || ""));
+  } catch (e) {
+    if (empty) empty.textContent = "could not load run metrics (metrics/runs.jsonl)";
+    return;
+  }
+  pmRuns = runs;
+  renderPmControls(runs);
+  renderPmTiles(runs);
+  if (!runs.length) {
+    if (empty) empty.textContent =
+      "No producer runs recorded yet. The first metric lands after the next producer cron run — " +
+      "then this chart fills in, one point per run.";
+    $("pmnote").replaceChildren(
+      "Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. Source: ",
+      runsJsonlLink(),
+      ".",
+    );
+    return;
+  }
+  renderPmChart(runs);
+  const last = runs[runs.length - 1], deg = last.outcome && last.outcome !== "ok";
+  $("pmnote").replaceChildren(
+    `Latest run ${fmtAgo(parseRunId(last.runId))} · outcome `,
+    htmlEl("span", deg ? "deg" : "", last.outcome || "ok"),
+    ". Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. Toggle to ",
+    htmlEl("b", "", "absolute"),
+    " to read the wall-clock startup time in minutes (run start → first mutation, ",
+    htmlEl("code", "", "startupMs"),
+    "); errored runs plot at their time-to-failure, non-errored runs with no recorded time are gaps. Source: ",
+    runsJsonlLink(),
+    ".",
+  );
+}
+loadMetrics();
 </script>
 </body>
 </html>

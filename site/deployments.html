@@ -1,0 +1,681 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>rain org health — deployments</title>
+<style>
+  :root {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --crit: #dc2626;
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+      --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+      --border: #332f24; --accent: #60a5fa;
+      --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+      --clean: #4ade80; --clean-bg: #12241a;
+      --crit: #f87171;
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+    --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+    --border: #332f24; --accent: #60a5fa;
+    --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+    --clean: #4ade80; --clean-bg: #12241a;
+    --crit: #f87171;
+  }
+  :root[data-theme="light"] {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --crit: #dc2626;
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 4px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .meta { color: var(--ink-3); font-size: 13px; }
+  .theme-btn {
+    margin-left: auto; background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
+    font-size: 13px; cursor: pointer;
+  }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
+       margin: 32px 0 12px; font-weight: 600; }
+  .empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
+  footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
+  footer a { color: var(--ink-3); }
+  .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
+  .nav a { padding: 8px 13px; color: var(--ink-2); text-decoration: none; font-size: 13.5px;
+           border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav a:hover { color: var(--ink); }
+  .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  /* ---- Known owners ---- */
+  .own-sub { color: var(--ink-3); font-size: 13px; margin: 0 0 4px; line-height: 1.55; max-width: 78ch; }
+  .own-sub a { color: var(--ink-2); }
+  .own-group { margin: 22px 0; }
+  .own-grouphead { font-size: 14.5px; font-weight: 650; color: var(--ink); margin: 0 0 2px; }
+  .own-groupnote { color: var(--ink-3); font-size: 12.5px; margin: 0 0 9px; line-height: 1.55; max-width: 78ch; }
+  .own-table { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; }
+  .own-row { display: grid; grid-template-columns: 210px 1fr auto; gap: 8px 16px; align-items: start;
+             padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  .own-row:last-child { border-bottom: 0; }
+  .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
+  .own-row.own-extra { background: var(--debt-bg); }
+  .own-row.hlth-missing, .own-row.hlth-mismatch, .own-row.hlth-drift { background: var(--debt-bg); }
+  .own-row.hlth-behind, .own-row.hlth-wiring, .own-row.hlth-extra { background: var(--debt-bg); }
+  .own-row.hlth-unknown { opacity: 0.7; }
+  .bcn-detail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
+  .bcn-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
+  .bcn-key { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
+             color: var(--ink-3); width: 78px; flex-shrink: 0; }
+  .tok-val { font-size: 12px; word-break: break-word; }
+  .tok-h3 { font-size: 15px; font-weight: 650; margin: 22px 0 2px; }
+  .own-role { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
+  .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
+  .own-ac { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 10px; }
+  .own-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
+              color: var(--ink-2); text-decoration: none; word-break: break-all; }
+  a.own-addr:hover { color: var(--accent); text-decoration: underline; }
+  .own-missing { color: var(--crit); font-style: italic; }
+  .own-net { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3);
+             border: 1px solid var(--border); border-radius: 5px; padding: 0 5px; }
+  .own-status { display: inline-flex; align-items: center; font-size: 11px; text-transform: uppercase;
+                letter-spacing: 0.04em; font-weight: 650; border-radius: 6px; padding: 3px 7px;
+                white-space: nowrap; border: 1px solid var(--border); color: var(--ink-3); }
+  .own-status-active { color: var(--clean); border-color: var(--clean); }
+  .own-status-pending { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
+  .own-status-migrated { color: var(--ink-3); border-color: var(--border); }
+  .own-status-bricked { color: var(--crit); border-color: var(--crit); }
+  .own-verify { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
+                border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px;
+                margin: 0 0 10px; font-size: 12.5px; line-height: 1.5; }
+  .own-verify-ok { background: var(--clean-bg); border-color: var(--clean); }
+  .own-verify-drift { background: var(--debt-bg); border-color: var(--crit); }
+  .own-verify-down { background: var(--surface); color: var(--ink-3); }
+  .own-verify-msg { font-weight: 600; color: var(--ink); }
+  .own-verify-ok .own-verify-msg::before { content: "✓ "; color: var(--clean); font-weight: 700; }
+  .own-verify-drift .own-verify-msg::before { content: "⚠ "; color: var(--crit); font-weight: 700; }
+  .own-verify-thr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-2); }
+  .own-verify-src { color: var(--ink-3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
+  .own-prov { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end; }
+  .own-chip { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
+              border: 1px solid var(--border); border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
+  .own-chip-yes { color: var(--clean); border-color: var(--clean); }
+  .own-chip-no { color: var(--crit); border-color: var(--crit); }
+  .own-chip-dim { color: var(--ink-3); border-color: var(--border); }
+  .own-chip-target { color: var(--accent); border-color: var(--accent); }
+  @media (max-width: 620px) {
+    .own-row { grid-template-columns: 1fr; gap: 5px; }
+    .own-prov { justify-content: flex-start; }
+  }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>rain org health</h1>
+    <span class="meta" id="meta">loading…</span>
+    <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
+  </header>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="repositories.html">Repositories</a>
+    <a href="audit.html">Audit</a>
+    <a href="pipeline.html">Pipeline</a>
+    <a href="metrics.html">Metrics</a>
+    <a href="deployments.html" class="active">Deployments</a>
+  </nav>
+  <div id="deployments">loading…</div>
+  <footer>
+    Org-health dashboard — status, not severity; identity is the label, not the color.
+    <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
+  </footer>
+</div>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+// Theme toggle: default follows the OS; the button stamps data-theme to override.
+$("theme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+});
+// Renders the deployments view into #deployments. Kept a top-level function with
+// locally-declared helpers so test/dashboard.test.js can extract and eval it standalone.
+function renderDeployments(document, $, data) {
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const link = (cls, text, href) => {
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    return a;
+  };
+  // A privileged address is the same on every chain except where the constant is
+  // network-specific; Base is the home network, so it is the default explorer.
+  const explorer = (address, network) =>
+    (network === "ethereum" ? "https://etherscan.io/address/" : "https://basescan.org/address/") +
+    address;
+  // Declared-vs-on-chain verdict banner for a group that carries a verification.
+  const verifyBanner = (v) => {
+    let cls, msg;
+    if (!v.reachable) {
+      cls = "down";
+      msg = "On-chain check incomplete — an RPC call didn't return; treat as unverified.";
+    } else if (v.match) {
+      cls = "ok";
+      msg =
+        `Declared roster matches the live Safe — ${v.onChainCount} of ${v.onChainCount} ` +
+        `owners confirmed by getOwners() on ${v.network}.`;
+    } else {
+      cls = "drift";
+      msg = "Drift — the declared roster differs from the live Safe; see the flagged rows.";
+    }
+    const b = el("div", `own-verify own-verify-${cls}`);
+    b.append(el("span", "own-verify-msg", msg));
+    const t = v.threshold;
+    if (t) {
+      b.append(
+        el(
+          "span",
+          "own-verify-thr",
+          t.onChain == null
+            ? `threshold ${t.declared} (constant)`
+            : `threshold ${t.declared} (constant) · ${t.onChain} (on-chain)${t.match ? " ✓" : " ✗"}`,
+        ),
+      );
+    }
+    if (v.safe) b.append(el("span", "own-verify-src", `Safe ${v.safe} · via ${v.rpcHost}`));
+    return b;
+  };
+  const box = $("deployments");
+  box.textContent = "";
+  // On-chain health of a pinned suite: each contract deployed at its pinned
+  // address with the live runtime code AND keccak codehash both matching.
+  const renderHealth = (health) => {
+    if (!health || !Array.isArray(health.contracts) || health.contracts.length === 0) return;
+    box.append(el("h2", null, `${health.version} suite — ${health.network} health`));
+    const hsub = el("div", "own-sub");
+    hsub.append(`Each pinned ${health.version} contract from `);
+    hsub.append(link("", `${health.org}/${health.repo}`, `https://github.com/${health.org}/${health.repo}`));
+    hsub.append(
+      `, checked live on ${health.network}: deployed at its pinned address with the runtime code and keccak codehash both matching the pins.`,
+    );
+    box.append(hsub);
+    const allHealthy = health.healthy === health.total;
+    const hb = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
+    hb.append(
+      el("span", "own-verify-msg", `${health.healthy} of ${health.total} contracts healthy on ${health.network}.`),
+    );
+    hb.append(el("span", "own-verify-src", `via ${health.rpcHost}`));
+    box.append(hb);
+    const chipFor = (label, v) =>
+      el(
+        "span",
+        `own-chip own-chip-${v === true ? "yes" : v === false ? "no" : "dim"}`,
+        `${label} ${v === true ? "✓" : v === false ? "✗" : "—"}`,
+      );
+    const table = el("div", "own-table");
+    for (const c of health.contracts) {
+      const st = c.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", c.name));
+      const ac = el("div", "own-ac");
+      if (c.address) ac.append(link("own-addr", c.address, `https://basescan.org/address/${c.address}`));
+      else ac.append(el("span", "own-addr own-missing", "— no pin"));
+      const tail = el("div", "own-prov");
+      const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
+      tail.append(el("span", `own-chip own-chip-${stCls}`, st));
+      tail.append(chipFor("code", c.codeMatch));
+      tail.append(chipFor("keccak", c.hashMatch));
+      // ERC-165 conformance is a string status, not a bool: conformant / non-
+      // conformant (a spec violation) / absent (no supportsInterface) / unknown.
+      const e165 = c.erc165 || "unknown";
+      const e165cls = e165 === "conformant" ? "yes" : e165 === "nonconformant" ? "no" : "dim";
+      const e165sym =
+        e165 === "conformant" ? "✓" : e165 === "nonconformant" ? "✗" : e165 === "absent" ? "—" : "?";
+      tail.append(el("span", `own-chip own-chip-${e165cls}`, `erc165 ${e165sym}`));
+      row.append(rc, ac, tail);
+      table.append(row);
+    }
+    box.append(table);
+  };
+  // Production beacons: each should be Safe-owned and point at its pinned impl.
+  const renderBeacons = (b) => {
+    if (!b || !Array.isArray(b.beacons) || b.beacons.length === 0) return;
+    box.append(el("h2", null, `Beacons — ${b.network}`));
+    box.append(
+      el(
+        "div",
+        "own-sub",
+        `Each production beacon should be Safe-owned and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
+      ),
+    );
+    const allHealthy = b.healthy === b.total;
+    const banner = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
+    banner.append(
+      el(
+        "span",
+        "own-verify-msg",
+        `${b.healthy} of ${b.total} beacons Safe-owned & at ${b.targetVersion} on ${b.network}.`,
+      ),
+    );
+    if (b.safeOwner) banner.append(el("span", "own-verify-src", `Safe = ${b.safeOwner}`));
+    box.append(banner);
+    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const detailLine = (key, chipText, chipCls, addr) => {
+      const line = el("div", "bcn-line");
+      line.append(el("span", "bcn-key", key));
+      line.append(el("span", `own-chip own-chip-${chipCls}`, chipText));
+      if (addr) line.append(explorerLink(addr));
+      return line;
+    };
+    const table = el("div", "own-table");
+    for (const bc of b.beacons) {
+      const st = bc.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", bc.name));
+      if (bc.address) {
+        const note = el("div", "own-note");
+        note.append(explorerLink(bc.address));
+        rc.append(note);
+      }
+      const detail = el("div", "bcn-detail");
+      // owner: who it actually is
+      const own =
+        bc.ownerLabel === "safe"
+          ? ["Safe", "yes"]
+          : bc.ownerLabel === "legacy"
+            ? ["legacy EOA", "no"]
+            : bc.ownerLabel === "foreign"
+              ? ["foreign", "no"]
+              : ["—", "dim"];
+      detail.append(detailLine("owner", own[0], own[1], bc.owner));
+      // impl: what it points at NOW, and — when it isn't already there — what it
+      // SHOULD point at, so a proposed upgradeTo(...) can be checked against both.
+      if (bc.atTarget === true) {
+        detail.append(detailLine("impl", `${bc.implVersion} ✓`, "yes", bc.implementation));
+      } else {
+        const nowLabel = bc.atTarget === false ? bc.implVersion : "unknown";
+        const nowCls = bc.atTarget === false ? "no" : "dim";
+        detail.append(detailLine("now", nowLabel, nowCls, bc.implementation));
+        if (bc.targetImpl) {
+          detail.append(detailLine("target", bc.targetVersion, "target", bc.targetImpl));
+        }
+      }
+      const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
+      row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
+      table.append(row);
+    }
+    box.append(table);
+  };
+  // Registry tokens: each wrapper's on-chain identity must match the registry and
+  // its asset() must point at the declared unwrapped underlying, with the linked
+  // unwrapped/legacy/receipt addresses all deployed.
+  const renderTokens = (t) => {
+    if (!t || !Array.isArray(t.tokens) || t.tokens.length === 0) return;
+    box.append(el("h2", null, `Tokens — ${t.network}`));
+    const tsub = el("div", "own-sub");
+    tsub.append("Each token in the ");
+    tsub.append(link("", `${t.org}/${t.repo}`, `https://github.com/${t.org}/${t.repo}`));
+    tsub.append(
+      ` Base list, checked live on ${t.network}: name/symbol/decimals match the registry verbatim, asset() points at the declared unwrapped underlying, and the unwrapped/legacy/receipt addresses are deployed.`,
+    );
+    box.append(tsub);
+    const allOk = t.ok === t.total;
+    const tb = el("div", `own-verify ${allOk ? "own-verify-ok" : "own-verify-drift"}`);
+    tb.append(
+      el("span", "own-verify-msg", `${t.ok} of ${t.total} tokens fully wired on ${t.network}.`),
+    );
+    tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
+    box.append(tb);
+    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    // The setAuthorizer migration target, stated once: what a pending Safe bundle
+    // rewires every receipt vault's authorizer() to, and how many are already there.
+    const auth = t.authoriser;
+    if (auth && auth.target) {
+      const allAt = t.atAuthoriserTarget === t.wrappedCount;
+      const ab = el("div", `own-verify ${allAt ? "own-verify-ok" : "own-verify-drift"}`);
+      const dep =
+        auth.targetDeployed === true
+          ? "deployed"
+          : auth.targetDeployed === false
+            ? "NOT deployed"
+            : "deploy state unknown";
+      ab.append(
+        el(
+          "span",
+          "own-verify-msg",
+          `Authoriser migration — ${t.atAuthoriserTarget} of ${t.wrappedCount} receipt vaults at the V4-clone target (${dep}); a setAuthorizer bundle rewires the rest.`,
+        ),
+      );
+      ab.append(el("span", "own-verify-src", `target ${auth.target}`));
+      box.append(ab);
+    }
+    const okChip = (label, v) => {
+      const sym = v === true ? "✓" : v === false ? "✗" : "—";
+      const cls = v === true ? "yes" : v === false ? "no" : "dim";
+      return el("span", `own-chip own-chip-${cls}`, label ? `${label} ${sym}` : sym);
+    };
+    // The resolved-authoriser chip: what authorizer() actually is right now.
+    const authChip = (lbl) => {
+      const m = {
+        target: ["V4 clone ✓", "yes"],
+        current: ["current prod authoriser", "no"],
+        none: ["unset", "no"],
+        foreign: ["foreign", "no"],
+      }[lbl] || ["—", "dim"];
+      return el("span", `own-chip own-chip-${m[1]}`, m[0]);
+    };
+    // The authoriser rows (now + → target) shared by registry tokens and the extra
+    // governed vaults: what authorizer() is NOW, and the target it should become.
+    const authRows = (detail, o) => {
+      const anl = el("div", "bcn-line");
+      anl.append(el("span", "bcn-key", "authoriser"));
+      anl.append(authChip(o.authoriserLabel));
+      if (o.authoriser) anl.append(explorerLink(o.authoriser));
+      detail.append(anl);
+      if (o.atAuthoriserTarget === false && o.authoriserTarget) {
+        const atl = el("div", "bcn-line");
+        atl.append(el("span", "bcn-key", "target"));
+        atl.append(el("span", "own-chip own-chip-target", "V4 clone"));
+        atl.append(explorerLink(o.authoriserTarget));
+        detail.append(atl);
+      }
+    };
+    // Cross-check the registry against the migration's authoritative vault set:
+    // governed vaults the registry doesn't list (surfaced with their authoriser so
+    // the whole setAuthorizer bundle is reviewable), and any registry vault the
+    // migration misses.
+    const renderReconcile = (rec) => {
+      if (!rec) return;
+      const extra = Array.isArray(rec.extraVaults) ? rec.extraVaults : [];
+      const missing = Array.isArray(rec.missingFromMigration) ? rec.missingFromMigration : [];
+      if (!extra.length && !missing.length) return;
+      box.append(el("h3", "tok-h3", "Migration set cross-check"));
+      box.append(
+        el(
+          "div",
+          "own-sub",
+          `${rec.source} · ${rec.function} — the authoritative vault set the setAuthorizer bundle operates on.`,
+        ),
+      );
+      const rb = el("div", "own-verify own-verify-drift");
+      rb.append(
+        el(
+          "span",
+          "own-verify-msg",
+          `${rec.governedCount} governed receipt vaults · ${rec.registryTokenCount} registry tokens — ${extra.length} governed vault(s) not in the registry, ${missing.length} registry token(s) not in the migration. The bundle has one setAuthorizer per governed vault.`,
+        ),
+      );
+      box.append(rb);
+      if (extra.length) {
+        const etable = el("div", "own-table");
+        for (const v of extra) {
+          const row = el("div", "own-row hlth-extra");
+          const rc = el("div", "own-rc");
+          rc.append(el("div", "own-role", v.symbol || "(unknown)"));
+          if (v.name) rc.append(el("div", "own-note", v.name));
+          const note = el("div", "own-note");
+          note.append(explorerLink(v.address));
+          rc.append(note);
+          rc.append(el("div", "own-note", "not in registry"));
+          const detail = el("div", "bcn-detail");
+          authRows(detail, v);
+          row.append(rc, detail, el("span", "own-chip own-chip-no", "unlisted"));
+          etable.append(row);
+        }
+        box.append(etable);
+      }
+      if (missing.length) {
+        const mb = el("div", "own-verify own-verify-drift");
+        mb.append(
+          el(
+            "span",
+            "own-verify-msg",
+            `${missing.length} registry token(s) have no governed receipt vault — not in the setAuthorizer bundle (a plain collateral token like USDC is expected; a wrapped token here is a gap).`,
+          ),
+        );
+        box.append(mb);
+        const mtable = el("div", "own-table");
+        for (const m of missing) {
+          // A wrapped token that isn't governed is a real gap (red); a plain
+          // collateral token with no vault is expected (dim).
+          const row = el("div", `own-row ${m.wrapped ? "hlth-mismatch" : "hlth-extra"}`);
+          const rc = el("div", "own-rc");
+          rc.append(el("div", "own-role", m.symbol || "(unknown)"));
+          if (m.name) rc.append(el("div", "own-note", m.name));
+          const note = el("div", "own-note");
+          note.append(explorerLink(m.receiptVault || m.address));
+          rc.append(note);
+          rc.append(el("div", "own-note", m.reason || "not in migration set"));
+          const pill = m.wrapped
+            ? el("span", "own-chip own-chip-no", "unmigrated")
+            : el("span", "own-chip own-chip-dim", "collateral");
+          row.append(rc, el("div", "bcn-detail"), pill);
+          mtable.append(row);
+        }
+        box.append(mtable);
+      }
+    };
+    const table = el("div", "own-table");
+    for (const tk of t.tokens) {
+      const st = tk.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", tk.symbol));
+      if (tk.name) rc.append(el("div", "own-note", tk.name));
+      if (tk.address) {
+        const note = el("div", "own-note");
+        note.append(explorerLink(tk.address));
+        rc.append(note);
+      }
+      const detail = el("div", "bcn-detail");
+      // identity: the three registry fields read back from the token contract.
+      const idl = el("div", "bcn-line");
+      idl.append(el("span", "bcn-key", "identity"));
+      idl.append(okChip("name", tk.nameOk));
+      idl.append(okChip("symbol", tk.symbolOk));
+      idl.append(okChip("decimals", tk.decimalsOk));
+      detail.append(idl);
+      // For any identity field that disagrees, show the on-chain value NOW next to
+      // the registry value it SHOULD be, so the actual difference is visible.
+      const fmt = (v) => (v === null || v === undefined ? "—" : `“${v}”`);
+      const idDiff = (key, ok, live, expected) => {
+        if (ok !== false) return;
+        const now = el("div", "bcn-line");
+        now.append(el("span", "bcn-key", key));
+        now.append(el("span", "own-chip own-chip-no", "on-chain"));
+        now.append(el("span", "tok-val", fmt(live)));
+        detail.append(now);
+        const exp = el("div", "bcn-line");
+        exp.append(el("span", "bcn-key", ""));
+        exp.append(el("span", "own-chip own-chip-target", "registry"));
+        exp.append(el("span", "tok-val", fmt(expected)));
+        detail.append(exp);
+      };
+      idDiff("name", tk.nameOk, tk.liveName, tk.name);
+      idDiff("symbol", tk.symbolOk, tk.liveSymbol, tk.symbol);
+      idDiff("decimals", tk.decimalsOk, tk.liveDecimals, tk.decimals);
+      // A plain collateral token (e.g. USDC) declares no unwrapped underlying, so
+      // it has no asset()/wiring to check — identity is the whole verdict.
+      if (tk.wrapped) {
+        // asset: what asset() returns NOW, and — when it isn't the declared
+        // unwrapped — what it SHOULD be, so a proposed re-wire can be checked.
+        const al = el("div", "bcn-line");
+        al.append(el("span", "bcn-key", "asset"));
+        al.append(okChip("", tk.assetOk));
+        if (tk.asset) al.append(explorerLink(tk.asset));
+        detail.append(al);
+        if (tk.assetOk === false && tk.unwrapped) {
+          const xl = el("div", "bcn-line");
+          xl.append(el("span", "bcn-key", "expected"));
+          xl.append(el("span", "own-chip own-chip-target", "unwrapped"));
+          xl.append(explorerLink(tk.unwrapped));
+          detail.append(xl);
+        }
+        // linked deploys — only the addresses the registry actually declares.
+        for (const [key, ok, addr] of [
+          ["unwrapped", tk.unwrappedDeployed, tk.unwrapped],
+          ["legacy", tk.legacyDeployed, tk.legacy],
+          ["receipt", tk.receiptDeployed, tk.receipt],
+        ]) {
+          if (!addr) continue;
+          const dl = el("div", "bcn-line");
+          dl.append(el("span", "bcn-key", key));
+          dl.append(okChip("", ok));
+          dl.append(explorerLink(addr));
+          detail.append(dl);
+        }
+        // authoriser: what authorizer() on the receipt vault resolves to NOW, and
+        // — when it isn't yet the V4-clone target — the target the setAuthorizer
+        // bundle sets, so the proposed transaction can be checked per vault.
+        authRows(detail, tk);
+      }
+      // registry→migration membership, shown on EVERY registry entry so the
+      // reconcile is visible per token: a wrapped token shows whether its receipt
+      // vault is in the setAuthorizer bundle; a plain token (USDC) has no receipt
+      // vault, so it is out of scope — shown, not silently dropped.
+      {
+        const ml = el("div", "bcn-line");
+        ml.append(el("span", "bcn-key", "migration"));
+        if (!tk.wrapped) {
+          ml.append(el("span", "own-chip own-chip-dim", "—"));
+          ml.append(
+            el("span", "tok-val", "no receipt vault (collateral) — not in the migration"),
+          );
+        } else {
+          ml.append(okChip("", tk.inMigrationSet));
+          ml.append(
+            el(
+              "span",
+              "tok-val",
+              tk.inMigrationSet ? "in setAuthorizer bundle" : "NOT in bundle — will not be migrated",
+            ),
+          );
+        }
+        detail.append(ml);
+      }
+      const stCls = st === "ok" ? "yes" : st === "unknown" ? "dim" : "no";
+      row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
+      table.append(row);
+    }
+    box.append(table);
+    renderReconcile(t.reconcile);
+  };
+  const owners = data.deploymentOwners;
+  box.append(el("h2", null, "Known owners"));
+  if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
+    box.append(
+      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
+    );
+    renderHealth(data.deploymentHealth);
+    renderBeacons(data.deploymentBeacons);
+    renderTokens(data.deploymentTokens);
+    return;
+  }
+  const sub = el("div", "own-sub");
+  sub.append("Privileged addresses read from the ");
+  sub.append(
+    link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
+  );
+  sub.append(
+    ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
+  );
+  box.append(sub);
+  for (const g of owners.groups) {
+    const grp = el("div", "own-group");
+    grp.append(el("div", "own-grouphead", g.title));
+    if (g.note) grp.append(el("div", "own-groupnote", g.note));
+    if (g.verification) grp.append(verifyBanner(g.verification));
+    const table = el("div", "own-table");
+    for (const e of g.entries || []) {
+      const status = e.status || "active";
+      const row = el("div", `own-row own-${status}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", e.role));
+      if (e.note) rc.append(el("div", "own-note", e.note));
+      const ac = el("div", "own-ac");
+      if (e.address) {
+        ac.append(link("own-addr", e.address, explorer(e.address, e.network)));
+      } else {
+        ac.append(el("span", "own-addr own-missing", "— not found"));
+      }
+      if (e.network) ac.append(el("span", "own-net", e.network));
+      // Where a row was checked on-chain, show its two provenances side by side as
+      // independent ✓/✗ per source — the declared constant and the getOwners()
+      // result; otherwise a plain status pill.
+      let tail;
+      if (e.onChain) {
+        const oc = e.onChain;
+        tail = el("div", "own-prov");
+        // constant source: present unless this owner was only seen on-chain.
+        tail.append(
+          oc === "extra"
+            ? el("span", "own-chip own-chip-no", "constant ✗")
+            : el("span", "own-chip own-chip-yes", "constant ✓"),
+        );
+        // on-chain source: present for match/extra, absent for missing, unknown
+        // when the RPC didn't answer.
+        tail.append(
+          oc === "missing"
+            ? el("span", "own-chip own-chip-no", "on-chain ✗")
+            : oc === "unverified"
+              ? el("span", "own-chip own-chip-dim", "on-chain —")
+              : el("span", "own-chip own-chip-yes", "on-chain ✓"),
+        );
+      } else {
+        tail = el("span", `own-status own-status-${status}`, status);
+      }
+      row.append(rc, ac, tail);
+      table.append(row);
+    }
+    grp.append(table);
+    box.append(grp);
+  }
+  renderHealth(data.deploymentHealth);
+  renderBeacons(data.deploymentBeacons);
+  renderTokens(data.deploymentTokens);
+}
+let data = null;
+async function load() {
+  try {
+    const r = await fetch("health.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    data = await r.json();
+  } catch (e) {
+    $("meta").textContent = "could not load health.json";
+    $("deployments").textContent = "";
+    return;
+  }
+  const ago = Math.round((Date.now() - new Date(data.generatedAt).getTime()) / 3.6e6);
+  $("meta").textContent =
+    `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
+    (isFinite(ago) ? ` (${ago}h ago)` : "");
+  renderDeployments(document, $, data);
+}
+load();
+</script>
+</body>
+</html>

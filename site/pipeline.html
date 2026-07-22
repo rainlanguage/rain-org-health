@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>rain org health — overview</title>
+<title>rain org health — pipeline</title>
 <style>
   :root {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -162,13 +162,17 @@
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
   .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
-  .fsm-list { margin: 2px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
+  .fsm-list { margin: 18px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
   .fsm-list.open { display: block; }
   .fsm-list .li { display: block; padding: 9px 13px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); font-size: 13.5px; }
   .fsm-list .li:last-child { border-bottom: 0; }
   .fsm-list .li:hover { background: var(--surface); }
   .fsm-list .li .lr { color: var(--ink-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
   .fsm-list .li .lz { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+  .fsm-list .fsm-dh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 13px; background: var(--surface); border-bottom: 1px solid var(--border); }
+  .fsm-list .fsm-dh .dhl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); }
+  .fsm-list .fsm-dh .dhc { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
+  .fsm-list .empty { padding: 12px 13px; }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
   .fsm-lane { margin: 14px 0 2px; }
@@ -239,15 +243,15 @@
     <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
   </header>
   <nav class="nav">
-    <a href="index.html" class="active">Overview</a>
+    <a href="index.html">Overview</a>
     <a href="repositories.html">Repositories</a>
     <a href="audit.html">Audit</a>
-    <a href="pipeline.html">Pipeline</a>
+    <a href="pipeline.html" class="active">Pipeline</a>
     <a href="metrics.html">Metrics</a>
     <a href="deployments.html">Deployments</a>
   </nav>
-  <div class="tiles" id="tiles"></div>
-  <div id="auditglance"></div>
+  <h2>Pipeline state machine</h2>
+  <div id="fsm"><div class="empty" id="fsmempty">loading pipeline state…</div></div>
   <footer>
     Org-health dashboard — status, not severity; identity is the label, not the color.
     <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
@@ -261,68 +265,249 @@ $("theme").addEventListener("click", () => {
   const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
 });
-let data = null;
-async function load() {
-  try {
-    const r = await fetch("health.json", { cache: "no-store" });
-    if (!r.ok) throw new Error(r.status);
-    data = await r.json();
-  } catch (e) {
-    $("meta").textContent = "could not load health.json";
+// ---- Pipeline FSM: the daily conformance review (README "Pipeline state machine").
+// Every open producer PR/issue sits in exactly one modeled ai:* state; the leak
+// bucket = PRs with a producer note but no state label, and should trend to zero.
+// Consumes health.json's `humanQueue` block (schema == `pr-review-report human-queue --json`).
+// All human-queue fields are UNTRUSTED (titles/reasons are attacker-influenceable PR/issue
+// content). This panel builds the DOM directly (createElement / textContent / .append / .href),
+// matching the rest of the dashboard — so escaping is BY CONSTRUCTION and there is no hand-rolled
+// HTML escaper to keep correct at every sink.
+function renderFsm(hq) {
+  const box = $("fsm");
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  // A link whose href is set via the .href PROPERTY (the DOM escapes it) — never string-built.
+  const link = (cls, text, href) => {
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener";
+    a.target = "_blank";
+    return a;
+  };
+
+  box.textContent = "";
+  if (!hq || !hq.counts) {
+    const empty = el("div", "empty");
+    empty.append(
+      "Pipeline state not wired yet — populated once ",
+      link(null, "the human-queue tool", "https://github.com/rainlanguage/issue-pr-cron/pull/41"),
+      " lands and the scan folds it into health.json."
+    );
+    box.append(empty);
     return;
   }
-  const ago = Math.round((Date.now() - new Date(data.generatedAt).getTime()) / 3.6e6);
-  $("meta").textContent =
-    `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
-    (isFinite(ago) ? ` (${ago}h ago)` : "");
-  const signalCount = Object.keys(data.summary || {}).length;
-  const clean = data.totalRepos - data.reposWithFindings;
-  const tiles = [
-    [data.totalRepos, "repos scanned"],
-    [data.reposWithFindings, "with debt"],
-    [clean, "clean"],
-    [signalCount, "distinct signals"],
-    [data.reposExternallyAudited, "externally audited"],
-    [data.reposNeverExternallyAudited, "never audited"],
+  const c = hq.counts;
+  const urlOf = (it, issue) => `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
+
+  // Main lifecycle rail — issue → un-vetted → ai:ready → queue → approved → merged.
+  const rail = el("div", "fsm-rail");
+  const railNodes = [
+    { l: "open issue" }, { l: "un-vetted" }, { l: "ai:ready", n: c.ready },
+    { l: "queue" }, { l: "approved" }, { l: "merged", done: true },
   ];
-  const box = $("tiles");
-  box.textContent = "";
-  for (const [n, l] of tiles) {
-    const t = document.createElement("div");
-    t.className = "tile";
-    const num = document.createElement("div");
-    num.className = "n";
-    num.textContent = n == null ? "—" : String(n);
-    const lab = document.createElement("div");
-    lab.className = "l";
-    lab.textContent = l;
-    t.append(num, lab);
-    box.appendChild(t);
+  railNodes.forEach((nd, i) => {
+    const node = el("div", "fsm-node" + (nd.done ? " done" : nd.n == null ? " flow" : ""));
+    node.append(el("span", "nl", nd.l));
+    if (nd.n != null) node.append(el("span", "nc", String(Number(nd.n))));
+    rail.append(node);
+    if (i < railNodes.length - 1) rail.append(el("span", "fsm-arrow", "→"));
+  });
+
+  // Leak bucket — the loudest element.
+  let alarm;
+  if (c.leaks > 0) {
+    alarm = el("button", "fsm-alarm bad");
+    alarm.dataset.t = "leak";
+    const atxt = el("span", "atxt");
+    atxt.append(
+      el("b", null, "not in any modeled state"),
+      " — producer PRs with a note but no ",
+      el("code", null, "ai:*"),
+      " label. The FSM-leak signal; it should be ",
+      el("b", null, "zero"),
+      ". Click to see what needs modeling."
+    );
+    alarm.append(el("span", "an", String(Number(c.leaks))), atxt);
+  } else {
+    alarm = el("div", "fsm-alarm ok");
+    const atxt = el("span", "atxt");
+    atxt.append(el("b", null, "fully conformant"), " — every open PR sits in a modeled state.");
+    alarm.append(el("span", "an", "0"), atxt);
   }
-  const neverN = data.reposNeverExternallyAudited || 0;
-  const g = $("auditglance");
-  g.textContent = "";
-  const alarm = document.createElement(neverN > 0 ? "a" : "div");
-  alarm.className = "au-alarm " + (neverN > 0 ? "bad" : "ok");
-  if (neverN > 0) {
-    alarm.href = "audit.html";
-    alarm.style.textDecoration = "none";
-    alarm.style.color = "inherit";
-    alarm.style.cursor = "pointer";
+
+  // The full machine, grouped by lane (issue-pr-cron `human-queue --json` `lanes`
+  // object: lane -> state -> { count, prs:[{repo,number,url,title}] }). The object is
+  // SPARSE (only non-empty states are emitted), so the lane/state set below is the
+  // canonical shape — a state absent from the JSON renders zero (dimmed), keeping the
+  // machine's whole shape visible. laneItems maps a state key -> its PR list for the
+  // click-to-expand detail. closeCandidateIssues (open ai:close-candidate ISSUES, not
+  // PRs) is carried alongside as its own group so that inventory isn't lost.
+  const hasLanes = hq.lanes && typeof hq.lanes === "object";
+  const laneItems = new Map();
+  const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
+
+  const stateBox = (key, label, count, act, kind) => {
+    const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
+    b.dataset.t = key;
+    b.append(el("div", "sc", String(Number(count))), el("div", "sk", label), el("div", "sa", act));
+    return b;
+  };
+
+  // Renders every state (kind: flow = moving, rule = needs a human ruling, blk = a
+  // stuck/rework pile) in lane order vet-lifecycle → vetter-verdicts → producer-blocked
+  // → human-decisions, then the close-candidate ISSUES as a final group.
+  const LANES = [
+    { title: "vet lifecycle", lane: "vet-lifecycle", states: [
+      { state: "un-vetted", act: "awaiting first vet", kind: "flow" },
+      { state: "awaiting-re-vet", act: "head moved · re-vet", kind: "flow" },
+    ] },
+    { title: "vetter verdicts", lane: "vetter-verdicts", states: [
+      { state: "ai:ready", act: "merge", kind: "flow" },
+      { state: "ai:reject", act: "producer reworks", kind: "blk" },
+      { state: "ai:relink", act: "Closes → Refs", kind: "rule" },
+      { state: "ai:design", act: "rule", kind: "rule" },
+      { state: "ai:close-candidate", act: "close PR", kind: "rule" },
+    ] },
+    { title: "producer blocked", lane: "producer-blocked", states: [
+      { state: "ai:blocked-deploy", act: "diagnose deploy", kind: "blk" },
+      { state: "ai:blocked-infra", act: "fix infra", kind: "blk" },
+      { state: "ai:blocked-on", act: "unblock dep", kind: "blk" },
+    ] },
+    { title: "human decisions", lane: "human-decisions", states: [
+      { state: "human:reject", act: "override", kind: "rule" },
+      { state: "human:design", act: "override", kind: "rule" },
+      { state: "human:close-candidate", act: "override", kind: "rule" },
+    ] },
+  ];
+
+  const grid = el("div"); // container appended into the panel below
+  if (hasLanes) {
+    LANES.forEach((L) => {
+      const g = el("div", "fsm-grid");
+      let laneTotal = 0;
+      L.states.forEach((s) => {
+        const cell = laneState(L.lane, s.state);
+        const count = cell ? Number(cell.count) || 0 : 0;
+        laneTotal += count;
+        laneItems.set(s.state, (cell && cell.prs) || []);
+        // The PR close-candidate state and the close-candidate ISSUES group both read
+        // `ai:close-candidate`; qualify the PR one so the two never look identical.
+        const boxLabel = s.state === "ai:close-candidate" ? "ai:close-candidate (PRs)" : s.state;
+        g.append(stateBox(s.state, boxLabel, count, s.act, s.kind));
+      });
+      const lane = el("div", "fsm-lane");
+      const h = el("div", "fsm-lane-h");
+      h.append(el("span", null, L.title), el("span", "lct", String(laneTotal)));
+      lane.append(h, g);
+      grid.append(lane);
+    });
+    // Close-candidate ISSUES (open ai:close-candidate issues, distinct from the PR state).
+    const ig = el("div", "fsm-grid");
+    ig.append(stateBox("closeCandidateIssues", "ai:close-candidate (issues)", Number(c.closeCandidateIssues) || 0, "close issue", "rule"));
+    const ilane = el("div", "fsm-lane");
+    const ih = el("div", "fsm-lane-h");
+    ih.append(el("span", null, "close-candidate issues"), el("span", "lct", String(Number(c.closeCandidateIssues) || 0)));
+    ilane.append(ih, ig);
+    grid.append(ilane);
+  } else {
+    // Backward-compat: an older human-queue.json with no `lanes` — render the original
+    // 6 human-action states from the legacy `states`/`counts` keys so the panel never blanks.
+    const legacy = [
+      { key: "ai:ready", label: "ai:ready", n: c.ready, act: "merge", kind: "flow" },
+      { key: "ai:design", label: "ai:design", n: c.design, act: "rule", kind: "rule" },
+      { key: "closeCandidateIssues", label: "ai:close-candidate", n: c.closeCandidateIssues, act: "close", kind: "rule" },
+      { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, act: "diagnose deploy", kind: "blk" },
+      { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, act: "fix infra", kind: "blk" },
+      { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, act: "unblock dep", kind: "blk" },
+    ];
+    const g = el("div", "fsm-grid");
+    legacy.forEach((s) => g.append(stateBox(s.key, s.label, s.n, s.act, s.kind)));
+    grid.append(g);
   }
-  const an = document.createElement("span");
-  an.className = "an";
-  an.textContent = String(neverN);
-  const atxt = document.createElement("span");
-  atxt.className = "atxt";
-  atxt.textContent =
-    neverN > 0
-      ? "repos never externally audited — the Protofire coverage gap. Open the Audit page →"
-      : "every repo externally audited.";
-  alarm.append(an, atxt);
-  g.append(alarm);
+
+  // itemsFor returns { arr, issue } for a state key: the item list, and whether the
+  // items are issues (vs PRs) — which decides the GitHub URL path.
+  const itemsFor = (key) => {
+    if (key === "leak") return { arr: hq.leaks || [], issue: false };
+    if (key === "closeCandidateIssues") return { arr: hq.closeCandidateIssues || [], issue: true };
+    if (laneItems.has(key)) return { arr: laneItems.get(key), issue: false };
+    return { arr: (hq.states && hq.states[key]) || [], issue: false };
+  };
+
+  // Detail body for a clicked box: a header naming THIS state and its OWN item count
+  // (the list length rendered directly below it), so the panel can never read as
+  // belonging to another section, then the items.
+  const detailBody = (key, label) => {
+    const { arr, issue } = itemsFor(key);
+    const frag = document.createDocumentFragment();
+    const h = el("div", "fsm-dh");
+    h.append(el("span", "dhl", label), el("span", "dhc", arr.length + (arr.length === 1 ? " item" : " items")));
+    frag.append(h);
+    if (!arr.length) {
+      frag.append(el("div", "empty", "no items in this state"));
+      return frag;
+    }
+    arr.forEach((it) => {
+      const a = link("li", undefined, urlOf(it, issue));
+      a.append(el("span", "lr", it.repo + "#" + Number(it.number)), " " + (it.title == null ? "" : it.title));
+      if (it.reason) a.append(el("span", "lz", it.reason));
+      frag.append(a);
+    });
+    return frag;
+  };
+
+  const note = el("div", "fsm-note");
+  note.append(
+    "The pipeline is a ",
+    link(null, "finite state machine", "https://github.com/rainlanguage/issue-pr-cron/blob/main/README.md"),
+    " — every open PR/issue sits in exactly one modeled ",
+    el("code", null, "ai:*"),
+    " state, and this is the daily conformance review"
+  );
+  if (hq.sample) note.append(" ", el("b", null, "(sample data — live once issue-pr-cron#41 lands)"));
+  note.append(".");
+
+  const detail = el("div", "fsm-list");
+  detail.id = "fsmdetail";
+  box.append(alarm, rail, grid, detail, note);
+
+  // Header label for a clicked box: its own state label (.sk), or a friendly name for
+  // the leak alarm (which carries no .sk).
+  const labelOf = (b, k) => {
+    const sk = b.querySelector && b.querySelector(".sk");
+    if (sk && sk.textContent) return sk.textContent;
+    return k === "leak" ? "not in any modeled state" : k;
+  };
+
+  let openKey = null;
+  box.querySelectorAll("[data-t]").forEach((b) => b.addEventListener("click", () => {
+    const k = b.dataset.t;
+    box.querySelectorAll("[data-t]").forEach((x) => x.classList.remove("sel"));
+    if (openKey === k) { detail.classList.remove("open"); openKey = null; return; }
+    openKey = k;
+    // The detail is a single panel at the bottom of the machine; its header names
+    // the selected state (below) and CSS gives it clear vertical separation, so it
+    // reads as the clicked state's list rather than an extension of the last lane.
+    detail.replaceChildren(detailBody(k, labelOf(b, k)));
+    detail.classList.add("open");
+    if (b.classList.contains("fsm-state")) b.classList.add("sel");
+  }));
 }
-load();
+
+// FSM-conformance state is issue-pr-cron's OWN artifact, fetched at runtime like the producer
+// metrics below — never baked into this repo or computed here (CLAUDE.md: the dashboard is a
+// consumer, not a producer, of data; new data ⇒ new fetch, not new baking).
+const HQ_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue.json";
+$("meta").textContent = "pipeline conformance · issue-pr-cron";
+fetch(HQ_URL, { cache: "no-store" })
+  .then((r) => (r.ok ? r.json() : null))
+  .then(renderFsm)
+  .catch(() => renderFsm(null));
 </script>
 </body>
 </html>

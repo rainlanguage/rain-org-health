@@ -1,0 +1,50 @@
+name: scan
+# Scheduled org scan: regenerate site/health.json so the dashboard stays fresh WITHOUT
+# any PR ever running the scan. PRs only change code/rendering; this keeps the data current.
+on:
+  schedule:
+    - cron: "17 * * * *" # hourly at :17 (offset off :00 to avoid clustering with other crons)
+  workflow_dispatch: {}
+permissions:
+  contents: write # commit the regenerated health.json back to the default branch
+concurrency:
+  group: scan
+  cancel-in-progress: false
+jobs:
+  scan:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: rainlanguage/rainix/.github/actions/nix-cachix-setup@main
+        with:
+          checkout: 'false'
+          cachix-auth-token: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      - name: Regenerate site/health.json
+        env:
+          # github.token reads the org's PUBLIC repos + search. Set a SCAN_TOKEN secret
+          # (PAT with org read) only if private repos must be scanned.
+          GH_TOKEN: ${{ secrets.SCAN_TOKEN || github.token }}
+          ORGS: "rainlanguage cyclofinance S01-Issuer"
+        run: nix run .#roh-scan
+      - name: Commit if changed
+        run: |
+          if [ -n "$(git status --porcelain site/health.json)" ]; then
+            git config user.name "github-actions[bot]"
+            git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+            git add site/health.json
+            git commit -m "chore(scan): refresh site/health.json"
+            # A concurrent merge to master rejects a plain push (non-fast-forward).
+            # Only the scan touches health.json, so rebasing onto the latest master
+            # and retrying is conflict-free and makes the race unable to fail the scan.
+            for attempt in 1 2 3 4 5; do
+              if git pull --rebase origin master && git push; then
+                exit 0
+              fi
+              echo "push race (attempt ${attempt}/5) — rebased onto master, retrying…"
+              sleep 3
+            done
+            echo "::error::could not push refreshed health.json after 5 attempts"
+            exit 1
+          else
+            echo "site/health.json unchanged — nothing to commit"
+          fi

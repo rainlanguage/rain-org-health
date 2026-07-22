@@ -1,0 +1,988 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>rain org health — audit</title>
+<style>
+  :root {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --bar: #b45309; --bar-track: #eeebe6;
+    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07); --pm-fill-deg: rgba(220,38,38,0.15);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+      --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+      --border: #332f24; --accent: #60a5fa;
+      --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+      --clean: #4ade80; --clean-bg: #12241a;
+      --bar: #d98a2b; --bar-track: #27241b;
+      --crit: #f87171; --pm-fill: rgba(236,232,224,0.07); --pm-fill-deg: rgba(248,113,113,0.18);
+    }
+  }
+  :root[data-theme="dark"] {
+    --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
+    --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
+    --border: #332f24; --accent: #60a5fa;
+    --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
+    --clean: #4ade80; --clean-bg: #12241a;
+    --bar: #d98a2b; --bar-track: #27241b;
+    --crit: #f87171; --pm-fill: rgba(236,232,224,0.07); --pm-fill-deg: rgba(248,113,113,0.18);
+  }
+  :root[data-theme="light"] {
+    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
+    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
+    --border: #e7e2da; --accent: #2563eb;
+    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
+    --clean: #15803d; --clean-bg: #e7f5ec;
+    --bar: #b45309; --bar-track: #eeebe6;
+    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07); --pm-fill-deg: rgba(220,38,38,0.15);
+  }
+  * { box-sizing: border-box; }
+  body {
+    margin: 0; background: var(--bg); color: var(--ink);
+    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
+    -webkit-font-smoothing: antialiased;
+  }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
+  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 4px; }
+  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
+  .meta { color: var(--ink-3); font-size: 13px; }
+  .theme-btn {
+    margin-left: auto; background: var(--surface); color: var(--ink-2);
+    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
+    font-size: 13px; cursor: pointer;
+  }
+  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0; }
+  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
+  .tile .n { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
+  .tile .l { color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
+  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
+       margin: 32px 0 12px; font-weight: 600; }
+  .summary { display: grid; gap: 6px; }
+  .srow {
+    display: grid; grid-template-columns: 220px 1fr 34px; align-items: center; gap: 12px;
+    background: none; border: 0; padding: 4px 6px; border-radius: 8px; cursor: pointer;
+    color: inherit; font: inherit; text-align: left; width: 100%;
+  }
+  .srow:hover { background: var(--surface); }
+  .srow.active { background: var(--surface-2); }
+  .srow .sig { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--ink-2);
+               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  .srow.active .sig { color: var(--ink); font-weight: 600; }
+  .track { height: 12px; background: var(--bar-track); border-radius: 4px; overflow: hidden; }
+  .fill { height: 100%; background: var(--bar); border-radius: 4px; min-width: 3px; }
+  .srow .c { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); text-align: right; }
+  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0 8px; }
+  input[type=search] {
+    flex: 1; min-width: 180px; background: var(--surface); border: 1px solid var(--border);
+    border-radius: 8px; padding: 8px 11px; color: var(--ink); font-size: 14px;
+  }
+  .clearf { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
+            border-radius: 8px; padding: 7px 11px; font-size: 13px; cursor: pointer; display: none; }
+  .clearf.show { display: inline-block; }
+  .repo { border-bottom: 1px solid var(--border); padding: 12px 4px; display: grid;
+          grid-template-columns: 240px 1fr; gap: 14px; align-items: start; }
+  .repo:last-child { border-bottom: 0; }
+  .repo a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 14.5px; word-break: break-word; }
+  .repo a:hover { color: var(--accent); text-decoration: underline; }
+  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
+  .chip {
+    display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
+    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+    background: var(--debt-bg); color: var(--debt); border: 1px solid var(--debt-border);
+    border-radius: 6px; padding: 2px 8px; cursor: pointer;
+  }
+  .chip::before { content: "▲"; font-size: 9px; }
+  .chip.dim { opacity: 0.32; }
+  .clean { display: inline-flex; align-items: center; gap: 6px; color: var(--clean); font-size: 13px; }
+  .clean::before { content: "✓"; font-weight: 700; }
+  .empty { color: var(--ink-3); padding: 24px 4px; }
+  .pm-chart-wrap { position: relative; background: var(--surface); border: 1px solid var(--border);
+                   border-radius: 12px; padding: 16px 16px 8px; }
+  .pm-chart { width: 100%; height: auto; display: block; overflow: visible; }
+  .pm-chart text { fill: var(--ink-3); font-size: 10px; font-variant-numeric: tabular-nums; }
+  .pm-axis-line { stroke: var(--border); stroke-width: 1; }
+  .pm-area { fill: var(--pm-fill); stroke: none; }
+  .pm-area.deg { fill: var(--pm-fill-deg); }
+  .pm-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
+  .pm-line.deg { stroke: var(--crit); }
+  .pm-dot { fill: var(--ink); }
+  .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
+  /* Qualified with .pm-chart so it outweighs `.pm-chart text` (0,1,1) — an
+     unqualified .pm-endlabel (0,1,0) loses the cascade and renders muted. */
+  .pm-chart text.pm-endlabel { fill: var(--ink); font-weight: 700; font-size: 11px; }
+  .pm-cursor { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
+  .pm-tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -100%);
+            background: var(--ink); color: var(--bg); border-radius: 8px; padding: 7px 9px;
+            font-size: 11.5px; line-height: 1.5; white-space: nowrap;
+            box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 5; transition: opacity .08s; }
+  .pm-tip .deg { color: var(--crit); font-weight: 700; }
+  .pm-empty { color: var(--ink-3); padding: 26px 4px; }
+  .pm-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
+  .pm-note a { color: var(--ink-3); }
+  .pm-note .deg { color: var(--crit); font-weight: 600; }
+  .pm-controls { display: flex; justify-content: flex-end; margin: 0 2px 10px; }
+  .pm-toggle { display: inline-flex; gap: 2px; background: var(--surface); border: 1px solid var(--border);
+               border-radius: 8px; padding: 2px; }
+  .pm-toggle button { background: none; border: 0; color: var(--ink-2); font: inherit; font-size: 12.5px;
+                      padding: 5px 12px; border-radius: 6px; cursor: pointer; }
+  .pm-toggle button.on { background: var(--surface-2); color: var(--ink); font-weight: 600; }
+  /* ---- Pipeline FSM conformance ---- */
+  .fsm-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
+  .fsm-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); cursor: pointer; text-align: left; color: inherit; font: inherit; width: 100%; }
+  .fsm-alarm.ok { background: var(--clean-bg); border: 1px solid var(--clean); }
+  .fsm-alarm .an { font-size: 32px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
+  .fsm-alarm.bad .an { color: var(--crit); }
+  .fsm-alarm.ok .an { color: var(--clean); }
+  .fsm-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+  .fsm-alarm .atxt b { color: var(--ink); }
+  .fsm-rail { display: flex; flex-wrap: wrap; align-items: stretch; gap: 5px; margin: 6px 0; }
+  .fsm-node { display: flex; flex-direction: column; justify-content: center; gap: 1px; background: var(--surface);
+              border: 1px solid var(--border); border-radius: 9px; padding: 7px 12px; }
+  .fsm-node .nl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
+  .fsm-node .nc { font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 650; color: var(--ink); }
+  .fsm-node.flow .nl { color: var(--ink-3); }
+  .fsm-node.done { border-color: var(--clean); }
+  .fsm-arrow { align-self: center; color: var(--ink-3); font-size: 13px; }
+  .fsm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 12px 0; }
+  .fsm-state { text-align: left; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border);
+               border-radius: 11px; padding: 12px 14px; cursor: pointer; color: inherit; font: inherit; width: 100%; }
+  .fsm-state:hover { background: var(--surface-2); }
+  .fsm-state.sel { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
+  .fsm-state.flow { border-left-color: var(--clean); }
+  .fsm-state.rule { border-left-color: var(--accent); }
+  .fsm-state.blk { border-left-color: var(--debt); }
+  .fsm-state.zero { opacity: 0.5; }
+  .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
+  .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
+  .fsm-list { margin: 2px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
+  .fsm-list.open { display: block; }
+  .fsm-list .li { display: block; padding: 9px 13px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); font-size: 13.5px; }
+  .fsm-list .li:last-child { border-bottom: 0; }
+  .fsm-list .li:hover { background: var(--surface); }
+  .fsm-list .li .lr { color: var(--ink-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
+  .fsm-list .li .lz { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
+  .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
+  .fsm-note a, .fsm-note code { color: var(--ink-3); }
+  .fsm-lane { margin: 14px 0 2px; }
+  .fsm-lane-h { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
+  .fsm-lane-h .lct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 650; text-transform: none; letter-spacing: 0; }
+  .fsm-lane .fsm-grid { margin: 0; }
+  /* ---- External (Protofire) audit coverage ---- */
+  .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
+  .au-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); }
+  .au-alarm.ok { background: var(--clean-bg); border: 1px solid var(--clean); }
+  .au-alarm .an { font-size: 32px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
+  .au-alarm.bad .an { color: var(--crit); }
+  .au-alarm.ok .an { color: var(--clean); }
+  .au-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
+  .au-alarm .atxt b { color: var(--ink); }
+  .au-table { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; margin: 4px 0 2px; }
+  .au-row { display: grid; grid-template-columns: 230px 84px 1fr; gap: 14px; align-items: start;
+            padding: 11px 14px; border-bottom: 1px solid var(--border); }
+  .au-row:last-child { border-bottom: 0; }
+  .au-row.stale { background: var(--debt-bg); }
+  .au-repo a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 14px; word-break: break-word; }
+  .au-repo a:hover { color: var(--accent); text-decoration: underline; }
+  .au-sub { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5;
+            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
+  .au-flag { display: inline-block; font-size: 11px; color: var(--debt); border: 1px solid var(--debt-border);
+             background: var(--debt-bg); border-radius: 5px; padding: 0 5px; margin-top: 3px; font-family: inherit; }
+  .au-status { display: inline-flex; align-items: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
+               font-weight: 650; border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
+  .au-status.stale { color: var(--crit); border: 1px solid var(--crit); background: transparent; }
+  .au-status.current { color: var(--clean); border: 1px solid var(--clean); background: transparent; }
+  .au-status.na { color: var(--ink-3); border: 1px solid var(--border); background: transparent; }
+  .au-status.never { color: var(--crit); border: 1px solid var(--crit); background: transparent; }
+  /* Dotted, matching the graph node and swatch: an indeterminate verdict, not a
+     confirmed gap. Deliberately not green — a scan that learned nothing must not
+     read as clean. */
+  .au-status.unknown { color: var(--ink-2); border: 1px dotted var(--ink-3); background: transparent; }
+  .au-drift { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
+  .au-drift .add { font-weight: 650; color: var(--clean); font-variant-numeric: tabular-nums; }
+  .au-drift .del { font-weight: 650; color: var(--crit); font-variant-numeric: tabular-nums; }
+  .au-drift .dim { color: var(--ink-3); }
+  .au-drift .ok { color: var(--clean); }
+  .au-drift a.au-drift-link { color: var(--ink-2); text-decoration: none; cursor: pointer; }
+  .au-drift a.au-drift-link:hover { text-decoration: underline; }
+  .au-drift.big { color: var(--crit); }
+  .au-drift.big a.au-drift-link { color: var(--crit); }
+  .au-drift.big .dim, .au-drift.big .ok { color: var(--crit); }
+  .au-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
+               border-radius: 8px; padding: 6px 11px; font-size: 13px; cursor: pointer; margin: 4px 0; }
+  .au-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
+  .au-note code { color: var(--ink-3); }
+  .au-subhead { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
+                margin: 20px 0 6px; font-weight: 600; }
+  footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
+  footer a { color: var(--ink-3); }
+  @media (max-width: 620px) {
+    .srow { grid-template-columns: 130px 1fr 30px; }
+    .repo { grid-template-columns: 1fr; gap: 8px; }
+  }
+  .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
+  .nav a { padding: 8px 13px; color: var(--ink-2); text-decoration: none; font-size: 13.5px;
+           border-bottom: 2px solid transparent; margin-bottom: -1px; }
+  .nav a:hover { color: var(--ink); }
+  .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .gsizer { position: relative; }
+  .gsurface { position: relative; transform-origin: 0 0; }
+  .gedges { position: absolute; inset: 0; overflow: visible; pointer-events: none; }
+  /* A current dependency is a fact the graph states at rest, so the default edge
+     is drawn in ink rather than the hairline `--border` used for panel chrome:
+     against `--surface` that border reads at ~1.2:1 and the link is invisible
+     until focus paints it. Ink clears the 3:1 non-text bar in both themes while
+     staying quieter than `--crit`/`--accent`, so stale and traced still dominate. */
+  .gedge { fill: none; stroke: var(--ink-3); stroke-width: 1; }
+  .gnode { position: absolute; box-sizing: border-box; display: inline-flex; flex-direction: column;
+           align-items: center; gap: 1px; padding: 5px 8px; border-radius: 6px; border: 1.5px solid;
+           font-size: 11px; line-height: 1.3; white-space: nowrap; background: var(--surface); cursor: pointer; }
+  .gn-repo { font-weight: 600; }
+  .gn-meta { font-size: 10px; }
+  .gn-plain { color: var(--ink-2); }
+  .gn-warn { font-size: 9px; color: var(--crit); }
+  .gnode .gn-anchor { color: inherit; text-decoration: none; border-bottom: 1px dotted currentColor; }
+  .gnode .gn-anchor:hover { border-bottom-style: solid; }
+  .gnode .add { color: var(--clean); }
+  .gnode .del { color: var(--crit); }
+  .gnode.au-current { border-color: var(--clean); background: var(--clean-bg); color: var(--clean); }
+  .gnode.au-stale { border-color: var(--debt); background: var(--debt-bg); color: var(--debt); border-style: dashed; }
+  .gnode.au-never { border-color: var(--crit); background: var(--bg); color: var(--crit); }
+  .gnode.au-na { border-color: var(--ink-3); background: var(--surface-2); color: var(--ink-2); }
+  .gn-cmt { color: var(--ink-3); }
+  .gnode.au-unknown { border-color: var(--ink-3); background: var(--surface-2); color: var(--ink-2); border-style: dotted; }
+  .legend .swatch.au-current { border-color: var(--clean); background: var(--clean-bg); }
+  .legend .swatch.au-stale { border-color: var(--debt); background: var(--debt-bg); border-style: dashed; }
+  .legend .swatch.au-never { border-color: var(--crit); background: var(--bg); }
+  .legend .swatch.au-na { border-color: var(--ink-3); background: var(--surface-2); }
+  .legend .swatch.au-unknown { border-color: var(--ink-3); background: var(--surface-2); border-style: dotted; }
+  .graphbox { height: clamp(400px, 78vh, 760px); overflow: auto; padding: 16px; border: 1px solid var(--border); border-radius: 8px; background: var(--surface); position: relative; }
+  .gnode.tr-off { opacity: 0.15; }
+  .gnode.tr-root { outline: 2px solid var(--accent); outline-offset: 1px; }
+  .gedge.stale { stroke: var(--crit); stroke-width: 1.4; }
+  .gedge.tr-on { stroke: var(--accent); stroke-width: 1.6; }
+  .gedge.tr-on.stale { stroke: var(--crit); }
+  .gedge.tr-off { opacity: 0.1; }
+  .gn-stale { font-size: 9px; color: var(--crit); font-weight: 600; }
+  /* The audit skill's own recency + open-findings backlog on a graph node. */
+  .gn-skill { font-size: 9px; color: var(--ink-2); }
+  .gn-open { color: var(--debt); font-weight: 600; }
+  .au-open { color: var(--debt); font-weight: 600; }
+  /* Comment churn: counted, but not a staleness signal — deliberately muted. */
+  .au-commentloc { color: var(--ink-3); }
+  .au-mut-commit { font-family: ui-monospace, monospace; color: var(--ink-2); }
+  .au-sub .ok, .gn-skill .ok { color: var(--clean); }
+  .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
+  .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .legend .key { display: inline-flex; align-items: center; gap: 6px; }
+  .legend .swatch { width: 22px; height: 14px; border-radius: 5px; border-width: 1.5px; border-style: solid; flex: none; }
+  .graphsum { margin: 0 0 10px; font-size: 13px; color: var(--ink); background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--debt); border-radius: 6px; padding: 8px 10px; line-height: 1.5; }
+  .graphsum b { font-weight: 600; }
+  .graphsum .none { color: var(--ink-2); }
+  .au-staledeps { font-size: 12px; color: var(--crit); margin-top: 3px; }
+  .au-staledeps b { font-weight: 600; }
+  .graphctl { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
+  .graphctl select { font: inherit; padding: 4px 8px; border: 1px solid var(--border); border-radius: 6px; background: var(--surface); color: var(--ink); }
+  .graphbox .empty { position: absolute; inset: 0; display: grid; place-items: center; }
+</style>
+</head>
+<body>
+<div class="wrap">
+  <header>
+    <h1>rain org health</h1>
+    <span class="meta" id="meta">loading…</span>
+    <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
+  </header>
+  <nav class="nav">
+    <a href="index.html">Overview</a>
+    <a href="repositories.html">Repositories</a>
+    <a href="audit.html" class="active">Audit</a>
+    <a href="pipeline.html">Pipeline</a>
+    <a href="metrics.html">Metrics</a>
+    <a href="deployments.html">Deployments</a>
+  </nav>
+  <h2>Dependency graph · blast radius</h2>
+  <p class="graphhelp" id="graphhelp">
+    Tap a repo to trace the ground it stands on — everything beneath it that an audit has to clear first. Scroll to pan, pinch or ctrl-scroll to zoom, tap the background to clear.
+    Solidity repos only; an arrow points from a consumer to the dependency it stands on.
+    Coverage is <strong>Protofire</strong> only: a repo audited by someone else still reads as uncovered here, because counting a PDF this scan cannot date would be a false coverage claim.
+  </p>
+  <p class="graphsum" id="graphsum"></p>
+  <div id="graphlegend" class="legend"></div>
+  <div id="graph" class="graphbox"><div class="empty" id="graphempty">loading dependency graph…</div></div>
+
+  <h2>External audit coverage · Protofire</h2>
+  <div id="audit"><div class="empty" id="auditempty">loading external-audit coverage…</div></div>
+  <footer>
+    Org-health dashboard — status, not severity; identity is the label, not the color.
+    <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
+  </footer>
+</div>
+<script src="vendor/elk.bundled.js"></script>
+<script type="module">
+const $ = (id) => document.getElementById(id);
+// Theme toggle: default follows the OS; the button stamps data-theme to override.
+$("theme").addEventListener("click", () => {
+  const cur = document.documentElement.getAttribute("data-theme");
+  const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
+  document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
+});
+let data = null;
+// Shared by both panels: every string rendered here is cross-repo and
+// attacker-influenceable, so the DOM is built with createElement / textContent /
+// .href — never innerHTML with data (CLAUDE.md "Rendering untrusted data").
+const el = (tag, cls, text) => {
+  const n = document.createElement(tag);
+  if (cls) n.className = cls;
+  if (text !== undefined) n.textContent = text;
+  return n;
+};
+// ---- External (Protofire) audit coverage panel ----
+// Consumes health.json's `protofireAudits` array + the reposNeverExternallyAudited
+// headline count (produced by roh-scan — the dashboard renders, never computes).
+// Every string here (repo names, PDF filenames, git tags) is cross-repo and
+// attacker-influenceable, so the DOM is built with createElement / textContent /
+// .href — never innerHTML with data. Escaping is BY CONSTRUCTION (CLAUDE.md
+// "Rendering untrusted data").
+function renderAudit() {
+  const box = $("audit");
+  // Local on purpose: test/dashboard.test.js extracts this function's source and
+  // evals it standalone, so anything it closes over must be declared inside it.
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const link = (cls, text, href) => {
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    return a;
+  };
+  const day = (iso) => (typeof iso === "string" ? iso.slice(0, 10) : "");
+
+  // Stale dependency pins per repo, from the graph scan (#79): a repo pinning a
+  // dependency below its current version resolves a different closure than the
+  // graph draws, so the audit should move it to latest. Shown on each repo's own
+  // row here rather than as one org-wide list.
+  const staleByRepo = new Map((data.auditGraph?.nodes ?? []).map((n) => [n.repo, n.staleDeps ?? []]));
+  const staleLine = (repo) => {
+    const sd = staleByRepo.get(repo) ?? [];
+    if (!sd.length) return null;
+    const line = el("div", "au-staledeps");
+    line.append(el("b", null, `⚠ ${sd.length} stale dep${sd.length > 1 ? "s" : ""}: `));
+    sd.forEach((d, i) => {
+      if (i > 0) line.append(", ");
+      line.append(`${d.repo} ${d.pinned}→${d.latest}`);
+    });
+    return line;
+  };
+
+  // The audit SKILL's own run + open findings per repo — a different signal from
+  // the external protofire audit these rows are built from. Keyed org/repo because
+  // the scan is multi-org. A stamp alone can read as "done" while its findings are
+  // still open, so recency and backlog are always shown together.
+  const skillByRepo = new Map(
+    (data.audits ?? []).map((a) => [`${a.org || data.org}/${a.name}`, a]),
+  );
+  const skillLine = (repo, org) => {
+    const a = skillByRepo.get(`${org || data.org}/${repo}`);
+    const la = a && a.lastAudit;
+    const line = el("div", "au-sub" + (la && la.auditedAt ? "" : " dim"));
+    line.append(
+      la && la.auditedAt
+        ? `audit skill ${day(la.auditedAt)}${la.skillVersion ? ` (v${la.skillVersion})` : ""}${la.stale ? " · stale" : ""}`
+        : "audit skill: never run",
+    );
+    // Absent count ⇒ the issue search failed for that org; say nothing rather
+    // than claim a clean backlog the scan never saw.
+    const open = a && a.openAuditIssues;
+    if (typeof open === "number") {
+      line.append(" · ");
+      line.append(el("span", open > 0 ? "au-open" : "ok", `${open} open`));
+    }
+    return line;
+  };
+  // The adversarial-mutation skill's newest run for a repo, as a row sub-line:
+  // when it ran and the commit it ran against.
+  const mutationLine = (repo, org) => {
+    const a = skillByRepo.get(`${org || data.org}/${repo}`);
+    const m = a && a.lastMutation;
+    const line = el("div", "au-sub" + (m && m.timestamp ? "" : " dim"));
+    line.append(
+      m && m.timestamp
+        ? `mutation ${day(m.timestamp)}${m.skillVersion ? ` (v${m.skillVersion})` : ""}`
+        : "mutation test: never run",
+    );
+    if (m && m.commit) {
+      line.append(" · ");
+      line.append(el("span", "au-mut-commit", `@${m.commit.slice(0, 7)}`));
+    }
+    return line;
+  };
+
+  box.textContent = "";
+  const rows = data.protofireAudits || [];
+  if (!rows.length) {
+    box.append(el("div", "empty", "No external-audit data in health.json yet."));
+    return;
+  }
+  const audited = rows.filter((r) => r.hasProtofireAudit);
+  const never = rows.filter((r) => !r.hasProtofireAudit);
+  const staleCount = audited.filter((r) => r.externalAudit === "stale").length;
+  const neverN = data.reposNeverExternallyAudited != null ? data.reposNeverExternallyAudited : never.length;
+
+  // Headline alarm — the never-audited count is the point.
+  const alarm = el("div", "au-alarm " + (neverN > 0 ? "bad" : "ok"));
+  const atxt = el("span", "atxt");
+  if (neverN > 0) {
+    atxt.append(
+      el("b", null, "repos never externally audited"),
+      " — no PDF under ",
+      el("code", null, "audit/"),
+      ". The external-audit coverage gap. ",
+      el("b", null, String(audited.length)),
+      " audited, ",
+      el("b", null, String(staleCount)),
+      " with a newer tag than the audit."
+    );
+  } else {
+    atxt.append(el("b", null, "every repo externally audited"), " — a Protofire PDF under audit/ for all.");
+  }
+  alarm.append(el("span", "an", String(neverN)), atxt);
+  box.append(alarm);
+
+  // Audited repos — status + source drift since the audited tag/PDF.
+  if (audited.length) {
+    box.append(el("div", "au-subhead", "Audited repos (" + audited.length + ") — drift since last audit"));
+    const table = el("div", "au-table");
+    for (const r of audited) {
+      const row = el("div", "au-row" + (r.externalAudit === "stale" ? " stale" : ""));
+
+      const c1 = el("div", "au-repo");
+      c1.append(link(null, r.name, "https://github.com/" + (r.org || data.org) + "/" + r.name));
+      const auditedLabel = r.auditedRef ? "audited " + r.auditedRef : "audited via PDF";
+      const sub = el("div", "au-sub", auditedLabel + (r.auditedDate ? " · " + day(r.auditedDate) : ""));
+      c1.append(sub);
+      // Show ONLY the referenced PDF (the one the anchor/drift are computed against,
+      // by index into auditPdfs); older PDFs are summarised, not listed (#62).
+      if (r.auditPdfs && r.auditPdfs.length) {
+        const i = typeof r.referencePdfIndex === "number" ? r.referencePdfIndex : 0;
+        const ref = r.auditPdfs[i] || r.auditPdfs[0];
+        const older = r.auditPdfs.length - 1;
+        c1.append(el("div", "au-sub", ref.filename + (older > 0 ? " · +" + older + " older" : "")));
+      }
+      if (r.anchorKind === "commit") c1.append(el("div", "au-flag", "commit-anchored"));
+      else if (r.anchorKind === "unanchored" || (r.anchorKind === undefined && r.tagConventionAbsent))
+        c1.append(el("div", "au-flag", "no tag in PDF name"));
+      c1.append(skillLine(r.name, r.org));
+      c1.append(mutationLine(r.name, r.org));
+      const s1 = staleLine(r.name);
+      if (s1) c1.append(s1);
+
+      const c2 = el("div");
+      c2.append(el("span", "au-status " + r.externalAudit, r.externalAudit));
+
+      const c3 = el("div", "au-drift");
+      if (r.externalAudit === "na") {
+        c3.append(el("span", "dim", "no tags to compare against"));
+      } else {
+        if (r.latestTag) {
+          c3.append("→ latest " + r.latestTag + (r.latestTagIso ? " · " + day(r.latestTagIso) : ""));
+          c3.append(document.createElement("br"));
+        }
+        // Drift since the audited ref, in three honest cases: (1) exact +/- from a
+        // non-truncated compare; (2) the compare hit GitHub's 300-file cap → an
+        // accurate changed-.sol FILE count from the tree diff (line drift is not
+        // recoverable, and 0 is a genuine "no Solidity drift"); (3) no compare data.
+        const commitsTail =
+          " · " + (r.commitsSinceAudit || 0) + " commits" +
+          (typeof r.daysSinceAudit === "number" ? " · " + r.daysSinceAudit + "d" : "");
+        // The drift figure links to the GitHub compare view (audited base…default
+        // branch) when the scanner resolved a compareUrl; href is set via the
+        // property, never innerHTML. No compareUrl ⇒ a plain span (no dead link).
+        const mkNode = () => {
+          if (typeof r.compareUrl === "string" && r.compareUrl) {
+            const a = el("a", "au-drift-link");
+            a.href = r.compareUrl;
+            a.rel = "noopener noreferrer";
+            a.target = "_blank";
+            return a;
+          }
+          return el("span");
+        };
+        if (typeof r.sourceLocAddedSinceAudit === "number" && typeof r.sourceLocRemovedSinceAudit === "number") {
+          // The headline diffstat is CODE only — comment churn is counted apart
+          // because it does not change what the audit covered, and so does not
+          // make the repo stale. Without a split (older scan data) fall back to
+          // the undifferentiated src LOC rather than implying a code figure.
+          const hasSplit = typeof r.codeLocAddedSinceAudit === "number" &&
+            typeof r.codeLocRemovedSinceAudit === "number";
+          const codeAdd = hasSplit ? r.codeLocAddedSinceAudit : r.sourceLocAddedSinceAudit;
+          const codeDel = hasSplit ? r.codeLocRemovedSinceAudit : r.sourceLocRemovedSinceAudit;
+          const commentAdd = r.commentLocAddedSinceAudit || 0;
+          const commentDel = r.commentLocRemovedSinceAudit || 0;
+          // +added / −removed: additions green (--clean), deletions red (--crit).
+          const diffstat = mkNode();
+          diffstat.append(
+            el("span", "add", "+" + codeAdd),
+            " / ",
+            el("span", "del", "−" + codeDel),
+            hasSplit ? " code LOC" : " src LOC"
+          );
+          c3.append(diffstat);
+          if (hasSplit && (commentAdd || commentDel)) {
+            c3.append(" · ");
+            c3.append(el("span", "au-commentloc", "+" + commentAdd + " / −" + commentDel + " comment"));
+          }
+          c3.append(" · " + (r.filesChangedSinceAudit || 0) + " files" + commitsTail);
+          // Some file's diff was too large to classify, so its churn was charged
+          // to code: say so rather than presenting the split as complete.
+          if (hasSplit && r.driftFullyClassified === false) {
+            c3.append(" ", el("span", "dim", "· some diffs unclassified"));
+          }
+          if (r.externalAudit === "current" && codeAdd + codeDel === 0) {
+            c3.append(
+              " ",
+              el("span", "ok", hasSplit && (commentAdd || commentDel) ? "· comments only" : "· up to date"),
+            );
+          }
+        } else if (r.sourceDriftTruncated && typeof r.filesChangedSinceAudit === "number") {
+          // The compare exceeded the 300-file cap, so the tree blob-sha diff gives
+          // the accurate changed-.sol file count (line drift unrecoverable). A count
+          // of 0 is a real "no Solidity drift", not an unknown.
+          const k = r.filesChangedSinceAudit;
+          const node = mkNode();
+          if (k === 0) {
+            node.append("no Solidity drift since audit");
+            c3.append(node, commitsTail);
+          } else {
+            // The line drift can't be ENUMERATED (the compare exceeded the 300-file
+            // cap), so flag it red — the one case that reads as a warning. An
+            // enumerated diff, however large, stays neutral with its +/- diffstat.
+            c3.classList.add("big");
+            node.append(k + (k === 1 ? " .sol file changed" : " .sol files changed"));
+            c3.append(node, " · line drift too large to size" + commitsTail);
+          }
+        } else {
+          c3.append(el("span", "dim", "drift unavailable"));
+        }
+      }
+      row.append(c1, c2, c3);
+      table.append(row);
+    }
+    box.append(table);
+  }
+
+  // Never externally audited — the coverage gap, enumerated per-repo in the same
+  // table language as the audited repos so the gap is concrete, not just a count.
+  if (never.length) {
+    box.append(el("div", "au-subhead", "Never externally audited (" + never.length + ") — the gap"));
+    const table = el("div", "au-table");
+    for (const r of never) {
+      const row = el("div", "au-row");
+      const c1 = el("div", "au-repo");
+      c1.append(link(null, r.name, "https://github.com/" + (r.org || data.org) + "/" + r.name));
+      c1.append(el("div", "au-sub", "no audit/protofire/ PDF"));
+      c1.append(skillLine(r.name, r.org));
+      c1.append(mutationLine(r.name, r.org));
+      const s2 = staleLine(r.name);
+      if (s2) c1.append(s2);
+      const c2 = el("div");
+      c2.append(el("span", "au-status never", "never"));
+      const c3 = el("div", "au-drift");
+      if (typeof r.fullSourceLoc === "number") {
+        c3.append(el("span", "add", "+" + r.fullSourceLoc + " src LOC"), " unaudited");
+      } else {
+        c3.append(el("span", "dim", "no external audit"));
+      }
+      row.append(c1, c2, c3);
+      table.append(row);
+    }
+    box.append(table);
+  }
+
+  const note = el("div", "au-note");
+  note.append(
+    "External audits are formal ",
+    el("code", null, "Protofire"),
+    " PDFs committed under ",
+    el("code", null, "audit/"),
+    " — a different signal from the internal audit-skill recency. Drift is measured clone-free against the audited git tag when the PDF filename encodes one (e.g. ",
+    el("code", null, "rain.factory.v0.1.1-r2.0.may-2026.pdf"),
+    "), else against the PDF's own commit — those rows are flagged ",
+    el("code", null, "no tag in PDF name"),
+    "."
+  );
+  box.append(note);
+}
+// ---- Dependency graph (#71) ----
+// Consumes health.json's `auditGraph` (roh-scan computes; the dashboard only
+// renders). The graph, not a sorted list, is the artifact: a topological order is
+// one of many valid linearisations, so a numbered list invents precedence between
+// independent leaves. The graph states what depends on what, and answers the
+// question an order cannot — given a finding in X, who inherits it?
+//
+// Audit state is carried by BORDER STYLE as well as colour, and every node is
+// labelled with its repo name: identity is the label, never the colour.
+// ---- Dependency graph (#71) ----
+// Consumes health.json's `auditGraph` (roh-scan computes; this only renders).
+// The graph, not a sorted list, is the artifact: a topological order is one of
+// many valid linearisations, so a numbered list invents precedence between
+// independent leaves. It also answers what an order cannot — given a finding in
+// X, who inherits it?
+//
+// ELK lays out; the DOM paints. Nodes are divs and edges are one SVG, so the
+// page's own CSS governs every colour, the theme toggle works for free, and a
+// node can hold a real link and a two-tone diff. A canvas renderer would need
+// the palette re-implemented in JS and could hold neither.
+const AUDIT_HELP = {
+  current: "Protofire-audited at the current tag",
+  stale: "Protofire-audited, source moved since",
+  never: "no Protofire PDF — a repo may still be audited by someone else",
+  unknown: "audit lookup FAILED — indeterminate, not a confirmed gap",
+  na: "Protofire-audited but no tags to date it against",
+};
+const AUDIT_ORDER = ["current", "stale", "never", "na", "unknown"];
+const GRAPH_HELP_DEFAULT =
+  "Click a repo to trace what it carries. Solidity repos only; an arrow points from a consumer to the dependency it stands on. Coverage is Protofire only.";
+
+function renderGraphLegend(present) {
+  const box = $("graphlegend");
+  box.replaceChildren();
+  for (const state of AUDIT_ORDER) {
+    if (!present.has(state)) continue;
+    const key = el("span", "key");
+    key.append(el("span", `swatch au-${state}`), `${state} — ${AUDIT_HELP[state]}`);
+    box.append(key);
+  }
+}
+
+// The node body. Built with createElement/textContent/.href — repo names,
+// anchors and URLs are cross-repo strings, so escaping is by construction.
+function nodeEl(n, p) {
+  const box = el("div", `gnode au-${n.audit}`);
+  box.dataset.repo = n.repo;
+  // The name links to the repo. `org` is per-node because the scan is multi-org,
+  // falling back to the scan's own org; with neither resolved the name stays plain
+  // text rather than becoming a dead link. Clicking it navigates instead of
+  // tracing — the graph's click handler ignores events originating in an anchor.
+  const org = n.org || (data && data.org);
+  if (org) {
+    const a = el("a", "gn-repo gn-anchor", n.repo);
+    a.href = `https://github.com/${org}/${n.repo}`;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    a.title = `${org}/${n.repo} on GitHub`;
+    box.append(a);
+  } else {
+    box.append(el("span", "gn-repo", n.repo));
+  }
+
+  const meta = el("span", "gn-meta");
+  if (n.audit === "never") {
+    meta.classList.add("gn-plain");
+    meta.textContent = p && p.fullSourceLoc != null ? `no protofire · ${p.fullSourceLoc} LOC` : "no protofire audit";
+  } else if (n.audit === "unknown") {
+    meta.classList.add("gn-plain");
+    meta.textContent = "audit lookup FAILED";
+  } else {
+    const anchorText = p && p.auditedRef ? (p.anchorKind === "tag" ? p.auditedRef : p.auditedRef.slice(0, 7)) : "?";
+    if (p && typeof p.compareUrl === "string" && p.compareUrl) {
+      const a = el("a", "gn-anchor", anchorText);
+      a.href = p.compareUrl;
+      a.rel = "noopener noreferrer";
+      a.target = "_blank";
+      a.title = `diff since the audited ${p.anchorKind === "tag" ? "tag" : "commit"}`;
+      meta.append(a);
+    } else {
+      // No compareUrl resolved ⇒ plain text, never a dead link.
+      meta.append(el("span", null, anchorText));
+    }
+    // The node leads with CODE drift, matching the row beside it. The
+    // undifferentiated total contradicted that row: a repo whose only churn is
+    // NatSpec reads `current` while its node showed a non-zero figure. Comment
+    // churn follows in its own muted span so the node still shows the repo
+    // moved. Without a split (older scan data) the old total is shown
+    // unlabelled rather than passed off as a code figure.
+    const nodeSplit = p && typeof p.codeLocAddedSinceAudit === "number" &&
+      typeof p.codeLocRemovedSinceAudit === "number";
+    const nodeAdd = nodeSplit ? p.codeLocAddedSinceAudit : p && p.sourceLocAddedSinceAudit;
+    const nodeDel = nodeSplit ? p.codeLocRemovedSinceAudit : p && p.sourceLocRemovedSinceAudit;
+    if (typeof nodeAdd === "number" && typeof nodeDel === "number") {
+      meta.append(
+        " · ",
+        el("span", "add", `+${nodeAdd}`),
+        " ",
+        el("span", "del", `\u2212${nodeDel}`),
+      );
+      const cAdd = (p && p.commentLocAddedSinceAudit) || 0;
+      const cDel = (p && p.commentLocRemovedSinceAudit) || 0;
+      if (nodeSplit && (cAdd || cDel)) {
+        meta.append(el("span", "gn-cmt", ` +${cAdd} \u2212${cDel} cmt`));
+      }
+    }
+  }
+  box.append(meta);
+  if (n.depsKnown === false) {
+    // Its manifest would not parse, so its dependencies are unknown — the graph
+    // cannot claim its ground is clear, and must not look like it does.
+    box.append(el("span", "gn-warn", "manifest unreadable — deps unknown"));
+  }
+  const stale = n.staleDeps ?? [];
+  if (stale.length) {
+    // Pins a dependency below its current version, so this repo's real closure
+    // differs from the one drawn — an audit should move it to latest (#79).
+    box.append(el("span", "gn-stale", `⚠ ${stale.length} stale dep${stale.length > 1 ? "s" : ""}`));
+  }
+  // The audit SKILL's own recency + backlog, distinct from the protofire verdict
+  // the node's colour carries: when it last ran whole-repo here, and how many of
+  // its findings are still open. A fresh stamp with open findings is not "done".
+  const la = n.lastAudit;
+  const skill = el("span", "gn-skill" + (la && la.auditedAt ? "" : " gn-plain"));
+  skill.append(
+    la && la.auditedAt
+      ? `skill ${la.auditedAt.slice(0, 10)}${la.stale ? " · stale" : ""}`
+      : "no audit-skill run",
+  );
+  // Absent count ⇒ that org's issue search failed; stay silent rather than
+  // showing a zero backlog the scan never confirmed.
+  if (typeof n.openAuditIssues === "number") {
+    skill.append(" · ");
+    skill.append(el("span", n.openAuditIssues > 0 ? "gn-open" : "ok", `${n.openAuditIssues} open`));
+  }
+  box.append(skill);
+  // The adversarial-mutation skill's newest run: when, and the commit it was run
+  // against — a third signal, separate from the Protofire verdict and the audit
+  // skill's own recency.
+  const mut = n.lastMutation;
+  const mutLine = el("span", "gn-skill" + (mut ? "" : " gn-plain"));
+  mutLine.append(
+    mut && mut.timestamp
+      ? `mutation ${mut.timestamp.slice(0, 10)}${mut.commit ? ` @${mut.commit.slice(0, 7)}` : ""}`
+      : "no mutation run",
+  );
+  box.append(mutLine);
+  return box;
+}
+
+// What is worth auditing NOW: clear ground beneath, not already current, and a
+// readable manifest. Ranked by how many repos inherit it — a counted fact, not
+// an invented order.
+function renderGraphSummary(nodes, pf) {
+  const box = $("graphsum");
+  box.replaceChildren();
+  const inheritors = new Map();
+  for (const n of nodes) for (const b of n.blockedBy ?? []) inheritors.set(b, (inheritors.get(b) ?? 0) + 1);
+
+  const ready = nodes
+    .filter((n) => (n.blockedBy ?? []).length === 0 && n.audit !== "current" && n.depsKnown !== false)
+    .sort((a, b) => (inheritors.get(b.repo) ?? 0) - (inheritors.get(a.repo) ?? 0) || a.repo.localeCompare(b.repo));
+
+  if (ready.length === 0) {
+    box.append(el("span", "none", "Nothing is unblocked: every uncovered repo stands on another that is uncovered too."));
+  } else {
+    box.append(
+      el("b", null, `${ready.length} of ${nodes.length}`),
+      " Solidity repos have clear ground beneath and no current Protofire audit — auditing one now yields findings that are genuinely its own. Most inherited first: ",
+    );
+    ready.slice(0, 3).forEach((n, i) => {
+      const p = pf.get(n.repo);
+      // Code drift, matching the rows and nodes. The undifferentiated total
+      // here said a repo had moved when its only churn was NatSpec — the same
+      // contradiction the node carried. Pre-split data falls back to the old
+      // total, and a never-audited repo has no drift to show, only its size.
+      const sumSplit = p && typeof p.codeLocAddedSinceAudit === "number" &&
+        typeof p.codeLocRemovedSinceAudit === "number";
+      const drift = sumSplit
+        ? `+${p.codeLocAddedSinceAudit}/\u2212${p.codeLocRemovedSinceAudit}`
+        : p && p.sourceLocAddedSinceAudit != null
+          ? `+${p.sourceLocAddedSinceAudit}/\u2212${p.sourceLocRemovedSinceAudit}`
+          : p && p.fullSourceLoc != null
+            ? `${p.fullSourceLoc} LOC`
+            : "";
+      if (i > 0) box.append(", ");
+      box.append(el("b", null, n.repo), ` (${inheritors.get(n.repo) ?? 0} inherit${drift ? `, ${drift}` : ""})`);
+    });
+    box.append(".");
+  }
+}
+function standsOn(edges, root) {
+  const deps = new Map();
+  for (const e of edges) {
+    if (!deps.has(e.from)) deps.set(e.from, []);
+    deps.get(e.from).push(e.to);
+  }
+  const seen = new Set([root]);
+  const stack = [root];
+  while (stack.length) {
+    for (const dep of deps.get(stack.pop()) ?? []) {
+      if (seen.has(dep)) continue;
+      seen.add(dep);
+      stack.push(dep);
+    }
+  }
+  return seen;
+}
+
+async function renderGraph() {
+  const g = data.auditGraph;
+  const box = $("graph");
+  if (!g || !g.nodes || g.nodes.length === 0) {
+    $("graphempty").textContent = "No dependency graph in health.json yet.";
+    return;
+  }
+  $("graphempty").remove();
+  const pf = new Map((data.protofireAudits ?? []).map((r) => [r.name, r]));
+  renderGraphLegend(new Set(g.nodes.map((n) => n.audit)));
+  renderGraphSummary(g.nodes, pf);
+
+  const surface = el("div", "gsurface");
+  const svg = document.createElementNS("http://www.w3.org/2000/svg", "svg");
+  svg.classList.add("gedges");
+  surface.append(svg);
+  const sizer = el("div", "gsizer");
+  sizer.append(surface);
+  box.append(sizer);
+
+  // Measure the real DOM: ELK needs each node's box, and the browser is the
+  // only thing that knows how wide this text actually renders. Measuring beats
+  // guessing from character counts, which is what makes labels overflow.
+  const els = new Map();
+  for (const n of g.nodes) {
+    const d = nodeEl(n, pf.get(n.repo));
+    d.style.visibility = "hidden";
+    surface.append(d);
+    els.set(n.repo, d);
+  }
+  const sized = g.nodes.map((n) => {
+    const r = els.get(n.repo).getBoundingClientRect();
+    return { id: n.repo, width: Math.ceil(r.width), height: Math.ceil(r.height) };
+  });
+
+  const laid = await new ELK().layout({
+    id: "root",
+    layoutOptions: {
+      "elk.algorithm": "layered",
+      "elk.direction": "DOWN",
+      "elk.spacing.nodeNode": "24",
+      "elk.layered.spacing.nodeNodeBetweenLayers": "48",
+      // 151 edges cross between layers, and ELK reserves edgeEdgeBetweenLayers
+      // PER edge — at the default that stacks into ~250px of empty gap and the
+      // node spacing above looks ignored. These are the knobs that actually set
+      // the vertical rhythm of a graph this dense.
+      "elk.layered.spacing.edgeEdgeBetweenLayers": "2",
+      "elk.layered.spacing.edgeNodeBetweenLayers": "8",
+      "elk.spacing.edgeEdge": "3",
+      "elk.spacing.edgeNode": "8",
+      "elk.layered.nodePlacement.strategy": "NETWORK_SIMPLEX",
+      "elk.layered.crossingMinimization.strategy": "LAYER_SWEEP",
+      "elk.edgeRouting": "POLYLINE",
+    },
+    children: sized,
+    edges: g.edges.map((e, i) => ({ id: `e${i}`, sources: [e.from], targets: [e.to] })),
+  });
+
+  const pos = new Map(laid.children.map((c) => [c.id, c]));
+  for (const [repo, d] of els) {
+    const c = pos.get(repo);
+    d.style.left = `${c.x}px`;
+    d.style.top = `${c.y}px`;
+    d.style.visibility = "";
+  }
+  surface.style.width = `${laid.width}px`;
+  surface.style.height = `${laid.height}px`;
+  svg.setAttribute("viewBox", `0 0 ${laid.width} ${laid.height}`);
+  svg.setAttribute("width", laid.width);
+  svg.setAttribute("height", laid.height);
+
+  // A stale edge — the consumer pins the dependency below its current version —
+  // draws red, so a link the graph can't be trusted to represent is visible.
+  const staleEdges = new Set(g.edges.filter((e) => e.stale).map((e) => `${e.from}\u0000${e.to}`));
+
+  const paths = [];
+  for (const e of laid.edges ?? []) {
+    for (const sec of e.sections ?? []) {
+      const pts = [sec.startPoint, ...(sec.bendPoints ?? []), sec.endPoint];
+      const path = document.createElementNS("http://www.w3.org/2000/svg", "path");
+      path.setAttribute("d", pts.map((pt, i) => `${i ? "L" : "M"}${pt.x},${pt.y}`).join(" "));
+      path.classList.add("gedge");
+      if (staleEdges.has(`${e.sources[0]}\u0000${e.targets[0]}`)) path.classList.add("stale");
+      path.dataset.from = e.sources[0];
+      path.dataset.to = e.targets[0];
+      svg.append(path);
+      paths.push(path);
+    }
+  }
+
+  // clientWidth spans the padding box, so drop the 16px each side to land the
+  // graph inside the padding rather than under it.
+  const fit = Math.min(1, (box.clientWidth - 32) / laid.width, (box.clientHeight - 32) / laid.height);
+
+  // Fit the whole graph into the box, once, as a plain static scale. Zoom and pan
+  // are the browser's own: it scrolls this box natively, and pinch (or ctrl-scroll)
+  // zooms the page, which keeps the point under the fingers fixed because the
+  // browser -- not this file -- is doing the arithmetic. A script that binds those
+  // gestures has to set touch-action: none, which suppresses the device's real
+  // pinch-zoom in order to reimplement it worse.
+  surface.style.transform = `scale(${fit})`;
+  sizer.style.width = `${laid.width * fit}px`;
+  sizer.style.height = `${laid.height * fit}px`;
+
+  // A pan ends in a click, so only a gesture that stayed put counts as a trace.
+  let downAt = null;
+  box.addEventListener("pointerdown", (ev) => {
+    downAt = { x: ev.clientX, y: ev.clientY };
+  });
+  box.addEventListener("click", (ev) => {
+    const moved = downAt && Math.abs(ev.clientX - downAt.x) + Math.abs(ev.clientY - downAt.y) > 4;
+    downAt = null;
+    if (moved || ev.target.closest("a")) return;
+    const target = ev.target.closest(".gnode");
+    if (!target) {
+      for (const d of els.values()) d.classList.remove("tr-off", "tr-root");
+      for (const path of paths) path.classList.remove("tr-on", "tr-off");
+      return;
+    }
+    const set = standsOn(g.edges, target.dataset.repo);
+    for (const [repo, d] of els) {
+      d.classList.toggle("tr-off", !set.has(repo));
+      d.classList.toggle("tr-root", repo === target.dataset.repo);
+    }
+    for (const path of paths) {
+      const on = set.has(path.dataset.from) && set.has(path.dataset.to);
+      path.classList.toggle("tr-on", on);
+      path.classList.toggle("tr-off", !on);
+    }
+  });
+}
+
+async function load() {
+  try {
+    const r = await fetch("health.json", { cache: "no-store" });
+    if (!r.ok) throw new Error(r.status);
+    data = await r.json();
+  } catch (e) {
+    $("meta").textContent = "could not load health.json";
+    return;
+  }
+  const ago = Math.round((Date.now() - new Date(data.generatedAt).getTime()) / 3.6e6);
+  $("meta").textContent =
+    `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
+    (isFinite(ago) ? ` (${ago}h ago)` : "");
+  renderAudit();
+  renderGraph();
+}
+load();
+</script>
+</body>
+</html>

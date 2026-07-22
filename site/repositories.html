@@ -3,7 +3,7 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>rain org health — overview</title>
+<title>rain org health — repositories</title>
 <style>
   :root {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -239,15 +239,21 @@
     <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
   </header>
   <nav class="nav">
-    <a href="index.html" class="active">Overview</a>
-    <a href="repositories.html">Repositories</a>
+    <a href="index.html">Overview</a>
+    <a href="repositories.html" class="active">Repositories</a>
     <a href="audit.html">Audit</a>
     <a href="pipeline.html">Pipeline</a>
     <a href="metrics.html">Metrics</a>
     <a href="deployments.html">Deployments</a>
   </nav>
-  <div class="tiles" id="tiles"></div>
-  <div id="auditglance"></div>
+  <h2>Modernization debt by signal</h2>
+  <div class="summary" id="summary"></div>
+  <h2>Repositories</h2>
+  <div class="controls">
+    <input type="search" id="search" placeholder="Filter repositories…" autocomplete="off" />
+    <button class="clearf" id="clearf">Clear signal filter</button>
+  </div>
+  <div id="repos"></div>
   <footer>
     Org-health dashboard — status, not severity; identity is the label, not the color.
     <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
@@ -261,7 +267,84 @@ $("theme").addEventListener("click", () => {
   const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
 });
-let data = null;
+let data = null, activeSignal = null;
+function render() {
+  const q = $("search").value.trim().toLowerCase();
+  const repos = data.repos.filter((r) => {
+    if (activeSignal && !r.signals.includes(activeSignal)) return false;
+    if (q && !r.name.toLowerCase().includes(q)) return false;
+    return true;
+  });
+  const el = $("repos");
+  el.innerHTML = "";
+  if (!repos.length) {
+    el.innerHTML = '<div class="empty">No repositories match.</div>';
+    return;
+  }
+  for (const r of repos) {
+    const row = document.createElement("div");
+    row.className = "repo";
+    const a = document.createElement("a");
+    a.href = `https://github.com/${r.org || data.org}/${r.name}`;
+    a.textContent = r.name;
+    a.rel = "noopener noreferrer";
+    a.target = "_blank";
+    const chips = document.createElement("div");
+    chips.className = "chips";
+    if (!r.signals.length) {
+      const c = document.createElement("span");
+      c.className = "clean";
+      c.textContent = "clean";
+      chips.appendChild(c);
+    } else {
+      for (const s of r.signals) {
+        const c = document.createElement("button");
+        c.className = "chip" + (activeSignal && activeSignal !== s ? " dim" : "");
+        c.textContent = s;
+        c.addEventListener("click", () => setSignal(activeSignal === s ? null : s));
+        chips.appendChild(c);
+      }
+    }
+    row.append(a, chips);
+    el.appendChild(row);
+  }
+}
+function setSignal(sig) {
+  activeSignal = sig;
+  $("clearf").classList.toggle("show", !!sig);
+  document.querySelectorAll(".srow").forEach((r) =>
+    r.classList.toggle("active", r.dataset.sig === sig));
+  render();
+}
+function renderSummary() {
+  const entries = Object.entries(data.summary);
+  const max = Math.max(1, ...entries.map(([, n]) => n));
+  const box = $("summary");
+  box.innerHTML = "";
+  if (!entries.length) {
+    box.innerHTML = '<div class="empty">No modernization debt detected across the scanned repos.</div>';
+    return;
+  }
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  for (const [sig, n] of entries) {
+    const b = el("button", "srow");
+    b.dataset.sig = sig;
+    const label = el("span", "sig", sig);
+    label.title = sig;
+    const track = el("span", "track");
+    const fill = el("span", "fill");
+    fill.style.width = (n / max) * 100 + "%";
+    track.appendChild(fill);
+    b.append(label, track, el("span", "c", String(n)));
+    b.addEventListener("click", () => setSignal(activeSignal === sig ? null : sig));
+    box.appendChild(b);
+  }
+}
 async function load() {
   try {
     const r = await fetch("health.json", { cache: "no-store" });
@@ -275,52 +358,10 @@ async function load() {
   $("meta").textContent =
     `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
     (isFinite(ago) ? ` (${ago}h ago)` : "");
-  const signalCount = Object.keys(data.summary || {}).length;
-  const clean = data.totalRepos - data.reposWithFindings;
-  const tiles = [
-    [data.totalRepos, "repos scanned"],
-    [data.reposWithFindings, "with debt"],
-    [clean, "clean"],
-    [signalCount, "distinct signals"],
-    [data.reposExternallyAudited, "externally audited"],
-    [data.reposNeverExternallyAudited, "never audited"],
-  ];
-  const box = $("tiles");
-  box.textContent = "";
-  for (const [n, l] of tiles) {
-    const t = document.createElement("div");
-    t.className = "tile";
-    const num = document.createElement("div");
-    num.className = "n";
-    num.textContent = n == null ? "—" : String(n);
-    const lab = document.createElement("div");
-    lab.className = "l";
-    lab.textContent = l;
-    t.append(num, lab);
-    box.appendChild(t);
-  }
-  const neverN = data.reposNeverExternallyAudited || 0;
-  const g = $("auditglance");
-  g.textContent = "";
-  const alarm = document.createElement(neverN > 0 ? "a" : "div");
-  alarm.className = "au-alarm " + (neverN > 0 ? "bad" : "ok");
-  if (neverN > 0) {
-    alarm.href = "audit.html";
-    alarm.style.textDecoration = "none";
-    alarm.style.color = "inherit";
-    alarm.style.cursor = "pointer";
-  }
-  const an = document.createElement("span");
-  an.className = "an";
-  an.textContent = String(neverN);
-  const atxt = document.createElement("span");
-  atxt.className = "atxt";
-  atxt.textContent =
-    neverN > 0
-      ? "repos never externally audited — the Protofire coverage gap. Open the Audit page →"
-      : "every repo externally audited.";
-  alarm.append(an, atxt);
-  g.append(alarm);
+  renderSummary();
+  render();
+  $("search").addEventListener("input", render);
+  $("clearf").addEventListener("click", () => setSignal(null));
 }
 load();
 </script>
