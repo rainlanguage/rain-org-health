@@ -1067,12 +1067,19 @@ mod tests {
     /// the same silent vanish that hid the token registry.
     #[test]
     fn beacons_unavailable_names_the_chain_and_the_reason() {
-        let v = beacons_unavailable("ethereum", "ethereum-rpc.publicnode.com", "constants unreadable");
+        let v = beacons_unavailable(
+            "ethereum",
+            "ethereum-rpc.publicnode.com",
+            "constants unreadable",
+        );
         assert_eq!(v["network"], "ethereum");
         assert_eq!(v["unavailable"], true);
         assert_eq!(v["reason"], "constants unreadable");
         assert_eq!(v["rpcHost"], "ethereum-rpc.publicnode.com");
-        assert!(v["beacons"].is_null(), "an unavailable chain must not claim a beacon list");
+        assert!(
+            v["beacons"].is_null(),
+            "an unavailable chain must not claim a beacon list"
+        );
     }
 
     #[test]

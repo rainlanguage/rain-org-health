@@ -2313,7 +2313,10 @@ Deno.test("deployments: every chain in the beacon list gets its own section", ()
     }],
   });
   const box = deploymentsBox({
-    deploymentBeacons: [set("base", "Base wrapped beacon"), set("ethereum", "Ethereum wrapped beacon")],
+    deploymentBeacons: [
+      set("base", "Base wrapped beacon"),
+      set("ethereum", "Ethereum wrapped beacon"),
+    ],
   });
   const t = textOf(box);
   assert(t.includes("Beacons — base"), "base section missing: " + t);
@@ -2335,11 +2338,18 @@ Deno.test("deployments: a single beacon block still renders", () => {
       targetVersion: "0.1.1",
       total: 1,
       healthy: 1,
-      beacons: [{ name: "Wrapped beacon", address: "0x4c2d", status: "healthy" }],
+      beacons: [{
+        name: "Wrapped beacon",
+        address: "0x4c2d",
+        status: "healthy",
+      }],
     },
   });
   const t = textOf(box);
-  assert(t.includes("Beacons — base"), "a health.json written before the array shape must still render: " + t);
+  assert(
+    t.includes("Beacons — base"),
+    "a health.json written before the array shape must still render: " + t,
+  );
 });
 
 Deno.test("deployments: a chain the scan could not read says so, it does not vanish", () => {
@@ -2352,9 +2362,18 @@ Deno.test("deployments: a chain the scan could not read says so, it does not van
     }],
   });
   const t = textOf(box);
-  assert(t.includes("Beacons — ethereum"), "the chain must still be named: " + t);
-  assert(t.includes("unavailable"), "must distinguish broken from absent: " + t);
-  assert(t.includes("could not read"), "the reason identifies the failure: " + t);
+  assert(
+    t.includes("Beacons — ethereum"),
+    "the chain must still be named: " + t,
+  );
+  assert(
+    t.includes("unavailable"),
+    "must distinguish broken from absent: " + t,
+  );
+  assert(
+    t.includes("could not read"),
+    "the reason identifies the failure: " + t,
+  );
 });
 
 Deno.test("deployments: an empty token set still shows the reconcile breakdown", () => {
