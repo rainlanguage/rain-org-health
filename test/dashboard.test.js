@@ -1140,7 +1140,7 @@ const OWNERS = {
         note: "",
         entries: [
           {
-            role: "V4 pending-swap clone",
+            role: "V4 authoriser clone",
             address: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
             network: "base",
             status: "pending",
