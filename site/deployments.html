@@ -262,7 +262,21 @@ function renderDeployments(document, $, data) {
   };
   // Production beacons: each should be Safe-owned and point at its pinned impl.
   const renderBeaconSet = (b) => {
-    if (!b || !Array.isArray(b.beacons) || b.beacons.length === 0) return;
+    if (!b) return;
+    // A chain the scan could not read says so under its own heading. Returning
+    // silently would drop the whole section, and a missing section reads as
+    // "this chain has no production beacons" rather than "this broke".
+    if (b.unavailable || !Array.isArray(b.beacons) || b.beacons.length === 0) {
+      box.append(el("h2", null, `Beacons — ${b.network ?? "unknown chain"}`));
+      box.append(
+        el(
+          "div",
+          "own-sub",
+          `Beacon data unavailable — ${b.reason ?? "the scan produced no beacons for this chain"}${b.rpcHost ? ` (via ${b.rpcHost})` : ""}.`,
+        ),
+      );
+      return;
+    }
     box.append(el("h2", null, `Beacons — ${b.network}`));
     box.append(
       el(

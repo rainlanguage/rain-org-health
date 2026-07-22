@@ -198,11 +198,14 @@ const BASE_RPCS: &[&str] = &[
 /// read answered by the wrong chain's endpoint reports a live contract as not
 /// deployed — a silent downgrade, not an error. Hence the chain travels with
 /// the session rather than being implied by the caller.
+/// Each verified live against the 0.1.1 beacon-set deployer: all four answer
+/// `iReceiptBeacon()` with the same address the Solidity lib resolves.
+/// `eth.llamarpc.com` (HTTP 521) and `eth.merkle.io` (429 under a burst) were
+/// dropped rather than left in as endpoints that fail the whole chain's read.
 const ETHEREUM_RPCS: &[&str] = &[
     "https://ethereum-rpc.publicnode.com",
     "https://eth.drpc.org",
     "https://1rpc.io/eth",
-    "https://eth.llamarpc.com",
     "https://rpc.mevblocker.io",
 ];
 
@@ -1950,14 +1953,27 @@ fn main() {
 
         // One block per chain. Base and Ethereum run on different beacon
         // generations owned by different Safes, so a single block could only
-        // ever describe one of them. A chain whose read failed is dropped
-        // rather than emitted as null, so the dashboard never renders an
-        // empty section that reads as "this chain has no beacons".
-        let beacon_sets: Vec<serde_json::Value> =
-            [deployment_beacons, deployment_beacons_ethereum]
-                .into_iter()
-                .filter(|b| !b.is_null())
-                .collect();
+        // ever describe one of them. A chain the scan could not read is
+        // reported as unavailable rather than dropped: a dropped chain renders
+        // as no section at all, which reads as "this chain has no production
+        // beacons" instead of "this broke".
+        let beacon_sets: Vec<serde_json::Value> = [
+            (deployment_beacons, "base", Chain::Base),
+            (deployment_beacons_ethereum, "ethereum", Chain::Ethereum),
+        ]
+        .into_iter()
+        .map(|(set, network, chain)| {
+            if set.is_null() {
+                deployhealth::beacons_unavailable(
+                    network,
+                    chain.rpc_host(),
+                    "the scan could not read the st0x.deploy beacon constants",
+                )
+            } else {
+                set
+            }
+        })
+        .collect();
 
         // Registry token wiring on Base (#90): for each token in the
         // st0x.registry Base list, confirm the deployed wrapper's

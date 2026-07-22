@@ -176,6 +176,17 @@ fn decode_bool(result_hex: &str) -> Option<bool> {
 mod tests {
     use super::*;
 
+    /// The two getters are the ONLY way Ethereum's receipt and receipt-vault
+    /// beacons are addressable — they have no generated pin. A wrong selector
+    /// returns an on-chain revert, which the scan reports as an unreadable
+    /// beacon rather than as a bad selector, so the encoding is pinned here
+    /// against `cast sig` output.
+    #[test]
+    fn beacon_getter_selectors_match_their_signatures() {
+        assert_eq!(receipt_beacon_calldata(), "0x2c9b7f40");
+        assert_eq!(receipt_vault_beacon_calldata(), "0x2f77a1c1");
+    }
+
     #[test]
     fn keccak256_of_empty_is_the_known_vector() {
         assert_eq!(
