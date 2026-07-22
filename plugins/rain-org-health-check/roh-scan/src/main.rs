@@ -1725,10 +1725,12 @@ fn main() {
             owners::build_owners(
                 org,
                 repo,
-                &safe,
-                &auth,
-                &v4,
-                &overrides,
+                &owners::OwnerSources {
+                    safe_lib: &safe,
+                    auth_lib: &auth,
+                    v4_lib: &v4,
+                    overrides: &overrides,
+                },
                 onchain.as_ref(),
                 live_authoriser.as_deref(),
             )

@@ -70,15 +70,6 @@ fn entry(
     })
 }
 
-/// Assemble the `deploymentOwners` document from the four st0x.deploy library
-/// sources. Returns `None` when the anchor (the Base token-owner Safe) can't be
-/// resolved — i.e. the repo was unreachable or the constant moved — so the page
-/// shows an honest "unavailable" state instead of a table of nulls.
-///
-/// - `safe_lib`  = `src/lib/LibSafeInvariants.sol` (the Safes, signers, threshold)
-/// - `auth_lib`  = `src/lib/LibAuthoriserInvariants.sol` (authoriser + grantees)
-/// - `v4_lib`    = `src/generated/LibProdDeployV4.sol` (deploy EOA, V4 clone)
-/// - `overrides` = `src/lib/LibProdDeployV2BaseOverrides.sol` (bricked V2 beacons)
 /// An address constant that resolved to the zero address — a pin declared but
 /// not yet hydrated. Distinct from `None` (the constant is absent entirely).
 fn is_unhydrated(pin: Option<&String>) -> bool {
@@ -107,16 +98,37 @@ pub fn authoriser_status(
     }
 }
 
+/// The st0x.deploy library sources the owners document is assembled from.
+/// Grouped so adding a source is a field, not another positional argument in a
+/// list where `&str`s are already indistinguishable at the call site.
+pub struct OwnerSources<'a> {
+    /// `src/lib/LibSafeInvariants.sol` — the Safes, signers, threshold.
+    pub safe_lib: &'a str,
+    /// `src/lib/LibAuthoriserInvariants.sol` — authoriser + grantees.
+    pub auth_lib: &'a str,
+    /// `src/generated/LibProdDeployV4.sol` — deploy EOA, V4 clones.
+    pub v4_lib: &'a str,
+    /// `src/lib/LibProdDeployV2BaseOverrides.sol` — bricked V2 beacons.
+    pub overrides: &'a str,
+}
+
+/// Assemble the `deploymentOwners` document from the st0x.deploy library
+/// sources. Returns `None` when the anchor (the Base token-owner Safe) can't be
+/// resolved — i.e. the repo was unreachable or the constant moved — so the page
+/// shows an honest "unavailable" state instead of a table of nulls.
+///
+/// `live_authoriser` is the `authorizer()` a production vault actually returns;
+/// `None` when that read failed, which leaves every clone's status `unknown`
+/// rather than falling back to a literal.
 pub fn build_owners(
     org: &str,
     repo: &str,
-    safe_lib: &str,
-    auth_lib: &str,
-    v4_lib: &str,
-    overrides: &str,
+    src: &OwnerSources,
     onchain: Option<&OnChainSafe>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
+    let (safe_lib, auth_lib, v4_lib, overrides) =
+        (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
     // Anchor: without the Base Safe there is nothing meaningful to show.
@@ -359,10 +371,12 @@ mod tests {
         let v = build_owners(
             "S01-Issuer",
             "st0x.deploy",
-            SAFE_LIB,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
             None,
             None,
         )
@@ -468,7 +482,16 @@ mod tests {
     fn ethereum_authoriser_row_is_rendered_before_the_clone_exists() {
         let v4_zero = format!("{V4_LIB}\n    address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x0000000000000000000000000000000000000000);\n");
         let v = build_owners(
-            "o", "r", SAFE_LIB, AUTH_LIB, &v4_zero, OVERRIDES, None, None,
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: &v4_zero,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
         )
         .unwrap();
         let auth = v["groups"][2]["entries"].as_array().unwrap();
@@ -488,7 +511,18 @@ mod tests {
     fn build_owners_is_none_without_the_anchor() {
         // Repo unreachable / anchor constant moved → no owners doc at all.
         assert_eq!(
-            build_owners("o", "r", "", AUTH_LIB, V4_LIB, OVERRIDES, None, None),
+            build_owners(
+                "o",
+                "r",
+                &OwnerSources {
+                    safe_lib: "",
+                    auth_lib: AUTH_LIB,
+                    v4_lib: V4_LIB,
+                    overrides: OVERRIDES
+                },
+                None,
+                None
+            ),
             None
         );
     }
@@ -501,10 +535,12 @@ mod tests {
         let v = build_owners(
             "o",
             "r",
-            safe_no_eth,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: safe_no_eth,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
             None,
             None,
         )
@@ -524,7 +560,19 @@ mod tests {
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0x2222222222222222222222222222222222222222;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x3333333333333333333333333333333333333333;
         ";
-        let v = build_owners("o", "r", three, AUTH_LIB, V4_LIB, OVERRIDES, None, None).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: three,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(v["signerCount"], 3);
         assert_eq!(v["groups"][1]["entries"].as_array().unwrap().len(), 3);
         assert_eq!(v["groups"][1]["title"], "Safe signers (3-of-3)");
@@ -558,10 +606,12 @@ mod tests {
         let v = build_owners(
             "o",
             "r",
-            SAFE_LIB,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
             Some(&oc),
             None,
         )
@@ -585,10 +635,12 @@ mod tests {
         let v = build_owners(
             "o",
             "r",
-            SAFE_LIB,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
             Some(&oc),
             None,
         )
@@ -613,10 +665,12 @@ mod tests {
         let v = build_owners(
             "o",
             "r",
-            SAFE_LIB,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
             Some(&oc),
             None,
         )
@@ -631,7 +685,19 @@ mod tests {
 
     #[test]
     fn no_onchain_omits_verification() {
-        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, None, None).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
+        )
+        .unwrap();
         assert!(v["groups"][1]["verification"].is_null());
     }
 
@@ -644,10 +710,12 @@ mod tests {
         let v = build_owners(
             "o",
             "r",
-            SAFE_LIB,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
             Some(&oc),
             None,
         )
@@ -674,10 +742,12 @@ mod tests {
         let v = build_owners(
             "o",
             "r",
-            SAFE_LIB,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
             Some(&oc),
             None,
         )
