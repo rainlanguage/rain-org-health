@@ -1827,7 +1827,8 @@ fn main() {
             // cross-checked BOTH ways: registry→migration (is this token governed?)
             // and migration→registry (is this governed vault in the registry?).
             let tok_lib = gh_file(dorg, drepo, "src/lib/LibTokenInvariants.sol");
-            let governed = deployhealth::parse_receipt_vault_list(&tok_lib);
+            let governed_parse = deployhealth::parse_receipt_vault_list(&tok_lib);
+            let governed = governed_parse.addresses;
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
             let tokens: Vec<serde_json::Value> = parsed
@@ -1986,6 +1987,10 @@ fn main() {
                 "source": format!("{dorg}/{drepo}"),
                 "function": "LibTokenInvariants.productionReceiptVaults()",
                 "governedCount": governed.len(),
+                // Entries the migration set LISTED. Greater than governedCount means
+                // some entry named a constant that did not resolve, so the governed
+                // set is short rather than genuinely smaller.
+                "governedDeclared": governed_parse.declared,
                 "registryTokenCount": registry_token_count,
                 "extraVaults": extra_vaults,
                 "missingFromMigration": missing_from_migration,

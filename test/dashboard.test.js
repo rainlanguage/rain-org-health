@@ -2288,3 +2288,125 @@ Deno.test("metrics chart: two series carry a legend, one series does not", () =>
   const pct = pmChart([RUN_LONG, RUN_LONG2], "pct");
   assert(!pct.includes("pm-legend"), "a single series needs no legend box");
 });
+
+// An empty token set must EXPLAIN itself. The registry section silently
+// vanished from prod for days because the governed-vault parser stopped
+// matching an upstream refactor, the intersection emptied, and both the
+// scanner and the page treated "nothing to show" as "show nothing" — so the
+// outage looked like a feature that had never existed.
+Deno.test("deployments: an empty token set still shows the reconcile breakdown", () => {
+  const box = deploymentsBox({
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      tokens: [],
+      reconcile: {
+        governedCount: 2,
+        registryTokenCount: 23,
+        source: "S01-Issuer/st0x.deploy",
+        function: "LibTokenInvariants.productionReceiptVaults()",
+        extraVaults: [{
+          address: "0xfeed000000000000000000000000000000000001",
+        }],
+        missingFromMigration: [{ symbol: "MSTR" }],
+      },
+    },
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("0xfeed000000000000000000000000000000000001"),
+    "the governed vault absent from the registry is the diagnostic: " + t,
+  );
+  assert(
+    !t.includes("could not be read"),
+    "a non-zero governed count is not an unreadable list: " + t,
+  );
+  assert(
+    t.includes("disjoint"),
+    "must name the actual cause when both sides parsed: " + t,
+  );
+});
+
+Deno.test("deployments: a governed set short of its declared entries says so", () => {
+  const box = deploymentsBox({
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      tokens: [],
+      reconcile: {
+        governedCount: 20,
+        governedDeclared: 22,
+        registryTokenCount: 23,
+        source: "S01-Issuer/st0x.deploy",
+        function: "LibTokenInvariants.productionReceiptVaults()",
+        extraVaults: [],
+        missingFromMigration: [],
+      },
+    },
+  });
+  const t = textOf(box);
+  assert(t.includes("INCOMPLETE"), "a short list must be named as short: " + t);
+  assert(t.includes("22"), "the declared count must appear: " + t);
+});
+
+Deno.test("deployments: a fully resolved governed set claims no shortfall", () => {
+  const box = deploymentsBox({
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      tokens: [],
+      reconcile: {
+        governedCount: 22,
+        governedDeclared: 22,
+        registryTokenCount: 23,
+        source: "S01-Issuer/st0x.deploy",
+        function: "LibTokenInvariants.productionReceiptVaults()",
+        extraVaults: [],
+        missingFromMigration: [],
+      },
+    },
+  });
+  const t = textOf(box);
+  assert(
+    !t.includes("INCOMPLETE"),
+    "declared === resolved is not a shortfall: " + t,
+  );
+});
+
+Deno.test("deployments: an empty token set reports why, it does not vanish", () => {
+  const box = deploymentsBox({
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      tokens: [],
+      reconcile: {
+        governedCount: 0,
+        registryTokenCount: 23,
+        function: "LibTokenInvariants.productionReceiptVaults()",
+        extraVaults: [],
+        missingFromMigration: [],
+      },
+    },
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Tokens"),
+    "the heading must still render: " + t.slice(0, 200),
+  );
+  assert(
+    t.includes("0 governed"),
+    "the governed count identifies the cause: " + t,
+  );
+  assert(
+    t.includes("23 registry"),
+    "the registry count shows the other side: " + t,
+  );
+  assert(
+    t.includes("unavailable, not empty"),
+    "must distinguish broken from genuinely empty: " + t,
+  );
+});
