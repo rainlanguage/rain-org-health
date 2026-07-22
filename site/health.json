@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-22T20:33:53Z",
+  "generatedAt": "2026-07-22T20:43:11Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2398,14 +2398,14 @@
       {
         "id": "authoriser",
         "title": "Operational access — authoriser",
-        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser.",
+        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. Which clone is live is read from a production vault's authorizer() on Base.",
         "entries": [
           {
-            "role": "Live authoriser clone",
+            "role": "V3-era authoriser clone",
             "address": "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456",
             "network": "base",
-            "status": "active",
-            "note": "the authorizer() target vaults point at"
+            "status": "migrated",
+            "note": "the pre-V4 authorizer() target"
           },
           {
             "role": "Authoriser implementation",
@@ -2415,11 +2415,18 @@
             "note": "implementation behind the clone"
           },
           {
-            "role": "V4 pending-swap clone",
+            "role": "V4 authoriser clone",
             "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
             "network": "base",
-            "status": "pending",
+            "status": "active",
             "note": "the V4 upgrade rewires every vault onto this"
+          },
+          {
+            "role": "V4 authoriser clone",
+            "address": null,
+            "network": "ethereum",
+            "status": "unknown",
+            "note": "the Ethereum bootstrap's authoriser clone"
           },
           {
             "role": "Service grantee",
