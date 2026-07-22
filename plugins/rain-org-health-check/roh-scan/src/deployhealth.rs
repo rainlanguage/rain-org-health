@@ -338,6 +338,22 @@ pub fn build_beacons(
     }))
 }
 
+/// A chain whose beacon set could not be read at all.
+///
+/// Emitted INSTEAD of dropping the chain. A dropped chain renders as no
+/// section, which is indistinguishable from "this chain has no production
+/// beacons" — the same silent vanish that hid the token registry. The block
+/// carries the chain's identity so the dashboard can say which chain is
+/// missing and why.
+pub fn beacons_unavailable(network: &str, rpc_host: &str, reason: &str) -> serde_json::Value {
+    json!({
+        "network": network,
+        "rpcHost": rpc_host,
+        "unavailable": true,
+        "reason": reason,
+    })
+}
+
 /// Live on-chain reads for one token; each field is `None` if that read failed.
 #[derive(Default)]
 pub struct TokenLive {
@@ -1044,6 +1060,26 @@ mod tests {
             },
         );
         assert_eq!(plain["inMigrationSet"], serde_json::Value::Null);
+    }
+
+    /// An unreadable chain is REPORTED, not dropped. A dropped chain renders
+    /// as no section, which reads as "this chain has no production beacons" —
+    /// the same silent vanish that hid the token registry.
+    #[test]
+    fn beacons_unavailable_names_the_chain_and_the_reason() {
+        let v = beacons_unavailable(
+            "ethereum",
+            "ethereum-rpc.publicnode.com",
+            "constants unreadable",
+        );
+        assert_eq!(v["network"], "ethereum");
+        assert_eq!(v["unavailable"], true);
+        assert_eq!(v["reason"], "constants unreadable");
+        assert_eq!(v["rpcHost"], "ethereum-rpc.publicnode.com");
+        assert!(
+            v["beacons"].is_null(),
+            "an unavailable chain must not claim a beacon list"
+        );
     }
 
     #[test]

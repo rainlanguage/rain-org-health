@@ -2294,6 +2294,88 @@ Deno.test("metrics chart: two series carry a legend, one series does not", () =>
 // matching an upstream refactor, the intersection emptied, and both the
 // scanner and the page treated "nothing to show" as "show nothing" — so the
 // outage looked like a feature that had never existed.
+Deno.test("deployments: every chain in the beacon list gets its own section", () => {
+  const set = (network, name) => ({
+    org: "S01-Issuer",
+    repo: "st0x.deploy",
+    network,
+    rpcHost: `${network}-rpc`,
+    safeOwner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+    targetVersion: "0.1.1",
+    total: 1,
+    healthy: 1,
+    beacons: [{
+      name,
+      address: "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
+      status: "healthy",
+      ownerLabel: "safe",
+      implLabel: "target",
+    }],
+  });
+  const box = deploymentsBox({
+    deploymentBeacons: [
+      set("base", "Base wrapped beacon"),
+      set("ethereum", "Ethereum wrapped beacon"),
+    ],
+  });
+  const t = textOf(box);
+  assert(t.includes("Beacons — base"), "base section missing: " + t);
+  assert(t.includes("Beacons — ethereum"), "ethereum section missing: " + t);
+  assert(
+    t.includes("Base wrapped beacon") && t.includes("Ethereum wrapped beacon"),
+    "each chain must render its own rows: " + t,
+  );
+});
+
+Deno.test("deployments: a single beacon block still renders", () => {
+  const box = deploymentsBox({
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      safeOwner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [{
+        name: "Wrapped beacon",
+        address: "0x4c2d",
+        status: "healthy",
+      }],
+    },
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Beacons — base"),
+    "a health.json written before the array shape must still render: " + t,
+  );
+});
+
+Deno.test("deployments: a chain the scan could not read says so, it does not vanish", () => {
+  const box = deploymentsBox({
+    deploymentBeacons: [{
+      network: "ethereum",
+      rpcHost: "ethereum-rpc.publicnode.com",
+      unavailable: true,
+      reason: "the scan could not read the st0x.deploy beacon constants",
+    }],
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Beacons — ethereum"),
+    "the chain must still be named: " + t,
+  );
+  assert(
+    t.includes("unavailable"),
+    "must distinguish broken from absent: " + t,
+  );
+  assert(
+    t.includes("could not read"),
+    "the reason identifies the failure: " + t,
+  );
+});
+
 Deno.test("deployments: an empty token set still shows the reconcile breakdown", () => {
   const box = deploymentsBox({
     deploymentTokens: {
