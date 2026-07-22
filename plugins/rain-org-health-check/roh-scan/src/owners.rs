@@ -70,24 +70,65 @@ fn entry(
     })
 }
 
-/// Assemble the `deploymentOwners` document from the four st0x.deploy library
+/// An address constant that resolved to the zero address — a pin declared but
+/// not yet hydrated. Distinct from `None` (the constant is absent entirely).
+fn is_unhydrated(pin: Option<&String>) -> bool {
+    pin.is_some_and(|a| a.trim_start_matches("0x").chars().all(|c| c == '0'))
+}
+
+/// Whether an authoriser pin is the one production vaults actually delegate to.
+///
+/// The two Base clones swap roles over the course of the V4 migration, so
+/// hardcoding "active" and "pending" freezes the page at whatever was true the
+/// day it was written — and it silently disagrees with the token rows on the
+/// same page, which read `authorizer()` live. `live` is that live value.
+///
+/// `not_live` is what this pin means when it is NOT the live one: the V3-era
+/// clone has been superseded, the V4 clone has not taken over yet. Without a
+/// live reading the honest answer is `unknown`, never a guess.
+pub fn authoriser_status(
+    pin: Option<&String>,
+    live: Option<&str>,
+    not_live: &'static str,
+) -> &'static str {
+    match (pin, live) {
+        (None, _) | (_, None) => "unknown",
+        (Some(p), Some(l)) if p.eq_ignore_ascii_case(l) => "active",
+        _ => not_live,
+    }
+}
+
+/// The st0x.deploy library sources the owners document is assembled from.
+/// Grouped so adding a source is a field, not another positional argument in a
+/// list where `&str`s are already indistinguishable at the call site.
+pub struct OwnerSources<'a> {
+    /// `src/lib/LibSafeInvariants.sol` — the Safes, signers, threshold.
+    pub safe_lib: &'a str,
+    /// `src/lib/LibAuthoriserInvariants.sol` — authoriser + grantees.
+    pub auth_lib: &'a str,
+    /// `src/generated/LibProdDeployV4.sol` — deploy EOA, V4 clones.
+    pub v4_lib: &'a str,
+    /// `src/lib/LibProdDeployV2BaseOverrides.sol` — bricked V2 beacons.
+    pub overrides: &'a str,
+}
+
+/// Assemble the `deploymentOwners` document from the st0x.deploy library
 /// sources. Returns `None` when the anchor (the Base token-owner Safe) can't be
 /// resolved — i.e. the repo was unreachable or the constant moved — so the page
 /// shows an honest "unavailable" state instead of a table of nulls.
 ///
-/// - `safe_lib`  = `src/lib/LibSafeInvariants.sol` (the Safes, signers, threshold)
-/// - `auth_lib`  = `src/lib/LibAuthoriserInvariants.sol` (authoriser + grantees)
-/// - `v4_lib`    = `src/generated/LibProdDeployV4.sol` (deploy EOA, V4 clone)
-/// - `overrides` = `src/lib/LibProdDeployV2BaseOverrides.sol` (bricked V2 beacons)
+/// `live_authoriser` is the `authorizer()` a production vault actually returns;
+/// `None` when that read failed, which leaves every clone's status `unknown`
+/// rather than falling back to a literal.
 pub fn build_owners(
     org: &str,
     repo: &str,
-    safe_lib: &str,
-    auth_lib: &str,
-    v4_lib: &str,
-    overrides: &str,
+    src: &OwnerSources,
     onchain: Option<&OnChainSafe>,
+    live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
+    let (safe_lib, auth_lib, v4_lib, overrides) =
+        (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
     // Anchor: without the Base Safe there is nothing meaningful to show.
@@ -182,14 +223,39 @@ pub fn build_owners(
         "entries": signers,
     });
 
+    // Which clone is live is READ FROM THE CHAIN, not asserted here: the two
+    // Base clones trade places during the V4 migration, and a hardcoded
+    // active/pending pair goes stale the moment the swap lands — while the
+    // token rows on the same page keep reporting the truth from `authorizer()`.
+    let v3_clone = addr(auth_lib, "STOX_PROD_AUTHORISER");
+    let v4_clone = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
+    let v4_clone_ethereum = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM");
+    let live_note = match live_authoriser {
+        Some(_) => "Which clone is live is read from a production vault's authorizer() on Base.",
+        None => "The live authorizer() read failed, so no clone is marked active — status unknown, not assumed.",
+    };
     let authoriser = json!({
         "id": "authoriser",
         "title": "Operational access — authoriser",
-        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser.",
+        "note": format!("Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. {live_note}"),
         "entries": [
-            entry("Live authoriser clone", addr(auth_lib, "STOX_PROD_AUTHORISER"), "base", "active", "the authorizer() target vaults point at"),
+            entry("V3-era authoriser clone", v3_clone.clone(), "base",
+                authoriser_status(v3_clone.as_ref(), live_authoriser, "migrated"),
+                "the pre-V4 authorizer() target"),
             entry("Authoriser implementation", addr(auth_lib, "STOX_PROD_AUTHORISER_IMPL"), "base", "active", "implementation behind the clone"),
-            entry("V4 pending-swap clone", addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE"), "base", "pending", "the V4 upgrade rewires every vault onto this"),
+            entry("V4 authoriser clone", v4_clone.clone(), "base",
+                authoriser_status(v4_clone.as_ref(), live_authoriser, "pending"),
+                "the V4 upgrade rewires every vault onto this"),
+            // Ethereum's clone is a nonce-based CloneFactory deploy, so its
+            // address cannot be known ahead of the broadcast. The row is
+            // rendered either way: an absent chain reads as "we do not deploy
+            // there", which is the opposite of what an unhydrated pin means.
+            entry("V4 authoriser clone", v4_clone_ethereum.clone(), "ethereum",
+                if v4_clone_ethereum.is_none() { "unknown" }
+                else if is_unhydrated(v4_clone_ethereum.as_ref()) { "pending" }
+                else { "active" },
+                if is_unhydrated(v4_clone_ethereum.as_ref()) { "pin declared, clone not yet deployed" }
+                else { "the Ethereum bootstrap's authoriser clone" }),
             entry("Service grantee", addr(auth_lib, "GRANTEE_SERVICE_1C66"), "", "active", "external service EOA granted deposit / withdraw / certify"),
         ],
     });
@@ -305,10 +371,13 @@ mod tests {
         let v = build_owners(
             "S01-Issuer",
             "st0x.deploy",
-            SAFE_LIB,
-            AUTH_LIB,
-            V4_LIB,
-            OVERRIDES,
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
             None,
         )
         .expect("anchor resolves");
@@ -327,20 +396,133 @@ mod tests {
         assert_eq!(groups[1]["entries"].as_array().unwrap().len(), 6);
         // Bricked V2 owners carry the bricked status.
         assert_eq!(groups[3]["entries"][1]["status"], "bricked");
-        // The V4 clone is flagged pending, not active.
+        // Without a live authorizer() reading no clone claims to be active.
         let auth = groups[2]["entries"].as_array().unwrap();
         let v4 = auth
             .iter()
-            .find(|e| e["role"] == "V4 pending-swap clone")
+            .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "base")
             .unwrap();
-        assert_eq!(v4["status"], "pending");
+        assert_eq!(v4["status"], "unknown");
+    }
+
+    /// The whole point of reading `authorizer()`: whichever clone the vaults
+    /// actually delegate to is the active one, and the other is labelled by
+    /// which side of the swap it sits on. A hardcoded pair gets this backwards
+    /// the moment the migration lands.
+    #[test]
+    fn authoriser_status_follows_the_live_reading() {
+        let v3 = Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456".to_string());
+        let v4 = Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".to_string());
+        // Pre-swap: vaults still point at the V3-era clone.
+        assert_eq!(
+            authoriser_status(
+                v3.as_ref(),
+                Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456"),
+                "migrated"
+            ),
+            "active"
+        );
+        assert_eq!(
+            authoriser_status(
+                v4.as_ref(),
+                Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456"),
+                "pending"
+            ),
+            "pending"
+        );
+        // Post-swap: the same two pins swap roles with no code change.
+        assert_eq!(
+            authoriser_status(
+                v3.as_ref(),
+                Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD"),
+                "migrated"
+            ),
+            "migrated"
+        );
+        assert_eq!(
+            authoriser_status(
+                v4.as_ref(),
+                Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD"),
+                "active"
+            ),
+            "active"
+        );
+    }
+
+    /// Checksum casing differs between the Solidity constant and an RPC reply,
+    /// and a case-sensitive compare would report the live clone as superseded.
+    #[test]
+    fn authoriser_status_ignores_address_casing() {
+        let pin = Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".to_string());
+        assert_eq!(
+            authoriser_status(
+                pin.as_ref(),
+                Some("0x315b16faa6ee413fabca877d3851b3818369f0cd"),
+                "pending"
+            ),
+            "active"
+        );
+    }
+
+    /// A failed RPC must never let a stale literal stand in for a live answer.
+    #[test]
+    fn authoriser_status_is_unknown_without_a_live_reading() {
+        let pin = Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".to_string());
+        assert_eq!(authoriser_status(pin.as_ref(), None, "pending"), "unknown");
+        assert_eq!(
+            authoriser_status(None, Some("0x315b16"), "pending"),
+            "unknown"
+        );
+    }
+
+    /// Ethereum's clone is nonce-deployed, so its pin sits at address(0) until
+    /// the bootstrap runs. That is "declared, not deployed" — not "no such
+    /// chain", which is what omitting the row would say.
+    #[test]
+    fn ethereum_authoriser_row_is_rendered_before_the_clone_exists() {
+        let v4_zero = format!("{V4_LIB}\n    address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x0000000000000000000000000000000000000000);\n");
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: &v4_zero,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
+        )
+        .unwrap();
+        let auth = v["groups"][2]["entries"].as_array().unwrap();
+        let eth = auth
+            .iter()
+            .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "ethereum")
+            .expect("the ethereum row must exist even unhydrated");
+        assert_eq!(eth["status"], "pending");
+        assert!(
+            eth["note"].as_str().unwrap().contains("not yet deployed"),
+            "an unhydrated pin must say so: {}",
+            eth["note"]
+        );
     }
 
     #[test]
     fn build_owners_is_none_without_the_anchor() {
         // Repo unreachable / anchor constant moved → no owners doc at all.
         assert_eq!(
-            build_owners("o", "r", "", AUTH_LIB, V4_LIB, OVERRIDES, None),
+            build_owners(
+                "o",
+                "r",
+                &OwnerSources {
+                    safe_lib: "",
+                    auth_lib: AUTH_LIB,
+                    v4_lib: V4_LIB,
+                    overrides: OVERRIDES
+                },
+                None,
+                None
+            ),
             None
         );
     }
@@ -350,7 +532,19 @@ mod tests {
         // The Ethereum Safe missing from the source surfaces as a null address in
         // its row rather than vanishing.
         let safe_no_eth = "address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;";
-        let v = build_owners("o", "r", safe_no_eth, AUTH_LIB, V4_LIB, OVERRIDES, None).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: safe_no_eth,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
+        )
+        .unwrap();
         let eth = &v["groups"][0]["entries"][1];
         assert_eq!(eth["role"], "Ethereum Safe");
         assert!(eth["address"].is_null());
@@ -366,7 +560,19 @@ mod tests {
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0x2222222222222222222222222222222222222222;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x3333333333333333333333333333333333333333;
         ";
-        let v = build_owners("o", "r", three, AUTH_LIB, V4_LIB, OVERRIDES, None).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: three,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
+        )
+        .unwrap();
         assert_eq!(v["signerCount"], 3);
         assert_eq!(v["groups"][1]["entries"].as_array().unwrap().len(), 3);
         assert_eq!(v["groups"][1]["title"], "Safe signers (3-of-3)");
@@ -397,7 +603,19 @@ mod tests {
     #[test]
     fn onchain_match_marks_every_signer_verified() {
         let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
-        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            Some(&oc),
+            None,
+        )
+        .unwrap();
         let sg = &v["groups"][1];
         assert_eq!(sg["verification"]["match"], true);
         assert_eq!(sg["verification"]["reachable"], true);
@@ -414,7 +632,19 @@ mod tests {
         let mut live: Vec<&str> = LIVE_ROSTER[..5].to_vec();
         live.push("0xdeadbeef00000000000000000000000000000001");
         let oc = onchain(Some(live), Some(2));
-        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            Some(&oc),
+            None,
+        )
+        .unwrap();
         let sg = &v["groups"][1];
         assert_eq!(sg["verification"]["match"], false);
         assert_eq!(sg["verification"]["threshold"]["match"], false);
@@ -432,7 +662,19 @@ mod tests {
     #[test]
     fn unreachable_rpc_leaves_signers_unverified() {
         let oc = onchain(None, None); // RPC failed
-        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            Some(&oc),
+            None,
+        )
+        .unwrap();
         let sg = &v["groups"][1];
         assert_eq!(sg["verification"]["reachable"], false);
         assert!(sg["verification"]["match"].is_null());
@@ -443,7 +685,19 @@ mod tests {
 
     #[test]
     fn no_onchain_omits_verification() {
-        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, None).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
+        )
+        .unwrap();
         assert!(v["groups"][1]["verification"].is_null());
     }
 
@@ -453,7 +707,19 @@ mod tests {
         // verdict must be false — never a green "verified" — even though every
         // signer row is a match.
         let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(4));
-        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            Some(&oc),
+            None,
+        )
+        .unwrap();
         let sg = &v["groups"][1];
         assert_eq!(sg["verification"]["reachable"], true);
         assert_eq!(
@@ -473,7 +739,19 @@ mod tests {
         // Owners answered but the threshold call didn't: not reachable and no
         // verdict, so the page shows "incomplete" rather than a green banner.
         let oc = onchain(Some(LIVE_ROSTER.to_vec()), None);
-        let v = build_owners("o", "r", SAFE_LIB, AUTH_LIB, V4_LIB, OVERRIDES, Some(&oc)).unwrap();
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            Some(&oc),
+            None,
+        )
+        .unwrap();
         let sg = &v["groups"][1];
         assert_eq!(
             sg["verification"]["reachable"], false,

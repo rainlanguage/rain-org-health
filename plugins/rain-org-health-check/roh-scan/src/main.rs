@@ -1707,8 +1707,34 @@ fn main() {
                         threshold: threshold_live,
                     }
                 });
-            owners::build_owners(org, repo, &safe, &auth, &v4, &overrides, onchain.as_ref())
-                .unwrap_or(serde_json::Value::Null)
+            // Which authoriser clone is LIVE, read from a production receipt
+            // vault rather than asserted from a constant. The two Base clones
+            // trade places during the V4 migration, so a hardcoded
+            // active/pending pair silently contradicts the token rows further
+            // down this same page, which read `authorizer()` per token.
+            let live_authoriser = {
+                let tok_lib = gh_file(org, repo, "src/lib/LibTokenInvariants.sol");
+                deployhealth::parse_receipt_vault_list(&tok_lib)
+                    .addresses
+                    .first()
+                    .and_then(|vault| {
+                        eth_call(rpc_session(Chain::Base), vault, &rpc::authorizer_calldata())
+                    })
+                    .and_then(|hex| rpc::decode_address(&hex))
+            };
+            owners::build_owners(
+                org,
+                repo,
+                &owners::OwnerSources {
+                    safe_lib: &safe,
+                    auth_lib: &auth,
+                    v4_lib: &v4,
+                    overrides: &overrides,
+                },
+                onchain.as_ref(),
+                live_authoriser.as_deref(),
+            )
+            .unwrap_or(serde_json::Value::Null)
         };
 
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each
