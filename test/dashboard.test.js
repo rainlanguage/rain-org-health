@@ -2781,14 +2781,58 @@ Deno.test("hostile input: an unparseable run id yields no axis label, not raw ma
   );
 });
 
+// A page may not so much as NAME a markup sink in its code. Matching the
+// assignment (`.innerHTML =`) instead would have to enumerate the ways one can
+// be written — `+=`, `||=`, `??=`, `el["innerHTML"] = x`, `Object.assign(el, {
+// innerHTML: x })` — and a guard that enumerates is the same escape-by-
+// remembering the renderers just stopped doing. The identifier itself is the
+// thing that must not appear: none of these pages has any business reading a
+// sink either, so there is no legitimate mention to carve out.
+const MARKUP_SINK =
+  /\binnerHTML\b|\bouterHTML\b|\binsertAdjacentHTML\b|\bsrcdoc\b|\bdocument\.write\b|\bcreateContextualFragment\b/;
+
+// The guard is only worth what it catches, so pin that directly rather than
+// trusting the pattern by eye. Every line here is a real sink somebody could
+// plausibly write; the negatives are the DOM calls that replaced them.
+Deno.test("the markup-sink guard catches every assignment form, not just `=`", () => {
+  for (
+    const sink of [
+      'el.innerHTML = "<b>x</b>";',
+      'el.innerHTML += "<b>x</b>";',
+      'el.innerHTML ||= "<b>x</b>";',
+      'el.innerHTML ??= "<b>x</b>";',
+      "el.innerHTML=x;",
+      'el["innerHTML"] = x;',
+      "Object.assign(el, { innerHTML: x });",
+      'el.outerHTML = "<b>x</b>";',
+      'el.insertAdjacentHTML("beforeend", x);',
+      'document.write("<b>x</b>");',
+      "range.createContextualFragment(x);",
+      'frame.srcdoc = "<b>x</b>";',
+    ]
+  ) {
+    assert(MARKUP_SINK.test(sink), "guard must flag: " + sink);
+  }
+  for (
+    const ok of [
+      "el.replaceChildren();",
+      "el.textContent = x;",
+      "el.append(a, b);",
+      'a.href = "https://example.com/" + name;',
+      'svgEl("text", { x: 1 }, label);',
+    ]
+  ) {
+    assert(!MARKUP_SINK.test(ok), "guard must not flag: " + ok);
+  }
+});
+
 // The per-renderer tests above prove the paths they drive. This one is what
 // makes the class unrepresentable rather than merely absent: a page with no
 // markup sink at all cannot grow a forgotten escape. Adding a section is
 // therefore not a new chance to get escaping wrong — there is nothing to escape.
 Deno.test("dashboard pages contain no markup sink at all", () => {
   const dir = new URL("../site/", import.meta.url);
-  const sinks =
-    /\.(innerHTML|outerHTML)\s*=|insertAdjacentHTML|document\.write|createContextualFragment/;
+  const sinks = MARKUP_SINK;
   const offenders = [];
   for (const entry of Deno.readDirSync(dir)) {
     if (!entry.isFile || !entry.name.endsWith(".html")) continue;
