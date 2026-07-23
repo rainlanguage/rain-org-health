@@ -76,9 +76,23 @@ Do not regress this:
 
 ## Rendering untrusted data
 
-The dashboard renders cross-repo, attacker-influenceable strings (PR/issue
-titles, producer reasons). Build the DOM directly — `createElement` /
-`textContent` / `.append` / the `.href` property — **never** `innerHTML`
-string-building with a hand-rolled escaper (escaping is context-dependent and
-fragile; see rainlanguage/claude-audit-skills#44). DOM construction escapes by
-construction. `health.json` is `.prettierignore`d (serde-generated).
+The dashboard renders cross-repo, attacker-influenceable strings (repo names,
+git tags, PR/issue titles, producer reasons, token names read off-chain). Build
+the DOM directly — `createElement` / `createElementNS` / `textContent` /
+`.append` / the `.href` property — **never** `innerHTML` string-building with a
+hand-rolled escaper (escaping is context-dependent and fragile; see
+rainlanguage/claude-audit-skills#44). DOM construction escapes by construction.
+
+No page assigns a markup string anywhere, and `test/dashboard.test.js` enforces
+it: one test greps every `site/*.html` for
+`innerHTML`/`outerHTML`/`insertAdjacentHTML`/`document.write`, and others drive
+the real renderers with payloads (`<img src=x onerror=…>`, `<script>…`,
+quote-and-angle-bracket strings) and assert the payload lands as a text node.
+That is the point — a page with no markup sink has nothing to forget to escape,
+so adding a section cannot reintroduce the hazard. The SVG chart in
+`metrics.html` is built the same way (`createElementNS` + `setAttribute`), not
+as an `innerHTML` string.
+
+`health.json` is `.prettierignore`d (serde-generated); `test/` is formatted by
+`deno fmt`, not prettier. Never run `deno fmt` over `site/*.html` — it reindents
+the inline script and breaks the column-0 function extraction the tests use.

@@ -403,7 +403,7 @@ function renderPmTiles(runs) {
     [String(runs.length), "runs recorded"],
   ];
   const box = $("pmtiles");
-  box.innerHTML = "";
+  box.replaceChildren();
   for (const [n, l] of tiles) {
     const t = document.createElement("div");
     t.className = "tile";
@@ -416,6 +416,47 @@ function renderPmTiles(runs) {
     t.append(num, lab);
     box.appendChild(t);
   }
+}
+
+// The hover tooltip body for one run, as DOM nodes. Every field here is read
+// from issue-pr-cron's runs.jsonl — an artifact this page does not own — so the
+// values go in via textContent and `append`'s string form, which produce text
+// nodes. A value can therefore never be parsed as markup, whatever it contains
+// (CLAUDE.md "Rendering untrusted data"). Returns a fragment for the caller to
+// drop into the tip in one shot.
+function pmTip(r, abs) {
+  const frag = document.createDocumentFragment();
+  const bold = (text) => {
+    const n = document.createElement("b");
+    n.textContent = text;
+    return n;
+  };
+  const mins = startupMin(r), minsTxt = mins == null ? null : mins.toFixed(1) + " min";
+  const pm = plotMin(r);
+  // Lead line shows the active unit; the complementary measure trails it. Only
+  // the durationMs-fallback case — an error run with no startupMs — reads as
+  // time-before-erroring; an error run that DID reach a first mutation has a
+  // real startupMs and gets the normal startup-time phrasing (still red).
+  if (abs && r.outcome === "error" && typeof r.startupMs !== "number")
+    frag.append(bold(pm == null ? "—" : pm.toFixed(1) + " min"), " before erroring");
+  else if (abs)
+    frag.append(bold(minsTxt || "—"), ` startup time · ${r.startupPct.toFixed(1)}% of calls`);
+  else
+    frag.append(bold(r.startupPct.toFixed(1) + "%"), " startup overhead" + (minsTxt ? ` · ${minsTxt}` : ""));
+  frag.append(document.createElement("br"));
+  if (typeof r.durationMs === "number")
+    frag.append(`of ${(r.durationMs / 60000).toFixed(1)}m total run`, document.createElement("br"));
+  frag.append(
+    `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
+    document.createElement("br"),
+    `${fmtRunTime(r.runId)} · `,
+  );
+  const outcome = document.createElement("span");
+  if (r.outcome && r.outcome !== "ok") outcome.className = "deg";
+  outcome.textContent = r.outcome || "ok";
+  frag.append(outcome);
+  if (typeof r.costUsd === "number") frag.append(` · $${r.costUsd.toFixed(2)}`);
+  return frag;
 }
 
 function renderPmChart(runs) {
@@ -466,11 +507,25 @@ function renderPmChart(runs) {
   if (seg.length) segs.push(seg);
   const real = pts.filter((p) => p.y != null);
 
-  const grid = gridVals.map((g) => {
-    const gy = yOf(g).toFixed(1);
-    return `<line class="pm-axis-line" x1="${PADL}" y1="${gy}" x2="${VBW - PADR}" y2="${gy}" opacity="${g === 0 ? 0.5 : 0.22}"/>` +
-      `<text x="${PADL - 6}" y="${(+gy + 3).toFixed(1)}" text-anchor="end">${fmtY(g)}</text>`;
-  }).join("");
+  // Everything below is built as real nodes — createElementNS plus setAttribute
+  // and textContent — never concatenated markup, so no value reaching this chart
+  // can be parsed as markup (CLAUDE.md "Rendering untrusted data"). Local on
+  // purpose: test/dashboard.test.js extracts this function's source and evals it
+  // standalone, so anything it closes over must be declared inside it.
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs, text) => {
+    const n = document.createElementNS(SVGNS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+
+  const grid = [];
+  for (const g of gridVals) {
+    const gy = +yOf(g).toFixed(1);
+    grid.push(svgEl("line", { class: "pm-axis-line", x1: PADL, y1: gy, x2: VBW - PADR, y2: gy, opacity: g === 0 ? 0.5 : 0.22 }));
+    grid.push(svgEl("text", { x: PADL - 6, y: (gy + 3).toFixed(1), "text-anchor": "end" }, fmtY(g)));
+  }
 
   // Colour is error-ness (position is time/percent — independent). A sub-segment,
   // and the shading beneath it, turns red when BOTH its endpoints errored, so a run
@@ -478,7 +533,7 @@ function renderPmChart(runs) {
   // Split each contiguous stretch into maximal runs of same error-ness so each colour
   // draws as ONE path (no anti-alias seams within a colour; a seam only at a colour change).
   const isDeg = (p) => p.run.outcome && p.run.outcome !== "ok";
-  let area = "", line = "";
+  const areas = [], lines = [];
   for (const s of segs) {
     if (s.length < 2) continue;
     const pairDeg = (i) => isDeg(s[i]) && isDeg(s[i + 1]); // sub-segment s[i]→s[i+1]
@@ -489,8 +544,8 @@ function renderPmChart(runs) {
       while (end + 1 <= s.length - 2 && pairDeg(end + 1) === deg) end++;
       const run = s.slice(start, end + 2); // points spanned: s[start]..s[end+1]
       const k = deg ? " deg" : "";
-      area += `<path class="pm-area${k}" d="M ${run[0].x} ${by} ${run.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${run[run.length - 1].x} ${by} Z"/>`;
-      line += `<path class="pm-line${k}" d="M ${run.map((p) => `${p.x} ${p.y}`).join(" L ")}"/>`;
+      areas.push(svgEl("path", { class: "pm-area" + k, d: `M ${run[0].x} ${by} ${run.map((p) => `L ${p.x} ${p.y}`).join(" ")} L ${run[run.length - 1].x} ${by} Z` }));
+      lines.push(svgEl("path", { class: "pm-line" + k, d: `M ${run.map((p) => `${p.x} ${p.y}`).join(" L ")}` }));
       start = end + 1; // next run shares this boundary point, keeping the line continuous
     }
   }
@@ -498,7 +553,7 @@ function renderPmChart(runs) {
   // line, which says nothing. Identity is carried by position (total is always
   // at or above startup, being its superset), a dashed stroke and the legend —
   // never by hue, because hue on this chart already means "this run errored".
-  let totalLine = "";
+  const totalLines = [];
   if (abs) {
     const tsegs = [];
     let tseg = [];
@@ -508,50 +563,68 @@ function renderPmChart(runs) {
       tseg.push({ x: +xOf(i).toFixed(1), y: +yOf(tv).toFixed(1) });
     });
     if (tseg.length) tsegs.push(tseg);
-    totalLine = tsegs
-      .filter((t) => t.length >= 2)
-      .map((t) => `<polyline class="pm-total" points="${t.map((q) => `${q.x},${q.y}`).join(" ")}"/>`)
-      .join("");
+    for (const t of tsegs) {
+      if (t.length < 2) continue;
+      totalLines.push(svgEl("polyline", { class: "pm-total", points: t.map((q) => `${q.x},${q.y}`).join(" ") }));
+    }
   }
-  const dots = real.map((p) => {
-    return `<circle class="pm-dot${isDeg(p) ? " deg" : ""}" cx="${p.x}" cy="${p.y}" r="${p === real[real.length - 1] ? 4 : 3}"/>`;
-  }).join("");
-  let endlabel = "";
+  const dots = real.map((p) =>
+    svgEl("circle", { class: "pm-dot" + (isDeg(p) ? " deg" : ""), cx: p.x, cy: p.y, r: p === real[real.length - 1] ? 4 : 3 }));
+  const endlabel = [];
   if (real.length) {
     const l = real[real.length - 1];
     const lbl = abs ? l.v.toFixed(1) + "m" : l.v.toFixed(0) + "%";
-    endlabel = `<text class="pm-endlabel" x="${(l.x + 6).toFixed(1)}" y="${(l.y + 3).toFixed(1)}">${lbl}</text>`;
+    endlabel.push(svgEl("text", { class: "pm-endlabel", x: (l.x + 6).toFixed(1), y: (l.y + 3).toFixed(1) }, lbl));
   }
   const xlabels = runs.length >= 2
-    ? `<text x="${PADL}" y="${VBH - 7}" text-anchor="start">${fmtDayTime(runs[0].runId)}</text>` +
-      `<text x="${VBW - PADR}" y="${VBH - 7}" text-anchor="end">${fmtDayTime(runs[runs.length - 1].runId)}</text>`
-    : `<text x="${PADL + plotW / 2}" y="${VBH - 7}" text-anchor="middle">${fmtDayTime(runs[0].runId)}</text>`;
-  const cursor = `<line class="pm-cursor" id="pmcursor" x1="0" y1="${PADT}" x2="0" y2="${VBH - PADB}"/>`;
+    ? [
+      svgEl("text", { x: PADL, y: VBH - 7, "text-anchor": "start" }, fmtDayTime(runs[0].runId)),
+      svgEl("text", { x: VBW - PADR, y: VBH - 7, "text-anchor": "end" }, fmtDayTime(runs[runs.length - 1].runId)),
+    ]
+    : [svgEl("text", { x: PADL + plotW / 2, y: VBH - 7, "text-anchor": "middle" }, fmtDayTime(runs[0].runId))];
+  const cur = svgEl("line", { class: "pm-cursor", id: "pmcursor", x1: 0, y1: PADT, x2: 0, y2: VBH - PADB });
   const aria = abs
     ? "Producer run time in minutes per run over time: total wall clock, and the startup portion within it"
     : "Producer startup overhead percent per run over time";
 
   // A legend is mandatory once two series share the plot, so identity is never
   // carried by the mark alone. Proportion mode has one series and gets none.
-  const legend = abs
-    ? `<div class="pm-legend"><span class="k"><span class="sw"></span>startup</span>` +
-      `<span class="k"><span class="sw total"></span>total run</span></div>`
-    : "";
+  const legend = [];
+  if (abs) {
+    const box = document.createElement("div");
+    box.className = "pm-legend";
+    for (const [swatch, label] of [["sw", "startup"], ["sw total", "total run"]]) {
+      const k = document.createElement("span");
+      k.className = "k";
+      const sw = document.createElement("span");
+      sw.className = swatch;
+      k.append(sw, label);
+      box.append(k);
+    }
+    legend.push(box);
+  }
+  const svg = svgEl("svg", {
+    class: "pm-chart",
+    id: "pmsvg",
+    viewBox: `0 0 ${VBW} ${VBH}`,
+    preserveAspectRatio: "xMidYMid meet",
+    role: "img",
+    "aria-label": aria,
+  });
+  svg.append(...grid, cur, ...areas, ...totalLines, ...lines, ...dots, ...endlabel, ...xlabels);
+  const tip = document.createElement("div");
+  tip.className = "pm-tip";
+  tip.id = "pmtip";
   const wrap = $("pmwrap");
-  wrap.innerHTML = legend +
-    `<svg class="pm-chart" id="pmsvg" viewBox="0 0 ${VBW} ${VBH}" preserveAspectRatio="xMidYMid meet"` +
-    ` role="img" aria-label="${aria}">` +
-    grid + cursor + area + totalLine + line + dots + endlabel + xlabels + `</svg>` +
-    `<div class="pm-tip" id="pmtip"></div>`;
+  wrap.replaceChildren(...legend, svg, tip);
 
-  const svg = $("pmsvg"), tip = $("pmtip"), cur = $("pmcursor");
   svg.addEventListener("mousemove", (e) => {
     const rr = svg.getBoundingClientRect();
     if (!rr.width) return;
     const relX = ((e.clientX - rr.left) / rr.width) * VBW;
     let best = 0, bd = Infinity;
     pts.forEach((p, i) => { const d = Math.abs(p.x - relX); if (d < bd) { bd = d; best = i; } });
-    const p = pts[best], r = p.run, deg = r.outcome && r.outcome !== "ok";
+    const p = pts[best], r = p.run;
     // Anchor the cursor + tip on the run's plotted point; a gap run has no y, so
     // fall back to the baseline for the vertical anchor.
     const anchorY = p.y == null ? by : p.y;
@@ -559,30 +632,48 @@ function renderPmChart(runs) {
     const wr = wrap.getBoundingClientRect();
     tip.style.left = (rr.left - wr.left + (p.x / VBW) * rr.width) + "px";
     tip.style.top = (rr.top - wr.top + (anchorY / VBH) * rr.height - 10) + "px";
-    const cost = typeof r.costUsd === "number" ? ` · $${r.costUsd.toFixed(2)}` : "";
-    const mins = startupMin(r), minsTxt = mins == null ? null : mins.toFixed(1) + " min";
-    const pm = plotMin(r);
-    // Lead line shows the active unit; the complementary measure trails it. Only
-    // the durationMs-fallback case — an error run with no startupMs — reads as
-    // time-before-erroring; an error run that DID reach a first mutation has a
-    // real startupMs and gets the normal startup-time phrasing (still red).
-    let head;
-    if (abs && r.outcome === "error" && typeof r.startupMs !== "number")
-      head = `<b>${pm == null ? "—" : pm.toFixed(1) + " min"}</b> before erroring`;
-    else if (abs)
-      head = `<b>${minsTxt || "—"}</b> startup time · ${r.startupPct.toFixed(1)}% of calls`;
-    else
-      head = `<b>${r.startupPct.toFixed(1)}%</b> startup overhead` + (minsTxt ? ` · ${minsTxt}` : "");
-    tip.innerHTML =
-      `${head}<br>` +
-      (typeof r.durationMs === "number"
-        ? `of ${(r.durationMs / 60000).toFixed(1)}m total run<br>`
-        : "") +
-      `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns<br>` +
-      `${fmtRunTime(r.runId)} · <span class="${deg ? "deg" : ""}">${r.outcome || "ok"}</span>${cost}`;
+    tip.replaceChildren(pmTip(r, abs));
     tip.style.opacity = 1;
   });
   svg.addEventListener("mouseleave", () => { tip.style.opacity = 0; cur.style.opacity = 0; });
+}
+
+// The caption under the chart. `last` is the newest run, or null when there is
+// no data yet — with none, the toggle sentence and the latest-run lead have
+// nothing to describe and are dropped. The only data here is the run's outcome
+// and age, both from runs.jsonl, so both go in as text nodes; the literal
+// markup (the link, the emphasis, the code span) is built as elements.
+function renderPmNote(last) {
+  const nodes = [];
+  const tag = (name, text) => {
+    const n = document.createElement(name);
+    n.textContent = text;
+    return n;
+  };
+  if (last) {
+    const outcome = document.createElement("span");
+    if (last.outcome && last.outcome !== "ok") outcome.className = "deg";
+    outcome.textContent = last.outcome || "ok";
+    nodes.push(`Latest run ${fmtAgo(parseRunId(last.runId))} · outcome `, outcome, ". ");
+  }
+  nodes.push(
+    "Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ",
+  );
+  if (last) {
+    nodes.push(
+      "Toggle to ",
+      tag("b", "absolute"),
+      " to read the wall-clock startup time in minutes (run start → first mutation, ",
+      tag("code", "startupMs"),
+      "); errored runs plot at their time-to-failure, non-errored runs with no recorded time are gaps. ",
+    );
+  }
+  const src = tag("a", "runs.jsonl");
+  src.href = "https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl";
+  src.rel = "noopener";
+  src.target = "_blank";
+  nodes.push("Source: ", src, ".");
+  $("pmnote").replaceChildren(...nodes);
 }
 
 async function loadMetrics() {
@@ -604,22 +695,14 @@ async function loadMetrics() {
   renderPmControls(runs);
   renderPmTiles(runs);
   if (!runs.length) {
-    if (empty) empty.innerHTML =
+    if (empty) empty.textContent =
       "No producer runs recorded yet. The first metric lands after the next producer cron run — " +
       "then this chart fills in, one point per run.";
-    $("pmnote").innerHTML =
-      `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
-      `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
+    renderPmNote(null);
     return;
   }
   renderPmChart(runs);
-  const last = runs[runs.length - 1], deg = last.outcome && last.outcome !== "ok";
-  $("pmnote").innerHTML =
-    `Latest run ${fmtAgo(parseRunId(last.runId))} · outcome <span class="${deg ? "deg" : ""}">${last.outcome || "ok"}</span>. ` +
-    `Startup overhead = share of a run's tool calls spent recovering state before its first GitHub mutation; lower is better. ` +
-    `Toggle to <b>absolute</b> to read the wall-clock startup time in minutes (run start → first mutation, <code>startupMs</code>); ` +
-    `errored runs plot at their time-to-failure, non-errored runs with no recorded time are gaps. ` +
-    `Source: <a href="https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl" rel="noopener" target="_blank">runs.jsonl</a>.`;
+  renderPmNote(runs[runs.length - 1]);
 }
 loadMetrics();
 </script>

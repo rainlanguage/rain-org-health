@@ -101,23 +101,38 @@ function makeEl(tag) {
     querySelector(sel) {
       return el.querySelectorAll(sel)[0] || null;
     },
-    // Attributes the render code sets for accessibility (role, aria-pressed).
-    // Stored rather than ignored so a test can assert the state a control
-    // announces, not just the class it happens to carry.
+    // Attributes the render code sets for accessibility (role, aria-pressed)
+    // and for SVG geometry. Stored rather than ignored so a test can assert the
+    // state a control announces, not just the class it happens to carry.
     attrs: {},
     setAttribute(k, v) {
       el.attrs[k] = String(v);
+      // An SVG element has no writable className, so its class arrives through
+      // setAttribute. Mirroring it keeps ONE class view for the selectors here,
+      // which is what the real DOM does too.
+      if (k === "class") el.className = String(v);
     },
     getAttribute(k) {
       return Object.prototype.hasOwnProperty.call(el.attrs, k)
         ? el.attrs[k]
         : null;
     },
+    // Layout: the stub has none, so a test that exercises a pointer path sets
+    // the rect it wants the render code to read.
+    _rect: { left: 0, top: 0, width: 0, height: 0 },
+    getBoundingClientRect() {
+      return el._rect;
+    },
     addEventListener(type, fn) {
       (el._ev[type] = el._ev[type] || []).push(fn);
     },
     click() {
       (el._ev.click || []).forEach((fn) => fn());
+    },
+    // Fire the handlers registered for `type` with a synthetic event, so a test
+    // can drive hover paths (the tooltip) as well as clicks.
+    fire(type, ev) {
+      (el._ev[type] || []).forEach((fn) => fn(ev));
     },
   };
   Object.defineProperty(el, "textContent", {
@@ -177,6 +192,31 @@ function textOf(node) {
     }
   }
   return s;
+}
+
+// Every descendant element with the given tag name.
+function tags(root, tag, out = []) {
+  for (const c of root.children || []) {
+    if (c && typeof c === "object") {
+      if (c.tagName === tag) out.push(c);
+      tags(c, tag, out);
+    }
+  }
+  return out;
+}
+
+// The document surface the render code touches: element creation (namespaced,
+// for the SVG chart) and fragments.
+function stubDocument() {
+  return {
+    createElement: (t) => makeEl(t),
+    createElementNS: (_ns, t) => makeEl(t),
+    createDocumentFragment: () => {
+      const f = makeEl("#fragment");
+      f._isFragment = true;
+      return f;
+    },
+  };
 }
 
 // Instantiate one extracted render function bound to a stub document/$ (+ data).
@@ -2040,59 +2080,86 @@ Deno.test("repo summary: no debt renders an empty state, not a blank panel", () 
   const [render, box] = repoSummaryBind({});
   render();
   assert(
-    String(box.innerHTML).includes("No modernization debt"),
-    "an empty summary should say so: " + box.innerHTML,
+    textOf(box).includes("No modernization debt"),
+    "an empty summary should say so: " + textOf(box),
   );
 });
 
 // The producer runs every 4 hours, so a date-only axis label cannot identify
 // which of six daily runs a point is. These render the REAL chart and assert on
-// its emitted axis markup — asserting on the formatter alone would pass even if
-// the chart never called it, which is exactly how a renderer drifts from its
-// helper unnoticed.
+// the nodes it emits — asserting on the formatter alone would pass even if the
+// chart never called it, which is exactly how a renderer drifts from its helper
+// unnoticed. The chart builds SVG nodes, not markup, so the assertions read the
+// tree (tag, class, attribute, textContent) rather than a serialised string.
+const MON = [
+  "Jan",
+  "Feb",
+  "Mar",
+  "Apr",
+  "May",
+  "Jun",
+  "Jul",
+  "Aug",
+  "Sep",
+  "Oct",
+  "Nov",
+  "Dec",
+];
+
+function pmDeps() {
+  const parseRunId = bind("metrics.html", "parseRunId", [], []);
+  return {
+    parseRunId,
+    fmtDayTime: bind("metrics.html", "fmtDayTime", ["MON", "parseRunId"], [
+      MON,
+      parseRunId,
+    ]),
+    fmtRunTime: bind("metrics.html", "fmtRunTime", ["MON", "parseRunId"], [
+      MON,
+      parseRunId,
+    ]),
+    startupMin: bind("metrics.html", "startupMin", [], []),
+    plotMin: bind("metrics.html", "plotMin", [], []),
+    totalMin: bind("metrics.html", "totalMin", [], []),
+    niceStep: bind("metrics.html", "niceStep", [], []),
+  };
+}
+
+// Bind the real pmTip and run it, returning the box the fragment landed in.
+function pmTipBox(run, abs) {
+  const d = pmDeps();
+  const document = stubDocument();
+  const fn = bind(
+    "metrics.html",
+    "pmTip",
+    ["document", "fmtRunTime", "startupMin", "plotMin"],
+    [document, d.fmtRunTime, d.startupMin, d.plotMin],
+  );
+  const box = makeEl("div");
+  box.replaceChildren(fn(run, abs));
+  return box;
+}
+
+// Render the real chart; returns the wrap element it built into.
 function pmChart(runs, pmMode = "pct") {
   const wrap = makeEl("div");
-  const svg = makeEl("svg");
-  const nodes = {
-    pmwrap: wrap,
-    pmsvg: svg,
-    pmtip: makeEl("div"),
-    pmcursor: makeEl("div"),
-  };
-  const $ = (id) => nodes[id] || makeEl("div");
-  const parseRunId = bind("metrics.html", "parseRunId", [], []);
-  const MON = [
-    "Jan",
-    "Feb",
-    "Mar",
-    "Apr",
-    "May",
-    "Jun",
-    "Jul",
-    "Aug",
-    "Sep",
-    "Oct",
-    "Nov",
-    "Dec",
-  ];
-  const fmtDayTime = bind("metrics.html", "fmtDayTime", ["MON", "parseRunId"], [
-    MON,
-    parseRunId,
-  ]);
-  const fmtRunTime = bind("metrics.html", "fmtRunTime", ["MON", "parseRunId"], [
-    MON,
-    parseRunId,
-  ]);
-  const startupMin = bind("metrics.html", "startupMin", [], []);
-  const plotMin = bind("metrics.html", "plotMin", [], []);
-  const totalMin = bind("metrics.html", "totalMin", [], []);
-  const niceStep = bind("metrics.html", "niceStep", [], []);
+  const $ = (id) => (id === "pmwrap" ? wrap : makeEl("div"));
+  const d = pmDeps();
+  const document = stubDocument();
+  const pmTip = bind(
+    "metrics.html",
+    "pmTip",
+    ["document", "fmtRunTime", "startupMin", "plotMin"],
+    [document, d.fmtRunTime, d.startupMin, d.plotMin],
+  );
   bind(
     "metrics.html",
     "renderPmChart",
     [
       "$",
+      "document",
       "pmMode",
+      "pmTip",
       "parseRunId",
       "fmtDayTime",
       "fmtRunTime",
@@ -2103,18 +2170,24 @@ function pmChart(runs, pmMode = "pct") {
     ],
     [
       $,
+      document,
       pmMode,
-      parseRunId,
-      fmtDayTime,
-      fmtRunTime,
-      startupMin,
-      plotMin,
-      totalMin,
-      niceStep,
+      pmTip,
+      d.parseRunId,
+      d.fmtDayTime,
+      d.fmtRunTime,
+      d.startupMin,
+      d.plotMin,
+      d.totalMin,
+      d.niceStep,
     ],
   )(runs);
-  return String(wrap.innerHTML);
+  return wrap;
 }
+
+// The chart's own <svg>, and the axis text nodes carrying a date label.
+const pmSvg = (wrap) => wrap.children.find((c) => c.tagName === "svg");
+const pmTexts = (wrap) => tags(wrap, "text").map((t) => t.textContent || "");
 
 const RUN_A = {
   runId: "20260720T010001Z",
@@ -2136,27 +2209,31 @@ const RUN_B = {
 };
 
 Deno.test("metrics chart: the axis shows an absolute time, not just a date", () => {
-  const svg = pmChart([RUN_A, RUN_B]);
+  const labels = pmTexts(pmChart([RUN_A, RUN_B]));
+  const shown = JSON.stringify(labels);
   assert(
-    svg.includes("Jul 20"),
-    "expected the date in the axis: " + svg.slice(-400),
+    labels.some((t) => t.includes("Jul 20")),
+    "expected the date: " + shown,
   );
   assert(
-    svg.includes("01:00"),
-    "expected the first run's time: " + svg.slice(-400),
+    labels.some((t) => t.includes("01:00")),
+    "expected the first run's time: " + shown,
   );
   assert(
-    svg.includes("17:00"),
-    "expected the last run's time: " + svg.slice(-400),
+    labels.some((t) => t.includes("17:00")),
+    "expected the last run's time: " + shown,
   );
-  assert(svg.includes("UTC"), "expected an explicit zone: " + svg.slice(-400));
+  assert(
+    labels.some((t) => t.includes("UTC")),
+    "expected an explicit zone: " + shown,
+  );
 });
 
 Deno.test("metrics chart: two runs on the same day get distinct axis labels", () => {
-  const svg = pmChart([RUN_A, RUN_B]);
   // Before absolute times both endpoints rendered as the bare date "Jul 20".
-  const labels = [...svg.matchAll(/<text[^>]*>([^<]*Jul 20[^<]*)<\/text>/g)]
-    .map((m) => m[1]);
+  const labels = pmTexts(pmChart([RUN_A, RUN_B])).filter((t) =>
+    t.includes("Jul 20")
+  );
   assert(
     labels.length >= 2,
     "expected two dated axis labels, got: " + JSON.stringify(labels),
@@ -2168,12 +2245,16 @@ Deno.test("metrics chart: two runs on the same day get distinct axis labels", ()
 });
 
 Deno.test("metrics chart: a single run still gets an absolute axis label", () => {
-  const svg = pmChart([RUN_A]);
+  const labels = pmTexts(pmChart([RUN_A]));
+  const shown = JSON.stringify(labels);
   assert(
-    svg.includes("01:00"),
-    "single-run axis should carry its time: " + svg.slice(-400),
+    labels.some((t) => t.includes("01:00")),
+    "single-run axis should carry its time: " + shown,
   );
-  assert(svg.includes("UTC"), "single-run axis should carry the zone");
+  assert(
+    labels.some((t) => t.includes("UTC")),
+    "single-run axis should carry the zone: " + shown,
+  );
 });
 
 // The chart opens on absolute minutes. A percentage answers "what share of the
@@ -2248,18 +2329,18 @@ const RUN_LONG2 = {
 };
 
 Deno.test("metrics chart: absolute mode plots total run time alongside startup", () => {
-  const svg = pmChart([RUN_LONG, RUN_LONG2], "abs");
+  const wrap = pmChart([RUN_LONG, RUN_LONG2], "abs");
+  assert(collect(wrap, "pm-total").length > 0, "expected a total-run series");
   assert(
-    svg.includes("pm-total"),
-    "expected a total-run series: " + svg.slice(0, 300),
+    collect(wrap, "pm-line").length > 0,
+    "startup series should still be drawn",
   );
-  assert(svg.includes("pm-line"), "startup series should still be drawn");
 });
 
 Deno.test("metrics chart: proportion mode omits total, which would be a flat 100%", () => {
-  const svg = pmChart([RUN_LONG, RUN_LONG2], "pct");
+  const wrap = pmChart([RUN_LONG, RUN_LONG2], "pct");
   assert(
-    !svg.includes("pm-total"),
+    collect(wrap, "pm-total").length === 0,
     "total as a proportion is always 100% and says nothing — it must not render",
   );
 });
@@ -2267,10 +2348,11 @@ Deno.test("metrics chart: proportion mode omits total, which would be a flat 100
 Deno.test("metrics chart: the y scale covers total, so it is never clipped", () => {
   // 4200000ms = 70min total vs 11.7min startup. A startup-only scale would top
   // out near 12 and push the total line off the plot.
-  const svg = pmChart([RUN_LONG, RUN_LONG2], "abs");
-  const ticks = [...svg.matchAll(/text-anchor="end">([\d.]+)<\/text>/g)].map((
-    m,
-  ) => parseFloat(m[1]));
+  const wrap = pmChart([RUN_LONG, RUN_LONG2], "abs");
+  const ticks = tags(wrap, "text")
+    .filter((t) => t.getAttribute("text-anchor") === "end")
+    .map((t) => parseFloat(t.textContent))
+    .filter((v) => !isNaN(v));
   const top = Math.max(...ticks);
   assert(
     top >= 70,
@@ -2280,13 +2362,17 @@ Deno.test("metrics chart: the y scale covers total, so it is never clipped", () 
 
 Deno.test("metrics chart: two series carry a legend, one series does not", () => {
   const wrap = pmChart([RUN_LONG, RUN_LONG2], "abs");
-  assert(wrap.includes("pm-legend"), "two series require a legend");
+  const legend = collect(wrap, "pm-legend");
+  assert(legend.length === 1, "two series require a legend");
+  const text = textOf(legend[0]);
   assert(
-    wrap.includes("total run") && wrap.includes("startup"),
-    "legend must name both series",
+    text.includes("total run") && text.includes("startup"),
+    "legend must name both series: " + text,
   );
-  const pct = pmChart([RUN_LONG, RUN_LONG2], "pct");
-  assert(!pct.includes("pm-legend"), "a single series needs no legend box");
+  assert(
+    collect(pmChart([RUN_LONG, RUN_LONG2], "pct"), "pm-legend").length === 0,
+    "a single series needs no legend box",
+  );
 });
 
 // An empty token set must EXPLAIN itself. The registry section silently
@@ -2490,5 +2576,278 @@ Deno.test("deployments: an empty token set reports why, it does not vanish", () 
   assert(
     t.includes("unavailable, not empty"),
     "must distinguish broken from genuinely empty: " + t,
+  );
+});
+
+// --- hostile input ----------------------------------------------------------
+// Nothing the dashboard renders is authored here. health.json carries repo
+// names, git tags and PDF filenames read out of other orgs' repositories;
+// deployments carry token names read off-chain, where the name is whatever the
+// deployer of the contract chose; runs.jsonl carries the producer's own strings
+// but from a repo this page does not own. Any of it can be markup. The pages
+// therefore build DOM nodes and never assign a markup string, so a payload can
+// only ever become text — these drive the REAL renderers with payloads and
+// assert exactly that, because a happy-path fixture proves nothing about it.
+const XSS_IMG = '<img src=x onerror="alert(1)">';
+const XSS_SCRIPT = "<script>alert(1)</script>";
+const XSS_SVG = '<svg onload="alert(1)">';
+// The attribute-context payload: harmless as text, an event handler the moment
+// it is concatenated into a quoted attribute.
+const XSS_ATTR = '" onmouseover="alert(1)';
+
+// Elements that only exist if a payload was parsed as markup rather than set as
+// text. `svg`/`text`/`circle` are legitimately built by the chart, so the ban
+// list is the tags a payload would introduce, not "any tag".
+const MARKUP_TAGS = ["img", "script", "iframe", "object", "embed", "style"];
+
+// Descriptions of anything in the tree that could only come from parsed markup.
+function markupNodes(root, out = []) {
+  for (const c of root.children || []) {
+    if (c && typeof c === "object") {
+      if (MARKUP_TAGS.includes(c.tagName)) out.push("<" + c.tagName + ">");
+      for (const k of Object.keys(c.attrs || {})) {
+        if (/^on/i.test(k)) out.push(k + "=" + c.attrs[k]);
+      }
+      markupNodes(c, out);
+    }
+  }
+  return out;
+}
+
+// The payload reached the rendered TEXT (so it was set with textContent or
+// appended as a string, both of which produce a text node), and the tree grew
+// no element or handler from it. The first half is what fails the moment a
+// renderer goes back to building a markup string: an `innerHTML` assignment
+// puts the payload somewhere textContent cannot see.
+function assertInert(root, payload, where) {
+  const text = textOf(root);
+  assert(
+    text.includes(payload),
+    where + ": payload must render as text, got: " + JSON.stringify(text),
+  );
+  const bad = markupNodes(root);
+  assert(
+    bad.length === 0,
+    where + ": payload became markup: " + bad.join(", "),
+  );
+}
+
+function repoListBind(repos, org = "testorg") {
+  const box = makeEl("div");
+  const search = makeEl("input");
+  search.value = "";
+  const $ = (id) =>
+    id === "repos" ? box : id === "search" ? search : makeEl("div");
+  const fn = bind(
+    "repositories.html",
+    "render",
+    ["$", "document", "data", "activeSignal", "setSignal"],
+    [$, stubDocument(), { org, repos }, null, () => {}],
+  );
+  return [fn, box];
+}
+
+function pmNoteBox(last) {
+  const box = makeEl("div");
+  const $ = (id) => (id === "pmnote" ? box : makeEl("div"));
+  const d = pmDeps();
+  const fmtAgo = bind("metrics.html", "fmtAgo", [], []);
+  bind(
+    "metrics.html",
+    "renderPmNote",
+    ["$", "document", "fmtAgo", "parseRunId"],
+    [$, stubDocument(), fmtAgo, d.parseRunId],
+  )(last);
+  return box;
+}
+
+Deno.test("hostile input: a repo name that is markup renders as text, and its link is a property", () => {
+  const [render, box] = repoListBind([{
+    name: XSS_IMG,
+    signals: [XSS_SCRIPT],
+  }]);
+  render();
+  assertInert(box, XSS_IMG, "repo row");
+  assertInert(box, XSS_SCRIPT, "signal chip");
+  // The href is assigned as a property, so an attribute-context payload cannot
+  // break out of the quoting — it stays inside the path of the URL.
+  const a = tags(box, "a")[0];
+  assert(
+    a.href === "https://github.com/testorg/" + XSS_IMG,
+    "the repo link must carry the name verbatim in the path: " + a.href,
+  );
+});
+
+Deno.test("hostile input: a quote-and-angle-bracket repo name stays inside the link", () => {
+  const [render, box] = repoListBind([{ name: XSS_ATTR, signals: [] }]);
+  render();
+  assertInert(box, XSS_ATTR, "repo row");
+  const a = tags(box, "a")[0];
+  assert(
+    a.href.endsWith(XSS_ATTR),
+    "an attribute-context payload must remain part of the href value: " +
+      a.href,
+  );
+});
+
+Deno.test("hostile input: a signal name that is markup renders as text", () => {
+  const [render, box] = repoSummaryBind({ [XSS_IMG]: 3 });
+  render();
+  assertInert(box, XSS_IMG, "signal summary");
+});
+
+Deno.test("hostile input: an audit row's repo name and git tag render as text", () => {
+  const box = auditBox(auditData([
+    auditRow({
+      name: XSS_IMG,
+      latestTag: XSS_SCRIPT,
+      compareUrl: "https://h/x/compare/a...b",
+      commitsSinceAudit: 3,
+    }),
+  ]));
+  assertInert(box, XSS_IMG, "audit row name");
+  assertInert(box, XSS_SCRIPT, "audit row tag");
+});
+
+Deno.test("hostile input: a run's outcome, id and counts render as tooltip text", () => {
+  // A DISTINCT payload per field: sharing one would let a field that stopped
+  // rendering as text pass on another field's copy of the same string.
+  const box = pmTipBox({
+    runId: XSS_ATTR,
+    startupPct: 4.3,
+    startupMs: 590693,
+    durationMs: 1611124,
+    toolCalls: XSS_SCRIPT,
+    startupToolCalls: 23,
+    numTurns: XSS_SVG,
+    outcome: XSS_IMG,
+  }, true);
+  // An unparseable runId falls back to the raw string, so it reaches the tip
+  // verbatim — which is only safe because the tip is built from nodes.
+  assertInert(box, XSS_ATTR, "tooltip run id");
+  assertInert(box, XSS_SCRIPT, "tooltip tool calls");
+  assertInert(box, XSS_SVG, "tooltip turn count");
+  assertInert(box, XSS_IMG, "tooltip outcome");
+});
+
+Deno.test("hostile input: the latest run's outcome renders as note text", () => {
+  const box = pmNoteBox({ runId: "20260720T010001Z", outcome: XSS_IMG });
+  assertInert(box, XSS_IMG, "chart note");
+});
+
+Deno.test("hostile input: hovering the chart lands the payload in the tip as text", () => {
+  // The integration half: pmTip being safe is worth nothing if the chart stops
+  // calling it and interpolates the run itself.
+  const run = (runId) => ({
+    runId,
+    startupPct: 4.3,
+    startupMs: 590693,
+    durationMs: 1611124,
+    toolCalls: 529,
+    startupToolCalls: 23,
+    numTurns: 66,
+    outcome: XSS_IMG,
+  });
+  const wrap = pmChart(
+    [run("20260720T010001Z"), run("20260720T170002Z")],
+    "abs",
+  );
+  const svg = pmSvg(wrap);
+  const rect = { left: 0, top: 0, width: 720, height: 210 };
+  svg._rect = rect;
+  wrap._rect = rect;
+  svg.fire("mousemove", { clientX: 10, clientY: 10 });
+  const tip = collect(wrap, "pm-tip")[0];
+  assert(tip, "the chart must build a tip element");
+  assertInert(tip, XSS_IMG, "chart tooltip on hover");
+  assert(
+    markupNodes(wrap).length === 0,
+    "no payload may become markup anywhere on the chart: " +
+      markupNodes(wrap).join(", "),
+  );
+});
+
+Deno.test("hostile input: an unparseable run id yields no axis label, not raw markup", () => {
+  const run = (runId) => ({ runId, startupPct: 4.3, outcome: "ok" });
+  const wrap = pmChart([run(XSS_IMG), run(XSS_SCRIPT)], "pct");
+  assert(
+    markupNodes(wrap).length === 0,
+    "axis labels must never become markup: " + markupNodes(wrap).join(", "),
+  );
+  assert(
+    !pmTexts(wrap).some((t) => t.includes("<")),
+    "an unparseable id formats to an empty label: " +
+      JSON.stringify(pmTexts(wrap)),
+  );
+});
+
+// A page may not so much as NAME a markup sink in its code. Matching the
+// assignment (`.innerHTML =`) instead would have to enumerate the ways one can
+// be written — `+=`, `||=`, `??=`, `el["innerHTML"] = x`, `Object.assign(el, {
+// innerHTML: x })` — and a guard that enumerates is the same escape-by-
+// remembering the renderers just stopped doing. The identifier itself is the
+// thing that must not appear: none of these pages has any business reading a
+// sink either, so there is no legitimate mention to carve out.
+const MARKUP_SINK =
+  /\binnerHTML\b|\bouterHTML\b|\binsertAdjacentHTML\b|\bsrcdoc\b|\bdocument\.write\b|\bcreateContextualFragment\b/;
+
+// The guard is only worth what it catches, so pin that directly rather than
+// trusting the pattern by eye. Every line here is a real sink somebody could
+// plausibly write; the negatives are the DOM calls that replaced them.
+Deno.test("the markup-sink guard catches every assignment form, not just `=`", () => {
+  for (
+    const sink of [
+      'el.innerHTML = "<b>x</b>";',
+      'el.innerHTML += "<b>x</b>";',
+      'el.innerHTML ||= "<b>x</b>";',
+      'el.innerHTML ??= "<b>x</b>";',
+      "el.innerHTML=x;",
+      'el["innerHTML"] = x;',
+      "Object.assign(el, { innerHTML: x });",
+      'el.outerHTML = "<b>x</b>";',
+      'el.insertAdjacentHTML("beforeend", x);',
+      'document.write("<b>x</b>");',
+      "range.createContextualFragment(x);",
+      'frame.srcdoc = "<b>x</b>";',
+    ]
+  ) {
+    assert(MARKUP_SINK.test(sink), "guard must flag: " + sink);
+  }
+  for (
+    const ok of [
+      "el.replaceChildren();",
+      "el.textContent = x;",
+      "el.append(a, b);",
+      'a.href = "https://example.com/" + name;',
+      'svgEl("text", { x: 1 }, label);',
+    ]
+  ) {
+    assert(!MARKUP_SINK.test(ok), "guard must not flag: " + ok);
+  }
+});
+
+// The per-renderer tests above prove the paths they drive. This one is what
+// makes the class unrepresentable rather than merely absent: a page with no
+// markup sink at all cannot grow a forgotten escape. Adding a section is
+// therefore not a new chance to get escaping wrong — there is nothing to escape.
+Deno.test("dashboard pages contain no markup sink at all", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const sinks = MARKUP_SINK;
+  const offenders = [];
+  for (const entry of Deno.readDirSync(dir)) {
+    if (!entry.isFile || !entry.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    src.split("\n").forEach((line, i) => {
+      // A comment naming the rule is not a use of it.
+      if (/^\s*(\/\/|\*|<!--)/.test(line)) return;
+      if (sinks.test(line)) {
+        offenders.push(`${entry.name}:${i + 1}:${line.trim()}`);
+      }
+    });
+  }
+  assert(
+    offenders.length === 0,
+    "a page must build DOM nodes, never assign markup:\n" +
+      offenders.join("\n"),
   );
 });
