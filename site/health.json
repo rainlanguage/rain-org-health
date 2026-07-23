@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T06:42:58Z",
+  "generatedAt": "2026-07-23T09:39:39Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2673,14 +2673,24 @@
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "LibTokenInvariants.productionReceiptVaults()",
-      "governedCount": 28,
-      "governedDeclared": 28,
+      "governedCount": 29,
+      "governedDeclared": 29,
       "registryTokenCount": 28,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
           "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
           "symbol": "tIBHG",
+          "deployed": true,
+          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+          "authoriserLabel": "target",
+          "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+          "atAuthoriserTarget": true
+        },
+        {
+          "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
+          "name": "Rocket Lab USA Inc ST0x",
+          "symbol": "tRKLB",
           "deployed": true,
           "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
           "authoriserLabel": "target",
@@ -4846,19 +4856,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:39:06Z",
-      "latestTag": "sol-v0.1.23",
-      "latestTagIso": "2026-07-23T05:15:19Z",
+      "latestTag": "sol-v0.1.27",
+      "latestTagIso": "2026-07-23T08:48:13Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 3211,
+      "sourceLocChangedSinceAudit": 3976,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3106,
+      "sourceLocAddedSinceAudit": 3871,
       "sourceLocRemovedSinceAudit": 105,
-      "filesChangedSinceAudit": 157,
-      "commitsSinceAudit": 302,
+      "filesChangedSinceAudit": 160,
+      "commitsSinceAudit": 325,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4132,
+      "commentLocAddedSinceAudit": 4464,
       "commentLocRemovedSinceAudit": 237,
-      "codeLocAddedSinceAudit": 4269,
+      "codeLocAddedSinceAudit": 4778,
       "codeLocRemovedSinceAudit": 234,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
