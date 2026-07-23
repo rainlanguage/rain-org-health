@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T12:05:00Z",
+  "generatedAt": "2026-07-23T14:36:10Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2402,14 +2402,14 @@
         "entries": [
           {
             "role": "V3-era authoriser clone",
-            "address": "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456",
+            "address": null,
             "network": "base",
-            "status": "migrated",
+            "status": "unknown",
             "note": "the pre-V4 authorizer() target"
           },
           {
             "role": "Authoriser implementation",
-            "address": "0x2B4A510c3619d5E888095BFE9f95902D32dA5556",
+            "address": null,
             "network": "base",
             "status": "active",
             "note": "implementation behind the clone"
@@ -2664,7 +2664,7 @@
     "total": 27,
     "ok": 23,
     "authoriser": {
-      "current": "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456",
+      "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
@@ -4856,19 +4856,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:39:06Z",
-      "latestTag": "sol-v0.1.27",
-      "latestTagIso": "2026-07-23T08:48:13Z",
+      "latestTag": "sol-v0.1.28",
+      "latestTagIso": "2026-07-23T14:30:18Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 3976,
+      "sourceLocChangedSinceAudit": 3948,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3871,
+      "sourceLocAddedSinceAudit": 3843,
       "sourceLocRemovedSinceAudit": 105,
       "filesChangedSinceAudit": 160,
-      "commitsSinceAudit": 325,
+      "commitsSinceAudit": 330,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4464,
+      "commentLocAddedSinceAudit": 4443,
       "commentLocRemovedSinceAudit": 237,
-      "codeLocAddedSinceAudit": 4778,
+      "codeLocAddedSinceAudit": 4745,
       "codeLocRemovedSinceAudit": 234,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
