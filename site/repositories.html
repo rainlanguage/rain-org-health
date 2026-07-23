@@ -276,9 +276,12 @@ function render() {
     return true;
   });
   const el = $("repos");
-  el.innerHTML = "";
+  el.replaceChildren();
   if (!repos.length) {
-    el.innerHTML = '<div class="empty">No repositories match.</div>';
+    const none = document.createElement("div");
+    none.className = "empty";
+    none.textContent = "No repositories match.";
+    el.append(none);
     return;
   }
   for (const r of repos) {
@@ -320,17 +323,19 @@ function renderSummary() {
   const entries = Object.entries(data.summary);
   const max = Math.max(1, ...entries.map(([, n]) => n));
   const box = $("summary");
-  box.innerHTML = "";
-  if (!entries.length) {
-    box.innerHTML = '<div class="empty">No modernization debt detected across the scanned repos.</div>';
-    return;
-  }
+  box.replaceChildren();
+  // Local on purpose: test/dashboard.test.js extracts this function's source and
+  // evals it standalone, so anything it closes over must be declared inside it.
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
     if (text !== undefined) n.textContent = text;
     return n;
   };
+  if (!entries.length) {
+    box.append(el("div", "empty", "No modernization debt detected across the scanned repos."));
+    return;
+  }
   for (const [sig, n] of entries) {
     const b = el("button", "srow");
     b.dataset.sig = sig;
