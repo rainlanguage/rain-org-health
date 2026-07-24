@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T00:15:32Z",
+  "generatedAt": "2026-07-24T03:49:15Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2615,7 +2615,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2644,14 +2644,14 @@
         {
           "name": "Wrapped-token-vault beacon",
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "owner": null,
-          "ownerLabel": "unknown",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
           "implementation": "0x0d99e0174dbf885ced6ae8deb939b0f890450099",
           "implVersion": "0.1.1",
           "targetImpl": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "unknown"
+          "status": "healthy"
         }
       ]
     }
