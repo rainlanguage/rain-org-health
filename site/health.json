@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-24T11:58:26Z",
+  "generatedAt": "2026-07-24T14:16:02Z",
   "auditGraph": {
     "nodes": [
       {
@@ -247,7 +247,7 @@
         "repo": "rain.factory.deploy",
         "org": "rainlanguage",
         "package": "rain-factory-deploy",
-        "audit": "na",
+        "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
         "openAuditIssues": 0,
@@ -3496,6 +3496,7 @@
     "dead-magic-nix-cache": 3,
     "bespoke-ci": 2,
     "private-key-dev": 2,
+    "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
   "repos": [
@@ -3515,6 +3516,14 @@
       "signals": [
         "dead-magic-nix-cache",
         "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.factory.deploy",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key",
+        "soldeer-unpublished"
       ]
     },
     {
@@ -3643,13 +3652,6 @@
     },
     {
       "name": "rain.factory",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
@@ -4932,19 +4934,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:39:06Z",
-      "latestTag": "sol-v0.1.28",
-      "latestTagIso": "2026-07-23T14:30:18Z",
+      "latestTag": "sol-v0.1.29",
+      "latestTagIso": "2026-07-24T13:46:43Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 3923,
+      "sourceLocChangedSinceAudit": 3947,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3818,
+      "sourceLocAddedSinceAudit": 3842,
       "sourceLocRemovedSinceAudit": 105,
       "filesChangedSinceAudit": 160,
-      "commitsSinceAudit": 331,
+      "commitsSinceAudit": 334,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4443,
+      "commentLocAddedSinceAudit": 4460,
       "commentLocRemovedSinceAudit": 237,
-      "codeLocAddedSinceAudit": 4745,
+      "codeLocAddedSinceAudit": 4757,
       "codeLocRemovedSinceAudit": 234,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -5569,6 +5571,48 @@
       "daysSinceAudit": 73
     },
     {
+      "name": "rain.factory.deploy",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.factory.1a92a86.feb-2026.pdf",
+          "path": "audit/protofire/rain.factory.1a92a86.feb-2026.pdf",
+          "lastCommitIso": "2026-07-24T08:42:11Z",
+          "auditDateIso": "2026-07-24T08:42:11Z"
+        },
+        {
+          "filename": "rain.factory.v0.1.1-r2.0.may-2026.pdf",
+          "path": "audit/protofire/rain.factory.v0.1.1-r2.0.may-2026.pdf",
+          "lastCommitIso": "2026-07-24T08:42:11Z",
+          "auditDateIso": "2026-07-24T08:42:11Z"
+        }
+      ],
+      "referencePdfIndex": 1,
+      "auditedRef": "v0.1.1",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-07-24T08:42:11Z",
+      "latestTag": "sol-v0.1.6",
+      "latestTagIso": "2026-07-24T13:21:55Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.factory.deploy/compare/v0.1.1...main",
+      "daysSinceAudit": 0
+    },
+    {
       "name": "rainlang",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -5603,48 +5647,6 @@
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1...main",
       "daysSinceAudit": 138
-    },
-    {
-      "name": "rain.factory.deploy",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "na",
-      "auditPdfs": [
-        {
-          "filename": "rain.factory.1a92a86.feb-2026.pdf",
-          "path": "audit/protofire/rain.factory.1a92a86.feb-2026.pdf",
-          "lastCommitIso": "2026-07-24T08:42:11Z",
-          "auditDateIso": "2026-07-24T08:42:11Z"
-        },
-        {
-          "filename": "rain.factory.v0.1.1-r2.0.may-2026.pdf",
-          "path": "audit/protofire/rain.factory.v0.1.1-r2.0.may-2026.pdf",
-          "lastCommitIso": "2026-07-24T08:42:11Z",
-          "auditDateIso": "2026-07-24T08:42:11Z"
-        }
-      ],
-      "referencePdfIndex": 1,
-      "auditedRef": "v0.1.1",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-07-24T08:42:11Z",
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.factory.deploy/compare/v0.1.1...main",
-      "daysSinceAudit": 0
     },
     {
       "name": "rain.math.binary",
