@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-23T23:16:54Z",
+  "generatedAt": "2026-07-24T00:15:32Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2615,7 +2615,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2644,14 +2644,14 @@
         {
           "name": "Wrapped-token-vault beacon",
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": null,
+          "ownerLabel": "unknown",
           "implementation": "0x0d99e0174dbf885ced6ae8deb939b0f890450099",
           "implVersion": "0.1.1",
           "targetImpl": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "healthy"
+          "status": "unknown"
         }
       ]
     }
@@ -4872,7 +4872,7 @@
       "codeLocRemovedSinceAudit": 234,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
-      "daysSinceAudit": 64
+      "daysSinceAudit": 65
     },
     {
       "name": "rain.math.float",
@@ -4908,7 +4908,7 @@
       "codeLocRemovedSinceAudit": 178,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
-      "daysSinceAudit": 234
+      "daysSinceAudit": 235
     },
     {
       "name": "raindex",
@@ -4950,7 +4950,7 @@
       "codeLocRemovedSinceAudit": 229,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/raindex/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 38
+      "daysSinceAudit": 39
     },
     {
       "name": "rain.factory",
@@ -4992,7 +4992,7 @@
       "codeLocRemovedSinceAudit": 9,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/v0.1.1...main",
-      "daysSinceAudit": 72
+      "daysSinceAudit": 73
     },
     {
       "name": "rain.tofu.erc20-decimals",
@@ -5028,7 +5028,7 @@
       "codeLocRemovedSinceAudit": 23,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/03406b6ad8d33a802c6eb58ae4dac3f0ea9aed38...main",
-      "daysSinceAudit": 163
+      "daysSinceAudit": 164
     },
     {
       "name": "rain.deploy",
@@ -5064,7 +5064,7 @@
       "codeLocRemovedSinceAudit": 22,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
-      "daysSinceAudit": 165
+      "daysSinceAudit": 166
     },
     {
       "name": "rain.sol.codegen",
@@ -5100,7 +5100,7 @@
       "codeLocRemovedSinceAudit": 22,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/35ec46f26376309ff5bdf946fadb2d447e09ebd8...main",
-      "daysSinceAudit": 175
+      "daysSinceAudit": 176
     },
     {
       "name": "rain.vats",
@@ -5148,7 +5148,7 @@
       "codeLocRemovedSinceAudit": 60,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 64
+      "daysSinceAudit": 65
     },
     {
       "name": "rain.metadata",
@@ -5184,7 +5184,7 @@
       "codeLocRemovedSinceAudit": 4,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
-      "daysSinceAudit": 175
+      "daysSinceAudit": 176
     },
     {
       "name": "rain.merkle",
@@ -5220,7 +5220,7 @@
       "codeLocRemovedSinceAudit": 57,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
-      "daysSinceAudit": 186
+      "daysSinceAudit": 187
     },
     {
       "name": "rainlang.interface",
@@ -5256,7 +5256,7 @@
       "codeLocRemovedSinceAudit": 11,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang.interface/compare/f83d8e0e2ea529acb9b76f622ff73464c65a3ba8...main",
-      "daysSinceAudit": 144
+      "daysSinceAudit": 145
     },
     {
       "name": "rain.string",
@@ -5292,7 +5292,7 @@
       "codeLocRemovedSinceAudit": 6,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.string/compare/0b1ca08aed6d9c06b83fe127a7d20ee7002ead28...main",
-      "daysSinceAudit": 236
+      "daysSinceAudit": 237
     },
     {
       "name": "rain.solmem",
@@ -5328,7 +5328,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.solmem/compare/228b35c6725877e7fbcd2432b4c692357f16f510...main",
-      "daysSinceAudit": 229
+      "daysSinceAudit": 230
     },
     {
       "name": "rain.math.fixedpoint",
@@ -5364,7 +5364,7 @@
       "codeLocRemovedSinceAudit": 9,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/1752e9fbd635901ac7eb177699681ed97290e12e...main",
-      "daysSinceAudit": 234
+      "daysSinceAudit": 235
     },
     {
       "name": "rain.lib.memkv",
@@ -5400,7 +5400,7 @@
       "codeLocRemovedSinceAudit": 1,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/8000285775e554ae157393dc4e2068ef2ffa7e3a...main",
-      "daysSinceAudit": 168
+      "daysSinceAudit": 169
     },
     {
       "name": "rain.datacontract",
@@ -5442,7 +5442,7 @@
       "codeLocRemovedSinceAudit": 1,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/3bff30782e408386f73b9353c5122e2e0ab24df2...main",
-      "daysSinceAudit": 166
+      "daysSinceAudit": 167
     },
     {
       "name": "rain.extrospection",
@@ -5490,7 +5490,7 @@
       "codeLocRemovedSinceAudit": 1,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 72
+      "daysSinceAudit": 73
     },
     {
       "name": "rainlang",
@@ -5526,7 +5526,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1...main",
-      "daysSinceAudit": 137
+      "daysSinceAudit": 138
     },
     {
       "name": "rain.math.binary",
@@ -5562,7 +5562,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
-      "daysSinceAudit": 185
+      "daysSinceAudit": 186
     },
     {
       "name": "rain.math.saturating",
@@ -5598,7 +5598,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
-      "daysSinceAudit": 234
+      "daysSinceAudit": 235
     },
     {
       "name": "rain.intorastring",
@@ -5634,7 +5634,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
-      "daysSinceAudit": 169
+      "daysSinceAudit": 170
     },
     {
       "name": "rain.lib.hash",
@@ -5670,7 +5670,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
-      "daysSinceAudit": 175
+      "daysSinceAudit": 176
     },
     {
       "name": "rain.lib.typecast",
@@ -5706,7 +5706,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
-      "daysSinceAudit": 186
+      "daysSinceAudit": 187
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -5742,7 +5742,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.binmaskflag/compare/41d8dfb2edf9695d1344e8d56ddae7c1789690c4...main",
-      "daysSinceAudit": 175
+      "daysSinceAudit": 176
     },
     {
       "name": "rain.verify.interface",
@@ -5778,7 +5778,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
-      "daysSinceAudit": 171
+      "daysSinceAudit": 172
     }
   ]
 }
