@@ -461,6 +461,135 @@ Deno.test("graph node: a never-run skill says so, and an unknown backlog is not 
   );
 });
 
+// A backlog of open audit findings is a DEFECT the repo is still carrying, not a
+// status line, so the count renders in the dashboard's semantic critical token —
+// the same `--crit` the pipeline's rising-WIP flag uses. And never on colour alone.
+function backlogNode(openAuditIssues) {
+  return graphNode({
+    repo: "rain.solmem",
+    org: "rainlanguage",
+    audit: "current",
+    depsKnown: true,
+    staleDeps: [],
+    lastAudit: { auditedAt: "2026-07-17T16:34:10Z" },
+    openAuditIssues,
+  }, null);
+}
+
+Deno.test("graph node: a non-zero open-findings backlog reads critical, with a non-color cue", () => {
+  const carrying = backlogNode(3);
+  const [count] = collect(carrying, "gn-open");
+  assert(count, "3 open findings takes the critical class: " + textOf(carrying));
+  assert(
+    collect(carrying, "ok").length === 0,
+    "and is not also rendered as the recessive/clean one",
+  );
+  assert(
+    textOf(count).includes("3 open"),
+    "the count itself still reads: " + textOf(carrying),
+  );
+  // Never color-alone: a visible ⚑ glyph plus a spelled-out title/aria-label.
+  assert(
+    collect(carrying, "gn-openflag").length === 1,
+    "a red count carries a visible ⚑ cue",
+  );
+  assert(
+    count.getAttribute("title") === "3 open audit findings" &&
+      count.getAttribute("aria-label") === "3 open audit findings",
+    `and spells the backlog out: ${count.getAttribute("aria-label")}`,
+  );
+  const [one] = collect(backlogNode(1), "gn-open");
+  assert(
+    one.getAttribute("aria-label") === "1 open audit finding",
+    `a lone finding is singular: ${one.getAttribute("aria-label")}`,
+  );
+});
+
+Deno.test("graph node: a zero backlog stays recessive — no critical color, no cue", () => {
+  // A repo with nothing outstanding must not read as a problem: the red is
+  // reserved for a real backlog, or it stops meaning anything.
+  const clean = backlogNode(0);
+  assert(
+    collect(clean, "gn-open").length === 0,
+    "0 open never takes the critical class: " + textOf(clean),
+  );
+  assert(collect(clean, "gn-openflag").length === 0, "and carries no ⚑ cue");
+  const [count] = collect(clean, "ok");
+  assert(
+    count && textOf(count).includes("0 open"),
+    "it still reports the zero: " + textOf(clean),
+  );
+  assert(
+    (count.getAttribute("aria-label") || "") === "",
+    "and adds no findings aria-label",
+  );
+});
+
+// The render tests above prove the CLASS lands. The red itself lives in the
+// stylesheet, so this pins the other half: the class must resolve to the shared
+// semantic critical token — not the accent hue, and not a hue hard-coded past the
+// themes, which is what would break the dark render.
+Deno.test("audit page: the open-findings count resolves to the semantic --crit token, defined for both themes", () => {
+  const css = Deno.readTextFileSync(new URL("../site/audit.html", import.meta.url));
+  for (const sel of [".gn-open", ".au-open"]) {
+    const rule = new RegExp("^\\s*\\" + sel + "\\s*\\{([^}]*)\\}", "m").exec(css);
+    assert(rule, "no rule for " + sel);
+    assert(
+      /color:\s*var\(--crit\)/.test(rule[1]),
+      `${sel} must take the semantic critical token, got: ${rule[1]}`,
+    );
+    assert(
+      !/var\(--accent\)|#[0-9a-f]{3,6}/i.test(rule[1]),
+      `${sel} must not use the accent hue or a literal colour: ${rule[1]}`,
+    );
+  }
+  // Light default, the OS-preference dark block, and both explicit toggle
+  // overrides — a token missing from any one of them is an unreadable theme.
+  const scopes = [
+    /:root\s*\{[^}]*--crit:/,
+    /@media \(prefers-color-scheme: dark\)\s*\{\s*:root\s*\{[^}]*--crit:/,
+    /:root\[data-theme="dark"\]\s*\{[^}]*--crit:/,
+    /:root\[data-theme="light"\]\s*\{[^}]*--crit:/,
+  ];
+  for (const s of scopes) {
+    assert(s.test(css), "--crit is undefined in a theme scope: " + s);
+  }
+});
+
+Deno.test("audit report: a row's open-findings backlog reads critical too, zero stays quiet", () => {
+  // The row and the graph node render the same datum on the same page, so they
+  // carry the same signal — one of them staying amber would read as a bug.
+  const data = {
+    ...auditData([
+      auditRow({ name: "carrying" }),
+      auditRow({ name: "clean" }),
+    ], 0),
+    audits: [
+      { name: "carrying", org: "testorg", lastAudit: null, openAuditIssues: 14 },
+      { name: "clean", org: "testorg", lastAudit: null, openAuditIssues: 0 },
+    ],
+  };
+  const box = auditBox(data);
+  const red = collect(box, "au-open");
+  assert(
+    red.length === 1 && textOf(red[0]).includes("14 open"),
+    "only the repo with findings takes the critical class: " +
+      JSON.stringify(red.map(textOf)),
+  );
+  assert(
+    collect(box, "au-openflag").length === 1,
+    "paired with a visible ⚑ cue, never color alone",
+  );
+  assert(
+    red[0].getAttribute("aria-label") === "14 open audit findings",
+    `spelled out for a screen reader: ${red[0].getAttribute("aria-label")}`,
+  );
+  assert(
+    textOf(box).includes("0 open"),
+    "the clean row still reports its zero: " + textOf(box),
+  );
+});
+
 Deno.test("audit report: each row carries the audit skill's run + open findings", () => {
   const data = {
     ...auditData([
