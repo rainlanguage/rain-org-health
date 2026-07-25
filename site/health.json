@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-25T17:19:01Z",
+  "generatedAt": "2026-07-25T17:41:57Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1129,6 +1129,57 @@
             "repo": "rain.vats",
             "pinned": "0.1.6",
             "latest": "0.2.0"
+          }
+        ]
+      },
+      {
+        "repo": "st0x.oracle",
+        "org": "ST0x-Technology",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 8,
+        "lastMutation": {
+          "timestamp": "2026-07-24T20:57:17Z",
+          "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
+          "skillVersion": "0.26.0",
+          "scope": "whole repo (src/)"
+        },
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.factory",
+          "rain.math.fixedpoint",
+          "rain.math.float",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rain.vats",
+          "st0x.deploy"
+        ],
+        "staleDeps": [
+          {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.5"
+          },
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.1.1",
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.vats",
+            "pinned": "0.1.5",
+            "latest": "0.2.0"
+          },
+          {
+            "repo": "st0x.deploy",
+            "pinned": "0.1.1",
+            "latest": "0.1.29"
           }
         ]
       },
@@ -2359,6 +2410,48 @@
         "stale": false,
         "pinned": "0.1.0",
         "latest": "0.1.0"
+      },
+      {
+        "from": "st0x.oracle",
+        "to": "rain.factory",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.5"
+      },
+      {
+        "from": "st0x.oracle",
+        "to": "rain.intorastring",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "st0x.oracle",
+        "to": "rain.math.float",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.7"
+      },
+      {
+        "from": "st0x.oracle",
+        "to": "rain.tofu.erc20-decimals",
+        "stale": false,
+        "pinned": "0.1.1",
+        "latest": "0.1.1"
+      },
+      {
+        "from": "st0x.oracle",
+        "to": "rain.vats",
+        "stale": true,
+        "pinned": "0.1.5",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "st0x.oracle",
+        "to": "st0x.deploy",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.29"
       }
     ]
   },
@@ -2677,19 +2770,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
-          "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
-          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-          "implVersion": "0.1.1",
+          "address": null,
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Receipt-vault beacon",
@@ -3479,23 +3572,24 @@
   "orgs": [
     "rainlanguage",
     "cyclofinance",
-    "S01-Issuer"
+    "S01-Issuer",
+    "ST0x-Technology"
   ],
-  "org": "rainlanguage, cyclofinance, S01-Issuer",
-  "totalRepos": 103,
-  "reposWithFindings": 33,
+  "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
+  "totalRepos": 115,
+  "reposWithFindings": 39,
   "reposWholeRepoAudited": 1,
-  "reposNeverAudited": 102,
+  "reposNeverAudited": 114,
   "reposExternallyAudited": 26,
-  "reposNeverExternallyAudited": 15,
+  "reposNeverExternallyAudited": 16,
   "summary": {
     "per-chain-etherscan-key": 12,
     "old-actions-checkout": 9,
-    "removed-rainix-task": 7,
-    "old-nix-installer": 6,
-    "dead-magic-nix-cache": 3,
-    "bespoke-ci": 2,
-    "private-key-dev": 2,
+    "old-nix-installer": 9,
+    "removed-rainix-task": 8,
+    "dead-magic-nix-cache": 7,
+    "bespoke-ci": 3,
+    "private-key-dev": 3,
     "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
@@ -3508,6 +3602,14 @@
         "old-nix-installer",
         "removed-rainix-task",
         "private-key-dev"
+      ]
+    },
+    {
+      "name": "event-sorcery",
+      "org": "ST0x-Technology",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
       ]
     },
     {
@@ -3559,11 +3661,35 @@
       ]
     },
     {
+      "name": "st0x.alpaca",
+      "org": "ST0x-Technology",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
       "name": "st0x.deploy",
       "org": "S01-Issuer",
       "signals": [
         "old-nix-installer",
         "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "st0x.liquidity",
+      "org": "ST0x-Technology",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer"
+      ]
+    },
+    {
+      "name": "st0x.oracle",
+      "org": "ST0x-Technology",
+      "signals": [
+        "removed-rainix-task",
+        "private-key-dev"
       ]
     },
     {
@@ -3740,9 +3866,30 @@
       "signals": [
         "per-chain-etherscan-key"
       ]
+    },
+    {
+      "name": "st0x.issuance",
+      "org": "ST0x-Technology",
+      "signals": [
+        "dead-magic-nix-cache"
+      ]
+    },
+    {
+      "name": "st0x.rest.api",
+      "org": "ST0x-Technology",
+      "signals": [
+        "bespoke-ci"
+      ]
     }
   ],
   "audits": [
+    {
+      "name": ".github",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
     {
       "name": ".github",
       "org": "rainlanguage",
@@ -3851,6 +3998,13 @@
     {
       "name": "dune-queries",
       "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "event-sorcery",
+      "org": "ST0x-Technology",
       "lastAudit": null,
       "openAuditIssues": 0,
       "lastMutation": null
@@ -4407,6 +4561,13 @@
       "lastMutation": null
     },
     {
+      "name": "st0x-oracle-server",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
       "name": "st0x-rewards",
       "org": "S01-Issuer",
       "lastAudit": null,
@@ -4428,8 +4589,76 @@
       "lastMutation": null
     },
     {
+      "name": "st0x.alerts",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "st0x.alpaca",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
       "name": "st0x.deploy",
       "org": "S01-Issuer",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "st0x.finance",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "st0x.issuance",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "st0x.liquidity",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "st0x.oracle",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 8,
+      "lastMutation": {
+        "timestamp": "2026-07-24T20:57:17Z",
+        "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
+        "skillVersion": "0.26.0",
+        "scope": "whole repo (src/)"
+      }
+    },
+    {
+      "name": "st0x.pricing-types",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "st0x.registry",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "st0x.rest.api",
+      "org": "ST0x-Technology",
       "lastAudit": null,
       "openAuditIssues": 0,
       "lastMutation": null
@@ -4917,6 +5146,35 @@
       "daysSinceAudit": null
     },
     {
+      "name": "st0x.oracle",
+      "org": "ST0x-Technology",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 1465,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
       "name": "st0x.deploy",
       "org": "S01-Issuer",
       "hasProtofireAudit": true,
@@ -5015,12 +5273,12 @@
       "latestTag": "npm-raindex-v0.0.1-alpha.240-uc-v0.0.1-alpha.239",
       "latestTagIso": "2026-07-20T16:09:38Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 560,
+      "sourceLocChangedSinceAudit": 488,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 556,
+      "sourceLocAddedSinceAudit": 484,
       "sourceLocRemovedSinceAudit": 4,
       "filesChangedSinceAudit": 63,
-      "commitsSinceAudit": 132,
+      "commitsSinceAudit": 138,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 996,
       "commentLocRemovedSinceAudit": 315,
