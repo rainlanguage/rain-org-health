@@ -837,6 +837,204 @@ function auditData(rows, neverN = 0) {
   };
 }
 
+// A class the render code set at CREATION lands in `className`; one it added
+// later lands in `classList`. The real DOM has one view of both, so tests ask
+// one question.
+function hasClass(node, c) {
+  return (typeof node.className === "string" &&
+    node.className.split(" ").includes(c)) || node.classList.contains(c);
+}
+
+// One inherited row as roh-scan emits it for a split repo: audited in the
+// predecessor, covering two of three snapshots, and NOT the live pin.
+function inheritedRow(over) {
+  return auditRow({
+    name: "rain.factory.deploy",
+    externalAudit: "inherited",
+    auditedRef: "v0.1.1",
+    anchorKind: "tag-inherited",
+    auditedDate: "2026-05-12T15:15:26Z",
+    reportDate: "2026-05-27",
+    inheritedFrom: {
+      org: "rainlanguage",
+      repo: "rain.factory",
+      ref: "v0.1.1",
+      refUrl: "https://github.com/rainlanguage/rain.factory/tree/v0.1.1",
+    },
+    coveredSnapshots: ["src/generated/0_1_3", "src/generated/0_1_4"],
+    uncoveredSnapshots: ["src/generated/0_1_5"],
+    liveSnapshot: "src/generated/0_1_5",
+    liveSnapshotCovered: false,
+    ...over,
+  });
+}
+
+Deno.test("audit row: an inherited audit names the predecessor, not a local ref", () => {
+  const box = auditBox(auditData([inheritedRow()]));
+  const t = textOf(box);
+  // "audited v0.1.1" alone would read as a ref in THIS repo — the one claim the
+  // convention exists NOT to make.
+  assert(
+    t.includes("audited as rainlanguage/rain.factory@v0.1.1 (inherited)"),
+    "the provenance line must name the source repo: " + t,
+  );
+  // Dated by the source ref's commit, not by the split that moved the file.
+  assert(t.includes("2026-05-12"), "shows the real audit date: " + t);
+  const statuses = collect(box, "au-status");
+  assert(
+    statuses.some((s) => hasClass(s, "inherited")),
+    "inherited needs its own chip class for the dashed treatment",
+  );
+  assert(
+    !statuses.some((s) => hasClass(s, "current") || hasClass(s, "clean")),
+    "inherited must never render as a clean bill of health",
+  );
+  // The one link that resolves: it shows exactly what was reviewed.
+  const links = tags(box, "a").filter((a) =>
+    a.href === "https://github.com/rainlanguage/rain.factory/tree/v0.1.1"
+  );
+  assert(links.length === 1, "expected the source-ref link, got " + links.length);
+});
+
+Deno.test("audit row: partial coverage names the uncovered live pin, loudly", () => {
+  const box = auditBox(auditData([inheritedRow()]));
+  const cell = collect(box, "au-drift")[0];
+  const t = textOf(cell);
+  assert(
+    t.includes("2 of 3 snapshots covered"),
+    "coverage replaces the drift figure: " + t,
+  );
+  assert(
+    t.includes("src/generated/0_1_5") && t.includes("UNAUDITED (live pin)"),
+    "the uncovered live pin must be named: " + t,
+  );
+  assert(
+    !t.includes("drift unavailable"),
+    "coverage must not fall through to the drift-unavailable state: " + t,
+  );
+  // Named ONCE. Listing the live pin in the uncovered list and again as the pin
+  // reads as two findings where there is one.
+  assert(
+    t.split("src/generated/0_1_5").length - 1 === 1,
+    "the uncovered live pin is named once, not twice: " + t,
+  );
+  // Colour is not the only carrier, but the row must read as an alarm.
+  assert(
+    collect(cell, "au-uncovered").length > 0,
+    "the uncovered pin takes the critical treatment",
+  );
+  const rows = collect(box, "au-row");
+  assert(
+    rows.some((r) => hasClass(r, "uncovered")),
+    "the row itself is flagged, so it cannot read as an audited row",
+  );
+});
+
+Deno.test("audit row: uncovered snapshots other than the live pin are still listed", () => {
+  // Two snapshots landed since the audit. Both must appear — the live pin on its
+  // own critical line, the other one quietly — so neither goes unmentioned.
+  const box = auditBox(auditData([
+    inheritedRow({
+      uncoveredSnapshots: ["src/generated/0_1_5", "src/generated/0_1_10"],
+      liveSnapshot: "src/generated/0_1_10",
+    }),
+  ]));
+  const t = textOf(collect(box, "au-drift")[0]);
+  assert(t.includes("2 of 4 snapshots covered"), "counts every snapshot: " + t);
+  assert(
+    t.includes("src/generated/0_1_5 uncovered"),
+    "the non-live uncovered snapshot is still named: " + t,
+  );
+  assert(
+    t.includes("src/generated/0_1_10 UNAUDITED (live pin)"),
+    "the live pin keeps its own line: " + t,
+  );
+});
+
+Deno.test("audit headline: an uncovered live pin counts in the alarm, not as audited", () => {
+  const box = auditBox(auditData([
+    inheritedRow(),
+    auditRow({ name: "clean", externalAudit: "current" }),
+  ], 3));
+  const t = textOf(box);
+  // 3 never-audited + 1 inherited-but-live-pin-uncovered. A repo whose deployed
+  // bytecode was never reviewed belongs in the headline, not in a footnote.
+  assert(t.includes("4"), "alarm count must include the uncovered pin: " + t);
+  assert(
+    t.includes("whose inherited audit does not cover the live pin"),
+    "the alarm must say WHY: " + t,
+  );
+  const alarms = collect(box, "au-alarm");
+  assert(
+    alarms.length === 1 && hasClass(alarms[0], "bad"),
+    "the alarm reads bad, not ok",
+  );
+});
+
+Deno.test("audit row: fully covered inherited audit says so and raises no alarm", () => {
+  const box = auditBox(auditData([
+    inheritedRow({
+      coveredSnapshots: ["src/generated/0_1_3", "src/generated/0_1_4"],
+      uncoveredSnapshots: [],
+      liveSnapshot: "src/generated/0_1_4",
+      liveSnapshotCovered: true,
+    }),
+  ]));
+  const t = textOf(collect(box, "au-drift")[0]);
+  assert(t.includes("2 of 2 snapshots covered"), "full coverage: " + t);
+  assert(t.includes("live pin covered"), "says the live pin is covered: " + t);
+  assert(!t.includes("UNAUDITED"), "nothing to shout about: " + t);
+  const alarms = collect(box, "au-alarm");
+  assert(hasClass(alarms[0], "ok"), "no alarm when nothing is uncovered");
+  // Still not `current`: the coverage is real but it came from elsewhere.
+  assert(
+    collect(box, "au-status").some((s) => hasClass(s, "inherited")),
+    "the verdict stays inherited",
+  );
+});
+
+Deno.test("audit row: unlistable snapshots are indeterminate, never zero uncovered", () => {
+  // A failed snapshot listing must not render as "nothing uncovered" — the #52
+  // discipline applied to coverage.
+  const box = auditBox(auditData([
+    inheritedRow({
+      coveredSnapshots: null,
+      uncoveredSnapshots: null,
+      liveSnapshotCovered: null,
+    }),
+  ]));
+  const t = textOf(collect(box, "au-drift")[0]);
+  assert(t.includes("coverage unavailable"), "says it could not tell: " + t);
+  assert(!t.includes("of 0 snapshots"), "must not invent a zero: " + t);
+  const alarms = collect(box, "au-alarm");
+  assert(
+    hasClass(alarms[0], "ok"),
+    "an unknown coverage is not a confirmed uncovered pin",
+  );
+});
+
+Deno.test("graph node: an inherited node shows its source and flags an unaudited pin", () => {
+  const box = graphNodeP({ repo: "rain.factory.deploy", audit: "inherited" }, {
+    inheritedFrom: {
+      org: "rainlanguage",
+      repo: "rain.factory",
+      ref: "v0.1.1",
+      refUrl: "https://github.com/rainlanguage/rain.factory/tree/v0.1.1",
+    },
+    coveredSnapshots: ["src/generated/0_1_3", "src/generated/0_1_4"],
+    uncoveredSnapshots: ["src/generated/0_1_5"],
+    liveSnapshotCovered: false,
+  }, { org: "rainlanguage" });
+  const t = textOf(box);
+  assert(hasClass(box, "au-inherited"), "node carries its own class");
+  assert(t.includes("rain.factory@v0.1.1"), "names the source: " + t);
+  assert(t.includes("2/3"), "shows coverage, not drift: " + t);
+  assert(t.includes("live pin UNAUDITED"), "shouts the uncovered pin: " + t);
+  // The anchor points at the source repo's tree, never at a cross-repo compare.
+  const anchors = tags(box, "a").filter((a) => typeof a.href === "string" && a.href.includes("/tree/"));
+  assert(anchors.length === 1, "one link, to what was actually reviewed");
+});
+
 Deno.test("audit drift is red ONLY when the line drift is unenumerable", () => {
   const box = auditBox(auditData([
     auditRow({

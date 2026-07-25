@@ -22,12 +22,18 @@ pub fn is_cleared(audit: protofire::ExternalAudit) -> bool {
         // Stale reviewed code that has since changed. Never has no audit. Na has
         // a PDF but no tag to date it against, so nothing pins WHAT was audited.
         // Unknown is a FAILED fetch: indeterminate, and must be read as neither
-        // cleared nor a confirmed gap. Matched exhaustively so a new verdict
-        // cannot default to "does not clear" without someone deciding it should.
+        // cleared nor a confirmed gap. Inherited is an audit performed on a
+        // PREDECESSOR repo: real provenance, but partial by construction — it
+        // covers named snapshots, not the repo — so it cannot clear a consumer
+        // standing on the whole of it. (If a repo's entire live surface were ever
+        // inherited-covered, that is a case to decide when it arises, not to
+        // default.) Matched exhaustively so a new verdict cannot default to "does
+        // not clear" without someone deciding it should.
         protofire::ExternalAudit::Stale
         | protofire::ExternalAudit::Never
         | protofire::ExternalAudit::Na
-        | protofire::ExternalAudit::Unknown => false,
+        | protofire::ExternalAudit::Unknown
+        | protofire::ExternalAudit::Inherited => false,
     }
 }
 
@@ -529,8 +535,10 @@ recursive_deps = false
         assert!(b["core"].is_empty(), "a leaf has solid ground");
     }
 
-    /// Only CURRENT clears. Each of the other four leaves the consumer above
-    /// standing on something unpinned, so each must block.
+    /// Only CURRENT clears. Each of the other five leaves the consumer above
+    /// standing on something unpinned, so each must block — INHERITED included:
+    /// an audit performed on a predecessor repo covers named snapshots, not the
+    /// repo, so it is real provenance and still not a clearance.
     #[test]
     fn every_non_current_verdict_blocks() {
         for audit in [
@@ -538,6 +546,7 @@ recursive_deps = false
             protofire::ExternalAudit::Never,
             protofire::ExternalAudit::Na,
             protofire::ExternalAudit::Unknown,
+            protofire::ExternalAudit::Inherited,
         ] {
             assert!(!is_cleared(audit), "{audit:?} cleared");
             let nodes = vec![

@@ -22,9 +22,9 @@ mod rpc;
 mod signals;
 use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
-    anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
-    counts_as_source_drift, days_between, is_stale, newest_pdf_index, source_drift, AuditAnchor,
-    AuditPdf, CompareFile,
+    changed_source_file_count, classify_anchor, classify_external_audit, counts_as_source_drift,
+    days_between, is_stale, reference_pdf_index, source_drift, AuditPdf, AuditProvenance,
+    CompareFile, InheritedSource,
 };
 use signals::{detect_signals, foundry_package_name, RepoInputs};
 
@@ -612,7 +612,38 @@ struct ProtofireResult {
     audited_ref: Option<String>,
     anchor_kind: Option<&'static str>,
     tag_convention_absent: bool,
-    audited_date: String,
+    /// `None` when the scan could not establish WHEN the audit was — an anchor that
+    /// does not resolve, or an inherited claim it could not validate. Typed absence
+    /// rather than a fallback: the fallback (the PDF's own file-commit date) is a
+    /// date for the last time someone MOVED the file, which is how a May-2026 audit
+    /// published as one day old (#128).
+    audited_date: Option<String>,
+    /// The predecessor this repo's audit was performed on, when the record declares
+    /// inherited provenance and the claim validated.
+    inherited_from: Option<InheritedSource>,
+    /// Why a DECLARED inherited claim could not be validated. Carried on the wire
+    /// so an `unknown` says what went wrong, and carried here so the org counters
+    /// can put the repo in NEITHER bucket: PDFs whose provenance the scan cannot
+    /// stand behind are not an audit, and an unreadable claim is not a confirmed
+    /// gap either.
+    unverified_inherited: Option<&'static str>,
+    /// The review-pass date printed in the inherited report — distinct from
+    /// `audited_date`, which is the source ref's commit date (verifiable, and the
+    /// earlier of the two, so the audit reads slightly older: fail-safe).
+    inherited_report_date: Option<String>,
+    /// Snapshot paths the inherited records CLAIM, as written in the manifest.
+    covered_paths: Option<Vec<String>>,
+    /// Claims intersected with the snapshot directories that actually exist, and
+    /// the complement — computed from the live tree, never declared, so a snapshot
+    /// added later shows up uncovered with no manifest edit. `None` when the
+    /// snapshot root could not be listed (indeterminate, not "nothing uncovered").
+    covered_snapshots: Option<Vec<String>>,
+    uncovered_snapshots: Option<Vec<String>>,
+    /// The highest-versioned snapshot — the pin production runs — and whether the
+    /// inherited audit covers it. A repo whose LIVE pin is unaudited must never
+    /// render as a clean row.
+    live_snapshot: Option<String>,
+    live_snapshot_covered: Option<bool>,
     latest_tag: Option<String>,
     latest_tag_iso: Option<String>,
     /// `None` when the scan could establish neither drift nor tag recency.
@@ -715,24 +746,6 @@ fn collect_audit_pdfs<F: GhApi>(
         }
     }
     false
-}
-
-/// Does `sha` name a real commit in the repo? The resolution half of anchor
-/// classification: `gh api repos/{o}/{r}/commits/{sha}` echoes the commit's SHA on
-/// success and 404s on an unknown ref. It runs through the shared `GhApi` seam so it
-/// shares the retry/backoff of the rest of the audit path; a hex-looking filename
-/// token that isn't a real commit (`NotFound`) — or a fetch that `Failed` after
-/// retries — falls back to unanchored rather than erroring.
-fn commit_exists<F: GhApi>(gh: &F, org: &str, repo: &str, sha: &str) -> bool {
-    match gh.api_jq(&[
-        "api",
-        &format!("repos/{org}/{repo}/commits/{sha}"),
-        "--jq",
-        ".sha",
-    ]) {
-        FetchOutcome::Found(s) => !s.trim().is_empty(),
-        FetchOutcome::NotFound | FetchOutcome::Failed => false,
-    }
 }
 
 /// Committer date (ISO-8601 UTC) of a git ref — a commit SHA **or** a tag name —
@@ -995,7 +1008,15 @@ fn empty_protofire(state: protofire::ExternalAudit) -> ProtofireResult {
         audited_ref: None,
         anchor_kind: None,
         tag_convention_absent: false,
-        audited_date: String::new(),
+        audited_date: None,
+        inherited_from: None,
+        unverified_inherited: None,
+        inherited_report_date: None,
+        covered_paths: None,
+        covered_snapshots: None,
+        uncovered_snapshots: None,
+        live_snapshot: None,
+        live_snapshot_covered: None,
         latest_tag: None,
         latest_tag_iso: None,
         is_stale: None,
@@ -1014,14 +1035,114 @@ fn empty_protofire(state: protofire::ExternalAudit) -> ProtofireResult {
     }
 }
 
+/// The vendor directory this scan treats as the formal external-audit record. A
+/// report elsewhere under `audit/` is NOT a Protofire audit and must not count.
+const PROTOFIRE_DIR: &str = "audit/protofire";
+
+/// Where snapshot directories live in a deploy repo. Coverage is asserted ABOUT
+/// these from the manifest, and the uncovered set is computed by listing them.
+const SNAPSHOT_ROOT: &str = "src/generated";
+
+/// A repo file's raw contents through the shared `GhApi` seam. Requests the raw
+/// media type so the body arrives as itself: `.content` would be base64 needing a
+/// second hop through a `base64` subprocess, and the whole point of routing this
+/// through the seam is that the parse is drivable without network OR subprocess.
+/// `None` on a genuine 404 and on a failed fetch alike — the caller distinguishes
+/// nothing here because both leave the claim unvalidated.
+fn gh_file_via<F: GhApi>(gh: &F, org: &str, repo: &str, path: &str) -> Option<String> {
+    match gh.api_jq(&[
+        "api",
+        "-H",
+        "Accept: application/vnd.github.raw",
+        &format!("repos/{org}/{repo}/contents/{path}"),
+    ]) {
+        FetchOutcome::Found(s) => Some(s),
+        FetchOutcome::NotFound | FetchOutcome::Failed => None,
+    }
+}
+
+/// Establish ONE PDF's provenance, and the date that goes with it.
+///
+/// The `inherited.` prefix decides which branch runs — a DECLARATION, never an
+/// inference from a failed local lookup. A prefixed PDF is resolved against the
+/// repo its record names and never against this one; if that cannot be done it is
+/// `UnverifiedInherited` with a reason, which the caller turns into `unknown`.
+fn classify_pdf_provenance<F: GhApi>(
+    gh: &F,
+    org: &str,
+    repo: &str,
+    filename: &str,
+    manifest: Option<&protofire::InheritedManifest>,
+) -> (AuditProvenance, Option<String>, Vec<String>) {
+    if !protofire::is_inherited_pdf(filename) {
+        // Resolution and dating are one call: `classify_anchor`'s resolver returns
+        // the ref's committer date, so an anchor cannot be confirmed without also
+        // being dated (and a tag is now resolved, not trusted on sight).
+        let anchor = classify_anchor(filename, |r| commit_date(gh, org, repo, r));
+        let date = anchor.resolved_date().map(str::to_string);
+        return (AuditProvenance::Local(anchor), date, Vec::new());
+    }
+    let Some(manifest) = manifest else {
+        return (
+            AuditProvenance::UnverifiedInherited("no readable inherited.json"),
+            None,
+            Vec::new(),
+        );
+    };
+    let Some(record) = manifest.record_for(filename) else {
+        return (
+            AuditProvenance::UnverifiedInherited("no record for this PDF"),
+            None,
+            Vec::new(),
+        );
+    };
+    let covers: Vec<String> = record.covers.iter().map(|c| c.snapshot.clone()).collect();
+    // The ref is resolved in the SOURCE repo. Every fetch helper already takes
+    // `(org, repo)`, so this is threading a second repo identity, not a new seam.
+    match commit_date(
+        gh,
+        &record.source.org,
+        &record.source.repo,
+        &record.source.git_ref,
+    ) {
+        Some(date) => (
+            AuditProvenance::Inherited(record.source.clone()),
+            Some(date),
+            covers,
+        ),
+        None => (
+            AuditProvenance::UnverifiedInherited("source ref does not resolve"),
+            None,
+            covers,
+        ),
+    }
+}
+
+/// The snapshot directories a repo carries, or `None` when the root could not be
+/// listed. `None` is indeterminate, NOT "no snapshots": an empty uncovered set
+/// read off a failed listing is a clean bill of health nobody earned.
+fn fetch_snapshot_dirs<F: GhApi>(gh: &F, org: &str, repo: &str) -> Option<Vec<String>> {
+    match gh_contents_entries(gh, org, repo, SNAPSHOT_ROOT) {
+        ContentsListing::Found(entries) => Some(
+            entries
+                .into_iter()
+                .filter(|(ty, _, _)| ty == "dir")
+                .map(|(_, path, _)| path)
+                .collect(),
+        ),
+        ContentsListing::NotFound => Some(Vec::new()),
+        ContentsListing::Failed => None,
+    }
+}
+
 /// Assemble a repo's EXTERNAL (Protofire) audit situation: enumerate
-/// `audit/protofire/` PDFs, pick the newest as the reference, parse its tag (or
-/// fall back to its commit), find the newest tag, and quantify source-LOC drift
+/// `audit/protofire/` PDFs, establish each one's provenance (local or inherited),
+/// pick the reference, find the newest tag, and quantify source-LOC drift
 /// base…HEAD — all clone-free. A genuinely-empty listing ⇒ `never` (the coverage
 /// gap); a FAILED listing ⇒ `unknown` (never a false `never` — issue #52).
 fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireResult {
     let mut pdf_paths: Vec<(String, String)> = Vec::new();
-    let failed = collect_audit_pdfs(gh, org, repo, "audit/protofire", 2, &mut pdf_paths);
+    let failed = collect_audit_pdfs(gh, org, repo, PROTOFIRE_DIR, 2, &mut pdf_paths);
     if pdf_paths.is_empty() {
         // A failed top-level listing is coverage-indeterminate (`unknown`), NOT a
         // confirmed gap (`never`). No fetch error may become a coverage claim.
@@ -1031,59 +1152,138 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             protofire::ExternalAudit::Never
         });
     }
+    // The prefix gates the manifest fetch, so the ~139 repos org-wide with no
+    // inherited PDF cost ZERO extra API calls: the discriminant pays for itself.
+    let manifest = pdf_paths
+        .iter()
+        .any(|(name, _)| protofire::is_inherited_pdf(name))
+        .then(|| {
+            gh_file_via(
+                gh,
+                org,
+                repo,
+                &format!("{PROTOFIRE_DIR}/{}", protofire::INHERITED_MANIFEST),
+            )
+            .as_deref()
+            .and_then(protofire::parse_inherited_manifest)
+        })
+        .flatten();
+
     // Resolve each PDF's commit date + sha, then order by path for stable output.
     let mut pdfs: Vec<AuditPdf> = pdf_paths
         .into_iter()
         .map(|(filename, path)| {
             let (iso, sha) = pdf_commit(gh, org, repo, &path);
-            // Recency by the AUDITED commit/tag date (the audit's real date),
-            // resolved from the filename's anchor ref. Falls back to the PDF's own
-            // file-commit date when the name encodes no resolvable anchor — so a
-            // bulk move that ties every PDF's file-commit date still orders them by
-            // which audit is newer (see `newest_pdf_index`).
-            let audit_date_iso = anchor_ref(&filename)
-                .and_then(|r| commit_date(gh, org, repo, &r))
-                .unwrap_or_else(|| iso.clone());
+            let (provenance, resolved, covers) =
+                classify_pdf_provenance(gh, org, repo, &filename, manifest.as_ref());
+            let audit_date = protofire::audit_date_for(&provenance, resolved.as_deref(), &iso);
             AuditPdf {
                 filename,
                 path,
                 last_commit_iso: iso,
                 commit_sha: sha,
-                audit_date_iso,
+                audit_date,
+                provenance,
+                covers,
             }
         })
         .collect();
     pdfs.sort_by(|a, b| a.path.cmp(&b.path));
-    let newest = newest_pdf_index(&pdfs).expect("non-empty");
-    // Index of the one PDF the anchor/drift reference (the newest); panel shows only it (#62).
+    // The reference is the record the repo is judged by: the newest one that
+    // covers something, else the newest overall (#62 shows only this one).
+    let newest = reference_pdf_index(&pdfs).expect("non-empty");
     let reference_pdf_index = Some(newest);
 
-    // Classify the audited anchor the newest PDF's filename encodes: a `vX.Y.Z`
-    // tag, a hex commit token that RESOLVES to a real commit, or neither. The
-    // resolver is the I/O half — `commit_exists` guards a hex-looking token that
-    // isn't actually a commit, so it falls back to unanchored (not an error).
-    let anchor = classify_anchor(&pdfs[newest].filename, |sha| {
-        commit_exists(gh, org, repo, sha)
-    });
+    let (default_branch, latest_tag, latest_tag_iso) = repo_default_and_latest_tag(gh, org, repo);
+
+    // A DECLARED inherited claim that could not be validated taints the whole
+    // record, whichever PDF carries it: the repo's provenance is not readable, so
+    // its coverage is indeterminate. Reported `unknown` rather than quietly judged
+    // by whichever other PDF happened to win the reference — a forgotten manifest
+    // entry must be loud, and it must never become a fabricated date (#128).
+    if let Some(reason) = pdfs.iter().find_map(|p| match &p.provenance {
+        AuditProvenance::UnverifiedInherited(why) => Some(*why),
+        _ => None,
+    }) {
+        eprintln!("{org}/{repo}: inherited audit record unverifiable ({reason})");
+        return ProtofireResult {
+            has_pdf: true,
+            external_audit: protofire::ExternalAudit::Unknown,
+            unverified_inherited: Some(reason),
+            pdfs,
+            reference_pdf_index,
+            latest_tag,
+            latest_tag_iso,
+            ..empty_protofire(protofire::ExternalAudit::Unknown)
+        };
+    }
+
+    // An inherited record answers a different question from drift. Its covered
+    // snapshots are frozen and append-only, so drift-since-audit is definitionally
+    // zero; the real risk is SCOPE — a snapshot the report never saw. So the drift
+    // machinery is skipped (not merely unavailable) and coverage takes its place.
+    if let AuditProvenance::Inherited(source) = pdfs[newest].provenance.clone() {
+        let claimed: Vec<String> = pdfs.iter().flat_map(|p| p.covers.clone()).collect();
+        let listing = fetch_snapshot_dirs(gh, org, repo);
+        let cov = listing
+            .as_ref()
+            .map(|dirs| protofire::coverage(&claimed, dirs));
+        return ProtofireResult {
+            has_pdf: true,
+            external_audit: protofire::ExternalAudit::Inherited,
+            anchor_kind: Some(protofire::inherited_anchor_kind(&source.git_ref)),
+            audited_ref: Some(source.git_ref.clone()),
+            // The filename convention is beside the point here: the ref is stated
+            // in the manifest, not parsed out of the name.
+            tag_convention_absent: false,
+            audited_date: pdfs[newest].audit_date.iso().map(str::to_string),
+            inherited_report_date: manifest
+                .as_ref()
+                .and_then(|m| m.record_for(&pdfs[newest].filename))
+                .map(|r| r.report_date.clone()),
+            inherited_from: Some(source),
+            covered_paths: Some({
+                let mut c = claimed.clone();
+                c.sort();
+                c.dedup();
+                c
+            }),
+            covered_snapshots: cov.as_ref().map(|c| c.covered.clone()),
+            uncovered_snapshots: cov.as_ref().map(|c| c.uncovered.clone()),
+            live_snapshot: cov.as_ref().and_then(|c| c.live.clone()),
+            live_snapshot_covered: cov.as_ref().and_then(|c| c.live_covered),
+            pdfs,
+            reference_pdf_index,
+            latest_tag,
+            latest_tag_iso,
+            ..empty_protofire(protofire::ExternalAudit::Inherited)
+        };
+    }
+
+    // Local record: the anchor the reference PDF's filename encodes, already
+    // resolved (or found not to resolve) when the PDF was dated.
+    let anchor = match &pdfs[newest].provenance {
+        AuditProvenance::Local(a) => a.clone(),
+        // Unreachable: inherited provenance returned above, unverified before it.
+        _ => protofire::AuditAnchor::Unanchored,
+    };
     let audited_ref = anchor.drift_base_ref().map(str::to_string);
     let anchor_kind = Some(anchor.kind());
     // Kept for the panel/consumers: true whenever the filename encodes no vX.Y.Z
     // tag — a commit-anchored PDF is still "tag convention absent" (no tag), it is
-    // just anchored to a commit instead.
-    let tag_convention_absent = !matches!(anchor, AuditAnchor::Tag(_));
+    // just anchored to a commit instead. A tag that does not RESOLVE still follows
+    // the naming convention, so it is not absent; it is broken, which `anchorKind`
+    // reports.
+    let tag_convention_absent = !anchor.names_tag();
 
-    let (default_branch, latest_tag, latest_tag_iso) = repo_default_and_latest_tag(gh, org, repo);
-
-    // Drift base: the audited anchor (tag or resolved commit) when the filename
-    // encodes one, else the newest PDF's own commit (the unanchored fallback).
-    let base = audited_ref
-        .clone()
-        .unwrap_or_else(|| pdfs[newest].commit_sha.clone());
-    let cmp = if base.is_empty() {
-        None
-    } else {
-        fetch_compare(gh, org, repo, &base, &default_branch)
-    };
+    // Drift base: the resolved anchor when the filename encodes one, else the
+    // reference PDF's own commit (the unanchored fallback). A stated-but-
+    // unresolvable tag yields NO base — the compare, the drift and the date all
+    // stay unknown rather than being measured from the commit that moved the file.
+    let base = protofire::drift_base(&anchor, &pdfs[newest].commit_sha);
+    let cmp = base
+        .as_deref()
+        .and_then(|b| fetch_compare(gh, org, repo, b, &default_branch));
 
     let (
         audited_date,
@@ -1101,11 +1301,12 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         // Fall back to a tree blob-sha diff for an ACCURATE changed-`.sol` FILE
         // count; line-level drift isn't recoverable from trees, so leave +/− unknown.
         Some((base_date, _files, total, trunc)) if *trunc => (
-            base_date.clone(),
+            Some(base_date.clone()),
             None,
             None,
             None,
-            changed_sol_count(gh, org, repo, &base, &default_branch),
+            base.as_deref()
+                .and_then(|b| changed_sol_count(gh, org, repo, b, &default_branch)),
             Some(*total),
             true,
             None,
@@ -1117,7 +1318,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             let versions = fetch_source_versions(
                 org,
                 repo,
-                &base,
+                base.as_deref().unwrap_or_default(),
                 &default_branch,
                 &files
                     .iter()
@@ -1135,7 +1336,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             // Keep +/− separate; the combined `source_loc` is derived as the sum for
             // sorting, the staleness check, and JSON back-compat.
             (
-                base_date.clone(),
+                Some(base_date.clone()),
                 Some(added + removed),
                 Some(added),
                 Some(removed),
@@ -1145,9 +1346,14 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
                 Some(split),
             )
         }
-        // Compare unavailable → date the audit by the PDF's own commit, drift unknown.
+        // Compare unavailable → drift unknown, and the audit keeps whatever date
+        // its own record establishes. That is the reference PDF's anchor date, or
+        // its file-commit date when (and only when) the name anchors to nothing;
+        // an anchor that does not resolve leaves it None. Substituting the PDF's
+        // file date unconditionally here is what dated an audit by the commit that
+        // last MOVED it and published `daysSinceAudit: 1` (#128).
         None => (
-            pdfs[newest].last_commit_iso.clone(),
+            pdfs[newest].audit_date.iso().map(str::to_string),
             None,
             None,
             None,
@@ -1163,7 +1369,8 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
     // evidence that no newer tag exists, so it must not collapse to `false` —
     // paired with unmeasurable drift that is what reported a broken scan clean.
     // None when the tag date is unreadable; see protofire::newer_tag_exists.
-    let newer_tag_exists = protofire::newer_tag_exists(latest_tag_iso.as_deref(), &audited_date);
+    let newer_tag_exists =
+        protofire::newer_tag_exists(latest_tag_iso.as_deref(), audited_date.as_deref());
     // Did the audited Solidity actually change? Prefer the line drift; when a
     // truncated compare leaves lines unknown, the tree-derived changed-file count
     // still answers it. Both unknown -> None, and is_stale falls back to tag
@@ -1182,8 +1389,9 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
     let stale = is_stale(newer_tag_exists, source_changed);
 
     // The GitHub compare-view URL for the audited drift (base…default branch);
-    // None when either ref is empty, so the panel links only when it resolves.
-    let compare_url = protofire::compare_url(org, repo, &base, &default_branch);
+    // None when the base never resolved, so the panel links only to a view that
+    // exists rather than to a 404 built from a ref nobody checked.
+    let compare_url = protofire::compare_url(org, repo, base.as_deref(), &default_branch);
 
     ProtofireResult {
         has_pdf: true,
@@ -1194,6 +1402,14 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         anchor_kind,
         tag_convention_absent,
         audited_date,
+        inherited_from: None,
+        unverified_inherited: None,
+        inherited_report_date: None,
+        covered_paths: None,
+        covered_snapshots: None,
+        uncovered_snapshots: None,
+        live_snapshot: None,
+        live_snapshot_covered: None,
         latest_tag,
         latest_tag_iso,
         is_stale: stale,
@@ -1515,7 +1731,39 @@ fn main() {
         .filter(|r| in_protofire_report(r.protofire.has_pdf, r.has_foundry))
         .collect();
     let protofire_total = pf_view.len();
-    let externally_audited = pf_view.iter().filter(|r| r.protofire.has_pdf).count();
+    // Three buckets, not two. An inherited repo carries a PDF, so counting it as
+    // externally audited would move it OUT of the coverage-gap number while its
+    // live production pin may be unaudited — the dashboard would read cleaner than
+    // the false `never` it replaced. It is not a gap either: the provenance is
+    // real. So it is neither, and it is named.
+    let inherited_repos: Vec<String> = pf_view
+        .iter()
+        .filter(|r| r.protofire.external_audit == protofire::ExternalAudit::Inherited)
+        .map(|r| format!("{}/{}", r.org, r.name))
+        .collect();
+    // A DECLARED inherited claim the scan could not validate is a fourth state,
+    // for the same reason: PDFs whose provenance nothing stands behind are not an
+    // audit, and an unreadable claim is not a confirmed gap. Counting it as
+    // audited would make a forgotten manifest entry read BETTER than the honest
+    // `never` it replaced.
+    let unverified_inherited_repos: Vec<String> = pf_view
+        .iter()
+        .filter(|r| r.protofire.unverified_inherited.is_some())
+        .map(|r| format!("{}/{}", r.org, r.name))
+        .collect();
+    let externally_audited = pf_view
+        .iter()
+        .filter(|r| {
+            r.protofire.has_pdf
+                && r.protofire.external_audit != protofire::ExternalAudit::Inherited
+                && r.protofire.unverified_inherited.is_none()
+        })
+        .count();
+    // The four buckets partition the report, so they still sum to the total.
+    let never_externally_audited = protofire_total
+        - externally_audited
+        - inherited_repos.len()
+        - unverified_inherited_repos.len();
     pf_view.sort_by(|a, b| {
         let (pa, pb) = (&a.protofire, &b.protofire);
         (
@@ -1534,8 +1782,11 @@ fn main() {
     println!("\n============ external audit coverage (Protofire PDFs under audit/protofire/) ====");
     println!("  externally audited:       {externally_audited} / {protofire_total}");
     println!(
-        "  NEVER externally audited: {} / {protofire_total}  (the coverage gap)",
-        protofire_total - externally_audited
+        "  inherited (predecessor):  {} / {protofire_total}  (partial by construction)",
+        inherited_repos.len()
+    );
+    println!(
+        "  NEVER externally audited: {never_externally_audited} / {protofire_total}  (the coverage gap)"
     );
     for r in &pf_view {
         let p = &r.protofire;
@@ -1550,23 +1801,48 @@ fn main() {
             Some(kind) => format!("[{kind}-anchored]"),
         };
         let latest = p.latest_tag.as_deref().unwrap_or("(no tags)");
-        let drift = match (
-            p.source_loc_added,
-            p.source_loc_removed,
-            p.files_changed,
-            p.commits_since,
-        ) {
-            (Some(added), Some(removed), Some(files), Some(commits)) => {
-                let days = days_between(&p.audited_date, &now).unwrap_or(-1);
-                let trunc = if p.source_drift_truncated { "+" } else { "" };
-                format!(
-                    "+{added}{trunc} / -{removed}{trunc} src LOC / {files} files / {commits} commits · {days}d"
-                )
+        // An inherited record reports COVERAGE, not drift: its snapshots are frozen,
+        // so the question is which of them the report never saw.
+        let drift = if let Some(src) = &p.inherited_from {
+            let scope = match (&p.covered_snapshots, &p.uncovered_snapshots) {
+                (Some(cov), Some(unc)) => format!(
+                    "{} of {} snapshots covered{}",
+                    cov.len(),
+                    cov.len() + unc.len(),
+                    match (&p.live_snapshot, p.live_snapshot_covered) {
+                        (Some(live), Some(false)) => format!(" · {live} UNAUDITED (live pin)"),
+                        _ => String::new(),
+                    }
+                ),
+                _ => "coverage unavailable".to_string(),
+            };
+            format!(
+                "inherited from {}/{}@{} · {scope}",
+                src.org, src.repo, src.git_ref
+            )
+        } else {
+            match (
+                p.source_loc_added,
+                p.source_loc_removed,
+                p.files_changed,
+                p.commits_since,
+            ) {
+                (Some(added), Some(removed), Some(files), Some(commits)) => {
+                    let days = p
+                        .audited_date
+                        .as_deref()
+                        .and_then(|d| days_between(d, &now))
+                        .unwrap_or(-1);
+                    let trunc = if p.source_drift_truncated { "+" } else { "" };
+                    format!(
+                        "+{added}{trunc} / -{removed}{trunc} src LOC / {files} files / {commits} commits · {days}d"
+                    )
+                }
+                _ => "drift unavailable".to_string(),
             }
-            _ => "drift unavailable".to_string(),
         };
         println!(
-            "  {:<28} {:<8} audited {refd} {anchor_label} → latest {latest} · {drift}",
+            "  {:<28} {:<9} audited {refd} {anchor_label} → latest {latest} · {drift}",
             r.name,
             p.external_audit.as_str()
         );
@@ -2230,7 +2506,13 @@ fn main() {
             "reposWholeRepoAudited": audited,
             "reposNeverAudited": total - audited,
             "reposExternallyAudited": externally_audited,
-            "reposNeverExternallyAudited": protofire_total - externally_audited,
+            "reposNeverExternallyAudited": never_externally_audited,
+            // Neither audited nor a gap: audited in a predecessor repo, covering
+            // named snapshots. Listed rather than counted so a reader can see WHICH.
+            "reposInheritedExternalAudit": inherited_repos,
+            // Declared inherited, provenance unvalidatable — indeterminate, and in
+            // neither of the other buckets.
+            "reposUnverifiedInheritedAudit": unverified_inherited_repos,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, org, sigs)| json!({"name": r, "org": org, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| {
@@ -2256,11 +2538,11 @@ fn main() {
             }).collect::<Vec<_>>(),
             "protofireAudits": pf_view.iter().map(|r| {
                 let p = &r.protofire;
-                let days = if p.audited_date.is_empty() {
-                    serde_json::Value::Null
-                } else {
-                    days_between(&p.audited_date, &now).map_or(serde_json::Value::Null, serde_json::Value::from)
-                };
+                // An unknown audit date yields a null age, never a number computed
+                // from a stand-in date (#128).
+                let days = p.audited_date.as_deref()
+                    .and_then(|d| days_between(d, &now))
+                    .map_or(serde_json::Value::Null, serde_json::Value::from);
                 json!({
                     "name": r.name,
                     "org": r.org,
@@ -2270,13 +2552,35 @@ fn main() {
                         "filename": pdf.filename,
                         "path": pdf.path,
                         "lastCommitIso": pdf.last_commit_iso,
-                        "auditDateIso": pdf.audit_date_iso,
+                        "auditDateIso": pdf.audit_date.iso(),
+                        // WHERE the date came from, so a file-commit stand-in is
+                        // never read as the audit's own date.
+                        "auditDateSource": pdf.audit_date.source(),
+                        "provenance": pdf.provenance.kind(),
+                        "covers": pdf.covers,
                     })).collect::<Vec<_>>(),
                     "referencePdfIndex": p.reference_pdf_index,
                     "auditedRef": p.audited_ref,
                     "anchorKind": p.anchor_kind,
                     "tagConventionAbsent": p.tag_convention_absent,
-                    "auditedDate": if p.audited_date.is_empty() { serde_json::Value::Null } else { serde_json::Value::from(p.audited_date.clone()) },
+                    "auditedDate": p.audited_date,
+                    // Inherited provenance: the predecessor, the ref, and a link
+                    // that actually resolves — it shows exactly what was reviewed.
+                    "inheritedFrom": p.inherited_from.as_ref().map(|s| json!({
+                        "org": s.org,
+                        "repo": s.repo,
+                        "ref": s.git_ref,
+                        "refUrl": s.ref_url(),
+                    })),
+                    // Why an `unknown` is unknown, when a declared inherited claim
+                    // is the reason.
+                    "inheritedUnverified": p.unverified_inherited,
+                    "reportDate": p.inherited_report_date,
+                    "coveredPaths": p.covered_paths,
+                    "coveredSnapshots": p.covered_snapshots,
+                    "uncoveredSnapshots": p.uncovered_snapshots,
+                    "liveSnapshot": p.live_snapshot,
+                    "liveSnapshotCovered": p.live_snapshot_covered,
                     "latestTag": p.latest_tag,
                     "latestTagIso": p.latest_tag_iso,
                     "isStale": match (p.has_pdf, p.is_stale) { (true, Some(b)) => serde_json::Value::from(b), _ => serde_json::Value::Null },
@@ -2393,6 +2697,97 @@ mod tests {
         FetchOutcome::Found(format!("file\taudit/protofire/{name}\t{name}"))
     }
 
+    /// A `contents` listing of several flat `.pdf`s (plus the manifest sidecar,
+    /// which the walker must ignore because it collects `.pdf` only).
+    fn pdf_rows(names: &[&str]) -> FetchOutcome {
+        let mut rows: Vec<String> = names
+            .iter()
+            .map(|n| format!("file\taudit/protofire/{n}\t{n}"))
+            .collect();
+        rows.push("file\taudit/protofire/inherited.json\tinherited.json".to_string());
+        FetchOutcome::Found(rows.join("\n"))
+    }
+
+    /// A `contents` listing of snapshot DIRECTORIES under `src/generated/`.
+    fn snapshot_rows(dirs: &[&str]) -> FetchOutcome {
+        FetchOutcome::Found(
+            dirs.iter()
+                .map(|d| format!("dir\tsrc/generated/{d}\t{d}"))
+                .collect::<Vec<_>>()
+                .join("\n"),
+        )
+    }
+
+    /// `rain.factory.deploy`'s real manifest: r2.0 covers the two byte-identical
+    /// snapshots built from the audited source; r1.0 is retained with NO coverage.
+    const INHERITED_JSON: &str = r#"{
+      "schema": 1,
+      "records": [
+        {
+          "pdf": "inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf",
+          "sha256": "6c4ecf9f47ebf96cda58a856901ccd25dd83b3a8b0e8524a00adb60f149894ca",
+          "report": "r2.0",
+          "reportDate": "2026-05-27",
+          "source": { "org": "rainlanguage", "repo": "rain.factory", "ref": "v0.1.1" },
+          "covers": [
+            { "snapshot": "src/generated/0_1_3", "bytecodeHash": "0xf21b813c7075a1621285df3a8369d0652c31ea80cb807be1aaadafeecd134475" },
+            { "snapshot": "src/generated/0_1_4", "bytecodeHash": "0xf21b813c7075a1621285df3a8369d0652c31ea80cb807be1aaadafeecd134475" }
+          ],
+          "basis": "rebuilt from the audited source; reproduces both snapshots byte-for-byte"
+        },
+        {
+          "pdf": "inherited.rain.factory.1a92a86.feb-2026.pdf",
+          "sha256": "ffb52e9f5d84eaa66c35b760aaf4b8d1ebcd6ac10b2da1ab601cc1f3f272ec61",
+          "report": "r1.0",
+          "reportDate": "2026-02-11",
+          "source": { "org": "rainlanguage", "repo": "rain.factory", "ref": "1a92a8688249aa5a8f4e82d5ed584604515f1ea0" },
+          "covers": [],
+          "supersededBy": "inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf",
+          "basis": "an earlier state of the same source; no snapshot here builds from it"
+        }
+      ]
+    }"#;
+
+    const R2_PDF: &str = "inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf";
+    const R1_PDF: &str = "inherited.rain.factory.1a92a86.feb-2026.pdf";
+
+    /// The routes `rain.factory.deploy` presents: two inherited PDFs, the
+    /// manifest, three snapshots, and the SOURCE repo's refs. The manifest route
+    /// precedes the directory route because `FakeGh` matches the first substring.
+    fn inherited_routes() -> Vec<(&'static str, FetchOutcome)> {
+        vec![
+            (
+                "contents/audit/protofire/inherited.json",
+                FetchOutcome::Found(INHERITED_JSON.to_string()),
+            ),
+            ("contents/audit/protofire", pdf_rows(&[R1_PDF, R2_PDF])),
+            (
+                "contents/src/generated",
+                snapshot_rows(&["0_1_3", "0_1_4", "0_1_5"]),
+            ),
+            // The SOURCE repo's refs — `rain.factory`, not `rain.factory.deploy`
+            // (neither needle is a substring of the other repo's paths).
+            (
+                "rain.factory/commits/v0.1.1",
+                FetchOutcome::Found("2026-05-12T15:15:26Z".into()),
+            ),
+            (
+                "rain.factory/commits/1a92a868",
+                FetchOutcome::Found("2026-02-07T15:29:43Z".into()),
+            ),
+            // The PDFs' own file commits: the SPLIT commit, one day old. Every
+            // published date must come from the source refs above, never here.
+            (
+                "commits?path=audit/protofire",
+                FetchOutcome::Found("2026-07-24T08:42:11Z\tsplitsha".into()),
+            ),
+            (
+                "graphql",
+                FetchOutcome::Found("main\tv0.1.5\t2026-07-20T00:00:00Z".into()),
+            ),
+        ]
+    }
+
     /// A recursive `git/trees` response carrying the given `(path, sha)` blobs and
     /// truncation flag, as the scanner's tree fetch receives it.
     fn tree_json(blobs: &[(&str, &str)], truncated: bool) -> FetchOutcome {
@@ -2490,13 +2885,20 @@ mod tests {
 
     #[test]
     fn found_pdf_classifies_as_audited_not_never_or_unknown() {
-        // A audit/protofire listing carrying a .pdf → the repo is audited. No tags
-        // are scripted, so the taxonomy lands on `na` (has PDF, nothing to compare)
-        // — the point is it is NEITHER `never` NOR `unknown`.
-        let gh = FakeGh::new(vec![(
-            "contents/audit/protofire",
-            pdf_row("rain.example.v1.2.3.jun-2026.pdf"),
-        )]);
+        // A audit/protofire listing carrying a .pdf whose tag RESOLVES → the repo
+        // is audited. No tags are scripted on the repo, so the taxonomy lands on
+        // `na` (has PDF, nothing to compare) — the point is it is NEITHER `never`
+        // NOR `unknown`.
+        let gh = FakeGh::new(vec![
+            (
+                "contents/audit/protofire",
+                pdf_row("rain.example.v1.2.3.jun-2026.pdf"),
+            ),
+            (
+                "commits/v1.2.3",
+                FetchOutcome::Found("2026-06-01T00:00:00Z".into()),
+            ),
+        ]);
         let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
         assert!(
             r.has_pdf,
@@ -2505,6 +2907,406 @@ mod tests {
         assert_eq!(r.external_audit, protofire::ExternalAudit::Na);
         assert_ne!(r.external_audit, protofire::ExternalAudit::Never);
         assert_ne!(r.external_audit, protofire::ExternalAudit::Unknown);
+        assert_eq!(r.anchor_kind, Some("tag"));
+        assert_eq!(r.audited_date.as_deref(), Some("2026-06-01T00:00:00Z"));
+    }
+
+    // ---- the underlying hole: a tag anchor was never resolution-checked ----
+
+    /// THE #128 FABRICATION, on the ORDINARY local path. A PDF names `v0.1.1`, the
+    /// repo has no such ref (here: a repo split carried the file in), and the file's
+    /// own commit is the split — one day old. The pre-fix scanner published
+    /// `anchorKind: "tag"`, `auditedDate` = the split commit, `daysSinceAudit: 1`
+    /// and a `compare/v0.1.1...main` link that 404s. Every one of those must now be
+    /// absent rather than invented.
+    #[test]
+    fn an_unresolvable_tag_reports_unknown_instead_of_fabricating_a_date() {
+        let gh = FakeGh::new(vec![
+            (
+                "contents/audit/protofire",
+                pdf_row("rain.factory.v0.1.1-r2.0.may-2026.pdf"),
+            ),
+            // The PDF's own file commit — the SPLIT, one day before the scan.
+            (
+                "commits?path=audit/protofire",
+                FetchOutcome::Found("2026-07-24T08:42:11Z\tsplitsha".into()),
+            ),
+            // `commits/v0.1.1` is deliberately unscripted → NotFound: the tag does
+            // not exist in THIS repo.
+            (
+                "graphql",
+                FetchOutcome::Found("main\tv0.1.4\t2026-07-20T00:00:00Z".into()),
+            ),
+        ]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.factory.deploy");
+        assert!(r.has_pdf, "the PDF is really there");
+        assert_eq!(
+            r.external_audit,
+            protofire::ExternalAudit::Unknown,
+            "a ref nobody could resolve leaves the verdict indeterminate"
+        );
+        assert_eq!(r.anchor_kind, Some("unresolved-tag"));
+        assert_eq!(
+            r.audited_ref, None,
+            "the scan must not claim to have audited at a ref it could not find"
+        );
+        assert_eq!(
+            r.audited_date, None,
+            "no date is known — the split commit is when the file MOVED"
+        );
+        assert_ne!(
+            r.audited_date.as_deref(),
+            Some("2026-07-24T08:42:11Z"),
+            "the file-move date must never stand in for the audit date"
+        );
+        assert_eq!(
+            r.compare_url, None,
+            "no compare link may be built from an unresolvable base"
+        );
+        assert_eq!(r.is_stale, None);
+        assert_eq!(r.source_loc, None);
+        // The naming convention IS followed; it is the ref that is broken.
+        assert!(!r.tag_convention_absent);
+        assert_eq!(r.pdfs[0].audit_date.source(), "unknown");
+    }
+
+    /// The unanchored fallback is NOT collateral damage of the fix: a date-only
+    /// name never asserted a ref, so it still dates from its own file commit — and
+    /// says so, so the weaker provenance is visible rather than mixed in.
+    #[test]
+    fn an_unanchored_pdf_still_falls_back_to_its_file_commit() {
+        let gh = FakeGh::new(vec![
+            (
+                "contents/audit/protofire",
+                pdf_row("protofire.rain.metadata.feb-2026.pdf"),
+            ),
+            (
+                "commits?path=audit/protofire",
+                FetchOutcome::Found("2026-02-09T00:00:00Z\tfilesha".into()),
+            ),
+            ("graphql", FetchOutcome::Found("main\t\t".into())),
+        ]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.metadata");
+        assert_eq!(r.anchor_kind, Some("unanchored"));
+        assert_eq!(r.audited_date.as_deref(), Some("2026-02-09T00:00:00Z"));
+        assert_eq!(r.pdfs[0].audit_date.source(), "file-commit");
+        assert!(r.tag_convention_absent);
+    }
+
+    // ---- the inherited-audit convention ----
+
+    /// The whole point: an inherited PDF is resolved against the SOURCE repo, and
+    /// reports a real date from it. The local repo also has a `v0.1.1`-shaped route
+    /// scripted here — it must go untouched, proving resolution is redirected by
+    /// the record rather than merely retried elsewhere after a local miss.
+    #[test]
+    fn an_inherited_pdf_resolves_against_the_source_repo() {
+        let mut routes = inherited_routes();
+        routes.push((
+            "rain.factory.deploy/commits/v0.1.1",
+            FetchOutcome::Found("2999-01-01T00:00:00Z".into()),
+        ));
+        // Drift is not merely unavailable for an inherited record — it is not the
+        // question. If the compare were fetched, this route would answer it.
+        routes.push(("compare/", FetchOutcome::Found("{}".into())));
+        let gh = FakeGh::new(routes);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.factory.deploy");
+
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Inherited);
+        let src = r.inherited_from.as_ref().expect("inherited provenance");
+        assert_eq!(src.org, "rainlanguage");
+        assert_eq!(src.repo, "rain.factory");
+        assert_eq!(src.git_ref, "v0.1.1");
+        assert_eq!(
+            src.ref_url(),
+            "https://github.com/rainlanguage/rain.factory/tree/v0.1.1",
+            "the one link that resolves: it shows exactly what was reviewed"
+        );
+        assert_eq!(
+            r.audited_date.as_deref(),
+            Some("2026-05-12T15:15:26Z"),
+            "dated by the SOURCE ref's commit, in the repo that owns it"
+        );
+        assert_eq!(r.anchor_kind, Some("tag-inherited"));
+        assert_eq!(r.inherited_report_date.as_deref(), Some("2026-05-27"));
+        assert_eq!(
+            gh.count("rain.factory.deploy/commits/v0.1.1"),
+            0,
+            "the ref must NEVER be resolved locally — a same-named local ref is not this audit"
+        );
+        assert_eq!(
+            gh.count("compare/"),
+            0,
+            "no cross-repo compare: `compare/v0.1.1...main` is not a diff of anything"
+        );
+        assert_eq!(r.compare_url, None);
+        assert_eq!(r.is_stale, None);
+        assert_eq!(r.source_loc, None);
+        assert_eq!(r.files_changed, None);
+        // The reference is the record that COVERS something — r2.0 — not r1.0,
+        // which is newer than nothing and covers nothing.
+        let reference = &r.pdfs[r.reference_pdf_index.expect("a reference")];
+        assert_eq!(reference.filename, R2_PDF);
+        assert_eq!(reference.audit_date.source(), "inherited-anchor");
+        // r1.0 is RETAINED with zero coverage: real provenance, no over-claim.
+        let r1 = r
+            .pdfs
+            .iter()
+            .find(|p| p.filename == R1_PDF)
+            .expect("r1 kept");
+        assert!(r1.covers.is_empty());
+    }
+
+    /// Partial coverage is the constraint the whole convention exists to express:
+    /// two snapshots covered, and the LIVE production pin not. A repo whose
+    /// deployed bytecode is unaudited must not read as fully audited.
+    #[test]
+    fn an_inherited_audit_names_the_snapshots_it_does_not_cover() {
+        let gh = FakeGh::new(inherited_routes());
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.factory.deploy");
+        assert_eq!(
+            r.covered_snapshots.as_deref(),
+            Some(
+                &[
+                    "src/generated/0_1_3".to_string(),
+                    "src/generated/0_1_4".to_string()
+                ][..]
+            )
+        );
+        assert_eq!(
+            r.uncovered_snapshots.as_deref(),
+            Some(&["src/generated/0_1_5".to_string()][..])
+        );
+        assert_eq!(r.live_snapshot.as_deref(), Some("src/generated/0_1_5"));
+        assert_eq!(
+            r.live_snapshot_covered,
+            Some(false),
+            "the pin production runs is NOT covered, and that is the headline"
+        );
+        // And it never clears a consumer standing on it.
+        assert!(!graph::is_cleared(r.external_audit));
+    }
+
+    /// A snapshot added later must show up uncovered with NO manifest edit — the
+    /// complement is computed from the live tree, so the record self-corrects. The
+    /// manifest here is byte-identical to the previous test's.
+    #[test]
+    fn a_new_snapshot_becomes_uncovered_without_touching_the_manifest() {
+        let mut routes = inherited_routes();
+        routes[2] = (
+            "contents/src/generated",
+            snapshot_rows(&["0_1_3", "0_1_4", "0_1_5", "0_1_10"]),
+        );
+        let gh = FakeGh::new(routes);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.factory.deploy");
+        assert_eq!(
+            r.live_snapshot.as_deref(),
+            Some("src/generated/0_1_10"),
+            "versions compare numerically: 0_1_10 is above 0_1_9, not below it"
+        );
+        assert_eq!(
+            r.uncovered_snapshots.as_deref(),
+            Some(
+                &[
+                    "src/generated/0_1_5".to_string(),
+                    "src/generated/0_1_10".to_string()
+                ][..]
+            )
+        );
+        assert_eq!(r.live_snapshot_covered, Some(false));
+    }
+
+    /// A failed snapshot listing is INDETERMINATE, not "nothing uncovered". An
+    /// empty uncovered set read off a failed fetch is a clean bill of health
+    /// nobody earned (the #52 discipline, applied to coverage).
+    #[test]
+    fn an_unreadable_snapshot_listing_leaves_coverage_null_not_empty() {
+        let mut routes = inherited_routes();
+        routes[2] = ("contents/src/generated", FetchOutcome::Failed);
+        let gh = FakeGh::new(routes);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.factory.deploy");
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Inherited);
+        assert_eq!(r.covered_snapshots, None);
+        assert_eq!(r.uncovered_snapshots, None);
+        assert_eq!(r.live_snapshot_covered, None);
+        // The CLAIMS are still reported — they are what the manifest says, and
+        // they did not become unreadable.
+        assert_eq!(
+            r.covered_paths.as_deref(),
+            Some(
+                &[
+                    "src/generated/0_1_3".to_string(),
+                    "src/generated/0_1_4".to_string()
+                ][..]
+            )
+        );
+    }
+
+    /// A prefixed PDF whose claim cannot be validated is `unknown` — never a
+    /// silent fallback to resolving the ref locally, and never the file-commit
+    /// date. Both a missing manifest and a missing record land here, which is what
+    /// makes a forgotten manifest entry loud instead of invisible.
+    #[test]
+    fn a_declared_inherited_pdf_without_a_valid_record_is_unknown() {
+        // (a) no manifest at all.
+        let no_manifest = FakeGh::new(vec![
+            ("contents/audit/protofire", pdf_rows(&[R2_PDF])),
+            (
+                "commits?path=audit/protofire",
+                FetchOutcome::Found("2026-07-24T08:42:11Z\tsplitsha".into()),
+            ),
+            // A local ref of the same name exists — and must not be used.
+            (
+                "rain.factory.deploy/commits/v0.1.1",
+                FetchOutcome::Found("2999-01-01T00:00:00Z".into()),
+            ),
+            (
+                "graphql",
+                FetchOutcome::Found("main\tv0.1.5\t2026-07-20T00:00:00Z".into()),
+            ),
+        ]);
+        let r = fetch_protofire_audit(&no_manifest, "rainlanguage", "rain.factory.deploy");
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Unknown);
+        assert_eq!(r.audited_date, None);
+        assert_eq!(r.compare_url, None);
+        assert_eq!(r.inherited_from, None);
+        assert_eq!(
+            no_manifest.count("rain.factory.deploy/commits/v0.1.1"),
+            0,
+            "an unvalidated inherited claim must not fall back to the local repo"
+        );
+        // The reason is carried, which is also what keeps the org counters honest:
+        // the repo lands in NEITHER the audited bucket nor the coverage gap. Were
+        // it counted as audited, forgetting the manifest would read BETTER than the
+        // honest `never` it replaced.
+        assert_eq!(
+            r.unverified_inherited,
+            Some("no readable inherited.json"),
+            "an unknown must say WHY, and be countable apart"
+        );
+
+        // (b) a manifest that parses but carries no record for this PDF.
+        let orphan = INHERITED_JSON.replace(R2_PDF, "inherited.some.other.v9.9.9.pdf");
+        let no_record = FakeGh::new(vec![
+            (
+                "contents/audit/protofire/inherited.json",
+                FetchOutcome::Found(orphan),
+            ),
+            ("contents/audit/protofire", pdf_rows(&[R2_PDF])),
+            (
+                "commits?path=audit/protofire",
+                FetchOutcome::Found("2026-07-24T08:42:11Z\tsplitsha".into()),
+            ),
+            (
+                "graphql",
+                FetchOutcome::Found("main\tv0.1.5\t2026-07-20T00:00:00Z".into()),
+            ),
+        ]);
+        let r2 = fetch_protofire_audit(&no_record, "rainlanguage", "rain.factory.deploy");
+        assert_eq!(r2.external_audit, protofire::ExternalAudit::Unknown);
+        assert_eq!(r2.audited_date, None);
+
+        // (c) a record whose SOURCE ref does not resolve (repo renamed/deleted):
+        // the provenance is no longer verifiable from here, which is a real change
+        // in the record's status — not a nuisance to paper over.
+        let mut routes = inherited_routes();
+        routes.retain(|(n, _)| *n != "rain.factory/commits/v0.1.1");
+        let gone = FakeGh::new(routes);
+        let r3 = fetch_protofire_audit(&gone, "rainlanguage", "rain.factory.deploy");
+        assert_eq!(r3.external_audit, protofire::ExternalAudit::Unknown);
+        assert_eq!(r3.audited_date, None);
+    }
+
+    /// An unreadable manifest is unreadable WHOLE. A record the scanner half-trusts
+    /// is how a gate and a scanner come to disagree about the same file.
+    #[test]
+    fn an_unreadable_manifest_taints_the_record_rather_than_being_half_used() {
+        let mut routes = inherited_routes();
+        routes[0] = (
+            "contents/audit/protofire/inherited.json",
+            FetchOutcome::Found("{\"schema\": 99, \"records\": []}".into()),
+        );
+        let gh = FakeGh::new(routes);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.factory.deploy");
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Unknown);
+        assert_eq!(r.covered_snapshots, None);
+        assert_eq!(r.audited_date, None);
+    }
+
+    /// The prefix pays for itself: a repo with no inherited PDF must not spend an
+    /// API call looking for a manifest that cannot exist (~139 repos org-wide).
+    #[test]
+    fn a_repo_with_no_inherited_pdf_never_fetches_the_manifest() {
+        let gh = FakeGh::new(vec![
+            (
+                "contents/audit/protofire/inherited.json",
+                FetchOutcome::Found(INHERITED_JSON.to_string()),
+            ),
+            (
+                "contents/audit/protofire",
+                pdf_row("rain.example.v1.2.3.jun-2026.pdf"),
+            ),
+            (
+                "commits/v1.2.3",
+                FetchOutcome::Found("2026-06-01T00:00:00Z".into()),
+            ),
+        ]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        assert_eq!(gh.count("contents/audit/protofire/inherited.json"), 0);
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Na);
+        assert_eq!(r.inherited_from, None);
+    }
+
+    /// The ordinary local path is untouched by all of the above: a resolvable tag
+    /// anchor still measures drift base…HEAD and still links to a real compare.
+    #[test]
+    fn a_normal_local_audit_is_unaffected() {
+        let compare = json!({
+            "base_commit": { "commit": { "committer": { "date": "2026-05-12T15:15:26Z" } } },
+            "total_commits": 7,
+            "files": [
+                { "filename": "src/A.sol", "additions": 4, "deletions": 2, "status": "modified" },
+                { "filename": "test/A.t.sol", "additions": 90, "deletions": 90, "status": "modified" },
+            ],
+        })
+        .to_string();
+        let gh = FakeGh::new(vec![
+            (
+                "contents/audit/protofire",
+                pdf_row("rain.vats.v0.1.5-r2.0.may-2026.pdf"),
+            ),
+            (
+                "commits?path=audit/protofire",
+                FetchOutcome::Found("2026-07-14T00:00:00Z\tfilesha".into()),
+            ),
+            (
+                "commits/v0.1.5",
+                FetchOutcome::Found("2026-05-12T15:15:26Z".into()),
+            ),
+            (
+                "graphql",
+                FetchOutcome::Found("main\tv0.1.7\t2026-07-01T00:00:00Z".into()),
+            ),
+            ("compare/", FetchOutcome::Found(compare)),
+        ]);
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "rain.vats");
+        assert_eq!(r.external_audit, protofire::ExternalAudit::Stale);
+        assert_eq!(r.anchor_kind, Some("tag"));
+        assert_eq!(r.audited_ref.as_deref(), Some("v0.1.5"));
+        assert_eq!(r.audited_date.as_deref(), Some("2026-05-12T15:15:26Z"));
+        assert_eq!(
+            r.compare_url.as_deref(),
+            Some("https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main")
+        );
+        // Non-test Solidity only: the 90/90 test churn is excluded.
+        assert_eq!(r.source_loc_added, Some(4));
+        assert_eq!(r.source_loc_removed, Some(2));
+        assert_eq!(r.commits_since, Some(7));
+        assert_eq!(r.is_stale, Some(true));
+        // And it carries none of the inherited apparatus.
+        assert_eq!(r.inherited_from, None);
+        assert_eq!(r.covered_snapshots, None);
+        assert_eq!(r.pdfs[0].audit_date.source(), "anchor");
     }
 
     #[test]

@@ -13,22 +13,88 @@
 //! ## The anchor-in-filename convention (the drift enabler)
 //! A Protofire PDF names the audited git state so drift is measured against the
 //! exact audited ref rather than inferred from the PDF's own commit date. A
-//! filename encodes one of three anchor kinds (`classify_anchor`):
+//! filename encodes one of four anchor kinds (`classify_anchor`):
 //! - **tag-anchored** — a `vMAJOR.MINOR.PATCH` token (e.g.
-//!   `rain.factory.v0.1.1-r2.0.may-2026.pdf`); `parse_audited_tag` extracts it.
+//!   `rain.factory.v0.1.1-r2.0.may-2026.pdf`) that RESOLVES to a real ref;
+//!   `parse_audited_tag` extracts it, resolution confirms it.
 //! - **commit-anchored** — a 7–40 hex-char token that RESOLVES to a real commit
 //!   (e.g. `raindex.e686b4d.apr-2026.pdf`, whose `e686b4d` predates any `sol-v`
 //!   contract tag, so the commit is the honest anchor). `parse_commit_candidate`
 //!   extracts the candidate; resolution (the I/O half, in `main.rs`) confirms it.
+//! - **unresolved-tag** — the name states a `vX.Y.Z` tag that does NOT resolve.
+//!   That is a BROKEN record, not an unanchored one: the name asserts a ref, the
+//!   assertion is false, and nothing about the audit's date is known. Dating it by
+//!   the PDF's own file commit is what published a May-2026 audit as one day old
+//!   after a repo split moved the file (#128).
 //! - **unanchored** — neither, or a hex-looking token that doesn't resolve; drift
 //!   is still computed, but from the PDF's own commit rather than the anchor.
+//!
+//! ## The inherited-audit convention (`inherited.` + `inherited.json`)
+//! An audit performed on a PREDECESSOR repo, whose audited ref does not resolve
+//! HERE but whose reviewed source produced artefacts this repo carries (a repo
+//! SPLIT — a rename keeps its history, so its anchor still resolves locally and it
+//! stays an ordinary local record). Two halves, checked against each other:
+//! - the mandatory `inherited.` basename prefix is the DISCRIMINANT — cheap,
+//!   visible in an `ls`, and it gates the manifest fetch so a repo with no
+//!   inherited PDF costs no extra API call;
+//! - `audit/<vendor>/inherited.json` is the PAYLOAD — which predecessor, which
+//!   ref, and (the part no filename can hold) WHICH snapshots the report covers.
+//!
+//! Coverage is partial by construction, so the complement is COMPUTED from the
+//! live tree (`coverage`) and never read from the manifest: a snapshot added
+//! later shows up as uncovered with no manifest edit. A prefixed PDF whose record
+//! is missing, unparseable or unresolvable is `unknown` — never a fallback to
+//! resolving the ref locally, and never the PDF's own file-commit date.
 
 use regex::Regex;
 use std::sync::OnceLock;
 
+/// Where an audit's date came from — carried WITH the date so a reader can never
+/// mistake one provenance for another. The date and its source are one value
+/// because they are one fact: a bare `String` with a silent
+/// `unwrap_or(file_commit_date)` is exactly what published a genuine May-2026
+/// audit as `daysSinceAudit: 1` when a split moved the PDF (#128).
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuditDate {
+    /// The committer date of the ref the FILENAME anchors to, resolved in THIS
+    /// repo. The audit's real date.
+    Anchor(String),
+    /// The committer date of the ref an INHERITED record anchors to, resolved in
+    /// the PREDECESSOR repo that owns it. Equally real, just not local.
+    InheritedAnchor(String),
+    /// No anchor in the name: the PDF's own file-commit date stands in. Weaker —
+    /// a `git mv` re-dates it — so it is labelled rather than silently mixed in.
+    FileCommit(String),
+    /// Nothing could be established: the name anchors to a ref that does not
+    /// resolve, or an inherited claim that could not be validated. Absence is a
+    /// value here; there is no date to fall back to that would not be invented.
+    Unknown,
+}
+
+impl AuditDate {
+    /// The ISO date, or `None` when it is genuinely unknown.
+    pub fn iso(&self) -> Option<&str> {
+        match self {
+            Self::Anchor(d) | Self::InheritedAnchor(d) | Self::FileCommit(d) => Some(d),
+            Self::Unknown => None,
+        }
+    }
+
+    /// Machine label for where the date came from, mirrored into `health.json`.
+    pub fn source(&self) -> &'static str {
+        match self {
+            Self::Anchor(_) => "anchor",
+            Self::InheritedAnchor(_) => "inherited-anchor",
+            Self::FileCommit(_) => "file-commit",
+            Self::Unknown => "unknown",
+        }
+    }
+}
+
 /// One Protofire audit PDF found under `audit/protofire/` (e.g.
 /// `audit/protofire/rain.factory.v0.1.1-r2.0.may-2026.pdf`). `commit_sha` is the
-/// commit that ADDED the file — the drift base when the filename encodes no tag.
+/// commit that last touched the file — the drift base only when the filename
+/// encodes no anchor at all.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct AuditPdf {
     pub filename: String,
@@ -36,12 +102,19 @@ pub struct AuditPdf {
     pub last_commit_iso: String,
     pub commit_sha: String,
     /// Recency key for choosing the reference audit: the committer date of the
-    /// commit/tag the filename anchors to — the audit's real date. Falls back to
-    /// the PDF's own file-commit date (`last_commit_iso`) when the name encodes no
-    /// resolvable anchor. Unlike `last_commit_iso` this does NOT collapse when
-    /// several PDFs are moved in one commit (which ties their file-commit dates):
-    /// the audited commit's own timestamp still orders one audit against another.
-    pub audit_date_iso: String,
+    /// commit/tag the record anchors to — the audit's real date — with its
+    /// provenance. Unlike `last_commit_iso` this does NOT collapse when several
+    /// PDFs are moved in one commit (which ties their file-commit dates): the
+    /// audited commit's own timestamp still orders one audit against another.
+    pub audit_date: AuditDate,
+    /// How this PDF's audited state is anchored: locally, inherited from a
+    /// predecessor repo, or declared inherited without a validatable record.
+    pub provenance: AuditProvenance,
+    /// The snapshot directories this PDF's inherited record CLAIMS to cover, as
+    /// written in the manifest. Empty for a local record, and legitimately empty
+    /// for an inherited one that covers nothing current (a superseded report) —
+    /// which is how real provenance is kept without over-claiming.
+    pub covers: Vec<String>,
 }
 
 /// One changed file from the `compare` API — the inputs the drift sum needs.
@@ -63,14 +136,20 @@ pub struct CompareFile {
 /// - `current` — has a PDF and the audited Solidity is unchanged since it (a
 ///   newer tag with no Solidity in it does NOT make an audit stale)
 /// - `unknown` — the scan could not establish the verdict, so it is
-///   indeterminate. Two causes: the `audit/protofire/` listing fetch FAILED (is
-///   there a PDF at all?), or the repo has a PDF but neither its drift nor its
-///   tag recency could be read (is it still current?). Distinct from both
+///   indeterminate. Three causes: the `audit/protofire/` listing fetch FAILED (is
+///   there a PDF at all?), the repo has a PDF but neither its drift nor its
+///   tag recency could be read (is it still current?), or a PDF DECLARES
+///   inherited provenance that could not be validated. Distinct from both
 ///   `never` and `current`: a failed lookup is neither a confirmed coverage gap
 ///   nor a clean bill of health.
+/// - `inherited` — the audit was performed on a PREDECESSOR repo (a split), and
+///   this repo's record says so honestly: which report, which source ref, and
+///   which of this repo's snapshots it covers. Deliberately NOT `current`:
+///   inherited coverage is partial by construction, so it names what is covered
+///   and, more importantly, what is not.
 ///
 /// A closed set, as a type rather than free strings: every consumer must decide
-/// what each verdict means to it, and a sixth verdict added here should fail to
+/// what each verdict means to it, and a seventh verdict added here should fail to
 /// compile at each site that has not decided, rather than silently falling into
 /// whatever the `else` arm happened to be.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -80,6 +159,7 @@ pub enum ExternalAudit {
     Stale,
     Current,
     Unknown,
+    Inherited,
 }
 
 impl ExternalAudit {
@@ -92,6 +172,7 @@ impl ExternalAudit {
             Self::Stale => "stale",
             Self::Current => "current",
             Self::Unknown => "unknown",
+            Self::Inherited => "inherited",
         }
     }
 }
@@ -119,14 +200,27 @@ pub fn parse_audited_tag(filename: &str) -> Option<String> {
 
 /// The audited anchor a Protofire PDF filename encodes: the ref the drift base is
 /// measured from. Tag and commit are BOTH honest anchors on the audited contract
-/// state; `Unanchored` is the fallback (drift dated by the PDF's own file commit).
+/// state, and both carry the committer date resolution returned — a resolved
+/// anchor cannot exist without its date, so the scanner cannot resolve a ref twice
+/// and disagree with itself. `UnresolvedTag` is a broken record and `Unanchored`
+/// the legacy fallback (drift dated by the PDF's own file commit).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum AuditAnchor {
-    /// A `vMAJOR.MINOR.PATCH` version tag encoded in the filename.
-    Tag(String),
-    /// A 7–40 hex-char token that resolved to a real commit in the repo.
-    Commit(String),
-    /// Neither a tag nor a resolvable commit.
+    /// A `vMAJOR.MINOR.PATCH` version tag encoded in the filename, RESOLVED, with
+    /// the committer date of the commit it points at.
+    Tag { tag: String, date: String },
+    /// A 7–40 hex-char token that resolved to a real commit, with its date.
+    Commit { sha: String, date: String },
+    /// The filename states a `vX.Y.Z` tag that does NOT resolve in the repo it was
+    /// resolved against. Kept apart from `Unanchored` because the two are opposite
+    /// facts: an unanchored name claims nothing, while this name makes a claim that
+    /// is false. Falling back to the PDF's file-commit date here invents a date for
+    /// an audit nobody can locate — the #128 fabrication. Nothing is known, so
+    /// nothing is reported.
+    UnresolvedTag(String),
+    /// Neither a tag nor a resolvable commit — a legacy date-only name. Its hex
+    /// candidate, if any, was a false positive rather than a stated ref, so the
+    /// PDF's own file commit is a fallback rather than a contradiction.
     Unanchored,
 }
 
@@ -134,21 +228,40 @@ impl AuditAnchor {
     /// Stable machine label for the anchor kind, mirrored into `health.json`.
     pub fn kind(&self) -> &'static str {
         match self {
-            AuditAnchor::Tag(_) => "tag",
-            AuditAnchor::Commit(_) => "commit",
+            AuditAnchor::Tag { .. } => "tag",
+            AuditAnchor::Commit { .. } => "commit",
+            AuditAnchor::UnresolvedTag(_) => "unresolved-tag",
             AuditAnchor::Unanchored => "unanchored",
         }
     }
 
     /// The ref the drift base compares from (`compare/{ref}...HEAD`): the tag or
-    /// the resolved commit SHA. `None` when unanchored — the caller then falls back
-    /// to the PDF's own commit.
+    /// the resolved commit SHA. `None` when the anchor names no ref that resolves,
+    /// so a compare is never built against a ref the scan could not find.
     pub fn drift_base_ref(&self) -> Option<&str> {
         match self {
-            AuditAnchor::Tag(t) => Some(t),
-            AuditAnchor::Commit(sha) => Some(sha),
-            AuditAnchor::Unanchored => None,
+            AuditAnchor::Tag { tag, .. } => Some(tag),
+            AuditAnchor::Commit { sha, .. } => Some(sha),
+            AuditAnchor::UnresolvedTag(_) | AuditAnchor::Unanchored => None,
         }
+    }
+
+    /// The audited state's committer date, when the anchor resolved.
+    pub fn resolved_date(&self) -> Option<&str> {
+        match self {
+            AuditAnchor::Tag { date, .. } | AuditAnchor::Commit { date, .. } => Some(date),
+            AuditAnchor::UnresolvedTag(_) | AuditAnchor::Unanchored => None,
+        }
+    }
+
+    /// Does the FILENAME follow the tag convention? True whether or not the tag
+    /// resolves: the convention is about the name, and an unresolved tag is a
+    /// broken anchor, not an absent one.
+    pub fn names_tag(&self) -> bool {
+        matches!(
+            self,
+            AuditAnchor::Tag { .. } | AuditAnchor::UnresolvedTag(_)
+        )
     }
 }
 
@@ -171,47 +284,395 @@ pub fn parse_commit_candidate(filename: &str) -> Option<String> {
 /// wins (a tag is never mistaken for a commit); else a 7–40 hex token that
 /// `resolve` confirms names a real commit is commit-anchored; else unanchored.
 ///
-/// `resolve` is the I/O seam (in `main.rs`, `gh api repos/{o}/{r}/commits/{sha}`):
-/// keeping it injected leaves this classification pure and network-free to test. A
-/// hex-looking token that does NOT resolve — or no hex token at all — falls back to
-/// `Unanchored` rather than erroring, guarding false positives. `resolve` is called
-/// at most once, only when a tag is absent but a hex candidate is present.
-pub fn classify_anchor<F: FnOnce(&str) -> bool>(filename: &str, resolve: F) -> AuditAnchor {
+/// `resolve` is the I/O seam (in `main.rs`, `gh api repos/{o}/{r}/commits/{ref}`)
+/// and it returns the ref's COMMITTER DATE: resolution and dating are the same
+/// API call, so a ref cannot be confirmed to exist without also pinning when it
+/// was. Keeping it injected leaves this classification pure and network-free to
+/// test. `resolve` is called at most once.
+///
+/// A TAG is resolved too. It used to be trusted on sight, which meant
+/// `anchorKind: "tag"` asserted a ref nobody had checked — and after a repo split
+/// carried a PDF into a repo where its tag does not exist, that produced a
+/// fabricated date and a 404 compare link (#128). A tag that does not resolve is
+/// `UnresolvedTag`, which reports nothing rather than something invented. A HEX
+/// token that does not resolve stays `Unanchored`: an all-hex word in a date-only
+/// name is a false positive, not a stated ref.
+pub fn classify_anchor<F: FnOnce(&str) -> Option<String>>(
+    filename: &str,
+    resolve: F,
+) -> AuditAnchor {
     if let Some(tag) = parse_audited_tag(filename) {
-        return AuditAnchor::Tag(tag);
+        return match resolve(&tag) {
+            Some(date) => AuditAnchor::Tag { tag, date },
+            None => AuditAnchor::UnresolvedTag(tag),
+        };
     }
     if let Some(sha) = parse_commit_candidate(filename) {
-        if resolve(&sha) {
-            return AuditAnchor::Commit(sha);
+        if let Some(date) = resolve(&sha) {
+            return AuditAnchor::Commit { sha, date };
         }
     }
     AuditAnchor::Unanchored
 }
 
-/// The anchor REF a PDF filename encodes — a `vX.Y.Z` tag (preferred) or a 7–40
-/// hex commit candidate — as a bare git ref string, or `None` when the name
-/// encodes neither. Unlike `classify_anchor` this performs NO resolution (no
-/// I/O): the caller resolves the ref (e.g. `gh api commits/{ref}` for the audit's
-/// date). Same precedence as `classify_anchor` so both agree on which token is
-/// the anchor. A hex candidate that is not a real commit is still returned here;
-/// resolving it simply fails and the caller falls back.
-pub fn anchor_ref(filename: &str) -> Option<String> {
-    parse_audited_tag(filename).or_else(|| parse_commit_candidate(filename))
+/// The ref a repo's drift compares FROM, given its reference PDF's anchor and
+/// that PDF's own file commit. Both inputs are resolution-confirmed by
+/// construction: the anchor variants that yield a ref were confirmed by
+/// `classify_anchor`, and `pdf_commit_sha` came back from the commits API.
+///
+/// `UnresolvedTag` yields `None` — NOT the file commit. That distinction is the
+/// whole point: a name that states a ref the repo does not have is a broken
+/// record, and dating its drift from the commit that last MOVED the file reports
+/// the move as if it were the audit.
+pub fn drift_base(anchor: &AuditAnchor, pdf_commit_sha: &str) -> Option<String> {
+    match anchor {
+        AuditAnchor::Tag { .. } | AuditAnchor::Commit { .. } => {
+            anchor.drift_base_ref().map(str::to_string)
+        }
+        AuditAnchor::Unanchored => (!pdf_commit_sha.is_empty()).then(|| pdf_commit_sha.to_string()),
+        AuditAnchor::UnresolvedTag(_) => None,
+    }
 }
 
 /// Build the GitHub compare-view URL for a repo's audit drift:
 /// `https://github.com/{owner}/{repo}/compare/{base}...{head}`. `base` is the
-/// audited anchor (tag or resolved commit); `head` the repo default branch.
-/// `None` when either side is empty (a `compare/...head` or `compare/base...`
-/// link is broken), so the panel omits the link rather than pointing at a
-/// malformed compare view.
-pub fn compare_url(owner: &str, repo: &str, base: &str, head: &str) -> Option<String> {
+/// RESOLVED audited anchor — `None` when nothing resolved, which is why the
+/// parameter is an `Option` rather than a string that may or may not be empty: a
+/// non-empty string is not evidence that a ref exists, and building a link from
+/// one is how a `compare/v0.1.1...main` that 404s got rendered as a live link.
+/// `None` (either side) omits the link rather than pointing at a broken view.
+pub fn compare_url(owner: &str, repo: &str, base: Option<&str>, head: &str) -> Option<String> {
+    let base = base?;
     if base.is_empty() || head.is_empty() {
         return None;
     }
     Some(format!(
         "https://github.com/{owner}/{repo}/compare/{base}...{head}"
     ))
+}
+
+// ---------------------------------------------------------------------------
+// The inherited-audit convention
+// ---------------------------------------------------------------------------
+
+/// The mandatory basename prefix that DECLARES an inherited audit record. Exact
+/// lowercase, on the basename, and the machine discriminant: inheritance is
+/// declared, never inferred from a failed local lookup. Inferring it would
+/// classify by symptom — a deleted tag and an undeclared inheritance produce the
+/// same failed lookup and must not be handled the same way.
+pub const INHERITED_PREFIX: &str = "inherited.";
+
+/// The one non-PDF file permitted in a vendor audit directory: the manifest that
+/// says where each `inherited.` PDF came from and what it covers.
+pub const INHERITED_MANIFEST: &str = "inherited.json";
+
+/// The manifest schema this scanner understands. A manifest declaring anything
+/// else is treated as UNREADABLE in full rather than parsed field-by-field —
+/// a future schema's records are not this schema's records.
+pub const INHERITED_SCHEMA: u64 = 1;
+
+/// Does this PDF basename declare inherited provenance? The prefix is checked on
+/// the basename only, and it also gates the manifest fetch, so a repo with no
+/// inherited PDF costs no extra API call.
+pub fn is_inherited_pdf(filename: &str) -> bool {
+    filename.starts_with(INHERITED_PREFIX)
+}
+
+/// The predecessor repo + ref an inherited record points at.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InheritedSource {
+    pub org: String,
+    pub repo: String,
+    /// Tag or full commit sha, exactly as printed in the report.
+    pub git_ref: String,
+}
+
+impl InheritedSource {
+    /// A link that actually resolves, showing exactly what was reviewed. The one
+    /// URL worth rendering for an inherited record: a cross-repo
+    /// `compare/{ref}...main` is not a diff of anything.
+    pub fn ref_url(&self) -> String {
+        format!(
+            "https://github.com/{}/{}/tree/{}",
+            self.org, self.repo, self.git_ref
+        )
+    }
+}
+
+/// One snapshot an inherited report covers, with the bytecode hash that pins WHICH
+/// bytes the claim is about. The scanner does not verify the hash against the
+/// snapshot (that is the CI gate's job — it can read the pointers file); carrying
+/// it makes the claim specific enough to be checkable at all.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CoveredSnapshot {
+    pub snapshot: String,
+    pub bytecode_hash: String,
+}
+
+/// One record in `audit/<vendor>/inherited.json`: the provenance of ONE inherited
+/// PDF. The vendor is carried by the DIRECTORY, not a field — `audit/protofire/`
+/// already states these are Protofire reports, and a second copy of that fact
+/// could disagree with the path.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InheritedRecord {
+    /// Basename of the PDF in the same directory. A basename, not a path: the
+    /// manifest is colocated with what it describes, and a path invites traversal.
+    pub pdf: String,
+    pub sha256: String,
+    pub report: Option<String>,
+    pub report_date: String,
+    pub source: InheritedSource,
+    /// Possibly EMPTY, and that is load-bearing: it is how a superseded report is
+    /// retained honestly — real provenance, zero current coverage. A convention
+    /// that forced every PDF to claim a snapshot would manufacture over-claiming.
+    pub covers: Vec<CoveredSnapshot>,
+    pub superseded_by: Option<String>,
+    pub basis: String,
+}
+
+/// A parsed `inherited.json`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct InheritedManifest {
+    pub records: Vec<InheritedRecord>,
+}
+
+impl InheritedManifest {
+    /// The record for a PDF basename, if the manifest carries one.
+    pub fn record_for(&self, pdf: &str) -> Option<&InheritedRecord> {
+        self.records.iter().find(|r| r.pdf == pdf)
+    }
+}
+
+/// Parse `audit/<vendor>/inherited.json`. Pure — the caller fetches.
+///
+/// All-or-nothing: an unknown `schema`, a malformed record, a `pdf` that is not a
+/// prefixed basename, a path-shaped field, or a DUPLICATE `pdf` yields `None` for
+/// the whole manifest. A provenance claim that is half-readable is not a claim
+/// the scanner may act on, and a duplicated `pdf` is ambiguous about which record
+/// governs — both must land in `unknown`, not in a best guess.
+pub fn parse_inherited_manifest(src: &str) -> Option<InheritedManifest> {
+    let v: serde_json::Value = serde_json::from_str(src).ok()?;
+    if v.get("schema").and_then(serde_json::Value::as_u64) != Some(INHERITED_SCHEMA) {
+        return None;
+    }
+    let rows = v.get("records")?.as_array()?;
+    let mut records: Vec<InheritedRecord> = Vec::with_capacity(rows.len());
+    for row in rows {
+        let rec = parse_inherited_record(row)?;
+        if records.iter().any(|r| r.pdf == rec.pdf) {
+            return None;
+        }
+        records.push(rec);
+    }
+    Some(InheritedManifest { records })
+}
+
+/// A required non-empty string field.
+fn req_str(v: &serde_json::Value, key: &str) -> Option<String> {
+    let s = v.get(key)?.as_str()?.trim().to_string();
+    (!s.is_empty()).then_some(s)
+}
+
+/// True if a field is safe to interpolate into a GitHub API path: no separators
+/// and no traversal. Every manifest string reaching a URL passes through here —
+/// the manifest is repo content, so it is attacker-influenceable input.
+fn is_path_safe(s: &str) -> bool {
+    !s.contains('/') && !s.contains('\\') && !s.contains("..") && !s.starts_with('.')
+}
+
+fn parse_inherited_record(v: &serde_json::Value) -> Option<InheritedRecord> {
+    let pdf = req_str(v, "pdf")?;
+    if !is_inherited_pdf(&pdf) || pdf.contains('/') || pdf.contains("..") {
+        return None;
+    }
+    let sha256 = req_str(v, "sha256")?;
+    if sha256.len() != 64 || !sha256.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    let report_date = req_str(v, "reportDate")?;
+    if report_date.len() != 10 || parse_ymd(&report_date).is_none() {
+        return None;
+    }
+    let src = v.get("source")?;
+    let source = InheritedSource {
+        org: req_str(src, "org")?,
+        repo: req_str(src, "repo")?,
+        git_ref: req_str(src, "ref")?,
+    };
+    if !is_path_safe(&source.org) || !is_path_safe(&source.repo) || !is_path_safe(&source.git_ref) {
+        return None;
+    }
+    let covers = v
+        .get("covers")?
+        .as_array()?
+        .iter()
+        .map(parse_covered_snapshot)
+        .collect::<Option<Vec<_>>>()?;
+    let basis = req_str(v, "basis")?;
+    Some(InheritedRecord {
+        pdf,
+        sha256,
+        report: req_str(v, "report"),
+        report_date,
+        source,
+        covers,
+        superseded_by: req_str(v, "supersededBy"),
+        basis,
+    })
+}
+
+fn parse_covered_snapshot(v: &serde_json::Value) -> Option<CoveredSnapshot> {
+    let snapshot = req_str(v, "snapshot")?;
+    // A repo-relative directory: never absolute, never traversing out, and never
+    // reaching into `.audit/` (the audit SKILL's stamp — a different signal that
+    // an external report cannot cover).
+    if snapshot.starts_with('/') || snapshot.contains("..") || snapshot.starts_with(".audit") {
+        return None;
+    }
+    let bytecode_hash = req_str(v, "bytecodeHash")?;
+    let hex = bytecode_hash.strip_prefix("0x")?;
+    if hex.len() != 64 || !hex.chars().all(|c| c.is_ascii_hexdigit()) {
+        return None;
+    }
+    Some(CoveredSnapshot {
+        snapshot,
+        bytecode_hash,
+    })
+}
+
+/// How one PDF's audited state is anchored — the three states the inherited
+/// convention defines, disjoint by DECLARATION rather than by symptom.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum AuditProvenance {
+    /// No `inherited.` prefix: an ordinary local record whose anchor must resolve
+    /// in THIS repo.
+    Local(AuditAnchor),
+    /// Prefixed, with a record whose `source.ref` resolved in the predecessor.
+    Inherited(InheritedSource),
+    /// Prefixed, but the claim could not be validated: no manifest, no record for
+    /// this PDF, an unreadable manifest, or a `source.ref` that does not resolve
+    /// there. NEVER falls back to resolving the ref locally or to the PDF's own
+    /// file-commit date; the reason is carried so the failure can be reported.
+    UnverifiedInherited(&'static str),
+}
+
+impl AuditProvenance {
+    /// Machine label mirrored into `health.json`.
+    pub fn kind(&self) -> &'static str {
+        match self {
+            Self::Local(_) => "local",
+            Self::Inherited(_) => "inherited",
+            Self::UnverifiedInherited(_) => "unverified-inherited",
+        }
+    }
+}
+
+/// The audit's date and where it came from, from the PDF's provenance and its own
+/// file commit. ONE rule, so every PDF is dated the same way:
+/// - a resolved anchor (local or inherited) dates the audit;
+/// - an unanchored name falls back to the file commit, labelled as such;
+/// - anything else is `Unknown` — an unresolved tag and an unvalidated inherited
+///   claim both know nothing, and nothing is what they report.
+pub fn audit_date_for(
+    provenance: &AuditProvenance,
+    resolved_date: Option<&str>,
+    file_commit_iso: &str,
+) -> AuditDate {
+    match provenance {
+        AuditProvenance::Local(anchor) => match anchor {
+            AuditAnchor::Tag { date, .. } | AuditAnchor::Commit { date, .. } => {
+                AuditDate::Anchor(date.clone())
+            }
+            AuditAnchor::Unanchored if !file_commit_iso.is_empty() => {
+                AuditDate::FileCommit(file_commit_iso.to_string())
+            }
+            AuditAnchor::Unanchored | AuditAnchor::UnresolvedTag(_) => AuditDate::Unknown,
+        },
+        AuditProvenance::Inherited(_) => match resolved_date {
+            Some(d) => AuditDate::InheritedAnchor(d.to_string()),
+            None => AuditDate::Unknown,
+        },
+        AuditProvenance::UnverifiedInherited(_) => AuditDate::Unknown,
+    }
+}
+
+/// The anchor kind of an inherited record's `source.ref`, for `health.json`. A
+/// 7–40 hex token is a commit; anything else is the tag the report named.
+pub fn inherited_anchor_kind(git_ref: &str) -> &'static str {
+    let hex =
+        git_ref.len() >= 7 && git_ref.len() <= 40 && git_ref.chars().all(|c| c.is_ascii_hexdigit());
+    if hex {
+        "commit-inherited"
+    } else {
+        "tag-inherited"
+    }
+}
+
+/// Sort key for a snapshot directory: the numeric components of its `M_m_p` name.
+/// `None` for a name that is not all-numeric components, which then sorts below
+/// every numeric one. Numeric comparison is required, not decoration —
+/// lexicographically `0_1_10` sorts BEFORE `0_1_9`, which would report the wrong
+/// snapshot as live and so the wrong answer to "is the deployed pin audited?".
+pub fn snapshot_order_key(dir_path: &str) -> Option<Vec<u64>> {
+    let name = dir_path.rsplit('/').next()?;
+    if name.is_empty() {
+        return None;
+    }
+    name.split('_')
+        .map(|c| c.parse::<u64>().ok())
+        .collect::<Option<Vec<u64>>>()
+}
+
+/// The LIVE snapshot: the highest-versioned directory in the listing. This is the
+/// pin production actually runs, so whether IT is covered is the question an
+/// inherited audit has to answer.
+pub fn live_snapshot(listing: &[String]) -> Option<String> {
+    listing
+        .iter()
+        .max_by(|a, b| {
+            snapshot_order_key(a)
+                .cmp(&snapshot_order_key(b))
+                .then_with(|| a.cmp(b))
+        })
+        .cloned()
+}
+
+/// What an inherited audit covers, and — the part that matters — what it does not.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub struct Coverage {
+    pub covered: Vec<String>,
+    pub uncovered: Vec<String>,
+    pub live: Option<String>,
+    /// `None` only when there is no snapshot at all to be live.
+    pub live_covered: Option<bool>,
+}
+
+/// Intersect the manifest's CLAIMS with the snapshot directories that actually
+/// exist, and compute the complement from the live tree.
+///
+/// The uncovered set is computed, never declared. A manifest that listed its own
+/// complement would be stale the day a snapshot is added — and the honest state
+/// (a new, unaudited pin) is exactly the one that must not be able to go unnoticed.
+/// A claim naming a directory that does not exist is dropped rather than trusted:
+/// the tree is the authority on what this repo carries.
+pub fn coverage(claimed: &[String], listing: &[String]) -> Coverage {
+    let mut sorted: Vec<String> = listing.to_vec();
+    sorted.sort_by(|a, b| {
+        snapshot_order_key(a)
+            .cmp(&snapshot_order_key(b))
+            .then_with(|| a.cmp(b))
+    });
+    sorted.dedup();
+    let (covered, uncovered): (Vec<String>, Vec<String>) =
+        sorted.iter().cloned().partition(|s| claimed.contains(s));
+    let live = live_snapshot(&sorted);
+    let live_covered = live.as_ref().map(|l| covered.contains(l));
+    Coverage {
+        covered,
+        uncovered,
+        live,
+        live_covered,
+    }
 }
 
 /// True if a Solidity path is a TEST file (excluded from source-LOC drift): it
@@ -344,17 +805,56 @@ pub fn changed_source_file_count(base: &[(String, String)], head: &[(String, Str
     changed
 }
 
-/// Index of the reference (newest) audit PDF, by the AUDITED commit/tag date
-/// (`audit_date_iso`, ISO-8601 UTC — lexicographic order == chronological). The
-/// audit date is the audited commit's own timestamp, NOT the PDF file's commit
-/// date, so several PDFs moved together in a single commit (which ties their file
-/// dates) still order by which audit is genuinely newer. The reference PDF's
-/// filename then supplies the drift-base anchor (tag or commit).
+/// Index of the newest audit PDF by the AUDITED commit/tag date (ISO-8601 UTC —
+/// lexicographic order == chronological). The audit date is the audited commit's
+/// own timestamp, NOT the PDF file's commit date, so several PDFs moved together
+/// in a single commit (which ties their file dates) still order by which audit is
+/// genuinely newer.
+///
+/// Two explicit policies, because both were silently decided before:
+/// - a PDF with an UNKNOWN date never wins over one with a known date. An empty
+///   string sorted below every real date only by accident of `String` ordering.
+/// - ties break to the FIRST index, not the last. `max_by` returns the last
+///   maximum, so once a bulk move collapsed every date onto one value, the
+///   "newest audit" was decided by path sort order — which is how the wrong PDF
+///   became the reference for the split repo (#128). First-wins is no more
+///   meaningful, but it is stated, and it is stable under a later insertion.
 pub fn newest_pdf_index(pdfs: &[AuditPdf]) -> Option<usize> {
-    pdfs.iter()
+    let best_known = pdfs
+        .iter()
         .enumerate()
-        .max_by(|(_, a), (_, b)| a.audit_date_iso.cmp(&b.audit_date_iso))
-        .map(|(i, _)| i)
+        .filter_map(|(i, p)| p.audit_date.iso().map(|d| (i, d)))
+        .fold(None::<(usize, &str)>, |acc, (i, d)| match acc {
+            Some((_, bd)) if bd >= d => acc,
+            _ => Some((i, d)),
+        });
+    match best_known {
+        Some((i, _)) => Some(i),
+        // Nothing is dated: nothing distinguishes them, so take the first rather
+        // than inventing an order.
+        None => (!pdfs.is_empty()).then_some(0),
+    }
+}
+
+/// Index of the REFERENCE audit PDF — the one the repo's verdict, anchor and
+/// coverage are computed against.
+///
+/// When any PDF's record claims coverage, the reference is the newest among THOSE.
+/// A superseded report with `covers: []` is real provenance and is kept, but it
+/// describes nothing this repo currently carries, so it must not be the record the
+/// repo is judged by. Picking by meaning beats picking by date or path order:
+/// nothing guarantees the covering report is also the newest file.
+pub fn reference_pdf_index(pdfs: &[AuditPdf]) -> Option<usize> {
+    let covering: Vec<AuditPdf> = pdfs
+        .iter()
+        .filter(|p| !p.covers.is_empty())
+        .cloned()
+        .collect();
+    if covering.is_empty() {
+        return newest_pdf_index(pdfs);
+    }
+    let chosen = newest_pdf_index(&covering)?;
+    pdfs.iter().position(|p| p.path == covering[chosen].path)
 }
 
 /// Strictly-newer comparison for two ISO-8601 UTC timestamps. Same fixed format
@@ -386,15 +886,19 @@ pub fn is_stale(newer_tag_exists: Option<bool>, source_changed: Option<bool>) ->
     source_changed.or(newer_tag_exists)
 }
 
-/// Whether a tag newer than the audit anchor exists, `None` when the latest
-/// tag's date could not be read.
+/// Whether a tag newer than the audit anchor exists, `None` when EITHER date
+/// could not be read.
 ///
-/// The `Option` is the whole point, so this is not inlined at the call site: a
+/// The `Option`s are the whole point, so this is not inlined at the call site: a
 /// failed tag lookup is not evidence that no newer tag exists, and collapsing
 /// it to `false` is what let a scan which learned nothing report every audited
-/// repo `current`.
-pub fn newer_tag_exists(latest_tag_iso: Option<&str>, audited_date: &str) -> Option<bool> {
-    latest_tag_iso.map(|t| newer_than(t, audited_date))
+/// repo `current`. An unknown AUDIT date is the same failure from the other side —
+/// every tag is "newer" than a date that does not exist.
+pub fn newer_tag_exists(latest_tag_iso: Option<&str>, audited_date: Option<&str>) -> Option<bool> {
+    match (latest_tag_iso, audited_date) {
+        (Some(t), Some(a)) => Some(newer_than(t, a)),
+        _ => None,
+    }
 }
 
 /// Sort rank for the audited-repos list: stale first, then unknown, then
@@ -412,6 +916,11 @@ pub fn staleness_rank(is_stale: Option<bool>) -> u8 {
 /// Coverage taxonomy from the facts the classification turns on. Staleness is
 /// delegated to `is_stale` so the rendered verdict and the `is_stale` flag cannot
 /// disagree about what stale means.
+///
+/// This is the LOCAL taxonomy only. `Inherited` and the `Unknown` an unvalidated
+/// inherited claim earns are decided upstream by PROVENANCE, before drift is even
+/// a question: whether an audit performed elsewhere covers this repo's snapshots
+/// is not something a diff against a local ref can answer.
 pub fn classify_external_audit(
     has_pdf: bool,
     has_tags: bool,
@@ -653,13 +1162,62 @@ mod tests {
 
     // ---- classify_anchor ----
     #[test]
-    fn classify_prefers_tag_and_skips_resolution() {
-        // a vX.Y.Z name is tag-anchored — the commit resolver must never run.
+    fn classify_resolves_the_tag_and_carries_its_date() {
+        // A vX.Y.Z name is tag-anchored ONLY once the tag resolves, and the same
+        // call that resolves it dates it — the anchor cannot exist undated.
+        let anchor = classify_anchor("rain.factory.v0.1.1-r2.0.may-2026.pdf", |r| {
+            assert_eq!(r, "v0.1.1"); // exactly the filename token is resolved
+            Some("2026-05-12T15:15:26Z".to_string())
+        });
         assert_eq!(
-            classify_anchor("rain.factory.v0.1.1-r2.0.may-2026.pdf", |_| panic!(
-                "resolver must not run for a tag-anchored name"
-            )),
-            AuditAnchor::Tag("v0.1.1".into())
+            anchor,
+            AuditAnchor::Tag {
+                tag: "v0.1.1".into(),
+                date: "2026-05-12T15:15:26Z".into()
+            }
+        );
+        assert_eq!(anchor.kind(), "tag");
+        assert_eq!(anchor.drift_base_ref(), Some("v0.1.1"));
+        assert_eq!(anchor.resolved_date(), Some("2026-05-12T15:15:26Z"));
+        assert!(anchor.names_tag());
+    }
+
+    /// THE #128 FIX. A tag used to be trusted on sight, so a PDF carried into a
+    /// repo where its tag does not exist still reported `anchorKind: "tag"`, a
+    /// date, and a compare link — all invented. An unresolvable tag now yields a
+    /// distinct state that offers NO ref, NO date and NO compare base. Against the
+    /// pre-fix code this assertion fails: it returned `Tag("v0.1.1")`.
+    #[test]
+    fn an_unresolvable_tag_is_broken_not_anchored_and_yields_no_date_or_base() {
+        let anchor = classify_anchor("rain.factory.v0.1.1-r2.0.may-2026.pdf", |_| None);
+        assert_eq!(anchor, AuditAnchor::UnresolvedTag("v0.1.1".into()));
+        assert_eq!(anchor.kind(), "unresolved-tag");
+        assert_eq!(
+            anchor.drift_base_ref(),
+            None,
+            "a ref that does not resolve is not a drift base"
+        );
+        assert_eq!(anchor.resolved_date(), None);
+        assert_ne!(
+            anchor.kind(),
+            "tag",
+            "must not claim a tag anchor nobody could find"
+        );
+        // The naming convention IS followed — the tag is present, just broken.
+        assert!(anchor.names_tag());
+        // And no compare URL can be built from it (the 404 link the split published).
+        assert_eq!(
+            compare_url("rainlanguage", "rain.factory.deploy", None, "main"),
+            None
+        );
+        // Nor is its date faked from the commit that last touched the file.
+        assert_eq!(
+            audit_date_for(
+                &AuditProvenance::Local(anchor),
+                None,
+                "2026-07-24T08:42:11Z"
+            ),
+            AuditDate::Unknown
         );
     }
 
@@ -668,21 +1226,39 @@ mod tests {
         // raindex's PDF: a hex token that resolves → commit-anchored at e686b4d.
         let anchor = classify_anchor("raindex.e686b4d.apr-2026.pdf", |sha| {
             assert_eq!(sha, "e686b4d"); // exactly the filename token is resolved
-            true
+            Some("2026-04-01T00:00:00Z".to_string())
         });
-        assert_eq!(anchor, AuditAnchor::Commit("e686b4d".into()));
+        assert_eq!(
+            anchor,
+            AuditAnchor::Commit {
+                sha: "e686b4d".into(),
+                date: "2026-04-01T00:00:00Z".into()
+            }
+        );
         assert_eq!(anchor.kind(), "commit");
         assert_eq!(anchor.drift_base_ref(), Some("e686b4d"));
+        assert!(!anchor.names_tag());
     }
 
     #[test]
     fn classify_unanchored_when_hex_does_not_resolve() {
         // a hex-looking token that resolution rejects falls back to unanchored — a
-        // false positive must never error or masquerade as a commit anchor.
-        let anchor = classify_anchor("raindex.deadbeef.jan-2026.pdf", |_| false);
+        // false positive must never error or masquerade as a commit anchor. Unlike
+        // an unresolved TAG this is not a broken claim: an all-hex word in a
+        // date-only name never asserted a ref in the first place.
+        let anchor = classify_anchor("raindex.deadbeef.jan-2026.pdf", |_| None);
         assert_eq!(anchor, AuditAnchor::Unanchored);
         assert_eq!(anchor.kind(), "unanchored");
         assert_eq!(anchor.drift_base_ref(), None);
+        // So it KEEPS the file-commit fallback, labelled as such.
+        assert_eq!(
+            audit_date_for(
+                &AuditProvenance::Local(anchor),
+                None,
+                "2026-01-09T00:00:00Z"
+            ),
+            AuditDate::FileCommit("2026-01-09T00:00:00Z".into())
+        );
     }
 
     #[test]
@@ -696,22 +1272,44 @@ mod tests {
         );
     }
 
-    // ---- anchor_ref ----
+    // ---- drift_base ----
     #[test]
-    fn anchor_ref_prefers_tag_then_commit_then_none() {
-        // A vX.Y.Z tag is the ref (same precedence as classify_anchor).
+    fn drift_base_uses_the_resolved_anchor_and_never_a_broken_one() {
+        let dated = |d: &str| d.to_string();
         assert_eq!(
-            anchor_ref("rain.factory.v0.1.1-r2.0.may-2026.pdf").as_deref(),
+            drift_base(
+                &AuditAnchor::Tag {
+                    tag: "v0.1.1".into(),
+                    date: dated("2026-05-12T00:00:00Z")
+                },
+                "filesha"
+            )
+            .as_deref(),
             Some("v0.1.1")
         );
-        // No tag but a whole-hex token → that commit candidate is the ref (returned
-        // WITHOUT resolution — unlike classify_anchor, no I/O here).
         assert_eq!(
-            anchor_ref("raindex.e686b4d.apr-2026.pdf").as_deref(),
+            drift_base(
+                &AuditAnchor::Commit {
+                    sha: "e686b4d".into(),
+                    date: dated("2026-04-01T00:00:00Z")
+                },
+                "filesha"
+            )
+            .as_deref(),
             Some("e686b4d")
         );
-        // Neither → None; the caller then dates the PDF by its own file commit.
-        assert_eq!(anchor_ref("protofire.rain.metadata.feb-2026.pdf"), None);
+        // Unanchored keeps the legacy fallback to the PDF's own commit …
+        assert_eq!(
+            drift_base(&AuditAnchor::Unanchored, "filesha").as_deref(),
+            Some("filesha")
+        );
+        assert_eq!(drift_base(&AuditAnchor::Unanchored, "").as_deref(), None);
+        // … but a STATED tag that does not resolve gets no base at all. Falling
+        // back here measures drift from the commit that last moved the PDF.
+        assert_eq!(
+            drift_base(&AuditAnchor::UnresolvedTag("v0.1.1".into()), "filesha"),
+            None
+        );
     }
 
     // ---- is_test_path ----
@@ -885,27 +1483,92 @@ mod tests {
         assert_eq!(changed_source_file_count(&base, &head), 0);
     }
 
-    // ---- newest_pdf_index ----
-    #[test]
-    fn newest_pdf_is_by_audit_date_not_file_commit_date() {
-        // Every PDF shares ONE file-commit date (as when a batch of PDFs is moved
-        // into audit/protofire/ in a single commit) — so file-commit date can't
-        // distinguish them. The AUDITED commit/tag date (audit_date_iso) must.
-        let mk = |f: &str, audit_iso: &str| AuditPdf {
+    // ---- newest_pdf_index / reference_pdf_index ----
+
+    /// Build a local-record PDF with a known audit date.
+    fn pdf(f: &str, audit: AuditDate) -> AuditPdf {
+        AuditPdf {
             filename: f.into(),
             path: format!("audit/protofire/{f}"),
             last_commit_iso: "2026-07-14T00:00:00Z".into(),
             commit_sha: "sha".into(),
-            audit_date_iso: audit_iso.into(),
-        };
+            audit_date: audit,
+            provenance: AuditProvenance::Local(AuditAnchor::Unanchored),
+            covers: Vec::new(),
+        }
+    }
+    fn dated(iso: &str) -> AuditDate {
+        AuditDate::Anchor(iso.into())
+    }
+
+    #[test]
+    fn newest_pdf_is_by_audit_date_not_file_commit_date() {
+        // Every PDF shares ONE file-commit date (as when a batch of PDFs is moved
+        // into audit/protofire/ in a single commit) — so file-commit date can't
+        // distinguish them. The AUDITED commit/tag date must.
         let pdfs = vec![
-            mk("old.pdf", "2025-01-01T00:00:00Z"),
-            mk("new.pdf", "2026-05-12T00:00:00Z"),
-            mk("mid.pdf", "2026-02-01T00:00:00Z"),
+            pdf("old.pdf", dated("2025-01-01T00:00:00Z")),
+            pdf("new.pdf", dated("2026-05-12T00:00:00Z")),
+            pdf("mid.pdf", dated("2026-02-01T00:00:00Z")),
         ];
         // Newest is the newest AUDIT (index 1), even though all file dates tie.
         assert_eq!(newest_pdf_index(&pdfs), Some(1));
         assert_eq!(newest_pdf_index(&[]), None);
+    }
+
+    /// An undated PDF must never outrank a dated one, and ties must not be decided
+    /// by position. `max_by` returned the LAST maximum, so once a bulk move
+    /// collapsed every date the reference was picked by path sort order (#128).
+    #[test]
+    fn unknown_dates_never_win_and_ties_break_to_the_first() {
+        let pdfs = vec![
+            pdf("a.pdf", AuditDate::Unknown),
+            pdf("b.pdf", dated("2026-02-01T00:00:00Z")),
+            pdf("c.pdf", AuditDate::Unknown),
+        ];
+        assert_eq!(
+            newest_pdf_index(&pdfs),
+            Some(1),
+            "the only DATED audit is the newest one"
+        );
+        let tied = vec![
+            pdf("a.pdf", dated("2026-02-01T00:00:00Z")),
+            pdf("b.pdf", dated("2026-02-01T00:00:00Z")),
+        ];
+        assert_eq!(newest_pdf_index(&tied), Some(0), "ties break to the first");
+        // Nothing dated at all: still a deterministic answer, not a panic.
+        let blind = vec![
+            pdf("a.pdf", AuditDate::Unknown),
+            pdf("b.pdf", AuditDate::Unknown),
+        ];
+        assert_eq!(newest_pdf_index(&blind), Some(0));
+    }
+
+    /// The reference is the record that covers something. A superseded report is
+    /// real provenance and is kept, but it describes nothing this repo carries, so
+    /// judging the repo by it would report coverage that does not exist. Picking by
+    /// MEANING also survives the case the date rule gets wrong: here the covering
+    /// report is neither the newest nor the first.
+    #[test]
+    fn reference_prefers_a_record_that_covers_something() {
+        let mut covering = pdf("inherited.r2.pdf", dated("2026-05-12T00:00:00Z"));
+        covering.covers = vec!["src/generated/0_1_3".into()];
+        let pdfs = vec![
+            pdf("inherited.r1.pdf", dated("2026-02-11T00:00:00Z")),
+            covering,
+            pdf("inherited.r3.pdf", dated("2026-06-01T00:00:00Z")),
+        ];
+        assert_eq!(
+            reference_pdf_index(&pdfs),
+            Some(1),
+            "the covering record is the reference even though a newer one exists"
+        );
+        // With nothing covering anything, it falls back to plain recency.
+        let none_cover = vec![
+            pdf("a.pdf", dated("2026-02-11T00:00:00Z")),
+            pdf("b.pdf", dated("2026-06-01T00:00:00Z")),
+        ];
+        assert_eq!(reference_pdf_index(&none_cover), Some(1));
     }
 
     // ---- newer_than ----
@@ -954,17 +1617,24 @@ mod tests {
     #[test]
     fn an_unreadable_latest_tag_is_unknown_not_absent() {
         assert_eq!(
-            newer_tag_exists(None, "2026-01-01T00:00:00Z"),
+            newer_tag_exists(None, Some("2026-01-01T00:00:00Z")),
             None,
             "a failed tag lookup must not read as 'no newer tag exists'"
         );
         assert_eq!(
-            newer_tag_exists(Some("2026-06-01T00:00:00Z"), "2026-01-01T00:00:00Z"),
+            newer_tag_exists(Some("2026-06-01T00:00:00Z"), Some("2026-01-01T00:00:00Z")),
             Some(true)
         );
         assert_eq!(
-            newer_tag_exists(Some("2025-06-01T00:00:00Z"), "2026-01-01T00:00:00Z"),
+            newer_tag_exists(Some("2025-06-01T00:00:00Z"), Some("2026-01-01T00:00:00Z")),
             Some(false)
+        );
+        // The same failure from the other side: with no AUDIT date, every tag
+        // trivially looks newer. Unknown, not stale.
+        assert_eq!(
+            newer_tag_exists(Some("2026-06-01T00:00:00Z"), None),
+            None,
+            "an unknown audit date is not evidence that a tag is newer than it"
         );
     }
 
@@ -1021,6 +1691,325 @@ mod tests {
             classify_external_audit(true, true, Some(true), None),
             ExternalAudit::Stale
         );
+    }
+
+    // ---- the inherited-audit convention ----
+
+    /// The real manifest shape, as `rain.factory.deploy` carries it: r2.0 covers
+    /// the two byte-identical snapshots built from the audited source, and r1.0 is
+    /// retained with ZERO coverage.
+    fn manifest_json() -> String {
+        r#"{
+          "schema": 1,
+          "records": [
+            {
+              "pdf": "inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf",
+              "sha256": "6c4ecf9f47ebf96cda58a856901ccd25dd83b3a8b0e8524a00adb60f149894ca",
+              "report": "r2.0",
+              "reportDate": "2026-05-27",
+              "source": { "org": "rainlanguage", "repo": "rain.factory", "ref": "v0.1.1" },
+              "covers": [
+                { "snapshot": "src/generated/0_1_3", "bytecodeHash": "0xf21b813c7075a1621285df3a8369d0652c31ea80cb807be1aaadafeecd134475" },
+                { "snapshot": "src/generated/0_1_4", "bytecodeHash": "0xf21b813c7075a1621285df3a8369d0652c31ea80cb807be1aaadafeecd134475" }
+              ],
+              "basis": "rebuilt from the audited source; reproduces both snapshots byte-for-byte"
+            },
+            {
+              "pdf": "inherited.rain.factory.1a92a86.feb-2026.pdf",
+              "sha256": "ffb52e9f5d84eaa66c35b760aaf4b8d1ebcd6ac10b2da1ab601cc1f3f272ec61",
+              "report": "r1.0",
+              "reportDate": "2026-02-11",
+              "source": { "org": "rainlanguage", "repo": "rain.factory", "ref": "1a92a8688249aa5a8f4e82d5ed584604515f1ea0" },
+              "covers": [],
+              "supersededBy": "inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf",
+              "basis": "an earlier state of the same source; no snapshot here builds from it"
+            }
+          ]
+        }"#
+        .to_string()
+    }
+
+    #[test]
+    fn the_prefix_is_the_discriminant_and_survives_anchor_parsing() {
+        assert!(is_inherited_pdf(
+            "inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf"
+        ));
+        assert!(!is_inherited_pdf("rain.factory.v0.1.1-r2.0.may-2026.pdf"));
+        // Case-exact: `Inherited.` is not the marker.
+        assert!(!is_inherited_pdf("Inherited.rain.factory.v0.1.1.pdf"));
+        // The prefix must not break the anchor parsers it sits in front of, and
+        // must not itself look like a commit candidate.
+        assert_eq!(
+            parse_audited_tag("inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf").as_deref(),
+            Some("v0.1.1")
+        );
+        assert_eq!(
+            parse_commit_candidate("inherited.rain.factory.1a92a86.feb-2026.pdf").as_deref(),
+            Some("1a92a86")
+        );
+        assert_eq!(parse_commit_candidate("inherited.x.pdf"), None);
+    }
+
+    #[test]
+    fn parses_the_manifest_including_an_empty_covers() {
+        let m = parse_inherited_manifest(&manifest_json()).expect("valid manifest");
+        assert_eq!(m.records.len(), 2);
+        let r2 = m
+            .record_for("inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf")
+            .expect("r2 record");
+        assert_eq!(r2.source.org, "rainlanguage");
+        assert_eq!(r2.source.repo, "rain.factory");
+        assert_eq!(r2.source.git_ref, "v0.1.1");
+        assert_eq!(r2.report_date, "2026-05-27");
+        assert_eq!(r2.covers.len(), 2);
+        assert_eq!(r2.covers[0].snapshot, "src/generated/0_1_3");
+        assert_eq!(
+            r2.source.ref_url(),
+            "https://github.com/rainlanguage/rain.factory/tree/v0.1.1"
+        );
+        // An EMPTY covers is legal and load-bearing: real provenance, no current
+        // coverage. Forcing every report to claim a snapshot would manufacture the
+        // over-claim the convention exists to prevent.
+        let r1 = m
+            .record_for("inherited.rain.factory.1a92a86.feb-2026.pdf")
+            .expect("r1 record");
+        assert!(r1.covers.is_empty());
+        assert_eq!(
+            r1.superseded_by.as_deref(),
+            Some("inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf")
+        );
+        assert_eq!(inherited_anchor_kind(&r2.source.git_ref), "tag-inherited");
+        assert_eq!(
+            inherited_anchor_kind(&r1.source.git_ref),
+            "commit-inherited"
+        );
+    }
+
+    /// Half-readable provenance is not provenance. Every one of these yields
+    /// `None` for the WHOLE manifest, which the scanner reports as `unknown` —
+    /// never a partially-trusted record, and never a fabricated date.
+    #[test]
+    fn an_unreadable_manifest_is_rejected_whole_never_partly() {
+        let base = manifest_json();
+        assert!(parse_inherited_manifest("not json").is_none());
+        // A future schema's records are not this schema's records.
+        assert!(
+            parse_inherited_manifest(&base.replace("\"schema\": 1", "\"schema\": 2")).is_none()
+        );
+        assert!(
+            parse_inherited_manifest(&base.replace("\"schema\": 1", "\"schema\": \"1\"")).is_none()
+        );
+        // A record for a PDF that does not declare the prefix.
+        assert!(parse_inherited_manifest(&base.replace(
+            "\"pdf\": \"inherited.rain.factory.v0.1.1",
+            "\"pdf\": \"rain.factory.v0.1.1"
+        ))
+        .is_none());
+        // A malformed date, a short hash, a missing basis: each kills the manifest.
+        assert!(parse_inherited_manifest(&base.replace("2026-05-27", "may 2026")).is_none());
+        assert!(parse_inherited_manifest(&base.replace("2026-05-27", "2026-13-01")).is_none());
+        assert!(parse_inherited_manifest(&base.replace(
+            "6c4ecf9f47ebf96cda58a856901ccd25dd83b3a8b0e8524a00adb60f149894ca",
+            "deadbeef"
+        ))
+        .is_none());
+        assert!(parse_inherited_manifest(&base.replace(
+            "\"basis\": \"rebuilt from the audited source; reproduces both snapshots byte-for-byte\"",
+            "\"basis\": \"\""
+        ))
+        .is_none());
+        // A DUPLICATE pdf is ambiguous about which record governs.
+        let dup = base.replace(
+            "inherited.rain.factory.1a92a86.feb-2026.pdf",
+            "inherited.rain.factory.v0.1.1-r2.0.may-2026.pdf",
+        );
+        assert!(
+            parse_inherited_manifest(&dup).is_none(),
+            "two records for one PDF must not silently pick one"
+        );
+    }
+
+    /// The manifest is repo content, so it is attacker-influenceable input that
+    /// reaches an API path and a rendered link. Anything path-shaped is refused
+    /// rather than sanitised at the point of use.
+    #[test]
+    fn path_shaped_manifest_fields_are_refused() {
+        let base = manifest_json();
+        for (from, to) in [
+            ("\"repo\": \"rain.factory\"", "\"repo\": \"../../evil\""),
+            ("\"org\": \"rainlanguage\"", "\"org\": \"a/b\""),
+            ("\"ref\": \"v0.1.1\"", "\"ref\": \"../heads/main\""),
+        ] {
+            assert!(
+                parse_inherited_manifest(&base.replace(from, to)).is_none(),
+                "{to} must be refused"
+            );
+        }
+        // Snapshot paths: no traversal, no absolute, and never into `.audit/` —
+        // the audit SKILL's stamp is a different signal an external report cannot
+        // cover.
+        for to in [
+            "\"snapshot\": \"../../etc\"",
+            "\"snapshot\": \"/etc\"",
+            "\"snapshot\": \".audit\"",
+        ] {
+            assert!(
+                parse_inherited_manifest(
+                    &base.replace("\"snapshot\": \"src/generated/0_1_3\"", to)
+                )
+                .is_none(),
+                "{to} must be refused"
+            );
+        }
+    }
+
+    /// The complement is computed from the LIVE TREE, never read from the
+    /// manifest. That is what makes the record self-correcting: a snapshot added
+    /// later shows up uncovered, and the live pin's coverage flips, with no
+    /// manifest edit — the honest state cannot go unnoticed.
+    #[test]
+    fn coverage_computes_the_uncovered_set_from_the_tree() {
+        let claimed = vec![
+            "src/generated/0_1_3".to_string(),
+            "src/generated/0_1_4".to_string(),
+        ];
+        let listing = vec![
+            "src/generated/0_1_5".to_string(),
+            "src/generated/0_1_3".to_string(),
+            "src/generated/0_1_4".to_string(),
+        ];
+        let c = coverage(&claimed, &listing);
+        assert_eq!(
+            c.covered,
+            vec!["src/generated/0_1_3", "src/generated/0_1_4"]
+        );
+        assert_eq!(
+            c.uncovered,
+            vec!["src/generated/0_1_5"],
+            "the live pin is uncovered and must be named"
+        );
+        assert_eq!(c.live.as_deref(), Some("src/generated/0_1_5"));
+        assert_eq!(
+            c.live_covered,
+            Some(false),
+            "the pin production actually runs is NOT audited"
+        );
+
+        // A later snapshot lands and nobody touches the manifest: it is uncovered
+        // and it becomes the live pin, automatically.
+        let mut grown = listing.clone();
+        grown.push("src/generated/0_1_6".to_string());
+        let c2 = coverage(&claimed, &grown);
+        assert_eq!(c2.live.as_deref(), Some("src/generated/0_1_6"));
+        assert_eq!(c2.uncovered.len(), 2);
+        assert_eq!(c2.live_covered, Some(false));
+
+        // A claim naming a directory that does not exist is dropped: the tree is
+        // the authority on what this repo carries.
+        let c3 = coverage(&["src/generated/9_9_9".to_string()], &listing);
+        assert!(c3.covered.is_empty());
+        assert_eq!(c3.uncovered.len(), 3);
+    }
+
+    /// Every snapshot covered ⇒ the live pin is covered. The flag must be able to
+    /// say YES, or `false` carries no information.
+    #[test]
+    fn full_coverage_reports_the_live_pin_covered() {
+        let dirs = vec![
+            "src/generated/0_1_3".to_string(),
+            "src/generated/0_1_4".to_string(),
+        ];
+        let c = coverage(&dirs, &dirs);
+        assert!(c.uncovered.is_empty());
+        assert_eq!(c.live_covered, Some(true));
+        // No snapshots at all: nothing is live, so the flag is absent rather than
+        // a `false` about a pin that does not exist.
+        let empty = coverage(&[], &[]);
+        assert_eq!(empty.live, None);
+        assert_eq!(empty.live_covered, None);
+    }
+
+    /// Snapshot versions compare NUMERICALLY. Lexicographically `0_1_10` sorts
+    /// before `0_1_9`, which would name the wrong directory as the live pin — and
+    /// so answer the only question that matters ("is the deployed pin audited?")
+    /// about the wrong deployment.
+    #[test]
+    fn the_live_snapshot_is_the_highest_version_not_the_last_string() {
+        let dirs = vec![
+            "src/generated/0_1_9".to_string(),
+            "src/generated/0_1_10".to_string(),
+            "src/generated/0_1_2".to_string(),
+        ];
+        assert_eq!(
+            live_snapshot(&dirs).as_deref(),
+            Some("src/generated/0_1_10")
+        );
+        assert_eq!(
+            snapshot_order_key("src/generated/0_1_10"),
+            Some(vec![0, 1, 10])
+        );
+        // A non-numeric name has no version to compare, so it never outranks one
+        // that does — but it is still listed rather than dropped.
+        let mixed = vec![
+            "src/generated/legacy".to_string(),
+            "src/generated/0_1_3".to_string(),
+        ];
+        assert_eq!(snapshot_order_key("src/generated/legacy"), None);
+        assert_eq!(
+            live_snapshot(&mixed).as_deref(),
+            Some("src/generated/0_1_3")
+        );
+        assert_eq!(coverage(&[], &mixed).uncovered.len(), 2);
+    }
+
+    /// An inherited date is dated by the SOURCE ref, and labelled so it can never
+    /// be confused with a local anchor or a file-move date.
+    #[test]
+    fn an_inherited_record_dates_from_the_source_ref() {
+        let src = InheritedSource {
+            org: "rainlanguage".into(),
+            repo: "rain.factory".into(),
+            git_ref: "v0.1.1".into(),
+        };
+        let d = audit_date_for(
+            &AuditProvenance::Inherited(src.clone()),
+            Some("2026-05-12T15:15:26Z"),
+            "2026-07-24T08:42:11Z",
+        );
+        assert_eq!(d.iso(), Some("2026-05-12T15:15:26Z"));
+        assert_eq!(d.source(), "inherited-anchor");
+        assert_ne!(
+            d.iso(),
+            Some("2026-07-24T08:42:11Z"),
+            "the split commit is not the audit date"
+        );
+        // A DECLARED inherited claim that could not be validated knows nothing —
+        // and must not quietly borrow the file-commit date.
+        let bad = audit_date_for(
+            &AuditProvenance::UnverifiedInherited("no record for this PDF"),
+            None,
+            "2026-07-24T08:42:11Z",
+        );
+        assert_eq!(bad, AuditDate::Unknown);
+        assert_eq!(bad.iso(), None);
+        assert_eq!(bad.source(), "unknown");
+        assert_eq!(AuditProvenance::Inherited(src).kind(), "inherited");
+    }
+
+    #[test]
+    fn inherited_is_its_own_verdict_string() {
+        assert_eq!(ExternalAudit::Inherited.as_str(), "inherited");
+        // Distinct from every other verdict — it is neither a clean bill of health
+        // nor a confirmed gap.
+        for other in [
+            ExternalAudit::Never,
+            ExternalAudit::Na,
+            ExternalAudit::Stale,
+            ExternalAudit::Current,
+            ExternalAudit::Unknown,
+        ] {
+            assert_ne!(ExternalAudit::Inherited.as_str(), other.as_str());
+        }
     }
 
     // ---- days_between ----
