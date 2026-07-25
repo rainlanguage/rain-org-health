@@ -1109,6 +1109,115 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
   assert(collect(detail, "li").length === 2, "renders exactly the 2 issues");
 });
 
+// #69: the FSM report groups states by WHO MUST ACT NEXT — three actor headings
+// (producer / vetter / human), and every modeled state files under exactly one of
+// them (no fourth "misc" bucket). Each .fsm-lane is one actor group: its header
+// names the actor, its .sk boxes are that actor's states.
+function ownerGroups(box) {
+  return collect(box, "fsm-lane").map((g) => ({
+    title: textOf(collect(g, "fsm-lane-h")[0] || makeEl("div")),
+    states: collect(g, "sk").map((s) => s.textContent),
+  }));
+}
+
+Deno.test("pipeline FSM: states group under the three actor headings, no fourth bucket", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 1, closeCandidateIssues: 4 },
+    lanes: {
+      "vet-lifecycle": {
+        "un-vetted": { count: 2, prs: [] },
+        "awaiting-re-vet": { count: 1, prs: [] },
+      },
+      "vetter-verdicts": {
+        "ai:ready": { count: 1, prs: [] },
+        "ai:reject": { count: 1, prs: [] },
+        "ai:relink": { count: 1, prs: [] },
+        "ai:design": { count: 1, prs: [] },
+        "ai:close-candidate": { count: 1, prs: [] },
+      },
+      "producer-blocked": {
+        "ai:blocked-deploy": { count: 1, prs: [] },
+        "ai:blocked-infra": { count: 1, prs: [] },
+        "ai:blocked-on": { count: 1, prs: [] },
+      },
+      "human-decisions": {
+        "human:reject": { count: 1, prs: [] },
+        "human:design": { count: 1, prs: [] },
+        "human:close-candidate": { count: 1, prs: [] },
+      },
+    },
+  });
+  const groups = ownerGroups(box);
+  assert(
+    groups.length === 3,
+    `exactly three actor groups (no misc bucket): ${groups.length}`,
+  );
+  assert(
+    groups[0].title.includes("Producer action") &&
+      groups[1].title.includes("Vetter action") &&
+      groups[2].title.includes("Human action"),
+    `headings are the three actors in order: ${JSON.stringify(groups.map((g) => g.title))}`,
+  );
+  const [producer, vetter, human] = groups;
+  // Vetter owns the two vet-lifecycle states.
+  assert(
+    ["un-vetted", "awaiting-re-vet"].every((s) => vetter.states.includes(s)),
+    `vetter states: ${JSON.stringify(vetter.states)}`,
+  );
+  // Producer owns the two vetter-verdict rework states.
+  assert(
+    ["ai:reject", "ai:relink"].every((s) => producer.states.includes(s)),
+    `producer states: ${JSON.stringify(producer.states)}`,
+  );
+  // Human owns the merge/ruling/close states + both close-candidate variants.
+  assert(
+    [
+      "ai:ready",
+      "ai:design",
+      "ai:close-candidate (PRs)",
+      "ai:close-candidate (issues)",
+      "human:design",
+      "human:close-candidate",
+    ].every((s) => human.states.includes(s)),
+    `human states: ${JSON.stringify(human.states)}`,
+  );
+  // Every state box sits under exactly one heading (no leaks into a fourth group).
+  const total = groups.reduce((n, g) => n + g.states.length, 0);
+  assert(total === 14, `all 14 states filed once: ${total}`);
+});
+
+// #69: the four historically dual-owner states each resolve to ONE actor.
+Deno.test("pipeline FSM: ambiguous states resolve to a single owner", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
+    lanes: {
+      "producer-blocked": {
+        "ai:blocked-deploy": { count: 1, prs: [] },
+        "ai:blocked-infra": { count: 1, prs: [] },
+        "ai:blocked-on": { count: 1, prs: [] },
+      },
+      "human-decisions": { "human:reject": { count: 1, prs: [] } },
+    },
+  });
+  const groups = ownerGroups(box);
+  const owner = (state) => {
+    const g = groups.find((g) => g.states.includes(state));
+    return g ? g.title : null;
+  };
+  // human:reject → producer (the FSM's sole exit is the producer reworking per note).
+  assert(
+    (owner("human:reject") || "").includes("Producer action"),
+    `human:reject is producer-owned: ${owner("human:reject")}`,
+  );
+  // The three blocked states → human (the actor that actually unblocks each).
+  for (const s of ["ai:blocked-deploy", "ai:blocked-infra", "ai:blocked-on"]) {
+    assert(
+      (owner(s) || "").includes("Human action"),
+      `${s} is human-owned: ${owner(s)}`,
+    );
+  }
+});
+
 // ---- deployments.html: known owners ----
 
 // renderDeployments takes (document, $, data) as its own params, so bind with no
