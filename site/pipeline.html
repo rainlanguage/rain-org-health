@@ -178,6 +178,7 @@
   .fsm-lane { margin: 14px 0 2px; }
   .fsm-lane-h { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
   .fsm-lane-h .lct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 650; text-transform: none; letter-spacing: 0; }
+  .fsm-lane-h .lsub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-3); text-transform: none; letter-spacing: 0; margin-left: -4px; }
   .fsm-lane .fsm-grid { margin: 0; }
   /* ---- External (Protofire) audit coverage ---- */
   .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
@@ -340,13 +341,24 @@ function renderFsm(hq) {
     alarm.append(el("span", "an", "0"), atxt);
   }
 
-  // The full machine, grouped by lane (issue-pr-cron `human-queue --json` `lanes`
-  // object: lane -> state -> { count, prs:[{repo,number,url,title}] }). The object is
-  // SPARSE (only non-empty states are emitted), so the lane/state set below is the
-  // canonical shape — a state absent from the JSON renders zero (dimmed), keeping the
-  // machine's whole shape visible. laneItems maps a state key -> its PR list for the
-  // click-to-expand detail. closeCandidateIssues (open ai:close-candidate ISSUES, not
-  // PRs) is carried alongside as its own group so that inventory isn't lost.
+  // The full machine, grouped by WHO MUST ACT NEXT (#69). A modeled state is not just
+  // a lifecycle phase — it is an INBOX owned by exactly one of three actors: the
+  // producer (cron), the vetter (cron), or the human (@thedavidmeister). The top-level
+  // headings are those actors, so the panel answers "whose inbox is this in — who do I
+  // nudge?" A state that cannot be filed under exactly one actor is a defect (an
+  // un-owned inbox stalls its token), so there is deliberately NO fourth "misc" bucket;
+  // the four historically dual-owner states are each resolved to one owner in STATES
+  // below, with the rationale inline.
+  //
+  // The tool's `human-queue --json` `lanes` object is still keyed by LIFECYCLE phase
+  // (vet-lifecycle / vetter-verdicts / producer-blocked / human-decisions) and is SPARSE
+  // (only non-empty states emitted). So each state descriptor carries `lane` = where its
+  // { count, prs:[{repo,number,url,title}] } is READ from, independent of `owner` = how
+  // it is GROUPED. STATES is the canonical shape — a state absent from the JSON renders
+  // zero (dimmed), keeping the machine's whole shape visible. laneItems maps a state key
+  // -> its PR list for the click-to-expand detail. (Ownership lives in this map until the
+  // tool emits an `owner` per state as the single source of truth — an issue-pr-cron
+  // follow-up, which would also split the two dual-owner states called out below.)
   const hasLanes = hq.lanes && typeof hq.lanes === "object";
   const laneItems = new Map();
   const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
@@ -358,76 +370,95 @@ function renderFsm(hq) {
     return b;
   };
 
-  // Renders every state (kind: flow = moving, rule = needs a human ruling, blk = a
-  // stuck/rework pile) in lane order vet-lifecycle → vetter-verdicts → producer-blocked
-  // → human-decisions, then the close-candidate ISSUES as a final group.
-  const LANES = [
-    { title: "vet lifecycle", lane: "vet-lifecycle", states: [
-      { state: "un-vetted", act: "awaiting first vet", kind: "flow" },
-      { state: "awaiting-re-vet", act: "head moved · re-vet", kind: "flow" },
-    ] },
-    { title: "vetter verdicts", lane: "vetter-verdicts", states: [
-      { state: "ai:ready", act: "merge", kind: "flow" },
-      { state: "ai:reject", act: "producer reworks", kind: "blk" },
-      { state: "ai:relink", act: "Closes → Refs", kind: "rule" },
-      { state: "ai:design", act: "rule", kind: "rule" },
-      { state: "ai:close-candidate", act: "close PR", kind: "rule" },
-    ] },
-    { title: "producer blocked", lane: "producer-blocked", states: [
-      { state: "ai:blocked-deploy", act: "diagnose deploy", kind: "blk" },
-      { state: "ai:blocked-infra", act: "fix infra", kind: "blk" },
-      { state: "ai:blocked-on", act: "unblock dep", kind: "blk" },
-    ] },
-    { title: "human decisions", lane: "human-decisions", states: [
-      { state: "human:reject", act: "override", kind: "rule" },
-      { state: "human:design", act: "override", kind: "rule" },
-      { state: "human:close-candidate", act: "override", kind: "rule" },
-    ] },
+  // Every modeled state → the actor whose inbox it sits in (`owner`), the human-queue
+  // `lane` its items live under, the next `act`, and a display `kind` (flow = moving,
+  // rule = needs a human ruling, blk = a stuck/rework pile). The four dual-owner
+  // resolutions (each defensible against the README FSM's own exit edges):
+  //   ai:blocked-deploy → HUMAN  — FSM exit is "human resolves deploy → re-work"; the
+  //       producer only DIAGNOSES the failed deploy, the human funds/dispatches it.
+  //   ai:blocked-infra  → HUMAN  — README's total-function fallback + a human-gated
+  //       state: "human clears infra / models a new state". A producer-fixable infra
+  //       blip (retrigger CI) never persists this label; a persisted one is a hand-off.
+  //   ai:blocked-on     → HUMAN  — FSM exit is "dependency merges → producer re-works",
+  //       and only the human merges a PR, so the human is the mover that unblocks it;
+  //       the dependency PR's own work is tracked under the dependency's own token.
+  //   human:reject      → PRODUCER — the FSM's SOLE exit is "producer reworks per note →
+  //       reworked-reject → re-vet". The human already acted (label + rework note); the
+  //       next mover is the producer. (The parked "final reject, no note" case is the
+  //       tool-side split human:reject-rework vs human:reject-final — see follow-up.)
+  const STATES = [
+    // Producer inbox — the producer moves these next.
+    { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", act: "rework per note", kind: "blk" },
+    { owner: "producer", state: "ai:relink", lane: "vetter-verdicts", act: "Closes → Refs", kind: "rule" },
+    { owner: "producer", state: "human:reject", lane: "human-decisions", act: "rework per note", kind: "blk" },
+    // Vetter inbox — the vetter records the next verdict.
+    { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", act: "first vet", kind: "flow" },
+    { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", act: "head moved · re-vet", kind: "flow" },
+    // Human inbox — a human merge / ruling / close.
+    { owner: "human", state: "ai:ready", lane: "vetter-verdicts", act: "merge", kind: "flow" },
+    { owner: "human", state: "ai:design", lane: "vetter-verdicts", act: "rule on design Q", kind: "rule" },
+    { owner: "human", state: "ai:close-candidate", lane: "vetter-verdicts", act: "close PR", kind: "rule", label: "ai:close-candidate (PRs)" },
+    { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", act: "resolve deploy", kind: "blk" },
+    { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", act: "clear infra", kind: "blk" },
+    { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", act: "merge dependency", kind: "blk" },
+    { owner: "human", state: "human:design", lane: "human-decisions", act: "decide", kind: "rule" },
+    { owner: "human", state: "human:close-candidate", lane: "human-decisions", act: "close", kind: "rule" },
+    // Close-candidate ISSUES: not a lane state — count from `counts`, items from the
+    // top-level `closeCandidateIssues`. A human closes the issue, so it lives here too.
+    { owner: "human", state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
+  ];
+
+  // Top-level headings = the three actors, in the #69 order (the two cron actors, then
+  // the human). Each state box carries `data-t` = its state key, so the click-to-expand
+  // detail is unchanged by the regrouping.
+  const OWNERS = [
+    { key: "producer", title: "Producer action", sub: "cron" },
+    { key: "vetter", title: "Vetter action", sub: "cron" },
+    { key: "human", title: "Human action", sub: "@thedavidmeister" },
   ];
 
   const grid = el("div"); // container appended into the panel below
   if (hasLanes) {
-    LANES.forEach((L) => {
+    OWNERS.forEach((O) => {
       const g = el("div", "fsm-grid");
-      let laneTotal = 0;
-      L.states.forEach((s) => {
-        const cell = laneState(L.lane, s.state);
-        const count = cell ? Number(cell.count) || 0 : 0;
-        laneTotal += count;
-        laneItems.set(s.state, (cell && cell.prs) || []);
-        // The PR close-candidate state and the close-candidate ISSUES group both read
-        // `ai:close-candidate`; qualify the PR one so the two never look identical.
-        const boxLabel = s.state === "ai:close-candidate" ? "ai:close-candidate (PRs)" : s.state;
-        g.append(stateBox(s.state, boxLabel, count, s.act, s.kind));
+      let ownerTotal = 0;
+      STATES.filter((s) => s.owner === O.key).forEach((s) => {
+        let count;
+        if (s.fromCounts) {
+          count = Number(c[s.fromCounts]) || 0;
+        } else {
+          const cell = laneState(s.lane, s.state);
+          count = cell ? Number(cell.count) || 0 : 0;
+          laneItems.set(s.state, (cell && cell.prs) || []);
+        }
+        ownerTotal += count;
+        g.append(stateBox(s.state, s.label || s.state, count, s.act, s.kind));
       });
       const lane = el("div", "fsm-lane");
       const h = el("div", "fsm-lane-h");
-      h.append(el("span", null, L.title), el("span", "lct", String(laneTotal)));
+      h.append(el("span", null, O.title), el("span", "lsub", O.sub), el("span", "lct", String(ownerTotal)));
       lane.append(h, g);
       grid.append(lane);
     });
-    // Close-candidate ISSUES (open ai:close-candidate issues, distinct from the PR state).
-    const ig = el("div", "fsm-grid");
-    ig.append(stateBox("closeCandidateIssues", "ai:close-candidate (issues)", Number(c.closeCandidateIssues) || 0, "close issue", "rule"));
-    const ilane = el("div", "fsm-lane");
-    const ih = el("div", "fsm-lane-h");
-    ih.append(el("span", null, "close-candidate issues"), el("span", "lct", String(Number(c.closeCandidateIssues) || 0)));
-    ilane.append(ih, ig);
-    grid.append(ilane);
   } else {
-    // Backward-compat: an older human-queue.json with no `lanes` — render the original
-    // 6 human-action states from the legacy `states`/`counts` keys so the panel never blanks.
+    // Backward-compat: an older human-queue.json with no `lanes` — render the 6 states
+    // the legacy `counts` keys carry (all human-owned under the actor mapping) from
+    // `counts`, so the panel never blanks.
     const legacy = [
       { key: "ai:ready", label: "ai:ready", n: c.ready, act: "merge", kind: "flow" },
-      { key: "ai:design", label: "ai:design", n: c.design, act: "rule", kind: "rule" },
-      { key: "closeCandidateIssues", label: "ai:close-candidate", n: c.closeCandidateIssues, act: "close", kind: "rule" },
-      { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, act: "diagnose deploy", kind: "blk" },
-      { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, act: "fix infra", kind: "blk" },
-      { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, act: "unblock dep", kind: "blk" },
+      { key: "ai:design", label: "ai:design", n: c.design, act: "rule on design Q", kind: "rule" },
+      { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, act: "close issue", kind: "rule" },
+      { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, act: "resolve deploy", kind: "blk" },
+      { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, act: "clear infra", kind: "blk" },
+      { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, act: "merge dependency", kind: "blk" },
     ];
     const g = el("div", "fsm-grid");
     legacy.forEach((s) => g.append(stateBox(s.key, s.label, s.n, s.act, s.kind)));
-    grid.append(g);
+    const lane = el("div", "fsm-lane");
+    const h = el("div", "fsm-lane-h");
+    h.append(el("span", null, "Human action"), el("span", "lsub", "@thedavidmeister"));
+    lane.append(h, g);
+    grid.append(lane);
   }
 
   // itemsFor returns { arr, issue } for a state key: the item list, and whether the
@@ -467,7 +498,9 @@ function renderFsm(hq) {
     link(null, "finite state machine", "https://github.com/rainlanguage/issue-pr-cron/blob/main/README.md"),
     " — every open PR/issue sits in exactly one modeled ",
     el("code", null, "ai:*"),
-    " state, and this is the daily conformance review"
+    " state, grouped here by ",
+    el("b", null, "who must act next"),
+    " (producer / vetter / human): a state that can't be filed under exactly one actor is an un-owned inbox where tokens stall"
   );
   if (hq.sample) note.append(" ", el("b", null, "(sample data — live once issue-pr-cron#41 lands)"));
   note.append(".");
