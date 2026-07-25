@@ -391,6 +391,11 @@ function renderFsm(hq) {
     { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", act: "rework per note", kind: "blk" },
     { owner: "producer", state: "ai:relink", lane: "vetter-verdicts", act: "Closes → Refs", kind: "rule" },
     { owner: "producer", state: "human:reject", lane: "human-decisions", act: "rework per note", kind: "blk" },
+    // Producer BACKLOG — open issues with no covering open PR (excl. human-gated / close-candidate):
+    // the biggest producer inbox, the untouched work it must turn into PRs. Not a lane state —
+    // count from `counts.uncoveredIssues`, items from the top-level `uncoveredIssues` (0 on an older
+    // human-queue.json that predates the field). See issue-pr-cron#66.
+    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
     // Vetter inbox — the vetter records the next verdict.
     { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", act: "first vet", kind: "flow" },
     { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", act: "head moved · re-vet", kind: "flow" },
@@ -466,6 +471,7 @@ function renderFsm(hq) {
   const itemsFor = (key) => {
     if (key === "leak") return { arr: hq.leaks || [], issue: false };
     if (key === "closeCandidateIssues") return { arr: hq.closeCandidateIssues || [], issue: true };
+    if (key === "uncoveredIssues") return { arr: hq.uncoveredIssues || [], issue: true };
     if (laneItems.has(key)) return { arr: laneItems.get(key), issue: false };
     return { arr: (hq.states && hq.states[key]) || [], issue: false };
   };
