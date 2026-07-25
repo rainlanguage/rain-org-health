@@ -237,10 +237,11 @@ function auditBox(data) {
   return box;
 }
 
-function fsmBox(hq) {
+function fsmBox(hq, history) {
   const box = makeEl("div");
   const document = {
     createElement: (t) => makeEl(t),
+    createElementNS: (_ns, t) => makeEl(t),
     createDocumentFragment: () => {
       const f = makeEl("#fragment");
       f._isFragment = true;
@@ -248,7 +249,16 @@ function fsmBox(hq) {
     },
   };
   const $ = (id) => (id === "fsm" ? box : makeEl("div"));
-  bind("pipeline.html", "renderFsm", ["document", "$"], [document, $])(hq);
+  // renderFsm calls the sibling top-level `sevenDaySlope` (the #32 trend). The harness
+  // evals each function standalone, so inject that sibling as a param — in the browser
+  // it resolves from module scope. `history` is optional (an older/unfetched rollup).
+  const slope = bind("pipeline.html", "sevenDaySlope", [], []);
+  bind(
+    "pipeline.html",
+    "renderFsm",
+    ["document", "$", "sevenDaySlope"],
+    [document, $, slope],
+  )(hq, history);
   return box;
 }
 
@@ -1218,6 +1228,133 @@ Deno.test("pipeline FSM: ambiguous states resolve to a single owner", () => {
       `${s} is human-owned: ${owner(s)}`,
     );
   }
+});
+
+// ---- pipeline.html: Theory-of-Constraints flow layer (#32) ----
+// Per-state inventory sparklines + a red border on any state whose inventory is
+// trending UP over the trailing 7 days (the bottleneck signal).
+
+const sevenDaySlope = bind("pipeline.html", "sevenDaySlope", [], []);
+const parseHistory = bind("pipeline.html", "parseHistory", [], []);
+const DAY = 864e5;
+
+// (c) the 7-day slope logic in isolation: rising / flat / falling / single-point.
+Deno.test("fsm trend: a rising 7d series slopes up, flat ≈ 0, falling down, a lone point is null", () => {
+  const now = 30 * DAY; // arbitrary anchor well past the epoch
+  // one point per day for the 8 days ending at `now` (all inside the trailing-7d window).
+  const daily = (vals) =>
+    vals.map((v, i) => ({ t: now - (vals.length - 1 - i) * DAY, v }));
+  assert(sevenDaySlope(daily([1, 2, 3, 4, 5, 6, 7, 8]), now) > 0.9, "steady rise ≈ +1/day");
+  assert(Math.abs(sevenDaySlope(daily([5, 5, 5, 5, 5, 5, 5, 5]), now)) < 1e-9, "flat ≈ 0");
+  assert(sevenDaySlope(daily([8, 7, 6, 5, 4, 3, 2, 1]), now) < -0.9, "steady fall ≈ -1/day");
+  assert(sevenDaySlope([{ t: now, v: 5 }], now) === null, "single point → null (no trend)");
+  assert(sevenDaySlope([], now) === null, "empty series → null");
+  // Points whose window is entirely older than 7 days no longer count as a trend.
+  const stale = [{ t: now - 20 * DAY, v: 1 }, { t: now - 15 * DAY, v: 9 }];
+  assert(sevenDaySlope(stale, now) === null, "all points outside the 7d window → null");
+});
+
+// (a) a sparkline renders per state from a history rollup.
+Deno.test("fsm sparkline: a state with ≥2 history points renders an inline sparkline (line + endpoint dot)", () => {
+  const now = Date.parse("2026-07-25T00:00:00Z");
+  const at = (d) => now - d * DAY;
+  const history = [6, 5, 7, 8, 9].map((v, i) => ({
+    t: at(4 - i),
+    counts: { ready: v, reject: 3, leaks: 0 },
+  }));
+  const hq = {
+    counts: { leaks: 0, ready: 9, reject: 3, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 9, prs: [] },
+        "ai:reject": { count: 3, prs: [] },
+      },
+    },
+  };
+  const box = fsmBox(hq, history);
+  const ready = collect(box, "fsm-state").find((b) => b.dataset.t === "ai:ready");
+  assert(ready, "ai:ready state box rendered");
+  assert(collect(ready, "fsm-spark").length === 1, "one inline sparkline in the state");
+  assert(tags(ready, "polyline").length === 1, "sparkline draws a polyline");
+  assert(tags(ready, "circle").length === 1, "sparkline has an emphasized endpoint dot");
+});
+
+// (b) the red border applies on an up-trend and NOT on a flat / single-blip series.
+Deno.test("fsm trend border: an up-trending state gets the rising warning border + a non-color cue; flat / blip states do not", () => {
+  const now = Date.parse("2026-07-25T00:00:00Z");
+  const at = (d) => now - d * DAY; // d days before `now`
+  // 8 daily samples ending at `now`:
+  //   ai:ready   climbs 40→54     (slope ≈ +2/day)          → the constraint, flagged.
+  //   ai:reject  holds flat at 10 (slope 0)                 → not flagged.
+  //   ai:relink  flat 3 with a lone +1 blip on the last day (slope ≈ 0.11/day, below the
+  //              0.15 epsilon)                              → not flagged (anti-flap guard).
+  const ready = [40, 42, 44, 46, 48, 50, 52, 54];
+  const relink = [3, 3, 3, 3, 3, 3, 3, 4];
+  const history = ready.map((_, i) => ({
+    t: at(7 - i),
+    counts: { ready: ready[i], reject: 10, relink: relink[i], leaks: 0 },
+  }));
+  const hq = {
+    counts: { leaks: 0, ready: 54, reject: 10, relink: 4, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 54, prs: [] },
+        "ai:reject": { count: 10, prs: [] },
+        "ai:relink": { count: 4, prs: [] },
+      },
+    },
+  };
+  const box = fsmBox(hq, history);
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const readyBox = byKey("ai:ready"), rejectBox = byKey("ai:reject"), relinkBox = byKey("ai:relink");
+  assert(readyBox.classList.contains("rising"), "up-trending ai:ready gets the rising border");
+  assert(!rejectBox.classList.contains("rising"), "flat ai:reject is not flagged");
+  assert(!relinkBox.classList.contains("rising"), "a lone +1 blip stays under epsilon, not flagged");
+  // Never color-alone: a visible ▲ badge + an aria-label spell the flag out.
+  assert(collect(readyBox, "fsm-rise").length === 1, "rising state carries a visible ▲ cue");
+  assert(
+    (readyBox.getAttribute("aria-label") || "").includes("rising"),
+    `rising state carries an aria cue: ${readyBox.getAttribute("aria-label")}`,
+  );
+  assert(
+    (rejectBox.getAttribute("aria-label") || "") === "",
+    "a non-rising state adds no rising aria-label",
+  );
+});
+
+Deno.test("fsm flow layer: with no history rollup there are no sparklines and no trend borders", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 5, reject: 2, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 5, prs: [] },
+        "ai:reject": { count: 2, prs: [] },
+      },
+    },
+  });
+  assert(collect(box, "fsm-spark").length === 0, "no sparklines without a history rollup");
+  assert(
+    !collect(box, "fsm-state").some((b) => b.classList.contains("rising")),
+    "no trend borders without a history rollup",
+  );
+});
+
+Deno.test("fsm history: parseHistory keeps well-formed {ts,counts} lines, sorts oldest→newest, drops junk", () => {
+  const text = [
+    '{"ts":"2026-07-20T00:00:00Z","counts":{"ready":5}}',
+    "   ",
+    "not json at all",
+    '{"ts":"nonsense","counts":{"ready":9}}', // unparseable timestamp → dropped
+    '{"ts":"2026-07-18T00:00:00Z","counts":{"ready":3}}',
+    '{"ts":"2026-07-19T00:00:00Z"}', // no counts object → dropped
+  ].join("\n");
+  const pts = parseHistory(text);
+  assert(pts.length === 2, `only the two well-formed lines are kept: ${pts.length}`);
+  assert(pts[0].t < pts[1].t, "sorted oldest→newest");
+  assert(
+    pts[0].counts.ready === 3 && pts[1].counts.ready === 5,
+    "counts preserved and ordered by time",
+  );
 });
 
 // Follow-up to #69: the producer's untouched backlog (open issues with no covering open PR,

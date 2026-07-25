@@ -159,6 +159,20 @@
   .fsm-state.rule { border-left-color: var(--accent); }
   .fsm-state.blk { border-left-color: var(--debt); }
   .fsm-state.zero { opacity: 0.5; }
+  /* Theory-of-Constraints bottleneck flag (#32): a state whose inventory is trending
+     UP over the trailing 7d gets a red WARNING border (semantic --crit, legible in
+     both themes) — placed after the kind rules so it wins the border-color cascade.
+     Never color-alone: it is paired with a ▲ badge + title/aria-label. */
+  .fsm-state.rising { border-color: var(--crit); box-shadow: inset 0 0 0 1px var(--crit); }
+  .fsm-scrow { display: flex; align-items: center; gap: 8px; }
+  /* Inventory sparkline: a recessive thin line + one emphasized endpoint dot, styled
+     via theme tokens so it reads in light and dark; it echoes --crit on a rising state. */
+  .fsm-spark { display: block; flex: none; overflow: visible; }
+  .fsm-spark .sl { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+  .fsm-spark .sd { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+  .fsm-state.rising .fsm-spark .sl { stroke: var(--crit); }
+  .fsm-state.rising .fsm-spark .sd { fill: var(--crit); }
+  .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
   .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
@@ -274,12 +288,18 @@ $("theme").addEventListener("click", () => {
 // content). This panel builds the DOM directly (createElement / textContent / .append / .href),
 // matching the rest of the dashboard — so escaping is BY CONSTRUCTION and there is no hand-rolled
 // HTML escaper to keep correct at every sink.
-function renderFsm(hq) {
+function renderFsm(hq, history) {
   const box = $("fsm");
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
     if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const SVGNS = "http://www.w3.org/2000/svg";
+  const svgEl = (tag, attrs) => {
+    const n = document.createElementNS(SVGNS, tag);
+    for (const k in attrs) n.setAttribute(k, attrs[k]);
     return n;
   };
   // A link whose href is set via the .href PROPERTY (the DOM escapes it) — never string-built.
@@ -304,6 +324,51 @@ function renderFsm(hq) {
   }
   const c = hq.counts;
   const urlOf = (it, issue) => `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
+
+  // ---- Theory-of-Constraints flow layer (#32): per-state inventory over time.
+  // `history` = the parsed human-queue-history.jsonl rollup ([{t:ms, counts}], one
+  // point per refresh). It is OPTIONAL — an older/unfetched history just means no
+  // sparklines and no trend borders, never a broken panel.
+  const hist = Array.isArray(history) ? history : [];
+  // "Now" is the LATEST sample, not wall-clock: a stalled feed must not silently
+  // slide the trailing window off the data (and it keeps the render deterministic).
+  const now = hist.length ? Math.max(...hist.map((p) => Number(p.t))) : 0;
+  // Least-squares slope (items/DAY) over the last 7 days must exceed this to flag a
+  // state as an accumulating constraint. A small epsilon absorbs sampling noise and a
+  // lone +1 blip (whose regression slope stays well under it) so the border never flaps.
+  const RISE_EPS = 0.15;
+  const SPARK_DAYS = 28; // the sparkline shows ~4 trailing weeks of inventory shape.
+  // A state's inventory series from the rollup: one point per refresh that CARRIED
+  // this state's counts key (a key absent from older snapshots ⇒ no point, not a zero).
+  const seriesFor = (histKey) => {
+    if (!histKey) return [];
+    const out = [];
+    for (const p of hist) {
+      const v = p && p.counts ? p.counts[histKey] : undefined;
+      if (v != null && Number.isFinite(Number(v))) out.push({ t: Number(p.t), v: Number(v) });
+    }
+    out.sort((a, b) => a.t - b.t);
+    return out;
+  };
+  // Built as real SVG nodes (createElementNS + setAttribute) — never markup — matching
+  // the rest of the dashboard, so nothing reaching the chart is parsed as markup.
+  const sparkline = (series) => {
+    const win = now ? series.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : series;
+    const pts = win.length ? win : series;
+    if (pts.length < 2) return null;
+    const W = 56, H = 16, PAD = 2;
+    const ts = pts.map((p) => p.t), vs = pts.map((p) => p.v);
+    const tMin = Math.min(...ts), tMax = Math.max(...ts);
+    const vMin = Math.min(...vs), vMax = Math.max(...vs);
+    const xOf = (t) => tMax === tMin ? W - PAD : PAD + ((t - tMin) / (tMax - tMin)) * (W - 2 * PAD);
+    const yOf = (v) => vMax === vMin ? H / 2 : H - PAD - ((v - vMin) / (vMax - vMin)) * (H - 2 * PAD);
+    const xy = pts.map((p) => [xOf(p.t), yOf(p.v)]);
+    const svg = svgEl("svg", { class: "fsm-spark", width: W, height: H, viewBox: `0 0 ${W} ${H}`, "aria-hidden": "true" });
+    svg.append(svgEl("polyline", { class: "sl", points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
+    const last = xy[xy.length - 1];
+    svg.append(svgEl("circle", { class: "sd", cx: last[0].toFixed(1), cy: last[1].toFixed(1), r: 2 }));
+    return svg;
+  };
 
   // Main lifecycle rail — issue → un-vetted → ai:ready → queue → approved → merged.
   const rail = el("div", "fsm-rail");
@@ -363,10 +428,26 @@ function renderFsm(hq) {
   const laneItems = new Map();
   const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
 
-  const stateBox = (key, label, count, act, kind) => {
+  const stateBox = (key, label, count, act, kind, series) => {
     const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
     b.dataset.t = key;
-    b.append(el("div", "sc", String(Number(count))), el("div", "sk", label), el("div", "sa", act));
+    const scRow = el("div", "fsm-scrow");
+    scRow.append(el("div", "sc", String(Number(count))));
+    const spark = series ? sparkline(series) : null;
+    if (spark) scRow.append(spark);
+    // The bottleneck flag: inventory rising over the trailing 7d = the constraint.
+    // Red warning border (via `.rising`) PLUS a ▲ badge and title/aria-label, so the
+    // signal is never carried by color alone.
+    const slope = series && series.length ? sevenDaySlope(series, now) : null;
+    if (slope != null && slope > RISE_EPS) {
+      b.classList.add("rising");
+      const up = el("span", "fsm-rise", "▲");
+      up.setAttribute("title", "inventory rising 7d");
+      scRow.append(up);
+      b.setAttribute("title", "inventory rising over the last 7 days — likely the bottleneck");
+      b.setAttribute("aria-label", label + ": inventory rising over the last 7 days (bottleneck)");
+    }
+    b.append(scRow, el("div", "sk", label), el("div", "sa", act));
     return b;
   };
 
@@ -386,31 +467,34 @@ function renderFsm(hq) {
   //       reworked-reject → re-vet". The human already acted (label + rework note); the
   //       next mover is the producer. (The parked "final reject, no note" case is the
   //       tool-side split human:reject-rework vs human:reject-final — see follow-up.)
+  // `hist` = this state's key in the human-queue-history rollup `counts` (which mirrors
+  // the snapshot's `counts`), i.e. where its inventory time-series is read from.
   const STATES = [
     // Producer inbox — the producer moves these next.
-    { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", act: "rework per note", kind: "blk" },
-    { owner: "producer", state: "ai:relink", lane: "vetter-verdicts", act: "Closes → Refs", kind: "rule" },
-    { owner: "producer", state: "human:reject", lane: "human-decisions", act: "rework per note", kind: "blk" },
+    { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", hist: "reject", act: "rework per note", kind: "blk" },
+    { owner: "producer", state: "ai:relink", lane: "vetter-verdicts", hist: "relink", act: "Closes → Refs", kind: "rule" },
+    { owner: "producer", state: "human:reject", lane: "human-decisions", hist: "humanReject", act: "rework per note", kind: "blk" },
     // Producer BACKLOG — open issues with no covering open PR (excl. human-gated / close-candidate):
     // the biggest producer inbox, the untouched work it must turn into PRs. Not a lane state —
     // count from `counts.uncoveredIssues`, items from the top-level `uncoveredIssues` (0 on an older
-    // human-queue.json that predates the field). See issue-pr-cron#66.
-    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
+    // human-queue.json that predates the field). See issue-pr-cron#66. `hist` populates its
+    // sparkline/trend once refreshes accrue the field (empty → no spark, never a broken box).
+    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
     // Vetter inbox — the vetter records the next verdict.
-    { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", act: "first vet", kind: "flow" },
-    { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", act: "head moved · re-vet", kind: "flow" },
+    { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "first vet", kind: "flow" },
+    { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", hist: "awaitingReVet", act: "head moved · re-vet", kind: "flow" },
     // Human inbox — a human merge / ruling / close.
-    { owner: "human", state: "ai:ready", lane: "vetter-verdicts", act: "merge", kind: "flow" },
-    { owner: "human", state: "ai:design", lane: "vetter-verdicts", act: "rule on design Q", kind: "rule" },
-    { owner: "human", state: "ai:close-candidate", lane: "vetter-verdicts", act: "close PR", kind: "rule", label: "ai:close-candidate (PRs)" },
-    { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", act: "resolve deploy", kind: "blk" },
-    { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", act: "clear infra", kind: "blk" },
-    { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", act: "merge dependency", kind: "blk" },
-    { owner: "human", state: "human:design", lane: "human-decisions", act: "decide", kind: "rule" },
-    { owner: "human", state: "human:close-candidate", lane: "human-decisions", act: "close", kind: "rule" },
+    { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
+    { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
+    { owner: "human", state: "ai:close-candidate", lane: "vetter-verdicts", hist: "closeCandidatePrs", act: "close PR", kind: "rule", label: "ai:close-candidate (PRs)" },
+    { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
+    { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", hist: "blockedInfra", act: "clear infra", kind: "blk" },
+    { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", hist: "blockedOn", act: "merge dependency", kind: "blk" },
+    { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
+    { owner: "human", state: "human:close-candidate", lane: "human-decisions", hist: "humanCloseCandidate", act: "close", kind: "rule" },
     // Close-candidate ISSUES: not a lane state — count from `counts`, items from the
     // top-level `closeCandidateIssues`. A human closes the issue, so it lives here too.
-    { owner: "human", state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
+    { owner: "human", state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", hist: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
@@ -437,7 +521,7 @@ function renderFsm(hq) {
           laneItems.set(s.state, (cell && cell.prs) || []);
         }
         ownerTotal += count;
-        g.append(stateBox(s.state, s.label || s.state, count, s.act, s.kind));
+        g.append(stateBox(s.state, s.label || s.state, count, s.act, s.kind, seriesFor(s.hist)));
       });
       const lane = el("div", "fsm-lane");
       const h = el("div", "fsm-lane-h");
@@ -450,15 +534,15 @@ function renderFsm(hq) {
     // the legacy `counts` keys carry (all human-owned under the actor mapping) from
     // `counts`, so the panel never blanks.
     const legacy = [
-      { key: "ai:ready", label: "ai:ready", n: c.ready, act: "merge", kind: "flow" },
-      { key: "ai:design", label: "ai:design", n: c.design, act: "rule on design Q", kind: "rule" },
-      { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, act: "close issue", kind: "rule" },
-      { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, act: "resolve deploy", kind: "blk" },
-      { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, act: "clear infra", kind: "blk" },
-      { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, act: "merge dependency", kind: "blk" },
+      { key: "ai:ready", label: "ai:ready", n: c.ready, hist: "ready", act: "merge", kind: "flow" },
+      { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
+      { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
+      { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
+      { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, hist: "blockedInfra", act: "clear infra", kind: "blk" },
+      { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, hist: "blockedOn", act: "merge dependency", kind: "blk" },
     ];
     const g = el("div", "fsm-grid");
-    legacy.forEach((s) => g.append(stateBox(s.key, s.label, s.n, s.act, s.kind)));
+    legacy.forEach((s) => g.append(stateBox(s.key, s.label, s.n, s.act, s.kind, seriesFor(s.hist))));
     const lane = el("div", "fsm-lane");
     const h = el("div", "fsm-lane-h");
     h.append(el("span", null, "Human action"), el("span", "lsub", "@thedavidmeister"));
@@ -510,6 +594,15 @@ function renderFsm(hq) {
   );
   if (hq.sample) note.append(" ", el("b", null, "(sample data — live once issue-pr-cron#41 lands)"));
   note.append(".");
+  if (hist.length) {
+    note.append(
+      " Each state carries an inventory sparkline (trailing 4 weeks); a ",
+      el("b", null, "red border"),
+      " marks a state whose inventory is trending up over the last 7 days — the ",
+      link(null, "Theory-of-Constraints", "https://github.com/rainlanguage/issue-pr-cron/blob/main/README.md"),
+      " bottleneck: rising WIP is where the system is constrained."
+    );
+  }
 
   const detail = el("div", "fsm-list");
   detail.id = "fsmdetail";
@@ -538,15 +631,66 @@ function renderFsm(hq) {
   }));
 }
 
+// Parse the append-only human-queue-history.jsonl rollup (one {ts, counts} per refresh)
+// into [{t:ms, counts}] sorted oldest→newest, dropping malformed lines and any with an
+// unparseable timestamp. Timestamps are the tool's real refresh/commit times — never
+// synthesized here; this only reads them. Kept top-level (not closed over renderFsm) so
+// the render can be tested against a plain fixture array.
+function parseHistory(text) {
+  if (typeof text !== "string" || !text) return [];
+  const out = [];
+  for (const line of text.split("\n")) {
+    const s = line.trim();
+    if (!s) continue;
+    let o;
+    try { o = JSON.parse(s); } catch { continue; }
+    if (!o || typeof o !== "object" || !o.counts || typeof o.counts !== "object") continue;
+    const t = Date.parse(o.ts);
+    if (!Number.isFinite(t)) continue;
+    out.push({ t, counts: o.counts });
+  }
+  out.sort((a, b) => a.t - b.t);
+  return out;
+}
+
+// Least-squares slope (inventory items per DAY) of a state's WIP over the trailing 7
+// days, anchored at nowMs (the latest sample). `series` is [{t:ms, v:count}]. This is
+// the Theory-of-Constraints trend that flags the bottleneck: a slope above a small
+// epsilon (applied at the call site) = inventory accumulating = the constraint. Returns
+// null when the window holds fewer than two distinct-time points — a single point or a
+// lone blip can't establish a trend, so it never flags a state on its own.
+function sevenDaySlope(series, nowMs) {
+  if (!Array.isArray(series) || !series.length) return null;
+  const from = nowMs - 7 * 864e5;
+  const win = series.filter((p) => p && Number(p.t) >= from && Number(p.t) <= nowMs);
+  if (win.length < 2) return null;
+  // x in days relative to nowMs; y = inventory. slope = Σ(x-x̄)(y-ȳ) / Σ(x-x̄)².
+  const xs = win.map((p) => (Number(p.t) - nowMs) / 864e5);
+  const ys = win.map((p) => Number(p.v));
+  const n = xs.length;
+  const xbar = xs.reduce((a, b) => a + b, 0) / n;
+  const ybar = ys.reduce((a, b) => a + b, 0) / n;
+  let num = 0, den = 0;
+  for (let i = 0; i < n; i++) {
+    num += (xs[i] - xbar) * (ys[i] - ybar);
+    den += (xs[i] - xbar) ** 2;
+  }
+  if (den === 0) return null; // every point shares a timestamp — no trend to fit
+  return num / den;
+}
+
 // FSM-conformance state is issue-pr-cron's OWN artifact, fetched at runtime like the producer
 // metrics below — never baked into this repo or computed here (CLAUDE.md: the dashboard is a
-// consumer, not a producer, of data; new data ⇒ new fetch, not new baking).
+// consumer, not a producer, of data; new data ⇒ new fetch, not new baking). The history
+// rollup (per-state inventory over time) is a second artifact fetched the same way; if it is
+// missing/older the panel simply renders no sparklines and no trend borders.
 const HQ_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue.json";
+const HIST_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue-history.jsonl";
 $("meta").textContent = "pipeline conformance · issue-pr-cron";
-fetch(HQ_URL, { cache: "no-store" })
-  .then((r) => (r.ok ? r.json() : null))
-  .then(renderFsm)
-  .catch(() => renderFsm(null));
+Promise.all([
+  fetch(HQ_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
+  fetch(HIST_URL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => ""),
+]).then(([hq, histText]) => renderFsm(hq, parseHistory(histText)));
 </script>
 </body>
 </html>
