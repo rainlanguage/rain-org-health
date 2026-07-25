@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-25T19:37:51Z",
+  "generatedAt": "2026-07-25T21:11:35Z",
   "auditGraph": {
     "nodes": [
       {
@@ -435,7 +435,13 @@
           "rain.solmem",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.math.saturating",
+            "pinned": "0.1.1",
+            "latest": "0.1.2"
+          }
+        ]
       },
       {
         "repo": "rain.math.float",
@@ -478,7 +484,7 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 2,
+        "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-07-25T18:58:58Z",
           "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -1696,9 +1702,9 @@
       {
         "from": "rain.math.fixedpoint",
         "to": "rain.math.saturating",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.1"
+        "latest": "0.1.2"
       },
       {
         "from": "rain.math.fixedpoint",
@@ -2864,7 +2870,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2893,14 +2899,14 @@
         {
           "name": "Wrapped-token-vault beacon",
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "owner": null,
-          "ownerLabel": "unknown",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
           "implementation": "0x0d99e0174dbf885ced6ae8deb939b0f890450099",
           "implVersion": "0.1.1",
           "targetImpl": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "unknown"
+          "status": "healthy"
         }
       ]
     }
@@ -4401,7 +4407,7 @@
       "name": "rain.math.saturating",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 2,
+      "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-07-25T18:58:58Z",
         "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -5998,6 +6004,42 @@
       "daysSinceAudit": 139
     },
     {
+      "name": "rain.math.saturating",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "current",
+      "auditPdfs": [
+        {
+          "filename": "rain.math.saturating.22e58d70a223b18d83dfc5529e3ac87aef3ff478.jan-2026.pdf",
+          "path": "audit/protofire/rain.math.saturating.22e58d70a223b18d83dfc5529e3ac87aef3ff478.jan-2026.pdf",
+          "lastCommitIso": "2026-07-15T13:13:28Z",
+          "auditDateIso": "2025-12-01T00:53:19Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "22e58d70a223b18d83dfc5529e3ac87aef3ff478",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2025-12-01T00:53:19Z",
+      "latestTag": "sol-v0.1.2",
+      "latestTagIso": "2026-07-25T19:40:24Z",
+      "isStale": false,
+      "sourceLocChangedSinceAudit": 24,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 23,
+      "sourceLocRemovedSinceAudit": 1,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 37,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 23,
+      "commentLocRemovedSinceAudit": 1,
+      "codeLocAddedSinceAudit": 0,
+      "codeLocRemovedSinceAudit": 0,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
+      "daysSinceAudit": 236
+    },
+    {
       "name": "rain.math.binary",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -6032,42 +6074,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
       "daysSinceAudit": 187
-    },
-    {
-      "name": "rain.math.saturating",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "current",
-      "auditPdfs": [
-        {
-          "filename": "rain.math.saturating.22e58d70a223b18d83dfc5529e3ac87aef3ff478.jan-2026.pdf",
-          "path": "audit/protofire/rain.math.saturating.22e58d70a223b18d83dfc5529e3ac87aef3ff478.jan-2026.pdf",
-          "lastCommitIso": "2026-07-15T13:13:28Z",
-          "auditDateIso": "2025-12-01T00:53:19Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "22e58d70a223b18d83dfc5529e3ac87aef3ff478",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2025-12-01T00:53:19Z",
-      "latestTag": "v0.1.1",
-      "latestTagIso": "2026-05-09T19:47:01Z",
-      "isStale": false,
-      "sourceLocChangedSinceAudit": 8,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 7,
-      "sourceLocRemovedSinceAudit": 1,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 32,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 7,
-      "commentLocRemovedSinceAudit": 1,
-      "codeLocAddedSinceAudit": 0,
-      "codeLocRemovedSinceAudit": 0,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
-      "daysSinceAudit": 236
     },
     {
       "name": "rain.intorastring",
