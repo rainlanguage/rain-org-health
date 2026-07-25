@@ -1174,9 +1174,11 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     ["un-vetted", "awaiting-re-vet"].every((s) => vetter.states.includes(s)),
     `vetter states: ${JSON.stringify(vetter.states)}`,
   );
-  // Producer owns the two vetter-verdict rework states.
+  // Producer owns the two vetter-verdict rework states + the untouched backlog.
   assert(
-    ["ai:reject", "ai:relink"].every((s) => producer.states.includes(s)),
+    ["ai:reject", "ai:relink", "untouched (no PR)"].every((s) =>
+      producer.states.includes(s)
+    ),
     `producer states: ${JSON.stringify(producer.states)}`,
   );
   // Human owns the merge/ruling/close states + both close-candidate variants.
@@ -1193,7 +1195,7 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 14, `all 14 states filed once: ${total}`);
+  assert(total === 15, `all 15 states filed once: ${total}`);
 });
 
 // #69: the four historically dual-owner states each resolve to ONE actor.
@@ -1352,6 +1354,56 @@ Deno.test("fsm history: parseHistory keeps well-formed {ts,counts} lines, sorts 
   assert(
     pts[0].counts.ready === 3 && pts[1].counts.ready === 5,
     "counts preserved and ordered by time",
+  );
+});
+
+// Follow-up to #69: the producer's untouched backlog (open issues with no covering open PR,
+// from counts.uncoveredIssues + the top-level uncoveredIssues list) is the biggest bucket of
+// its inbox and must surface under Producer action.
+Deno.test("pipeline FSM: producer untouched-backlog count + items render under Producer action", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, uncoveredIssues: 2 },
+    lanes: { "vetter-verdicts": {} },
+    uncoveredIssues: [
+      { repo: "o/x", number: 20, title: "untouched twenty" },
+      { repo: "o/y", number: 21, title: "untouched twenty-one" },
+    ],
+  });
+  const producer = ownerGroups(box).find((g) => g.title.includes("Producer action"));
+  assert(producer, "a Producer action group exists");
+  assert(
+    producer.states.includes("untouched (no PR)"),
+    `producer owns the untouched-backlog box: ${JSON.stringify(producer.states)}`,
+  );
+  // Clicking it opens the panel with count == the item list length (rendered as issues).
+  const boxByT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  boxByT("uncoveredIssues").click();
+  assert(detail.classList.contains("open"), "detail opens");
+  assert(
+    collect(detail, "dhc")[0].textContent === "2 items",
+    "header count == the uncovered-issue list length",
+  );
+  assert(
+    collect(detail, "li").length === 2,
+    "renders exactly the 2 untouched issues",
+  );
+});
+
+// Backward-compat: an older human-queue.json predating the field renders the box at 0, never NaN.
+Deno.test("pipeline FSM: missing uncoveredIssues renders the backlog box at 0", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
+    lanes: { "vetter-verdicts": {} },
+  });
+  const b = box
+    .querySelectorAll("[data-t]")
+    .find((x) => x.dataset.t === "uncoveredIssues");
+  assert(b, "the backlog box still renders when the field is absent");
+  assert(
+    !textOf(b).includes("NaN"),
+    `no NaN when uncoveredIssues is absent: ${textOf(b)}`,
   );
 });
 
