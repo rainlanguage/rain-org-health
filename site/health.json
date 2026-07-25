@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-25T18:06:58Z",
+  "generatedAt": "2026-07-25T18:16:00Z",
   "auditGraph": {
     "nodes": [
       {
@@ -612,7 +612,12 @@
         "depsKnown": true,
         "lastAudit": null,
         "openAuditIssues": 3,
-        "lastMutation": null,
+        "lastMutation": {
+          "timestamp": "2026-07-20T15:41:05Z",
+          "commit": "b3bd859",
+          "skillVersion": "0.27.0",
+          "scope": "whole repo"
+        },
         "blockedBy": [],
         "staleDeps": []
       },
@@ -4345,7 +4350,12 @@
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 3,
-      "lastMutation": null
+      "lastMutation": {
+        "timestamp": "2026-07-20T15:41:05Z",
+        "commit": "b3bd859",
+        "skillVersion": "0.27.0",
+        "scope": "whole repo"
+      }
     },
     {
       "name": "rain.solver",
@@ -5651,7 +5661,7 @@
       "sourceLocAddedSinceAudit": 21,
       "sourceLocRemovedSinceAudit": 0,
       "filesChangedSinceAudit": 2,
-      "commitsSinceAudit": 58,
+      "commitsSinceAudit": 60,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 10,
       "commentLocRemovedSinceAudit": 0,
