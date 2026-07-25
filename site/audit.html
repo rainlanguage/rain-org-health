@@ -273,8 +273,14 @@
   .gn-stale { font-size: 9px; color: var(--crit); font-weight: 600; }
   /* The audit skill's own recency + open-findings backlog on a graph node. */
   .gn-skill { font-size: 9px; color: var(--ink-2); }
-  .gn-open { color: var(--debt); font-weight: 600; }
-  .au-open { color: var(--debt); font-weight: 600; }
+  /* An outstanding findings backlog is a DEFECT signal, not a status line: a non-zero
+     count takes the semantic `--crit` token — the same one the pipeline's rising-WIP
+     flag uses, so the dashboard reads as one system and it stays legible in both
+     themes. Zero keeps the recessive `.ok` treatment below. Never colour-alone: the
+     count is paired with a ⚑ glyph and a spelled-out title/aria-label. */
+  .gn-open { color: var(--crit); font-weight: 700; }
+  .au-open { color: var(--crit); font-weight: 700; }
+  .gn-openflag, .au-openflag { margin-right: 2px; }
   /* Comment churn: counted, but not a staleness signal — deliberately muted. */
   .au-commentloc { color: var(--ink-3); }
   .au-mut-commit { font-family: ui-monospace, monospace; color: var(--ink-2); }
@@ -404,11 +410,22 @@ function renderAudit() {
         : "audit skill: never run",
     );
     // Absent count ⇒ the issue search failed for that org; say nothing rather
-    // than claim a clean backlog the scan never saw.
+    // than claim a clean backlog the scan never saw. Same reading as the graph
+    // node: a non-zero backlog is a defect signal, so it takes `--crit`
+    // (`au-open`) plus a ⚑ glyph and a title/aria-label, never colour alone.
     const open = a && a.openAuditIssues;
     if (typeof open === "number") {
-      line.append(" · ");
-      line.append(el("span", open > 0 ? "au-open" : "ok", `${open} open`));
+      const backlog = el("span", open > 0 ? "au-open" : "ok");
+      if (open > 0) {
+        const flag = el("span", "au-openflag", "⚑");
+        flag.setAttribute("aria-hidden", "true");
+        const said = `${open} open audit finding${open === 1 ? "" : "s"}`;
+        backlog.setAttribute("title", said);
+        backlog.setAttribute("aria-label", said);
+        backlog.append(flag);
+      }
+      backlog.append(`${open} open`);
+      line.append(" · ", backlog);
     }
     return line;
   };
@@ -755,10 +772,23 @@ function nodeEl(n, p) {
       : "no audit-skill run",
   );
   // Absent count ⇒ that org's issue search failed; stay silent rather than
-  // showing a zero backlog the scan never confirmed.
+  // showing a zero backlog the scan never confirmed. A non-zero backlog is a
+  // defect the repo is still carrying, so it renders in `--crit` (`gn-open`) —
+  // never on colour alone: a ⚑ glyph and a spelled-out title/aria-label carry the
+  // same signal without it. Zero stays recessive.
   if (typeof n.openAuditIssues === "number") {
-    skill.append(" · ");
-    skill.append(el("span", n.openAuditIssues > 0 ? "gn-open" : "ok", `${n.openAuditIssues} open`));
+    const open = n.openAuditIssues;
+    const backlog = el("span", open > 0 ? "gn-open" : "ok");
+    if (open > 0) {
+      const flag = el("span", "gn-openflag", "⚑");
+      flag.setAttribute("aria-hidden", "true");
+      const said = `${open} open audit finding${open === 1 ? "" : "s"}`;
+      backlog.setAttribute("title", said);
+      backlog.setAttribute("aria-label", said);
+      backlog.append(flag);
+    }
+    backlog.append(`${open} open`);
+    skill.append(" · ", backlog);
   }
   box.append(skill);
   // The adversarial-mutation skill's newest run: when, and the commit it was run
