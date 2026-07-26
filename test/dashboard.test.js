@@ -1323,8 +1323,10 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     `human states: ${JSON.stringify(human.states)}`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
+  // 17 = the 15 original states + the two close-candidate ISSUE states the vetter
+  // verdict introduces (issue-pr-cron#73).
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 15, `all 15 states filed once: ${total}`);
+  assert(total === 17, `all 17 states filed once: ${total}`);
 });
 
 // #69: the four historically dual-owner states each resolve to ONE actor.
@@ -1438,6 +1440,106 @@ Deno.test("fsm sparkline: a brand-new counts key with ONE history point draws it
   const ready = byKey("ai:ready");
   assert(tags(ready, "polyline").length === 1, "a multi-sample sibling still draws its line");
   assert(tags(ready, "circle").length === 1, "a multi-sample sibling still draws its dot");
+});
+
+// issue-pr-cron#73: the close-candidate ISSUE lifecycle gains a vetter verdict, so the
+// single "all flagged issues" figure splits into two inboxes with DIFFERENT owners —
+// unvetted (the vetter judges the flag) and upheld (a human closes the issue).
+Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a human inbox", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
+    lanes: {},
+  });
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const unvetted = byKey("closeCandidateUnvetted");
+  const upheld = byKey("closeCandidateUpheld");
+  assert(unvetted, "unvetted close-candidate box rendered");
+  assert(upheld, "upheld close-candidate box rendered");
+  assert(
+    textOf(unvetted).includes("20") && textOf(upheld).includes("9"),
+    `each reads its own count: ${textOf(unvetted)} / ${textOf(upheld)}`,
+  );
+  // Each is exactly one actor's inbox — the whole point of splitting them.
+  const groups = ownerGroups(box);
+  const owner = (label) => {
+    const g = groups.find((g) => g.states.includes(label));
+    return g ? g.title : null;
+  };
+  assert(
+    (owner("ai:close-candidate (unvetted)") || "").includes("Vetter action"),
+    `unvetted is the vetter's inbox: ${owner("ai:close-candidate (unvetted)")}`,
+  );
+  assert(
+    (owner("ai:close-candidate (upheld)") || "").includes("Human action"),
+    `upheld is the human's inbox: ${owner("ai:close-candidate (upheld)")}`,
+  );
+});
+
+// The all-issues box is a ROLL-UP of the two split states, so adding it to the human's
+// inventory total would double-count every issue already counted above. It must still
+// RENDER — it is the only real figure until pr-review-report emits the split keys.
+Deno.test("pipeline FSM: the close-candidate roll-up renders but never inflates the actor total", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
+    lanes: {},
+  });
+  const human = ownerGroups(box).find((g) => g.title.includes("Human action"));
+  assert(human, "human group present");
+  assert(
+    human.states.includes("ai:close-candidate (issues)"),
+    `the roll-up still renders: ${JSON.stringify(human.states)}`,
+  );
+  // The heading concatenates title + sub + count, so the total is its trailing number:
+  // upheld (9) alone, NOT 9 + the 29-issue roll-up.
+  assert(
+    human.title.endsWith("9") && !human.title.includes("38"),
+    `human total is 9, not 9+29=38: ${human.title}`,
+  );
+});
+
+// Rollout ordering: this dashboard change ships BEFORE pr-review-report emits the new
+// keys, so live data will not carry them for a while. An absent key must render a zeroed
+// box (the machine's whole shape stays visible) with no sparkline — never a broken box.
+Deno.test("pipeline FSM: close-candidate split states render zeroed when the tool has not emitted them yet", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29 },
+    lanes: {},
+  }, [
+    { t: Date.parse("2026-07-25T00:00:00Z"), counts: { closeCandidateIssues: 29 } },
+    { t: Date.parse("2026-07-26T00:00:00Z"), counts: { closeCandidateIssues: 29 } },
+  ]);
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  for (const k of ["closeCandidateUnvetted", "closeCandidateUpheld"]) {
+    const b = byKey(k);
+    assert(b, `${k} box still rendered with the key absent`);
+    // `zero` is baked into the className at construction (only `rising` is added via
+    // classList), so read the string the box was built with.
+    assert(b.className.includes("zero"), `${k} reads as zero, dimmed`);
+    assert(collect(b, "fsm-spark").length === 0, `${k} has no spark with no samples`);
+    assert(!b.classList.contains("rising"), `${k} cannot flag a bottleneck with no data`);
+  }
+  // The roll-up still carries the live number through the transition.
+  assert(textOf(byKey("closeCandidateIssues")).includes("29"), "roll-up keeps the real count");
+});
+
+// The first refresh after the tool starts emitting a split key gives it a single sample.
+// Per #129 that must draw its lone endpoint dot rather than vanishing.
+Deno.test("pipeline FSM: a freshly-emitted close-candidate split key draws its lone endpoint dot", () => {
+  const now = Date.parse("2026-07-26T06:22:06Z");
+  const at = (d) => now - d * DAY;
+  const history = [0, 1, 2, 3, 4].map((i) => ({
+    t: at(4 - i),
+    counts: i === 4 ? { closeCandidateIssues: 29, closeCandidateUnvetted: 20 } : { closeCandidateIssues: 29 },
+  }));
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20 },
+    lanes: {},
+  }, history);
+  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "closeCandidateUnvetted");
+  assert(collect(unvetted, "fsm-spark").length === 1, "one sample still gets a sparkline");
+  assert(tags(unvetted, "circle").length === 1, "the sample renders as an endpoint dot");
+  assert(tags(unvetted, "polyline").length === 0, "one point draws no line");
+  assert(!unvetted.classList.contains("rising"), "one sample never flags a bottleneck");
 });
 
 // (b) the red border applies on an up-trend and NOT on a flat / single-blip series.

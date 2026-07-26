@@ -493,6 +493,10 @@ function renderFsm(hq, history) {
     // Vetter inbox — the vetter records the next verdict.
     { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "first vet", kind: "flow" },
     { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", hist: "awaitingReVet", act: "head moved · re-vet", kind: "flow" },
+    // Close-candidate ISSUES awaiting a vetter verdict (issue-pr-cron#73). Hand-triage of
+    // the queue found ~1 in 3 producer flags wrong, so a flag is now JUDGED before it
+    // reaches a human — this is that inbox. Not a lane state; count from `counts`.
+    { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
     // Human inbox — a human merge / ruling / close.
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
@@ -502,9 +506,17 @@ function renderFsm(hq, history) {
     { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", hist: "blockedOn", act: "merge dependency", kind: "blk" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
     { owner: "human", state: "human:close-candidate", lane: "human-decisions", hist: "humanCloseCandidate", act: "close", kind: "rule" },
-    // Close-candidate ISSUES: not a lane state — count from `counts`, items from the
-    // top-level `closeCandidateIssues`. A human closes the issue, so it lives here too.
-    { owner: "human", state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", hist: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
+    // Close-candidate ISSUES the vetter UPHELD (issue-pr-cron#73): the flag survived
+    // judgement, so a human genuinely has to dispose of it. Rejected flags need no state
+    // — the vetter strips the label and they fall back into `uncoveredIssues`.
+    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", hist: "closeCandidateUpheld", act: "close issue", kind: "rule", label: "ai:close-candidate (upheld)" },
+    // Close-candidate ISSUES, ALL of them: not a lane state — count from `counts`, items
+    // from the top-level `closeCandidateIssues`. This is the roll-up of the two states
+    // above (unvetted + upheld), kept because it is the one figure that survives the
+    // vetting rollout: until pr-review-report emits the split keys it is the only real
+    // number. `rollup` keeps it OUT of the actor total — it is a total, not an inbox, and
+    // adding it would double-count every issue already counted under vetter/human above.
+    { owner: "human", rollup: true, state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", hist: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
@@ -530,7 +542,10 @@ function renderFsm(hq, history) {
           count = cell ? Number(cell.count) || 0 : 0;
           laneItems.set(s.state, (cell && cell.prs) || []);
         }
-        ownerTotal += count;
+        // A `rollup` box aggregates states already counted elsewhere in the machine, so it
+        // renders but never adds to the actor's inventory total (double-counting would
+        // overstate the inbox it heads).
+        if (!s.rollup) ownerTotal += count;
         g.append(stateBox(s.state, s.label || s.state, count, s.act, s.kind, seriesFor(s.hist)));
       });
       const lane = el("div", "fsm-lane");
