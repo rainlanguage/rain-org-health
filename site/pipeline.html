@@ -493,6 +493,10 @@ function renderFsm(hq, history) {
     // Vetter inbox — the vetter records the next verdict.
     { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "first vet", kind: "flow" },
     { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", hist: "awaitingReVet", act: "head moved · re-vet", kind: "flow" },
+    // Close-candidate ISSUES awaiting a vetter verdict (issue-pr-cron#73). Hand-triage of
+    // the queue found ~1 in 3 producer flags wrong, so a flag is now JUDGED before it
+    // reaches a human — this is that inbox. Not a lane state; count from `counts`.
+    { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
     // Human inbox — a human merge / ruling / close.
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
@@ -502,9 +506,16 @@ function renderFsm(hq, history) {
     { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", hist: "blockedOn", act: "merge dependency", kind: "blk" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
     { owner: "human", state: "human:close-candidate", lane: "human-decisions", hist: "humanCloseCandidate", act: "close", kind: "rule" },
-    // Close-candidate ISSUES: not a lane state — count from `counts`, items from the
-    // top-level `closeCandidateIssues`. A human closes the issue, so it lives here too.
-    { owner: "human", state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", hist: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
+    // Close-candidate ISSUES the vetter UPHELD (issue-pr-cron#73): the flag survived
+    // judgement, so a human genuinely has to dispose of it. Rejected flags need no state
+    // — the vetter strips the label and they fall back into `uncoveredIssues`.
+    // There is deliberately NO combined "all flagged issues" box: one flag now produces
+    // TWO inboxes with DIFFERENT owners (unvetted → vetter, upheld → human), so their sum
+    // is not a state anyone acts on — it is a number spanning two actors, which is exactly
+    // why it could never be added to an actor total. The legacy no-`lanes` branch below
+    // still renders `closeCandidateIssues`, because a human-queue.json old enough to lack
+    // `lanes` also predates the split keys.
+    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", hist: "closeCandidateUpheld", act: "close issue", kind: "rule", label: "ai:close-candidate (upheld)" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
