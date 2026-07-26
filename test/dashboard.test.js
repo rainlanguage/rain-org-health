@@ -1166,19 +1166,24 @@ Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", (
 // #66: the close-candidate PR STATE and the close-candidate ISSUES group must not
 // share the identical "ai:close-candidate" label (they read as one contradictory
 // control otherwise).
-Deno.test("pipeline FSM: the two close-candidate states carry distinct labels", () => {
+Deno.test("pipeline FSM: the close-candidate states carry distinct labels", () => {
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateIssues: 18 },
+    counts: { leaks: 0, ready: 0, closeCandidateUnvetted: 18, closeCandidateUpheld: 4 },
     lanes: {},
   });
   const labels = collect(box, "sk").map((s) => s.textContent);
+  // One flag, three distinct boxes: the PR variant, plus the issue variant split by
+  // vetting stage (issue-pr-cron#73). None may read as another.
+  for (const l of [
+    "ai:close-candidate (PRs)",
+    "ai:close-candidate (unvetted)",
+    "ai:close-candidate (upheld)",
+  ]) {
+    assert(labels.includes(l), `label missing: ${l} in ${JSON.stringify(labels)}`);
+  }
   assert(
-    labels.includes("ai:close-candidate (PRs)"),
-    `PR label missing: ${JSON.stringify(labels)}`,
-  );
-  assert(
-    labels.includes("ai:close-candidate (issues)"),
-    `issues label missing: ${JSON.stringify(labels)}`,
+    new Set(labels).size === labels.length,
+    `no two boxes share a label: ${JSON.stringify(labels)}`,
   );
   assert(
     !labels.includes("ai:close-candidate"),
@@ -1204,7 +1209,7 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
         },
       },
     },
-    closeCandidateIssues: [
+    uncoveredIssues: [
       { repo: "o/x", number: 10, title: "issue ten" },
       { repo: "o/y", number: 11, title: "issue eleven" },
     ],
@@ -1233,12 +1238,12 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
   );
   assert(collect(detail, "li").length === 3, "renders exactly the 3 PRs");
 
-  // Click the close-candidate ISSUES box (2 issues) — the SAME bottom panel re-populates
-  // with the issues state's own header + count, so the two never blur together.
-  boxByT("closeCandidateIssues").click();
+  // Click an ISSUE-type box (2 issues) — the SAME bottom panel re-populates with that
+  // state's own header + count, so PR and issue states never blur together.
+  boxByT("uncoveredIssues").click();
   assert(detail.parent === detailHost, "still the same panel, still in place");
   assert(
-    collect(detail, "dhl")[0].textContent === "ai:close-candidate (issues)",
+    collect(detail, "dhl")[0].textContent === "untouched (no PR)",
     "header re-names to the issues state",
   );
   assert(
@@ -1316,17 +1321,17 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
       "ai:ready",
       "ai:design",
       "ai:close-candidate (PRs)",
-      "ai:close-candidate (issues)",
+      "ai:close-candidate (upheld)",
       "human:design",
       "human:close-candidate",
     ].every((s) => human.states.includes(s)),
     `human states: ${JSON.stringify(human.states)}`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
-  // 17 = the 15 original states + the two close-candidate ISSUE states the vetter
-  // verdict introduces (issue-pr-cron#73).
+  // 16 = the 15 original states, minus the combined close-candidate issues box, plus the
+  // two owner-specific states the vetter verdict introduces (issue-pr-cron#73).
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 17, `all 17 states filed once: ${total}`);
+  assert(total === 16, `all 16 states filed once: ${total}`);
 });
 
 // #69: the four historically dual-owner states each resolve to ONE actor.
@@ -1475,25 +1480,29 @@ Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a 
   );
 });
 
-// The all-issues box is a ROLL-UP of the two split states, so adding it to the human's
-// inventory total would double-count every issue already counted above. It must still
-// RENDER — it is the only real figure until pr-review-report emits the split keys.
-Deno.test("pipeline FSM: the close-candidate roll-up renders but never inflates the actor total", () => {
+// One flag now produces TWO inboxes with DIFFERENT owners, so their sum is not a state
+// anyone acts on. No combined box exists in the lanes view, and each split state counts
+// toward its own actor's total — the invariant a combined box could not satisfy.
+Deno.test("pipeline FSM: no combined close-candidate box; each split state counts toward its own actor total", () => {
   const box = fsmBox({
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
     lanes: {},
   });
-  const human = ownerGroups(box).find((g) => g.title.includes("Human action"));
-  assert(human, "human group present");
+  const groups = ownerGroups(box);
+  const all = groups.flatMap((g) => g.states);
   assert(
-    human.states.includes("ai:close-candidate (issues)"),
-    `the roll-up still renders: ${JSON.stringify(human.states)}`,
+    !all.includes("ai:close-candidate (issues)"),
+    `the combined all-issues box is gone: ${JSON.stringify(all)}`,
   );
-  // The heading concatenates title + sub + count, so the total is its trailing number:
-  // upheld (9) alone, NOT 9 + the 29-issue roll-up.
+  // The heading concatenates title + sub + count, so the total is its trailing number.
+  const vetter = groups.find((g) => g.title.includes("Vetter action"));
+  const human = groups.find((g) => g.title.includes("Human action"));
+  assert(vetter.title.endsWith("20"), `vetter total counts the 20 unvetted: ${vetter.title}`);
+  assert(human.title.endsWith("9"), `human total counts the 9 upheld: ${human.title}`);
+  // Neither total silently absorbs the 29 that used to be rendered as its own box.
   assert(
-    human.title.endsWith("9") && !human.title.includes("38"),
-    `human total is 9, not 9+29=38: ${human.title}`,
+    !vetter.title.includes("29") && !human.title.includes("29"),
+    `no total carries the combined figure: ${vetter.title} / ${human.title}`,
   );
 });
 
@@ -1518,8 +1527,6 @@ Deno.test("pipeline FSM: close-candidate split states render zeroed when the too
     assert(collect(b, "fsm-spark").length === 0, `${k} has no spark with no samples`);
     assert(!b.classList.contains("rising"), `${k} cannot flag a bottleneck with no data`);
   }
-  // The roll-up still carries the live number through the transition.
-  assert(textOf(byKey("closeCandidateIssues")).includes("29"), "roll-up keeps the real count");
 });
 
 // The first refresh after the tool starts emitting a split key gives it a single sample.

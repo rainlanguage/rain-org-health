@@ -509,14 +509,13 @@ function renderFsm(hq, history) {
     // Close-candidate ISSUES the vetter UPHELD (issue-pr-cron#73): the flag survived
     // judgement, so a human genuinely has to dispose of it. Rejected flags need no state
     // — the vetter strips the label and they fall back into `uncoveredIssues`.
+    // There is deliberately NO combined "all flagged issues" box: one flag now produces
+    // TWO inboxes with DIFFERENT owners (unvetted → vetter, upheld → human), so their sum
+    // is not a state anyone acts on — it is a number spanning two actors, which is exactly
+    // why it could never be added to an actor total. The legacy no-`lanes` branch below
+    // still renders `closeCandidateIssues`, because a human-queue.json old enough to lack
+    // `lanes` also predates the split keys.
     { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", hist: "closeCandidateUpheld", act: "close issue", kind: "rule", label: "ai:close-candidate (upheld)" },
-    // Close-candidate ISSUES, ALL of them: not a lane state — count from `counts`, items
-    // from the top-level `closeCandidateIssues`. This is the roll-up of the two states
-    // above (unvetted + upheld), kept because it is the one figure that survives the
-    // vetting rollout: until pr-review-report emits the split keys it is the only real
-    // number. `rollup` keeps it OUT of the actor total — it is a total, not an inbox, and
-    // adding it would double-count every issue already counted under vetter/human above.
-    { owner: "human", rollup: true, state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", hist: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
@@ -542,10 +541,7 @@ function renderFsm(hq, history) {
           count = cell ? Number(cell.count) || 0 : 0;
           laneItems.set(s.state, (cell && cell.prs) || []);
         }
-        // A `rollup` box aggregates states already counted elsewhere in the machine, so it
-        // renders but never adds to the actor's inventory total (double-counting would
-        // overstate the inbox it heads).
-        if (!s.rollup) ownerTotal += count;
+        ownerTotal += count;
         g.append(stateBox(s.state, s.label || s.state, count, s.act, s.kind, seriesFor(s.hist)));
       });
       const lane = el("div", "fsm-lane");
