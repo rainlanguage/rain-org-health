@@ -1408,6 +1408,38 @@ Deno.test("fsm sparkline: a state with ≥2 history points renders an inline spa
   assert(tags(ready, "circle").length === 1, "sparkline has an emphasized endpoint dot");
 });
 
+// (a2) a state whose counts key is NEW — carried by only the newest refresh — still gets a
+// chart: the lone endpoint dot. This is the real shape of the live rollup whenever the tool
+// starts emitting a key (`uncoveredIssues`/"untouched (no PR)" entered `counts` on
+// 2026-07-25 and appeared in 1 of 118 history lines), and the state must not silently lose
+// its sparkline just because its series is short. No polyline: one vertex paints nothing.
+Deno.test("fsm sparkline: a brand-new counts key with ONE history point draws its endpoint dot alone", () => {
+  const now = Date.parse("2026-07-26T06:22:06Z");
+  const at = (d) => now - d * DAY;
+  // 5 refreshes; only the newest carries `uncoveredIssues` — exactly like the live rollup.
+  const history = [6, 5, 7, 8, 9].map((v, i) => ({
+    t: at(4 - i),
+    counts: i === 4 ? { ready: v, uncoveredIssues: 616 } : { ready: v },
+  }));
+  const hq = {
+    counts: { leaks: 0, ready: 9, closeCandidateIssues: 0, uncoveredIssues: 616 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 9, prs: [] } } },
+  };
+  const box = fsmBox(hq, history);
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const untouched = byKey("uncoveredIssues");
+  assert(untouched, "untouched (no PR) state box rendered");
+  assert(collect(untouched, "fsm-spark").length === 1, "a single-sample state still gets a sparkline");
+  assert(tags(untouched, "circle").length === 1, "the single sample renders as an endpoint dot");
+  assert(tags(untouched, "polyline").length === 0, "one point draws no line");
+  // A single point can't establish a trend, so it is still never flagged as the bottleneck.
+  assert(!untouched.classList.contains("rising"), "one sample never flags a bottleneck");
+  // Siblings with a full series are untouched by this: line AND dot, exactly as before.
+  const ready = byKey("ai:ready");
+  assert(tags(ready, "polyline").length === 1, "a multi-sample sibling still draws its line");
+  assert(tags(ready, "circle").length === 1, "a multi-sample sibling still draws its dot");
+});
+
 // (b) the red border applies on an up-trend and NOT on a flat / single-blip series.
 Deno.test("fsm trend border: an up-trending state gets the rising warning border + a non-color cue; flat / blip states do not", () => {
   const now = Date.parse("2026-07-25T00:00:00Z");
