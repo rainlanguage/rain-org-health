@@ -8,15 +8,14 @@
   There is no overview page: its tiles restated counts the other pages already
   show, and its audit alarm duplicated the one on audit.html. Dropping it cannot
   drop index.html, because GitHub Pages serves that as the site root — so the
-  root forwards to Repositories, the scanner's own output and the reason this
-  dashboard exists.
+  root forwards to Pipeline, the board that is actually watched.
 
-  A redirect rather than moving the Repositories page here: repositories.html
-  keeps working for anything already linking to it, and the page stays where its
-  tests bind it by filename.
+  A redirect rather than moving that page here: pipeline.html keeps working for
+  anything already linking to it, and every page stays where its tests bind it
+  by filename.
 -->
-<meta http-equiv="refresh" content="0; url=repositories.html" />
-<link rel="canonical" href="repositories.html" />
+<meta http-equiv="refresh" content="0; url=pipeline.html" />
+<link rel="canonical" href="pipeline.html" />
 <style>
   :root { color-scheme: light dark; }
   body {
@@ -34,7 +33,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p>Redirecting to <a href="repositories.html">Repositories</a>…</p>
+  <p>Redirecting to <a href="pipeline.html">Pipeline</a>…</p>
 </div>
 </body>
 </html>
