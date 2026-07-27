@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-27T11:43:24Z",
+  "generatedAt": "2026-07-27T15:17:42Z",
   "auditGraph": {
     "nodes": [
       {
@@ -142,7 +142,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 22,
+        "openAuditIssues": 18,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -2935,7 +2935,7 @@
       "function": "LibTokenInvariants.productionReceiptVaults()",
       "governedCount": 29,
       "governedDeclared": 29,
-      "registryTokenCount": 28,
+      "registryTokenCount": 34,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
@@ -2959,6 +2959,54 @@
         }
       ],
       "missingFromMigration": [
+        {
+          "symbol": "wtGOOGL",
+          "name": "Wrapped Alphabet Inc. Class A ST0x",
+          "address": "0x6a2357Df4975C667B171bE53dA6FFe6deBf7030c",
+          "receiptVault": "0x15De944Cd020A18C8E5626fB0F81b36e73956199",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtINTC",
+          "name": "Wrapped Intel Corporation ST0x",
+          "address": "0xf567652fC2d7Db8D5469fD06AEbe8C9c4372d722",
+          "receiptVault": "0xBDC237Aa3B67cC3088adAf117913F30Bf08157a3",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtAAPL",
+          "name": "Wrapped Apple Inc. ST0x",
+          "address": "0x1020EC8Aa3f709a1f3D8705cdBa89b950451bd88",
+          "receiptVault": "0xD36056a4a03707D3743fCE4e9C08852820ADcfdC",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMSFT",
+          "name": "Wrapped Microsoft Corporation ST0x",
+          "address": "0x515A3Ac2a6aB590bDFa970caFFFd7fAdC680886E",
+          "receiptVault": "0x6a071E25fa25653cF15d1ee320eA3df771926Aa0",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtLLY",
+          "name": "Wrapped Eli Lilly and Company ST0x",
+          "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
+          "receiptVault": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtPTY",
+          "name": "Wrapped PIMCO Corporate & Income Opportunity Fund ST0x",
+          "address": "0xb6D779A79E7493ed821a65D52bA419F0F6D5dD0a",
+          "receiptVault": "0xb6021810971714cD48572af527307Acc324ecF61",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
         {
           "symbol": "USDC",
           "name": "USD Coin",
@@ -4314,7 +4362,7 @@
       "name": "rain.erc4626.words",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 22,
+      "openAuditIssues": 18,
       "lastMutation": null
     },
     {
