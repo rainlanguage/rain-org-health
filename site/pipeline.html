@@ -149,11 +149,14 @@
      Never color-alone: it is paired with a ▲ badge + title/aria-label. */
   .fsm-state.rising { border-color: var(--crit); box-shadow: inset 0 0 0 1px var(--crit); }
   /* Per-actor FALLBACK emphasis: the largest non-zero queue in a group that flagged no
-     bottleneck. Deliberately quieter and semantically distinct from `.rising` — a neutral
-     ink ring, no red, and no border-color change (the kind's left edge survives), because
-     "this is your biggest pile" must never read as "this is getting worse". Never
-     color-alone either: paired with a ▸ badge + title/aria-label. */
-  .fsm-state.lead { box-shadow: inset 0 0 0 1px var(--ink-3); }
+     bottleneck. Semantically distinct from `.rising` — a NEUTRAL ink ring, never --crit,
+     and no border-color change (the kind's left edge survives), because "this is your
+     biggest pile" must not read as "this is getting worse". But it must still LAND at 1x:
+     the first cut used a 1px --ink-3 hairline that was invisible without zooming, which
+     defeated the whole point of giving the eye somewhere to go. A 2px --ink-2 ring reads
+     against the surface at normal viewing while staying unmistakably not-red, and it is
+     paired with a worded chip so the cue is never carried by the ring alone. */
+  .fsm-state.lead { box-shadow: inset 0 0 0 2px var(--ink-2); }
   .fsm-scrow { display: flex; align-items: center; gap: 8px; }
   /* Inventory sparkline: a recessive thin line + one emphasized endpoint dot, styled
      via theme tokens so it reads in light and dark; it echoes --crit on a rising state. */
@@ -163,7 +166,14 @@
   .fsm-state.rising .fsm-spark .sl { stroke: var(--crit); }
   .fsm-state.rising .fsm-spark .sd { fill: var(--crit); }
   .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
-  .fsm-lead { color: var(--ink-3); font-size: 12px; font-weight: 700; line-height: 1; }
+  /* The lead cue is a solid neutral PILL in the act row, not a glyph beside the sparkline:
+     a hairline ring and a ▸ were invisible at 1x, and the ▸ sat close enough to the
+     sparkline's endpoint dot to read as chart furniture. A filled chip carries a word, so
+     it survives normal viewing, states its own meaning, and can never be mistaken for the
+     red ▲ trend flag. Inverted ink-on-surface keeps it emphatic while staying out of the
+     --crit alarm palette entirely. */
+  .fsm-lead { margin-left: 7px; padding: 1px 6px; border-radius: 999px; background: var(--ink-2);
+              color: var(--surface); font-size: 10px; font-weight: 700; letter-spacing: 0.06em; white-space: nowrap; }
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
   .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
@@ -423,12 +433,17 @@ function renderFsm(hq, history) {
   // "nowhere", which is wrong whenever there is work. So when a group flags no bottleneck,
   // mark its LARGEST non-zero queue instead.
   //
-  // Deliberately a different signal from `.rising` — a neutral ring + ▸, never the red ▲:
-  // "your biggest pile" is not "this is getting worse", and reusing the bottleneck
-  // treatment would assert a trend the data does not show. It is a FALLBACK, not an
-  // addition: a group that already flags a bottleneck is left alone, because the trend is
+  // Deliberately a different signal from `.rising` — a neutral ring + a worded chip, never
+  // the red ▲: "your biggest pile" is not "this is getting worse", and reusing the
+  // bottleneck treatment would assert a trend the data does not show. It is a FALLBACK, not
+  // an addition: a group that already flags a bottleneck is left alone, because the trend is
   // the better answer to "look here first" when it exists. An all-zero group gets nothing —
   // no work really is nothing to do, and marking an empty queue would be pure noise.
+  //
+  // The chip lives in the ACT row, not beside the sparkline. A glyph there was both too
+  // faint to see at 1x and close enough to the sparkline's endpoint dot to read as chart
+  // furniture; a word next to "MERGE" cannot be mistaken for either, and says what it means
+  // without a legend lookup.
   const markLead = (boxes) => {
     if (boxes.some((x) => x.b.classList.contains("rising"))) return;
     // Strictly-greater keeps the FIRST of equal counts, so STATES order is the tie-break
@@ -437,10 +452,9 @@ function renderFsm(hq, history) {
     for (const x of boxes) if (x.count > 0 && (!lead || x.count > lead.count)) lead = x;
     if (!lead) return;
     lead.b.classList.add("lead");
-    const tip = el("span", "fsm-lead", "▸");
-    tip.setAttribute("title", "largest queue for this actor");
-    const row = lead.b.querySelector(".fsm-scrow");
-    if (row) row.append(tip);
+    const chip = el("span", "fsm-lead", "largest");
+    const row = lead.b.querySelector(".sa");
+    if (row) row.append(chip);
     lead.b.setAttribute("title", "largest queue for this actor — start here");
     lead.b.setAttribute("aria-label", lead.label + ": largest queue for this actor (start here)");
   };
@@ -636,8 +650,8 @@ function renderFsm(hq, history) {
   // no trend is computable, so it can appear on a page with no sparklines at all.
   note.append(
     " Where nothing in an actor's group is trending up, a ",
-    el("b", null, "▸"),
-    " marks that actor's largest queue instead — not a trend, just where to start."
+    el("b", null, "largest"),
+    " chip marks that actor's biggest queue instead — not a trend, just where to start."
   );
 
   const detail = el("div", "fsm-list");

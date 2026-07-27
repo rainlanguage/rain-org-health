@@ -1736,7 +1736,15 @@ Deno.test("fsm lead fallback: a group with no bottleneck marks its largest non-z
   const ready = byKey("ai:ready");
   assert(ready.classList.contains("lead"), "human's largest queue (44 ai:ready) is marked");
   assert(!ready.classList.contains("rising"), "the fallback is NOT the bottleneck flag");
-  assert(collect(ready, "fsm-lead").length === 1, "lead carries a visible ▸ cue");
+  // The cue must be a WORD in the act row, not a glyph beside the sparkline: the first cut
+  // used a ▸ that was invisible at 1x and read as chart furniture next to the endpoint dot.
+  const chip = collect(ready, "fsm-lead");
+  assert(chip.length === 1, "lead carries a visible chip");
+  assert(chip[0]._text === "largest", `the chip states its own meaning: ${chip[0]._text}`);
+  assert(
+    ready.querySelector(".sa").children.includes(chip[0]),
+    "the chip sits in the act row, away from the sparkline it could be confused with",
+  );
   assert(collect(ready, "fsm-rise").length === 0, "lead must not borrow the ▲ bottleneck cue");
   assert(
     (ready.getAttribute("aria-label") || "").includes("largest queue"),
