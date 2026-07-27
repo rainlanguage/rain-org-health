@@ -1704,15 +1704,22 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
     (readyBox.getAttribute("aria-label") || "").includes("rising"),
     `rising state carries an aria cue: ${readyBox.getAttribute("aria-label")}`,
   );
-  // A non-rising state must never ANNOUNCE a trend. It may still carry an aria-label from
-  // the per-actor lead fallback — ai:reject is producer-owned, and that group flags no
-  // bottleneck here, so it is legitimately marked as the producer's largest queue. The
-  // invariant that matters is the claim, not the presence of a label.
+  // A non-rising state must never ANNOUNCE a trend. It may still LOOK highlighted: ai:reject
+  // is producer-owned, that group flags no bottleneck here, so it is legitimately marked as
+  // the producer's largest queue — and the fallback wears the bottleneck's exact treatment
+  // by design. What must never travel with the mark is the trend CLAIM.
   assert(
     !(rejectBox.getAttribute("aria-label") || "").includes("rising"),
     `a non-rising state never claims a trend: ${rejectBox.getAttribute("aria-label")}`,
   );
-  assert(collect(rejectBox, "fsm-rise").length === 0, "a non-rising state carries no ▲ cue");
+  assert(
+    !(collect(rejectBox, "fsm-rise")[0]?.getAttribute("title") || "").includes("rising"),
+    "the ▲ on a fallback pick does not claim a trend either",
+  );
+  // ai:relink is producer-owned and SMALLER than ai:reject, so it is neither the bottleneck
+  // nor its group's fallback pick: a state with no reason to be marked carries no cue at all.
+  assert(collect(relinkBox, "fsm-rise").length === 0, "an unmarked state carries no ▲ cue");
+  assert(!relinkBox.getAttribute("aria-label"), "an unmarked state carries no aria cue");
 });
 
 // The fallback that keeps every working actor pointed somewhere. `sevenDaySlope` needs two
@@ -1735,20 +1742,26 @@ Deno.test("fsm lead fallback: a group with no bottleneck marks its largest non-z
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
   const ready = byKey("ai:ready");
   assert(ready.classList.contains("lead"), "human's largest queue (44 ai:ready) is marked");
-  assert(!ready.classList.contains("rising"), "the fallback is NOT the bottleneck flag");
-  // The cue must be a WORD in the act row, not a glyph beside the sparkline: the first cut
-  // used a ▸ that was invisible at 1x and read as chart furniture next to the endpoint dot.
-  const chip = collect(ready, "fsm-lead");
-  assert(chip.length === 1, "lead carries a visible chip");
-  assert(chip[0]._text === "largest", `the chip states its own meaning: ${chip[0]._text}`);
+  assert(!ready.classList.contains("rising"), "identical on screen, still distinct in the DOM");
+  // The fallback wears the EXISTING highlight, not a second visual language: the same ▲ in
+  // the same row, and a `.lead` class whose stylesheet rule is shared verbatim with
+  // `.rising`. A reader sees one kind of "look here", never two competing ones.
+  const up = collect(ready, "fsm-rise");
+  assert(up.length === 1, "the fallback carries the same visible ▲ cue a bottleneck does");
+  assert(up[0]._text === "▲", `the same glyph, not a substitute: ${up[0]._text}`);
   assert(
-    ready.querySelector(".sa").children.includes(chip[0]),
-    "the chip sits in the act row, away from the sparkline it could be confused with",
+    ready.querySelector(".fsm-scrow").children.includes(up[0]),
+    "the ▲ sits in the same row it does on a bottleneck",
   );
-  assert(collect(ready, "fsm-rise").length === 0, "lead must not borrow the ▲ bottleneck cue");
+  assert(collect(ready, "fsm-lead").length === 0, "no separate chip — nothing new is invented");
+  // Only the WORDING differs, because only the wording can lie: this box has no trend.
   assert(
     (ready.getAttribute("aria-label") || "").includes("largest queue"),
-    `lead carries an aria cue: ${ready.getAttribute("aria-label")}`,
+    `the fallback states its own reason: ${ready.getAttribute("aria-label")}`,
+  );
+  assert(
+    !(ready.getAttribute("aria-label") || "").includes("rising"),
+    "the fallback never claims a trend it does not have",
   );
   // One mark per actor group, and only on that group's own biggest pile.
   assert(!byKey("ai:design").classList.contains("lead"), "a smaller queue in the group is not marked");
