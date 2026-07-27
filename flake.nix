@@ -55,7 +55,9 @@
           text = ''
             site="''${1:-site}"
             out="''${2:-dashboard.png}"
-            page="''${3:-index.html}"
+            # index.html is a redirect to repositories.html, so rendering it would
+            # capture the stub; default to the page it forwards to.
+            page="''${3:-repositories.html}"
             port="''${PORT:-8799}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}
             python3 -m http.server "$port" --directory "$site" >/dev/null 2>&1 &

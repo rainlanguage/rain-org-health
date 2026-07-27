@@ -3,326 +3,38 @@
 <head>
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>rain org health — overview</title>
+<title>rain org health</title>
+<!--
+  There is no overview page: its tiles restated counts the other pages already
+  show, and its audit alarm duplicated the one on audit.html. Dropping it cannot
+  drop index.html, because GitHub Pages serves that as the site root — so the
+  root forwards to Repositories, the scanner's own output and the reason this
+  dashboard exists.
+
+  A redirect rather than moving the Repositories page here: repositories.html
+  keeps working for anything already linking to it, and the page stays where its
+  tests bind it by filename.
+-->
+<meta http-equiv="refresh" content="0; url=repositories.html" />
+<link rel="canonical" href="repositories.html" />
 <style>
-  :root {
-    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
-    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
-    --border: #e7e2da; --accent: #2563eb;
-    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
-    --clean: #15803d; --clean-bg: #e7f5ec;
-    --bar: #b45309; --bar-track: #eeebe6;
-    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07); --pm-fill-deg: rgba(220,38,38,0.15);
+  :root { color-scheme: light dark; }
+  body {
+    margin: 0;
+    background: #fdfcfb; color: #201d1a;
+    font: 15px/1.6 ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   }
   @media (prefers-color-scheme: dark) {
-    :root {
-      --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
-      --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
-      --border: #332f24; --accent: #60a5fa;
-      --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
-      --clean: #4ade80; --clean-bg: #12241a;
-      --bar: #d98a2b; --bar-track: #27241b;
-      --crit: #f87171; --pm-fill: rgba(236,232,224,0.07); --pm-fill-deg: rgba(248,113,113,0.18);
-    }
+    body { background: #14120f; color: #f0ece6; }
   }
-  :root[data-theme="dark"] {
-    --bg: #16150f; --surface: #1f1d16; --surface-2: #27241b;
-    --ink: #ece8e0; --ink-2: #aaa79c; --ink-3: #706c62;
-    --border: #332f24; --accent: #60a5fa;
-    --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
-    --clean: #4ade80; --clean-bg: #12241a;
-    --bar: #d98a2b; --bar-track: #27241b;
-    --crit: #f87171; --pm-fill: rgba(236,232,224,0.07); --pm-fill-deg: rgba(248,113,113,0.18);
-  }
-  :root[data-theme="light"] {
-    --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
-    --ink: #201d1a; --ink-2: #5c574f; --ink-3: #8a847a;
-    --border: #e7e2da; --accent: #2563eb;
-    --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
-    --clean: #15803d; --clean-bg: #e7f5ec;
-    --bar: #b45309; --bar-track: #eeebe6;
-    --crit: #dc2626; --pm-fill: rgba(32,29,26,0.07); --pm-fill-deg: rgba(220,38,38,0.15);
-  }
-  * { box-sizing: border-box; }
-  body {
-    margin: 0; background: var(--bg); color: var(--ink);
-    font: 15px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
-    -webkit-font-smoothing: antialiased;
-  }
-  .wrap { max-width: 980px; margin: 0 auto; padding: 32px 20px 80px; }
-  header { display: flex; flex-wrap: wrap; align-items: baseline; gap: 8px 16px; margin-bottom: 4px; }
-  h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
-  .meta { color: var(--ink-3); font-size: 13px; }
-  .theme-btn {
-    margin-left: auto; background: var(--surface); color: var(--ink-2);
-    border: 1px solid var(--border); border-radius: 8px; padding: 5px 10px;
-    font-size: 13px; cursor: pointer;
-  }
-  .tiles { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); gap: 12px; margin: 24px 0; }
-  .tile { background: var(--surface); border: 1px solid var(--border); border-radius: 12px; padding: 14px 16px; }
-  .tile .n { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
-  .tile .l { color: var(--ink-3); font-size: 12px; text-transform: uppercase; letter-spacing: 0.04em; margin-top: 2px; }
-  h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
-       margin: 32px 0 12px; font-weight: 600; }
-  .summary { display: grid; gap: 6px; }
-  .srow {
-    display: grid; grid-template-columns: 220px 1fr 34px; align-items: center; gap: 12px;
-    background: none; border: 0; padding: 4px 6px; border-radius: 8px; cursor: pointer;
-    color: inherit; font: inherit; text-align: left; width: 100%;
-  }
-  .srow:hover { background: var(--surface); }
-  .srow.active { background: var(--surface-2); }
-  .srow .sig { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; color: var(--ink-2);
-               overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-  .srow.active .sig { color: var(--ink); font-weight: 600; }
-  .track { height: 12px; background: var(--bar-track); border-radius: 4px; overflow: hidden; }
-  .fill { height: 100%; background: var(--bar); border-radius: 4px; min-width: 3px; }
-  .srow .c { font-variant-numeric: tabular-nums; font-size: 13px; color: var(--ink-2); text-align: right; }
-  .controls { display: flex; flex-wrap: wrap; gap: 10px; align-items: center; margin: 12px 0 8px; }
-  input[type=search] {
-    flex: 1; min-width: 180px; background: var(--surface); border: 1px solid var(--border);
-    border-radius: 8px; padding: 8px 11px; color: var(--ink); font-size: 14px;
-  }
-  .clearf { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
-            border-radius: 8px; padding: 7px 11px; font-size: 13px; cursor: pointer; display: none; }
-  .clearf.show { display: inline-block; }
-  .repo { border-bottom: 1px solid var(--border); padding: 12px 4px; display: grid;
-          grid-template-columns: 240px 1fr; gap: 14px; align-items: start; }
-  .repo:last-child { border-bottom: 0; }
-  .repo a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 14.5px; word-break: break-word; }
-  .repo a:hover { color: var(--accent); text-decoration: underline; }
-  .chips { display: flex; flex-wrap: wrap; gap: 6px; }
-  .chip {
-    display: inline-flex; align-items: center; gap: 5px; font-size: 12px;
-    font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-    background: var(--debt-bg); color: var(--debt); border: 1px solid var(--debt-border);
-    border-radius: 6px; padding: 2px 8px; cursor: pointer;
-  }
-  .chip::before { content: "▲"; font-size: 9px; }
-  .chip.dim { opacity: 0.32; }
-  .clean { display: inline-flex; align-items: center; gap: 6px; color: var(--clean); font-size: 13px; }
-  .clean::before { content: "✓"; font-weight: 700; }
-  .empty { color: var(--ink-3); padding: 24px 4px; }
-  .pm-chart-wrap { position: relative; background: var(--surface); border: 1px solid var(--border);
-                   border-radius: 12px; padding: 16px 16px 8px; }
-  .pm-chart { width: 100%; height: auto; display: block; overflow: visible; }
-  .pm-chart text { fill: var(--ink-3); font-size: 10px; font-variant-numeric: tabular-nums; }
-  .pm-axis-line { stroke: var(--border); stroke-width: 1; }
-  .pm-area { fill: var(--pm-fill); stroke: none; }
-  .pm-area.deg { fill: var(--pm-fill-deg); }
-  .pm-line { fill: none; stroke: var(--ink); stroke-width: 2; stroke-linejoin: round; stroke-linecap: round; }
-  .pm-line.deg { stroke: var(--crit); }
-  .pm-dot { fill: var(--ink); }
-  .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
-  /* Qualified with .pm-chart so it outweighs `.pm-chart text` (0,1,1) — an
-     unqualified .pm-endlabel (0,1,0) loses the cascade and renders muted. */
-  .pm-chart text.pm-endlabel { fill: var(--ink); font-weight: 700; font-size: 11px; }
-  .pm-cursor { stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 3 3; opacity: 0; pointer-events: none; }
-  .pm-tip { position: absolute; pointer-events: none; opacity: 0; transform: translate(-50%, -100%);
-            background: var(--ink); color: var(--bg); border-radius: 8px; padding: 7px 9px;
-            font-size: 11.5px; line-height: 1.5; white-space: nowrap;
-            box-shadow: 0 4px 16px rgba(0,0,0,0.22); z-index: 5; transition: opacity .08s; }
-  .pm-tip .deg { color: var(--crit); font-weight: 700; }
-  .pm-empty { color: var(--ink-3); padding: 26px 4px; }
-  .pm-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
-  .pm-note a { color: var(--ink-3); }
-  .pm-note .deg { color: var(--crit); font-weight: 600; }
-  .pm-controls { display: flex; justify-content: flex-end; margin: 0 2px 10px; }
-  .pm-toggle { display: inline-flex; gap: 2px; background: var(--surface); border: 1px solid var(--border);
-               border-radius: 8px; padding: 2px; }
-  .pm-toggle button { background: none; border: 0; color: var(--ink-2); font: inherit; font-size: 12.5px;
-                      padding: 5px 12px; border-radius: 6px; cursor: pointer; }
-  .pm-toggle button.on { background: var(--surface-2); color: var(--ink); font-weight: 600; }
-  /* ---- Pipeline FSM conformance ---- */
-  .fsm-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
-  .fsm-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); cursor: pointer; text-align: left; color: inherit; font: inherit; width: 100%; }
-  .fsm-alarm.ok { background: var(--clean-bg); border: 1px solid var(--clean); }
-  .fsm-alarm .an { font-size: 32px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
-  .fsm-alarm.bad .an { color: var(--crit); }
-  .fsm-alarm.ok .an { color: var(--clean); }
-  .fsm-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
-  .fsm-alarm .atxt b { color: var(--ink); }
-  .fsm-rail { display: flex; flex-wrap: wrap; align-items: stretch; gap: 5px; margin: 6px 0; }
-  .fsm-node { display: flex; flex-direction: column; justify-content: center; gap: 1px; background: var(--surface);
-              border: 1px solid var(--border); border-radius: 9px; padding: 7px 12px; }
-  .fsm-node .nl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
-  .fsm-node .nc { font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 650; color: var(--ink); }
-  .fsm-node.flow .nl { color: var(--ink-3); }
-  .fsm-node.done { border-color: var(--clean); }
-  .fsm-arrow { align-self: center; color: var(--ink-3); font-size: 13px; }
-  .fsm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 12px 0; }
-  .fsm-state { text-align: left; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border);
-               border-radius: 11px; padding: 12px 14px; cursor: pointer; color: inherit; font: inherit; width: 100%; }
-  .fsm-state:hover { background: var(--surface-2); }
-  .fsm-state.sel { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
-  .fsm-state.flow { border-left-color: var(--clean); }
-  .fsm-state.rule { border-left-color: var(--accent); }
-  .fsm-state.blk { border-left-color: var(--debt); }
-  .fsm-state.zero { opacity: 0.5; }
-  .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-  .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
-  .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
-  .fsm-list { margin: 2px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
-  .fsm-list.open { display: block; }
-  .fsm-list .li { display: block; padding: 9px 13px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); font-size: 13.5px; }
-  .fsm-list .li:last-child { border-bottom: 0; }
-  .fsm-list .li:hover { background: var(--surface); }
-  .fsm-list .li .lr { color: var(--ink-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-  .fsm-list .li .lz { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
-  .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
-  .fsm-note a, .fsm-note code { color: var(--ink-3); }
-  .fsm-lane { margin: 14px 0 2px; }
-  .fsm-lane-h { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
-  .fsm-lane-h .lct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 650; text-transform: none; letter-spacing: 0; }
-  .fsm-lane .fsm-grid { margin: 0; }
-  /* ---- External (Protofire) audit coverage ---- */
-  .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
-  .au-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); }
-  .au-alarm.ok { background: var(--clean-bg); border: 1px solid var(--clean); }
-  .au-alarm .an { font-size: 32px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
-  .au-alarm.bad .an { color: var(--crit); }
-  .au-alarm.ok .an { color: var(--clean); }
-  .au-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
-  .au-alarm .atxt b { color: var(--ink); }
-  .au-table { border: 1px solid var(--border); border-radius: 11px; overflow: hidden; margin: 4px 0 2px; }
-  .au-row { display: grid; grid-template-columns: 230px 84px 1fr; gap: 14px; align-items: start;
-            padding: 11px 14px; border-bottom: 1px solid var(--border); }
-  .au-row:last-child { border-bottom: 0; }
-  .au-row.stale { background: var(--debt-bg); }
-  .au-repo a { color: var(--ink); font-weight: 600; text-decoration: none; font-size: 14px; word-break: break-word; }
-  .au-repo a:hover { color: var(--accent); text-decoration: underline; }
-  .au-sub { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5;
-            font-family: ui-monospace, SFMono-Regular, Menlo, monospace; word-break: break-word; }
-  .au-flag { display: inline-block; font-size: 11px; color: var(--debt); border: 1px solid var(--debt-border);
-             background: var(--debt-bg); border-radius: 5px; padding: 0 5px; margin-top: 3px; font-family: inherit; }
-  .au-status { display: inline-flex; align-items: center; font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em;
-               font-weight: 650; border-radius: 6px; padding: 3px 7px; white-space: nowrap; }
-  .au-status.stale { color: var(--crit); border: 1px solid var(--crit); background: transparent; }
-  .au-status.current { color: var(--clean); border: 1px solid var(--clean); background: transparent; }
-  .au-status.na { color: var(--ink-3); border: 1px solid var(--border); background: transparent; }
-  .au-drift { font-size: 13px; color: var(--ink-2); line-height: 1.55; }
-  .au-drift .add { font-weight: 650; color: var(--clean); font-variant-numeric: tabular-nums; }
-  .au-drift .del { font-weight: 650; color: var(--crit); font-variant-numeric: tabular-nums; }
-  .au-drift .dim { color: var(--ink-3); }
-  .au-drift .ok { color: var(--clean); }
-  .au-drift a.au-drift-link { color: var(--ink-2); text-decoration: none; cursor: pointer; }
-  .au-drift a.au-drift-link:hover { text-decoration: underline; }
-  .au-gap { display: flex; flex-wrap: wrap; gap: 6px; margin: 8px 0 2px; }
-  .au-gapchip { font-size: 12.5px; font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
-                color: var(--ink-2); background: var(--surface); border: 1px solid var(--border);
-                border-radius: 6px; padding: 2px 8px; text-decoration: none; }
-  .au-gapchip:hover { color: var(--accent); border-color: var(--accent); }
-  .au-toggle { background: var(--surface); border: 1px solid var(--border); color: var(--ink-2);
-               border-radius: 8px; padding: 6px 11px; font-size: 13px; cursor: pointer; margin: 4px 0; }
-  .au-note { color: var(--ink-3); font-size: 12px; margin: 10px 2px 0; line-height: 1.5; }
-  .au-note code { color: var(--ink-3); }
-  .au-subhead { font-size: 12px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
-                margin: 20px 0 6px; font-weight: 600; }
-  footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
-  footer a { color: var(--ink-3); }
-  @media (max-width: 620px) {
-    .srow { grid-template-columns: 130px 1fr 30px; }
-    .repo { grid-template-columns: 1fr; gap: 8px; }
-  }
-  .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
-  .nav a { padding: 8px 13px; color: var(--ink-2); text-decoration: none; font-size: 13.5px;
-           border-bottom: 2px solid transparent; margin-bottom: -1px; }
-  .nav a:hover { color: var(--ink); }
-  .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  .wrap { max-width: 980px; margin: 0 auto; padding: 48px 20px; }
+  a { color: #2563eb; }
+  @media (prefers-color-scheme: dark) { a { color: #7ba7ff; } }
 </style>
 </head>
 <body>
 <div class="wrap">
-  <header>
-    <h1>rain org health</h1>
-    <span class="meta" id="meta">loading…</span>
-    <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
-  </header>
-  <nav class="nav">
-    <a href="index.html" class="active">Overview</a>
-    <a href="repositories.html">Repositories</a>
-    <a href="audit.html">Audit</a>
-    <a href="pipeline.html">Pipeline</a>
-    <a href="metrics.html">Metrics</a>
-    <a href="deployments.html">Deployments</a>
-  </nav>
-  <div class="tiles" id="tiles"></div>
-  <div id="auditglance"></div>
-  <footer>
-    Org-health dashboard — status, not severity; identity is the label, not the color.
-    <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
-  </footer>
+  <p>Redirecting to <a href="repositories.html">Repositories</a>…</p>
 </div>
-<script type="module">
-const $ = (id) => document.getElementById(id);
-// Theme toggle: default follows the OS; the button stamps data-theme to override.
-$("theme").addEventListener("click", () => {
-  const cur = document.documentElement.getAttribute("data-theme");
-  const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
-  document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
-});
-let data = null;
-async function load() {
-  try {
-    const r = await fetch("health.json", { cache: "no-store" });
-    if (!r.ok) throw new Error(r.status);
-    data = await r.json();
-  } catch (e) {
-    $("meta").textContent = "could not load health.json";
-    return;
-  }
-  const ago = Math.round((Date.now() - new Date(data.generatedAt).getTime()) / 3.6e6);
-  $("meta").textContent =
-    `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
-    (isFinite(ago) ? ` (${ago}h ago)` : "");
-  const signalCount = Object.keys(data.summary || {}).length;
-  const clean = data.totalRepos - data.reposWithFindings;
-  const tiles = [
-    [data.totalRepos, "repos scanned"],
-    [data.reposWithFindings, "with debt"],
-    [clean, "clean"],
-    [signalCount, "distinct signals"],
-    [data.reposExternallyAudited, "externally audited"],
-    [data.reposNeverExternallyAudited, "never audited"],
-  ];
-  const box = $("tiles");
-  box.textContent = "";
-  for (const [n, l] of tiles) {
-    const t = document.createElement("div");
-    t.className = "tile";
-    const num = document.createElement("div");
-    num.className = "n";
-    num.textContent = n == null ? "—" : String(n);
-    const lab = document.createElement("div");
-    lab.className = "l";
-    lab.textContent = l;
-    t.append(num, lab);
-    box.appendChild(t);
-  }
-  const neverN = data.reposNeverExternallyAudited || 0;
-  const g = $("auditglance");
-  g.textContent = "";
-  const alarm = document.createElement(neverN > 0 ? "a" : "div");
-  alarm.className = "au-alarm " + (neverN > 0 ? "bad" : "ok");
-  if (neverN > 0) {
-    alarm.href = "audit.html";
-    alarm.style.textDecoration = "none";
-    alarm.style.color = "inherit";
-    alarm.style.cursor = "pointer";
-  }
-  const an = document.createElement("span");
-  an.className = "an";
-  an.textContent = String(neverN);
-  const atxt = document.createElement("span");
-  atxt.className = "atxt";
-  atxt.textContent =
-    neverN > 0
-      ? "repos never externally audited — the Protofire coverage gap. Open the Audit page →"
-      : "every repo externally audited.";
-  alarm.append(an, atxt);
-  g.append(alarm);
-}
-load();
-</script>
 </body>
 </html>

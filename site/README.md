@@ -4,10 +4,15 @@ Static, dependency-free dashboard for the org-health scan.
 
 **Live: <https://rainlanguage.github.io/rain-org-health/>**
 
-- `index.html` — self-contained page (inline CSS/JS, no build, no external
-  requests) that fetches `health.json` and renders per-repo modernization-debt
-  signals: stat tiles, a per-signal magnitude summary, and a filterable repo
-  list. Theme follows the OS with a manual toggle.
+- `repositories.html` — the landing page: self-contained (inline CSS/JS, no
+  build, no external requests), fetches `health.json` and renders per-repo
+  modernization-debt signals — a per-signal magnitude summary and a filterable
+  repo list. Theme follows the OS with a manual toggle.
+- `audit.html`, `pipeline.html`, `metrics.html`, `deployments.html` — the other
+  pages, same shape; each fetches the artifact it reports on.
+- `index.html` — a redirect to `repositories.html`. GitHub Pages serves it as
+  the site root, so it stays even though the overview page it used to hold is
+  gone.
 - `health.json` — the data source, produced by the scan:
 
   ```
