@@ -20,7 +20,11 @@ as a Claude plugin (`.claude-plugin/`, `plugins/rain-org-health-check/`).
   need — the browser scrolls and pinch-zooms natively, and its zoom focuses
   correctly because it is the thing reading the gesture. Binding those in JS
   requires `touch-action: none`, which suppresses the real pinch-zoom to
-  reimplement it worse.
+  reimplement it worse. BUTTONS are a different thing and are wanted: the audit
+  graph's zoom in/out/fit buttons re-apply the same static fit scale the page
+  already computes, bind no gesture, and set no `touch-action` — so the
+  browser's own pinch and scroll keep working untouched. The rejection is of
+  gesture binding, not of a visible control.
 - `flake.nix` — `packages.roh-scan`, `packages.screenshot`,
   `packages.default = roh-scan`; `devShells.default` composes rainix's devshell
   (so `pre-commit run --all-files` reproduces CI's static suite).
