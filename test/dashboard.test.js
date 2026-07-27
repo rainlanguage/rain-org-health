@@ -262,6 +262,64 @@ function fsmBox(hq, history) {
   return box;
 }
 
+// Zoom is BUTTONS ONLY — the repo rejects binding pan/zoom GESTURES in JS
+// (CLAUDE.md: touch-action:none suppresses the device's real pinch to reimplement
+// it worse). These pin the button arithmetic, not any gesture path.
+const graphFit = bind("audit.html", "graphFit", [], []);
+const zoomScale = bind(
+  "audit.html",
+  "zoomScale",
+  ["GRAPH_ZOOM_STEP", "GRAPH_ZOOM_MAX"],
+  [1.25, 3],
+);
+
+const zoomBtnDisabled = bind("audit.html", "zoomBtnDisabled", ["GRAPH_ZOOM_MAX"], [3]);
+
+Deno.test("graph zoom: at the initial fit only zoom-IN is live", () => {
+  // What the page shows on first render: fitted, so out/Fit are dead ends and the
+  // only useful move is in. A board where every control looks dead reads as broken.
+  const off = zoomBtnDisabled(0.5, 0.5);
+  assert(off.in === false, "zoom-in is live at the fit");
+  assert(off.out === true, "zoom-out is dead at the fit");
+  assert(off.fit === true, "Fit is dead when already fitted");
+});
+
+Deno.test("graph zoom: at the ceiling only zoom-OUT and Fit are live", () => {
+  const off = zoomBtnDisabled(3, 0.5);
+  assert(off.in === true, "zoom-in is dead at the max");
+  assert(off.out === false, "zoom-out is live at the max");
+  assert(off.fit === false, "Fit is live once zoomed off the fit");
+});
+
+Deno.test("graph fit: fits the whole graph inside the box padding, never magnifying", () => {
+  // 16px padding each side, so a 1032-wide box holds 1000px of graph at 1:1.
+  assert(graphFit(1032, 1032, 1000, 1000) === 1, "exactly-fitting graph sits at 1:1");
+  // A graph twice the box width fits at half scale, and the TIGHTER axis wins.
+  assert(graphFit(532, 1032, 1000, 1000) === 0.5, "width-constrained: " + graphFit(532, 1032, 1000, 1000));
+  assert(graphFit(1032, 532, 1000, 1000) === 0.5, "height-constrained");
+  // Small graph in a big box is NOT blown up — 1 is the ceiling.
+  assert(graphFit(2032, 2032, 100, 100) === 1, "never magnifies past 1:1");
+});
+
+Deno.test("graph zoom: steps in and out, clamped by the fit below and the max above", () => {
+  const fit = 0.5;
+  assert(zoomScale(fit, fit, "in") === 0.625, "one step in: " + zoomScale(fit, fit, "in"));
+  assert(zoomScale(1, fit, "out") === 0.8, "one step out: " + zoomScale(1, fit, "out"));
+  // Nothing smaller than "the whole graph" is useful, so the fit is the floor.
+  assert(zoomScale(fit, fit, "out") === fit, "cannot zoom out past the fit");
+  assert(zoomScale(0.55, fit, "out") === fit, "a step that would undershoot clamps to the fit");
+  // And a step cannot launch the graph out of its own scrollport.
+  assert(zoomScale(3, fit, "in") === 3, "cannot zoom in past the max");
+  assert(zoomScale(2.9, fit, "in") === 3, "a step that would overshoot clamps to the max");
+});
+
+Deno.test("graph zoom: fit action returns the CURRENT fit, not a remembered one", () => {
+  // Reset recomputes, so after a resize it lands on the new fit rather than the
+  // scale the graph first rendered at.
+  assert(zoomScale(2.4, 0.5, "fit") === 0.5, "resets to the fit passed in");
+  assert(zoomScale(2.4, 0.31, "fit") === 0.31, "a resized box resets to its NEW fit");
+});
+
 const standsOn = bind("audit.html", "standsOn", [], []);
 const ground = (edges, root) => [...standsOn(edges, root)].sort().join(",");
 
@@ -1325,33 +1383,92 @@ Deno.test("audit never-audited: headline count + one enumerated row per uncovere
   );
 });
 
-Deno.test("pipeline FSM: leak alarm shows the count; OK alarm when zero", () => {
+// The FSM leak is a STATE the human must clear, not a banner beside the machine. A
+// banner reads as an annotation on the diagram and gets skipped; a state box sits in
+// the human's actionable set and counts toward their total like every other inbox.
+Deno.test("pipeline FSM: unmodelled PRs are a human-owned state, not a banner", () => {
   const box = fsmBox({
     counts: { leaks: 3, ready: 5, closeCandidateIssues: 0 },
     lanes: { "vetter-verdicts": { "ai:ready": { count: 5, prs: [] } } },
   });
-  const bad = collect(box, "fsm-alarm").filter((a) =>
-    a.className.split(" ").includes("bad")
-  );
-  assert(bad.length === 1, "a leak alarm is rendered when leaks > 0");
+  // No banner survives — the old one was the only .fsm-alarm on the page.
   assert(
-    collect(bad[0], "an")[0].textContent === "3",
-    "leak alarm shows the leak count",
+    collect(box, "fsm-alarm").length === 0,
+    "the leak banner is gone",
+  );
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  assert(leak, "a leak state box is rendered");
+  assert(
+    collect(leak, "sk")[0].textContent === "not in any modeled state",
+    "the state keeps the banner's label",
   );
   assert(
-    textOf(box).includes("not in any modeled state"),
-    "leak alarm copy present",
+    collect(leak, "sc")[0].textContent === "3",
+    "the state shows the leak count",
   );
+  assert(
+    collect(leak, "sa")[0].textContent === "model it",
+    "the act names what the human must do",
+  );
+  // It belongs to the human, and its count reaches the human total (3 leaks + 5 ready).
+  const human = ownerGroups(box).find((g) => g.title.includes("Human action"));
+  assert(
+    human.states.includes("not in any modeled state"),
+    `leak is human-owned: ${JSON.stringify(human.states)}`,
+  );
+  assert(
+    human.title.includes("8"),
+    `human total includes the leaks (3+5=8): ${human.title}`,
+  );
+});
 
-  const clean = fsmBox({
+// A zero leak count is the healthy case and must render as a dimmed zero box — the
+// machine's shape stays visible rather than the state vanishing.
+Deno.test("pipeline FSM: a zero leak count renders a dimmed state, not a gap", () => {
+  const box = fsmBox({
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
     lanes: {},
   });
-  const ok = collect(clean, "fsm-alarm").filter((a) =>
-    a.className.split(" ").includes("ok")
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  assert(leak, "the leak state still renders at zero");
+  assert(collect(leak, "sc")[0].textContent === "0", "it reads zero");
+  assert(
+    leak.className.includes("zero"),
+    `zero states are dimmed: ${leak.className}`,
   );
-  assert(ok.length === 1, "a zero-leak run shows the OK alarm");
-  assert(textOf(clean).includes("fully conformant"), "conformant copy present");
+});
+
+// An older human-queue.json may not carry `leaks` at all — that must render zero, not
+// NaN or a broken box.
+Deno.test("pipeline FSM: an absent leaks key renders zero, not NaN", () => {
+  const box = fsmBox({
+    counts: { ready: 1, closeCandidateIssues: 0 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } } },
+  });
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  assert(leak, "the leak state renders even with no leaks key");
+  assert(
+    collect(leak, "sc")[0].textContent === "0",
+    `absent key reads 0, got ${collect(leak, "sc")[0].textContent}`,
+  );
+});
+
+// Clicking the state lists the offending PRs from the top-level `leaks` array — the
+// click-through the banner had is preserved by keeping the state key `leak`.
+Deno.test("pipeline FSM: the leak state lists its PRs on click", () => {
+  const box = fsmBox({
+    counts: { leaks: 2, ready: 0, closeCandidateIssues: 0 },
+    lanes: {},
+    leaks: [
+      { repo: "rainlanguage/raindex", number: 11, title: "unlabelled one" },
+      { repo: "rainlanguage/rain.flare", number: 22, title: "unlabelled two" },
+    ],
+  });
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  leak.click();
+  const text = textOf(box);
+  assert(text.includes("unlabelled one"), "first leaked PR listed");
+  assert(text.includes("rain.flare#22"), "second leaked PR listed by repo#number");
 });
 
 Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", () => {
@@ -1364,19 +1481,24 @@ Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", (
 // #66: the close-candidate PR STATE and the close-candidate ISSUES group must not
 // share the identical "ai:close-candidate" label (they read as one contradictory
 // control otherwise).
-Deno.test("pipeline FSM: the two close-candidate states carry distinct labels", () => {
+Deno.test("pipeline FSM: the close-candidate states carry distinct labels", () => {
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateIssues: 18 },
+    counts: { leaks: 0, ready: 0, closeCandidateUnvetted: 18, closeCandidateUpheld: 4 },
     lanes: {},
   });
   const labels = collect(box, "sk").map((s) => s.textContent);
+  // One flag, three distinct boxes: the PR variant, plus the issue variant split by
+  // vetting stage (issue-pr-cron#73). None may read as another.
+  for (const l of [
+    "ai:close-candidate (PRs)",
+    "ai:close-candidate (unvetted)",
+    "ai:close-candidate (upheld)",
+  ]) {
+    assert(labels.includes(l), `label missing: ${l} in ${JSON.stringify(labels)}`);
+  }
   assert(
-    labels.includes("ai:close-candidate (PRs)"),
-    `PR label missing: ${JSON.stringify(labels)}`,
-  );
-  assert(
-    labels.includes("ai:close-candidate (issues)"),
-    `issues label missing: ${JSON.stringify(labels)}`,
+    new Set(labels).size === labels.length,
+    `no two boxes share a label: ${JSON.stringify(labels)}`,
   );
   assert(
     !labels.includes("ai:close-candidate"),
@@ -1402,7 +1524,7 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
         },
       },
     },
-    closeCandidateIssues: [
+    uncoveredIssues: [
       { repo: "o/x", number: 10, title: "issue ten" },
       { repo: "o/y", number: 11, title: "issue eleven" },
     ],
@@ -1431,12 +1553,12 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
   );
   assert(collect(detail, "li").length === 3, "renders exactly the 3 PRs");
 
-  // Click the close-candidate ISSUES box (2 issues) — the SAME bottom panel re-populates
-  // with the issues state's own header + count, so the two never blur together.
-  boxByT("closeCandidateIssues").click();
+  // Click an ISSUE-type box (2 issues) — the SAME bottom panel re-populates with that
+  // state's own header + count, so PR and issue states never blur together.
+  boxByT("uncoveredIssues").click();
   assert(detail.parent === detailHost, "still the same panel, still in place");
   assert(
-    collect(detail, "dhl")[0].textContent === "ai:close-candidate (issues)",
+    collect(detail, "dhl")[0].textContent === "untouched (no PR)",
     "header re-names to the issues state",
   );
   assert(
@@ -1514,15 +1636,18 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
       "ai:ready",
       "ai:design",
       "ai:close-candidate (PRs)",
-      "ai:close-candidate (issues)",
+      "ai:close-candidate (upheld)",
       "human:design",
       "human:close-candidate",
     ].every((s) => human.states.includes(s)),
     `human states: ${JSON.stringify(human.states)}`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
+  // 17 = the 15 original states, minus the combined close-candidate issues box, plus the
+  // two owner-specific states the vetter verdict introduces (issue-pr-cron#73), plus the
+  // FSM leak, promoted from a banner to a human-owned state.
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 15, `all 15 states filed once: ${total}`);
+  assert(total === 17, `all 17 states filed once: ${total}`);
 });
 
 // #69: the four historically dual-owner states each resolve to ONE actor.
@@ -1604,6 +1729,140 @@ Deno.test("fsm sparkline: a state with ≥2 history points renders an inline spa
   assert(collect(ready, "fsm-spark").length === 1, "one inline sparkline in the state");
   assert(tags(ready, "polyline").length === 1, "sparkline draws a polyline");
   assert(tags(ready, "circle").length === 1, "sparkline has an emphasized endpoint dot");
+});
+
+// (a2) a state whose counts key is NEW — carried by only the newest refresh — still gets a
+// chart: the lone endpoint dot. This is the real shape of the live rollup whenever the tool
+// starts emitting a key (`uncoveredIssues`/"untouched (no PR)" entered `counts` on
+// 2026-07-25 and appeared in 1 of 118 history lines), and the state must not silently lose
+// its sparkline just because its series is short. No polyline: one vertex paints nothing.
+Deno.test("fsm sparkline: a brand-new counts key with ONE history point draws its endpoint dot alone", () => {
+  const now = Date.parse("2026-07-26T06:22:06Z");
+  const at = (d) => now - d * DAY;
+  // 5 refreshes; only the newest carries `uncoveredIssues` — exactly like the live rollup.
+  const history = [6, 5, 7, 8, 9].map((v, i) => ({
+    t: at(4 - i),
+    counts: i === 4 ? { ready: v, uncoveredIssues: 616 } : { ready: v },
+  }));
+  const hq = {
+    counts: { leaks: 0, ready: 9, closeCandidateIssues: 0, uncoveredIssues: 616 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 9, prs: [] } } },
+  };
+  const box = fsmBox(hq, history);
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const untouched = byKey("uncoveredIssues");
+  assert(untouched, "untouched (no PR) state box rendered");
+  assert(collect(untouched, "fsm-spark").length === 1, "a single-sample state still gets a sparkline");
+  assert(tags(untouched, "circle").length === 1, "the single sample renders as an endpoint dot");
+  assert(tags(untouched, "polyline").length === 0, "one point draws no line");
+  // A single point can't establish a trend, so it is still never flagged as the bottleneck.
+  assert(!untouched.classList.contains("rising"), "one sample never flags a bottleneck");
+  // Siblings with a full series are untouched by this: line AND dot, exactly as before.
+  const ready = byKey("ai:ready");
+  assert(tags(ready, "polyline").length === 1, "a multi-sample sibling still draws its line");
+  assert(tags(ready, "circle").length === 1, "a multi-sample sibling still draws its dot");
+});
+
+// issue-pr-cron#73: the close-candidate ISSUE lifecycle gains a vetter verdict, so the
+// single "all flagged issues" figure splits into two inboxes with DIFFERENT owners —
+// unvetted (the vetter judges the flag) and upheld (a human closes the issue).
+Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a human inbox", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
+    lanes: {},
+  });
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const unvetted = byKey("closeCandidateUnvetted");
+  const upheld = byKey("closeCandidateUpheld");
+  assert(unvetted, "unvetted close-candidate box rendered");
+  assert(upheld, "upheld close-candidate box rendered");
+  assert(
+    textOf(unvetted).includes("20") && textOf(upheld).includes("9"),
+    `each reads its own count: ${textOf(unvetted)} / ${textOf(upheld)}`,
+  );
+  // Each is exactly one actor's inbox — the whole point of splitting them.
+  const groups = ownerGroups(box);
+  const owner = (label) => {
+    const g = groups.find((g) => g.states.includes(label));
+    return g ? g.title : null;
+  };
+  assert(
+    (owner("ai:close-candidate (unvetted)") || "").includes("Vetter action"),
+    `unvetted is the vetter's inbox: ${owner("ai:close-candidate (unvetted)")}`,
+  );
+  assert(
+    (owner("ai:close-candidate (upheld)") || "").includes("Human action"),
+    `upheld is the human's inbox: ${owner("ai:close-candidate (upheld)")}`,
+  );
+});
+
+// One flag now produces TWO inboxes with DIFFERENT owners, so their sum is not a state
+// anyone acts on. No combined box exists in the lanes view, and each split state counts
+// toward its own actor's total — the invariant a combined box could not satisfy.
+Deno.test("pipeline FSM: no combined close-candidate box; each split state counts toward its own actor total", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
+    lanes: {},
+  });
+  const groups = ownerGroups(box);
+  const all = groups.flatMap((g) => g.states);
+  assert(
+    !all.includes("ai:close-candidate (issues)"),
+    `the combined all-issues box is gone: ${JSON.stringify(all)}`,
+  );
+  // The heading concatenates title + sub + count, so the total is its trailing number.
+  const vetter = groups.find((g) => g.title.includes("Vetter action"));
+  const human = groups.find((g) => g.title.includes("Human action"));
+  assert(vetter.title.endsWith("20"), `vetter total counts the 20 unvetted: ${vetter.title}`);
+  assert(human.title.endsWith("9"), `human total counts the 9 upheld: ${human.title}`);
+  // Neither total silently absorbs the 29 that used to be rendered as its own box.
+  assert(
+    !vetter.title.includes("29") && !human.title.includes("29"),
+    `no total carries the combined figure: ${vetter.title} / ${human.title}`,
+  );
+});
+
+// Rollout ordering: this dashboard change ships BEFORE pr-review-report emits the new
+// keys, so live data will not carry them for a while. An absent key must render a zeroed
+// box (the machine's whole shape stays visible) with no sparkline — never a broken box.
+Deno.test("pipeline FSM: close-candidate split states render zeroed when the tool has not emitted them yet", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29 },
+    lanes: {},
+  }, [
+    { t: Date.parse("2026-07-25T00:00:00Z"), counts: { closeCandidateIssues: 29 } },
+    { t: Date.parse("2026-07-26T00:00:00Z"), counts: { closeCandidateIssues: 29 } },
+  ]);
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  for (const k of ["closeCandidateUnvetted", "closeCandidateUpheld"]) {
+    const b = byKey(k);
+    assert(b, `${k} box still rendered with the key absent`);
+    // `zero` is baked into the className at construction (only `rising` is added via
+    // classList), so read the string the box was built with.
+    assert(b.className.includes("zero"), `${k} reads as zero, dimmed`);
+    assert(collect(b, "fsm-spark").length === 0, `${k} has no spark with no samples`);
+    assert(!b.classList.contains("rising"), `${k} cannot flag a bottleneck with no data`);
+  }
+});
+
+// The first refresh after the tool starts emitting a split key gives it a single sample.
+// Per #129 that must draw its lone endpoint dot rather than vanishing.
+Deno.test("pipeline FSM: a freshly-emitted close-candidate split key draws its lone endpoint dot", () => {
+  const now = Date.parse("2026-07-26T06:22:06Z");
+  const at = (d) => now - d * DAY;
+  const history = [0, 1, 2, 3, 4].map((i) => ({
+    t: at(4 - i),
+    counts: i === 4 ? { closeCandidateIssues: 29, closeCandidateUnvetted: 20 } : { closeCandidateIssues: 29 },
+  }));
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20 },
+    lanes: {},
+  }, history);
+  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "closeCandidateUnvetted");
+  assert(collect(unvetted, "fsm-spark").length === 1, "one sample still gets a sparkline");
+  assert(tags(unvetted, "circle").length === 1, "the sample renders as an endpoint dot");
+  assert(tags(unvetted, "polyline").length === 0, "one point draws no line");
+  assert(!unvetted.classList.contains("rising"), "one sample never flags a bottleneck");
 });
 
 // (b) the red border applies on an up-trend and NOT on a flat / single-blip series.

@@ -302,6 +302,13 @@
   .au-mut-commit { font-family: ui-monospace, monospace; color: var(--ink-2); }
   .au-sub .ok, .gn-skill .ok { color: var(--clean); }
   .graphhelp { color: var(--ink-2); font-size: 13px; margin: 0 0 8px; }
+  .graphctl { display: flex; justify-content: flex-end; margin: 0 0 8px; }
+  .zoomctl { display: inline-flex; gap: 2px; background: var(--surface); border: 1px solid var(--border);
+             border-radius: 8px; padding: 2px; }
+  .zoomctl button { background: none; border: 0; color: var(--ink-2); font: inherit; font-size: 12.5px;
+                    padding: 5px 11px; border-radius: 6px; cursor: pointer; min-width: 34px; }
+  .zoomctl button:hover:not(:disabled) { background: var(--surface-2); color: var(--ink); }
+  .zoomctl button:disabled { opacity: 0.4; cursor: default; }
   .legend { display: flex; flex-wrap: wrap; gap: 12px; margin: 0 0 10px; font-size: 13px; color: var(--ink-2); }
   .legend .key { display: inline-flex; align-items: center; gap: 6px; }
   .legend .swatch { width: 22px; height: 14px; border-radius: 5px; border-width: 1.5px; border-style: solid; flex: none; }
@@ -323,21 +330,27 @@
     <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
   </header>
   <nav class="nav">
-    <a href="index.html">Overview</a>
+    <a href="pipeline.html">Pipeline</a>
     <a href="repositories.html">Repositories</a>
     <a href="audit.html" class="active">Audit</a>
-    <a href="pipeline.html">Pipeline</a>
     <a href="metrics.html">Metrics</a>
     <a href="deployments.html">Deployments</a>
   </nav>
   <h2>Dependency graph · blast radius</h2>
   <p class="graphhelp" id="graphhelp">
-    Tap a repo to trace the ground it stands on — everything beneath it that an audit has to clear first. Scroll to pan, pinch or ctrl-scroll to zoom, tap the background to clear.
+    Tap a repo to trace the ground it stands on — everything beneath it that an audit has to clear first. Scroll to pan, pinch or ctrl-scroll to zoom (or use the zoom buttons), tap the background to clear.
     Solidity repos only; an arrow points from a consumer to the dependency it stands on.
     Coverage is <strong>Protofire</strong> only: a repo audited by someone else still reads as uncovered here, because counting a PDF this scan cannot date would be a false coverage claim.
   </p>
   <p class="graphsum" id="graphsum"></p>
   <div id="graphlegend" class="legend"></div>
+  <div class="graphctl">
+    <div class="zoomctl" role="group" aria-label="Graph zoom">
+      <button type="button" id="zoomout" aria-label="Zoom out" disabled>&minus;</button>
+      <button type="button" id="zoomfit" aria-label="Reset zoom to fit the whole graph" disabled>Fit</button>
+      <button type="button" id="zoomin" aria-label="Zoom in" disabled>+</button>
+    </div>
+  </div>
   <div id="graph" class="graphbox"><div class="empty" id="graphempty">loading dependency graph…</div></div>
 
   <h2>External audit coverage · Protofire</h2>
@@ -963,6 +976,33 @@ function standsOn(edges, root) {
   return seen;
 }
 
+const GRAPH_ZOOM_STEP = 1.25;
+const GRAPH_ZOOM_MAX = 3;
+
+// The scale that fits the whole graph in its box. clientWidth spans the padding
+// box, so drop the 16px each side to land the graph inside the padding rather
+// than under it. Never magnifies past 1:1 — a small graph sits at natural size.
+// Recomputed (not cached) so "Fit" stays correct after the box is resized.
+function graphFit(boxW, boxH, w, h) {
+  return Math.min(1, (boxW - 32) / w, (boxH - 32) / h);
+}
+
+// Next scale for a zoom BUTTON press. Clamped below by the fit — nothing smaller
+// than "the whole graph" is useful — and above by GRAPH_ZOOM_MAX so a step cannot
+// launch the graph out of its own scrollport. Pure: the caller owns the DOM.
+function zoomScale(scale, fit, action) {
+  if (action === "fit") return fit;
+  const next = action === "in" ? scale * GRAPH_ZOOM_STEP : scale / GRAPH_ZOOM_STEP;
+  return Math.min(GRAPH_ZOOM_MAX, Math.max(fit, next));
+}
+
+// Which zoom buttons are live at a given scale. Pure so the rule is testable:
+// at the fit you can only go in, at the ceiling only out, and "Fit" is dead when
+// you are already fitted.
+function zoomBtnDisabled(scale, fit) {
+  return { in: scale >= GRAPH_ZOOM_MAX, out: scale <= fit, fit: scale === fit };
+}
+
 async function renderGraph() {
   const g = data.auditGraph;
   const box = $("graph");
@@ -1053,19 +1093,45 @@ async function renderGraph() {
     }
   }
 
-  // clientWidth spans the padding box, so drop the 16px each side to land the
-  // graph inside the padding rather than under it.
-  const fit = Math.min(1, (box.clientWidth - 32) / laid.width, (box.clientHeight - 32) / laid.height);
-
-  // Fit the whole graph into the box, once, as a plain static scale. Zoom and pan
-  // are the browser's own: it scrolls this box natively, and pinch (or ctrl-scroll)
+  // Fit the whole graph into the box as a plain static scale. GESTURE zoom and pan
+  // remain the browser's own: it scrolls this box natively, and pinch (or ctrl-scroll)
   // zooms the page, which keeps the point under the fingers fixed because the
   // browser -- not this file -- is doing the arithmetic. A script that binds those
   // gestures has to set touch-action: none, which suppresses the device's real
-  // pinch-zoom in order to reimplement it worse.
-  surface.style.transform = `scale(${fit})`;
-  sizer.style.width = `${laid.width * fit}px`;
-  sizer.style.height = `${laid.height * fit}px`;
+  // pinch-zoom in order to reimplement it worse. Nothing below binds a gesture:
+  // the buttons only re-apply this same static scale, and because .graphbox is
+  // overflow:auto, a larger sizer means the BROWSER's scrollbars do the panning.
+  let scale = graphFit(box.clientWidth, box.clientHeight, laid.width, laid.height);
+
+  const applyScale = (next) => {
+    // Hold the viewport centre still across a step: convert the centre to graph
+    // coordinates at the old scale, then put it back at the new one. Plain
+    // arithmetic on scroll offsets -- no pointer, wheel or touch involved.
+    const cx = (box.scrollLeft + box.clientWidth / 2) / scale;
+    const cy = (box.scrollTop + box.clientHeight / 2) / scale;
+    scale = next;
+    surface.style.transform = `scale(${scale})`;
+    sizer.style.width = `${laid.width * scale}px`;
+    sizer.style.height = `${laid.height * scale}px`;
+    box.scrollLeft = cx * scale - box.clientWidth / 2;
+    box.scrollTop = cy * scale - box.clientHeight / 2;
+    const off = zoomBtnDisabled(scale, graphFit(box.clientWidth, box.clientHeight, laid.width, laid.height));
+    $("zoomin").disabled = off.in;
+    $("zoomout").disabled = off.out;
+    $("zoomfit").disabled = off.fit;
+  };
+
+  for (const [id, action] of [["zoomin", "in"], ["zoomout", "out"], ["zoomfit", "fit"]]) {
+    const btn = $(id);
+    btn.disabled = false;
+    // "Fit" recomputes rather than replaying the first scale, so it stays correct
+    // after the window (and so the box) has been resized.
+    btn.addEventListener("click", () => {
+      const fitNow = graphFit(box.clientWidth, box.clientHeight, laid.width, laid.height);
+      applyScale(zoomScale(scale, fitNow, action));
+    });
+  }
+  applyScale(scale);
 
   // A pan ends in a click, so only a gesture that stayed put counts as a trace.
   let downAt = null;

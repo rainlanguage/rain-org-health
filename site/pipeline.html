@@ -134,22 +134,6 @@
                       padding: 5px 12px; border-radius: 6px; cursor: pointer; }
   .pm-toggle button.on { background: var(--surface-2); color: var(--ink); font-weight: 600; }
   /* ---- Pipeline FSM conformance ---- */
-  .fsm-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
-  .fsm-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); cursor: pointer; text-align: left; color: inherit; font: inherit; width: 100%; }
-  .fsm-alarm.ok { background: var(--clean-bg); border: 1px solid var(--clean); }
-  .fsm-alarm .an { font-size: 32px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
-  .fsm-alarm.bad .an { color: var(--crit); }
-  .fsm-alarm.ok .an { color: var(--clean); }
-  .fsm-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
-  .fsm-alarm .atxt b { color: var(--ink); }
-  .fsm-rail { display: flex; flex-wrap: wrap; align-items: stretch; gap: 5px; margin: 6px 0; }
-  .fsm-node { display: flex; flex-direction: column; justify-content: center; gap: 1px; background: var(--surface);
-              border: 1px solid var(--border); border-radius: 9px; padding: 7px 12px; }
-  .fsm-node .nl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); white-space: nowrap; }
-  .fsm-node .nc { font-variant-numeric: tabular-nums; font-size: 16px; font-weight: 650; color: var(--ink); }
-  .fsm-node.flow .nl { color: var(--ink-3); }
-  .fsm-node.done { border-color: var(--clean); }
-  .fsm-arrow { align-self: center; color: var(--ink-3); font-size: 13px; }
   .fsm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 12px 0; }
   .fsm-state { text-align: left; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border);
                border-radius: 11px; padding: 12px 14px; cursor: pointer; color: inherit; font: inherit; width: 100%; }
@@ -258,10 +242,9 @@
     <button class="theme-btn" id="theme" aria-label="Toggle theme">◐ theme</button>
   </header>
   <nav class="nav">
-    <a href="index.html">Overview</a>
+    <a href="pipeline.html" class="active">Pipeline</a>
     <a href="repositories.html">Repositories</a>
     <a href="audit.html">Audit</a>
-    <a href="pipeline.html" class="active">Pipeline</a>
     <a href="metrics.html">Metrics</a>
     <a href="deployments.html">Deployments</a>
   </nav>
@@ -352,10 +335,17 @@ function renderFsm(hq, history) {
   };
   // Built as real SVG nodes (createElementNS + setAttribute) — never markup — matching
   // the rest of the dashboard, so nothing reaching the chart is parsed as markup.
+  // A series of ONE sample still draws: its endpoint dot, alone. A newly-emitted counts
+  // key legitimately has a single point until refreshes accrue (older snapshots carry no
+  // value for it, and seriesFor won't invent zeros), and dropping the chart made that
+  // state indistinguishable from one wired to no history key at all — silence, on the
+  // metric a reader is most likely to be checking BECAUSE it is new. The lone dot is
+  // unambiguous against a flat inventory, which has ≥2 points and so draws a horizontal
+  // LINE through that same dot; it grows into a full line as the rollup fills in.
   const sparkline = (series) => {
     const win = now ? series.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : series;
     const pts = win.length ? win : series;
-    if (pts.length < 2) return null;
+    if (!pts.length) return null;
     const W = 56, H = 16, PAD = 2;
     const ts = pts.map((p) => p.t), vs = pts.map((p) => p.v);
     const tMin = Math.min(...ts), tMax = Math.max(...ts);
@@ -364,47 +354,13 @@ function renderFsm(hq, history) {
     const yOf = (v) => vMax === vMin ? H / 2 : H - PAD - ((v - vMin) / (vMax - vMin)) * (H - 2 * PAD);
     const xy = pts.map((p) => [xOf(p.t), yOf(p.v)]);
     const svg = svgEl("svg", { class: "fsm-spark", width: W, height: H, viewBox: `0 0 ${W} ${H}`, "aria-hidden": "true" });
-    svg.append(svgEl("polyline", { class: "sl", points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
+    // One point is a dot, not a line — a single-vertex polyline paints nothing.
+    if (xy.length > 1) svg.append(svgEl("polyline", { class: "sl", points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
     const last = xy[xy.length - 1];
     svg.append(svgEl("circle", { class: "sd", cx: last[0].toFixed(1), cy: last[1].toFixed(1), r: 2 }));
     return svg;
   };
 
-  // Main lifecycle rail — issue → un-vetted → ai:ready → queue → approved → merged.
-  const rail = el("div", "fsm-rail");
-  const railNodes = [
-    { l: "open issue" }, { l: "un-vetted" }, { l: "ai:ready", n: c.ready },
-    { l: "queue" }, { l: "approved" }, { l: "merged", done: true },
-  ];
-  railNodes.forEach((nd, i) => {
-    const node = el("div", "fsm-node" + (nd.done ? " done" : nd.n == null ? " flow" : ""));
-    node.append(el("span", "nl", nd.l));
-    if (nd.n != null) node.append(el("span", "nc", String(Number(nd.n))));
-    rail.append(node);
-    if (i < railNodes.length - 1) rail.append(el("span", "fsm-arrow", "→"));
-  });
-
-  // Leak bucket — the loudest element.
-  let alarm;
-  if (c.leaks > 0) {
-    alarm = el("button", "fsm-alarm bad");
-    alarm.dataset.t = "leak";
-    const atxt = el("span", "atxt");
-    atxt.append(
-      el("b", null, "not in any modeled state"),
-      " — producer PRs with a note but no ",
-      el("code", null, "ai:*"),
-      " label. The FSM-leak signal; it should be ",
-      el("b", null, "zero"),
-      ". Click to see what needs modeling."
-    );
-    alarm.append(el("span", "an", String(Number(c.leaks))), atxt);
-  } else {
-    alarm = el("div", "fsm-alarm ok");
-    const atxt = el("span", "atxt");
-    atxt.append(el("b", null, "fully conformant"), " — every open PR sits in a modeled state.");
-    alarm.append(el("span", "an", "0"), atxt);
-  }
 
   // The full machine, grouped by WHO MUST ACT NEXT (#69). A modeled state is not just
   // a lifecycle phase — it is an INBOX owned by exactly one of three actors: the
@@ -477,13 +433,29 @@ function renderFsm(hq, history) {
     // Producer BACKLOG — open issues with no covering open PR (excl. human-gated / close-candidate):
     // the biggest producer inbox, the untouched work it must turn into PRs. Not a lane state —
     // count from `counts.uncoveredIssues`, items from the top-level `uncoveredIssues` (0 on an older
-    // human-queue.json that predates the field). See issue-pr-cron#66. `hist` populates its
-    // sparkline/trend once refreshes accrue the field (empty → no spark, never a broken box).
+    // human-queue.json that predates the field). See issue-pr-cron#66. `hist` draws from the
+    // refreshes that carried the field — one sample is a lone dot, more fill in the line and
+    // (past two inside the 7d window) the trend border; none at all → no spark, never a
+    // broken box.
     { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
     // Vetter inbox — the vetter records the next verdict.
     { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "first vet", kind: "flow" },
     { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", hist: "awaitingReVet", act: "head moved · re-vet", kind: "flow" },
+    // Close-candidate ISSUES awaiting a vetter verdict (issue-pr-cron#73). Hand-triage of
+    // the queue found ~1 in 3 producer flags wrong, so a flag is now JUDGED before it
+    // reaches a human — this is that inbox. Not a lane state; count from `counts`.
+    { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
     // Human inbox — a human merge / ruling / close.
+    // FSM CONFORMANCE LEAK, first because it is the loudest: producer PRs carrying a note
+    // but no `ai:*` label, so they sit in NO modeled state. This was a banner beside the
+    // machine, which read as a footnote and got ignored; but "not modelled" is not an
+    // annotation on the machine, it is a condition someone must clear — a human has to
+    // classify each one into a real state or extend the machine to cover it. As a state it
+    // lands in the human's actionable set, carries its own inventory sparkline, and trips
+    // the rising-bottleneck border like any other inbox. It should read ZERO. Not a lane
+    // state — count from `counts.leaks`, items from the top-level `leaks` array (which is
+    // why the key stays `leak`: itemsFor already resolves it).
+    { owner: "human", state: "leak", fromCounts: "leaks", hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
     { owner: "human", state: "ai:close-candidate", lane: "vetter-verdicts", hist: "closeCandidatePrs", act: "close PR", kind: "rule", label: "ai:close-candidate (PRs)" },
@@ -492,9 +464,16 @@ function renderFsm(hq, history) {
     { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", hist: "blockedOn", act: "merge dependency", kind: "blk" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
     { owner: "human", state: "human:close-candidate", lane: "human-decisions", hist: "humanCloseCandidate", act: "close", kind: "rule" },
-    // Close-candidate ISSUES: not a lane state — count from `counts`, items from the
-    // top-level `closeCandidateIssues`. A human closes the issue, so it lives here too.
-    { owner: "human", state: "closeCandidateIssues", fromCounts: "closeCandidateIssues", hist: "closeCandidateIssues", act: "close issue", kind: "rule", label: "ai:close-candidate (issues)" },
+    // Close-candidate ISSUES the vetter UPHELD (issue-pr-cron#73): the flag survived
+    // judgement, so a human genuinely has to dispose of it. Rejected flags need no state
+    // — the vetter strips the label and they fall back into `uncoveredIssues`.
+    // There is deliberately NO combined "all flagged issues" box: one flag now produces
+    // TWO inboxes with DIFFERENT owners (unvetted → vetter, upheld → human), so their sum
+    // is not a state anyone acts on — it is a number spanning two actors, which is exactly
+    // why it could never be added to an actor total. The legacy no-`lanes` branch below
+    // still renders `closeCandidateIssues`, because a human-queue.json old enough to lack
+    // `lanes` also predates the split keys.
+    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", hist: "closeCandidateUpheld", act: "close issue", kind: "rule", label: "ai:close-candidate (upheld)" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
@@ -534,6 +513,7 @@ function renderFsm(hq, history) {
     // the legacy `counts` keys carry (all human-owned under the actor mapping) from
     // `counts`, so the panel never blanks.
     const legacy = [
+      { key: "leak", label: "not in any modeled state", n: c.leaks, hist: "leaks", act: "model it", kind: "blk" },
       { key: "ai:ready", label: "ai:ready", n: c.ready, hist: "ready", act: "merge", kind: "flow" },
       { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
       { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
@@ -606,14 +586,14 @@ function renderFsm(hq, history) {
 
   const detail = el("div", "fsm-list");
   detail.id = "fsmdetail";
-  box.append(alarm, rail, grid, detail, note);
+  box.append(grid, detail, note);
 
-  // Header label for a clicked box: its own state label (.sk), or a friendly name for
-  // the leak alarm (which carries no .sk).
+  // Header label for a clicked box: its own state label (.sk). Every [data-t] is a
+  // state box now that the leak banner is a state, so the key is only a defensive
+  // fallback.
   const labelOf = (b, k) => {
     const sk = b.querySelector && b.querySelector(".sk");
-    if (sk && sk.textContent) return sk.textContent;
-    return k === "leak" ? "not in any modeled state" : k;
+    return sk && sk.textContent ? sk.textContent : k;
   };
 
   let openKey = null;
