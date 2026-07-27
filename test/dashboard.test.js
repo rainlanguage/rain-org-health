@@ -3648,3 +3648,141 @@ Deno.test("dashboard pages contain no markup sink at all", () => {
       offenders.join("\n"),
   );
 });
+
+// These stylesheets are heavily commented — often several prose paragraphs per rule — and a
+// mis-terminated comment is SILENT. There is no parse error, no console warning, nothing in
+// the DOM: CSS error recovery just consumes forward to the next `{…}` and throws that whole
+// block away. A stray `*/` therefore deletes the rule that FOLLOWS it, which is the rule the
+// comment was explaining. That is exactly how `.fsm-state.rising` lost its red border here —
+// a paragraph appended after a comment's terminator instead of before it swallowed the rule,
+// and every "is it highlighted?" check still passed because the reference box it was being
+// compared against had been broken by the same stray delimiter.
+const styleBlocks = (src) =>
+  [...src.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]);
+
+// A hand-rolled scan rather than a regex: the property is about the SEQUENCE of delimiters,
+// which is what a regex over the whole file cannot see. Returns comment-stripped CSS plus
+// every structural fault found, so one pass serves both assertions below.
+const scanCss = (css) => {
+  const faults = [];
+  let out = "", i = 0, depth = 0, openedAt = -1;
+  while (i < css.length) {
+    if (css.startsWith("/*", i)) {
+      if (depth > 0) faults.push(`nested /* at offset ${i} (CSS comments do not nest)`);
+      else openedAt = i;
+      depth++, i += 2;
+    } else if (css.startsWith("*/", i)) {
+      if (depth === 0) faults.push(`stray */ at offset ${i} with no comment open`);
+      else depth--;
+      i += 2;
+    } else {
+      if (depth === 0) out += css[i];
+      i++;
+    }
+  }
+  if (depth > 0) faults.push(`comment opened at offset ${openedAt} is never closed`);
+  return { out, faults };
+};
+
+Deno.test("stylesheet comments are balanced, so no rule is silently swallowed", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const faults = [];
+  for (const entry of Deno.readDirSync(dir)) {
+    if (!entry.isFile || !entry.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    styleBlocks(src).forEach((css, n) => {
+      for (const f of scanCss(css).faults) faults.push(`${entry.name} <style> #${n + 1}: ${f}`);
+    });
+  }
+  assert(faults.length === 0, "malformed stylesheet comment:\n" + faults.join("\n"));
+});
+
+// Prose landing in selector position is the SYMPTOM a browser acts on, whatever produced it.
+// Two independent tells, because either alone has a blind spot: punctuation a selector cannot
+// contain, and a run of bare words no selector would ever string together. A word list was the
+// obvious first cut and was wrong — `a` is an element selector, so `.nav a` read as prose.
+const isProse = (s) =>
+  /[`;—’“”]/.test(s) ||
+  s.split(/\s+/).filter((t) => /^[A-Za-z]+$/.test(t)).length >= 5;
+
+// Rules as a BROWSER would end up with them, error recovery included: a block whose prelude
+// is not a selector is not merely ugly, it is discarded along with its declarations. Modelling
+// the discard is the whole point — a check that reads the rule text out of the raw source
+// would happily find `.fsm-state.rising` sitting behind garbage that deletes it, which is
+// precisely the false pass that let this ship.
+const cssRules = (css) => {
+  const out = [];
+  let depth = 0, prelude = "", body = "";
+  for (const ch of scanCss(css).out) {
+    if (ch === "{") {
+      depth++;
+      if (depth === 1) continue;
+    } else if (ch === "}") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        const sel = prelude.trim().replace(/\s+/g, " ");
+        // An at-rule (@media, @supports) nests real rules; recurse rather than treat its
+        // prelude as a selector. Anything else with prose in the prelude is dropped.
+        if (sel.startsWith("@")) out.push(...cssRules(body));
+        else if (!isProse(sel)) out.push({ sel, body: body.trim() });
+        prelude = "", body = "";
+        continue;
+      }
+    }
+    if (depth === 0) prelude += ch;
+    else body += ch;
+  }
+  return out;
+};
+
+// The delimiter count above catches the cause; this catches the EFFECT, and would still fire
+// for any other way prose lands in stylesheet position. Between one rule's `}` and the next
+// rule's `{` there may only ever be a selector — so anything in that gap carrying prose
+// punctuation means a block boundary is not where the author thought it was.
+Deno.test("nothing but selectors sits between stylesheet rules", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const offenders = [];
+  for (const entry of Deno.readDirSync(dir)) {
+    if (!entry.isFile || !entry.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    styleBlocks(src).forEach((css, n) => {
+      let depth = 0, gap = "";
+      const flush = () => {
+        const s = gap.trim();
+        if (s && isProse(s)) {
+          offenders.push(`${entry.name} <style> #${n + 1}: not a selector: ${JSON.stringify(s.slice(0, 90))}`);
+        }
+        gap = "";
+      };
+      for (const ch of scanCss(css).out) {
+        if (ch === "{") depth++, depth === 1 && flush();
+        else if (ch === "}") depth = Math.max(0, depth - 1);
+        else if (depth === 0) gap += ch;
+      }
+      flush();
+    });
+  }
+  assert(offenders.length === 0, "prose in stylesheet position swallows the next rule:\n" + offenders.join("\n"));
+});
+
+// The two guards above are structural. This one pins the specific rule the bug destroyed, in
+// the terms that matter to a reader: the bottleneck highlight and its fallback must actually
+// declare the red border, and must declare it TOGETHER so they can never drift apart.
+Deno.test("the bottleneck highlight and its fallback survive parsing with the red border intact", () => {
+  const src = Deno.readTextFileSync(new URL("../site/pipeline.html", import.meta.url));
+  const rules = styleBlocks(src).flatMap(cssRules);
+  const hit = rules.find((r) => /\.fsm-state\.rising\b/.test(r.sel));
+  assert(hit, "the .fsm-state.rising rule survives parsing — it is not swallowed by recovery");
+  assert(
+    /\.fsm-state\.lead\b/.test(hit.sel),
+    `the fallback shares the rule rather than restating it: ${hit.sel}`,
+  );
+  assert(
+    /border-color:\s*var\(--crit\)/.test(hit.body),
+    `the highlight declares the red border: ${hit.body}`,
+  );
+  assert(
+    /box-shadow:\s*inset[^;]*var\(--crit\)/.test(hit.body),
+    `the highlight declares the red inset ring: ${hit.body}`,
+  );
+});
