@@ -1586,10 +1586,100 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
     (readyBox.getAttribute("aria-label") || "").includes("rising"),
     `rising state carries an aria cue: ${readyBox.getAttribute("aria-label")}`,
   );
+  // A non-rising state must never ANNOUNCE a trend. It may still carry an aria-label from
+  // the per-actor lead fallback — ai:reject is producer-owned, and that group flags no
+  // bottleneck here, so it is legitimately marked as the producer's largest queue. The
+  // invariant that matters is the claim, not the presence of a label.
   assert(
-    (rejectBox.getAttribute("aria-label") || "") === "",
-    "a non-rising state adds no rising aria-label",
+    !(rejectBox.getAttribute("aria-label") || "").includes("rising"),
+    `a non-rising state never claims a trend: ${rejectBox.getAttribute("aria-label")}`,
   );
+  assert(collect(rejectBox, "fsm-rise").length === 0, "a non-rising state carries no ▲ cue");
+});
+
+// The fallback that keeps every working actor pointed somewhere. `sevenDaySlope` needs two
+// samples inside the 7d window AND a positive slope, so a flat or newly-emitted group flags
+// no bottleneck at all — and before this, such a group rendered with NOTHING highlighted
+// even while holding the biggest pile on the board (the human group, carrying 44 `ready`).
+Deno.test("fsm lead fallback: a group with no bottleneck marks its largest non-zero queue instead", () => {
+  // No history at all → no sparklines, no slope, so no group can flag a bottleneck.
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 44, design: 2, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 44, prs: [] },
+        "ai:design": { count: 2, prs: [] },
+        "ai:reject": { count: 9, prs: [] },
+      },
+      "vet-lifecycle": { "un-vetted": { count: 3, prs: [] } },
+    },
+  });
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const ready = byKey("ai:ready");
+  assert(ready.classList.contains("lead"), "human's largest queue (44 ai:ready) is marked");
+  assert(!ready.classList.contains("rising"), "the fallback is NOT the bottleneck flag");
+  assert(collect(ready, "fsm-lead").length === 1, "lead carries a visible ▸ cue");
+  assert(collect(ready, "fsm-rise").length === 0, "lead must not borrow the ▲ bottleneck cue");
+  assert(
+    (ready.getAttribute("aria-label") || "").includes("largest queue"),
+    `lead carries an aria cue: ${ready.getAttribute("aria-label")}`,
+  );
+  // One mark per actor group, and only on that group's own biggest pile.
+  assert(!byKey("ai:design").classList.contains("lead"), "a smaller queue in the group is not marked");
+  assert(byKey("ai:reject").classList.contains("lead"), "producer's largest queue is marked too");
+  assert(byKey("un-vetted").classList.contains("lead"), "vetter's largest queue is marked too");
+});
+
+Deno.test("fsm lead fallback: a group that already flags a bottleneck is left alone", () => {
+  const now = Date.parse("2026-07-25T00:00:00Z");
+  const at = (d) => now - d * DAY;
+  // ai:ready climbs 40→54 (≈ +2/day) so the human group flags a bottleneck. ai:design sits
+  // flat at a HIGHER count — the fallback must still not fire, and must not steal the mark.
+  const ready = [40, 42, 44, 46, 48, 50, 52, 54];
+  const history = ready.map((_, i) => ({
+    t: at(7 - i),
+    counts: { ready: ready[i], design: 99, leaks: 0 },
+  }));
+  const hq = {
+    counts: { leaks: 0, ready: 54, design: 99, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 54, prs: [] },
+        "ai:design": { count: 99, prs: [] },
+      },
+    },
+  };
+  const box = fsmBox(hq, history);
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  assert(byKey("ai:ready").classList.contains("rising"), "the rising flag still fires");
+  assert(
+    !byKey("ai:ready").classList.contains("lead"),
+    "a flagged bottleneck is not also given the fallback mark",
+  );
+  assert(
+    !byKey("ai:design").classList.contains("lead"),
+    "99 ai:design is not marked over the flagged bottleneck — it is a fallback, not an addition",
+  );
+});
+
+Deno.test("fsm lead fallback: an all-zero group gets nothing, and equal counts break toward STATES order", () => {
+  // Every human-owned state is zero → nothing to do, so nothing is marked. The producer
+  // group holds two EQUAL non-zero queues, which must resolve deterministically.
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, design: 0, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:reject": { count: 7, prs: [] },
+        "ai:relink": { count: 7, prs: [] },
+      },
+    },
+  });
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  assert(!byKey("ai:ready").classList.contains("lead"), "an all-zero group is never marked");
+  assert(!byKey("ai:design").classList.contains("lead"), "no work really is nothing to do");
+  // ai:reject precedes ai:relink in STATES, and strictly-greater keeps the first seen.
+  assert(byKey("ai:reject").classList.contains("lead"), "ties break toward the earlier STATES entry");
+  assert(!byKey("ai:relink").classList.contains("lead"), "the later of two equal counts is not marked");
 });
 
 Deno.test("fsm flow layer: with no history rollup there are no sparklines and no trend borders", () => {
