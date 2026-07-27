@@ -1704,10 +1704,121 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
     (readyBox.getAttribute("aria-label") || "").includes("rising"),
     `rising state carries an aria cue: ${readyBox.getAttribute("aria-label")}`,
   );
+  // A non-rising state must never ANNOUNCE a trend. It may still LOOK highlighted: ai:reject
+  // is producer-owned, that group flags no bottleneck here, so it is legitimately marked as
+  // the producer's largest queue — and the fallback wears the bottleneck's exact treatment
+  // by design. What must never travel with the mark is the trend CLAIM.
   assert(
-    (rejectBox.getAttribute("aria-label") || "") === "",
-    "a non-rising state adds no rising aria-label",
+    !(rejectBox.getAttribute("aria-label") || "").includes("rising"),
+    `a non-rising state never claims a trend: ${rejectBox.getAttribute("aria-label")}`,
   );
+  assert(
+    !(collect(rejectBox, "fsm-rise")[0]?.getAttribute("title") || "").includes("rising"),
+    "the ▲ on a fallback pick does not claim a trend either",
+  );
+  // ai:relink is producer-owned and SMALLER than ai:reject, so it is neither the bottleneck
+  // nor its group's fallback pick: a state with no reason to be marked carries no cue at all.
+  assert(collect(relinkBox, "fsm-rise").length === 0, "an unmarked state carries no ▲ cue");
+  assert(!relinkBox.getAttribute("aria-label"), "an unmarked state carries no aria cue");
+});
+
+// The fallback that keeps every working actor pointed somewhere. `sevenDaySlope` needs two
+// samples inside the 7d window AND a positive slope, so a flat or newly-emitted group flags
+// no bottleneck at all — and before this, such a group rendered with NOTHING highlighted
+// even while holding the biggest pile on the board (the human group, carrying 44 `ready`).
+Deno.test("fsm lead fallback: a group with no bottleneck marks its largest non-zero queue instead", () => {
+  // No history at all → no sparklines, no slope, so no group can flag a bottleneck.
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 44, design: 2, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 44, prs: [] },
+        "ai:design": { count: 2, prs: [] },
+        "ai:reject": { count: 9, prs: [] },
+      },
+      "vet-lifecycle": { "un-vetted": { count: 3, prs: [] } },
+    },
+  });
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const ready = byKey("ai:ready");
+  assert(ready.classList.contains("lead"), "human's largest queue (44 ai:ready) is marked");
+  assert(!ready.classList.contains("rising"), "identical on screen, still distinct in the DOM");
+  // The fallback wears the EXISTING highlight, not a second visual language: the same ▲ in
+  // the same row, and a `.lead` class whose stylesheet rule is shared verbatim with
+  // `.rising`. A reader sees one kind of "look here", never two competing ones.
+  const up = collect(ready, "fsm-rise");
+  assert(up.length === 1, "the fallback carries the same visible ▲ cue a bottleneck does");
+  assert(up[0]._text === "▲", `the same glyph, not a substitute: ${up[0]._text}`);
+  assert(
+    ready.querySelector(".fsm-scrow").children.includes(up[0]),
+    "the ▲ sits in the same row it does on a bottleneck",
+  );
+  assert(collect(ready, "fsm-lead").length === 0, "no separate chip — nothing new is invented");
+  // Only the WORDING differs, because only the wording can lie: this box has no trend.
+  assert(
+    (ready.getAttribute("aria-label") || "").includes("largest queue"),
+    `the fallback states its own reason: ${ready.getAttribute("aria-label")}`,
+  );
+  assert(
+    !(ready.getAttribute("aria-label") || "").includes("rising"),
+    "the fallback never claims a trend it does not have",
+  );
+  // One mark per actor group, and only on that group's own biggest pile.
+  assert(!byKey("ai:design").classList.contains("lead"), "a smaller queue in the group is not marked");
+  assert(byKey("ai:reject").classList.contains("lead"), "producer's largest queue is marked too");
+  assert(byKey("un-vetted").classList.contains("lead"), "vetter's largest queue is marked too");
+});
+
+Deno.test("fsm lead fallback: a group that already flags a bottleneck is left alone", () => {
+  const now = Date.parse("2026-07-25T00:00:00Z");
+  const at = (d) => now - d * DAY;
+  // ai:ready climbs 40→54 (≈ +2/day) so the human group flags a bottleneck. ai:design sits
+  // flat at a HIGHER count — the fallback must still not fire, and must not steal the mark.
+  const ready = [40, 42, 44, 46, 48, 50, 52, 54];
+  const history = ready.map((_, i) => ({
+    t: at(7 - i),
+    counts: { ready: ready[i], design: 99, leaks: 0 },
+  }));
+  const hq = {
+    counts: { leaks: 0, ready: 54, design: 99, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 54, prs: [] },
+        "ai:design": { count: 99, prs: [] },
+      },
+    },
+  };
+  const box = fsmBox(hq, history);
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  assert(byKey("ai:ready").classList.contains("rising"), "the rising flag still fires");
+  assert(
+    !byKey("ai:ready").classList.contains("lead"),
+    "a flagged bottleneck is not also given the fallback mark",
+  );
+  assert(
+    !byKey("ai:design").classList.contains("lead"),
+    "99 ai:design is not marked over the flagged bottleneck — it is a fallback, not an addition",
+  );
+});
+
+Deno.test("fsm lead fallback: an all-zero group gets nothing, and equal counts break toward STATES order", () => {
+  // Every human-owned state is zero → nothing to do, so nothing is marked. The producer
+  // group holds two EQUAL non-zero queues, which must resolve deterministically.
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, design: 0, closeCandidateIssues: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:reject": { count: 7, prs: [] },
+        "ai:relink": { count: 7, prs: [] },
+      },
+    },
+  });
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  assert(!byKey("ai:ready").classList.contains("lead"), "an all-zero group is never marked");
+  assert(!byKey("ai:design").classList.contains("lead"), "no work really is nothing to do");
+  // ai:reject precedes ai:relink in STATES, and strictly-greater keeps the first seen.
+  assert(byKey("ai:reject").classList.contains("lead"), "ties break toward the earlier STATES entry");
+  assert(!byKey("ai:relink").classList.contains("lead"), "the later of two equal counts is not marked");
 });
 
 Deno.test("fsm flow layer: with no history rollup there are no sparklines and no trend borders", () => {
@@ -3535,5 +3646,143 @@ Deno.test("dashboard pages contain no markup sink at all", () => {
     offenders.length === 0,
     "a page must build DOM nodes, never assign markup:\n" +
       offenders.join("\n"),
+  );
+});
+
+// These stylesheets are heavily commented — often several prose paragraphs per rule — and a
+// mis-terminated comment is SILENT. There is no parse error, no console warning, nothing in
+// the DOM: CSS error recovery just consumes forward to the next `{…}` and throws that whole
+// block away. A stray `*/` therefore deletes the rule that FOLLOWS it, which is the rule the
+// comment was explaining. That is exactly how `.fsm-state.rising` lost its red border here —
+// a paragraph appended after a comment's terminator instead of before it swallowed the rule,
+// and every "is it highlighted?" check still passed because the reference box it was being
+// compared against had been broken by the same stray delimiter.
+const styleBlocks = (src) =>
+  [...src.matchAll(/<style\b[^>]*>([\s\S]*?)<\/style>/gi)].map((m) => m[1]);
+
+// A hand-rolled scan rather than a regex: the property is about the SEQUENCE of delimiters,
+// which is what a regex over the whole file cannot see. Returns comment-stripped CSS plus
+// every structural fault found, so one pass serves both assertions below.
+const scanCss = (css) => {
+  const faults = [];
+  let out = "", i = 0, depth = 0, openedAt = -1;
+  while (i < css.length) {
+    if (css.startsWith("/*", i)) {
+      if (depth > 0) faults.push(`nested /* at offset ${i} (CSS comments do not nest)`);
+      else openedAt = i;
+      depth++, i += 2;
+    } else if (css.startsWith("*/", i)) {
+      if (depth === 0) faults.push(`stray */ at offset ${i} with no comment open`);
+      else depth--;
+      i += 2;
+    } else {
+      if (depth === 0) out += css[i];
+      i++;
+    }
+  }
+  if (depth > 0) faults.push(`comment opened at offset ${openedAt} is never closed`);
+  return { out, faults };
+};
+
+Deno.test("stylesheet comments are balanced, so no rule is silently swallowed", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const faults = [];
+  for (const entry of Deno.readDirSync(dir)) {
+    if (!entry.isFile || !entry.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    styleBlocks(src).forEach((css, n) => {
+      for (const f of scanCss(css).faults) faults.push(`${entry.name} <style> #${n + 1}: ${f}`);
+    });
+  }
+  assert(faults.length === 0, "malformed stylesheet comment:\n" + faults.join("\n"));
+});
+
+// Prose landing in selector position is the SYMPTOM a browser acts on, whatever produced it.
+// Two independent tells, because either alone has a blind spot: punctuation a selector cannot
+// contain, and a run of bare words no selector would ever string together. A word list was the
+// obvious first cut and was wrong — `a` is an element selector, so `.nav a` read as prose.
+const isProse = (s) =>
+  /[`;—’“”]/.test(s) ||
+  s.split(/\s+/).filter((t) => /^[A-Za-z]+$/.test(t)).length >= 5;
+
+// Rules as a BROWSER would end up with them, error recovery included: a block whose prelude
+// is not a selector is not merely ugly, it is discarded along with its declarations. Modelling
+// the discard is the whole point — a check that reads the rule text out of the raw source
+// would happily find `.fsm-state.rising` sitting behind garbage that deletes it, which is
+// precisely the false pass that let this ship.
+const cssRules = (css) => {
+  const out = [];
+  let depth = 0, prelude = "", body = "";
+  for (const ch of scanCss(css).out) {
+    if (ch === "{") {
+      depth++;
+      if (depth === 1) continue;
+    } else if (ch === "}") {
+      depth = Math.max(0, depth - 1);
+      if (depth === 0) {
+        const sel = prelude.trim().replace(/\s+/g, " ");
+        // An at-rule (@media, @supports) nests real rules; recurse rather than treat its
+        // prelude as a selector. Anything else with prose in the prelude is dropped.
+        if (sel.startsWith("@")) out.push(...cssRules(body));
+        else if (!isProse(sel)) out.push({ sel, body: body.trim() });
+        prelude = "", body = "";
+        continue;
+      }
+    }
+    if (depth === 0) prelude += ch;
+    else body += ch;
+  }
+  return out;
+};
+
+// The delimiter count above catches the cause; this catches the EFFECT, and would still fire
+// for any other way prose lands in stylesheet position. Between one rule's `}` and the next
+// rule's `{` there may only ever be a selector — so anything in that gap carrying prose
+// punctuation means a block boundary is not where the author thought it was.
+Deno.test("nothing but selectors sits between stylesheet rules", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const offenders = [];
+  for (const entry of Deno.readDirSync(dir)) {
+    if (!entry.isFile || !entry.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    styleBlocks(src).forEach((css, n) => {
+      let depth = 0, gap = "";
+      const flush = () => {
+        const s = gap.trim();
+        if (s && isProse(s)) {
+          offenders.push(`${entry.name} <style> #${n + 1}: not a selector: ${JSON.stringify(s.slice(0, 90))}`);
+        }
+        gap = "";
+      };
+      for (const ch of scanCss(css).out) {
+        if (ch === "{") depth++, depth === 1 && flush();
+        else if (ch === "}") depth = Math.max(0, depth - 1);
+        else if (depth === 0) gap += ch;
+      }
+      flush();
+    });
+  }
+  assert(offenders.length === 0, "prose in stylesheet position swallows the next rule:\n" + offenders.join("\n"));
+});
+
+// The two guards above are structural. This one pins the specific rule the bug destroyed, in
+// the terms that matter to a reader: the bottleneck highlight and its fallback must actually
+// declare the red border, and must declare it TOGETHER so they can never drift apart.
+Deno.test("the bottleneck highlight and its fallback survive parsing with the red border intact", () => {
+  const src = Deno.readTextFileSync(new URL("../site/pipeline.html", import.meta.url));
+  const rules = styleBlocks(src).flatMap(cssRules);
+  const hit = rules.find((r) => /\.fsm-state\.rising\b/.test(r.sel));
+  assert(hit, "the .fsm-state.rising rule survives parsing — it is not swallowed by recovery");
+  assert(
+    /\.fsm-state\.lead\b/.test(hit.sel),
+    `the fallback shares the rule rather than restating it: ${hit.sel}`,
+  );
+  assert(
+    /border-color:\s*var\(--crit\)/.test(hit.body),
+    `the highlight declares the red border: ${hit.body}`,
+  );
+  assert(
+    /box-shadow:\s*inset[^;]*var\(--crit\)/.test(hit.body),
+    `the highlight declares the red inset ring: ${hit.body}`,
   );
 });

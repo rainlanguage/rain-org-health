@@ -146,16 +146,20 @@
   /* Theory-of-Constraints bottleneck flag (#32): a state whose inventory is trending
      UP over the trailing 7d gets a red WARNING border (semantic --crit, legible in
      both themes) — placed after the kind rules so it wins the border-color cascade.
-     Never color-alone: it is paired with a ▲ badge + title/aria-label. */
-  .fsm-state.rising { border-color: var(--crit); box-shadow: inset 0 0 0 1px var(--crit); }
+     Never color-alone: it is paired with a ▲ badge + title/aria-label.
+     `.lead` — the per-actor fallback pick — shares this rule verbatim. One highlight
+     language on the board, not two: the concept is "this is where this actor should look",
+     which trend answers when there is a trend and size answers otherwise. `.lead` adds no
+     properties of its own; it only ever appears on a box in a group where nothing rose. */
+  .fsm-state.rising, .fsm-state.lead { border-color: var(--crit); box-shadow: inset 0 0 0 1px var(--crit); }
   .fsm-scrow { display: flex; align-items: center; gap: 8px; }
   /* Inventory sparkline: a recessive thin line + one emphasized endpoint dot, styled
      via theme tokens so it reads in light and dark; it echoes --crit on a rising state. */
   .fsm-spark { display: block; flex: none; overflow: visible; }
   .fsm-spark .sl { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
   .fsm-spark .sd { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
-  .fsm-state.rising .fsm-spark .sl { stroke: var(--crit); }
-  .fsm-state.rising .fsm-spark .sd { fill: var(--crit); }
+  .fsm-state.rising .fsm-spark .sl, .fsm-state.lead .fsm-spark .sl { stroke: var(--crit); }
+  .fsm-state.rising .fsm-spark .sd, .fsm-state.lead .fsm-spark .sd { fill: var(--crit); }
   .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
@@ -407,6 +411,43 @@ function renderFsm(hq, history) {
     return b;
   };
 
+  // Per-actor FALLBACK emphasis: the bottleneck flag above only fires on a RISING series,
+  // and `sevenDaySlope` needs two points inside the 7d window — so an actor whose queues
+  // are all flat, or whose counts keys were only just emitted, gets NO highlight at all and
+  // the eye has nowhere to land even while that actor is carrying real work. The board's
+  // job is "where does this actor look first"; a group with nothing marked answers
+  // "nowhere", which is wrong whenever there is work. So when a group flags no bottleneck,
+  // mark its LARGEST non-zero queue instead.
+  //
+  // It reuses the EXISTING highlight rather than inventing a second visual language: the
+  // board says one thing, "this is where this actor should look", and trend answers that
+  // when a trend exists while size answers it otherwise. `.lead` shares every `.rising` rule
+  // and adds none of its own, so the two are indistinguishable on screen by design.
+  //
+  // It is a FALLBACK, not an addition: a group that already flags a bottleneck is left
+  // alone, because the trend is the better answer when it exists. An all-zero group gets
+  // nothing — no work really is nothing to do, and marking an empty queue would be noise.
+  //
+  // The ▲ comes along too. It is plain markup here, not a rendering of the slope, so
+  // reproducing it needs no faked trend value. Only the title/aria-label differ: those
+  // carry the REASON, and claiming "rising" on a box with no trend would be false — the
+  // one place where honesty and identical appearance do not conflict.
+  const markLead = (boxes) => {
+    if (boxes.some((x) => x.b.classList.contains("rising"))) return;
+    // Strictly-greater keeps the FIRST of equal counts, so STATES order is the tie-break
+    // and the pick is stable across renders instead of depending on iteration accidents.
+    let lead = null;
+    for (const x of boxes) if (x.count > 0 && (!lead || x.count > lead.count)) lead = x;
+    if (!lead) return;
+    lead.b.classList.add("lead");
+    const up = el("span", "fsm-rise", "▲");
+    up.setAttribute("title", "largest queue for this actor");
+    const row = lead.b.querySelector(".fsm-scrow");
+    if (row) row.append(up);
+    lead.b.setAttribute("title", "largest queue for this actor — start here");
+    lead.b.setAttribute("aria-label", lead.label + ": largest queue for this actor (start here)");
+  };
+
   // Every modeled state → the actor whose inbox it sits in (`owner`), the human-queue
   // `lane` its items live under, the next `act`, and a display `kind` (flow = moving,
   // rule = needs a human ruling, blk = a stuck/rework pile). The four dual-owner
@@ -490,6 +531,7 @@ function renderFsm(hq, history) {
     OWNERS.forEach((O) => {
       const g = el("div", "fsm-grid");
       let ownerTotal = 0;
+      const boxes = [];
       STATES.filter((s) => s.owner === O.key).forEach((s) => {
         let count;
         if (s.fromCounts) {
@@ -500,8 +542,12 @@ function renderFsm(hq, history) {
           laneItems.set(s.state, (cell && cell.prs) || []);
         }
         ownerTotal += count;
-        g.append(stateBox(s.state, s.label || s.state, count, s.act, s.kind, seriesFor(s.hist)));
+        const label = s.label || s.state;
+        const b = stateBox(s.state, label, count, s.act, s.kind, seriesFor(s.hist));
+        boxes.push({ b, count, label });
+        g.append(b);
       });
+      markLead(boxes);
       const lane = el("div", "fsm-lane");
       const h = el("div", "fsm-lane-h");
       h.append(el("span", null, O.title), el("span", "lsub", O.sub), el("span", "lct", String(ownerTotal)));
@@ -522,7 +568,13 @@ function renderFsm(hq, history) {
       { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, hist: "blockedOn", act: "merge dependency", kind: "blk" },
     ];
     const g = el("div", "fsm-grid");
-    legacy.forEach((s) => g.append(stateBox(s.key, s.label, s.n, s.act, s.kind, seriesFor(s.hist))));
+    const boxes = [];
+    legacy.forEach((s) => {
+      const b = stateBox(s.key, s.label, s.n, s.act, s.kind, seriesFor(s.hist));
+      boxes.push({ b, count: Number(s.n) || 0, label: s.label });
+      g.append(b);
+    });
+    markLead(boxes);
     const lane = el("div", "fsm-lane");
     const h = el("div", "fsm-lane-h");
     h.append(el("span", null, "Human action"), el("span", "lsub", "@thedavidmeister"));
@@ -583,6 +635,15 @@ function renderFsm(hq, history) {
       " bottleneck: rising WIP is where the system is constrained."
     );
   }
+  // Deliberately OUTSIDE the `hist` guard: the fallback is exactly what fills the gap when no
+  // trend is computable, so it can appear on a page with no sparklines at all. The sentence
+  // is not optional — without it the legend above would state a single meaning for the red
+  // mark that is no longer the only one.
+  note.append(
+    " Where nothing in an actor's group is trending up, the same mark falls back to that actor's ",
+    el("b", null, "largest queue"),
+    " — still where to start, just chosen by size rather than trend."
+  );
 
   const detail = el("div", "fsm-list");
   detail.id = "fsmdetail";
