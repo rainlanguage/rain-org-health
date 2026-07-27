@@ -51,7 +51,7 @@ plugins/rain-org-health-check/
 ├── .claude-plugin/plugin.json           # plugin manifest
 ├── roh-scan/                            # the org scanner (Rust; signal detection + gh/curl)
 └── skills/rain-org-health-check/SKILL.md  # skill instructions + remediation playbook
-site/                                    # dashboard (index.html + health.json)
+site/                                    # dashboard (html pages + health.json)
 ```
 
 ## License
