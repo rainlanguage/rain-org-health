@@ -134,14 +134,6 @@
                       padding: 5px 12px; border-radius: 6px; cursor: pointer; }
   .pm-toggle button.on { background: var(--surface-2); color: var(--ink); font-weight: 600; }
   /* ---- Pipeline FSM conformance ---- */
-  .fsm-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
-  .fsm-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); cursor: pointer; text-align: left; color: inherit; font: inherit; width: 100%; }
-  .fsm-alarm.ok { background: var(--clean-bg); border: 1px solid var(--clean); }
-  .fsm-alarm .an { font-size: 32px; font-weight: 750; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1; }
-  .fsm-alarm.bad .an { color: var(--crit); }
-  .fsm-alarm.ok .an { color: var(--clean); }
-  .fsm-alarm .atxt { font-size: 13.5px; color: var(--ink-2); line-height: 1.45; }
-  .fsm-alarm .atxt b { color: var(--ink); }
   .fsm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 12px 0; }
   .fsm-state { text-align: left; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border);
                border-radius: 11px; padding: 12px 14px; cursor: pointer; color: inherit; font: inherit; width: 100%; }
@@ -370,27 +362,6 @@ function renderFsm(hq, history) {
     return svg;
   };
 
-  // Leak bucket — the loudest element.
-  let alarm;
-  if (c.leaks > 0) {
-    alarm = el("button", "fsm-alarm bad");
-    alarm.dataset.t = "leak";
-    const atxt = el("span", "atxt");
-    atxt.append(
-      el("b", null, "not in any modeled state"),
-      " — producer PRs with a note but no ",
-      el("code", null, "ai:*"),
-      " label. The FSM-leak signal; it should be ",
-      el("b", null, "zero"),
-      ". Click to see what needs modeling."
-    );
-    alarm.append(el("span", "an", String(Number(c.leaks))), atxt);
-  } else {
-    alarm = el("div", "fsm-alarm ok");
-    const atxt = el("span", "atxt");
-    atxt.append(el("b", null, "fully conformant"), " — every open PR sits in a modeled state.");
-    alarm.append(el("span", "an", "0"), atxt);
-  }
 
   // The full machine, grouped by WHO MUST ACT NEXT (#69). A modeled state is not just
   // a lifecycle phase — it is an INBOX owned by exactly one of three actors: the
@@ -476,6 +447,16 @@ function renderFsm(hq, history) {
     // reaches a human — this is that inbox. Not a lane state; count from `counts`.
     { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
     // Human inbox — a human merge / ruling / close.
+    // FSM CONFORMANCE LEAK, first because it is the loudest: producer PRs carrying a note
+    // but no `ai:*` label, so they sit in NO modeled state. This was a banner beside the
+    // machine, which read as a footnote and got ignored; but "not modelled" is not an
+    // annotation on the machine, it is a condition someone must clear — a human has to
+    // classify each one into a real state or extend the machine to cover it. As a state it
+    // lands in the human's actionable set, carries its own inventory sparkline, and trips
+    // the rising-bottleneck border like any other inbox. It should read ZERO. Not a lane
+    // state — count from `counts.leaks`, items from the top-level `leaks` array (which is
+    // why the key stays `leak`: itemsFor already resolves it).
+    { owner: "human", state: "leak", fromCounts: "leaks", hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
     { owner: "human", state: "ai:close-candidate", lane: "vetter-verdicts", hist: "closeCandidatePrs", act: "close PR", kind: "rule", label: "ai:close-candidate (PRs)" },
@@ -533,6 +514,7 @@ function renderFsm(hq, history) {
     // the legacy `counts` keys carry (all human-owned under the actor mapping) from
     // `counts`, so the panel never blanks.
     const legacy = [
+      { key: "leak", label: "not in any modeled state", n: c.leaks, hist: "leaks", act: "model it", kind: "blk" },
       { key: "ai:ready", label: "ai:ready", n: c.ready, hist: "ready", act: "merge", kind: "flow" },
       { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
       { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
@@ -605,14 +587,14 @@ function renderFsm(hq, history) {
 
   const detail = el("div", "fsm-list");
   detail.id = "fsmdetail";
-  box.append(alarm, grid, detail, note);
+  box.append(grid, detail, note);
 
-  // Header label for a clicked box: its own state label (.sk), or a friendly name for
-  // the leak alarm (which carries no .sk).
+  // Header label for a clicked box: its own state label (.sk). Every [data-t] is a
+  // state box now that the leak banner is a state, so the key is only a defensive
+  // fallback.
   const labelOf = (b, k) => {
     const sk = b.querySelector && b.querySelector(".sk");
-    if (sk && sk.textContent) return sk.textContent;
-    return k === "leak" ? "not in any modeled state" : k;
+    return sk && sk.textContent ? sk.textContent : k;
   };
 
   let openKey = null;
