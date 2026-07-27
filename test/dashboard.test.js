@@ -262,6 +262,64 @@ function fsmBox(hq, history) {
   return box;
 }
 
+// Zoom is BUTTONS ONLY — the repo rejects binding pan/zoom GESTURES in JS
+// (CLAUDE.md: touch-action:none suppresses the device's real pinch to reimplement
+// it worse). These pin the button arithmetic, not any gesture path.
+const graphFit = bind("audit.html", "graphFit", [], []);
+const zoomScale = bind(
+  "audit.html",
+  "zoomScale",
+  ["GRAPH_ZOOM_STEP", "GRAPH_ZOOM_MAX"],
+  [1.25, 3],
+);
+
+const zoomBtnDisabled = bind("audit.html", "zoomBtnDisabled", ["GRAPH_ZOOM_MAX"], [3]);
+
+Deno.test("graph zoom: at the initial fit only zoom-IN is live", () => {
+  // What the page shows on first render: fitted, so out/Fit are dead ends and the
+  // only useful move is in. A board where every control looks dead reads as broken.
+  const off = zoomBtnDisabled(0.5, 0.5);
+  assert(off.in === false, "zoom-in is live at the fit");
+  assert(off.out === true, "zoom-out is dead at the fit");
+  assert(off.fit === true, "Fit is dead when already fitted");
+});
+
+Deno.test("graph zoom: at the ceiling only zoom-OUT and Fit are live", () => {
+  const off = zoomBtnDisabled(3, 0.5);
+  assert(off.in === true, "zoom-in is dead at the max");
+  assert(off.out === false, "zoom-out is live at the max");
+  assert(off.fit === false, "Fit is live once zoomed off the fit");
+});
+
+Deno.test("graph fit: fits the whole graph inside the box padding, never magnifying", () => {
+  // 16px padding each side, so a 1032-wide box holds 1000px of graph at 1:1.
+  assert(graphFit(1032, 1032, 1000, 1000) === 1, "exactly-fitting graph sits at 1:1");
+  // A graph twice the box width fits at half scale, and the TIGHTER axis wins.
+  assert(graphFit(532, 1032, 1000, 1000) === 0.5, "width-constrained: " + graphFit(532, 1032, 1000, 1000));
+  assert(graphFit(1032, 532, 1000, 1000) === 0.5, "height-constrained");
+  // Small graph in a big box is NOT blown up — 1 is the ceiling.
+  assert(graphFit(2032, 2032, 100, 100) === 1, "never magnifies past 1:1");
+});
+
+Deno.test("graph zoom: steps in and out, clamped by the fit below and the max above", () => {
+  const fit = 0.5;
+  assert(zoomScale(fit, fit, "in") === 0.625, "one step in: " + zoomScale(fit, fit, "in"));
+  assert(zoomScale(1, fit, "out") === 0.8, "one step out: " + zoomScale(1, fit, "out"));
+  // Nothing smaller than "the whole graph" is useful, so the fit is the floor.
+  assert(zoomScale(fit, fit, "out") === fit, "cannot zoom out past the fit");
+  assert(zoomScale(0.55, fit, "out") === fit, "a step that would undershoot clamps to the fit");
+  // And a step cannot launch the graph out of its own scrollport.
+  assert(zoomScale(3, fit, "in") === 3, "cannot zoom in past the max");
+  assert(zoomScale(2.9, fit, "in") === 3, "a step that would overshoot clamps to the max");
+});
+
+Deno.test("graph zoom: fit action returns the CURRENT fit, not a remembered one", () => {
+  // Reset recomputes, so after a resize it lands on the new fit rather than the
+  // scale the graph first rendered at.
+  assert(zoomScale(2.4, 0.5, "fit") === 0.5, "resets to the fit passed in");
+  assert(zoomScale(2.4, 0.31, "fit") === 0.31, "a resized box resets to its NEW fit");
+});
+
 const standsOn = bind("audit.html", "standsOn", [], []);
 const ground = (edges, root) => [...standsOn(edges, root)].sort().join(",");
 
@@ -1127,33 +1185,92 @@ Deno.test("audit never-audited: headline count + one enumerated row per uncovere
   );
 });
 
-Deno.test("pipeline FSM: leak alarm shows the count; OK alarm when zero", () => {
+// The FSM leak is a STATE the human must clear, not a banner beside the machine. A
+// banner reads as an annotation on the diagram and gets skipped; a state box sits in
+// the human's actionable set and counts toward their total like every other inbox.
+Deno.test("pipeline FSM: unmodelled PRs are a human-owned state, not a banner", () => {
   const box = fsmBox({
     counts: { leaks: 3, ready: 5, closeCandidateIssues: 0 },
     lanes: { "vetter-verdicts": { "ai:ready": { count: 5, prs: [] } } },
   });
-  const bad = collect(box, "fsm-alarm").filter((a) =>
-    a.className.split(" ").includes("bad")
-  );
-  assert(bad.length === 1, "a leak alarm is rendered when leaks > 0");
+  // No banner survives — the old one was the only .fsm-alarm on the page.
   assert(
-    collect(bad[0], "an")[0].textContent === "3",
-    "leak alarm shows the leak count",
+    collect(box, "fsm-alarm").length === 0,
+    "the leak banner is gone",
+  );
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  assert(leak, "a leak state box is rendered");
+  assert(
+    collect(leak, "sk")[0].textContent === "not in any modeled state",
+    "the state keeps the banner's label",
   );
   assert(
-    textOf(box).includes("not in any modeled state"),
-    "leak alarm copy present",
+    collect(leak, "sc")[0].textContent === "3",
+    "the state shows the leak count",
   );
+  assert(
+    collect(leak, "sa")[0].textContent === "model it",
+    "the act names what the human must do",
+  );
+  // It belongs to the human, and its count reaches the human total (3 leaks + 5 ready).
+  const human = ownerGroups(box).find((g) => g.title.includes("Human action"));
+  assert(
+    human.states.includes("not in any modeled state"),
+    `leak is human-owned: ${JSON.stringify(human.states)}`,
+  );
+  assert(
+    human.title.includes("8"),
+    `human total includes the leaks (3+5=8): ${human.title}`,
+  );
+});
 
-  const clean = fsmBox({
+// A zero leak count is the healthy case and must render as a dimmed zero box — the
+// machine's shape stays visible rather than the state vanishing.
+Deno.test("pipeline FSM: a zero leak count renders a dimmed state, not a gap", () => {
+  const box = fsmBox({
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
     lanes: {},
   });
-  const ok = collect(clean, "fsm-alarm").filter((a) =>
-    a.className.split(" ").includes("ok")
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  assert(leak, "the leak state still renders at zero");
+  assert(collect(leak, "sc")[0].textContent === "0", "it reads zero");
+  assert(
+    leak.className.includes("zero"),
+    `zero states are dimmed: ${leak.className}`,
   );
-  assert(ok.length === 1, "a zero-leak run shows the OK alarm");
-  assert(textOf(clean).includes("fully conformant"), "conformant copy present");
+});
+
+// An older human-queue.json may not carry `leaks` at all — that must render zero, not
+// NaN or a broken box.
+Deno.test("pipeline FSM: an absent leaks key renders zero, not NaN", () => {
+  const box = fsmBox({
+    counts: { ready: 1, closeCandidateIssues: 0 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } } },
+  });
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  assert(leak, "the leak state renders even with no leaks key");
+  assert(
+    collect(leak, "sc")[0].textContent === "0",
+    `absent key reads 0, got ${collect(leak, "sc")[0].textContent}`,
+  );
+});
+
+// Clicking the state lists the offending PRs from the top-level `leaks` array — the
+// click-through the banner had is preserved by keeping the state key `leak`.
+Deno.test("pipeline FSM: the leak state lists its PRs on click", () => {
+  const box = fsmBox({
+    counts: { leaks: 2, ready: 0, closeCandidateIssues: 0 },
+    lanes: {},
+    leaks: [
+      { repo: "rainlanguage/raindex", number: 11, title: "unlabelled one" },
+      { repo: "rainlanguage/rain.flare", number: 22, title: "unlabelled two" },
+    ],
+  });
+  const leak = collect(box, "fsm-state").find((b) => b.dataset.t === "leak");
+  leak.click();
+  const text = textOf(box);
+  assert(text.includes("unlabelled one"), "first leaked PR listed");
+  assert(text.includes("rain.flare#22"), "second leaked PR listed by repo#number");
 });
 
 Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", () => {
@@ -1328,10 +1445,11 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     `human states: ${JSON.stringify(human.states)}`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
-  // 16 = the 15 original states, minus the combined close-candidate issues box, plus the
-  // two owner-specific states the vetter verdict introduces (issue-pr-cron#73).
+  // 17 = the 15 original states, minus the combined close-candidate issues box, plus the
+  // two owner-specific states the vetter verdict introduces (issue-pr-cron#73), plus the
+  // FSM leak, promoted from a banner to a human-owned state.
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 16, `all 16 states filed once: ${total}`);
+  assert(total === 17, `all 17 states filed once: ${total}`);
 });
 
 // #69: the four historically dual-owner states each resolve to ONE actor.
