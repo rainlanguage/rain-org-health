@@ -483,7 +483,13 @@ function renderAudit() {
     return;
   }
   const audited = rows.filter((r) => r.hasProtofireAudit);
-  const never = rows.filter((r) => !r.hasProtofireAudit);
+  // A repo with no PDF is in ONE OF TWO states, and they are not the same fact:
+  // the audit/protofire/ listing came back empty (a confirmed gap) or the listing
+  // FAILED (`unknown` — nothing established). roh-scan keeps them apart in
+  // reposNeverExternallyAudited; splitting the rows the same way is what stops the
+  // page putting the failure back into the gap, wearing a `never` badge (#52).
+  const never = rows.filter((r) => !r.hasProtofireAudit && r.externalAudit !== "unknown");
+  const indeterminate = rows.filter((r) => !r.hasProtofireAudit && r.externalAudit === "unknown");
   const staleCount = audited.filter((r) => r.externalAudit === "stale").length;
   const neverN = data.reposNeverExternallyAudited != null ? data.reposNeverExternallyAudited : never.length;
   // An inherited audit that does NOT cover the repo's live pin is a coverage gap
@@ -514,6 +520,16 @@ function renderAudit() {
     );
   } else {
     atxt.append(el("b", null, "every repo externally audited"), " — a Protofire PDF under audit/ for all.");
+  }
+  // Said on BOTH branches, including the clean one: a repo the scan could not read
+  // is neither a gap nor a clean bill, so an all-clear that stayed silent about it
+  // would be the same overclaim from the other side.
+  if (indeterminate.length) {
+    atxt.append(
+      " ",
+      el("b", null, String(indeterminate.length)),
+      " audit listing" + (indeterminate.length === 1 ? "" : "s") + " FAILED — indeterminate, counted in neither.",
+    );
   }
   alarm.append(el("span", "an", String(alarmN)), atxt);
   box.append(alarm);
@@ -708,6 +724,32 @@ function renderAudit() {
       } else {
         c3.append(el("span", "dim", "no external audit"));
       }
+      row.append(c1, c2, c3);
+      table.append(row);
+    }
+    box.append(table);
+  }
+
+  // Audit listing FAILED — enumerated in its own section, below the gap and not
+  // inside it. Naming these is the whole point: a repo that dropped out of every
+  // count without appearing anywhere would read exactly like a repo with nothing
+  // to report, which is the failure mode the split exists to prevent.
+  if (indeterminate.length) {
+    box.append(el("div", "au-subhead", "Audit listing FAILED (" + indeterminate.length + ") — indeterminate, NOT the gap"));
+    const table = el("div", "au-table");
+    for (const r of indeterminate) {
+      const row = el("div", "au-row");
+      const c1 = el("div", "au-repo");
+      c1.append(link(null, r.name, "https://github.com/" + (r.org || data.org) + "/" + r.name));
+      c1.append(el("div", "au-sub", "audit/protofire/ could not be read — no PDF was established either way"));
+      c1.append(skillLine(r.name, r.org));
+      c1.append(mutationLine(r.name, r.org));
+      const s3 = staleLine(r.name);
+      if (s3) c1.append(s3);
+      const c2 = el("div");
+      c2.append(el("span", "au-status unknown", "unknown"));
+      const c3 = el("div", "au-drift");
+      c3.append(el("span", "dim", "coverage unknown"));
       row.append(c1, c2, c3);
       table.append(row);
     }

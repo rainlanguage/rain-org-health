@@ -1017,7 +1017,16 @@ Deno.test("audit headline: an uncovered live pin counts in the alarm, not as aud
   const t = textOf(box);
   // 3 never-audited + 1 inherited-but-live-pin-uncovered. A repo whose deployed
   // bytecode was never reviewed belongs in the headline, not in a footnote.
-  assert(t.includes("4"), "alarm count must include the uncovered pin: " + t);
+  //
+  // Asserted on the count ELEMENT, not on the box text: this row's own fixture
+  // carries `src/generated/0_1_4`, so `t.includes("4")` passed on a snapshot name
+  // and would have gone on passing for any wrong headline number.
+  const counts = collect(box, "an");
+  assert(
+    counts.length === 1 && counts[0].textContent === "4",
+    "alarm count must be exactly 4 (3 never + 1 uncovered pin), got " +
+      counts.map((c) => c.textContent).join("/") + " in: " + t,
+  );
   assert(
     t.includes("whose inherited audit does not cover the live pin"),
     "the alarm must say WHY: " + t,
@@ -1026,6 +1035,66 @@ Deno.test("audit headline: an uncovered live pin counts in the alarm, not as aud
   assert(
     alarms.length === 1 && hasClass(alarms[0], "bad"),
     "the alarm reads bad, not ok",
+  );
+});
+
+// A repo whose audit/protofire listing FAILED: no PDF, and `unknown` — not the
+// `never` an empty listing earns (#52).
+function unlistableRow(over) {
+  return auditRow({
+    name: "unlistable",
+    hasProtofireAudit: false,
+    externalAudit: "unknown",
+    ...over,
+  });
+}
+
+Deno.test("audit gap: a failed audit listing is not enumerated as never-audited", () => {
+  const box = auditBox(auditData([
+    unlistableRow(),
+    auditRow({ name: "realgap", hasProtofireAudit: false, externalAudit: "never" }),
+  ], 1));
+  // The gap section counts and lists the CONFIRMED absence only. A listing the
+  // scan could not read is not evidence of a missing audit.
+  const t = textOf(box);
+  assert(
+    t.includes("Never externally audited (1) — the gap"),
+    "only the confirmed gap is enumerated: " + t,
+  );
+  // …and the repo the scan could not read still appears, in its own section,
+  // wearing `unknown` rather than `never`. Dropping out of every count without
+  // appearing anywhere would read exactly like having nothing to report.
+  assert(
+    t.includes("Audit listing FAILED (1)"),
+    "the unreadable repo is named, not dropped: " + t,
+  );
+  const badges = collect(box, "au-status").filter((s) => hasClass(s, "never"));
+  assert(
+    badges.length === 1 && badges[0].textContent === "never",
+    "exactly one `never` badge — the real gap, got " + badges.length,
+  );
+  assert(
+    collect(box, "au-status").some((s) => hasClass(s, "unknown")),
+    "the unreadable repo takes the dotted unknown badge: " + t,
+  );
+});
+
+Deno.test("audit headline: a failed listing is named even when nothing is alarming", () => {
+  // The all-clear branch. "every repo externally audited" beside a listing the
+  // scan never managed to read is the same overclaim from the other side.
+  const box = auditBox(auditData([
+    unlistableRow(),
+    auditRow({ name: "clean", externalAudit: "current" }),
+  ], 0));
+  const t = textOf(box);
+  const counts = collect(box, "an");
+  assert(
+    counts.length === 1 && counts[0].textContent === "0",
+    "a failed listing raises no alarm count: " + counts.map((c) => c.textContent).join("/"),
+  );
+  assert(
+    t.includes("1 audit listing FAILED"),
+    "the all-clear must still name the indeterminate repo: " + t,
   );
 });
 

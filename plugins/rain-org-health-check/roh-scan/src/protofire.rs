@@ -425,7 +425,13 @@ pub struct InheritedRecord {
     /// Possibly EMPTY, and that is load-bearing: it is how a superseded report is
     /// retained honestly — real provenance, zero current coverage. A convention
     /// that forced every PDF to claim a snapshot would manufacture over-claiming.
+    ///
+    /// EMPTY whenever `superseded_by` is set. Not a convention — `parse_inherited_record`
+    /// rejects the manifest outright when both are populated, so no constructed
+    /// record can hold that pair.
     pub covers: Vec<CoveredSnapshot>,
+    /// The PDF that replaced this one, and with it took over its coverage. Set ⇒
+    /// `covers` is empty (enforced at parse).
     pub superseded_by: Option<String>,
     pub basis: String,
 }
@@ -446,10 +452,12 @@ impl InheritedManifest {
 /// Parse `audit/<vendor>/inherited.json`. Pure — the caller fetches.
 ///
 /// All-or-nothing: an unknown `schema`, a malformed record, a `pdf` that is not a
-/// prefixed basename, a path-shaped field, or a DUPLICATE `pdf` yields `None` for
-/// the whole manifest. A provenance claim that is half-readable is not a claim
-/// the scanner may act on, and a duplicated `pdf` is ambiguous about which record
-/// governs — both must land in `unknown`, not in a best guess.
+/// prefixed basename, a path-shaped field, a DUPLICATE `pdf`, or a record that is
+/// both superseded and still claiming snapshots yields `None` for the whole
+/// manifest. A provenance claim that is half-readable is not a claim the scanner
+/// may act on; a duplicated `pdf` is ambiguous about which record governs; and a
+/// superseded record with live claims contradicts itself — all must land in
+/// `unknown`, not in a best guess.
 pub fn parse_inherited_manifest(src: &str) -> Option<InheritedManifest> {
     let v: serde_json::Value = serde_json::from_str(src).ok()?;
     if v.get("schema").and_then(serde_json::Value::as_u64) != Some(INHERITED_SCHEMA) {
@@ -509,6 +517,18 @@ fn parse_inherited_record(v: &serde_json::Value) -> Option<InheritedRecord> {
         .map(parse_covered_snapshot)
         .collect::<Option<Vec<_>>>()?;
     let basis = req_str(v, "basis")?;
+    let superseded_by = req_str(v, "supersededBy");
+    // A superseded record is one whose coverage has been TAKEN OVER by the record
+    // that replaced it, which is the whole reason an empty `covers` is legal. So
+    // "superseded" and "still claims snapshots" cannot both be true: a repo's
+    // covered set is the UNION over its records, and the union would read the
+    // handed-over claim as live coverage — marking a live pin audited off a report
+    // that was retired. The contradiction is not resolvable from the file (which
+    // half is the lie?), so it is rejected here rather than guessed at, and lands
+    // in `unknown` like every other unreadable manifest.
+    if superseded_by.is_some() && !covers.is_empty() {
+        return None;
+    }
     Some(InheritedRecord {
         pdf,
         sha256,
@@ -516,7 +536,7 @@ fn parse_inherited_record(v: &serde_json::Value) -> Option<InheritedRecord> {
         report_date,
         source,
         covers,
-        superseded_by: req_str(v, "supersededBy"),
+        superseded_by,
         basis,
     })
 }
@@ -820,20 +840,31 @@ pub fn changed_source_file_count(base: &[(String, String)], head: &[(String, Str
 ///   became the reference for the split repo (#128). First-wins is no more
 ///   meaningful, but it is stated, and it is stable under a later insertion.
 pub fn newest_pdf_index(pdfs: &[AuditPdf]) -> Option<usize> {
-    let best_known = pdfs
-        .iter()
-        .enumerate()
-        .filter_map(|(i, p)| p.audit_date.iso().map(|d| (i, d)))
-        .fold(None::<(usize, &str)>, |acc, (i, d)| match acc {
-            Some((_, bd)) if bd >= d => acc,
-            _ => Some((i, d)),
-        });
-    match best_known {
-        Some((i, _)) => Some(i),
+    newest_index_among(pdfs, 0..pdfs.len())
+}
+
+/// The newest of a SUBSET of `pdfs`, named by index, under the two policies
+/// `newest_pdf_index` documents. Indices, not values: the answer is a position in
+/// `pdfs`, so carrying positions all the way through means it never has to be
+/// recovered by matching a field, and no field has to be unique for that to work.
+///
+/// `None` only when `candidates` is empty — a non-empty candidate set always names
+/// a winner, because "nothing is dated" falls back to the first candidate.
+fn newest_index_among(pdfs: &[AuditPdf], candidates: impl Iterator<Item = usize>) -> Option<usize> {
+    let mut first: Option<usize> = None;
+    let mut best: Option<(usize, &str)> = None;
+    for i in candidates {
         // Nothing is dated: nothing distinguishes them, so take the first rather
         // than inventing an order.
-        None => (!pdfs.is_empty()).then_some(0),
+        first.get_or_insert(i);
+        if let Some(d) = pdfs[i].audit_date.iso() {
+            match best {
+                Some((_, bd)) if bd >= d => {}
+                _ => best = Some((i, d)),
+            }
+        }
     }
+    best.map(|(i, _)| i).or(first)
 }
 
 /// Index of the REFERENCE audit PDF — the one the repo's verdict, anchor and
@@ -844,17 +875,16 @@ pub fn newest_pdf_index(pdfs: &[AuditPdf]) -> Option<usize> {
 /// describes nothing this repo currently carries, so it must not be the record the
 /// repo is judged by. Picking by meaning beats picking by date or path order:
 /// nothing guarantees the covering report is also the newest file.
+///
+/// The fallback fires only when NO PDF covers anything: over a non-empty candidate
+/// set `newest_index_among` always names one, so a covering PDF can never be
+/// silently replaced by the newest overall.
 pub fn reference_pdf_index(pdfs: &[AuditPdf]) -> Option<usize> {
-    let covering: Vec<AuditPdf> = pdfs
-        .iter()
-        .filter(|p| !p.covers.is_empty())
-        .cloned()
-        .collect();
-    if covering.is_empty() {
-        return newest_pdf_index(pdfs);
-    }
-    let chosen = newest_pdf_index(&covering)?;
-    pdfs.iter().position(|p| p.path == covering[chosen].path)
+    newest_index_among(
+        pdfs,
+        (0..pdfs.len()).filter(|&i| !pdfs[i].covers.is_empty()),
+    )
+    .or_else(|| newest_pdf_index(pdfs))
 }
 
 /// Strictly-newer comparison for two ISO-8601 UTC timestamps. Same fixed format
@@ -1571,6 +1601,32 @@ mod tests {
         assert_eq!(reference_pdf_index(&none_cover), Some(1));
     }
 
+    /// The reference is a POSITION, and a position may not be recovered by matching
+    /// a field. Selecting into a filtered copy and then searching the original for
+    /// `path` equality silently makes `path` a primary key: two entries sharing one
+    /// makes the search return the FIRST, so the repo is judged by a record that
+    /// covers nothing while the covering one sits at the index nobody looked up.
+    /// The listing that builds these happens to yield distinct paths today; that is
+    /// an accident of the caller, not a property of this function's input.
+    #[test]
+    fn reference_is_selected_by_index_not_by_matching_a_field() {
+        let mut covering = pdf("inherited.r2.pdf", dated("2026-05-12T00:00:00Z"));
+        covering.covers = vec!["src/generated/0_1_3".into()];
+        let mut shadow = pdf("inherited.r1.pdf", dated("2026-02-11T00:00:00Z"));
+        // Same `path` as the covering record, no coverage of its own.
+        shadow.path.clone_from(&covering.path);
+        let pdfs = vec![shadow, covering];
+        assert_eq!(
+            reference_pdf_index(&pdfs),
+            Some(1),
+            "the covering record is at index 1; a path lookup would answer 0",
+        );
+        assert!(
+            !pdfs[reference_pdf_index(&pdfs).unwrap()].covers.is_empty(),
+            "the reference must be the record that actually covers something",
+        );
+    }
+
     // ---- newer_than ----
     #[test]
     fn newer_than_is_strict_chronological() {
@@ -1826,6 +1882,35 @@ mod tests {
         assert!(
             parse_inherited_manifest(&dup).is_none(),
             "two records for one PDF must not silently pick one"
+        );
+    }
+
+    /// A superseded record has HANDED OVER its coverage to the record that replaced
+    /// it — which is the only reason an empty `covers` is legal at all. So the two
+    /// cannot both be populated. Nothing downstream re-checks it: a repo's covered
+    /// set is the UNION over every record, so a retired report still claiming
+    /// `src/generated/0_1_5` would mark that snapshot audited, flip the live pin's
+    /// `liveSnapshotCovered` to true, and silence the UNAUDITED alarm on bytecode
+    /// that is genuinely in production. Which half is the lie is not decidable from
+    /// the file, so the manifest is refused whole and the repo reads `unknown`.
+    #[test]
+    fn a_superseded_record_may_not_still_claim_snapshots() {
+        let base = manifest_json();
+        // r1.0 is the superseded record; give it back a live claim.
+        let overclaiming = base.replace(
+            "\"covers\": [],",
+            "\"covers\": [ { \"snapshot\": \"src/generated/0_1_5\", \"bytecodeHash\": \"0xf21b813c7075a1621285df3a8369d0652c31ea80cb807be1aaadafeecd134475\" } ],",
+        );
+        assert_ne!(overclaiming, base, "the fixture must actually have changed");
+        assert!(
+            parse_inherited_manifest(&overclaiming).is_none(),
+            "a superseded record that still claims a snapshot contradicts itself",
+        );
+        // The mirror image stays legal, so this is a rejection of the CONTRADICTION
+        // and not of coverage or of supersession on their own.
+        assert!(
+            parse_inherited_manifest(&base).is_some(),
+            "superseded + empty covers, and covering + not superseded, are both fine",
         );
     }
 

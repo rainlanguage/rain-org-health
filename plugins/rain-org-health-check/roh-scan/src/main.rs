@@ -1466,6 +1466,51 @@ fn in_protofire_report(has_pdf: bool, has_foundry: bool) -> bool {
     has_pdf || has_foundry
 }
 
+/// The one bucket a repo in the Protofire report occupies. FIVE states, not four:
+/// the two PDF-less states are not the same fact. A directory listing that came
+/// back EMPTY establishes an absence (`never` — the coverage gap); a listing that
+/// FAILED establishes nothing at all (`unknown` — issue #52). Collapsing the
+/// second into the first is how a transient GitHub error becomes a reported
+/// coverage gap, and `full_source_loc` already refuses to make exactly that
+/// mistake.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum ProtofireBucket {
+    /// Carries a PDF this scan stands behind.
+    ExternallyAudited,
+    /// Audited in a PREDECESSOR repo, covering named snapshots. Real provenance,
+    /// partial by construction — neither audited nor a gap.
+    Inherited,
+    /// Declares an inherited audit whose provenance could not be validated.
+    UnverifiedInherited,
+    /// CONFIRMED absence: `audit/protofire/` was read and holds no PDF.
+    NeverExternallyAudited,
+    /// The listing FAILED. Not an absence — an absence of information.
+    Indeterminate,
+}
+
+/// Classify a repo into exactly one `ProtofireBucket`. TOTAL by construction: the
+/// buckets are counted, never derived by subtracting one from the total, so no
+/// state can be silently absorbed into another. Anything not positively
+/// established lands in `Indeterminate` — the fail-safe direction, since the only
+/// bucket that asserts a fact about the repo is `NeverExternallyAudited`.
+fn protofire_bucket(
+    has_pdf: bool,
+    external_audit: protofire::ExternalAudit,
+    unverified_inherited: bool,
+) -> ProtofireBucket {
+    if unverified_inherited {
+        ProtofireBucket::UnverifiedInherited
+    } else if external_audit == protofire::ExternalAudit::Inherited {
+        ProtofireBucket::Inherited
+    } else if has_pdf {
+        ProtofireBucket::ExternallyAudited
+    } else if external_audit == protofire::ExternalAudit::Never {
+        ProtofireBucket::NeverExternallyAudited
+    } else {
+        ProtofireBucket::Indeterminate
+    }
+}
+
 /// The newest revision the soldeer registry holds for `pkg`.
 ///
 /// `Some(Some(v))` — published, `v` is the newest revision.
@@ -1731,39 +1776,49 @@ fn main() {
         .filter(|r| in_protofire_report(r.protofire.has_pdf, r.has_foundry))
         .collect();
     let protofire_total = pf_view.len();
-    // Three buckets, not two. An inherited repo carries a PDF, so counting it as
-    // externally audited would move it OUT of the coverage-gap number while its
-    // live production pin may be unaudited — the dashboard would read cleaner than
-    // the false `never` it replaced. It is not a gap either: the provenance is
-    // real. So it is neither, and it is named.
-    let inherited_repos: Vec<String> = pf_view
+    // Every repo in the report is CLASSIFIED into exactly one bucket, and no
+    // bucket is derived by subtracting the others. Subtraction made the remainder
+    // a dumping ground: it silently absorbed the `unknown` (failed-listing) repos
+    // and reported them as the confirmed coverage gap — the false `never` this
+    // scan exists to prevent (#52). A total classifier cannot do that, because
+    // there is nothing left over to absorb.
+    let bucketed: Vec<(String, ProtofireBucket)> = pf_view
         .iter()
-        .filter(|r| r.protofire.external_audit == protofire::ExternalAudit::Inherited)
-        .map(|r| format!("{}/{}", r.org, r.name))
-        .collect();
-    // A DECLARED inherited claim the scan could not validate is a fourth state,
-    // for the same reason: PDFs whose provenance nothing stands behind are not an
-    // audit, and an unreadable claim is not a confirmed gap. Counting it as
-    // audited would make a forgotten manifest entry read BETTER than the honest
-    // `never` it replaced.
-    let unverified_inherited_repos: Vec<String> = pf_view
-        .iter()
-        .filter(|r| r.protofire.unverified_inherited.is_some())
-        .map(|r| format!("{}/{}", r.org, r.name))
-        .collect();
-    let externally_audited = pf_view
-        .iter()
-        .filter(|r| {
-            r.protofire.has_pdf
-                && r.protofire.external_audit != protofire::ExternalAudit::Inherited
-                && r.protofire.unverified_inherited.is_none()
+        .map(|r| {
+            (
+                format!("{}/{}", r.org, r.name),
+                protofire_bucket(
+                    r.protofire.has_pdf,
+                    r.protofire.external_audit,
+                    r.protofire.unverified_inherited.is_some(),
+                ),
+            )
         })
-        .count();
-    // The four buckets partition the report, so they still sum to the total.
-    let never_externally_audited = protofire_total
-        - externally_audited
-        - inherited_repos.len()
-        - unverified_inherited_repos.len();
+        .collect();
+    let named = |want: ProtofireBucket| -> Vec<String> {
+        bucketed
+            .iter()
+            .filter(|(_, b)| *b == want)
+            .map(|(n, _)| n.clone())
+            .collect()
+    };
+    let tally = |want: ProtofireBucket| bucketed.iter().filter(|(_, b)| *b == want).count();
+    // An inherited repo carries a PDF, so counting it as externally audited would
+    // move it OUT of the coverage-gap number while its live production pin may be
+    // unaudited — the dashboard would read cleaner than the false `never` it
+    // replaced. It is not a gap either: the provenance is real. So it is neither,
+    // and it is named.
+    let inherited_repos: Vec<String> = named(ProtofireBucket::Inherited);
+    // A DECLARED inherited claim the scan could not validate, for the same reason:
+    // PDFs whose provenance nothing stands behind are not an audit, and an
+    // unreadable claim is not a confirmed gap. Counting it as audited would make a
+    // forgotten manifest entry read BETTER than the honest `never` it replaced.
+    let unverified_inherited_repos: Vec<String> = named(ProtofireBucket::UnverifiedInherited);
+    // A listing that FAILED. Named, never counted as a gap: "I could not look" is
+    // not "there is nothing there".
+    let indeterminate_repos: Vec<String> = named(ProtofireBucket::Indeterminate);
+    let externally_audited = tally(ProtofireBucket::ExternallyAudited);
+    let never_externally_audited = tally(ProtofireBucket::NeverExternallyAudited);
     pf_view.sort_by(|a, b| {
         let (pa, pb) = (&a.protofire, &b.protofire);
         (
@@ -1786,7 +1841,17 @@ fn main() {
         inherited_repos.len()
     );
     println!(
+        "  inherited, UNVERIFIABLE:  {} / {protofire_total}  (provenance unreadable)",
+        unverified_inherited_repos.len()
+    );
+    println!(
         "  NEVER externally audited: {never_externally_audited} / {protofire_total}  (the coverage gap)"
+    );
+    // Printed even at zero: the five buckets are shown adding up to the total, so
+    // a reader can see that the gap number is a count and not a remainder.
+    println!(
+        "  audit listing FAILED:     {} / {protofire_total}  (indeterminate — NOT a gap)",
+        indeterminate_repos.len()
     );
     for r in &pf_view {
         let p = &r.protofire;
@@ -2506,6 +2571,8 @@ fn main() {
             "reposWholeRepoAudited": audited,
             "reposNeverAudited": total - audited,
             "reposExternallyAudited": externally_audited,
+            // A COUNT of confirmed absences, not a remainder: a repo whose audit
+            // listing failed is not in here (#52).
             "reposNeverExternallyAudited": never_externally_audited,
             // Neither audited nor a gap: audited in a predecessor repo, covering
             // named snapshots. Listed rather than counted so a reader can see WHICH.
@@ -2513,6 +2580,9 @@ fn main() {
             // Declared inherited, provenance unvalidatable — indeterminate, and in
             // neither of the other buckets.
             "reposUnverifiedInheritedAudit": unverified_inherited_repos,
+            // The audit listing FAILED for these. Named so the repos the scan could
+            // not read stay visible instead of vanishing out of every bucket.
+            "reposExternalAuditIndeterminate": indeterminate_repos,
             "summary": summary.iter().map(|(s, n)| (s.to_string(), serde_json::Value::from(*n))).collect::<serde_json::Map<String, serde_json::Value>>(),
             "repos": findings.iter().map(|(r, org, sigs)| json!({"name": r, "org": org, "signals": sigs})).collect::<Vec<_>>(),
             "audits": results.iter().map(|r| {
@@ -2851,6 +2921,91 @@ mod tests {
         assert!(in_protofire_report(true, true));
         // No PDF and no foundry.toml (docs/subgraph/tooling/.github) → excluded, not a gap.
         assert!(!in_protofire_report(false, false));
+    }
+
+    // ---- Protofire bucket classification (#52) ----
+
+    /// THE regression this bucket split exists for. A Foundry repo whose
+    /// `audit/protofire` listing FAILED has no PDF and `unknown` state — exactly
+    /// the shape the report used to sweep into the coverage gap by subtracting the
+    /// other buckets from the total. "I could not look" is not "there is nothing
+    /// there", and the number the dashboard prints as the gap must not contain it.
+    #[test]
+    fn a_failed_audit_listing_is_indeterminate_never_the_coverage_gap() {
+        assert_eq!(
+            protofire_bucket(false, protofire::ExternalAudit::Unknown, false),
+            ProtofireBucket::Indeterminate,
+        );
+        // …and the CONFIRMED absence it must stay distinct from.
+        assert_eq!(
+            protofire_bucket(false, protofire::ExternalAudit::Never, false),
+            ProtofireBucket::NeverExternallyAudited,
+        );
+    }
+
+    #[test]
+    fn every_protofire_state_lands_in_exactly_one_bucket() {
+        // A PDF the scan stands behind is audited, whatever its drift verdict.
+        for state in [
+            protofire::ExternalAudit::Current,
+            protofire::ExternalAudit::Stale,
+            protofire::ExternalAudit::Na,
+            // has_pdf with an indeterminate STALENESS verdict is still an audited
+            // repo: the PDF was read, only the drift could not be sized.
+            protofire::ExternalAudit::Unknown,
+        ] {
+            assert_eq!(
+                protofire_bucket(true, state, false),
+                ProtofireBucket::ExternallyAudited,
+                "{state:?} with a PDF is audited",
+            );
+        }
+        assert_eq!(
+            protofire_bucket(true, protofire::ExternalAudit::Inherited, false),
+            ProtofireBucket::Inherited,
+        );
+        // An unvalidatable inherited claim outranks everything: nothing stands
+        // behind the PDF, so it is neither audited nor a confirmed gap.
+        assert_eq!(
+            protofire_bucket(true, protofire::ExternalAudit::Unknown, true),
+            ProtofireBucket::UnverifiedInherited,
+        );
+    }
+
+    /// The property the old subtraction gave for free and a classifier must earn:
+    /// the buckets partition the report. Counting each one and summing must land
+    /// exactly on the total, with no repo counted twice and none dropped.
+    #[test]
+    fn the_buckets_partition_the_report() {
+        let report = [
+            (true, protofire::ExternalAudit::Current, false),
+            (true, protofire::ExternalAudit::Stale, false),
+            (true, protofire::ExternalAudit::Na, false),
+            (true, protofire::ExternalAudit::Unknown, false),
+            (true, protofire::ExternalAudit::Inherited, false),
+            (true, protofire::ExternalAudit::Unknown, true),
+            (false, protofire::ExternalAudit::Never, false),
+            (false, protofire::ExternalAudit::Unknown, false),
+        ];
+        let buckets: Vec<ProtofireBucket> = report
+            .iter()
+            .map(|&(pdf, state, unver)| protofire_bucket(pdf, state, unver))
+            .collect();
+        let tally = |want: ProtofireBucket| buckets.iter().filter(|b| **b == want).count();
+        assert_eq!(tally(ProtofireBucket::ExternallyAudited), 4);
+        assert_eq!(tally(ProtofireBucket::Inherited), 1);
+        assert_eq!(tally(ProtofireBucket::UnverifiedInherited), 1);
+        assert_eq!(tally(ProtofireBucket::NeverExternallyAudited), 1);
+        assert_eq!(tally(ProtofireBucket::Indeterminate), 1);
+        assert_eq!(
+            tally(ProtofireBucket::ExternallyAudited)
+                + tally(ProtofireBucket::Inherited)
+                + tally(ProtofireBucket::UnverifiedInherited)
+                + tally(ProtofireBucket::NeverExternallyAudited)
+                + tally(ProtofireBucket::Indeterminate),
+            report.len(),
+            "every repo lands in exactly one bucket",
+        );
     }
 
     // ---- unaudited source LOC counting (#37) ----
