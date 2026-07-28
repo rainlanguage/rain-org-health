@@ -1910,11 +1910,14 @@ Deno.test("pipeline FSM: missing uncoveredIssues renders the backlog box at 0", 
 //
 // A state is either a LANE state (count and items both from `lanes.<lane>.<state>`) or a
 // `fromCounts` state (count from `counts.<key>`, items from a top-level array). Only the lane
-// branch ever registered items, so every fromCounts state rendered a real count above an empty
-// panel. `closeCandidateUpheld` showed it live — 1 on the box, nothing behind it.
+// branch ever registered items; three fromCounts states were rescued by a per-key if-chain in
+// `itemsFor`, and the two the close-candidate split added were never added to it — so they
+// rendered a real count above an empty panel. `closeCandidateUpheld` showed it live: 1 on the
+// box, nothing behind it.
 //
 // The whole existing suite (145 tests) passed with that bug in place, because a state's count
-// and its list were only ever asserted apart. These assert them TOGETHER.
+// and its list were only ever asserted apart. These assert them TOGETHER, for every state
+// rather than the ones someone remembered to wire.
 
 // Fixture items for a state's top-level array, tagged so one state's list can never be mistaken
 // for another's.
