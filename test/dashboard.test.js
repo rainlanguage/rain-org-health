@@ -2346,12 +2346,21 @@ Deno.test("deployments: a grantee with no chain resolved reads as unchecked, not
     for (const r of gr.roles) r.chains = [];
   }
   const box = deploymentsBox(d);
-  const tallies = collect(box, "own-chip").map((c) => c.textContent).filter(
-    (t) => t === "not checked" || /^\d+\/\d+ live$/.test(t),
+  const tallies = collect(box, "own-chip").filter((c) =>
+    c.textContent === "not checked" || /^\d+\/\d+ live$/.test(c.textContent)
   );
   assert(
-    tallies.length > 0 && tallies.every((t) => t === "not checked"),
-    "every tally reads unchecked, got " + tallies.join(","),
+    tallies.length > 0 &&
+      tallies.every((c) => c.textContent === "not checked"),
+    "every tally reads unchecked, got " +
+      tallies.map((c) => c.textContent).join(","),
+  );
+  // Colour as well as words: a green chip reading "not checked" is the same
+  // confusion in the channel a reader scans first.
+  assert(
+    tallies.every((c) => !c.className.split(" ").includes("own-chip-yes")),
+    "and none of them is painted as confirmed: " +
+      tallies.map((c) => c.className).join(","),
   );
   // …and with no chain there is no per-chain cell to claim one either.
   const chips = collect(box, "own-chip").map((c) => c.textContent);
