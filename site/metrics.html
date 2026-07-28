@@ -116,11 +116,23 @@
      meaning. Identity comes from position, the dash, and the legend. */
   .pm-total { fill: none; stroke: var(--ink-3); stroke-width: 1.5; stroke-dasharray: 4 3;
               stroke-linejoin: round; stroke-linecap: round; }
+  /* The two halves startup decomposes into (issue-pr-cron#84): boot = launch
+     overhead (nix/MCP/prompt), ttl = orientation before the first productive
+     act. Same reasoning as .pm-total — NO new hue, because hue on this chart
+     already means "this run errored". Identity is the dash pattern + the
+     legend. boot is sub-second in practice, so it draws as a line hugging the
+     baseline; the exact figure is in the tooltip, which is where it is read. */
+  .pm-boot { fill: none; stroke: var(--ink-2); stroke-width: 1.25; stroke-dasharray: 1 2;
+             stroke-linejoin: round; stroke-linecap: round; }
+  .pm-ttl { fill: none; stroke: var(--ink-2); stroke-width: 1.5; stroke-dasharray: 7 2 1 2;
+            stroke-linejoin: round; stroke-linecap: round; }
   .pm-legend { display: flex; gap: 14px; align-items: center; margin: 0 2px 6px;
                font-size: 12px; color: var(--ink-3); }
   .pm-legend .k { display: inline-flex; align-items: center; gap: 6px; }
   .pm-legend .sw { width: 18px; height: 0; border-top: 2px solid var(--ink); flex: none; }
   .pm-legend .sw.total { border-top: 1.5px dashed var(--ink-3); }
+  .pm-legend .sw.boot { border-top: 1.25px dotted var(--ink-2); }
+  .pm-legend .sw.ttl { border-top: 1.5px dashed var(--ink-2); }
   .pm-line.deg { stroke: var(--crit); }
   .pm-dot { fill: var(--ink); }
   .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
@@ -332,6 +344,13 @@ function median(a) {
 function startupMin(r) {
   return typeof r.startupMs === "number" ? r.startupMs / 60000 : null;
 }
+// Startup as a proportion of the run's tool calls, or null. A PARTIAL record
+// (`stage` "boot"/"ttl", appended mid-run) has no toolCalls yet, so it has no
+// proportion — null, never a zero, and never an `undefined` reaching a
+// `.toFixed`. Every read of startupPct goes through here for that reason.
+function startupPctOf(r) {
+  return typeof r.startupPct === "number" ? r.startupPct : null;
+}
 // Minutes at which to PLOT a run on the absolute axis — position is time, colour
 // (below) is error-ness; they are independent. A run that reached a first
 // mutation has startupMs. A run that errored before mutating has no startupMs,
@@ -349,6 +368,57 @@ function plotMin(r) {
 function totalMin(r) {
   return typeof r.durationMs === "number" ? r.durationMs / 60000 : null;
 }
+// The two costs `startupMs` used to fuse (issue-pr-cron#84). boot = first trace
+// event → the first tool call: nix resolving and exec'ing the flake output, the
+// MCP handshake, the prompt load — nothing model-driven. ttl = that first tool
+// call → the first productive act (producer: first mutation; vetter: first
+// record_verdict) — orientation, entirely model- and tool-surface-driven. They
+// regress for unrelated reasons, which is why they are charted apart.
+//
+// They are NOT a partition of startupMs, and boot + ttl can EXCEED it. The
+// legacy metric clocks from the first tool RESULT, so it silently omits the
+// first tool call's own latency — on the modern MCP vetter surface that call is
+// `unvetted` and it has measured ~137 s. boot and ttl are anchored on the
+// tool_use events instead and do include it. Both series therefore have to be
+// fed into the y-scale on their own account; assuming startupMs bounds them
+// would clip a ttl line off the top of the plot.
+//
+// null for a record written before the split, where only the fused startupMs
+// exists — those plot no boot/ttl rather than a fabricated zero.
+function bootMin(r) {
+  return typeof r.bootMs === "number" ? r.bootMs / 60000 : null;
+}
+function ttlMin(r) {
+  return typeof r.ttlMs === "number" ? r.ttlMs / 60000 : null;
+}
+// The word a run's outcome renders as. A record with no `outcome` is one the
+// emitter never got to finish — the run was killed or timed out and only its
+// partials landed — so "ok" would report a success that never happened. Shared
+// by the tooltip and the caption: the two must never disagree about whether a
+// run succeeded, and an inline copy in each is a rule waiting to drift.
+function outcomeWord(r) {
+  return r.outcome || (r.stage && r.stage !== "final" ? "unfinished" : "ok");
+}
+// One record per run. The emitter appends a PARTIAL record the moment each
+// number becomes known — `stage:"boot"` at the first tool call, `stage:"ttl"` at
+// the first productive act — and the complete `stage:"final"` record only at run
+// end, so a run that is killed or times out still contributes what it knew. That
+// is the whole point: the run you most want timings for is the one that died.
+//
+// The cost is up to three lines sharing a runId. Collapse to the most complete:
+// final beats ttl beats boot. A record with NO `stage` is a legacy (pre-split)
+// record, written at run end under the old fused meaning — it ranks as final,
+// which is what it is.
+function collapseRuns(runs) {
+  const rank = (r) => (r.stage === "boot" ? 0 : r.stage === "ttl" ? 1 : 2);
+  const best = new Map();
+  for (const r of runs) {
+    const k = `${r.runId} ${r.role}`;
+    const cur = best.get(k);
+    if (!cur || rank(r) >= rank(cur)) best.set(k, r);
+  }
+  return [...best.values()];
+}
 // Round a per-gridline span up to a tidy 1/1.5/2/3/5/10 × 10ⁿ step, so the
 // minutes axis lands on human numbers (…0 15 30 45) instead of 0 11.4 22.8….
 function niceStep(v) {
@@ -364,7 +434,11 @@ function niceStep(v) {
 function renderPmControls(runs) {
   const box = $("pmcontrols");
   box.textContent = "";
-  if (!runs.some((r) => startupMin(r) != null)) { pmMode = "pct"; return; }
+  // boot/ttl count as absolute data in their own right. A window in which every
+  // run was killed has no startupMs anywhere — yet those are exactly the runs
+  // whose boot and ttl the partials preserved, and gating on startupMs alone
+  // would lock the only view that can show them.
+  if (!runs.some((r) => startupMin(r) != null || bootMin(r) != null || ttlMin(r) != null)) { pmMode = "pct"; return; }
   const group = document.createElement("div");
   group.className = "pm-toggle";
   group.setAttribute("role", "group");
@@ -389,7 +463,7 @@ function renderPmControls(runs) {
 
 function renderPmTiles(runs) {
   const abs = pmMode === "abs";
-  const valOf = (r) => (abs ? startupMin(r) : r.startupPct);
+  const valOf = (r) => (abs ? startupMin(r) : startupPctOf(r));
   // Latest = the most recent run that HAS a value (in abs mode the newest run
   // may be a gap); median is over the runs that have a value.
   let latest = null;
@@ -432,27 +506,68 @@ function pmTip(r, abs) {
   };
   const mins = startupMin(r), minsTxt = mins == null ? null : mins.toFixed(1) + " min";
   const pm = plotMin(r);
+  const pct = startupPctOf(r);
+  const pctTxt = pct == null ? null : pct.toFixed(1) + "%";
+  // boot / ttl in absolute minutes. boot is sub-second in practice — a hairline
+  // against a 35-minute axis — so the chart shows which half MOVES and the tip
+  // is where the figure is actually read. Only in abs mode: as a proportion of
+  // the run's tool calls neither half has a meaning.
+  const bm = bootMin(r), tm = ttlMin(r);
+  // Seconds under a minute, minutes above. boot is sub-second in practice, so a
+  // minutes-only format renders every boot ever measured as "0.0m" — the tip
+  // would carry the figure and still not say it. The unit is spelled out on
+  // each value, so the two halves stay comparable while being legible apart.
+  const mTxt = (v) =>
+    v == null ? "—" : v < 1 ? (v * 60).toFixed(1) + "s" : v.toFixed(1) + "m";
+  const split = `boot ${mTxt(bm)} · ttl ${mTxt(tm)}`;
+  const hasSplit = bm != null || tm != null;
   // Lead line shows the active unit; the complementary measure trails it. Only
   // the durationMs-fallback case — an error run with no startupMs — reads as
   // time-before-erroring; an error run that DID reach a first mutation has a
   // real startupMs and gets the normal startup-time phrasing (still red).
+  // A PARTIAL record has no proportion at all (no toolCalls yet) and, at the
+  // "ttl" stage, no startupMs either — so the "% of calls" clause is dropped
+  // rather than printed as `undefined%`, and the split is PROMOTED into the
+  // lead rather than leaving the tip's most prominent slot showing "—" for the
+  // one figure a killed run does not have.
+  let ledWithSplit = false;
   if (abs && r.outcome === "error" && typeof r.startupMs !== "number")
     frag.append(bold(pm == null ? "—" : pm.toFixed(1) + " min"), " before erroring");
-  else if (abs)
-    frag.append(bold(minsTxt || "—"), ` startup time · ${r.startupPct.toFixed(1)}% of calls`);
+  else if (abs && mins == null && hasSplit) {
+    // Lead with whichever half is actually KNOWN. A run killed between the boot
+    // and the ttl stage has boot and no ttl, and bolting ttl into the lead
+    // regardless puts "—" in the prominent slot — the very thing promoting the
+    // split was meant to avoid — while burying the one figure the run recorded.
+    const ttlKnown = tm != null;
+    frag.append(
+      bold(mTxt(ttlKnown ? tm : bm)),
+      ttlKnown ? ` ttl · boot ${mTxt(bm)}` : ` boot · ttl ${mTxt(tm)}`,
+    );
+    ledWithSplit = true;
+  } else if (abs)
+    frag.append(bold(minsTxt || "—"), " startup time" + (pctTxt ? ` · ${pctTxt} of calls` : ""));
   else
-    frag.append(bold(r.startupPct.toFixed(1) + "%"), " startup overhead" + (minsTxt ? ` · ${minsTxt}` : ""));
+    frag.append(bold(pctTxt || "—"), " startup overhead" + (minsTxt ? ` · ${minsTxt}` : ""));
   frag.append(document.createElement("br"));
+  if (abs && hasSplit && !ledWithSplit)
+    frag.append(split, document.createElement("br"));
   if (typeof r.durationMs === "number")
     frag.append(`of ${(r.durationMs / 60000).toFixed(1)}m total run`, document.createElement("br"));
-  frag.append(
-    `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
-    document.createElement("br"),
-    `${fmtRunTime(r.runId)} · `,
-  );
+  // ABSENCE, not type: a partial record has no call counts at all and must not
+  // print `undefined/undefined`. A present-but-hostile value still renders — as
+  // a text node, like every other field here — because dropping it would hide
+  // what the record actually says, and the tip is built from nodes precisely so
+  // that showing it is safe.
+  if (r.startupToolCalls != null && r.toolCalls != null && r.numTurns != null)
+    frag.append(
+      `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
+      document.createElement("br"),
+    );
+  frag.append(`${fmtRunTime(r.runId)} · `);
   const outcome = document.createElement("span");
-  if (r.outcome && r.outcome !== "ok") outcome.className = "deg";
-  outcome.textContent = r.outcome || "ok";
+  const word = outcomeWord(r);
+  if (word !== "ok") outcome.className = "deg";
+  outcome.textContent = word;
   frag.append(outcome);
   if (typeof r.costUsd === "number") frag.append(` · $${r.costUsd.toFixed(2)}`);
   return frag;
@@ -464,14 +579,23 @@ function renderPmChart(runs) {
   const plotW = VBW - PADL - PADR, plotH = VBH - PADT - PADB;
   // Value in the active unit. In abs mode null = a gap (a non-errored run with
   // no recorded startup time); errored runs plot at their time-to-death.
-  const valOf = (r) => (abs ? plotMin(r) : r.startupPct);
+  const valOf = (r) => (abs ? plotMin(r) : startupPctOf(r));
 
   // Y scale + gridlines. Proportion is a fixed 0–100%; absolute autoscales the
   // minutes axis to a tidy ceiling over the runs that carry a value.
   let ymax, gridVals, fmtY;
   if (abs) {
-    // Scale over BOTH series — scaling on startup alone would clip every total.
-    const vv = runs.map(valOf).concat(runs.map(totalMin)).filter((v) => v != null);
+    // Scale over EVERY series — scaling on startup alone would clip every total.
+    // boot and ttl are NOT bounded by startup: the legacy metric starts its
+    // clock at the first tool RESULT, so it omits the first call's own latency
+    // (~137 s on the MCP vetter surface) while ttl includes it, and ttl alone
+    // can therefore exceed startupMs. They must raise the ceiling on their own
+    // account or the ttl line draws off the top of the plot. It is also what
+    // lets a run that recorded ONLY its partials — killed before any startupMs
+    // or durationMs existed — scale the axis instead of being clipped to zero.
+    const vv = runs.map(valOf)
+      .concat(runs.map(totalMin), runs.map(bootMin), runs.map(ttlMin))
+      .filter((v) => v != null);
     const step = niceStep(Math.max(1, ...vv) / 4);
     ymax = step * 4;
     gridVals = [0, step, step * 2, step * 3, step * 4];
@@ -548,24 +672,38 @@ function renderPmChart(runs) {
       start = end + 1; // next run shares this boundary point, keeping the line continuous
     }
   }
-  // Total run time, absolute mode only: as a proportion it would be a flat 100%
-  // line, which says nothing. Identity is carried by position (total is always
-  // at or above startup, being its superset), a dashed stroke and the legend —
-  // never by hue, because hue on this chart already means "this run errored".
+  // The secondary series, absolute mode only: as a proportion each would be a
+  // flat or meaningless line. Identity is carried by position, the stroke
+  // pattern and the legend — never by hue, because hue on this chart already
+  // means "this run errored". One polyline per contiguous stretch of runs that
+  // carry the value, so a run missing it stays a gap instead of being bridged.
+  const seriesLines = (minsOf, cls) => {
+    const out = [], segs2 = [];
+    let s2 = [];
+    runs.forEach((r, i) => {
+      const v = minsOf(r);
+      if (v == null) { if (s2.length) { segs2.push(s2); s2 = []; } return; }
+      s2.push({ x: +xOf(i).toFixed(1), y: +yOf(v).toFixed(1) });
+    });
+    if (s2.length) segs2.push(s2);
+    for (const t of segs2) {
+      if (t.length < 2) continue;
+      out.push(svgEl("polyline", { class: cls, points: t.map((q) => `${q.x},${q.y}`).join(" ") }));
+    }
+    return out;
+  };
+  // Total run time (startup's superset, so always at or above it), plus the two
+  // halves startup decomposes into — boot below ttl, since boot is launch
+  // overhead and ttl is everything the model did before its first productive
+  // act. Charting them together is the point of issue-pr-cron#84: the two
+  // regress for unrelated reasons, and on one axis you can read which dominates.
   const totalLines = [];
   if (abs) {
-    const tsegs = [];
-    let tseg = [];
-    runs.forEach((r, i) => {
-      const tv = totalMin(r);
-      if (tv == null) { if (tseg.length) { tsegs.push(tseg); tseg = []; } return; }
-      tseg.push({ x: +xOf(i).toFixed(1), y: +yOf(tv).toFixed(1) });
-    });
-    if (tseg.length) tsegs.push(tseg);
-    for (const t of tsegs) {
-      if (t.length < 2) continue;
-      totalLines.push(svgEl("polyline", { class: "pm-total", points: t.map((q) => `${q.x},${q.y}`).join(" ") }));
-    }
+    totalLines.push(
+      ...seriesLines(totalMin, "pm-total"),
+      ...seriesLines(ttlMin, "pm-ttl"),
+      ...seriesLines(bootMin, "pm-boot"),
+    );
   }
   const dots = real.map((p) =>
     svgEl("circle", { class: "pm-dot" + (isDeg(p) ? " deg" : ""), cx: p.x, cy: p.y, r: p === real[real.length - 1] ? 4 : 3 }));
@@ -583,7 +721,7 @@ function renderPmChart(runs) {
     : [svgEl("text", { x: PADL + plotW / 2, y: VBH - 7, "text-anchor": "middle" }, fmtDayTime(runs[0].runId))];
   const cur = svgEl("line", { class: "pm-cursor", id: "pmcursor", x1: 0, y1: PADT, x2: 0, y2: VBH - PADB });
   const aria = abs
-    ? "Producer run time in minutes per run over time: total wall clock, and the startup portion within it"
+    ? "Producer run time in minutes per run over time: total wall clock, the startup portion within it, and startup's boot and ttl parts"
     : "Producer startup overhead percent per run over time";
 
   // A legend is mandatory once two series share the plot, so identity is never
@@ -592,7 +730,7 @@ function renderPmChart(runs) {
   if (abs) {
     const box = document.createElement("div");
     box.className = "pm-legend";
-    for (const [swatch, label] of [["sw", "startup"], ["sw total", "total run"]]) {
+    for (const [swatch, label] of [["sw", "startup"], ["sw boot", "boot"], ["sw ttl", "ttl"], ["sw total", "total run"]]) {
       const k = document.createElement("span");
       k.className = "k";
       const sw = document.createElement("span");
@@ -651,8 +789,9 @@ function renderPmNote(last) {
   };
   if (last) {
     const outcome = document.createElement("span");
-    if (last.outcome && last.outcome !== "ok") outcome.className = "deg";
-    outcome.textContent = last.outcome || "ok";
+    const word = outcomeWord(last);
+    if (word !== "ok") outcome.className = "deg";
+    outcome.textContent = word;
     nodes.push(`Latest run ${fmtAgo(parseRunId(last.runId))} · outcome `, outcome, ". ");
   }
   nodes.push(
@@ -662,9 +801,23 @@ function renderPmNote(last) {
     nodes.push(
       "Toggle to ",
       tag("b", "absolute"),
-      " to read the wall-clock startup time in minutes (run start → first mutation, ",
+      " to read the wall-clock startup time in minutes (",
       tag("code", "startupMs"),
       "); errored runs plot at their time-to-failure, non-errored runs with no recorded time are gaps. ",
+      "Absolute mode also splits startup into ",
+      tag("code", "bootMs"),
+      " — launch overhead, nix resolving the flake output plus the MCP handshake and prompt load, nothing model-driven — and ",
+      tag("code", "ttlMs"),
+      ", the orientation the model then does before its first productive act. The two regress for unrelated reasons, so which of them dominates is the reading. ",
+      "They are not a partition of ",
+      tag("code", "startupMs"),
+      ": that legacy number starts its clock at the first tool RESULT and so omits the first call's own latency, which ",
+      tag("code", "bootMs"),
+      " + ",
+      tag("code", "ttlMs"),
+      " includes — their sum can exceed it. Records written before the split carry only the fused ",
+      tag("code", "startupMs"),
+      " and plot no boot or ttl. ",
     );
   }
   const src = tag("a", "runs.jsonl");
@@ -675,17 +828,34 @@ function renderPmNote(last) {
   $("pmnote").replaceChildren(...nodes);
 }
 
+// runs.jsonl text → the producer runs to chart, one record per run, oldest
+// first. A malformed line is skipped rather than failing the whole fetch: the
+// file is appended to by a live cron and a half-written last line is normal.
+//
+// A record earns a place if it carries EITHER a startup proportion (the
+// complete end-of-run record) or a boot time (a partial, appended the moment
+// the number became known). The second half is the point of the split: a run
+// that was killed or timed out never reaches its final record, so requiring
+// startupPct dropped exactly the runs whose timings are most wanted — the
+// dashboard could only ever report successes.
+function pmRecords(text) {
+  return collapseRuns(
+    text.split("\n").map((l) => l.trim()).filter(Boolean)
+      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
+      .filter((r) =>
+        r && r.role === "producer" &&
+        (typeof r.startupPct === "number" || typeof r.bootMs === "number")
+      ),
+  ).sort((a, b) => (a.runId || "").localeCompare(b.runId || ""));
+}
+
 async function loadMetrics() {
   const empty = $("pmempty");
   let runs = [];
   try {
     const res = await fetch(PM_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(res.status);
-    const text = await res.text();
-    runs = text.split("\n").map((l) => l.trim()).filter(Boolean)
-      .map((l) => { try { return JSON.parse(l); } catch { return null; } })
-      .filter((r) => r && r.role === "producer" && typeof r.startupPct === "number")
-      .sort((a, b) => (a.runId || "").localeCompare(b.runId || ""));
+    runs = pmRecords(await res.text());
   } catch (e) {
     if (empty) empty.textContent = "could not load run metrics (metrics/runs.jsonl)";
     return;
