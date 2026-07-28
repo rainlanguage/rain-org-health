@@ -3378,6 +3378,22 @@ Deno.test("metrics collapse: distinct runs are never merged", () => {
   assert(out.length === 2, "two runs must stay two records, got " + out.length);
 });
 
+Deno.test("metrics collapse: a producer and a vetter run are two runs, not one", () => {
+  // The key is (runId, role), not runId. Today `pmRecords` filters to the
+  // producer BEFORE collapsing, so the role half never gets to matter — which
+  // is exactly why it needs pinning: the producer and the vetter cron can tick
+  // in the same second, and the moment anything feeds both roles in (a vetter
+  // panel, a combined view) a runId-only key silently merges two different runs
+  // into one and drops the other's timings.
+  const vetter = { ...PARTIAL_TTL, role: "vetter", ttlMs: 999000 };
+  const out = collapseRunsReal([PARTIAL_TTL, vetter]);
+  assert(out.length === 2, "one id, two roles, two runs — got " + out.length);
+  assert(
+    out.some((r) => r.ttlMs === 298141) && out.some((r) => r.ttlMs === 999000),
+    "neither run's timings may be dropped: " + JSON.stringify(out),
+  );
+});
+
 // The runs.jsonl → chart pipeline. These are the tests that pin the KILLED-RUN
 // path end to end: the emitter writes partials so a run that dies still leaves
 // its timings, and the dashboard has to actually admit them.
