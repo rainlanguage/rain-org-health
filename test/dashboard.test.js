@@ -2049,21 +2049,56 @@ Deno.test("pipeline FSM: a zero state reads as deliberately empty; a count with 
   );
 });
 
-// Structural guard against the way #141 was introduced: two states were ADDED to STATES, their
-// lists were never wired, and nothing failed. Every box the machine draws must resolve to an
-// item source — a state added without one now reports itself, and this fails when it does.
-Deno.test("pipeline FSM: every state in the machine has an item source wired", () => {
-  const box = fsmBox({ counts: {}, lanes: { "vetter-verdicts": {} } });
+// The invariant #141's own Check clause states, asserted over EVERY box the machine draws
+// rather than the handful a test happens to name: the number on a box is the number of rows it
+// expands to. Lane states and fromCounts states are held to it identically, which is the point
+// — they were not, and only the lane half was ever wired.
+Deno.test("pipeline FSM: every box's count equals the number of rows it expands to", () => {
+  const laneCell = (tag, n) => ({ count: n, prs: fcItems(tag, n) });
+  const box = fsmBox({
+    counts: {
+      // fromCounts states, each with its top-level array below.
+      leaks: 3,
+      uncoveredIssues: 4,
+      closeCandidateUnvetted: 2,
+      closeCandidateUpheld: 5,
+      // lane states are counted off their own cells, not these.
+      ready: 0,
+    },
+    lanes: {
+      "vet-lifecycle": { "un-vetted": laneCell("unvetted-pr", 2) },
+      "vetter-verdicts": {
+        "ai:ready": laneCell("ready", 6),
+        "ai:reject": laneCell("reject", 1),
+        // ai:design / ai:relink / ai:close-candidate deliberately absent: a sparse lane must
+        // render a zero box that expands to zero rows, which is the same invariant at n = 0.
+      },
+      "producer-blocked": { "ai:blocked-deploy": laneCell("deploy", 3) },
+      "human-decisions": { "human:reject": laneCell("hreject", 4) },
+    },
+    leaks: fcItems("leak", 3),
+    uncoveredIssues: fcItems("uncovered", 4),
+    closeCandidateUnvetted: fcItems("unvetted", 2),
+    closeCandidateUpheld: fcItems("upheld", 5),
+  });
   const detail = box.querySelectorAll("#fsmdetail")[0];
-  const unwired = [];
+  const mismatches = [];
+  let checked = 0, nonZero = 0;
   for (const b of box.querySelectorAll("[data-t]")) {
+    const n = Number(collect(b, "sc")[0].textContent);
     b.click();
-    if (textOf(detail).includes("No item list is wired")) unwired.push(b.dataset.t);
+    const rows = collect(detail, "li").length;
+    checked++;
+    if (n > 0) nonZero++;
+    if (rows !== n) mismatches.push(`${b.dataset.t}: box ${n}, panel ${rows}`);
     b.click();
   }
+  assert(checked === 17, `the whole machine was walked, got ${checked} boxes`);
+  // Guard the guard: a fixture that zeroed everything would satisfy the invariant vacuously.
+  assert(nonZero >= 8, `the fixture must exercise non-zero states, got ${nonZero}`);
   assert(
-    unwired.length === 0,
-    `states drawn with no item source: ${JSON.stringify(unwired)}`,
+    mismatches.length === 0,
+    `a count that opens onto a different number of rows:\n  ${mismatches.join("\n  ")}`,
   );
 });
 

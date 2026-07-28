@@ -584,11 +584,12 @@ function renderFsm(hq, history) {
         let count;
         if (s.fromCounts) {
           count = Number(c[s.fromCounts]) || 0;
-          // The counts key names the NUMBER; `items` names the LIST. Both branches register,
-          // so the click-to-expand has a source for every box the machine draws — the whole
-          // point of #141. A descriptor with no `items` registers nothing and the detail
-          // panel reports it as unwired rather than passing it off as an empty queue.
-          if (typeof s.items === "string") register(s.state, hq[s.items], s.issue, count);
+          // The counts key names the NUMBER; `items` names the LIST. Both branches register
+          // UNCONDITIONALLY, so the click-to-expand has a source for every box the machine
+          // draws — the whole point of #141. A descriptor that declared no `items` would
+          // register an empty list against a real count, which the detail panel reports as a
+          // defect rather than passing off as an empty queue.
+          register(s.state, hq[s.items], s.issue, count);
         } else {
           const cell = laneState(s.lane, s.state);
           count = cell ? Number(cell.count) || 0 : 0;
@@ -639,38 +640,32 @@ function renderFsm(hq, history) {
     grid.append(lane);
   }
 
-  // itemsFor returns a state's registration — { arr, issue, count } — or null when the state
-  // has none. Every box the machine draws registered above, in whichever branch drew it, so
-  // null means the RENDERER never wired this state up. It is deliberately not "|| []": an
-  // unwired state and an empty one used to render the same silence, which is precisely why
-  // #141 survived (a genuinely-empty close-candidate box looks identical to a broken one).
-  const itemsFor = (key) => laneItems.get(key) || null;
+  // itemsFor returns a state's registration — { arr, issue, count }. Every box the machine
+  // draws registered above, in whichever branch drew it, so the fallback is only a total
+  // function for a key no box carries.
+  const itemsFor = (key) => laneItems.get(key) || { arr: [], issue: false, count: 0 };
 
   // Detail body for a clicked box: a header naming THIS state and its OWN item count
   // (the list length rendered directly below it), so the panel can never read as
   // belonging to another section, then the items.
   //
-  // Three distinct readings for a list with no rows, because "no rows" has three causes and
-  // conflating them is the bug:
-  //   1. no registration          -> a dashboard defect; the state was drawn but never wired.
-  //   2. registered, count > 0    -> the snapshot counts N here and carries no list for it;
-  //                                  the list is MISSING, which is #141's exact signature.
-  //   3. registered, count == 0   -> genuinely, deliberately empty. The normal case.
-  // 1 and 2 are defects and read as defects (--crit, and in words — never colour alone).
+  // A list with no rows gets one of TWO readings, because "no rows" has two causes and
+  // conflating them is what let #141 live for weeks:
+  //   count == 0  -> genuinely, deliberately empty. The normal case, and the one that made a
+  //                  broken box unfalsifiable while it happened to be zero.
+  //   count  > 0  -> the machine counts N here and no list came with it. The list is MISSING,
+  //                  which is #141's exact signature, so it reads as the defect it is
+  //                  (--crit, and in WORDS — the colour is never the only carrier).
   const detailBody = (key, label) => {
     const src = itemsFor(key);
-    const arr = src ? src.arr : [];
+    const arr = src.arr;
     const frag = document.createDocumentFragment();
     const h = el("div", "fsm-dh");
     h.append(
       el("span", "dhl", label),
-      el("span", "dhc", src ? arr.length + (arr.length === 1 ? " item" : " items") : "no item source"),
+      el("span", "dhc", arr.length + (arr.length === 1 ? " item" : " items")),
     );
     frag.append(h);
-    if (!src) {
-      frag.append(el("div", "empty miswired", "No item list is wired for this state — that is a dashboard defect, not an empty queue."));
-      return frag;
-    }
     if (!arr.length) {
       frag.append(src.count > 0
         ? el("div", "empty miswired", "The machine counts " + src.count + " here, but the pipeline snapshot carries no list for this state — the list is missing, not empty.")
