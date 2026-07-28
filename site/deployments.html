@@ -737,17 +737,22 @@ function renderDeployments(document, $, data) {
       }[st] || ["dim", "?"];
       return el("span", `own-chip own-chip-${m[0]}`, `${c.network} ${m[1]}`);
     };
-    // The addresses a grantee was actually checked at. One for a constant; one
-    // per chain for the Safe slot, whose address is a per-chain deploy artifact
-    // — showing a single address there would be wrong on every chain but one.
+    // The addresses a grantee was actually checked at, keyed BY ADDRESS: a
+    // service key is one address covering every chain, while the Safe slot is a
+    // per-chain deploy artifact and a single address there would be wrong on
+    // every chain but one. Keying by chain instead would print the service key's
+    // one address once per chain, which reads as two different keys.
     const addressesOf = (gr) => {
-      const seen = new Map();
+      const byAddr = new Map();
       for (const r of gr.roles || []) {
         for (const c of r.chains || []) {
-          if (c.address && !seen.has(c.network)) seen.set(c.network, c.address);
+          if (!c.address) continue;
+          if (!byAddr.has(c.address)) byAddr.set(c.address, []);
+          const nets = byAddr.get(c.address);
+          if (!nets.includes(c.network)) nets.push(c.network);
         }
       }
-      return [...seen].map(([network, address]) => ({ network, address }));
+      return [...byAddr].map(([address, networks]) => ({ address, networks }));
     };
     const section = (title, note, isAdmin) => {
       const rows = (g.grantees || [])
@@ -772,13 +777,20 @@ function renderDeployments(document, $, data) {
               : "service key pinned in the grant map — hot single signer",
           ),
         );
-        for (const a of addressesOf(gr)) {
+        const addrs = addressesOf(gr);
+        for (const a of addrs) {
           const line = el("div", "grt-addr");
-          if (gr.kind === "safe") line.append(el("span", "own-net", a.network));
-          line.append(link("own-addr", a.address, explorer(a.address, a.network)));
+          // The chain tag is only meaningful where the addresses DIFFER by
+          // chain; on a single address it would imply a per-chain key.
+          if (addrs.length > 1) {
+            for (const n of a.networks) line.append(el("span", "own-net", n));
+          }
+          line.append(
+            link("own-addr", a.address, explorer(a.address, a.networks[0])),
+          );
           rc.append(line);
         }
-        if (!addressesOf(gr).length) {
+        if (!addrs.length) {
           rc.append(el("div", "own-addr own-missing", "— not found"));
         }
         const detail = el("div", "bcn-detail");

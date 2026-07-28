@@ -2375,6 +2375,17 @@ Deno.test("deployments: the Safe grantee shows the address it was checked at on 
     nets.includes("base") && nets.includes("ethereum"),
     "each Safe address is tagged with the chain it belongs to",
   );
+  // A service key is ONE address covering every chain. Printing it once per
+  // chain — which is what keying the address list by chain does — reads as two
+  // different keys holding the same roles, i.e. exactly the miscount this
+  // section exists to prevent.
+  const svc = collect(box, "own-addr").filter((a) =>
+    a.textContent === SERVICE_EOA
+  );
+  assert(
+    svc.length === 1,
+    "the service key's one address renders once, got " + svc.length,
+  );
 });
 
 // A read that did not happen is not a grant that was revoked. The two look
