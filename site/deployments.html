@@ -119,6 +119,15 @@
   .own-chip-no { color: var(--crit); border-color: var(--crit); }
   .own-chip-dim { color: var(--ink-3); border-color: var(--border); }
   .own-chip-target { color: var(--accent); border-color: var(--accent); }
+  /* A pinned grant not yet held on a chain is a ROLLOUT state, not a fault: the
+     deploy repo's model has a chain's grants absent until its provisioning
+     bundle executes, so "granted on Base, not yet on Ethereum" is a true and
+     expected reading. It gets the status amber the rest of the site uses for
+     work-to-do, never the red reserved for something that is wrong. */
+  .own-chip-roll { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
+  .own-verify-roll { background: var(--debt-bg); border-color: var(--debt-border); }
+  .own-verify-roll .own-verify-msg::before { content: "◐ "; color: var(--debt); font-weight: 700; }
+  .grt-addr { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 7px; margin-top: 3px; }
   @media (max-width: 620px) {
     .own-row { grid-template-columns: 1fr; gap: 5px; }
     .own-prov { justify-content: flex-start; }
@@ -646,12 +655,171 @@ function renderDeployments(document, $, data) {
     box.append(table);
     renderReconcile(t.reconcile);
   };
+  // Authoriser role grants: who holds each pinned (role, grantee) pair, and on
+  // which chains it is actually live.
+  //
+  // The Safe above answers "who can upgrade". This answers "who can move value"
+  // — the hot service keys — and the two are NOT a partition of the principals:
+  // the Safe holds DEPOSIT / WITHDRAW / CERTIFY directly as well as every
+  // _ADMIN. So admin-vs-action splits the ROLES here, inside one section, rather
+  // than splitting the page; a top-level split would have to file the Safe under
+  // both headings or misfile it under one.
+  //
+  // Every row is derived from the scan's read of the deploy repo's grant map.
+  // Nothing about a grantee is written down on this page, so a signer added to
+  // that map arrives here on the next scan.
+  const renderGrants = (g) => {
+    if (!g || !Array.isArray(g.grantees) || g.grantees.length === 0) return;
+    box.append(el("h2", null, "Authoriser role grants — who can move value"));
+    const gsub = el("div", "own-sub");
+    gsub.append("Every (role, grantee) pair pinned in ");
+    gsub.append(
+      link(
+        "",
+        `${g.function}`,
+        `https://github.com/${g.org}/${g.repo}/blob/main/${g.source}`,
+      ),
+    );
+    gsub.append(
+      ` — the same map the on-chain invariants assert — read back per chain with hasRole(). ` +
+        `The list is DERIVED from that map: a signer added there appears here, and one removed disappears, ` +
+        `with no change to this page. It shows current production only — a revoked grantee is not kept as history, ` +
+        `because a key on this screen reads as a key that can still act.`,
+    );
+    box.append(gsub);
+    const pinned = g.pinnedCount ?? 0;
+    // A map that parsed short would otherwise read as a smaller map, and every
+    // count under it would be quietly measured against the wrong denominator.
+    if (typeof g.declaredCount === "number" && g.declaredCount > pinned) {
+      box.append(
+        el(
+          "div",
+          "own-verify own-verify-drift",
+          `${g.declaredCount} grants declared in ${g.function}, ${pinned} parsed — the pinned map read here is INCOMPLETE, so every count below is drawn from a partial list.`,
+        ),
+      );
+    }
+    // One banner per chain. A chain mid-rollout is amber, never red: its grants
+    // are absent because its bundle has not run, which is a state to watch and
+    // not a fault to fix. Only an unreadable chain is dimmed, and it says why.
+    for (const c of g.chains || []) {
+      const st = c.state || "unknown";
+      const cls = st === "live" ? "ok" : st === "unknown" ? "down" : "roll";
+      const msg = st === "live"
+        ? `${c.network} — all ${c.total} pinned grants live.`
+        : st === "partial"
+        ? `${c.network} — ${c.granted} of ${c.total} pinned grants live; ${c.missing} not provisioned on this chain yet.`
+        : st === "unprovisioned"
+        ? `${c.network} — none of the ${c.total} pinned grants are live yet; this chain's provisioning has not run.`
+        : `${c.network} — pinned grants could not be read${
+          !c.authoriser
+            ? " (no authoriser pinned for this chain yet)"
+            : !c.rpcHost
+            ? " (no RPC endpoint configured for this chain)"
+            : " (the on-chain read did not answer)"
+        }; unread, not revoked.`;
+      const b = el("div", `own-verify own-verify-${cls}`);
+      b.append(el("span", "own-verify-msg", msg));
+      if (c.authoriser) {
+        const src = el("span", "own-verify-src");
+        src.append("authoriser ");
+        src.append(link("own-addr", c.authoriser, explorer(c.authoriser, c.network)));
+        b.append(src);
+      }
+      if (c.rpcHost) b.append(el("span", "own-verify-src", `via ${c.rpcHost}`));
+      box.append(b);
+    }
+    const chainChip = (c) => {
+      const st = c.status || "unknown";
+      const m = {
+        granted: ["yes", "✓"],
+        missing: ["roll", "○"],
+      }[st] || ["dim", "?"];
+      return el("span", `own-chip own-chip-${m[0]}`, `${c.network} ${m[1]}`);
+    };
+    // The addresses a grantee was actually checked at. One for a constant; one
+    // per chain for the Safe slot, whose address is a per-chain deploy artifact
+    // — showing a single address there would be wrong on every chain but one.
+    const addressesOf = (gr) => {
+      const seen = new Map();
+      for (const r of gr.roles || []) {
+        for (const c of r.chains || []) {
+          if (c.address && !seen.has(c.network)) seen.set(c.network, c.address);
+        }
+      }
+      return [...seen].map(([network, address]) => ({ network, address }));
+    };
+    const section = (title, note, isAdmin) => {
+      const rows = (g.grantees || [])
+        .map((gr) => [gr, (gr.roles || []).filter((r) => !!r.admin === isAdmin)])
+        .filter(([, roles]) => roles.length > 0);
+      if (!rows.length) return;
+      box.append(el("h3", "tok-h3", title));
+      box.append(el("div", "own-sub", note));
+      const table = el("div", "own-table");
+      for (const [gr, roles] of rows) {
+        const row = el("div", "own-row");
+        const rc = el("div", "own-rc");
+        // The constant's own name, so a row greps straight back to the line in
+        // the deploy repo that put this key on the page.
+        rc.append(el("div", "own-role", gr.ident));
+        rc.append(
+          el(
+            "div",
+            "own-note",
+            gr.kind === "safe"
+              ? "the chain's token-owner Safe — cold multisig, holds these directly"
+              : "service key pinned in the grant map — hot single signer",
+          ),
+        );
+        for (const a of addressesOf(gr)) {
+          const line = el("div", "grt-addr");
+          if (gr.kind === "safe") line.append(el("span", "own-net", a.network));
+          line.append(link("own-addr", a.address, explorer(a.address, a.network)));
+          rc.append(line);
+        }
+        if (!addressesOf(gr).length) {
+          rc.append(el("div", "own-addr own-missing", "— not found"));
+        }
+        const detail = el("div", "bcn-detail");
+        let live = 0, total = 0;
+        for (const r of roles) {
+          const line = el("div", "bcn-line");
+          line.append(el("span", "bcn-key", r.role));
+          for (const c of r.chains || []) {
+            total += 1;
+            if (c.status === "granted") live += 1;
+            line.append(chainChip(c));
+          }
+          detail.append(line);
+        }
+        const cls = live === total ? "yes" : live === 0 ? "dim" : "roll";
+        row.append(rc, detail, el("span", `own-chip own-chip-${cls}`, `${live}/${total} live`));
+        table.append(row);
+      }
+      box.append(table);
+    };
+    section(
+      "Action roles — who can move value",
+      "Deposit / withdraw / certify and anything else the map grants directly. These are the keys used day to day.",
+      false,
+    );
+    section(
+      "Admin roles — who can grant and revoke",
+      "The <ROLE>_ADMIN half of the same map: the authority to hand the action roles out. Read off the role name, not a list kept here.",
+      true,
+    );
+  };
   const owners = data.deploymentOwners;
   box.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
     box.append(
       el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
     );
+    // The grant map is parsed independently of the owner constants, so it can
+    // still be readable when they are not — and it is the half of this page
+    // that says who can move value.
+    renderGrants(data.deploymentGrants);
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
@@ -716,6 +884,7 @@ function renderDeployments(document, $, data) {
     grp.append(table);
     box.append(grp);
   }
+  renderGrants(data.deploymentGrants);
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);

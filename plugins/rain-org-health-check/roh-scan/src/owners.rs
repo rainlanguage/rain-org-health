@@ -7,6 +7,13 @@
 //! notes are the stable curation and live here. Each address is read from the
 //! file that declares it as a LITERAL — never from an aliasing re-export — so
 //! parsing never has to resolve `= OtherLib.CONST;`.
+//!
+//! `build_owners` covers the named pins — the Safes, the signers, the authoriser
+//! clones. `build_grants` covers the `(role, grantee)` map: who holds DEPOSIT /
+//! WITHDRAW / CERTIFY on those authorisers, and on which chains it is live. The
+//! second is derived END TO END — grantees, roles and chains all read out of the
+//! deploy repo — because the thing it reports on is a set that grows, and a
+//! curated list of hot keys is only ever as complete as somebody's memory.
 
 use regex::Regex;
 use serde_json::json;
@@ -260,7 +267,11 @@ pub fn build_owners(
                 else { "active" },
                 if is_unhydrated(v4_clone_ethereum.as_ref()) { "pin not yet hydrated — this says nothing about whether the clone exists" }
                 else { "the Ethereum bootstrap's authoriser clone" }),
-            entry("Service grantee", addr(auth_lib, "GRANTEE_SERVICE_1C66"), "", "active", "external service EOA granted deposit / withdraw / certify"),
+            // The grantees that hold roles ON these authorisers are NOT listed
+            // here. They used to be — one hand-written row naming one service
+            // constant — and that row could only ever describe the grantee
+            // somebody remembered to type. They are derived from the pinned
+            // grant map instead; see `build_grants`.
         ],
     });
 
@@ -282,6 +293,370 @@ pub fn build_owners(
         "signerCount": signer_count,
         "groups": [safe, signers_group, authoriser, historical],
     }))
+}
+
+// ---------------------------------------------------------------------------
+// Authoriser role grants (#143)
+//
+// Who can UPGRADE production is the Safe, and the page already carried it. Who
+// can MOVE VALUE is a different set — service EOAs holding DEPOSIT / WITHDRAW /
+// CERTIFY on the authoriser — and it was absent.
+//
+// It is DERIVED, never transcribed. `LibAuthoriserInvariants.expectedGrants` is
+// the one place the `(role, grantee)` pairs live: the same map the on-chain
+// assertions iterate. So this reads that map and reports exactly what it says.
+// A grantee added there appears here, and one removed disappears, with no change
+// to this file — which is the only version of the feature worth having, because
+// the whole hazard is a hot key nobody remembered to add to a list.
+// ---------------------------------------------------------------------------
+
+/// One `(role, grantee)` pair exactly as the pinned map writes it: the role NAME
+/// from `keccak256("…")`, and the grantee IDENTIFIER — either a constant name or
+/// the function's own per-chain Safe parameter.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct GrantPin {
+    pub role: String,
+    pub grantee: String,
+}
+
+/// The pinned grant map, parsed out of the Safe-parametric `expectedGrants`.
+#[derive(Debug, PartialEq, Eq, Clone)]
+pub struct GrantMap {
+    /// The Safe parameter's name. A grantee slot filled by it is THAT chain's
+    /// token-owner Safe, not a constant — which is how one map describes every
+    /// chain.
+    pub safe_param: String,
+    /// Source order, which is the order the map is read in and the order the
+    /// page lists grantees in.
+    pub grants: Vec<GrantPin>,
+    /// The length the source declares (`new RoleGrant[](13)`). Kept so a map
+    /// whose entries did not all parse reports a shortfall instead of quietly
+    /// looking smaller than it is.
+    pub declared: Option<usize>,
+}
+
+/// A role that ADMINS another role rather than performing an action.
+///
+/// The hierarchy is the source's own: every action role is admin'd by its
+/// `<ROLE>_ADMIN` (`DEFAULT_ADMIN_ROLE` is deliberately held by nobody). So the
+/// admin/action split is read off the role NAME rather than listed here — a new
+/// action role lands on the action side by itself.
+pub fn is_admin_role(role: &str) -> bool {
+    role.ends_with("_ADMIN")
+}
+
+/// The body of the first `function <name>(<sig>)` whose signature matches
+/// `sig_contains`, by brace matching from the signature's `{`.
+fn function_body<'a>(src: &'a str, name: &str, sig_contains: &str) -> Option<(&'a str, &'a str)> {
+    let mut from = 0usize;
+    loop {
+        let at = src[from..].find(&format!("function {name}"))? + from;
+        let open_paren = src[at..].find('(')? + at;
+        let close_paren = src[open_paren..].find(')')? + open_paren;
+        let params = &src[open_paren + 1..close_paren];
+        let open = src[close_paren..].find('{')? + close_paren;
+        // Brace-match the body. Role names carry no braces, so counting is
+        // enough here — this parses one known library, not arbitrary Solidity.
+        let mut depth = 0usize;
+        let mut end = None;
+        for (i, c) in src[open..].char_indices() {
+            match c {
+                '{' => depth += 1,
+                '}' => {
+                    depth -= 1;
+                    if depth == 0 {
+                        end = Some(open + i);
+                        break;
+                    }
+                }
+                _ => {}
+            }
+        }
+        let end = end?;
+        if params.contains(sig_contains) {
+            return Some((params, &src[open + 1..end]));
+        }
+        from = end;
+    }
+}
+
+/// Parse the Safe-parametric `expectedGrants(address …)` map.
+///
+/// The no-arg overload just delegates to this one with Base's Safe, so the
+/// parametric body is where every `(role, grantee)` pair actually is — and its
+/// Safe parameter is what makes the same map describe every chain.
+pub fn parse_expected_grants(src: &str) -> Option<GrantMap> {
+    let (params, body) = function_body(src, "expectedGrants", "address")?;
+    let safe_param = Regex::new(r"address\s+(?:memory\s+|calldata\s+)?([A-Za-z_][A-Za-z0-9_]*)")
+        .ok()?
+        .captures(params)
+        .and_then(|c| c.get(1))
+        .map(|m| m.as_str().to_string())?;
+    let declared = Regex::new(r"new\s+RoleGrant\[\]\s*\(\s*(\d+)\s*\)")
+        .ok()
+        .and_then(|re| re.captures(body))
+        .and_then(|c| c.get(1))
+        .and_then(|m| m.as_str().parse().ok());
+    let pair = Regex::new(
+        r#"RoleGrant\(\s*keccak256\(\s*"([A-Za-z0-9_]+)"\s*\)\s*,\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\)"#,
+    )
+    .ok()?;
+    let grants: Vec<GrantPin> = pair
+        .captures_iter(body)
+        .map(|c| GrantPin {
+            role: c[1].to_string(),
+            grantee: c[2].to_string(),
+        })
+        .collect();
+    if grants.is_empty() {
+        return None;
+    }
+    Some(GrantMap {
+        safe_param,
+        grants,
+        declared,
+    })
+}
+
+/// A chain the deploy repo pins production state for: its authoriser (the
+/// contract the grants live on) and its token-owner Safe (the per-chain grantee
+/// the map is parameterised by).
+///
+/// `rpc_host` is `None` for a chain the scanner has no endpoint set for. A chain
+/// pinned in the source but not yet reachable from here still appears — with its
+/// pins and an unread status — because a chain that vanishes reads as "we do not
+/// deploy there", which is the opposite of "its rollout has not reached us yet".
+pub struct ChainPin {
+    pub network: String,
+    pub authoriser: Option<String>,
+    pub safe: Option<String>,
+    pub rpc_host: Option<String>,
+}
+
+/// Read the chains from the generated deploy lib's authoriser-clone pins:
+/// `STOX_PROD_AUTHORISER_V4_CLONE` is the home chain (Base) and each
+/// `…_<CHAIN>` suffix is another, paired with that chain's
+/// `STOX_TOKEN_OWNER_SAFE[_<CHAIN>]`. Derived for the same reason the grantees
+/// are: the rollout this page reports on is adding chains, and a hand-listed
+/// pair of chains would stop being the truth the moment one lands.
+///
+/// An unhydrated (all-zero) authoriser pin yields `None` — there is nothing to
+/// ask a chain about — while the chain itself still appears.
+pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str) -> Vec<ChainPin> {
+    // The `[^0-9a-fA-F]` tail is what keeps a bytes32 `…_CODEHASH` out: 64 hex
+    // chars cannot end after 40.
+    let Ok(re) = Regex::new(
+        r"\bSTOX_PROD_AUTHORISER_V4_CLONE(_[A-Z0-9_]+)?\s*=\s*(?:address\(\s*)?(0x[0-9a-fA-F]{40})[^0-9a-fA-F]",
+    ) else {
+        return Vec::new();
+    };
+    let mut out: Vec<ChainPin> = Vec::new();
+    for c in re.captures_iter(v4_lib) {
+        let suffix = c.get(1).map(|m| m.as_str().to_string());
+        let network = match &suffix {
+            None => "base".to_string(),
+            Some(s) => s.trim_start_matches('_').to_lowercase(),
+        };
+        if out.iter().any(|p| p.network == network) {
+            continue;
+        }
+        let authoriser = Some(c[2].to_string()).filter(|a| !is_unhydrated(Some(a)));
+        let safe_const = match &suffix {
+            None => "STOX_TOKEN_OWNER_SAFE".to_string(),
+            Some(s) => format!("STOX_TOKEN_OWNER_SAFE{s}"),
+        };
+        out.push(ChainPin {
+            network,
+            authoriser,
+            safe: parse_address_constant(safe_lib, &safe_const),
+            rpc_host: None,
+        });
+    }
+    out
+}
+
+/// What the chain said about one pinned `(role, grantee)` pair.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum GrantOnChain {
+    Granted,
+    NotGranted,
+    /// The question could not be asked or answered — a failed call, or no
+    /// endpoint for this chain. Never a stand-in for "not granted".
+    Unknown,
+}
+
+impl GrantOnChain {
+    fn token(self) -> &'static str {
+        match self {
+            GrantOnChain::Granted => "granted",
+            GrantOnChain::NotGranted => "missing",
+            GrantOnChain::Unknown => "unknown",
+        }
+    }
+}
+
+/// Roll a chain's per-grant results into one word.
+///
+/// `unprovisioned` and `partial` are rollout states, not faults: #280's model
+/// has a chain's pins red until its provisioning bundle executes. "Granted on
+/// Base, not yet on Ethereum" is a true reading of a rollout in flight, and the
+/// page colours it as one.
+fn chain_state(granted: usize, missing: usize, unknown: usize) -> &'static str {
+    if granted > 0 && missing == 0 && unknown == 0 {
+        "live"
+    } else if granted > 0 {
+        "partial"
+    } else if missing > 0 {
+        // Nothing granted and at least one pin read back absent: the chain's
+        // provisioning has not run. A state to watch, not a fault to fix.
+        "unprovisioned"
+    } else {
+        "unknown"
+    }
+}
+
+/// Assemble the authoriser role-grant document: every `(role, grantee)` pair the
+/// deploy repo pins, grouped by grantee, checked per chain.
+///
+/// `check(network, authoriser, role, grantee_address)` is the on-chain
+/// `hasRole` probe, injected so the assembly is testable without a network.
+/// It is only called where there IS something to ask — a chain with an
+/// authoriser pin, an endpoint, and a grantee whose address resolved.
+///
+/// `None` when the map cannot be read, so the page shows nothing rather than an
+/// empty table that would read as "no key holds these roles".
+pub fn build_grants(
+    org: &str,
+    repo: &str,
+    src: &OwnerSources,
+    chains: &[ChainPin],
+    check: &dyn Fn(&str, &str, &str, &str) -> GrantOnChain,
+) -> Option<serde_json::Value> {
+    let map = parse_expected_grants(src.auth_lib)?;
+    // Grantee identifiers in first-appearance order — the order the map is
+    // written in, so the page's order is the source's order.
+    let mut idents: Vec<&str> = Vec::new();
+    for g in &map.grants {
+        if !idents.contains(&g.grantee.as_str()) {
+            idents.push(&g.grantee);
+        }
+    }
+    // Per-chain tallies, accumulated as the rows are built so the banner counts
+    // the rows the page actually shows rather than a separately-derived figure.
+    let mut tally: Vec<(usize, usize, usize)> = vec![(0, 0, 0); chains.len()];
+
+    let mut grantees: Vec<serde_json::Value> = Vec::new();
+    for ident in &idents {
+        let is_safe = *ident == map.safe_param;
+        // A constant grantee is one address on every chain; the Safe slot is the
+        // chain's own Safe. Both are read from the source, neither is typed here.
+        let fixed = if is_safe {
+            None
+        } else {
+            resolve_ident(src, ident)
+        };
+        let roles: Vec<&str> = {
+            let mut seen: Vec<&str> = Vec::new();
+            for g in map.grants.iter().filter(|g| g.grantee == **ident) {
+                if !seen.contains(&g.role.as_str()) {
+                    seen.push(&g.role);
+                }
+            }
+            seen
+        };
+        let mut role_rows: Vec<serde_json::Value> = Vec::new();
+        for role in &roles {
+            let mut per_chain: Vec<serde_json::Value> = Vec::new();
+            for (i, chain) in chains.iter().enumerate() {
+                let address = if is_safe {
+                    chain.safe.clone()
+                } else {
+                    fixed.clone()
+                };
+                let status = match (&chain.authoriser, &chain.rpc_host, &address) {
+                    (Some(auth), Some(_), Some(a)) => check(&chain.network, auth, role, a),
+                    _ => GrantOnChain::Unknown,
+                };
+                match status {
+                    GrantOnChain::Granted => tally[i].0 += 1,
+                    GrantOnChain::NotGranted => tally[i].1 += 1,
+                    GrantOnChain::Unknown => tally[i].2 += 1,
+                }
+                per_chain.push(json!({
+                    "network": chain.network,
+                    "address": address,
+                    "status": status.token(),
+                }));
+            }
+            role_rows.push(json!({
+                "role": role,
+                "admin": is_admin_role(role),
+                "chains": per_chain,
+            }));
+        }
+        grantees.push(json!({
+            // The constant's own name, verbatim — it greps straight back to the
+            // line in the deploy repo that put this key on the page.
+            "ident": ident,
+            "kind": if is_safe { "safe" } else { "constant" },
+            // null for the Safe: its address is per chain, and each row carries
+            // the one it was checked against.
+            "address": fixed,
+            "roles": role_rows,
+        }));
+    }
+
+    let chain_docs: Vec<serde_json::Value> = chains
+        .iter()
+        .zip(&tally)
+        .map(|(c, (granted, missing, unknown))| {
+            json!({
+                "network": c.network,
+                "authoriser": c.authoriser,
+                "safe": c.safe,
+                "rpcHost": c.rpc_host,
+                "granted": granted,
+                "missing": missing,
+                "unknown": unknown,
+                "total": granted + missing + unknown,
+                "state": chain_state(*granted, *missing, *unknown),
+            })
+        })
+        .collect();
+
+    Some(json!({
+        "org": org,
+        "repo": repo,
+        "source": "src/lib/LibAuthoriserInvariants.sol",
+        "function": "expectedGrants(address)",
+        "pinnedCount": map.grants.len(),
+        "declaredCount": map.declared,
+        "chains": chain_docs,
+        "grantees": grantees,
+    }))
+}
+
+/// Resolve a grantee identifier to its address literal across the deploy repo's
+/// libraries, following at most one re-export hop (`X = OtherLib.Y;`). A grantee
+/// declared in one lib and aliased into the grant map's lib still resolves, so
+/// where the constant lives is not a thing this page depends on.
+fn resolve_ident(src: &OwnerSources, ident: &str) -> Option<String> {
+    let sources = [src.auth_lib, src.safe_lib, src.v4_lib, src.overrides];
+    if let Some(a) = sources.iter().find_map(|s| parse_address_constant(s, ident)) {
+        return Some(a);
+    }
+    let alias = Regex::new(&format!(
+        r"\b{}\b\s*=\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)?([A-Za-z_][A-Za-z0-9_]*)\s*;",
+        regex::escape(ident)
+    ))
+    .ok()?;
+    let target = sources
+        .iter()
+        .find_map(|s| alias.captures(s).and_then(|c| c.get(1)))
+        .map(|m| m.as_str().to_string())?;
+    sources
+        .iter()
+        .find_map(|s| parse_address_constant(s, &target))
 }
 
 #[cfg(test)]
@@ -770,5 +1145,451 @@ mod tests {
         );
         assert!(sg["verification"]["match"].is_null());
         assert!(sg["verification"]["threshold"]["onChain"].is_null());
+    }
+
+    // ---- authoriser role grants (#143) ----
+
+    /// The shape the real `LibAuthoriserInvariants` carries: a Safe-parametric
+    /// map with `_ADMIN` roles on the chain's Safe, action roles on a service
+    /// constant, and the same action roles held directly by the Safe.
+    const GRANT_LIB: &str = r#"
+        library LibAuthoriserInvariants {
+            address internal constant GRANTEE_TOKEN_OWNER_SAFE = LibSafeInvariants.STOX_TOKEN_OWNER_SAFE;
+            address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
+            bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);
+
+            function expectedGrants() internal pure returns (RoleGrant[] memory grants) {
+                grants = expectedGrants(GRANTEE_TOKEN_OWNER_SAFE);
+            }
+
+            function expectedGrants(address tokenOwnerSafe) internal pure returns (RoleGrant[] memory grants) {
+                grants = new RoleGrant[](7);
+                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), tokenOwnerSafe);
+                grants[1] = RoleGrant(keccak256("WITHDRAW_ADMIN"), tokenOwnerSafe);
+                grants[2] = RoleGrant(keccak256("DEPOSIT"), GRANTEE_SERVICE_1C66);
+                grants[3] = RoleGrant(keccak256("WITHDRAW"), GRANTEE_SERVICE_1C66);
+                grants[4] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_1C66);
+                grants[5] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
+                grants[6] = RoleGrant(keccak256("WITHDRAW"), tokenOwnerSafe);
+            }
+        }
+    "#;
+
+    const V4_CHAINS: &str = r#"
+        address constant STOX_PROD_AUTHORISER_V4_CLONE = address(0x315b16faa6eE413faBCa877d3851B3818369f0cD);
+        bytes32 constant STOX_PROD_AUTHORISER_V4_CLONE_CODEHASH = 0x9d1c1a4b2f8f0e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a3928170615;
+        address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x66566cc91dEAf818859bD4b09B7903ac48998157);
+    "#;
+
+    fn grant_sources<'a>(auth: &'a str) -> OwnerSources<'a> {
+        OwnerSources {
+            safe_lib: SAFE_LIB,
+            auth_lib: auth,
+            v4_lib: V4_LIB,
+            overrides: OVERRIDES,
+        }
+    }
+
+    /// Two chains with everything pinned, so a test only has to vary the probe.
+    fn two_chains() -> Vec<ChainPin> {
+        vec![
+            ChainPin {
+                network: "base".into(),
+                authoriser: Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".into()),
+                safe: Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into()),
+                rpc_host: Some("mainnet.base.org".into()),
+            },
+            ChainPin {
+                network: "ethereum".into(),
+                authoriser: Some("0x66566cc91dEAf818859bD4b09B7903ac48998157".into()),
+                safe: Some("0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329".into()),
+                rpc_host: Some("ethereum-rpc.publicnode.com".into()),
+            },
+        ]
+    }
+
+    fn all_granted(_n: &str, _a: &str, _r: &str, _g: &str) -> GrantOnChain {
+        GrantOnChain::Granted
+    }
+
+    /// Find a grantee doc by the constant name it was derived from.
+    fn grantee<'a>(v: &'a serde_json::Value, ident: &str) -> Option<&'a serde_json::Value> {
+        v["grantees"]
+            .as_array()?
+            .iter()
+            .find(|g| g["ident"] == ident)
+    }
+
+    /// The status of one grantee's role on one chain.
+    fn status(v: &serde_json::Value, ident: &str, role: &str, network: &str) -> String {
+        grantee(v, ident)
+            .and_then(|g| g["roles"].as_array())
+            .and_then(|rs| rs.iter().find(|r| r["role"] == role))
+            .and_then(|r| r["chains"].as_array())
+            .and_then(|cs| cs.iter().find(|c| c["network"] == network))
+            .and_then(|c| c["status"].as_str())
+            .unwrap_or("<absent>")
+            .to_string()
+    }
+
+    /// The owners view must carry no hand-written grantee row. It used to: one
+    /// entry naming one service constant, which could only ever describe the key
+    /// somebody typed. Grantees come from the map now, and a row typed back in
+    /// here would be a second list to forget to update.
+    #[test]
+    fn the_authoriser_group_carries_no_hand_written_grantee_row() {
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            None,
+        )
+        .unwrap();
+        let auth = v["groups"][2]["entries"].as_array().unwrap();
+        assert!(
+            !auth.iter().any(|e| e["address"] == "0x1c66D6708914C40239D54919320b4C48cAE3D1A9"),
+            "a grantee address must not be pinned by hand in the owners groups"
+        );
+        assert!(
+            auth.iter().all(|e| e["role"] != "Service grantee"),
+            "the hand-written grantee row is gone"
+        );
+    }
+
+    #[test]
+    fn parses_the_pinned_grant_map_in_source_order() {
+        let m = parse_expected_grants(GRANT_LIB).expect("the parametric overload parses");
+        assert_eq!(m.safe_param, "tokenOwnerSafe");
+        assert_eq!(m.declared, Some(7));
+        assert_eq!(m.grants.len(), 7);
+        assert_eq!(
+            m.grants[2],
+            GrantPin {
+                role: "DEPOSIT".into(),
+                grantee: "GRANTEE_SERVICE_1C66".into()
+            }
+        );
+        // The no-arg overload delegates; parsing IT would yield one bogus pair.
+        assert!(m.grants.iter().all(|g| g.role != "GRANTEE_TOKEN_OWNER_SAFE"));
+    }
+
+    /// The check the issue names: a service EOA added to `expectedGrants()`
+    /// reaches the page with NO change to this repo. The fixture below differs
+    /// from `GRANT_LIB` only by the lines a future PR would add to the deploy
+    /// repo — if this passes, the grantee list is derived, not transcribed.
+    #[test]
+    fn a_third_service_eoa_appears_with_no_dashboard_change() {
+        let before = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
+            .expect("map parses");
+        assert!(
+            grantee(&before, "GRANTEE_SERVICE_3D0C").is_none(),
+            "not in the map yet"
+        );
+        let after_lib = GRANT_LIB
+            .replace(
+                "bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);",
+                "address internal constant GRANTEE_SERVICE_3D0C = 0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE;\n\
+                 bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);",
+            )
+            .replace(
+                "grants = new RoleGrant[](7);",
+                "grants = new RoleGrant[](9);",
+            )
+            .replace(
+                r#"grants[6] = RoleGrant(keccak256("WITHDRAW"), tokenOwnerSafe);"#,
+                "grants[6] = RoleGrant(keccak256(\"WITHDRAW\"), tokenOwnerSafe);\n\
+                 grants[7] = RoleGrant(keccak256(\"DEPOSIT\"), GRANTEE_SERVICE_3D0C);\n\
+                 grants[8] = RoleGrant(keccak256(\"CERTIFY\"), GRANTEE_SERVICE_3D0C);",
+            );
+        let after = build_grants("o", "r", &grant_sources(&after_lib), &two_chains(), &all_granted)
+            .expect("map parses");
+        let g = grantee(&after, "GRANTEE_SERVICE_3D0C").expect("the new EOA is listed");
+        assert_eq!(g["address"], "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE");
+        assert_eq!(g["kind"], "constant");
+        let roles: Vec<&str> = g["roles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["role"].as_str().unwrap())
+            .collect();
+        assert_eq!(roles, ["DEPOSIT", "CERTIFY"], "its roles, not a fixed trio");
+        assert_eq!(status(&after, "GRANTEE_SERVICE_3D0C", "DEPOSIT", "base"), "granted");
+        assert_eq!(after["pinnedCount"], 9);
+        // …and revoking one removes it, which is the same property read backwards.
+        let revoked = GRANT_LIB.replace(
+            r#"grants[4] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_1C66);"#,
+            "",
+        );
+        let after_revoke =
+            build_grants("o", "r", &grant_sources(&revoked), &two_chains(), &all_granted).unwrap();
+        assert_eq!(
+            status(&after_revoke, "GRANTEE_SERVICE_1C66", "CERTIFY", "base"),
+            "<absent>",
+            "a pair dropped from the map is gone from the page"
+        );
+        assert_eq!(
+            status(&after_revoke, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"),
+            "granted",
+            "its other roles are untouched"
+        );
+    }
+
+    #[test]
+    fn the_safe_slot_resolves_to_each_chains_own_safe() {
+        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
+            .unwrap();
+        let safe = grantee(&v, "tokenOwnerSafe").expect("the Safe grantee is listed");
+        assert_eq!(safe["kind"], "safe");
+        assert!(
+            safe["address"].is_null(),
+            "one address would be wrong on one of the chains"
+        );
+        let deposit = safe["roles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["role"] == "DEPOSIT")
+            .unwrap();
+        let by_net = |n: &str| {
+            deposit["chains"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|c| c["network"] == n)
+                .unwrap()["address"]
+                .as_str()
+                .unwrap()
+                .to_string()
+        };
+        assert_eq!(by_net("base"), "0xe70d821f3462a074e63b42d0AaC6523faAe1d611");
+        assert_eq!(
+            by_net("ethereum"),
+            "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329"
+        );
+    }
+
+    /// The Safe holds `_ADMIN` roles AND the action roles, so admin-vs-action is
+    /// a property of the ROLE, not a partition of the principals. Splitting the
+    /// page on it at the top level would have to file the Safe twice or lie.
+    #[test]
+    fn admin_and_action_split_by_role_name_and_the_safe_is_in_both() {
+        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
+            .unwrap();
+        let safe = grantee(&v, "tokenOwnerSafe").unwrap();
+        let flags: Vec<(&str, bool)> = safe["roles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| (r["role"].as_str().unwrap(), r["admin"].as_bool().unwrap()))
+            .collect();
+        assert_eq!(
+            flags,
+            [
+                ("DEPOSIT_ADMIN", true),
+                ("WITHDRAW_ADMIN", true),
+                ("DEPOSIT", false),
+                ("WITHDRAW", false)
+            ]
+        );
+        let svc = grantee(&v, "GRANTEE_SERVICE_1C66").unwrap();
+        assert!(
+            svc["roles"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .all(|r| r["admin"] == false),
+            "a service EOA holds no admin role"
+        );
+        assert!(is_admin_role("CANCEL_CORPORATE_ACTION_ADMIN"));
+        assert!(!is_admin_role("CERTIFY"));
+    }
+
+    /// Per-chain status is the point of the section: the same key is granted on
+    /// one chain and not the other, and that reads as a rollout, not a fault.
+    #[test]
+    fn per_chain_status_reports_a_rollout_in_progress() {
+        let base_only = |network: &str, _a: &str, _r: &str, _g: &str| {
+            if network == "base" {
+                GrantOnChain::Granted
+            } else {
+                GrantOnChain::NotGranted
+            }
+        };
+        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &base_only)
+            .unwrap();
+        assert_eq!(status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"), "granted");
+        assert_eq!(
+            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "ethereum"),
+            "missing"
+        );
+        let chains = v["chains"].as_array().unwrap();
+        let base = chains.iter().find(|c| c["network"] == "base").unwrap();
+        let eth = chains.iter().find(|c| c["network"] == "ethereum").unwrap();
+        assert_eq!(base["state"], "live");
+        assert_eq!(base["granted"], 7);
+        assert_eq!(base["total"], 7);
+        assert_eq!(
+            eth["state"], "unprovisioned",
+            "a chain whose bundle has not run is a rollout state, not a drift verdict"
+        );
+        assert_eq!(eth["granted"], 0);
+        assert_eq!(eth["missing"], 7);
+    }
+
+    /// A failed probe is never a revoked grant. The two are opposite readings of
+    /// the same pixel, and only one of them is a reason to page somebody.
+    #[test]
+    fn an_unreadable_chain_is_unknown_not_missing() {
+        let mut chains = two_chains();
+        chains[1].rpc_host = None; // no endpoint for this chain yet
+        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &chains, &all_granted).unwrap();
+        assert_eq!(
+            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "ethereum"),
+            "unknown"
+        );
+        let eth = v["chains"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["network"] == "ethereum")
+            .unwrap();
+        assert_eq!(eth["state"], "unknown");
+        assert_eq!(eth["missing"], 0, "unread is not absent");
+        assert!(eth["rpcHost"].is_null(), "and the reason is on the record");
+
+        // Same again for a chain with no authoriser pin to ask.
+        let mut unpinned = two_chains();
+        unpinned[1].authoriser = None;
+        let v2 = build_grants("o", "r", &grant_sources(GRANT_LIB), &unpinned, &all_granted).unwrap();
+        assert_eq!(
+            status(&v2, "GRANTEE_SERVICE_1C66", "CERTIFY", "ethereum"),
+            "unknown"
+        );
+        let failing = |_n: &str, _a: &str, _r: &str, _g: &str| GrantOnChain::Unknown;
+        let v3 = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &failing).unwrap();
+        assert_eq!(status(&v3, "GRANTEE_SERVICE_1C66", "CERTIFY", "base"), "unknown");
+        assert_eq!(v3["chains"][0]["state"], "unknown");
+    }
+
+    #[test]
+    fn chains_are_read_from_the_clone_pins_not_a_fixed_pair() {
+        let pins = parse_chain_pins(V4_CHAINS, SAFE_LIB);
+        let nets: Vec<&str> = pins.iter().map(|p| p.network.as_str()).collect();
+        assert_eq!(nets, ["base", "ethereum"], "no codehash pin leaks in as a chain");
+        assert_eq!(
+            pins[0].authoriser.as_deref(),
+            Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD")
+        );
+        assert_eq!(
+            pins[0].safe.as_deref(),
+            Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611")
+        );
+        assert_eq!(
+            pins[1].safe.as_deref(),
+            Some("0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329"),
+            "each chain takes its own Safe constant"
+        );
+        // A chain the deploy repo adds shows up on its own.
+        let grown = format!(
+            "{V4_CHAINS}\n address constant STOX_PROD_AUTHORISER_V4_CLONE_HYPEREVM = address(0x00000000219ab540356cBB839Cbe05303d7705Fa);\n"
+        );
+        let grown_pins = parse_chain_pins(&grown, SAFE_LIB);
+        assert_eq!(grown_pins.len(), 3);
+        assert_eq!(grown_pins[2].network, "hyperevm");
+        assert!(
+            grown_pins[2].safe.is_none(),
+            "its Safe constant is not there yet, which is a gap to show, not a row to drop"
+        );
+    }
+
+    /// An unhydrated clone pin gives nothing to query. The chain still appears —
+    /// dropping it would read as "we do not deploy there".
+    #[test]
+    fn an_unhydrated_clone_pin_leaves_the_chain_unqueried() {
+        let zeroed = V4_CHAINS.replace(
+            "address(0x66566cc91dEAf818859bD4b09B7903ac48998157)",
+            "address(0x0000000000000000000000000000000000000000)",
+        );
+        let pins = parse_chain_pins(&zeroed, SAFE_LIB);
+        assert_eq!(pins.len(), 2, "the chain is still listed");
+        assert_eq!(pins[1].network, "ethereum");
+        assert!(pins[1].authoriser.is_none(), "nothing to ask");
+    }
+
+    #[test]
+    fn an_unparsable_map_yields_no_document() {
+        assert!(
+            build_grants("o", "r", &grant_sources("library L {}"), &two_chains(), &all_granted)
+                .is_none(),
+            "an empty table would read as 'no key holds these roles'"
+        );
+    }
+
+    /// A grantee re-exported from another library still resolves, so which lib
+    /// declares a constant is not something this page depends on.
+    #[test]
+    fn an_aliased_grantee_constant_resolves_through_the_re_export() {
+        let aliased = GRANT_LIB.replace(
+            "address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;",
+            "address internal constant GRANTEE_SERVICE_1C66 = LibElsewhere.SERVICE_KEY;",
+        );
+        let mut src = grant_sources(&aliased);
+        let elsewhere =
+            "address internal constant SERVICE_KEY = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;";
+        src.overrides = elsewhere;
+        let v = build_grants("o", "r", &src, &two_chains(), &all_granted).unwrap();
+        assert_eq!(
+            grantee(&v, "GRANTEE_SERVICE_1C66").unwrap()["address"],
+            "0x1c66D6708914C40239D54919320b4C48cAE3D1A9"
+        );
+    }
+
+    /// A grantee whose constant cannot be resolved is shown with a null address
+    /// and an unread status — never silently dropped, and never asked about
+    /// under some other address.
+    #[test]
+    fn an_unresolvable_grantee_is_listed_without_an_address() {
+        let dangling = GRANT_LIB.replace(
+            "address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;",
+            "",
+        );
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(&dangling),
+            &two_chains(),
+            &all_granted,
+        )
+        .unwrap();
+        let g = grantee(&v, "GRANTEE_SERVICE_1C66").expect("still listed");
+        assert!(g["address"].is_null());
+        assert_eq!(
+            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"),
+            "unknown"
+        );
+    }
+
+    /// The map's declared length travels with it, so a body that parsed short
+    /// can be called out rather than reading as a smaller map.
+    #[test]
+    fn a_short_parse_is_visible_against_the_declared_length() {
+        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
+            .unwrap();
+        assert_eq!(v["pinnedCount"], 7);
+        assert_eq!(v["declaredCount"], 7);
+        let dropped = GRANT_LIB.replace(
+            r#"grants[3] = RoleGrant(keccak256("WITHDRAW"), GRANTEE_SERVICE_1C66);"#,
+            "grants[3] = someOtherThing();",
+        );
+        let v2 =
+            build_grants("o", "r", &grant_sources(&dropped), &two_chains(), &all_granted).unwrap();
+        assert_eq!(v2["pinnedCount"], 6);
+        assert_eq!(v2["declaredCount"], 7, "the shortfall is reportable");
     }
 }

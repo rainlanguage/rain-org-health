@@ -4,10 +4,11 @@
 //! layer (calldata builders, return decoders, the JSON-RPC result/error split)
 //! and is unit-tested against known encodings.
 
-use alloy_primitives::{hex, keccak256};
+use alloy_primitives::{hex, keccak256, Address, FixedBytes};
 use alloy_sol_types::{sol, SolCall};
 
 sol! {
+    function hasRole(bytes32 role, address account) external view returns (bool);
     function getOwners() external view returns (address[]);
     function getThreshold() external view returns (uint256);
     function supportsInterface(bytes4 interfaceId) external view returns (bool);
@@ -93,6 +94,30 @@ pub fn asset_calldata() -> String {
 }
 pub fn authorizer_calldata() -> String {
     to_hex(authorizerCall {}.abi_encode())
+}
+
+/// The `bytes32` role id an OpenZeppelin `AccessControl` grant is keyed by:
+/// `keccak256(<ROLE NAME>)` over the name's UTF-8 bytes, exactly as the Solidity
+/// `keccak256("DEPOSIT")` in the pinned grant map computes it. Deriving the id
+/// from the name (rather than pinning literals) is what lets a role added to
+/// that map be checked here without a code change.
+pub fn role_id(name: &str) -> [u8; 32] {
+    keccak256(name.as_bytes()).into()
+}
+
+/// `hasRole(<role>, <account>)` calldata. `None` when `account` is not a
+/// 20-byte hex address — an unparseable address must not silently encode as
+/// the zero address, which would read back as "not granted" for a grantee
+/// nobody checked.
+pub fn has_role_calldata(role: [u8; 32], account: &str) -> Option<String> {
+    let account: Address = account.parse().ok()?;
+    Some(to_hex(
+        hasRoleCall {
+            role: FixedBytes(role),
+            account,
+        }
+        .abi_encode(),
+    ))
 }
 
 // ---- return decoders (from the `eth_call` result hex) ----
@@ -250,6 +275,53 @@ mod tests {
         assert_eq!(classify_bool(f), CallClass::False);
         assert_eq!(classify_bool(rev), CallClass::Reverted);
         assert_eq!(classify_bool(b"not json"), CallClass::Unknown);
+    }
+
+    /// The role id is `keccak256(<NAME>)` over the name's UTF-8 bytes — the same
+    /// thing `keccak256("DEPOSIT")` computes in the pinned Solidity grant map.
+    /// Pinned against an INDEPENDENT keccak (a from-scratch Keccak-256, itself
+    /// checked against the published `keccak256("")` and ERC-20 `Transfer` topic
+    /// vectors), not against alloy re-deriving its own answer: a wrong id asks
+    /// the chain about a role nobody holds and comes back a confident `false`,
+    /// which is exactly the failure that reads as "the key lost its grant".
+    #[test]
+    fn role_ids_are_keccak_of_the_role_name() {
+        let id = |n: &str| format!("0x{}", hex::encode(role_id(n)));
+        assert_eq!(
+            id("DEPOSIT"),
+            "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+        );
+        assert_eq!(
+            id("WITHDRAW"),
+            "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+        );
+        assert_eq!(
+            id("CERTIFY"),
+            "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+        );
+        assert_eq!(
+            id("DEPOSIT_ADMIN"),
+            "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+        );
+        // A role name that is a PREFIX of another must not share its id.
+        assert_ne!(id("DEPOSIT"), id("DEPOSIT_ADMIN"));
+    }
+
+    #[test]
+    fn has_role_calldata_encodes_role_then_account() {
+        let cd =
+            has_role_calldata(role_id("DEPOSIT"), "0x1c66D6708914C40239D54919320b4C48cAE3D1A9").unwrap();
+        // selector | role word | account word (left-padded, lowercased hex)
+        assert_eq!(
+            cd,
+            "0x91d14854\
+             87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821\
+             0000000000000000000000001c66d6708914c40239d54919320b4c48cae3d1a9"
+        );
+        // A grantee that is not an address yields no call at all — encoding it as
+        // address(0) would come back `false` and read as a revoked grant.
+        assert_eq!(has_role_calldata(role_id("DEPOSIT"), "tokenOwnerSafe"), None);
+        assert_eq!(has_role_calldata(role_id("DEPOSIT"), "0xdeadbeef"), None);
     }
 
     #[test]
