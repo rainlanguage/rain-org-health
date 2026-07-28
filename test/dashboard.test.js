@@ -2336,6 +2336,31 @@ Deno.test("deployments: a grant not yet live on a chain reads as a rollout, neve
   );
 });
 
+// A partly-live chain's remainder is two different things. Reporting only the
+// provisioning half prints "0 not provisioned" over a grant that was never read
+// — the conflation this whole section exists to prevent, restated as a count.
+Deno.test("deployments: a partly-live chain names the unread grants apart from the unprovisioned ones", () => {
+  const d = grantsData();
+  d.deploymentGrants.chains[1] = {
+    ...d.deploymentGrants.chains[1],
+    granted: 4,
+    missing: 0,
+    unknown: 1,
+    total: 5,
+    state: "partial",
+  };
+  const roll = collect(deploymentsBox(d), "own-verify-roll").map(textOf)[0] ||
+    "";
+  assert(
+    roll.includes("1 could not be read"),
+    "the unread grant is counted and named: " + roll,
+  );
+  assert(
+    !roll.includes("0 not provisioned"),
+    "and a zero provisioning gap is not asserted over it: " + roll,
+  );
+});
+
 // The grant map is parsed independently of the owner constants, and it is the
 // half of this page that says who can move value — so it must survive the
 // owners read failing rather than disappearing with it.

@@ -714,10 +714,18 @@ function renderDeployments(document, $, data) {
     for (const c of g.chains || []) {
       const st = c.state || "unknown";
       const cls = st === "live" ? "ok" : st === "unknown" ? "down" : "roll";
+      // A partial chain's remainder is made of two DIFFERENT things, and
+      // reporting only the provisioning half prints "0 not provisioned" over a
+      // grant that was never read — the exact conflation this section exists to
+      // prevent, restated as a count. Each part is named only when non-zero.
+      const rest = [
+        c.missing ? `${c.missing} not provisioned on this chain yet` : null,
+        c.unknown ? `${c.unknown} could not be read` : null,
+      ].filter(Boolean).join(", ");
       const msg = st === "live"
         ? `${c.network} — all ${c.total} pinned grants live.`
         : st === "partial"
-        ? `${c.network} — ${c.granted} of ${c.total} pinned grants live; ${c.missing} not provisioned on this chain yet.`
+        ? `${c.network} — ${c.granted} of ${c.total} pinned grants live; ${rest}.`
         : st === "unprovisioned"
         ? `${c.network} — none of the ${c.total} pinned grants are live yet; this chain's provisioning has not run.`
         : `${c.network} — pinned grants could not be read${
