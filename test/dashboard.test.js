@@ -2204,7 +2204,9 @@ const serviceRole = (role) => ({
 });
 function grantsData(over = {}) {
   return {
-    deploymentOwners: null,
+    // The owner groups are present, so these drive the SAME path the live page
+    // takes. The owners-unavailable path gets its own test below.
+    deploymentOwners: OWNERS.deploymentOwners,
     deploymentGrants: {
       org: "S01-Issuer",
       repo: "st0x.deploy",
@@ -2276,11 +2278,18 @@ Deno.test("deployments: each grantee lists its own roles and per-chain live stat
     addr && addr.href === "https://basescan.org/address/" + SERVICE_EOA,
     "the service EOA links to the explorer, got " + (addr && addr.href),
   );
-  // All three action roles appear as keys, each with a chip per chain.
-  const keys = collect(box, "bcn-key").map((k) => k.textContent);
+  // All three action roles appear as keys, each with a chip per chain. The role
+  // key is its OWN class: the shared one is a fixed 78px that does not shrink,
+  // and a name like SCHEDULE_CORPORATE_ACTION_ADMIN overflows it straight over
+  // the chips beside it.
+  const keys = collect(box, "grt-role").map((k) => k.textContent);
   for (const r of ["DEPOSIT", "WITHDRAW", "CERTIFY"]) {
     assert(keys.includes(r), "role " + r + " listed, got " + keys.join(","));
   }
+  assert(
+    collect(box, "bcn-key").every((k) => !/^[A-Z_]+$/.test(k.textContent || "")),
+    "no role name is rendered into the narrow fixed-width key",
+  );
   const chips = chipText(box);
   assert(chips.includes("base ✓"), "granted on base");
   assert(chips.includes("ethereum ○"), "not yet granted on ethereum");
@@ -2319,10 +2328,27 @@ Deno.test("deployments: a grant not yet live on a chain reads as a rollout, neve
       textOf(roll).includes("not provisioned on this chain yet"),
     "the banner says what is actually true: " + textOf(roll),
   );
-  const ok = collect(box, "own-verify-ok")[0];
   assert(
-    textOf(ok).includes("base — all 5 pinned grants live"),
-    "the finished chain reads as done: " + textOf(ok),
+    collect(box, "own-verify-ok").map(textOf).some((t) =>
+      t.includes("base — all 5 pinned grants live")
+    ),
+    "the finished chain reads as done",
+  );
+});
+
+// The grant map is parsed independently of the owner constants, and it is the
+// half of this page that says who can move value — so it must survive the
+// owners read failing rather than disappearing with it.
+Deno.test("deployments: the grants section renders even when the owner constants could not be read", () => {
+  const d = grantsData();
+  d.deploymentOwners = null;
+  const box = deploymentsBox(d);
+  assert(collect(box, "empty").length === 1, "owners report themselves absent");
+  assert(
+    collect(box, "own-role").some((r) =>
+      r.textContent === "GRANTEE_SERVICE_1C66"
+    ),
+    "and the grants still render",
   );
 });
 
@@ -2346,7 +2372,7 @@ Deno.test("deployments: admin and action roles split into their own tables, and 
   );
   assert(svcRows.length === 1, "the service key holds no admin role, so one row");
   // The admin role itself is only under the admin heading.
-  const keys = collect(box, "bcn-key").map((k) => k.textContent);
+  const keys = collect(box, "grt-role").map((k) => k.textContent);
   assert(
     keys.filter((k) => k === "DEPOSIT_ADMIN").length === 1,
     "DEPOSIT_ADMIN listed once",
