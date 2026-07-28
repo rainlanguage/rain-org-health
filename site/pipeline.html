@@ -323,8 +323,12 @@ function renderFsm(hq, history) {
   // /issues/<n> (verified against this repo: /issues/137 → /pull/137, /pull/141 → /issues/141).
   // That matters because `closeCandidateUnvetted` mixes issues and PRs and the item shape says
   // nothing about which — so the `issue` flag only decides which path is tried FIRST.
+  //
+  // `it` is an object by contract: `detailBody` screens each entry before it gets here, because
+  // a malformed one has to be handled at the ROW (a link with a safe href whose very next line
+  // reads `it.repo` still throws). One guard, in the one place it can do something.
   const urlOf = (it, issue) =>
-    (it && typeof it.url === "string" && it.url) ||
+    (typeof it.url === "string" && it.url) ||
     `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
 
   // ---- Theory-of-Constraints flow layer (#32): per-state inventory over time.
@@ -672,6 +676,15 @@ function renderFsm(hq, history) {
       return frag;
     }
     arr.forEach((it) => {
+      // The snapshot is an artifact this page does not own and every field in it is UNTRUSTED
+      // (CLAUDE.md). An entry that is not an object renders as a malformed ROW: not a thrown
+      // exception, which would take the rest of the list down with it, and not a silently
+      // dropped row, which would put the header count and the visible rows back into the
+      // disagreement this whole change exists to remove.
+      if (!it || typeof it !== "object") {
+        frag.append(el("div", "li", "malformed entry — the snapshot carried no item here"));
+        return;
+      }
       const a = link("li", undefined, urlOf(it, src.issue));
       a.append(el("span", "lr", it.repo + "#" + Number(it.number)), " " + (it.title == null ? "" : it.title));
       if (it.reason) a.append(el("span", "lz", it.reason));

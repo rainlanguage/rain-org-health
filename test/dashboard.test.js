@@ -2145,6 +2145,47 @@ Deno.test("pipeline FSM: a top-level item's link is built from repo + number, an
   );
 });
 
+// The snapshot is fetched from a repo this page does not own and every field in it is
+// untrusted. A malformed entry must not throw out of the row loop — that would drop the rest of
+// the list on the floor — and must not be silently skipped either, because a skipped row puts
+// the header count and the visible rows back into the disagreement #141 is about.
+Deno.test("pipeline FSM: a malformed item renders as a malformed row, taking no other row with it", () => {
+  const box = fsmBox({
+    counts: { ready: 0, leaks: 0, uncoveredIssues: 4 },
+    lanes: { "vetter-verdicts": {} },
+    uncoveredIssues: [
+      { repo: "o/i", number: 1, title: "first good" },
+      null,
+      "not an object",
+      { repo: "o/i", number: 2, title: "last good" },
+    ],
+  });
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "uncoveredIssues").click();
+  const text = textOf(detail);
+  // The row AFTER the malformed ones still rendered — i.e. nothing threw partway through.
+  assert(text.includes("first good"), `the row before the malformed ones survives: ${text}`);
+  assert(text.includes("last good"), `the row AFTER the malformed ones survives: ${text}`);
+  // Four entries in, four rows out: the header count and the rows still agree.
+  assert(
+    collect(detail, "li").length === 4,
+    `every entry gets a row, malformed included: ${collect(detail, "li").length}`,
+  );
+  assert(
+    collect(detail, "dhc")[0].textContent === "4 items",
+    `header still counts them all: ${collect(detail, "dhc")[0].textContent}`,
+  );
+  assert(
+    (text.match(/malformed entry/g) || []).length === 2,
+    `each malformed entry says so: ${text}`,
+  );
+  // A malformed row is not a link — there is no subject to link to.
+  assert(
+    tags(detail, "a").length === 2,
+    `only the two well-formed rows are links: ${tags(detail, "a").length}`,
+  );
+});
+
 // ---- deployments.html: known owners ----
 
 // renderDeployments takes (document, $, data) as its own params, so bind with no
