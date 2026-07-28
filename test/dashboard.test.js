@@ -2178,6 +2178,376 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
   );
 });
 
+// ---- deployments.html: authoriser role grants (#143) ----
+
+// Two chains mid-rollout: every pinned grant is live on base, and only the
+// Safe's are live on ethereum — the shape the deploy repo's own model produces
+// while a chain's provisioning bundle is still pending.
+const BASE_SAFE = "0xe70d821f3462a074e63b42d0AaC6523faAe1d611";
+const ETH_SAFE = "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329";
+const SERVICE_EOA = "0x1c66D6708914C40239D54919320b4C48cAE3D1A9";
+const safeRole = (role, admin) => ({
+  role,
+  admin,
+  chains: [
+    { network: "base", address: BASE_SAFE, status: "granted" },
+    { network: "ethereum", address: ETH_SAFE, status: "granted" },
+  ],
+});
+const serviceRole = (role) => ({
+  role,
+  admin: false,
+  chains: [
+    { network: "base", address: SERVICE_EOA, status: "granted" },
+    { network: "ethereum", address: SERVICE_EOA, status: "missing" },
+  ],
+});
+function grantsData(over = {}) {
+  return {
+    // The owner groups are present, so these drive the SAME path the live page
+    // takes. The owners-unavailable path gets its own test below.
+    deploymentOwners: OWNERS.deploymentOwners,
+    deploymentGrants: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      source: "src/lib/LibAuthoriserInvariants.sol",
+      function: "expectedGrants(address)",
+      pinnedCount: 5,
+      declaredCount: 5,
+      chains: [
+        {
+          network: "base",
+          authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+          safe: BASE_SAFE,
+          rpcHost: "mainnet.base.org",
+          granted: 5,
+          missing: 0,
+          unknown: 0,
+          total: 5,
+          state: "live",
+        },
+        {
+          network: "ethereum",
+          authoriser: "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+          safe: ETH_SAFE,
+          rpcHost: "ethereum-rpc.publicnode.com",
+          granted: 2,
+          missing: 3,
+          unknown: 0,
+          total: 5,
+          state: "partial",
+        },
+      ],
+      grantees: [
+        {
+          ident: "tokenOwnerSafe",
+          kind: "safe",
+          address: null,
+          roles: [safeRole("DEPOSIT_ADMIN", true), safeRole("DEPOSIT", false)],
+        },
+        {
+          ident: "GRANTEE_SERVICE_1C66",
+          kind: "constant",
+          address: SERVICE_EOA,
+          roles: ["DEPOSIT", "WITHDRAW", "CERTIFY"].map(serviceRole),
+        },
+      ],
+      ...over,
+    },
+  };
+}
+// The h3 section headings the grants block emits, in order.
+const grantSections = (box) =>
+  collect(box, "tok-h3").map((h) => h.textContent);
+// Every chip label under the grants block, as text.
+const chipText = (box) => collect(box, "own-chip").map((c) => c.textContent);
+
+Deno.test("deployments: each grantee lists its own roles and per-chain live status", () => {
+  const box = deploymentsBox(grantsData());
+  const roles = collect(box, "own-role").map((r) => r.textContent);
+  assert(
+    roles.includes("GRANTEE_SERVICE_1C66"),
+    "the service key is named by its constant: " + roles.join(","),
+  );
+  assert(roles.includes("tokenOwnerSafe"), "so is the Safe slot");
+  // Its address is rendered as a link to the explorer, not just as text.
+  const addr = collect(box, "own-addr").find((a) =>
+    a.textContent === SERVICE_EOA
+  );
+  assert(
+    addr && addr.href === "https://basescan.org/address/" + SERVICE_EOA,
+    "the service EOA links to the explorer, got " + (addr && addr.href),
+  );
+  // All three action roles appear as keys, each with a chip per chain. The role
+  // key is its OWN class: the shared one is a fixed 78px that does not shrink,
+  // and a name like SCHEDULE_CORPORATE_ACTION_ADMIN overflows it straight over
+  // the chips beside it.
+  const keys = collect(box, "grt-role").map((k) => k.textContent);
+  for (const r of ["DEPOSIT", "WITHDRAW", "CERTIFY"]) {
+    assert(keys.includes(r), "role " + r + " listed, got " + keys.join(","));
+  }
+  assert(
+    collect(box, "bcn-key").every((k) => !/^[A-Z_]+$/.test(k.textContent || "")),
+    "no role name is rendered into the narrow fixed-width key",
+  );
+  const chips = chipText(box);
+  assert(chips.includes("base ✓"), "granted on base");
+  assert(chips.includes("ethereum ○"), "not yet granted on ethereum");
+  // The per-grantee tally counts the chain cells, not the roles.
+  assert(chips.includes("3/6 live"), "service key 3 of 6 cells: " + chips.join(","));
+});
+
+// The distinction the whole section turns on. A chain whose provisioning has
+// not run yet is REPORTING A ROLLOUT, and a red row there would train the reader
+// to ignore the one time it means a key really lost its grant.
+Deno.test("deployments: a grant not yet live on a chain reads as a rollout, never as a fault", () => {
+  const box = deploymentsBox(grantsData());
+  const rollChips = collect(box, "own-chip-roll").map((c) => c.textContent);
+  assert(
+    rollChips.filter((t) => t === "ethereum ○").length === 3,
+    "three not-yet-granted cells carry the rollout chip: " + rollChips.join(","),
+  );
+  assert(
+    !chipText(box).some((t) => t === "ethereum ✗"),
+    "nothing renders the not-granted state as a failure mark",
+  );
+  const no = collect(box, "own-chip-no");
+  assert(no.length === 0, "no red chip anywhere in a healthy rollout");
+  // The chain banner follows the same rule.
+  assert(
+    collect(box, "own-verify-roll").length === 1,
+    "the partial chain gets the rollout banner",
+  );
+  assert(
+    collect(box, "own-verify-drift").length === 0,
+    "and NOT the drift banner",
+  );
+  const roll = collect(box, "own-verify-roll")[0];
+  assert(
+    textOf(roll).includes("2 of 5 pinned grants live") &&
+      textOf(roll).includes("not provisioned on this chain yet"),
+    "the banner says what is actually true: " + textOf(roll),
+  );
+  assert(
+    collect(box, "own-verify-ok").map(textOf).some((t) =>
+      t.includes("base — all 5 pinned grants live")
+    ),
+    "the finished chain reads as done",
+  );
+});
+
+// With no chain resolved there is nothing to be live on. A green "0/0 live"
+// would read as verified — the same unread-looks-confirmed reading the rest of
+// this section refuses.
+Deno.test("deployments: a grantee with no chain resolved reads as unchecked, not as fully live", () => {
+  const d = grantsData();
+  d.deploymentGrants.chains = [];
+  for (const gr of d.deploymentGrants.grantees) {
+    for (const r of gr.roles) r.chains = [];
+  }
+  const box = deploymentsBox(d);
+  const tallies = collect(box, "own-chip").filter((c) =>
+    c.textContent === "not checked" || /^\d+\/\d+ live$/.test(c.textContent)
+  );
+  assert(
+    tallies.length > 0 &&
+      tallies.every((c) => c.textContent === "not checked"),
+    "every tally reads unchecked, got " +
+      tallies.map((c) => c.textContent).join(","),
+  );
+  // Colour as well as words: a green chip reading "not checked" is the same
+  // confusion in the channel a reader scans first.
+  assert(
+    tallies.every((c) => !c.className.split(" ").includes("own-chip-yes")),
+    "and none of them is painted as confirmed: " +
+      tallies.map((c) => c.className).join(","),
+  );
+  // …and with no chain there is no per-chain cell to claim one either.
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  assert(
+    !chips.some((t) => /^(base|ethereum) /.test(t || "")),
+    "no per-chain cell is rendered: " + chips.join(","),
+  );
+});
+
+// A partly-live chain's remainder is two different things. Reporting only the
+// provisioning half prints "0 not provisioned" over a grant that was never read
+// — the conflation this whole section exists to prevent, restated as a count.
+Deno.test("deployments: a partly-live chain names the unread grants apart from the unprovisioned ones", () => {
+  const d = grantsData();
+  d.deploymentGrants.chains[1] = {
+    ...d.deploymentGrants.chains[1],
+    granted: 4,
+    missing: 0,
+    unknown: 1,
+    total: 5,
+    state: "partial",
+  };
+  const roll = collect(deploymentsBox(d), "own-verify-roll").map(textOf)[0] ||
+    "";
+  assert(
+    roll.includes("1 could not be read"),
+    "the unread grant is counted and named: " + roll,
+  );
+  assert(
+    !roll.includes("0 not provisioned"),
+    "and a zero provisioning gap is not asserted over it: " + roll,
+  );
+});
+
+// The grant map is parsed independently of the owner constants, and it is the
+// half of this page that says who can move value — so it must survive the
+// owners read failing rather than disappearing with it.
+Deno.test("deployments: the grants section renders even when the owner constants could not be read", () => {
+  const d = grantsData();
+  d.deploymentOwners = null;
+  const box = deploymentsBox(d);
+  assert(collect(box, "empty").length === 1, "owners report themselves absent");
+  assert(
+    collect(box, "own-role").some((r) =>
+      r.textContent === "GRANTEE_SERVICE_1C66"
+    ),
+    "and the grants still render",
+  );
+});
+
+// admin-vs-action splits the ROLES, not the principals: the Safe holds both, so
+// it appears in both tables. A top-level split of the page would have to file it
+// twice or misfile it once.
+Deno.test("deployments: admin and action roles split into their own tables, and the Safe is in both", () => {
+  const box = deploymentsBox(grantsData());
+  assert(
+    grantSections(box).length === 2 &&
+      grantSections(box)[0].startsWith("Action roles") &&
+      grantSections(box)[1].startsWith("Admin roles"),
+    "action first, admin second: " + grantSections(box).join(" | "),
+  );
+  const safeRows = collect(box, "own-role").filter((r) =>
+    r.textContent === "tokenOwnerSafe"
+  );
+  assert(safeRows.length === 2, "the Safe is in both tables, got " + safeRows.length);
+  const svcRows = collect(box, "own-role").filter((r) =>
+    r.textContent === "GRANTEE_SERVICE_1C66"
+  );
+  assert(svcRows.length === 1, "the service key holds no admin role, so one row");
+  // The admin role itself is only under the admin heading.
+  const keys = collect(box, "grt-role").map((k) => k.textContent);
+  assert(
+    keys.filter((k) => k === "DEPOSIT_ADMIN").length === 1,
+    "DEPOSIT_ADMIN listed once",
+  );
+});
+
+// The Safe's address is a per-chain deploy artifact. One address on the row
+// would be wrong on every chain but one, and the row is the audit trail for
+// which address was actually asked.
+Deno.test("deployments: the Safe grantee shows the address it was checked at on each chain", () => {
+  const box = deploymentsBox(grantsData());
+  const addrs = collect(box, "own-addr");
+  const base = addrs.find((a) => a.textContent === BASE_SAFE);
+  const eth = addrs.find((a) => a.textContent === ETH_SAFE);
+  assert(base && eth, "both chains' Safe addresses render");
+  assert(
+    base.href === "https://basescan.org/address/" + BASE_SAFE,
+    "base Safe → basescan, got " + base.href,
+  );
+  assert(
+    eth.href === "https://etherscan.io/address/" + ETH_SAFE,
+    "ethereum Safe → etherscan, got " + eth.href,
+  );
+  const nets = collect(box, "own-net").map((n) => n.textContent);
+  assert(
+    nets.includes("base") && nets.includes("ethereum"),
+    "each Safe address is tagged with the chain it belongs to",
+  );
+  // A service key is ONE address covering every chain. Printing it once per
+  // chain — which is what keying the address list by chain does — reads as two
+  // different keys holding the same roles, i.e. exactly the miscount this
+  // section exists to prevent.
+  const svc = collect(box, "own-addr").filter((a) =>
+    a.textContent === SERVICE_EOA
+  );
+  assert(
+    svc.length === 1,
+    "the service key's one address renders once, got " + svc.length,
+  );
+});
+
+// A read that did not happen is not a grant that was revoked. The two look
+// identical on a row that only knows "not granted", and only one of them is a
+// reason to move a key.
+Deno.test("deployments: an unread chain says why, and never reads as revoked", () => {
+  const d = grantsData();
+  const g = d.deploymentGrants;
+  g.chains[1] = {
+    network: "hyperevm",
+    authoriser: null,
+    safe: null,
+    rpcHost: null,
+    granted: 0,
+    missing: 0,
+    unknown: 5,
+    total: 5,
+    state: "unknown",
+  };
+  for (const gr of g.grantees) {
+    for (const r of gr.roles) {
+      r.chains[1] = { network: "hyperevm", address: null, status: "unknown" };
+    }
+  }
+  const box = deploymentsBox(d);
+  const down = collect(box, "own-verify-down");
+  assert(down.length === 1, "the unread chain gets the dimmed banner");
+  assert(
+    textOf(down[0]).includes("no authoriser pinned for this chain yet") &&
+      textOf(down[0]).includes("unread, not revoked"),
+    "it says why and refuses the revoked reading: " + textOf(down[0]),
+  );
+  const chips = chipText(box);
+  assert(chips.includes("hyperevm ?"), "unread cells are a question, not a cross");
+  assert(
+    !chips.includes("hyperevm ○") && !chips.includes("hyperevm ✗"),
+    "an unread cell is neither a rollout gap nor a fault",
+  );
+  assert(
+    !collect(box, "own-chip-roll").some((c) =>
+      (c.textContent || "").includes("hyperevm")
+    ),
+    "no cell on the unread chain claims to be a known gap",
+  );
+  // The grantee tally counts only what was actually read as granted, so an
+  // unread chain lowers the ratio rather than inflating or hiding it.
+  assert(chips.includes("3/6 live"), "3 of 6 cells confirmed: " + chips.join(","));
+});
+
+Deno.test("deployments: a grant map that parsed short says so before any count is read", () => {
+  const box = deploymentsBox(grantsData({ declaredCount: 9 }));
+  const drift = collect(box, "own-verify-drift");
+  assert(drift.length === 1, "a short parse is drift, not a rollout");
+  const msg = drift[0].textContent || "";
+  assert(
+    msg.includes("9 grants declared") && msg.includes("5 parsed") &&
+      msg.includes("INCOMPLETE"),
+    "it names both numbers: " + msg,
+  );
+});
+
+Deno.test("deployments: with no grant data the section is absent and the rest of the page survives", () => {
+  const box = deploymentsBox({ ...OWNERS, deploymentGrants: null });
+  assert(
+    !collect(box, "tok-h3").some((h) => h.textContent.startsWith("Action roles")),
+    "no grants section",
+  );
+  assert(collect(box, "own-group").length === 4, "the owner groups still render");
+  // …and an empty grantee list is the same: nothing, rather than a table that
+  // would read as "no key holds these roles".
+  const empty = deploymentsBox(grantsData({ grantees: [] }));
+  assert(
+    collect(empty, "tok-h3").length === 0,
+    "an empty grantee list renders no section at all",
+  );
+});
+
 Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak checks", () => {
   const data = {
     deploymentOwners: null, // health must render even without owners
@@ -4014,6 +4384,30 @@ Deno.test("hostile input: an audit row's repo name and git tag render as text", 
   ]));
   assertInert(box, XSS_IMG, "audit row name");
   assertInert(box, XSS_SCRIPT, "audit row tag");
+});
+
+// The grant rows are built from a constant NAME and a network NAME read out of
+// another repo's Solidity — both attacker-influenceable by anyone who can land a
+// commit there, and both rendered next to an address a reader is meant to trust.
+Deno.test("hostile input: a grantee constant, its network and its address render as text", () => {
+  const d = grantsData();
+  d.deploymentGrants.grantees[1].ident = XSS_IMG;
+  d.deploymentGrants.grantees[1].address = XSS_SCRIPT;
+  d.deploymentGrants.grantees[1].roles[0].role = XSS_SVG;
+  d.deploymentGrants.grantees[1].roles[0].chains[0].address = XSS_SCRIPT;
+  d.deploymentGrants.chains[0].network = XSS_ATTR;
+  const box = deploymentsBox(d);
+  assertInert(box, XSS_IMG, "grantee constant name");
+  assertInert(box, XSS_SCRIPT, "grantee address");
+  assertInert(box, XSS_SVG, "role name");
+  assertInert(box, XSS_ATTR, "chain name");
+  // The address goes into an href as a PROPERTY, so an attribute-context
+  // payload stays inside the URL rather than escaping the quoting.
+  const a = tags(box, "a").find((x) => x.textContent === XSS_SCRIPT);
+  assert(
+    a && a.href === "https://basescan.org/address/" + XSS_SCRIPT,
+    "the hostile address stays inside the href path, got " + (a && a.href),
+  );
 });
 
 Deno.test("hostile input: a run's outcome, id and counts render as tooltip text", () => {

@@ -232,6 +232,18 @@ impl Chain {
             Chain::Ethereum => "ethereum-rpc.publicnode.com",
         }
     }
+
+    /// The chain a network NAME read out of the deploy repo's pins refers to.
+    /// `None` for a chain the deploy repo pins but this scanner has no endpoint
+    /// set for — a new chain therefore reports as unread rather than as absent,
+    /// and adding it here is the only thing needed to start reading it.
+    fn from_network(network: &str) -> Option<Chain> {
+        match network {
+            "base" => Some(Chain::Base),
+            "ethereum" => Some(Chain::Ethereum),
+            _ => None,
+        }
+    }
 }
 
 /// One entity's RPC context: which chain to ask, and where in that chain's set
@@ -1682,12 +1694,30 @@ fn main() {
         // Deployments page's "known owners" view. A one-off targeted read — the
         // pins live in a handful of libraries in one repo, not per-repo — so it is
         // fetched here rather than in the per-repo scan. `null` if unreachable.
+        // The deploy libraries both the owners view and the role-grant view read
+        // from, fetched once. `deployment_grants` below consumes the same four.
+        let (deploy_org, deploy_repo) = ("S01-Issuer", "st0x.deploy");
+        let safe = gh_file(deploy_org, deploy_repo, "src/lib/LibSafeInvariants.sol");
+        let auth = gh_file(
+            deploy_org,
+            deploy_repo,
+            "src/lib/LibAuthoriserInvariants.sol",
+        );
+        let v4 = gh_file(deploy_org, deploy_repo, "src/generated/LibProdDeployV4.sol");
+        let overrides = gh_file(
+            deploy_org,
+            deploy_repo,
+            "src/lib/LibProdDeployV2BaseOverrides.sol",
+        );
+        let deploy_sources = owners::OwnerSources {
+            safe_lib: &safe,
+            auth_lib: &auth,
+            v4_lib: &v4,
+            overrides: &overrides,
+        };
+
         let deployment_owners = {
-            let (org, repo) = ("S01-Issuer", "st0x.deploy");
-            let safe = gh_file(org, repo, "src/lib/LibSafeInvariants.sol");
-            let auth = gh_file(org, repo, "src/lib/LibAuthoriserInvariants.sol");
-            let v4 = gh_file(org, repo, "src/generated/LibProdDeployV4.sol");
-            let overrides = gh_file(org, repo, "src/lib/LibProdDeployV2BaseOverrides.sol");
+            let (org, repo) = (deploy_org, deploy_repo);
             // Read the live Base Safe (getOwners + getThreshold) so the page can
             // show declared-constant vs on-chain provenance. Best-effort: on any
             // RPC failure the fields stay None and the section falls back to
@@ -1725,16 +1755,59 @@ fn main() {
             owners::build_owners(
                 org,
                 repo,
-                &owners::OwnerSources {
-                    safe_lib: &safe,
-                    auth_lib: &auth,
-                    v4_lib: &v4,
-                    overrides: &overrides,
-                },
+                &deploy_sources,
                 onchain.as_ref(),
                 live_authoriser.as_deref(),
             )
             .unwrap_or(serde_json::Value::Null)
+        };
+
+        // Who holds the ACTION roles (#143). The Safe above is the cold key that
+        // can upgrade; these are the hot keys that move value daily, and the page
+        // carried the first without the second.
+        //
+        // Every `(role, grantee)` pair comes out of the deploy repo's own
+        // `expectedGrants()` map — the same map the on-chain assertions iterate —
+        // and each is then asked of the chain with `hasRole`. Nothing about a
+        // grantee is typed here, so a key added to that map appears on the page
+        // by itself. That is the entire point: the hazard being reported on is a
+        // hot key nobody remembered to write down.
+        let deployment_grants = {
+            let mut chains = owners::parse_chain_pins(&v4, &safe);
+            for c in chains.iter_mut() {
+                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
+            }
+            // One session per chain, so every `hasRole` for a chain hits the same
+            // endpoint and the map cannot be answered by two nodes disagreeing.
+            let sessions: Vec<(String, Session)> = chains
+                .iter()
+                .filter_map(|c| {
+                    Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
+                })
+                .collect();
+            let check = |network: &str, authoriser: &str, role: &str, grantee: &str| {
+                let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
+                    return owners::GrantOnChain::Unknown;
+                };
+                // An address that will not parse is not asked about as address(0)
+                // — that would come back `false` and read as a revoked grant.
+                let Some(data) = rpc::has_role_calldata(rpc::role_id(role), grantee) else {
+                    return owners::GrantOnChain::Unknown;
+                };
+                match curl_json(*session, &eth_call_payload(authoriser, &data)) {
+                    Some(body) => match rpc::classify_bool(&body) {
+                        rpc::CallClass::True => owners::GrantOnChain::Granted,
+                        rpc::CallClass::False => owners::GrantOnChain::NotGranted,
+                        // A revert is not a `false`: an authoriser that does not
+                        // answer `hasRole` at all has told us nothing about the
+                        // grant, and saying "not granted" would invent an answer.
+                        _ => owners::GrantOnChain::Unknown,
+                    },
+                    None => owners::GrantOnChain::Unknown,
+                }
+            };
+            owners::build_grants(deploy_org, deploy_repo, &deploy_sources, &chains, &check)
+                .unwrap_or(serde_json::Value::Null)
         };
 
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each
@@ -2218,6 +2291,7 @@ fn main() {
             "generatedAt": now,
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
+            "deploymentGrants": deployment_grants,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
