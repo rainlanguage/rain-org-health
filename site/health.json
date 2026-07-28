@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T12:35:50Z",
+  "generatedAt": "2026-07-28T14:38:54Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2687,13 +2687,6 @@
             "network": "ethereum",
             "status": "active",
             "note": "the Ethereum bootstrap's authoriser clone"
-          },
-          {
-            "role": "Service grantee",
-            "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
-            "network": "",
-            "status": "active",
-            "note": "external service EOA granted deposit / withdraw / certify"
           }
         ]
       },
@@ -2722,6 +2715,262 @@
             "network": "base",
             "status": "bricked",
             "note": "owned by the token contract itself — the V2 beacon can no longer be upgraded"
+          }
+        ]
+      }
+    ]
+  },
+  "deploymentGrants": {
+    "org": "S01-Issuer",
+    "repo": "st0x.deploy",
+    "source": "src/lib/LibAuthoriserInvariants.sol",
+    "function": "expectedGrants(address)",
+    "pinnedCount": 13,
+    "declaredCount": 13,
+    "chains": [
+      {
+        "network": "base",
+        "authoriser": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+        "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+        "rpcHost": "mainnet.base.org",
+        "granted": 13,
+        "missing": 0,
+        "unknown": 0,
+        "total": 13,
+        "state": "live"
+      },
+      {
+        "network": "ethereum",
+        "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+        "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        "rpcHost": "ethereum-rpc.publicnode.com",
+        "granted": 13,
+        "missing": 0,
+        "unknown": 0,
+        "total": 13,
+        "state": "live"
+      }
+    ],
+    "grantees": [
+      {
+        "ident": "tokenOwnerSafe",
+        "kind": "safe",
+        "address": null,
+        "roles": [
+          {
+            "role": "DEPOSIT_ADMIN",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "WITHDRAW_ADMIN",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "CERTIFY_ADMIN",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "CONFISCATE_SHARES_ADMIN",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "CONFISCATE_RECEIPT_ADMIN",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "SCHEDULE_CORPORATE_ACTION_ADMIN",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "CANCEL_CORPORATE_ACTION_ADMIN",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "DEPOSIT",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "WITHDRAW",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "CERTIFY",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ident": "GRANTEE_SERVICE_1C66",
+        "kind": "constant",
+        "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+        "roles": [
+          {
+            "role": "DEPOSIT",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "WITHDRAW",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "granted"
+              }
+            ]
+          },
+          {
+            "role": "CERTIFY",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "granted"
+              }
+            ]
           }
         ]
       }
