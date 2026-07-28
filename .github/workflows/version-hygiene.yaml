@@ -36,7 +36,7 @@ jobs:
             listed=$(jq -r --argjson i "$i" '.plugins[$i].version // ""' "$market")
             source_type=$(jq -r --argjson i "$i" '.plugins[$i].source | type' "$market")
             if [ "$source_type" != "string" ]; then
-              echo "::error::$market entry '$name' has a $source_type source, not a path in this repo, so the plugin it serves cannot be read here."
+              echo "::error::$market entry '$name' has a source of type $source_type, not a path in this repo, so the plugin it serves cannot be read here."
               status=1
               continue
             fi
