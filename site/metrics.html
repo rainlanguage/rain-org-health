@@ -405,7 +405,7 @@ function collapseRuns(runs) {
   const rank = (r) => (r.stage === "boot" ? 0 : r.stage === "ttl" ? 1 : 2);
   const best = new Map();
   for (const r of runs) {
-    const k = `${r.runId} ${r.role}`;
+    const k = `${r.runId} ${r.role}`;
     const cur = best.get(k);
     if (!cur || rank(r) >= rank(cur)) best.set(k, r);
   }

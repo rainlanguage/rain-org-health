@@ -3313,6 +3313,25 @@ const PARTIAL_TTL = {
   model: "claude-opus-4-8",
 };
 
+Deno.test("metrics accessors: an absent figure reads null, never undefined", () => {
+  // These five accessors are the page's ONE reading of "this run has no such
+  // number", and every consumer branches on `== null` / `!= null`. Returning
+  // the raw field instead would hand back `undefined` for a partial — which
+  // those loose checks happen to swallow today, so nothing would break until
+  // the first consumer that uses `=== null`, a strict equality, `??`, or
+  // serialises a record. Pinning the contract is what keeps them interchangeable.
+  const partial = { stage: "boot", bootMs: 774 };
+  assert(startupPctOfReal(partial) === null, "startupPctOf must return null");
+  assert(startupMinReal(partial) === null, "startupMin must return null");
+  assert(ttlMinReal(partial) === null, "ttlMin must return null");
+  // …and a present figure still comes back as a number, in minutes.
+  assert(bootMinReal(partial) === 774 / 60000, "bootMin must convert to minutes");
+  assert(
+    startupPctOfReal({ startupPct: 61.5 }) === 61.5,
+    "a real proportion must pass through unchanged",
+  );
+});
+
 Deno.test("metrics collapse: the complete record wins over its own partials", () => {
   // All three lines share a runId. Plotting them as three runs would triple the
   // point and drag the median toward the partials' half-known values.
@@ -4059,6 +4078,42 @@ Deno.test("dashboard pages contain no markup sink at all", () => {
   assert(
     offenders.length === 0,
     "a page must build DOM nodes, never assign markup:\n" +
+      offenders.join("\n"),
+  );
+});
+
+// A stray control byte in a page is invisible in every view that matters. One
+// reached this file as a NUL inside the metrics chart's collapse key — where a
+// SPACE was intended — and nothing caught it: NUL is a legal character in a JS
+// string, so the key still worked and the whole suite stayed green; prettier
+// reformatted around it without complaint; and printing the line shows nothing
+// where the byte is. The only thing that finds it is looking for it. Tab and
+// newline are the two that legitimately appear in source.
+Deno.test("no page or test carries a stray control byte", () => {
+  const roots = [
+    ["../site/", (n) => n.endsWith(".html") || n.endsWith(".md")],
+    ["./", (n) => n.endsWith(".js")],
+  ];
+  const offenders = [];
+  for (const [rel, want] of roots) {
+    const dir = new URL(rel, import.meta.url);
+    for (const entry of Deno.readDirSync(dir)) {
+      if (!entry.isFile || !want(entry.name)) continue;
+      const src = Deno.readTextFileSync(new URL(entry.name, dir));
+      for (let i = 0; i < src.length; i++) {
+        const c = src.charCodeAt(i);
+        if (c < 32 && c !== 10 && c !== 9) {
+          const line = src.slice(0, i).split("\n").length;
+          offenders.push(
+            `${entry.name}:${line}: U+${c.toString(16).padStart(4, "0")}`,
+          );
+        }
+      }
+    }
+  }
+  assert(
+    offenders.length === 0,
+    "source must carry no control bytes but tab and newline:\n" +
       offenders.join("\n"),
   );
 });
