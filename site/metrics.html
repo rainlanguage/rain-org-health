@@ -391,6 +391,14 @@ function bootMin(r) {
 function ttlMin(r) {
   return typeof r.ttlMs === "number" ? r.ttlMs / 60000 : null;
 }
+// The word a run's outcome renders as. A record with no `outcome` is one the
+// emitter never got to finish — the run was killed or timed out and only its
+// partials landed — so "ok" would report a success that never happened. Shared
+// by the tooltip and the caption: the two must never disagree about whether a
+// run succeeded, and an inline copy in each is a rule waiting to drift.
+function outcomeWord(r) {
+  return r.outcome || (r.stage && r.stage !== "final" ? "unfinished" : "ok");
+}
 // One record per run. The emitter appends a PARTIAL record the moment each
 // number becomes known — `stage:"boot"` at the first tool call, `stage:"ttl"` at
 // the first productive act — and the complete `stage:"final"` record only at run
@@ -526,7 +534,15 @@ function pmTip(r, abs) {
   if (abs && r.outcome === "error" && typeof r.startupMs !== "number")
     frag.append(bold(pm == null ? "—" : pm.toFixed(1) + " min"), " before erroring");
   else if (abs && mins == null && hasSplit) {
-    frag.append(bold(mTxt(tm)), ` ttl · boot ${mTxt(bm)}`);
+    // Lead with whichever half is actually KNOWN. A run killed between the boot
+    // and the ttl stage has boot and no ttl, and bolting ttl into the lead
+    // regardless puts "—" in the prominent slot — the very thing promoting the
+    // split was meant to avoid — while burying the one figure the run recorded.
+    const ttlKnown = tm != null;
+    frag.append(
+      bold(mTxt(ttlKnown ? tm : bm)),
+      ttlKnown ? ` ttl · boot ${mTxt(bm)}` : ` boot · ttl ${mTxt(tm)}`,
+    );
     ledWithSplit = true;
   } else if (abs)
     frag.append(bold(minsTxt || "—"), " startup time" + (pctTxt ? ` · ${pctTxt} of calls` : ""));
@@ -542,17 +558,14 @@ function pmTip(r, abs) {
   // a text node, like every other field here — because dropping it would hide
   // what the record actually says, and the tip is built from nodes precisely so
   // that showing it is safe.
-  if (r.startupToolCalls != null && r.toolCalls != null)
+  if (r.startupToolCalls != null && r.toolCalls != null && r.numTurns != null)
     frag.append(
       `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
       document.createElement("br"),
     );
   frag.append(`${fmtRunTime(r.runId)} · `);
-  // A record with no `outcome` is one the emitter never got to finish — the run
-  // was killed or timed out and only its partials landed. Saying "ok" there
-  // would report a success that never happened.
   const outcome = document.createElement("span");
-  const word = r.outcome || (r.stage && r.stage !== "final" ? "unfinished" : "ok");
+  const word = outcomeWord(r);
   if (word !== "ok") outcome.className = "deg";
   outcome.textContent = word;
   frag.append(outcome);
@@ -776,7 +789,7 @@ function renderPmNote(last) {
   };
   if (last) {
     const outcome = document.createElement("span");
-    const word = last.outcome || (last.stage && last.stage !== "final" ? "unfinished" : "ok");
+    const word = outcomeWord(last);
     if (word !== "ok") outcome.className = "deg";
     outcome.textContent = word;
     nodes.push(`Latest run ${fmtAgo(parseRunId(last.runId))} · outcome `, outcome, ". ");

@@ -2767,6 +2767,9 @@ const startupPctOfReal = bind("metrics.html", "startupPctOf", [], []);
 const bootMinReal = bind("metrics.html", "bootMin", [], []);
 const ttlMinReal = bind("metrics.html", "ttlMin", [], []);
 const collapseRunsReal = bind("metrics.html", "collapseRuns", [], []);
+// Shared by the tooltip and the caption, so the two can never disagree about
+// whether a run succeeded.
+const outcomeWordReal = bind("metrics.html", "outcomeWord", [], []);
 // The whole runs.jsonl → charted-runs pipeline: parse, filter, collapse, sort.
 // Bound with the real collapseRuns so the filter and the collapse are exercised
 // together, which is how they run.
@@ -2973,6 +2976,7 @@ function pmTipBox(run, abs) {
       "startupPctOf",
       "bootMin",
       "ttlMin",
+      "outcomeWord",
     ],
     [
       document,
@@ -2982,6 +2986,7 @@ function pmTipBox(run, abs) {
       d.startupPctOf,
       d.bootMin,
       d.ttlMin,
+      outcomeWordReal,
     ],
   );
   const box = makeEl("div");
@@ -3006,6 +3011,7 @@ function pmChart(runs, pmMode = "pct") {
       "startupPctOf",
       "bootMin",
       "ttlMin",
+      "outcomeWord",
     ],
     [
       document,
@@ -3015,6 +3021,7 @@ function pmChart(runs, pmMode = "pct") {
       d.startupPctOf,
       d.bootMin,
       d.ttlMin,
+      outcomeWordReal,
     ],
   );
   bind(
@@ -3563,18 +3570,43 @@ Deno.test("metrics tip: a killed run's partial renders its timings, not undefine
 
 Deno.test("metrics tip: an unfinished run does not report itself as ok", () => {
   // A partial has no `outcome`, and the old `r.outcome || "ok"` would print a
-  // success for a run that was killed.
-  const t = textOf(pmTipBox(PARTIAL_TTL, true));
-  assert(t.includes("unfinished"), "a partial must read as unfinished: " + t);
-  assert(!t.includes("ok"), "it must not claim success: " + t);
+  // success for a run that was killed. Read the outcome ELEMENT rather than
+  // grepping the whole tip: "ok" is a substring of ordinary words, so a loose
+  // search would be satisfied — or broken — by text that is not the outcome.
+  const word = collect(pmTipBox(PARTIAL_TTL, true), "deg")[0];
+  assert(word, "an unfinished outcome must render in the degraded style");
+  assert(
+    word.textContent === "unfinished",
+    "the outcome element must read exactly unfinished: " + word.textContent,
+  );
 });
 
-Deno.test("metrics tip: a boot-only partial renders with only boot known", () => {
-  // Killed before the first productive act — boot is all that exists.
+Deno.test("metrics caption: an unfinished latest run is not captioned ok", () => {
+  // The caption derives the outcome word from the SAME helper the tooltip uses.
+  // Before it was extracted the rule existed twice verbatim, so the chart could
+  // say "unfinished" while the sentence under it said "ok" about the same run.
+  const word = collect(pmNoteBox(PARTIAL_TTL), "deg")[0];
+  assert(word, "an unfinished outcome must render in the degraded style");
+  assert(
+    word.textContent === "unfinished",
+    "the caption must agree with the tooltip: " + word.textContent,
+  );
+});
+
+Deno.test("metrics tip: a boot-only partial leads with the boot it knows", () => {
+  // Killed BETWEEN the boot and ttl stages — boot is all that exists. Leading
+  // with ttl regardless would bold "—", putting the one thing this run does not
+  // have in the most prominent slot and burying the one thing it does.
   const t = textOf(pmTipBox(PARTIAL_BOOT, true));
   assert(!t.includes("undefined"), "no undefined may reach the tip: " + t);
   assert(!t.includes("NaN"), "no NaN may reach the tip: " + t);
   assert(t.includes("0.8s"), "boot 774ms should read as 0.8s: " + t);
+  const lead = tags(pmTipBox(PARTIAL_BOOT, true), "b")[0];
+  assert(
+    lead && lead.textContent === "0.8s",
+    "the bolded lead must be the known boot value, got: " +
+      (lead && lead.textContent),
+  );
 });
 
 Deno.test("metrics chart: a killed run's partial reaches the tooltip on hover", () => {
@@ -3618,7 +3650,17 @@ Deno.test("metrics tiles: a partial contributes no startup figure", () => {
   const t = textOf(box);
   assert(t.includes("15.0%"), "median over [10,20] is 15: " + t);
   assert(!t.includes("undefined"), "no undefined in the tiles: " + t);
-  assert(t.includes("3"), "runs recorded still counts every run: " + t);
+  // Tie the count to its OWN tile — a bare "3" matches any digit anywhere,
+  // including the "15.0%" two tiles over, so it would pass without the count
+  // ever rendering.
+  const counted = collect(box, "tile").find((tile) =>
+    textOf(tile).includes("runs recorded")
+  );
+  assert(counted, "expected a runs-recorded tile");
+  assert(
+    textOf(counted).startsWith("3"),
+    "runs recorded still counts every run, gaps included: " + textOf(counted),
+  );
 });
 
 // An empty token set must EXPLAIN itself. The registry section silently
@@ -3901,8 +3943,8 @@ function pmNoteBox(last) {
   bind(
     "metrics.html",
     "renderPmNote",
-    ["$", "document", "fmtAgo", "parseRunId"],
-    [$, stubDocument(), fmtAgo, d.parseRunId],
+    ["$", "document", "fmtAgo", "parseRunId", "outcomeWord"],
+    [$, stubDocument(), fmtAgo, d.parseRunId, outcomeWordReal],
   )(last);
   return box;
 }
@@ -4106,22 +4148,33 @@ Deno.test("dashboard pages contain no markup sink at all", () => {
 // where the byte is. The only thing that finds it is looking for it. Tab and
 // newline are the two that legitimately appear in source.
 Deno.test("no page or test carries a stray control byte", () => {
-  const roots = [
-    ["../site/", (n) => n.endsWith(".html") || n.endsWith(".md")],
-    ["./", (n) => n.endsWith(".js")],
-  ];
+  // The class is every byte that is invisible yet legal: C0 (U+0000-U+001F),
+  // DEL (U+007F) and C1 (U+0080-U+009F). Stopping at C0 would catch the byte
+  // that actually shipped and leave its neighbours — the point of the guard is
+  // the category, not the one instance. The walk recurses because `site/` has
+  // subdirectories; the vendored ELK bundle is scanned too and is clean, so
+  // nothing needs carving out.
+  const want = (n) => /\.(html|md|js)$/.test(n);
+  const walk = function* (base) {
+    for (const entry of Deno.readDirSync(base)) {
+      const url = new URL(
+        encodeURIComponent(entry.name) + (entry.isDirectory ? "/" : ""),
+        base,
+      );
+      if (entry.isDirectory) yield* walk(url);
+      else if (entry.isFile && want(entry.name)) yield [entry.name, url];
+    }
+  };
   const offenders = [];
-  for (const [rel, want] of roots) {
-    const dir = new URL(rel, import.meta.url);
-    for (const entry of Deno.readDirSync(dir)) {
-      if (!entry.isFile || !want(entry.name)) continue;
-      const src = Deno.readTextFileSync(new URL(entry.name, dir));
+  for (const rel of ["../site/", "./"]) {
+    for (const [name, url] of walk(new URL(rel, import.meta.url))) {
+      const src = Deno.readTextFileSync(url);
       for (let i = 0; i < src.length; i++) {
         const c = src.charCodeAt(i);
-        if (c < 32 && c !== 10 && c !== 9) {
+        if ((c < 32 && c !== 10 && c !== 9) || (c >= 0x7f && c <= 0x9f)) {
           const line = src.slice(0, i).split("\n").length;
           offenders.push(
-            `${entry.name}:${line}: U+${c.toString(16).padStart(4, "0")}`,
+            `${name}:${line}: U+${c.toString(16).padStart(4, "0")}`,
           );
         }
       }
@@ -4129,7 +4182,7 @@ Deno.test("no page or test carries a stray control byte", () => {
   }
   assert(
     offenders.length === 0,
-    "source must carry no control bytes but tab and newline:\n" +
+    "source must carry no invisible control bytes but tab and newline:\n" +
       offenders.join("\n"),
   );
 });
