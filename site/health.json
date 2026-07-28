@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-28T07:25:44Z",
+  "generatedAt": "2026-07-28T09:50:53Z",
   "auditGraph": {
     "nodes": [
       {
@@ -142,7 +142,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 18,
+        "openAuditIssues": 17,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -300,7 +300,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 15,
+        "openAuditIssues": 14,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -2875,7 +2875,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2891,15 +2891,15 @@
         },
         {
           "name": "Receipt-vault beacon",
-          "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
-          "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
-          "implVersion": "0.1.1",
+          "address": null,
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -4103,7 +4103,7 @@
       "name": "cyclo.site",
       "org": "cyclofinance",
       "lastAudit": null,
-      "openAuditIssues": 59,
+      "openAuditIssues": 58,
       "lastMutation": null
     },
     {
@@ -4362,7 +4362,7 @@
       "name": "rain.erc4626.words",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 18,
+      "openAuditIssues": 17,
       "lastMutation": null
     },
     {
@@ -4397,7 +4397,7 @@
       "name": "rain.flare",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 15,
+      "openAuditIssues": 14,
       "lastMutation": null
     },
     {
@@ -5673,7 +5673,7 @@
       "sourceLocAddedSinceAudit": 66,
       "sourceLocRemovedSinceAudit": 107,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 43,
+      "commitsSinceAudit": 57,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 41,
       "commentLocRemovedSinceAudit": 35,
