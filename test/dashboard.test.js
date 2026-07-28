@@ -1906,6 +1906,207 @@ Deno.test("pipeline FSM: missing uncoveredIssues renders the backlog box at 0", 
   );
 });
 
+// ---- #141: a fromCounts state's click-to-expand ----------------------------
+//
+// A state is either a LANE state (count and items both from `lanes.<lane>.<state>`) or a
+// `fromCounts` state (count from `counts.<key>`, items from a top-level array). Only the lane
+// branch ever registered items, so every fromCounts state rendered a real count above an empty
+// panel. `closeCandidateUpheld` showed it live — 1 on the box, nothing behind it.
+//
+// The whole existing suite (145 tests) passed with that bug in place, because a state's count
+// and its list were only ever asserted apart. These assert them TOGETHER.
+
+// Fixture items for a state's top-level array, tagged so one state's list can never be mistaken
+// for another's.
+function fcItems(tag, n) {
+  return Array.from({ length: n }, (_, i) => ({
+    repo: "o/" + tag,
+    number: i + 1,
+    title: tag + " " + (i + 1),
+  }));
+}
+
+Deno.test("pipeline FSM: every fromCounts state expands to its own items, not an empty panel", () => {
+  const box = fsmBox({
+    counts: {
+      ready: 0,
+      leaks: 3,
+      uncoveredIssues: 4,
+      closeCandidateUnvetted: 2,
+      closeCandidateUpheld: 5,
+    },
+    lanes: { "vetter-verdicts": {} },
+    leaks: fcItems("leak", 3),
+    uncoveredIssues: fcItems("uncovered", 4),
+    closeCandidateUnvetted: fcItems("unvetted", 2),
+    closeCandidateUpheld: fcItems("upheld", 5),
+  });
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  const byKey = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  // state key -> [count it must show, a title only ITS list carries]
+  const expected = {
+    leak: [3, "leak 1"],
+    uncoveredIssues: [4, "uncovered 1"],
+    closeCandidateUnvetted: [2, "unvetted 1"],
+    closeCandidateUpheld: [5, "upheld 1"],
+  };
+  for (const [key, [n, marker]] of Object.entries(expected)) {
+    const b = byKey(key);
+    assert(b, `${key} box rendered`);
+    assert(
+      collect(b, "sc")[0].textContent === String(n),
+      `${key} box reads ${n}: ${collect(b, "sc")[0].textContent}`,
+    );
+    b.click();
+    const rows = collect(detail, "li").length;
+    // The bug in one assertion: the box says n, the panel says 0.
+    assert(rows === n, `${key} shows ${n} but expands to ${rows} rows`);
+    assert(
+      collect(detail, "dhc")[0].textContent === n + (n === 1 ? " item" : " items"),
+      `${key} header count == its own list length`,
+    );
+    assert(
+      textOf(detail).includes(marker),
+      `${key} lists ITS OWN items (looking for ${marker})`,
+    );
+    b.click(); // collapse before moving on, so nothing reads a stale panel
+  }
+});
+
+// `leak` is the ONE state whose key and item array disagree: the key is `leak` (kept so the
+// pre-existing click-through survives), the items live under `leaks`. Deriving the array name
+// from the state key misses silently, and a silent miss renders exactly the empty panel #141 is
+// about — so the mapping is pinned, with a decoy array named after the key that must never win.
+Deno.test("pipeline FSM: the leak state lists from the top-level `leaks`, not from its state key", () => {
+  const box = fsmBox({
+    counts: { ready: 0, leaks: 2 },
+    lanes: { "vetter-verdicts": {} },
+    leaks: [
+      { repo: "o/real", number: 1, title: "real leaked PR" },
+      { repo: "o/real", number: 2, title: "second leaked PR" },
+    ],
+    // Named after the STATE, not the array. Nothing may read it.
+    leak: [{ repo: "o/decoy", number: 99, title: "decoy from the state key" }],
+  });
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "leak").click();
+  const text = textOf(detail);
+  assert(
+    collect(detail, "li").length === 2,
+    `leak expands to its 2 leaks, got ${collect(detail, "li").length}`,
+  );
+  assert(text.includes("real leaked PR"), `reads the \`leaks\` array: ${text}`);
+  assert(
+    !text.includes("decoy"),
+    `never reads an array named after the state key: ${text}`,
+  );
+});
+
+// The reason #141 survived: an empty panel said nothing about WHY it was empty. A genuinely
+// empty state and a state whose list was never wired rendered identical silence, so the bug was
+// only findable on a state that happened to be non-zero. Three causes, three readings — and the
+// two that are defects say so in words, not by colour alone.
+Deno.test("pipeline FSM: a zero state reads as deliberately empty; a count with no list reads as a defect", () => {
+  const openDetail = (hq, key) => {
+    const box = fsmBox(hq);
+    const detail = box.querySelectorAll("#fsmdetail")[0];
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === key).click();
+    return detail;
+  };
+  const lanes = { "vetter-verdicts": {} };
+
+  // (a) genuinely empty — counted zero, nothing to list.
+  const empty = openDetail(
+    { counts: { ready: 0, leaks: 0, closeCandidateUpheld: 0 }, lanes },
+    "closeCandidateUpheld",
+  );
+  const etxt = textOf(empty);
+  assert(etxt.includes("Empty"), `a zero state reads as deliberately empty: ${etxt}`);
+  assert(
+    collect(empty, "miswired").length === 0,
+    "a genuinely empty state is never flagged as a defect",
+  );
+
+  // (b) #141's exact signature — a real count with no list behind it. Must not read as empty.
+  const broken = openDetail(
+    { counts: { ready: 0, leaks: 0, closeCandidateUpheld: 7 }, lanes },
+    "closeCandidateUpheld",
+  );
+  const btxt = textOf(broken);
+  assert(
+    collect(broken, "miswired").length === 1,
+    `a count with no list is flagged as a defect: ${btxt}`,
+  );
+  assert(btxt.includes("7"), `it names the count that has no list: ${btxt}`);
+  assert(
+    btxt.includes("missing, not empty"),
+    `it says which of the two this is: ${btxt}`,
+  );
+  assert(
+    !btxt.includes("Empty — nothing"),
+    `it must not also read as deliberately empty: ${btxt}`,
+  );
+});
+
+// Structural guard against the way #141 was introduced: two states were ADDED to STATES, their
+// lists were never wired, and nothing failed. Every box the machine draws must resolve to an
+// item source — a state added without one now reports itself, and this fails when it does.
+Deno.test("pipeline FSM: every state in the machine has an item source wired", () => {
+  const box = fsmBox({ counts: {}, lanes: { "vetter-verdicts": {} } });
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  const unwired = [];
+  for (const b of box.querySelectorAll("[data-t]")) {
+    b.click();
+    if (textOf(detail).includes("No item list is wired")) unwired.push(b.dataset.t);
+    b.click();
+  }
+  assert(
+    unwired.length === 0,
+    `states drawn with no item source: ${JSON.stringify(unwired)}`,
+  );
+});
+
+// Top-level items are {repo, number, title} with no `url`, so the link is built from repo +
+// number. github.com redirects /issues/<n> ↔ /pull/<n>, so the built form resolves for either
+// population — which is what makes it safe on `closeCandidateUnvetted`, whose items are a MIX
+// of issues and PRs with nothing in the shape saying which. A `url` the tool DOES supply (lane
+// items today, these arrays once issue-pr-cron#114 lands) wins outright, so nothing is inferred
+// where the answer is already known.
+Deno.test("pipeline FSM: a top-level item's link is built from repo + number, and a supplied url wins", () => {
+  const box = fsmBox({
+    counts: { ready: 0, leaks: 1, uncoveredIssues: 2 },
+    lanes: { "vetter-verdicts": {} },
+    leaks: [{ repo: "o/p", number: 7, title: "a leaked PR" }],
+    uncoveredIssues: [
+      { repo: "o/i", number: 8, title: "an untouched issue" },
+      { repo: "o/i", number: 9, url: "https://github.com/o/i/pull/9", title: "already resolved" },
+    ],
+  });
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  const open = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k).click();
+
+  // Leaks are producer PRs.
+  open("leak");
+  assert(
+    collect(detail, "li")[0].href === "https://github.com/o/p/pull/7",
+    `a leaked PR links to /pull/: ${collect(detail, "li")[0].href}`,
+  );
+
+  // Untouched work is issues — except where the item already carries its own url.
+  open("uncoveredIssues");
+  const hrefs = collect(detail, "li").map((a) => a.href);
+  assert(
+    hrefs[0] === "https://github.com/o/i/issues/8",
+    `an untouched issue links to /issues/: ${hrefs[0]}`,
+  );
+  assert(
+    hrefs[1] === "https://github.com/o/i/pull/9",
+    `a supplied url is used verbatim, not rebuilt: ${hrefs[1]}`,
+  );
+});
+
 // ---- deployments.html: known owners ----
 
 // renderDeployments takes (document, $, data) as its own params, so bind with no

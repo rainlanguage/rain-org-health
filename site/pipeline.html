@@ -175,6 +175,10 @@
   .fsm-list .fsm-dh .dhl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); }
   .fsm-list .fsm-dh .dhc { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
   .fsm-list .empty { padding: 12px 13px; }
+  /* A list that is empty because it is BROKEN, not because the state is empty. Semantic
+     --crit (defined in both themes) plus wording that says which — the colour is never the
+     only carrier. Two classes deep so it outweighs `.fsm-list .empty`'s own colour. */
+  .fsm-list .empty.miswired { color: var(--crit); }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
   .fsm-lane { margin: 14px 0 2px; }
@@ -310,7 +314,18 @@ function renderFsm(hq, history) {
     return;
   }
   const c = hq.counts;
-  const urlOf = (it, issue) => `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
+  // Lane items carry a resolved `url`; the top-level arrays (uncoveredIssues, closeCandidate*,
+  // leaks) carry only {repo, number, title}, so their link is built here from repo + number. A
+  // resolved `url` always WINS when the item has one, so the day the tool emits it on those
+  // arrays too (issue-pr-cron#114) nothing here has to change and nothing is inferred.
+  // Building it is safe for either population: github.com REDIRECTS between the two paths —
+  // /issues/<n> on a PR number 302s to /pull/<n>, and /pull/<n> on an issue number 302s to
+  // /issues/<n> (verified against this repo: /issues/137 → /pull/137, /pull/141 → /issues/141).
+  // That matters because `closeCandidateUnvetted` mixes issues and PRs and the item shape says
+  // nothing about which — so the `issue` flag only decides which path is tried FIRST.
+  const urlOf = (it, issue) =>
+    (it && typeof it.url === "string" && it.url) ||
+    `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
 
   // ---- Theory-of-Constraints flow layer (#32): per-state inventory over time.
   // `history` = the parsed human-queue-history.jsonl rollup ([{t:ms, counts}], one
@@ -385,7 +400,25 @@ function renderFsm(hq, history) {
   // tool emits an `owner` per state as the single source of truth — an issue-pr-cron
   // follow-up, which would also split the two dual-owner states called out below.)
   const hasLanes = hq.lanes && typeof hq.lanes === "object";
+  // EVERY rendered state registers its item list here, whichever branch built it — a lane
+  // cell's `prs` for a lane state, the named top-level array for a `fromCounts` state. The
+  // click-to-expand reads ONLY this map, so registration is the single wiring point instead of
+  // a hand-maintained per-key if-chain in `itemsFor` (which is how #141 happened: the
+  // close-candidate split added two `fromCounts` states and nobody extended the chain, so both
+  // rendered a count that opened onto nothing).
+  //
+  // A key MISSING from the map is therefore a renderer defect, not an empty queue, and the
+  // panel says so. `count` rides along because the number and the list are read from different
+  // places by design (`counts.<key>` vs a top-level array) — a count with no list is the exact
+  // signature of this bug class, and recording it is what lets the panel tell "nothing is in
+  // this state" apart from "this state's list never arrived".
   const laneItems = new Map();
+  const register = (key, arr, issue, count) =>
+    laneItems.set(key, {
+      arr: Array.isArray(arr) ? arr : [],
+      issue: !!issue,
+      count: Number(count) || 0,
+    });
   const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
 
   const stateBox = (key, label, count, act, kind, series) => {
@@ -466,6 +499,15 @@ function renderFsm(hq, history) {
   //       tool-side split human:reject-rework vs human:reject-final — see follow-up.)
   // `hist` = this state's key in the human-queue-history rollup `counts` (which mirrors
   // the snapshot's `counts`), i.e. where its inventory time-series is read from.
+  //
+  // A `fromCounts` state additionally carries `items` = the TOP-LEVEL array its click-to-expand
+  // list is read from, and `issue` = whether those items are issues (which path `urlOf` tries
+  // first). `items` is DECLARED, never derived: the state key and the array name do not agree
+  // (`leak` lists from `leaks`), and deriving it from the state key would silently miss on
+  // exactly that state — a miss whose only symptom is the empty list this wiring exists to
+  // prevent. Declaring it makes the odd one out data rather than a convention to remember, and
+  // a `fromCounts` state that declares no `items` at all is reported as unwired, not drawn
+  // empty (see `detailBody`).
   const STATES = [
     // Producer inbox — the producer moves these next.
     { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", hist: "reject", act: "rework per note", kind: "blk" },
@@ -478,14 +520,18 @@ function renderFsm(hq, history) {
     // refreshes that carried the field — one sample is a lone dot, more fill in the line and
     // (past two inside the 7d window) the trend border; none at all → no spark, never a
     // broken box.
-    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
+    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
     // Vetter inbox — the vetter records the next verdict.
     { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "first vet", kind: "flow" },
     { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", hist: "awaitingReVet", act: "head moved · re-vet", kind: "flow" },
     // Close-candidate ISSUES awaiting a vetter verdict (issue-pr-cron#73). Hand-triage of
     // the queue found ~1 in 3 producer flags wrong, so a flag is now JUDGED before it
-    // reaches a human — this is that inbox. Not a lane state; count from `counts`.
-    { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
+    // reaches a human — this is that inbox. Not a lane state; count from `counts`, items from
+    // the top-level `closeCandidateUnvetted`. This bucket MIXES issues and PRs (it holds
+    // whatever the producer flagged) and the item shape says nothing about which, so `issue`
+    // only picks the path tried first and github's own /issues/↔/pull/ redirect resolves the
+    // rest — see `urlOf`.
+    { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", items: "closeCandidateUnvetted", issue: true, hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
     // Human inbox — a human merge / ruling / close.
     // FSM CONFORMANCE LEAK, first because it is the loudest: producer PRs carrying a note
     // but no `ai:*` label, so they sit in NO modeled state. This was a banner beside the
@@ -494,9 +540,11 @@ function renderFsm(hq, history) {
     // classify each one into a real state or extend the machine to cover it. As a state it
     // lands in the human's actionable set, carries its own inventory sparkline, and trips
     // the rising-bottleneck border like any other inbox. It should read ZERO. Not a lane
-    // state — count from `counts.leaks`, items from the top-level `leaks` array (which is
-    // why the key stays `leak`: itemsFor already resolves it).
-    { owner: "human", state: "leak", fromCounts: "leaks", hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
+    // state — count from `counts.leaks`, items from the top-level `leaks` array. This is the
+    // ONE state whose key (`leak`, kept so the pre-existing click-through survives) differs
+    // from the array it lists from, which is why `items` is declared rather than derived.
+    // These are producer PRs, so `issue` stays false.
+    { owner: "human", state: "leak", fromCounts: "leaks", items: "leaks", issue: false, hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
     { owner: "human", state: "ai:close-candidate", lane: "vetter-verdicts", hist: "closeCandidatePrs", act: "close PR", kind: "rule", label: "ai:close-candidate (PRs)" },
@@ -514,7 +562,7 @@ function renderFsm(hq, history) {
     // why it could never be added to an actor total. The legacy no-`lanes` branch below
     // still renders `closeCandidateIssues`, because a human-queue.json old enough to lack
     // `lanes` also predates the split keys.
-    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", hist: "closeCandidateUpheld", act: "close issue", kind: "rule", label: "ai:close-candidate (upheld)" },
+    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", items: "closeCandidateUpheld", issue: true, hist: "closeCandidateUpheld", act: "close issue", kind: "rule", label: "ai:close-candidate (upheld)" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
@@ -536,10 +584,15 @@ function renderFsm(hq, history) {
         let count;
         if (s.fromCounts) {
           count = Number(c[s.fromCounts]) || 0;
+          // The counts key names the NUMBER; `items` names the LIST. Both branches register,
+          // so the click-to-expand has a source for every box the machine draws — the whole
+          // point of #141. A descriptor with no `items` registers nothing and the detail
+          // panel reports it as unwired rather than passing it off as an empty queue.
+          if (typeof s.items === "string") register(s.state, hq[s.items], s.issue, count);
         } else {
           const cell = laneState(s.lane, s.state);
           count = cell ? Number(cell.count) || 0 : 0;
-          laneItems.set(s.state, (cell && cell.prs) || []);
+          register(s.state, cell && cell.prs, false, count);
         }
         ownerTotal += count;
         const label = s.label || s.state;
@@ -558,11 +611,13 @@ function renderFsm(hq, history) {
     // Backward-compat: an older human-queue.json with no `lanes` — render the 6 states
     // the legacy `counts` keys carry (all human-owned under the actor mapping) from
     // `counts`, so the panel never blanks.
+    // `items` names a top-level array as in STATES; an entry with none lists from the flat
+    // `states` map keyed by the state itself, which is what a pre-`lanes` snapshot carries.
     const legacy = [
-      { key: "leak", label: "not in any modeled state", n: c.leaks, hist: "leaks", act: "model it", kind: "blk" },
+      { key: "leak", label: "not in any modeled state", n: c.leaks, items: "leaks", hist: "leaks", act: "model it", kind: "blk" },
       { key: "ai:ready", label: "ai:ready", n: c.ready, hist: "ready", act: "merge", kind: "flow" },
       { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
-      { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
+      { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, items: "closeCandidateIssues", issue: true, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
       { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
       { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, hist: "blockedInfra", act: "clear infra", kind: "blk" },
       { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, hist: "blockedOn", act: "merge dependency", kind: "blk" },
@@ -570,8 +625,10 @@ function renderFsm(hq, history) {
     const g = el("div", "fsm-grid");
     const boxes = [];
     legacy.forEach((s) => {
+      const n = Number(s.n) || 0;
+      register(s.key, s.items ? hq[s.items] : hq.states && hq.states[s.key], s.issue, n);
       const b = stateBox(s.key, s.label, s.n, s.act, s.kind, seriesFor(s.hist));
-      boxes.push({ b, count: Number(s.n) || 0, label: s.label });
+      boxes.push({ b, count: n, label: s.label });
       g.append(b);
     });
     markLead(boxes);
@@ -582,31 +639,46 @@ function renderFsm(hq, history) {
     grid.append(lane);
   }
 
-  // itemsFor returns { arr, issue } for a state key: the item list, and whether the
-  // items are issues (vs PRs) — which decides the GitHub URL path.
-  const itemsFor = (key) => {
-    if (key === "leak") return { arr: hq.leaks || [], issue: false };
-    if (key === "closeCandidateIssues") return { arr: hq.closeCandidateIssues || [], issue: true };
-    if (key === "uncoveredIssues") return { arr: hq.uncoveredIssues || [], issue: true };
-    if (laneItems.has(key)) return { arr: laneItems.get(key), issue: false };
-    return { arr: (hq.states && hq.states[key]) || [], issue: false };
-  };
+  // itemsFor returns a state's registration — { arr, issue, count } — or null when the state
+  // has none. Every box the machine draws registered above, in whichever branch drew it, so
+  // null means the RENDERER never wired this state up. It is deliberately not "|| []": an
+  // unwired state and an empty one used to render the same silence, which is precisely why
+  // #141 survived (a genuinely-empty close-candidate box looks identical to a broken one).
+  const itemsFor = (key) => laneItems.get(key) || null;
 
   // Detail body for a clicked box: a header naming THIS state and its OWN item count
   // (the list length rendered directly below it), so the panel can never read as
   // belonging to another section, then the items.
+  //
+  // Three distinct readings for a list with no rows, because "no rows" has three causes and
+  // conflating them is the bug:
+  //   1. no registration          -> a dashboard defect; the state was drawn but never wired.
+  //   2. registered, count > 0    -> the snapshot counts N here and carries no list for it;
+  //                                  the list is MISSING, which is #141's exact signature.
+  //   3. registered, count == 0   -> genuinely, deliberately empty. The normal case.
+  // 1 and 2 are defects and read as defects (--crit, and in words — never colour alone).
   const detailBody = (key, label) => {
-    const { arr, issue } = itemsFor(key);
+    const src = itemsFor(key);
+    const arr = src ? src.arr : [];
     const frag = document.createDocumentFragment();
     const h = el("div", "fsm-dh");
-    h.append(el("span", "dhl", label), el("span", "dhc", arr.length + (arr.length === 1 ? " item" : " items")));
+    h.append(
+      el("span", "dhl", label),
+      el("span", "dhc", src ? arr.length + (arr.length === 1 ? " item" : " items") : "no item source"),
+    );
     frag.append(h);
+    if (!src) {
+      frag.append(el("div", "empty miswired", "No item list is wired for this state — that is a dashboard defect, not an empty queue."));
+      return frag;
+    }
     if (!arr.length) {
-      frag.append(el("div", "empty", "no items in this state"));
+      frag.append(src.count > 0
+        ? el("div", "empty miswired", "The machine counts " + src.count + " here, but the pipeline snapshot carries no list for this state — the list is missing, not empty.")
+        : el("div", "empty", "Empty — nothing is in this state."));
       return frag;
     }
     arr.forEach((it) => {
-      const a = link("li", undefined, urlOf(it, issue));
+      const a = link("li", undefined, urlOf(it, src.issue));
       a.append(el("span", "lr", it.repo + "#" + Number(it.number)), " " + (it.title == null ? "" : it.title));
       if (it.reason) a.append(el("span", "lz", it.reason));
       frag.append(a);
