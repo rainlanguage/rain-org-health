@@ -407,11 +407,10 @@ function renderFsm(hq, history) {
   // close-candidate split added two `fromCounts` states and nobody extended the chain, so both
   // rendered a count that opened onto nothing).
   //
-  // A key MISSING from the map is therefore a renderer defect, not an empty queue, and the
-  // panel says so. `count` rides along because the number and the list are read from different
-  // places by design (`counts.<key>` vs a top-level array) — a count with no list is the exact
-  // signature of this bug class, and recording it is what lets the panel tell "nothing is in
-  // this state" apart from "this state's list never arrived".
+  // `count` rides along because the number and the list are read from different places by
+  // design (`counts.<key>` vs a top-level array) — a count with no list is the exact signature
+  // of this bug class, and recording it is what lets the panel tell "nothing is in this state"
+  // apart from "this state's list never arrived".
   const laneItems = new Map();
   const register = (key, arr, issue, count) =>
     laneItems.set(key, {
@@ -506,8 +505,8 @@ function renderFsm(hq, history) {
   // (`leak` lists from `leaks`), and deriving it from the state key would silently miss on
   // exactly that state — a miss whose only symptom is the empty list this wiring exists to
   // prevent. Declaring it makes the odd one out data rather than a convention to remember, and
-  // a `fromCounts` state that declares no `items` at all is reported as unwired, not drawn
-  // empty (see `detailBody`).
+  // a `fromCounts` state that declared no `items` would register an empty list against its real
+  // count, which `detailBody` reports as a defect rather than drawing as an empty queue.
   const STATES = [
     // Producer inbox — the producer moves these next.
     { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", hist: "reject", act: "rework per note", kind: "blk" },
