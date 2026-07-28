@@ -642,7 +642,10 @@ pub fn build_grants(
 /// where the constant lives is not a thing this page depends on.
 fn resolve_ident(src: &OwnerSources, ident: &str) -> Option<String> {
     let sources = [src.auth_lib, src.safe_lib, src.v4_lib, src.overrides];
-    if let Some(a) = sources.iter().find_map(|s| parse_address_constant(s, ident)) {
+    if let Some(a) = sources
+        .iter()
+        .find_map(|s| parse_address_constant(s, ident))
+    {
         return Some(a);
     }
     let alias = Regex::new(&format!(
@@ -1253,7 +1256,9 @@ mod tests {
         .unwrap();
         let auth = v["groups"][2]["entries"].as_array().unwrap();
         assert!(
-            !auth.iter().any(|e| e["address"] == "0x1c66D6708914C40239D54919320b4C48cAE3D1A9"),
+            !auth
+                .iter()
+                .any(|e| e["address"] == "0x1c66D6708914C40239D54919320b4C48cAE3D1A9"),
             "a grantee address must not be pinned by hand in the owners groups"
         );
         assert!(
@@ -1276,7 +1281,10 @@ mod tests {
             }
         );
         // The no-arg overload delegates; parsing IT would yield one bogus pair.
-        assert!(m.grants.iter().all(|g| g.role != "GRANTEE_TOKEN_OWNER_SAFE"));
+        assert!(m
+            .grants
+            .iter()
+            .all(|g| g.role != "GRANTEE_TOKEN_OWNER_SAFE"));
     }
 
     /// The check the issue names: a service EOA added to `expectedGrants()`
@@ -1285,8 +1293,14 @@ mod tests {
     /// repo — if this passes, the grantee list is derived, not transcribed.
     #[test]
     fn a_third_service_eoa_appears_with_no_dashboard_change() {
-        let before = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
-            .expect("map parses");
+        let before = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB),
+            &two_chains(),
+            &all_granted,
+        )
+        .expect("map parses");
         assert!(
             grantee(&before, "GRANTEE_SERVICE_3D0C").is_none(),
             "not in the map yet"
@@ -1307,8 +1321,14 @@ mod tests {
                  grants[7] = RoleGrant(keccak256(\"DEPOSIT\"), GRANTEE_SERVICE_3D0C);\n\
                  grants[8] = RoleGrant(keccak256(\"CERTIFY\"), GRANTEE_SERVICE_3D0C);",
             );
-        let after = build_grants("o", "r", &grant_sources(&after_lib), &two_chains(), &all_granted)
-            .expect("map parses");
+        let after = build_grants(
+            "o",
+            "r",
+            &grant_sources(&after_lib),
+            &two_chains(),
+            &all_granted,
+        )
+        .expect("map parses");
         let g = grantee(&after, "GRANTEE_SERVICE_3D0C").expect("the new EOA is listed");
         assert_eq!(g["address"], "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE");
         assert_eq!(g["kind"], "constant");
@@ -1319,15 +1339,24 @@ mod tests {
             .map(|r| r["role"].as_str().unwrap())
             .collect();
         assert_eq!(roles, ["DEPOSIT", "CERTIFY"], "its roles, not a fixed trio");
-        assert_eq!(status(&after, "GRANTEE_SERVICE_3D0C", "DEPOSIT", "base"), "granted");
+        assert_eq!(
+            status(&after, "GRANTEE_SERVICE_3D0C", "DEPOSIT", "base"),
+            "granted"
+        );
         assert_eq!(after["pinnedCount"], 9);
         // …and revoking one removes it, which is the same property read backwards.
         let revoked = GRANT_LIB.replace(
             r#"grants[4] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_1C66);"#,
             "",
         );
-        let after_revoke =
-            build_grants("o", "r", &grant_sources(&revoked), &two_chains(), &all_granted).unwrap();
+        let after_revoke = build_grants(
+            "o",
+            "r",
+            &grant_sources(&revoked),
+            &two_chains(),
+            &all_granted,
+        )
+        .unwrap();
         assert_eq!(
             status(&after_revoke, "GRANTEE_SERVICE_1C66", "CERTIFY", "base"),
             "<absent>",
@@ -1342,8 +1371,14 @@ mod tests {
 
     #[test]
     fn the_safe_slot_resolves_to_each_chains_own_safe() {
-        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
-            .unwrap();
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB),
+            &two_chains(),
+            &all_granted,
+        )
+        .unwrap();
         let safe = grantee(&v, "tokenOwnerSafe").expect("the Safe grantee is listed");
         assert_eq!(safe["kind"], "safe");
         assert!(
@@ -1379,8 +1414,14 @@ mod tests {
     /// page on it at the top level would have to file the Safe twice or lie.
     #[test]
     fn admin_and_action_split_by_role_name_and_the_safe_is_in_both() {
-        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
-            .unwrap();
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB),
+            &two_chains(),
+            &all_granted,
+        )
+        .unwrap();
         let safe = grantee(&v, "tokenOwnerSafe").unwrap();
         let flags: Vec<(&str, bool)> = safe["roles"]
             .as_array()
@@ -1421,9 +1462,18 @@ mod tests {
                 GrantOnChain::NotGranted
             }
         };
-        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &base_only)
-            .unwrap();
-        assert_eq!(status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"), "granted");
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB),
+            &two_chains(),
+            &base_only,
+        )
+        .unwrap();
+        assert_eq!(
+            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"),
+            "granted"
+        );
         assert_eq!(
             status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "ethereum"),
             "missing"
@@ -1466,14 +1516,19 @@ mod tests {
         // Same again for a chain with no authoriser pin to ask.
         let mut unpinned = two_chains();
         unpinned[1].authoriser = None;
-        let v2 = build_grants("o", "r", &grant_sources(GRANT_LIB), &unpinned, &all_granted).unwrap();
+        let v2 =
+            build_grants("o", "r", &grant_sources(GRANT_LIB), &unpinned, &all_granted).unwrap();
         assert_eq!(
             status(&v2, "GRANTEE_SERVICE_1C66", "CERTIFY", "ethereum"),
             "unknown"
         );
         let failing = |_n: &str, _a: &str, _r: &str, _g: &str| GrantOnChain::Unknown;
-        let v3 = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &failing).unwrap();
-        assert_eq!(status(&v3, "GRANTEE_SERVICE_1C66", "CERTIFY", "base"), "unknown");
+        let v3 =
+            build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &failing).unwrap();
+        assert_eq!(
+            status(&v3, "GRANTEE_SERVICE_1C66", "CERTIFY", "base"),
+            "unknown"
+        );
         assert_eq!(v3["chains"][0]["state"], "unknown");
     }
 
@@ -1481,7 +1536,11 @@ mod tests {
     fn chains_are_read_from_the_clone_pins_not_a_fixed_pair() {
         let pins = parse_chain_pins(V4_CHAINS, SAFE_LIB);
         let nets: Vec<&str> = pins.iter().map(|p| p.network.as_str()).collect();
-        assert_eq!(nets, ["base", "ethereum"], "no codehash pin leaks in as a chain");
+        assert_eq!(
+            nets,
+            ["base", "ethereum"],
+            "no codehash pin leaks in as a chain"
+        );
         assert_eq!(
             pins[0].authoriser.as_deref(),
             Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD")
@@ -1525,8 +1584,14 @@ mod tests {
     #[test]
     fn an_unparsable_map_yields_no_document() {
         assert!(
-            build_grants("o", "r", &grant_sources("library L {}"), &two_chains(), &all_granted)
-                .is_none(),
+            build_grants(
+                "o",
+                "r",
+                &grant_sources("library L {}"),
+                &two_chains(),
+                &all_granted
+            )
+            .is_none(),
             "an empty table would read as 'no key holds these roles'"
         );
     }
@@ -1579,16 +1644,28 @@ mod tests {
     /// can be called out rather than reading as a smaller map.
     #[test]
     fn a_short_parse_is_visible_against_the_declared_length() {
-        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &all_granted)
-            .unwrap();
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB),
+            &two_chains(),
+            &all_granted,
+        )
+        .unwrap();
         assert_eq!(v["pinnedCount"], 7);
         assert_eq!(v["declaredCount"], 7);
         let dropped = GRANT_LIB.replace(
             r#"grants[3] = RoleGrant(keccak256("WITHDRAW"), GRANTEE_SERVICE_1C66);"#,
             "grants[3] = someOtherThing();",
         );
-        let v2 =
-            build_grants("o", "r", &grant_sources(&dropped), &two_chains(), &all_granted).unwrap();
+        let v2 = build_grants(
+            "o",
+            "r",
+            &grant_sources(&dropped),
+            &two_chains(),
+            &all_granted,
+        )
+        .unwrap();
         assert_eq!(v2["pinnedCount"], 6);
         assert_eq!(v2["declaredCount"], 7, "the shortfall is reportable");
     }

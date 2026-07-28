@@ -1806,14 +1806,8 @@ fn main() {
                     None => owners::GrantOnChain::Unknown,
                 }
             };
-            owners::build_grants(
-                deploy_org,
-                deploy_repo,
-                &deploy_sources,
-                &chains,
-                &check,
-            )
-            .unwrap_or(serde_json::Value::Null)
+            owners::build_grants(deploy_org, deploy_repo, &deploy_sources, &chains, &check)
+                .unwrap_or(serde_json::Value::Null)
         };
 
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each

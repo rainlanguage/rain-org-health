@@ -309,8 +309,11 @@ mod tests {
 
     #[test]
     fn has_role_calldata_encodes_role_then_account() {
-        let cd =
-            has_role_calldata(role_id("DEPOSIT"), "0x1c66D6708914C40239D54919320b4C48cAE3D1A9").unwrap();
+        let cd = has_role_calldata(
+            role_id("DEPOSIT"),
+            "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+        )
+        .unwrap();
         // selector | role word | account word (left-padded, lowercased hex)
         assert_eq!(
             cd,
@@ -320,7 +323,10 @@ mod tests {
         );
         // A grantee that is not an address yields no call at all — encoding it as
         // address(0) would come back `false` and read as a revoked grant.
-        assert_eq!(has_role_calldata(role_id("DEPOSIT"), "tokenOwnerSafe"), None);
+        assert_eq!(
+            has_role_calldata(role_id("DEPOSIT"), "tokenOwnerSafe"),
+            None
+        );
         assert_eq!(has_role_calldata(role_id("DEPOSIT"), "0xdeadbeef"), None);
     }
 
