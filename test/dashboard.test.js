@@ -2760,6 +2760,19 @@ Deno.test("graph summary: pre-split data falls back to the old total", () => {
 // arithmetic rather than a reimplementation of it in the test.
 const startupMinReal = bind("metrics.html", "startupMin", [], []);
 const medianReal = bind("metrics.html", "median", [], []);
+// The boot/ttl split (rainlanguage/issue-pr-cron#84) and the null-safe
+// startupPct reader that lets a PARTIAL record — one appended mid-run, before
+// toolCalls exist — through the renderers without a `.toFixed` on undefined.
+const startupPctOfReal = bind("metrics.html", "startupPctOf", [], []);
+const bootMinReal = bind("metrics.html", "bootMin", [], []);
+const ttlMinReal = bind("metrics.html", "ttlMin", [], []);
+const collapseRunsReal = bind("metrics.html", "collapseRuns", [], []);
+// The whole runs.jsonl → charted-runs pipeline: parse, filter, collapse, sort.
+// Bound with the real collapseRuns so the filter and the collapse are exercised
+// together, which is how they run.
+const pmRecordsReal = bind("metrics.html", "pmRecords", ["collapseRuns"], [
+  collapseRunsReal,
+]);
 
 function pmBind(name, boxId, pmMode, extraParams = [], extraValues = []) {
   const box = makeEl("div");
@@ -2768,8 +2781,28 @@ function pmBind(name, boxId, pmMode, extraParams = [], extraValues = []) {
   const fn = bind(
     "metrics.html",
     name,
-    ["$", "document", "pmMode", "startupMin", "median", ...extraParams],
-    [$, document, pmMode, startupMinReal, medianReal, ...extraValues],
+    [
+      "$",
+      "document",
+      "pmMode",
+      "startupMin",
+      "median",
+      "startupPctOf",
+      "bootMin",
+      "ttlMin",
+      ...extraParams,
+    ],
+    [
+      $,
+      document,
+      pmMode,
+      startupMinReal,
+      medianReal,
+      startupPctOfReal,
+      bootMinReal,
+      ttlMinReal,
+      ...extraValues,
+    ],
   );
   return [fn, box];
 }
@@ -2919,6 +2952,9 @@ function pmDeps() {
     plotMin: bind("metrics.html", "plotMin", [], []),
     totalMin: bind("metrics.html", "totalMin", [], []),
     niceStep: bind("metrics.html", "niceStep", [], []),
+    startupPctOf: startupPctOfReal,
+    bootMin: bootMinReal,
+    ttlMin: ttlMinReal,
   };
 }
 
@@ -2929,8 +2965,24 @@ function pmTipBox(run, abs) {
   const fn = bind(
     "metrics.html",
     "pmTip",
-    ["document", "fmtRunTime", "startupMin", "plotMin"],
-    [document, d.fmtRunTime, d.startupMin, d.plotMin],
+    [
+      "document",
+      "fmtRunTime",
+      "startupMin",
+      "plotMin",
+      "startupPctOf",
+      "bootMin",
+      "ttlMin",
+    ],
+    [
+      document,
+      d.fmtRunTime,
+      d.startupMin,
+      d.plotMin,
+      d.startupPctOf,
+      d.bootMin,
+      d.ttlMin,
+    ],
   );
   const box = makeEl("div");
   box.replaceChildren(fn(run, abs));
@@ -2946,8 +2998,24 @@ function pmChart(runs, pmMode = "pct") {
   const pmTip = bind(
     "metrics.html",
     "pmTip",
-    ["document", "fmtRunTime", "startupMin", "plotMin"],
-    [document, d.fmtRunTime, d.startupMin, d.plotMin],
+    [
+      "document",
+      "fmtRunTime",
+      "startupMin",
+      "plotMin",
+      "startupPctOf",
+      "bootMin",
+      "ttlMin",
+    ],
+    [
+      document,
+      d.fmtRunTime,
+      d.startupMin,
+      d.plotMin,
+      d.startupPctOf,
+      d.bootMin,
+      d.ttlMin,
+    ],
   );
   bind(
     "metrics.html",
@@ -2964,6 +3032,9 @@ function pmChart(runs, pmMode = "pct") {
       "plotMin",
       "totalMin",
       "niceStep",
+      "startupPctOf",
+      "bootMin",
+      "ttlMin",
     ],
     [
       $,
@@ -2977,6 +3048,9 @@ function pmChart(runs, pmMode = "pct") {
       d.plotMin,
       d.totalMin,
       d.niceStep,
+      d.startupPctOf,
+      d.bootMin,
+      d.ttlMin,
     ],
   )(runs);
   return wrap;
@@ -3170,6 +3244,346 @@ Deno.test("metrics chart: two series carry a legend, one series does not", () =>
     collect(pmChart([RUN_LONG, RUN_LONG2], "pct"), "pm-legend").length === 0,
     "a single series needs no legend box",
   );
+});
+
+// --- boot / ttl split (rainlanguage/issue-pr-cron#84) ------------------------
+// `startupMs` fused two costs with nothing in common: boot (nix resolving and
+// exec'ing the flake output, the MCP handshake, the prompt load — not
+// model-driven) and ttl (orientation before the first productive act — entirely
+// model- and tool-surface-driven). They regress for unrelated reasons, so a
+// single number that either can wreck is one you cannot act on.
+//
+// The emitter also appends PARTIAL records mid-run — `stage:"boot"` at the first
+// tool call, `stage:"ttl"` at the first productive act — so a run that is killed
+// or times out still contributes. Those partials carry no toolCalls, no
+// startupPct, no durationMs and no outcome, and the "ttl" one carries no
+// startupMs either. Every fixture below is shaped exactly like the emitter's
+// output for that reason; a tidied-up fixture would test a record that never
+// exists.
+
+// Real figures, measured off the live traces in the issue: boot 1.125 s,
+// ttl 297.0 s at tool call 17 (20260728T053610Z).
+const RUN_SPLIT = {
+  runId: "20260723T010001Z",
+  role: "producer",
+  stage: "final",
+  startupPct: 61.5,
+  startupMs: 166600,
+  bootMs: 1125,
+  ttlMs: 297016,
+  durationMs: 4200000,
+  toolCalls: 431,
+  startupToolCalls: 200,
+  numTurns: 128,
+  outcome: "ok",
+};
+const RUN_SPLIT2 = {
+  runId: "20260723T050001Z",
+  role: "producer",
+  stage: "final",
+  startupPct: 40.0,
+  startupMs: 120000,
+  bootMs: 801,
+  ttlMs: 180000,
+  durationMs: 3000000,
+  toolCalls: 300,
+  startupToolCalls: 120,
+  numTurns: 90,
+  outcome: "ok",
+};
+// What a KILLED run leaves behind: the emitter got as far as the first tool call
+// and the first productive act, and never reached the end-of-run record.
+const PARTIAL_BOOT = {
+  trace: "/runs/20260724T010001Z.jsonl",
+  stage: "boot",
+  bootMs: 774,
+  runId: "20260724T010001Z",
+  role: "producer",
+  model: "claude-opus-4-8",
+};
+const PARTIAL_TTL = {
+  trace: "/runs/20260724T010001Z.jsonl",
+  stage: "ttl",
+  bootMs: 774,
+  ttlMs: 298141,
+  startupToolCalls: 16,
+  firstMutationIndex: 16,
+  runId: "20260724T010001Z",
+  role: "producer",
+  model: "claude-opus-4-8",
+};
+
+Deno.test("metrics collapse: the complete record wins over its own partials", () => {
+  // All three lines share a runId. Plotting them as three runs would triple the
+  // point and drag the median toward the partials' half-known values.
+  const final = { ...RUN_SPLIT, runId: "20260724T010001Z" };
+  const out = collapseRunsReal([PARTIAL_BOOT, PARTIAL_TTL, final]);
+  assert(
+    out.length === 1,
+    "one run must collapse to one record, got " + out.length,
+  );
+  // Assert on a value ONLY the final record carries — matching on runId alone
+  // would pass even if a partial had won.
+  assert(
+    out[0].toolCalls === 431,
+    "the final record must win, got stage=" + out[0].stage,
+  );
+});
+
+Deno.test("metrics collapse: with no final record the ttl partial survives", () => {
+  // The killed-run case. Something must reach the chart, and it must be the
+  // most complete thing the run managed to record.
+  const out = collapseRunsReal([PARTIAL_BOOT, PARTIAL_TTL]);
+  assert(out.length === 1, "expected one collapsed run, got " + out.length);
+  assert(
+    out[0].stage === "ttl" && out[0].ttlMs === 298141,
+    "ttl beats boot: got " + JSON.stringify(out[0]),
+  );
+});
+
+Deno.test("metrics collapse: a legacy record with no stage outranks a partial", () => {
+  // Pre-#84 records carry no `stage` at all. They were written at run end, so
+  // absent must rank as final — reading it as "unknown, therefore lowest" would
+  // let a partial overwrite a complete historical record.
+  const legacy = { ...RUN_LONG, runId: "20260724T010001Z", role: "producer" };
+  const out = collapseRunsReal([legacy, PARTIAL_TTL]);
+  assert(out.length === 1, "expected one collapsed run, got " + out.length);
+  assert(
+    out[0].toolCalls === 529,
+    "the legacy end-of-run record must win: " + JSON.stringify(out[0]),
+  );
+});
+
+Deno.test("metrics collapse: distinct runs are never merged", () => {
+  const out = collapseRunsReal([RUN_SPLIT, RUN_SPLIT2]);
+  assert(out.length === 2, "two runs must stay two records, got " + out.length);
+});
+
+// The runs.jsonl → chart pipeline. These are the tests that pin the KILLED-RUN
+// path end to end: the emitter writes partials so a run that dies still leaves
+// its timings, and the dashboard has to actually admit them.
+const jsonl = (...recs) => recs.map((r) => JSON.stringify(r)).join("\n") + "\n";
+
+Deno.test("metrics records: a killed run's partials reach the chart", () => {
+  // The old filter required startupPct, which no partial has — so a run that
+  // died contributed nothing at all, and the dashboard reported only successes.
+  const out = pmRecordsReal(jsonl(RUN_SPLIT, PARTIAL_BOOT, PARTIAL_TTL));
+  assert(
+    out.length === 2,
+    "expected the finished run AND the killed one, got " + out.length,
+  );
+  const killed = out.find((r) => r.runId === "20260724T010001Z");
+  assert(
+    killed,
+    "the killed run must be charted: " +
+      JSON.stringify(out.map((r) => r.runId)),
+  );
+  assert(
+    killed.ttlMs === 298141 && killed.bootMs === 774,
+    "it must carry the timings it recorded: " + JSON.stringify(killed),
+  );
+});
+
+Deno.test("metrics records: one run never plots as three points", () => {
+  // All three lines of one run share a runId; without the collapse the run
+  // would be plotted three times and drag the median toward its partials.
+  const final = { ...RUN_SPLIT, runId: "20260724T010001Z" };
+  const out = pmRecordsReal(jsonl(PARTIAL_BOOT, PARTIAL_TTL, final));
+  assert(out.length === 1, "three lines are one run, got " + out.length);
+  assert(
+    out[0].toolCalls === 431,
+    "the final record must win: " + JSON.stringify(out[0]),
+  );
+});
+
+Deno.test("metrics records: the vetter's runs are not charted here", () => {
+  // This panel is the PRODUCER's. A vetter partial carries bootMs too, so the
+  // relaxed filter must still discriminate on role.
+  const out = pmRecordsReal(
+    jsonl({ ...PARTIAL_TTL, role: "vetter" }, RUN_SPLIT),
+  );
+  assert(
+    out.length === 1 && out[0].role === "producer",
+    "vetter runs must not leak in: " + JSON.stringify(out),
+  );
+});
+
+Deno.test("metrics records: a half-written trailing line is skipped, not fatal", () => {
+  // runs.jsonl is appended to by a live cron; the last line can be torn.
+  const out = pmRecordsReal(jsonl(RUN_SPLIT) + '{"role":"producer","start');
+  assert(
+    out.length === 1,
+    "the intact records must still load, got " + out.length,
+  );
+});
+
+Deno.test("metrics records: runs come back oldest first", () => {
+  const out = pmRecordsReal(jsonl(RUN_SPLIT2, RUN_SPLIT));
+  assert(
+    out[0].runId === "20260723T010001Z" && out[1].runId === "20260723T050001Z",
+    "expected chronological order: " + JSON.stringify(out.map((r) => r.runId)),
+  );
+});
+
+Deno.test("metrics chart: absolute mode plots boot and ttl as their own series", () => {
+  const wrap = pmChart([RUN_SPLIT, RUN_SPLIT2], "abs");
+  assert(collect(wrap, "pm-boot").length > 0, "expected a boot series");
+  assert(collect(wrap, "pm-ttl").length > 0, "expected a ttl series");
+  assert(collect(wrap, "pm-total").length > 0, "total must still draw");
+  assert(collect(wrap, "pm-line").length > 0, "startup must still draw");
+});
+
+Deno.test("metrics chart: proportion mode omits boot and ttl", () => {
+  // As a share of the run's tool calls neither half has a meaning — they are
+  // wall-clock spans, and there is no call count to divide them by.
+  const wrap = pmChart([RUN_SPLIT, RUN_SPLIT2], "pct");
+  assert(
+    collect(wrap, "pm-boot").length === 0,
+    "boot must not draw as a proportion",
+  );
+  assert(
+    collect(wrap, "pm-ttl").length === 0,
+    "ttl must not draw as a proportion",
+  );
+});
+
+Deno.test("metrics chart: a pre-split record draws no boot or ttl series", () => {
+  // History was recorded under the fused metric. Inventing a zero boot for it
+  // would draw a flat line along the axis that no run ever measured.
+  const wrap = pmChart([RUN_LONG, RUN_LONG2], "abs");
+  assert(
+    collect(wrap, "pm-boot").length === 0,
+    "a legacy record has no boot to plot",
+  );
+  assert(
+    collect(wrap, "pm-ttl").length === 0,
+    "a legacy record has no ttl to plot",
+  );
+  assert(collect(wrap, "pm-line").length > 0, "its startup series still draws");
+});
+
+Deno.test("metrics chart: a ttl longer than startupMs still fits under the y ceiling", () => {
+  // boot + ttl is NOT a partition of startupMs and can EXCEED it: the legacy
+  // metric starts its clock at the first tool RESULT, so it omits the first
+  // call's own latency (~137 s on the MCP vetter surface) while ttl includes it.
+  // Scaling the axis over startup + total alone therefore draws the ttl line off
+  // the top of the plot, silently. RUN_SPLIT: ttl 297016ms = 4.95min vs
+  // startupMs 166600ms = 2.78min. Both durations are shrunk to 3.3min here so
+  // that ttl is genuinely the largest value on the chart — with the real 70min
+  // total the axis would clear ttl by accident and the test would prove nothing.
+  const wrap = pmChart([
+    { ...RUN_SPLIT, durationMs: 200000 },
+    { ...RUN_SPLIT2, durationMs: 200000 },
+  ], "abs");
+  const ticks = tags(wrap, "text")
+    .filter((t) => t.getAttribute("text-anchor") === "end")
+    .map((t) => parseFloat(t.textContent))
+    .filter((v) => !isNaN(v));
+  const top = Math.max(...ticks);
+  assert(
+    top >= 4.95,
+    "y axis must reach the largest ttl (4.95m), got top tick " + top,
+  );
+});
+
+Deno.test("metrics legend: names boot and ttl alongside startup and total", () => {
+  const text = textOf(
+    collect(pmChart([RUN_SPLIT, RUN_SPLIT2], "abs"), "pm-legend")[0],
+  );
+  for (const label of ["startup", "boot", "ttl", "total run"]) {
+    assert(text.includes(label), `legend must name "${label}": ` + text);
+  }
+});
+
+Deno.test("metrics tip: carries boot and ttl as absolute values", () => {
+  // boot is ~1s against a 35-minute axis — a hairline the chart can show MOVING
+  // but cannot show the size of. The number has to be readable somewhere.
+  const t = textOf(pmTipBox(RUN_SPLIT, true));
+  assert(t.includes("1.1s"), "boot 1125ms should read as 1.1s: " + t);
+  assert(t.includes("5.0m"), "ttl 297016ms should read as 5.0m: " + t);
+});
+
+Deno.test("metrics tip: sub-minute values are seconds, not a rounded 0.0m", () => {
+  // The whole point of putting the figure in the tip is that it is legible.
+  const t = textOf(pmTipBox(RUN_SPLIT, true));
+  assert(!t.includes("boot 0.0m"), "boot must not collapse to 0.0m: " + t);
+});
+
+Deno.test("metrics tip: proportion mode omits the split", () => {
+  const t = textOf(pmTipBox(RUN_SPLIT, false));
+  assert(!t.includes("boot"), "boot has no proportional reading: " + t);
+});
+
+Deno.test("metrics tip: a killed run's partial renders its timings, not undefined", () => {
+  // THE case the issue is about: "the run you most want timings for is the one
+  // that died, and it is exactly the one that leaves none". The ttl partial has
+  // no startupPct, no startupMs, no toolCalls, no durationMs and no outcome —
+  // every one of which used to be read unconditionally.
+  const t = textOf(pmTipBox(PARTIAL_TTL, true));
+  assert(!t.includes("undefined"), "no undefined may reach the tip: " + t);
+  assert(!t.includes("NaN"), "no NaN may reach the tip: " + t);
+  assert(t.includes("5.0m"), "the ttl it did record must show: " + t);
+  assert(t.includes("0.8s"), "the boot it did record must show: " + t);
+});
+
+Deno.test("metrics tip: an unfinished run does not report itself as ok", () => {
+  // A partial has no `outcome`, and the old `r.outcome || "ok"` would print a
+  // success for a run that was killed.
+  const t = textOf(pmTipBox(PARTIAL_TTL, true));
+  assert(t.includes("unfinished"), "a partial must read as unfinished: " + t);
+  assert(!t.includes("ok"), "it must not claim success: " + t);
+});
+
+Deno.test("metrics tip: a boot-only partial renders with only boot known", () => {
+  // Killed before the first productive act — boot is all that exists.
+  const t = textOf(pmTipBox(PARTIAL_BOOT, true));
+  assert(!t.includes("undefined"), "no undefined may reach the tip: " + t);
+  assert(!t.includes("NaN"), "no NaN may reach the tip: " + t);
+  assert(t.includes("0.8s"), "boot 774ms should read as 0.8s: " + t);
+});
+
+Deno.test("metrics chart: a killed run's partial reaches the tooltip on hover", () => {
+  // The integration half — the guards in pmTip are worth nothing if the chart
+  // drops the partial before it gets there.
+  const wrap = pmChart([RUN_SPLIT, PARTIAL_TTL], "abs");
+  const svg = pmSvg(wrap);
+  const rect = { left: 0, top: 0, width: 720, height: 210 };
+  svg._rect = rect;
+  wrap._rect = rect;
+  svg.fire("mousemove", { clientX: 719, clientY: 10 });
+  const t = textOf(collect(wrap, "pm-tip")[0]);
+  assert(t.includes("unfinished"), "the partial must be hoverable: " + t);
+  assert(!t.includes("undefined"), "no undefined on hover: " + t);
+});
+
+Deno.test("metrics controls: boot-only partials still offer absolute mode", () => {
+  // A window in which every run was killed has no startupMs anywhere — and
+  // those are precisely the runs whose boot and ttl the partials preserved.
+  // Gating the toggle on startupMs alone locks the only view that shows them.
+  const [render, box] = pmBind("renderPmControls", "pmcontrols", "abs", [
+    "pmRuns",
+    "renderPmTiles",
+    "renderPmChart",
+  ], [[], () => {}, () => {}]);
+  render([PARTIAL_BOOT, PARTIAL_TTL]);
+  assert(
+    collect(box, "pm-toggle").length === 1,
+    "boot/ttl are absolute data and must keep absolute mode available",
+  );
+});
+
+Deno.test("metrics tiles: a partial contributes no startup figure", () => {
+  // It has none — the run never reached a first productive act's result. A zero
+  // would drag the median down and read as an improvement.
+  const [render, box] = pmBind("renderPmTiles", "pmtiles", "pct");
+  render([{ startupPct: 10, runId: "a" }, PARTIAL_TTL, {
+    startupPct: 20,
+    runId: "b",
+  }]);
+  const t = textOf(box);
+  assert(t.includes("15.0%"), "median over [10,20] is 15: " + t);
+  assert(!t.includes("undefined"), "no undefined in the tiles: " + t);
+  assert(t.includes("3"), "runs recorded still counts every run: " + t);
 });
 
 // An empty token set must EXPLAIN itself. The registry section silently
