@@ -3581,6 +3581,25 @@ Deno.test("metrics tip: an unfinished run does not report itself as ok", () => {
   );
 });
 
+Deno.test("metrics tip: a record with counts but no turn count leaks no undefined", () => {
+  // runs.jsonl is an artifact this page does not own, so the shape it does not
+  // anticipate is the whole risk — every guard here exists because a field went
+  // missing. The three fields share one line and so must share one presence
+  // check: guarding two of them and interpolating the third one line below is
+  // the same `undefined` leak, just narrower.
+  const t = textOf(pmTipBox({
+    runId: "20260724T010001Z",
+    role: "producer",
+    startupPct: 40,
+    startupMs: 120000,
+    startupToolCalls: 12,
+    toolCalls: 30,
+    outcome: "ok",
+  }, true));
+  assert(!t.includes("undefined"), "no undefined may reach the tip: " + t);
+  assert(!t.includes("NaN"), "no NaN may reach the tip: " + t);
+});
+
 Deno.test("metrics caption: an unfinished latest run is not captioned ok", () => {
   // The caption derives the outcome word from the SAME helper the tooltip uses.
   // Before it was extracted the rule existed twice verbatim, so the chart could
