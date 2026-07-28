@@ -2336,6 +2336,31 @@ Deno.test("deployments: a grant not yet live on a chain reads as a rollout, neve
   );
 });
 
+// With no chain resolved there is nothing to be live on. A green "0/0 live"
+// would read as verified — the same unread-looks-confirmed reading the rest of
+// this section refuses.
+Deno.test("deployments: a grantee with no chain resolved reads as unchecked, not as fully live", () => {
+  const d = grantsData();
+  d.deploymentGrants.chains = [];
+  for (const gr of d.deploymentGrants.grantees) {
+    for (const r of gr.roles) r.chains = [];
+  }
+  const box = deploymentsBox(d);
+  const tallies = collect(box, "own-chip").map((c) => c.textContent).filter(
+    (t) => t === "not checked" || /^\d+\/\d+ live$/.test(t),
+  );
+  assert(
+    tallies.length > 0 && tallies.every((t) => t === "not checked"),
+    "every tally reads unchecked, got " + tallies.join(","),
+  );
+  // …and with no chain there is no per-chain cell to claim one either.
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  assert(
+    !chips.some((t) => /^(base|ethereum) /.test(t || "")),
+    "no per-chain cell is rendered: " + chips.join(","),
+  );
+});
+
 // A partly-live chain's remainder is two different things. Reporting only the
 // provisioning half prints "0 not provisioned" over a grant that was never read
 // — the conflation this whole section exists to prevent, restated as a count.

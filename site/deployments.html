@@ -822,8 +822,25 @@ function renderDeployments(document, $, data) {
           }
           detail.append(line);
         }
-        const cls = live === total ? "yes" : live === 0 ? "dim" : "roll";
-        row.append(rc, detail, el("span", `own-chip own-chip-${cls}`, `${live}/${total} live`));
+        // With no chains resolved there is nothing to be live ON, and `0/0 live`
+        // in green would read as verified — the same "unread looks confirmed"
+        // reading this section refuses everywhere else.
+        const cls = total === 0
+          ? "dim"
+          : live === total
+          ? "yes"
+          : live === 0
+          ? "dim"
+          : "roll";
+        row.append(
+          rc,
+          detail,
+          el(
+            "span",
+            `own-chip own-chip-${cls}`,
+            total === 0 ? "not checked" : `${live}/${total} live`,
+          ),
+        );
         table.append(row);
       }
       box.append(table);
