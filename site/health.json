@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T12:23:57Z",
+  "generatedAt": "2026-07-29T15:22:19Z",
   "auditGraph": {
     "nodes": [
       {
@@ -65,7 +65,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 12,
+        "openAuditIssues": 11,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -4590,7 +4590,7 @@
       "name": "rain.dia",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 12,
+      "openAuditIssues": 11,
       "lastMutation": null
     },
     {
@@ -5200,7 +5200,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 537,
+      "fullSourceLoc": 540,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5258,7 +5258,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 602,
+      "fullSourceLoc": 605,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -6058,15 +6058,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.0",
-      "latestTagIso": "2026-07-14T06:45:13Z",
+      "latestTag": "sol-v0.2.1",
+      "latestTagIso": "2026-07-29T14:49:28Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 54,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 36,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 26,
+      "commitsSinceAudit": 29,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 23,
       "commentLocRemovedSinceAudit": 7,
