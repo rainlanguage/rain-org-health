@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-29T15:22:19Z",
+  "generatedAt": "2026-07-29T15:31:34Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4352,7 +4352,7 @@
       "name": "cyclo.site",
       "org": "cyclofinance",
       "lastAudit": null,
-      "openAuditIssues": 58,
+      "openAuditIssues": 57,
       "lastMutation": null
     },
     {
