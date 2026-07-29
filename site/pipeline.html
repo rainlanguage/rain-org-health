@@ -526,9 +526,10 @@ function renderFsm(hq, history) {
   //       and only the human merges a PR, so the human is the mover that unblocks it;
   //       the dependency PR's own work is tracked under the dependency's own token.
   //   human:reject      → PRODUCER — the FSM's SOLE exit is "producer reworks per note →
-  //       reworked-reject clears the labels → un-vetted". The human already acted (label +
-  //       rework note); the next mover is the producer. (The parked "final reject, no note" case is the
-  //       tool-side split human:reject-rework vs human:reject-final — see follow-up.)
+  //       reworked-reject clears the labels → un-vetted". The human already acted (label
+  //       + rework note); the next mover is the producer. (The parked "final reject, no
+  //       note" case is the tool-side split human:reject-rework vs human:reject-final —
+  //       see follow-up.)
   // `hist` = this state's key in the human-queue-history rollup `counts` (which mirrors
   // the snapshot's `counts`), i.e. where its inventory time-series is read from.
   //
