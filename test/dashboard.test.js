@@ -1420,10 +1420,17 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     `headings are the three actors in order: ${JSON.stringify(groups.map((g) => g.title))}`,
   );
   const [producer, vetter, human] = groups;
-  // Vetter owns the two vet-lifecycle states.
+  // Vetter owns the ONE vet-lifecycle state. `awaiting-re-vet` is retired
+  // (issue-pr-cron#128) and is in the fixture above as a DECOY — asserting only that
+  // `un-vetted` is present would pass with the retired box still drawn beside it, so this
+  // asserts both directions and a reintroduction fails here.
   assert(
-    ["un-vetted", "awaiting-re-vet"].every((s) => vetter.states.includes(s)),
+    vetter.states.includes("un-vetted"),
     `vetter states: ${JSON.stringify(vetter.states)}`,
+  );
+  assert(
+    !vetter.states.includes("awaiting-re-vet"),
+    `the retired awaiting-re-vet state renders nowhere: ${JSON.stringify(vetter.states)}`,
   );
   // Producer owns the two vetter-verdict rework states + the untouched backlog.
   assert(
@@ -1445,11 +1452,157 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     `human states: ${JSON.stringify(human.states)}`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
-  // 17 = the 15 original states, minus the combined close-candidate issues box, plus the
+  // 16 = the 15 original states, minus the combined close-candidate issues box, plus the
   // two owner-specific states the vetter verdict introduces (issue-pr-cron#73), plus the
-  // FSM leak, promoted from a banner to a human-owned state.
+  // FSM leak, promoted from a banner to a human-owned state, minus `awaiting-re-vet`,
+  // collapsed into `un-vetted` by issue-pr-cron#128.
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 17, `all 17 states filed once: ${total}`);
+  assert(total === 16, `all 16 states filed once: ${total}`);
+});
+
+// issue-pr-cron#128: `awaiting-re-vet` is not a state any more. Vetting is a pure function
+// of the PR at its current head, so a moved head just makes a PR un-vetted — there is one
+// vet-lifecycle state, handled one way. This page hardcodes the state vocabulary, so the
+// retired box would otherwise render at zero, dimmed, FOREVER, describing a machine that no
+// longer exists (rain-org-health#145).
+Deno.test("pipeline FSM: the retired awaiting-re-vet state draws no box, even from a snapshot that still carries it", () => {
+  // A snapshot from a pre-#128 emitter: the retired lane cell AND its counts key, both
+  // non-zero. Nothing here may resurrect the box.
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, unvetted: 2, awaitingReVet: 7 },
+    lanes: {
+      "vet-lifecycle": {
+        "un-vetted": { count: 2, prs: [] },
+        "awaiting-re-vet": { count: 7, prs: [{ repo: "o/a", number: 1, title: "moved head" }] },
+      },
+    },
+  });
+  const boxes = collect(box, "fsm-state");
+  assert(
+    !boxes.some((b) => b.dataset.t === "awaiting-re-vet"),
+    `no box is keyed to the retired state: ${JSON.stringify(boxes.map((b) => b.dataset.t))}`,
+  );
+  const labels = collect(box, "sk").map((s) => s.textContent);
+  assert(
+    !labels.includes("awaiting-re-vet"),
+    `no box is labelled with the retired state: ${JSON.stringify(labels)}`,
+  );
+  // The surviving state renders, and reads its OWN lane cell — the retired cell is ignored
+  // outright rather than summed in. The live snapshot's shape is the tool's to declare and
+  // this page does not own that vocabulary (issue-pr-cron#130), so it renders what the tool
+  // says a state holds and nothing else. HISTORY is the deliberate exception, folded below,
+  // because a retired key's samples are the only surviving record of the old machine.
+  const unvetted = boxes.find((b) => b.dataset.t === "un-vetted");
+  assert(unvetted, "the surviving un-vetted box renders");
+  assert(
+    collect(unvetted, "sc")[0].textContent === "2",
+    `un-vetted reads its own count, not the sum: ${collect(unvetted, "sc")[0].textContent}`,
+  );
+  // Its ACTION describes the collapsed state, not the half that survived the name. "first
+  // vet" would say this box holds only never-judged PRs, which is the deleted machine.
+  assert(
+    collect(unvetted, "sa")[0].textContent === "vet at current head",
+    `the action covers a first vet and a re-vet alike: ${collect(unvetted, "sa")[0].textContent}`,
+  );
+  // The vetter heading's total moves with it: 2, never 9.
+  const vetter = ownerGroups(box).find((g) => g.title.includes("Vetter action"));
+  assert(vetter.title.endsWith("2"), `vetter total is the un-vetted count: ${vetter.title}`);
+});
+
+// rain-org-health#145: deleting the state must not delete its HISTORY. Every rollup line
+// written before the collapse carries `counts.awaitingReVet` alongside `counts.unvetted`,
+// and they counted disjoint sets of PRs — so the quantity `un-vetted` now measures is their
+// SUM at every one of those samples. Reading only the surviving key would draw a cliff at
+// the change that the machine never had: it would misrepresent the past, not merely stop.
+Deno.test("fsm history: retired awaiting-re-vet samples fold into un-vetted, so the series is continuous across the collapse", () => {
+  const now = Date.parse("2026-07-29T16:31:36Z");
+  const at = (d) => now - d * DAY;
+  // Real inventory held flat at 10 across the collapse. Before it, the tool split that 10
+  // across two keys (1 + 9); after it, one key carries all 10. Folded, the series is FLAT.
+  // Unfolded, it steps 1 → 10 — a cliff, and a false +2.4/day bottleneck alarm.
+  const history = [
+    { t: at(4), counts: { unvetted: 1, awaitingReVet: 9 } },
+    { t: at(3), counts: { unvetted: 1, awaitingReVet: 9 } },
+    { t: at(2), counts: { unvetted: 1, awaitingReVet: 9 } },
+    { t: at(1), counts: { unvetted: 10 } },
+    { t: at(0), counts: { unvetted: 10 } },
+  ];
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, unvetted: 10 },
+    lanes: { "vet-lifecycle": { "un-vetted": { count: 10, prs: [] } } },
+  }, history);
+  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "un-vetted");
+  assert(unvetted, "un-vetted box rendered");
+  const line = tags(unvetted, "polyline")[0];
+  assert(line, "the folded series draws a line");
+  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
+  // A flat series normalises to one y for every point. Drop the fold and the first three
+  // sit at the floor while the last two sit at the ceiling.
+  assert(
+    ys.every((y) => y === ys[0]),
+    `the line is continuous, with no cliff at the collapse: ${JSON.stringify(ys)}`,
+  );
+  // And the collapse is not misread as an accumulating constraint.
+  assert(
+    !unvetted.classList.contains("rising"),
+    "folding a flat inventory raises no bottleneck flag",
+  );
+});
+
+// The fold must not INVENT samples: a refresh that carried neither key is still no point,
+// not a zero — the pre-existing contract every other state depends on. The rollup is fetched
+// from a repo this page does not own, so a line with no `counts` at all is skipped, never
+// thrown on.
+Deno.test("fsm history: a refresh carrying neither the surviving nor the retired key contributes no point", () => {
+  const now = Date.parse("2026-07-29T16:31:36Z");
+  const at = (d) => now - d * DAY;
+  // The live rollup's real shape: its first 14 lines predate BOTH keys. Plus two malformed
+  // ones, because the file is untrusted input.
+  const history = [
+    { t: at(4), counts: { ready: 5 } },
+    { t: at(3) },
+    { t: at(2), counts: null },
+    { t: at(1), counts: { ready: 5, unvetted: 4, awaitingReVet: 2 } },
+    { t: at(0), counts: { ready: 5, unvetted: 6 } },
+  ];
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 5, closeCandidateIssues: 0, unvetted: 6 },
+    lanes: { "vet-lifecycle": { "un-vetted": { count: 6, prs: [] } } },
+  }, history);
+  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "un-vetted");
+  const pts = tags(unvetted, "polyline")[0].getAttribute("points").split(" ");
+  assert(pts.length === 2, `only the two carrying refreshes are plotted: ${pts.length}`);
+  // Both plotted points are the SUM, so the older one (4+2=6) matches the newer (6) and the
+  // line is flat — the fold reads the retired key wherever it appears, not just on a key
+  // the newest sample happens to carry.
+  const ys = pts.map((p) => Number(p.split(",")[1]));
+  assert(ys[0] === ys[1], `4+2 == 6, so the two samples sit level: ${JSON.stringify(ys)}`);
+});
+
+// The rollup is an artifact this page does not own, so a count that is not a number is
+// skipped exactly as an absent one is. The fold widens that surface — a junk value under the
+// RETIRED key would otherwise reach the sum and turn the whole point into NaN, which draws a
+// chart with NaN geometry: silence, on the state whose history this change exists to keep.
+Deno.test("fsm history: a junk count is skipped like an absent one and cannot poison the folded sum", () => {
+  const now = Date.parse("2026-07-29T16:31:36Z");
+  const at = (d) => now - d * DAY;
+  const history = [
+    { t: at(2), counts: { awaitingReVet: "many" } }, // only the retired key, and it is junk
+    { t: at(1), counts: { unvetted: 6, awaitingReVet: "many" } },
+    { t: at(0), counts: { unvetted: 6 } },
+  ];
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, unvetted: 6 },
+    lanes: { "vet-lifecycle": { "un-vetted": { count: 6, prs: [] } } },
+  }, history);
+  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "un-vetted");
+  const points = tags(unvetted, "polyline")[0].getAttribute("points");
+  assert(!points.includes("NaN"), `no NaN reaches the chart geometry: ${points}`);
+  const pts = points.split(" ");
+  assert(pts.length === 2, `the junk-only refresh contributes no point: ${points}`);
+  const ys = pts.map((p) => Number(p.split(",")[1]));
+  assert(ys[0] === ys[1], `both samples read 6, so the line is flat: ${JSON.stringify(ys)}`);
 });
 
 // #69: the four historically dual-owner states each resolve to ONE actor.
@@ -2096,7 +2249,7 @@ Deno.test("pipeline FSM: every box's count equals the number of rows it expands 
     if (rows !== n) mismatches.push(`${b.dataset.t}: box ${n}, panel ${rows}`);
     b.click();
   }
-  assert(checked === 17, `the whole machine was walked, got ${checked} boxes`);
+  assert(checked === 16, `the whole machine was walked, got ${checked} boxes`);
   // Guard the guard: a fixture that zeroed everything would satisfy the invariant vacuously.
   assert(nonZero >= 8, `the fixture must exercise non-zero states, got ${nonZero}`);
   assert(

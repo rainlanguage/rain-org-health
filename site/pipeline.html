@@ -344,14 +344,43 @@ function renderFsm(hq, history) {
   // lone +1 blip (whose regression slope stays well under it) so the border never flaps.
   const RISE_EPS = 0.15;
   const SPARK_DAYS = 28; // the sparkline shows ~4 trailing weeks of inventory shape.
-  // A state's inventory series from the rollup: one point per refresh that CARRIED
-  // this state's counts key (a key absent from older snapshots ⇒ no point, not a zero).
+  // RETIRED counts keys, each mapped onto the live key that ABSORBED its inventory.
+  // issue-pr-cron#128 collapsed `awaiting-re-vet` into `un-vetted`: vetting is a pure
+  // function of the PR at its current head, so a moved head (or a verdict stamped under a
+  // superseded vet protocol) simply makes a PR un-vetted again — "judged before" was never
+  // a second state. `counts.awaitingReVet` is no longer emitted.
+  //
+  // Every rollup line written before that collapse still carries the retired key, and those
+  // are real measurements of the machine as it then was (in the live history: 134 samples
+  // carry it, 51 of them non-zero, peaking at 23). Reading only the surviving key would draw
+  // `un-vetted` as though that inventory had never existed — the series would MISREPRESENT
+  // the past, not merely start later. The two were disjoint inboxes (a PR sat in exactly
+  // one), so per-sample ADDITION is precisely the quantity the surviving state now measures,
+  // and a chart spanning the change reads as the one continuous line it now describes.
+  //
+  // The Map is the whole mechanism, and it is keyed by the SURVIVING key: every reader of
+  // history goes through `seriesFor`, so a future collapse is one entry here rather than a
+  // special case sprinkled through the render. It folds HISTORY only — the live snapshot's
+  // shape is the tool's to declare, and this page does not own that vocabulary
+  // (issue-pr-cron#130); the rollup is different because those samples are the only surviving
+  // record of a machine that no longer exists.
+  const HIST_FOLD = new Map([["unvetted", ["awaitingReVet"]]]);
+  // A state's inventory series from the rollup: one point per refresh that CARRIED this
+  // state's counts key, or any key folded into it (a snapshot carrying NONE of them ⇒ no
+  // point, not a zero).
   const seriesFor = (histKey) => {
     if (!histKey) return [];
+    const keys = [histKey, ...(HIST_FOLD.get(histKey) || [])];
     const out = [];
     for (const p of hist) {
-      const v = p && p.counts ? p.counts[histKey] : undefined;
-      if (v != null && Number.isFinite(Number(v))) out.push({ t: Number(p.t), v: Number(v) });
+      const counts = p && p.counts;
+      if (!counts) continue;
+      let sum = 0, carried = false;
+      for (const k of keys) {
+        const v = counts[k];
+        if (v != null && Number.isFinite(Number(v))) { sum += Number(v); carried = true; }
+      }
+      if (carried) out.push({ t: Number(p.t), v: sum });
     }
     out.sort((a, b) => a.t - b.t);
     return out;
@@ -497,8 +526,8 @@ function renderFsm(hq, history) {
   //       and only the human merges a PR, so the human is the mover that unblocks it;
   //       the dependency PR's own work is tracked under the dependency's own token.
   //   human:reject      → PRODUCER — the FSM's SOLE exit is "producer reworks per note →
-  //       reworked-reject → re-vet". The human already acted (label + rework note); the
-  //       next mover is the producer. (The parked "final reject, no note" case is the
+  //       reworked-reject clears the labels → un-vetted". The human already acted (label +
+  //       rework note); the next mover is the producer. (The parked "final reject, no note" case is the
   //       tool-side split human:reject-rework vs human:reject-final — see follow-up.)
   // `hist` = this state's key in the human-queue-history rollup `counts` (which mirrors
   // the snapshot's `counts`), i.e. where its inventory time-series is read from.
@@ -524,9 +553,13 @@ function renderFsm(hq, history) {
     // (past two inside the 7d window) the trend border; none at all → no spark, never a
     // broken box.
     { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
-    // Vetter inbox — the vetter records the next verdict.
-    { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "first vet", kind: "flow" },
-    { owner: "vetter", state: "awaiting-re-vet", lane: "vet-lifecycle", hist: "awaitingReVet", act: "head moved · re-vet", kind: "flow" },
+    // Vetter inbox — the vetter records the next verdict. ONE vet-lifecycle state, not two:
+    // issue-pr-cron#128 collapsed `awaiting-re-vet` into this one, because vetting is a pure
+    // function of the PR at its CURRENT head — a PR whose head moved, or whose verdict was
+    // stamped under a superseded vet protocol, is simply un-vetted, handled the one way. So
+    // the act is "vet at current head", which covers a first vet and a re-vet alike. The
+    // retired state's inventory history folds into this one's series via HIST_FOLD above.
+    { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "vet at current head", kind: "flow" },
     // Close-candidate ISSUES awaiting a vetter verdict (issue-pr-cron#73). Hand-triage of
     // the queue found ~1 in 3 producer flags wrong, so a flag is now JUDGED before it
     // reaches a human — this is that inbox. Not a lane state; count from `counts`, items from
