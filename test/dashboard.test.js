@@ -1452,12 +1452,18 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     `human states: ${JSON.stringify(human.states)}`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
-  // 16 = the 15 original states, minus the combined close-candidate issues box, plus the
+  // 15 = the 15 original states, minus the combined close-candidate issues box, plus the
   // two owner-specific states the vetter verdict introduces (issue-pr-cron#73), plus the
   // FSM leak, promoted from a banner to a human-owned state, minus `awaiting-re-vet`,
-  // collapsed into `un-vetted` by issue-pr-cron#128.
+  // collapsed into `un-vetted` by issue-pr-cron#128, minus `human:reject`, consolidated
+  // into `ai:reject` by issue-pr-cron#133/#138.
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 16, `all 16 states filed once: ${total}`);
+  assert(total === 15, `all 15 states filed once: ${total}`);
+  // Both directions, same as awaiting-re-vet: a reintroduction fails here.
+  assert(
+    groups.every((g) => !g.states.includes("human:reject")),
+    `the retired human:reject state renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
+  );
 });
 
 // issue-pr-cron#128: `awaiting-re-vet` is not a state any more. Vetting is a pure function
@@ -1623,10 +1629,12 @@ Deno.test("pipeline FSM: ambiguous states resolve to a single owner", () => {
     const g = groups.find((g) => g.states.includes(state));
     return g ? g.title : null;
   };
-  // human:reject → producer (the FSM's sole exit is the producer reworking per note).
+  // human:reject is RETIRED (issue-pr-cron#133/#138: one reject state, ai:reject,
+  // whoever ruled). A lanes payload still carrying it — an old snapshot — renders no
+  // state row in any group; its history folds into reject via HIST_FOLD.
   assert(
-    (owner("human:reject") || "").includes("Producer action"),
-    `human:reject is producer-owned: ${owner("human:reject")}`,
+    owner("human:reject") === null,
+    `retired human:reject renders in no group: ${owner("human:reject")}`,
   );
   // The three blocked states → human (the actor that actually unblocks each).
   for (const s of ["ai:blocked-deploy", "ai:blocked-infra", "ai:blocked-on"]) {
@@ -2230,6 +2238,8 @@ Deno.test("pipeline FSM: every box's count equals the number of rows it expands 
         // render a zero box that expands to zero rows, which is the same invariant at n = 0.
       },
       "producer-blocked": { "ai:blocked-deploy": laneCell("deploy", 3) },
+      // Retired state in the data (old snapshot): must render NO box and NO rows, so it
+      // cannot create a count/rows mismatch (issue-pr-cron#133/#138).
       "human-decisions": { "human:reject": laneCell("hreject", 4) },
     },
     leaks: fcItems("leak", 3),
@@ -2249,7 +2259,7 @@ Deno.test("pipeline FSM: every box's count equals the number of rows it expands 
     if (rows !== n) mismatches.push(`${b.dataset.t}: box ${n}, panel ${rows}`);
     b.click();
   }
-  assert(checked === 16, `the whole machine was walked, got ${checked} boxes`);
+  assert(checked === 15, `the whole machine was walked, got ${checked} boxes`);
   // Guard the guard: a fixture that zeroed everything would satisfy the invariant vacuously.
   assert(nonZero >= 8, `the fixture must exercise non-zero states, got ${nonZero}`);
   assert(
