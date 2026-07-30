@@ -1556,6 +1556,41 @@ Deno.test("fsm history: retired awaiting-re-vet samples fold into un-vetted, so 
   );
 });
 
+// Same shape for the second retirement (issue-pr-cron#133/#138): a snapshot written before
+// the reject consolidation carries `counts.humanReject` alongside `counts.reject`, counting
+// disjoint sets. The quantity `ai:reject` now measures is their SUM at those samples —
+// unfolded, the 2026-07-30 migration of 42 PRs would draw as a cliff the inventory never had.
+Deno.test("fsm history: retired human-reject samples fold into reject, so the series is continuous across the consolidation", () => {
+  const now = Date.parse("2026-07-30T14:01:00Z");
+  const at = (d) => now - d * DAY;
+  // Real inventory flat at 70 across the migration: split 28 + 42 before, one key after.
+  const history = [
+    { t: at(4), counts: { reject: 28, humanReject: 42 } },
+    { t: at(3), counts: { reject: 28, humanReject: 42 } },
+    { t: at(2), counts: { reject: 28, humanReject: 42 } },
+    { t: at(1), counts: { reject: 70 } },
+    { t: at(0), counts: { reject: 70 } },
+  ];
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, reject: 70 },
+    lanes: { "vetter-verdicts": { "ai:reject": { count: 70, prs: [] } } },
+  }, history);
+  const reject = collect(box, "fsm-state").find((b) => b.dataset.t === "ai:reject");
+  assert(reject, "ai:reject box rendered");
+  const line = tags(reject, "polyline")[0];
+  assert(line, "the folded series draws a line");
+  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
+  assert(
+    ys.every((y) => y === ys[0]),
+    `the line is continuous, with no cliff at the consolidation: ${JSON.stringify(ys)}`,
+  );
+  assert(
+    !reject.classList.contains("rising"),
+    "folding a flat inventory raises no bottleneck flag",
+  );
+});
+
 // The fold must not INVENT samples: a refresh that carried neither key is still no point,
 // not a zero — the pre-existing contract every other state depends on. The rollup is fetched
 // from a repo this page does not own, so a line with no `counts` at all is skipped, never
