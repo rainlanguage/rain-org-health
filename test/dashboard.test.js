@@ -1432,12 +1432,19 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     !vetter.states.includes("awaiting-re-vet"),
     `the retired awaiting-re-vet state renders nowhere: ${JSON.stringify(vetter.states)}`,
   );
-  // Producer owns the two vetter-verdict rework states + the untouched backlog.
+  // Producer owns the reject rework state + the untouched backlog. ai:relink is NOT
+  // here: the verdict is retired (issue-pr-cron#135/#139), the producer has no relink
+  // transition to execute, and the residue exits by the vetter re-vetting at current
+  // head — so the retired state files under the vetter while its count is non-zero.
   assert(
-    ["ai:reject", "ai:relink", "untouched (no PR)"].every((s) =>
+    ["ai:reject", "untouched (no PR)"].every((s) =>
       producer.states.includes(s)
     ),
     `producer states: ${JSON.stringify(producer.states)}`,
+  );
+  assert(
+    vetter.states.includes("ai:relink"),
+    `retired ai:relink awaits the vetter: ${JSON.stringify(vetter.states)}`,
   );
   // Human owns the merge/ruling/close states + both close-candidate variants.
   assert(
@@ -1912,10 +1919,15 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
     !(collect(rejectBox, "fsm-rise")[0]?.getAttribute("title") || "").includes("rising"),
     "the ▲ on a fallback pick does not claim a trend either",
   );
-  // ai:relink is producer-owned and SMALLER than ai:reject, so it is neither the bottleneck
-  // nor its group's fallback pick: a state with no reason to be marked carries no cue at all.
-  assert(collect(relinkBox, "fsm-rise").length === 0, "an unmarked state carries no ▲ cue");
-  assert(!relinkBox.getAttribute("aria-label"), "an unmarked state carries no aria cue");
+  // ai:relink now files under the VETTER (retired verdict, exits by re-vet — issue-pr-
+  // cron#135/#139), and in this fixture the vetter group has no un-vetted inventory, so
+  // relink IS that group's largest queue: it wears the fallback mark, but its series is a
+  // lone under-epsilon blip, so the one thing it must never carry is a trend CLAIM.
+  assert(collect(relinkBox, "fsm-rise").length === 1, "the vetter group's fallback pick carries the ▲ cue");
+  assert(
+    !(relinkBox.getAttribute("aria-label") || "").includes("rising"),
+    `a fallback pick never claims a trend: ${relinkBox.getAttribute("aria-label")}`,
+  );
 });
 
 // The fallback that keeps every working actor pointed somewhere. `sevenDaySlope` needs two
@@ -2007,14 +2019,23 @@ Deno.test("fsm lead fallback: an all-zero group gets nothing, and equal counts b
         "ai:reject": { count: 7, prs: [] },
         "ai:relink": { count: 7, prs: [] },
       },
+      "human-decisions": {
+        "human:design": { count: 7, prs: [] },
+        "human:close-candidate": { count: 7, prs: [] },
+      },
     },
   });
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
   assert(!byKey("ai:ready").classList.contains("lead"), "an all-zero group is never marked");
   assert(!byKey("ai:design").classList.contains("lead"), "no work really is nothing to do");
-  // ai:reject precedes ai:relink in STATES, and strictly-greater keeps the first seen.
-  assert(byKey("ai:reject").classList.contains("lead"), "ties break toward the earlier STATES entry");
-  assert(!byKey("ai:relink").classList.contains("lead"), "the later of two equal counts is not marked");
+  // ai:reject and ai:relink sit in DIFFERENT groups now (relink retired to the vetter —
+  // issue-pr-cron#135/#139), so equal counts mark independently: each leads its own group.
+  assert(byKey("ai:reject").classList.contains("lead"), "reject leads the producer group");
+  assert(byKey("ai:relink").classList.contains("lead"), "relink leads the vetter group");
+  // Same-group ties still break toward the earlier STATES entry: human-decisions carries
+  // two equal states, and human:design precedes human:close-candidate.
+  assert(byKey("human:design").classList.contains("lead"), "ties break toward the earlier STATES entry");
+  assert(!byKey("human:close-candidate").classList.contains("lead"), "the later of two equal counts is not marked");
 });
 
 Deno.test("fsm flow layer: with no history rollup there are no sparklines and no trend borders", () => {
