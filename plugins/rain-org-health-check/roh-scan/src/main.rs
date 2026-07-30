@@ -965,7 +965,11 @@ fn sum_sol_loc(root: &std::path::Path) -> u64 {
 /// repo through this seam. Unlike the rest of the scan this is NOT clone-free;
 /// clones stay `--depth 1 --single-branch --no-tags` and submodule-free (so
 /// `lib/` dependencies are never present, let alone measured).
-fn with_shallow_clone<T>(org: &str, repo: &str, f: impl FnOnce(&std::path::Path) -> T) -> Option<T> {
+fn with_shallow_clone<T>(
+    org: &str,
+    repo: &str,
+    f: impl FnOnce(&std::path::Path) -> T,
+) -> Option<T> {
     let dir = std::env::temp_dir().join(format!(
         "rohclone-{}-{}",
         repo.replace(['/', '.'], "-"),
@@ -1483,8 +1487,7 @@ fn main() {
         // as a confirmed coverage gap with a source-LOC magnitude (cf #52).
         // #54 (claude-audit-skills): the untested-external-surface check, for
         // EVERY Foundry repo. A failed clone leaves both `None` — unknown.
-        let count_loc =
-            has_foundry && protofire.external_audit == protofire::ExternalAudit::Never;
+        let count_loc = has_foundry && protofire.external_audit == protofire::ExternalAudit::Never;
         let (full_source_loc, untested) = if has_foundry {
             match with_shallow_clone(org, repo, |dir| {
                 (
@@ -2698,6 +2701,34 @@ mod tests {
             loc, 5,
             "3 (src/A.sol) + 2 (deploy/D.sol); tests, README, .git, and the symlink excluded"
         );
+    }
+
+    // ---- clone walk for the untested-external check: collect_sol_files ----
+    #[test]
+    fn collect_sol_files_reads_every_sol_with_relative_paths_sorted() {
+        let dir = std::env::temp_dir().join(format!("rohsol-unit-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("src")).unwrap();
+        std::fs::create_dir_all(dir.join("test")).unwrap();
+        std::fs::create_dir_all(dir.join(".git")).unwrap();
+        std::fs::write(dir.join("src/B.sol"), "contract B {}").unwrap();
+        std::fs::write(dir.join("src/A.sol"), "contract A {}").unwrap();
+        std::fs::write(dir.join("test/A.t.sol"), "contract AT {}").unwrap();
+        std::fs::write(dir.join("README.md"), "not sol").unwrap();
+        std::fs::write(dir.join(".git/junk.sol"), "not repo content").unwrap();
+        // A symlinked .sol must not be followed: the same file would otherwise be
+        // read twice (and a link could escape the clone).
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(dir.join("src/A.sol"), dir.join("src/Link.sol")).unwrap();
+        let got = collect_sol_files(&dir);
+        let _ = std::fs::remove_dir_all(&dir);
+        let paths: Vec<&str> = got.iter().map(|(p, _)| p.as_str()).collect();
+        assert_eq!(
+            paths,
+            vec!["src/A.sol", "src/B.sol", "test/A.t.sol"],
+            "every real .sol, relative, sorted; .git, non-sol and the symlink excluded"
+        );
+        assert_eq!(got[0].1, "contract A {}", "content travels with the path");
     }
 
     // ---- external-call coverage: fetch_protofire_audit / collect_audit_pdfs ----

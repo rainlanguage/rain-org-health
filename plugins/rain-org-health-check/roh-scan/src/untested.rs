@@ -84,10 +84,7 @@ pub fn is_test_corpus(path: &str) -> bool {
 /// be pure noise), and vendored dependencies (third-party surface is not this
 /// repo's coverage gap).
 pub fn is_enumerable_source(path: &str) -> bool {
-    is_sol(path)
-        && !is_vendored(path)
-        && !crate::protofire::is_test_path(path)
-        && !is_script(path)
+    is_sol(path) && !is_vendored(path) && !crate::protofire::is_test_path(path) && !is_script(path)
 }
 
 fn is_sol(path: &str) -> bool {
@@ -301,6 +298,21 @@ mod tests {
     }
 
     #[test]
+    fn a_modifier_with_bogus_visibility_is_still_not_surface() {
+        // solc rejects visibility on a modifier, but the scan reads arbitrary
+        // repo contents and solang-parser accepts this permissively — so the
+        // FunctionTy gate must exclude it even when a visibility attribute is
+        // present. (Constructor/receive/fallback are already unnamed in the
+        // AST; this is the one function-like item where the gate is load-bearing.)
+        let got = external_functions(
+            "src/P.sol",
+            "contract C { modifier m() external { _; } function real() external {} }",
+        )
+        .unwrap();
+        assert_eq!(got, vec![f("src/P.sol", "C", "real")]);
+    }
+
+    #[test]
     fn public_state_variable_getters_are_not_enumerated() {
         let src = "contract C { uint256 public counter; function bump() external { counter++; } }";
         let got = external_functions("src/C.sol", src).unwrap();
@@ -363,7 +375,10 @@ mod tests {
     fn a_comment_mention_counts_as_a_reference() {
         // Deliberate generosity: the flag is only for functions NO test so much
         // as names — indirect/indirectly-documented coverage suppresses it.
-        assert!(referenced("// exercised via format in the fuzz harness", "format"));
+        assert!(referenced(
+            "// exercised via format in the fuzz harness",
+            "format"
+        ));
     }
 
     #[test]
@@ -443,7 +458,10 @@ mod tests {
             ("src/Ok.sol", "contract D { function d() external {} }"),
         ]);
         let got = analyze(&files);
-        assert_eq!(got.sources_unparsed, 1, "the broken file is UNKNOWN, on the record");
+        assert_eq!(
+            got.sources_unparsed, 1,
+            "the broken file is UNKNOWN, on the record"
+        );
         assert_eq!(got.untested, vec![f("src/Ok.sol", "D", "d")]);
     }
 
@@ -472,12 +490,18 @@ mod tests {
 
     #[test]
     fn analyze_corpus_join_cannot_bridge_two_files_into_a_name() {
-        // "for" ends one test file and "mat" starts another; the separator must
-        // prevent the concatenation from reading as `format`.
+        // One test file's content ends with the LITERAL characters `for` and the
+        // next begins with `mat(`: joined with no separator they read `format(`,
+        // a false reference that would suppress the flag. The separator must
+        // keep the two files apart. (First written with a `//` between the
+        // halves — a fixture the mutant survived; this one kills it.)
         let files = repo(&[
             ("src/C.sol", "contract C { function format() external {} }"),
-            ("test/A.t.sol", "contract A { uint256 a; } // ends with for"),
-            ("test/B.t.sol", "// mat starts this file"),
+            (
+                "test/A.t.sol",
+                "contract A { uint256 xfor; } // trailing for",
+            ),
+            ("test/B.t.sol", "mat(); // fragment continues"),
         ]);
         let got = analyze(&files);
         assert_eq!(got.untested, vec![f("src/C.sol", "C", "format")]);
@@ -506,6 +530,10 @@ mod tests {
             ..Default::default()
         };
         assert_eq!(signal(Some(&dirty)), Some("untested-externals"));
-        assert_eq!(signal(None), None, "unknown is not a finding — and not clean");
+        assert_eq!(
+            signal(None),
+            None,
+            "unknown is not a finding — and not clean"
+        );
     }
 }
