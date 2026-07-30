@@ -364,7 +364,7 @@ function renderFsm(hq, history) {
   // shape is the tool's to declare, and this page does not own that vocabulary
   // (issue-pr-cron#130); the rollup is different because those samples are the only surviving
   // record of a machine that no longer exists.
-  const HIST_FOLD = new Map([["unvetted", ["awaitingReVet"]]]);
+  const HIST_FOLD = new Map([["unvetted", ["awaitingReVet"]], ["reject", ["humanReject"]]]);
   // A state's inventory series from the rollup: one point per refresh that CARRIED this
   // state's counts key, or any key folded into it (a snapshot carrying NONE of them ⇒ no
   // point, not a zero).
@@ -525,11 +525,9 @@ function renderFsm(hq, history) {
   //   ai:blocked-on     → HUMAN  — FSM exit is "dependency merges → producer re-works",
   //       and only the human merges a PR, so the human is the mover that unblocks it;
   //       the dependency PR's own work is tracked under the dependency's own token.
-  //   human:reject      → PRODUCER — the FSM's SOLE exit is "producer reworks per note →
-  //       reworked-reject clears the labels → un-vetted". The human already acted (label
-  //       + rework note); the next mover is the producer. (The parked "final reject, no
-  //       note" case is the tool-side split human:reject-rework vs human:reject-final —
-  //       see follow-up.)
+  //   (human:reject is RETIRED — issue-pr-cron#133/#138 consolidated it into ai:reject: a
+  //       reject is a reject whoever ruled it, the producer is the mover either way, and
+  //       authority lives in the sha-pinned human comment rather than the label spelling.)
   // `hist` = this state's key in the human-queue-history rollup `counts` (which mirrors
   // the snapshot's `counts`), i.e. where its inventory time-series is read from.
   //
@@ -543,9 +541,12 @@ function renderFsm(hq, history) {
   // count, which `detailBody` reports as a defect rather than drawing as an empty queue.
   const STATES = [
     // Producer inbox — the producer moves these next.
+    // ONE reject state (issue-pr-cron#133/#138): `human:reject` is RETIRED — a reject is a
+    // reject whoever ruled it, authority lives in the sha-pinned human comment, and the 42 PRs
+    // still carrying the retired label were migrated 2026-07-30. Its inventory history folds
+    // into this series via HIST_FOLD above, same as awaiting-re-vet's into un-vetted.
     { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", hist: "reject", act: "rework per note", kind: "blk" },
     { owner: "producer", state: "ai:relink", lane: "vetter-verdicts", hist: "relink", act: "Closes → Refs", kind: "rule" },
-    { owner: "producer", state: "human:reject", lane: "human-decisions", hist: "humanReject", act: "rework per note", kind: "blk" },
     // Producer BACKLOG — open issues with no covering open PR (excl. human-gated / close-candidate):
     // the biggest producer inbox, the untouched work it must turn into PRs. Not a lane state —
     // count from `counts.uncoveredIssues`, items from the top-level `uncoveredIssues` (0 on an older
