@@ -422,6 +422,7 @@ mod tests {
         // `test/src/lib/` corpus in the first live run. Foundry vendors at the
         // repo ROOT, so only the first segment may exclude.
         assert!(is_enumerable_source("src/lib/LibParse.sol"));
+        assert!(is_enumerable_source("src/scripts/Runner.sol"));
         assert!(is_test_corpus("test/src/lib/LibCtPop.ctpop.t.sol"));
         assert!(is_test_corpus("test/lib/LibDataContract.t.sol"));
         // Root-level vendor/script dirs still excluded on both sides.
