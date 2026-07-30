@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-30T06:45:18Z",
+  "generatedAt": "2026-07-30T09:45:29Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2024,7 +2024,7 @@
         "to": "rain.verify.interface",
         "stale": false,
         "pinned": "0.1.0",
-        "latest": ""
+        "latest": "0.1.0"
       },
       {
         "from": "rain.vats.flare",
@@ -2080,7 +2080,7 @@
         "to": "rain.verify.interface",
         "stale": false,
         "pinned": "0.1.0",
-        "latest": ""
+        "latest": "0.1.0"
       },
       {
         "from": "rain.verify",
@@ -2185,7 +2185,7 @@
         "to": "rain.verify.interface",
         "stale": false,
         "pinned": "0.1.0",
-        "latest": ""
+        "latest": "0.1.0"
       },
       {
         "from": "rain.verify",
@@ -2514,7 +2514,7 @@
         "to": "rain.verify.interface",
         "stale": false,
         "pinned": "0.1.0",
-        "latest": ""
+        "latest": "0.1.0"
       },
       {
         "from": "st0x.oracle",
@@ -4352,7 +4352,7 @@
       "name": "cyclo.site",
       "org": "cyclofinance",
       "lastAudit": null,
-      "openAuditIssues": 54,
+      "openAuditIssues": 52,
       "lastMutation": null
     },
     {
