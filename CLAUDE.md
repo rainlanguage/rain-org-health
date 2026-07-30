@@ -10,8 +10,11 @@ as a Claude plugin (`.claude-plugin/`, `plugins/rain-org-health-check/`).
 - `plugins/rain-org-health-check/roh-scan/` — the scanner (Rust). Signal
   detection is `signals.rs` (pure, unit + mutation tested, run in-build via
   `doCheck`); `main.rs` is the `gh`/network orchestration + output;
-  audit-recency parsing is `audit.rs`. The crate is a workspace member but
-  `Cargo.toml`/`Cargo.lock` live at the repo root, so builds root there.
+  audit-recency parsing is `audit.rs`; the untested-external-surface check
+  (concrete contracts' external/public functions no test names) is
+  `untested.rs`, fed from a per-repo shallow clone. The crate is a workspace
+  member but `Cargo.toml`/`Cargo.lock` live at the repo root, so builds root
+  there.
 - `site/` — the dashboard: one self-contained page per view (inline CSS/JS) plus
   `health.json`. `pipeline.html` is the landing page; `index.html` is a redirect
   to it, kept because Pages serves it as the site root. Deployed by `pages.yml`.
