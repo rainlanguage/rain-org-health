@@ -62,16 +62,16 @@ are overdue for a full audit.
 
 ## Untested external surface (external/public functions no test names)
 
-External/public functions are a contract's API and attack surface; one with
-zero test coverage is a latent risk (rain.math.float#156: three external
-`format()` overloads sat uncovered for months and were only tested in #169
-after the gap was noticed by hand). The scan generalizes that one-off into a
-standing check: for every Foundry repo it shallow-clones the default branch,
-**enumerates** (never samples) the external/public functions declared on every
-concrete `contract` — not `abstract contract`, `interface`, or `library` — via
-a real Solidity parse, then greps the repo's own test sources for each
-function's name as a whole identifier. Only a function whose name appears
-**nowhere** in any test file is flagged.
+External/public functions are a contract's API and attack surface; one with zero
+test coverage is a latent risk (rain.math.float#156: three external `format()`
+overloads sat uncovered for months and were only tested in #169 after the gap
+was noticed by hand). The scan generalizes that one-off into a standing check:
+for every Foundry repo it shallow-clones the default branch, **enumerates**
+(never samples) the external/public functions declared on every concrete
+`contract` — not `abstract contract`, `interface`, or `library` — via a real
+Solidity parse, then greps the repo's own test sources for each function's name
+as a whole identifier. Only a function whose name appears **nowhere** in any
+test file is flagged.
 
 Restraint, so the flag stays a strong claim:
 
@@ -84,8 +84,8 @@ Restraint, so the flag stays a strong claim:
   neither as surface nor as coverage; Foundry scripts and test helpers are not
   surface; `constructor`/`receive`/`fallback` and auto-generated public-getter
   functions are excluded.
-- Functions inherited from an abstract base are enumerated at the base only if
-  a concrete contract declares them, so the report is a floor, not a ceiling.
+- Functions inherited from an abstract base are enumerated at the base only if a
+  concrete contract declares them, so the report is a floor, not a ceiling.
 - A repo whose clone failed reports `unknown` — never "clean" — and a source
   file that does not parse is counted in `sourcesUnparsed` rather than silently
   contributing nothing.
@@ -163,7 +163,7 @@ the issue's filing date.**
 | `soldeer-unpublished`                        | foundry.toml has a `[package]` but no revision on the soldeer registry                                                                                                                                                                                                                                             | a publishable package never got pushed — wire `rainix-autopublish` (+ `[package].version`), add a `.soldeerignore` (publish only `src/` + license/readme; soldeer's sensitive-file prompt otherwise hangs CI), and have an org admin create the project on soldeer.xyz before the first push.                                                     |
 | `deprecated-interface`                       | Solidity imports a deprecated rain interpreter interface (V2/V3-era) — `IInterpreterV2`, `IInterpreterCallerV2`, `IInterpreterStoreV2`, `IExpressionDeployerV3`, `EvaluableConfigV3`/`EvaluableV2`, `LibEncodedDispatch`, `.eval2(`, `deployExpression2`, or any `rain.interpreter.interface/.../deprecated/` path | migrate to the current V4 API: `IInterpreterV4.eval4(EvalV4{...})` with `EvaluableV4{interpreter,store,bytecode}` (no expression deployment / encoded dispatch), `StackItem`/`bytes32[]`, eval-time validation. Follow the upstream `RaindexV6`/`LibRaindex` caller pattern. Worked example: flow#474.                                            |
 | `soldeer-skip-warnings`                      | a workflow runs `forge soldeer push` with `--skip-warnings`                                                                                                                                                                                                                                                        | **Never** skip soldeer publish warnings — they're the guard that catches accidentally publishing sensitive files (`.env`, keys, `.git`, build dirs) into the package. Remove `--skip-warnings` and scope the publish with a `.soldeerignore` (publish only `src/` + license/readme) so the push succeeds in CI _without_ suppressing the warning. |
-| `untested-externals`                         | a concrete contract declares external/public function(s) whose name appears in NO test source (see "Untested external surface" below)                                                                                                                                                                              | write tests exercising each flagged function directly (the flagged list is per contract/function in `health.json`'s `untestedExternals` and the text report). Worked example: rain.math.float#156 → #169. Confirm each is a real gap first — the grep already suppresses any test that so much as names the function.                            |
+| `untested-externals`                         | a concrete contract declares external/public function(s) whose name appears in NO test source (see "Untested external surface" below)                                                                                                                                                                              | write tests exercising each flagged function directly (the flagged list is per contract/function in `health.json`'s `untestedExternals` and the text report). Worked example: rain.math.float#156 → #169. Confirm each is a real gap first — the grep already suppresses any test that so much as names the function.                             |
 
 ## Detecting deprecated interfaces (code search)
 
