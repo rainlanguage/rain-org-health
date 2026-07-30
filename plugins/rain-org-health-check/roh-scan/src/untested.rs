@@ -96,18 +96,30 @@ fn is_script(path: &str) -> bool {
     if p.ends_with(".s.sol") {
         return true;
     }
+    // Foundry's script dir lives at the repo root; judged top-level only, like
+    // `is_vendored`, so a deeper first-party dir that happens to share the name
+    // is not silently dropped. `.s.sol` still catches scripts anywhere.
     const SCRIPT_DIRS: [&str; 2] = ["script", "scripts"];
-    p.split('/').any(|seg| SCRIPT_DIRS.contains(&seg))
+    p.split('/')
+        .next()
+        .is_some_and(|seg| SCRIPT_DIRS.contains(&seg))
 }
 
 /// Vendored/generated trees that must count neither as surface nor as tests:
 /// `lib/` (git submodule deps — forge-std's OWN test dir would otherwise fake
 /// coverage), `dependencies/` (soldeer), `node_modules/`, and build output.
+///
+/// Judged by the TOP-LEVEL path segment ONLY. Foundry vendors at the repo root,
+/// while first-party code legitimately nests the same names deeper —
+/// `src/lib/LibFoo.sol` and `test/src/lib/…` are the org's own layout, and an
+/// any-depth `lib` match silently dropped rain.math.binary's entire
+/// `test/src/lib/` corpus in the first live run of this check.
 fn is_vendored(path: &str) -> bool {
     const VENDOR_DIRS: [&str; 5] = ["lib", "dependencies", "node_modules", "out", "cache"];
     path.to_ascii_lowercase()
         .split('/')
-        .any(|seg| VENDOR_DIRS.contains(&seg))
+        .next()
+        .is_some_and(|seg| VENDOR_DIRS.contains(&seg))
 }
 
 /// Enumerate the external/public functions of every CONCRETE contract in one
@@ -401,6 +413,21 @@ mod tests {
         assert!(!is_enumerable_source("lib/forge-std/src/Test.sol"));
         assert!(!is_enumerable_source("dependencies/rain.math/src/M.sol"));
         assert!(!is_enumerable_source("src/README.md"));
+    }
+
+    #[test]
+    fn vendored_and_script_dirs_are_top_level_facts_not_any_segment() {
+        // The org's own layout nests `lib` under `src/` and `test/` — an
+        // any-depth segment match dropped rain.math.binary's whole
+        // `test/src/lib/` corpus in the first live run. Foundry vendors at the
+        // repo ROOT, so only the first segment may exclude.
+        assert!(is_enumerable_source("src/lib/LibParse.sol"));
+        assert!(is_test_corpus("test/src/lib/LibCtPop.ctpop.t.sol"));
+        assert!(is_test_corpus("test/lib/LibDataContract.t.sol"));
+        // Root-level vendor/script dirs still excluded on both sides.
+        assert!(!is_enumerable_source("lib/forge-std/src/Test.sol"));
+        assert!(!is_test_corpus("lib/forge-std/test/StdAssertions.t.sol"));
+        assert!(!is_enumerable_source("script/util/Helper.sol"));
     }
 
     #[test]
