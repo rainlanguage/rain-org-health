@@ -158,8 +158,17 @@
   .fsm-spark { display: block; flex: none; overflow: visible; }
   .fsm-spark .sl { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
   .fsm-spark .sd { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+  /* Median-AGE series (rain-org-health#140): a different DIMENSION (days, own per-series
+     scale) sharing the count's chart, so it must never read as another count — dashed,
+     thinner, muted, and deliberately NOT recolored by .rising/.lead below: the bottleneck
+     flag is about the COUNT trend, and a red age line would claim it for the wrong series. */
+  .fsm-spark .al { fill: none; stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 2 2; opacity: 0.7; }
+  .fsm-spark .ad { fill: var(--ink-3); }
   .fsm-state.rising .fsm-spark .sl, .fsm-state.lead .fsm-spark .sl { stroke: var(--crit); }
   .fsm-state.rising .fsm-spark .sd, .fsm-state.lead .fsm-spark .sd { fill: var(--crit); }
+  /* The age series' current-value label, unit attached — "median 41d" — so the number can
+     never be misread as a queue size. */
+  .fsm-state .sg { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-top: 2px; }
   .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
@@ -385,6 +394,40 @@ function renderFsm(hq, history) {
     out.sort((a, b) => a.t - b.t);
     return out;
   };
+  // A state's median-AGE series (days) from the rollup's optional sibling `ages` block
+  // (rain-org-health#140): one point per refresh whose line carried `ages.<key>.medianDays`
+  // as a finite number — every line written before the tool emitted the block, and every
+  // refresh with no age to report, contributes NO point (absence, never a zero: an empty
+  // backlog has no age and a fabricated 0 would draw a fresh one). `oldestDays` rides along
+  // as `o` for the tooltip when finite. This is a different DIMENSION from a queue size, so
+  // it is drawn with its own normalization and its own dashed style — see `sparkline`.
+  const ageSeriesFor = (ageKey) => {
+    if (!ageKey) return [];
+    const out = [];
+    for (const p of hist) {
+      const a = p && p.ages && p.ages[ageKey];
+      if (!a || typeof a !== "object") continue;
+      const v = Number(a.medianDays);
+      if (!Number.isFinite(v)) continue;
+      const o = Number(a.oldestDays);
+      out.push({ t: Number(p.t), v, o: Number.isFinite(o) ? o : null });
+    }
+    out.sort((a, b) => a.t - b.t);
+    return out;
+  };
+  // The CURRENT age stats for a state's label: the live snapshot's sibling `ages` block when
+  // it carries a well-formed entry (the same precedence counts get — the snapshot is the
+  // present, history the past), else the newest history sample, else null ⇒ no label. Every
+  // field is validated on the way in: the snapshot is an artifact this page does not own.
+  const ageCurFor = (ageKey, series) => {
+    const a = hq.ages && typeof hq.ages === "object" ? hq.ages[ageKey] : null;
+    if (a && typeof a === "object" && Number.isFinite(Number(a.medianDays))) {
+      const o = Number(a.oldestDays);
+      return { medianDays: Number(a.medianDays), oldestDays: Number.isFinite(o) ? o : null };
+    }
+    const last = series.length ? series[series.length - 1] : null;
+    return last ? { medianDays: last.v, oldestDays: last.o } : null;
+  };
   // Built as real SVG nodes (createElementNS + setAttribute) — never markup — matching
   // the rest of the dashboard, so nothing reaching the chart is parsed as markup.
   // A series of ONE sample still draws: its endpoint dot, alone. A newly-emitted counts
@@ -394,22 +437,44 @@ function renderFsm(hq, history) {
   // metric a reader is most likely to be checking BECAUSE it is new. The lone dot is
   // unambiguous against a flat inventory, which has ≥2 points and so draws a horizontal
   // LINE through that same dot; it grows into a full line as the rollup fills in.
-  const sparkline = (series) => {
-    const win = now ? series.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : series;
-    const pts = win.length ? win : series;
-    if (!pts.length) return null;
+  // `ageSeries` (optional, rain-org-health#140) is a second line in the same chart, but a
+  // different DIMENSION: days, not items. It gets its OWN vertical normalization — the
+  // per-series min/max scaling below is per line, never shared, so a 40-day median next to a
+  // 600-item queue still uses the full height and neither flattens the other — and its own
+  // recessive dashed style (`al`/`ad`, see the CSS), so it can never read as a second count.
+  // Only the time axis is shared: same chart, same window, aligned samples. Either series may
+  // be empty (ages start mid-history; a count key can be newer than the rollup) and the other
+  // still draws; both empty ⇒ no chart, never a broken box.
+  const sparkline = (series, ageSeries) => {
+    const winOf = (s) => {
+      const win = now ? s.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : s;
+      return win.length ? win : s;
+    };
+    const pts = series.length ? winOf(series) : [];
+    const apts = ageSeries && ageSeries.length ? winOf(ageSeries) : [];
+    if (!pts.length && !apts.length) return null;
     const W = 56, H = 16, PAD = 2;
-    const ts = pts.map((p) => p.t), vs = pts.map((p) => p.v);
+    // ONE time axis across both series, so a shared instant lands on a shared x.
+    const ts = [...pts, ...apts].map((p) => p.t);
     const tMin = Math.min(...ts), tMax = Math.max(...ts);
-    const vMin = Math.min(...vs), vMax = Math.max(...vs);
     const xOf = (t) => tMax === tMin ? W - PAD : PAD + ((t - tMin) / (tMax - tMin)) * (W - 2 * PAD);
-    const yOf = (v) => vMax === vMin ? H / 2 : H - PAD - ((v - vMin) / (vMax - vMin)) * (H - 2 * PAD);
-    const xy = pts.map((p) => [xOf(p.t), yOf(p.v)]);
+    // Per-SERIES vertical scale: each line normalizes to its own min/max.
+    const yScale = (vs) => {
+      const vMin = Math.min(...vs), vMax = Math.max(...vs);
+      return (v) => vMax === vMin ? H / 2 : H - PAD - ((v - vMin) / (vMax - vMin)) * (H - 2 * PAD);
+    };
     const svg = svgEl("svg", { class: "fsm-spark", width: W, height: H, viewBox: `0 0 ${W} ${H}`, "aria-hidden": "true" });
     // One point is a dot, not a line — a single-vertex polyline paints nothing.
-    if (xy.length > 1) svg.append(svgEl("polyline", { class: "sl", points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
-    const last = xy[xy.length - 1];
-    svg.append(svgEl("circle", { class: "sd", cx: last[0].toFixed(1), cy: last[1].toFixed(1), r: 2 }));
+    const draw = (p2, lineClass, dotClass, r) => {
+      const yOf = yScale(p2.map((p) => p.v));
+      const xy = p2.map((p) => [xOf(p.t), yOf(p.v)]);
+      if (xy.length > 1) svg.append(svgEl("polyline", { class: lineClass, points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
+      const last = xy[xy.length - 1];
+      svg.append(svgEl("circle", { class: dotClass, cx: last[0].toFixed(1), cy: last[1].toFixed(1), r }));
+    };
+    // Age under count: the count series is the box's headline signal and paints on top.
+    if (apts.length) draw(apts, "al", "ad", 1.5);
+    if (pts.length) draw(pts, "sl", "sd", 2);
     return svg;
   };
 
@@ -453,12 +518,16 @@ function renderFsm(hq, history) {
     });
   const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
 
-  const stateBox = (key, label, count, act, kind, series) => {
+  // `age` (optional, rain-org-health#140) = { series, cur } — the state's median-age series
+  // for the chart plus the CURRENT stats ({medianDays, oldestDays}, from the live snapshot
+  // when it carries them, else the newest history sample) for the labelled value. A state
+  // with no age data anywhere renders exactly as before: no dashed line, no label.
+  const stateBox = (key, label, count, act, kind, series, age) => {
     const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
     b.dataset.t = key;
     const scRow = el("div", "fsm-scrow");
     scRow.append(el("div", "sc", String(Number(count))));
-    const spark = series ? sparkline(series) : null;
+    const spark = sparkline(series || [], age && age.series);
     if (spark) scRow.append(spark);
     // The bottleneck flag: inventory rising over the trailing 7d = the constraint.
     // Red warning border (via `.rising`) PLUS a ▲ badge and title/aria-label, so the
@@ -472,7 +541,23 @@ function renderFsm(hq, history) {
       b.setAttribute("title", "inventory rising over the last 7 days — likely the bottleneck");
       b.setAttribute("aria-label", label + ": inventory rising over the last 7 days (bottleneck)");
     }
-    b.append(scRow, el("div", "sk", label), el("div", "sa", act));
+    b.append(scRow, el("div", "sk", label));
+    // The age series' current value, labelled WITH ITS UNIT so it can never be read as a
+    // queue size ("median 41d", never a bare number), oldest — the tail signal — in the
+    // tooltip. Rendered only when there is a real value: no age ⇒ no label, matching the
+    // series' own absence-degradation.
+    // Like the count, it lives in the button's TEXT (part of the accessible name by
+    // default) rather than an aria-label of its own, so it never fights the rising/lead
+    // branches, which own that attribute when they fire.
+    if (age && age.cur) {
+      const fmtD = (v) => String(Math.round(v * 10) / 10).replace(/\.0$/, "") + "d";
+      const g = el("div", "sg", "median " + fmtD(age.cur.medianDays));
+      let tip = "median age of this backlog: " + fmtD(age.cur.medianDays);
+      if (Number.isFinite(Number(age.cur.oldestDays))) tip += " · oldest " + fmtD(Number(age.cur.oldestDays));
+      g.setAttribute("title", tip);
+      b.append(g);
+    }
+    b.append(el("div", "sa", act));
     return b;
   };
 
@@ -555,7 +640,15 @@ function renderFsm(hq, history) {
     // refreshes that carried the field — one sample is a lone dot, more fill in the line and
     // (past two inside the 7d window) the trend border; none at all → no spark, never a
     // broken box.
-    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
+    //
+    // `age` (rain-org-health#140 / issue-pr-cron#165) = this state's key in the OPTIONAL
+    // sibling `ages` block ({medianDays, oldestDays}, snapshot and rollup alike): the count
+    // says how MUCH backlog there is, the median age says how OLD it runs — a queue turning
+    // over and one stagnating draw the same count line. Same degradation contract as `hist`:
+    // every point predating the block (all 136+ at ship time), and every refresh whose
+    // backlog had no age to report, contributes nothing — no dashed line, no label, never a
+    // broken box.
+    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", age: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
     // Vetter inbox — the vetter records the next verdict. ONE vet-lifecycle state, not two:
     // issue-pr-cron#128 collapsed `awaiting-re-vet` into this one, because vetting is a pure
     // function of the PR at its CURRENT head — a PR whose head moved, or whose verdict was
@@ -636,7 +729,14 @@ function renderFsm(hq, history) {
         }
         ownerTotal += count;
         const label = s.label || s.state;
-        const b = stateBox(s.state, label, count, s.act, s.kind, seriesFor(s.hist));
+        // A state that declares an `age` key gets its median-age series + current stats;
+        // the rest pass nothing and render exactly as before.
+        let age = null;
+        if (s.age) {
+          const ageSeries = ageSeriesFor(s.age);
+          age = { series: ageSeries, cur: ageCurFor(s.age, ageSeries) };
+        }
+        const b = stateBox(s.state, label, count, s.act, s.kind, seriesFor(s.hist), age);
         boxes.push({ b, count, label });
         g.append(b);
       });
@@ -750,6 +850,18 @@ function renderFsm(hq, history) {
       " bottleneck: rising WIP is where the system is constrained."
     );
   }
+  // Guarded on age data actually being on screen (its own guard, not `hist` — the snapshot
+  // alone can carry `ages` before the rollup does): the legend only ever describes marks the
+  // panel is drawing.
+  if ((hq.ages && typeof hq.ages === "object") || hist.some((p) => p && p.ages)) {
+    note.append(
+      " The dashed line and the labelled ",
+      el("b", null, "median …d"),
+      " in the backlog box are its median ",
+      el("b", null, "age in days"),
+      " — a different dimension on its own scale, never comparable to a queue size; the oldest issue's age rides in the label's tooltip."
+    );
+  }
   // Deliberately OUTSIDE the `hist` guard: the fallback is exactly what fills the gap when no
   // trend is computable, so it can appear on a page with no sparklines at all. The sentence
   // is not optional — without it the legend above would state a single meaning for the red
@@ -787,11 +899,17 @@ function renderFsm(hq, history) {
   }));
 }
 
-// Parse the append-only human-queue-history.jsonl rollup (one {ts, counts} per refresh)
-// into [{t:ms, counts}] sorted oldest→newest, dropping malformed lines and any with an
-// unparseable timestamp. Timestamps are the tool's real refresh/commit times — never
-// synthesized here; this only reads them. Kept top-level (not closed over renderFsm) so
-// the render can be tested against a plain fixture array.
+// Parse the append-only human-queue-history.jsonl rollup (one {ts, counts[, ages]} per
+// refresh) into [{t:ms, counts[, ages]}] sorted oldest→newest, dropping malformed lines and
+// any with an unparseable timestamp. Timestamps are the tool's real refresh/commit times —
+// never synthesized here; this only reads them. Kept top-level (not closed over renderFsm)
+// so the render can be tested against a plain fixture array.
+//
+// `ages` (rain-org-health#140) is OPTIONAL per line — every rollup written before the tool
+// emitted it lacks the key, and a refresh whose backlog had no age to report omits it too.
+// It rides through only as a well-formed object; a point without one simply has no `ages`
+// key, which is the absence `ageSeriesFor` degrades on. A malformed `ages` never invalidates
+// the line's counts: the count series is not hostage to the age block.
 function parseHistory(text) {
   if (typeof text !== "string" || !text) return [];
   const out = [];
@@ -803,7 +921,9 @@ function parseHistory(text) {
     if (!o || typeof o !== "object" || !o.counts || typeof o.counts !== "object") continue;
     const t = Date.parse(o.ts);
     if (!Number.isFinite(t)) continue;
-    out.push({ t, counts: o.counts });
+    const pt = { t, counts: o.counts };
+    if (o.ages && typeof o.ages === "object") pt.ages = o.ages;
+    out.push(pt);
   }
   out.sort((a, b) => a.t - b.t);
   return out;

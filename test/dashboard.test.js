@@ -2109,6 +2109,161 @@ Deno.test("fsm history: parseHistory keeps well-formed {ts,counts} lines, sorts 
   );
 });
 
+// ---- rain-org-health#140: backlog AGE beside backlog SIZE --------------------
+//
+// The recording half (issue-pr-cron#165) emits an OPTIONAL `ages` block beside `counts` —
+// snapshot and rollup line alike: `ages.uncoveredIssues = {medianDays, oldestDays}`, computed
+// over the same population `counts.uncoveredIssues` counts. The panel draws the median as a
+// second, visually distinct series inside the backlog box (dashed `al`/`ad`, its OWN
+// normalization — days are not comparable to queue sizes) with the current value labelled
+// WITH ITS UNIT ("median 41d") and oldest in the tooltip. Every rollup line written before
+// the block existed (136+ at ship time) simply lacks the key, and that absence must degrade
+// to exactly today's render: no dashed line, no label, never a broken box.
+
+// The one-decimal `ages` block the tool emits, as a fixture.
+const agesOf = (median, oldest) => ({
+  uncoveredIssues: { medianDays: median, oldestDays: oldest },
+});
+
+Deno.test("fsm ages: parseHistory carries a well-formed ages block and drops a malformed one — without costing the line its counts", () => {
+  const text = [
+    '{"ts":"2026-07-28T00:00:00Z","counts":{"uncoveredIssues":600}}',
+    '{"ts":"2026-07-29T00:00:00Z","counts":{"uncoveredIssues":610},"ages":{"uncoveredIssues":{"medianDays":41.0,"oldestDays":812.3}}}',
+    '{"ts":"2026-07-30T00:00:00Z","counts":{"uncoveredIssues":620},"ages":"not an object"}',
+  ].join("\n");
+  const pts = parseHistory(text);
+  assert(pts.length === 3, `all three lines keep their counts: ${pts.length}`);
+  assert(!("ages" in pts[0]), "a line without ages yields a point without the key — absence, not null");
+  assert(
+    pts[1].ages.uncoveredIssues.medianDays === 41.0 &&
+      pts[1].ages.uncoveredIssues.oldestDays === 812.3,
+    "a well-formed ages block rides through verbatim",
+  );
+  assert(!("ages" in pts[2]), "a malformed ages block is dropped, not forwarded");
+  assert(pts[2].counts.uncoveredIssues === 620, "…and never invalidates the line's counts");
+});
+
+// The history fixture the drawing tests share: 3 daily refreshes, every one carrying the
+// count, only some carrying ages — the live shape of a series that starts mid-history.
+function agedHistory(now, counts, medians) {
+  return counts.map((c, i) => {
+    const p = { t: now - (counts.length - 1 - i) * DAY, counts: { uncoveredIssues: c } };
+    if (medians[i] != null) p.ages = agesOf(medians[i], medians[i] * 20);
+    return p;
+  });
+}
+
+Deno.test("fsm ages: history carrying ages draws a second, dashed-classed series with its own dot in the backlog box", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
+  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  assert(collect(b, "fsm-spark").length === 1, "ONE chart — the age line shares the box's spark, not a second chart");
+  const lines = tags(b, "polyline");
+  const sl = lines.filter((l) => l.className.includes("sl"));
+  const al = lines.filter((l) => l.className.includes("al"));
+  assert(sl.length === 1, "the count line still draws");
+  assert(al.length === 1, `the age line draws with its own class: ${lines.map((l) => l.className)}`);
+  const dots = tags(b, "circle");
+  assert(dots.filter((d) => d.className.includes("sd")).length === 1, "count endpoint dot");
+  assert(dots.filter((d) => d.className.includes("ad")).length === 1, "age endpoint dot, its own class");
+});
+
+Deno.test("fsm ages: the age series NEVER shares the count's normalization — each line spans its own scale", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  // Counts in the hundreds, ages in the tens: on a shared scale the 10→30d rise would be a
+  // flat smear pinned under the count line (or off the chart entirely). Per-series
+  // normalization must stretch BOTH lines across the full chart height [PAD, H-PAD] = [2,14].
+  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
+  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  const ys = (cls) =>
+    tags(b, "polyline")
+      .find((l) => l.className.includes(cls))
+      .getAttribute("points")
+      .split(" ")
+      .map((pt) => Number(pt.split(",")[1]));
+  for (const cls of ["sl", "al"]) {
+    const y = ys(cls);
+    assert(
+      Math.min(...y) === 2 && Math.max(...y) === 14,
+      `${cls} spans its OWN full scale [2,14], got [${Math.min(...y)},${Math.max(...y)}] — a shared normalization would flatten or eject the smaller-ranged series`,
+    );
+  }
+});
+
+Deno.test("fsm ages: the current value is labelled WITH ITS UNIT and the oldest rides in the tooltip", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
+  // The snapshot's own sibling block wins over the newest history sample, same as counts do.
+  const box = fsmBox(
+    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: agesOf(41.0, 812.3) },
+    history,
+  );
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  const label = collect(b, "sg");
+  assert(label.length === 1, "one age label in the backlog box");
+  assert(
+    label[0].textContent === "median 41d",
+    `the value carries its unit, never a bare number a reader could take for a count: "${label[0].textContent}"`,
+  );
+  const tip = label[0].getAttribute("title") || "";
+  assert(tip.includes("oldest 812.3d"), `oldest — the tail signal — rides in the tooltip: "${tip}"`);
+  assert(tip.includes("age"), `the tooltip says what the number IS: "${tip}"`);
+});
+
+Deno.test("fsm ages: with no snapshot block the label falls back to the newest history sample", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
+  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  const label = collect(b, "sg");
+  assert(label.length === 1, "the newest rollup sample still yields a current value");
+  assert(label[0].textContent === "median 30d", `newest sample, unit attached: "${label[0].textContent}"`);
+  assert((label[0].getAttribute("title") || "").includes("oldest 600d"), "its oldest rides along");
+});
+
+// The 136-historical-points case, and every state that never declares an age: absence
+// degrades to EXACTLY today's render.
+Deno.test("fsm ages: history without ages draws no age line, no age dot and no label — never a broken box", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const history = agedHistory(now, [600, 610, 620], [null, null, null]);
+  const box = fsmBox({ counts: { uncoveredIssues: 620, ready: 3 }, lanes: { "vetter-verdicts": { "ai:ready": { count: 3, prs: [] } } } }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  assert(collect(b, "fsm-spark").length === 1, "the count sparkline still draws");
+  assert(tags(b, "polyline").every((l) => !l.className.includes("al")), "no age line without age data");
+  assert(tags(b, "circle").every((d) => !d.className.includes("ad")), "no age dot without age data");
+  assert(collect(box, "sg").length === 0, "no age label anywhere — absence degrades to silence, not to 0d");
+});
+
+// A rollup line whose ages block reports on a refresh mid-window while the count key is
+// MISSING from every line (a rollup older than the count key, or a count that folded) must
+// still draw the age series rather than divide by an empty count range.
+Deno.test("fsm ages: an age series with NO count series still draws, alone", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const history = [1, 2].map((i) => {
+    const p = { t: now - (2 - i) * DAY, counts: { ready: 5 } };
+    p.ages = agesOf(10 * i, 100);
+    return p;
+  });
+  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  const lines = tags(b, "polyline");
+  assert(lines.length === 1 && lines[0].className.includes("al"), "the age line draws alone");
+});
+
+// The bottleneck flag reads the COUNT trend and only that: a backlog ageing fast while its
+// size holds flat is stagnation, not accumulation, and must not trip the rising border.
+Deno.test("fsm ages: a rising age over a flat count never flags the bottleneck", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const counts = [600, 600, 600, 600, 600, 600, 600, 600];
+  const medians = [10, 20, 30, 40, 50, 60, 70, 80];
+  const history = agedHistory(now, counts, medians);
+  const box = fsmBox({ counts: { uncoveredIssues: 600 }, lanes: {} }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  assert(!b.classList.contains("rising"), "a flat count is not a bottleneck, however fast the backlog ages");
+});
+
 // Follow-up to #69: the producer's untouched backlog (open issues with no covering open PR,
 // from counts.uncoveredIssues + the top-level uncoveredIssues list) is the biggest bucket of
 // its inbox and must surface under Producer action.
