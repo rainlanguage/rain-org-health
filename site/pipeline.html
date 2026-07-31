@@ -364,7 +364,7 @@ function renderFsm(hq, history) {
   // shape is the tool's to declare, and this page does not own that vocabulary
   // (issue-pr-cron#130); the rollup is different because those samples are the only surviving
   // record of a machine that no longer exists.
-  const HIST_FOLD = new Map([["unvetted", ["awaitingReVet"]], ["reject", ["humanReject"]]]);
+  const HIST_FOLD = new Map([["unvetted", ["awaitingReVet"]], ["reject", ["humanReject", "relink"]]]);
   // A state's inventory series from the rollup: one point per refresh that CARRIED this
   // state's counts key, or any key folded into it (a snapshot carrying NONE of them ⇒ no
   // point, not a zero).
@@ -543,16 +543,11 @@ function renderFsm(hq, history) {
     // Producer inbox — the producer moves these next.
     // ONE reject state (issue-pr-cron#133/#138): `human:reject` is RETIRED — a reject is a
     // reject whoever ruled it, authority lives in the sha-pinned human comment, and the 42 PRs
-    // still carrying the retired label were migrated 2026-07-30. Its inventory history folds
-    // into this series via HIST_FOLD above, same as awaiting-re-vet's into un-vetted.
+    // still carrying the retired label were migrated 2026-07-30. `ai:relink` is RETIRED too
+    // (#135: a relink IS a reject with a specific note; the last labelled PR was migrated
+    // 2026-07-31). Both retired states' inventory history folds into this series via
+    // HIST_FOLD above, same as awaiting-re-vet's into un-vetted.
     { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", hist: "reject", act: "rework per note", kind: "blk" },
-    // RETIRED verdict (issue-pr-cron#135/#139): nothing writes ai:relink any more and the
-    // producer has no relink transition to execute — the residue exits when the VETTER re-vets
-    // at current head and the fresh verdict supersedes the label. So the next mover is the
-    // vetter, and the act is the same act as un-vetted's. The box stays while the count can be
-    // non-zero (hiding it would hide the PR awaiting that re-vet); at zero it retires like
-    // human:reject did.
-    { owner: "vetter", state: "ai:relink", lane: "vetter-verdicts", hist: "relink", act: "vet at current head", kind: "rule" },
     // Producer BACKLOG — open issues with no covering open PR (excl. human-gated / close-candidate):
     // the biggest producer inbox, the untouched work it must turn into PRs. Not a lane state —
     // count from `counts.uncoveredIssues`, items from the top-level `uncoveredIssues` (0 on an older
