@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-07-31T07:16:39Z",
+  "generatedAt": "2026-07-31T10:03:53Z",
   "auditGraph": {
     "nodes": [
       {
@@ -3995,6 +3995,7 @@
     "old-nix-installer": 9,
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
+    "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
     "soldeer-unpublished": 1,
@@ -4036,11 +4037,43 @@
       ]
     },
     {
+      "name": "rain.merkle",
+      "org": "rainlanguage",
+      "signals": [
+        "removed-rainix-task",
+        "untested-externals"
+      ]
+    },
+    {
+      "name": "rain.pyth",
+      "org": "rainlanguage",
+      "signals": [
+        "removed-rainix-task",
+        "untested-externals"
+      ]
+    },
+    {
+      "name": "rain.solver",
+      "org": "rainlanguage",
+      "signals": [
+        "telegram-secret-drift",
+        "untested-externals"
+      ]
+    },
+    {
       "name": "raindex",
       "org": "rainlanguage",
       "signals": [
         "old-actions-checkout",
         "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "raindex.governance",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key",
+        "untested-externals"
       ]
     },
     {
@@ -4198,31 +4231,10 @@
       ]
     },
     {
-      "name": "rain.merkle",
-      "org": "rainlanguage",
-      "signals": [
-        "removed-rainix-task"
-      ]
-    },
-    {
       "name": "rain.metadata",
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "rain.pyth",
-      "org": "rainlanguage",
-      "signals": [
-        "removed-rainix-task"
-      ]
-    },
-    {
-      "name": "rain.solver",
-      "org": "rainlanguage",
-      "signals": [
-        "telegram-secret-drift"
       ]
     },
     {
@@ -4258,13 +4270,6 @@
       "org": "rainlanguage",
       "signals": [
         "old-actions-checkout"
-      ]
-    },
-    {
-      "name": "raindex.governance",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
       ]
     },
     {
@@ -6566,6 +6571,440 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
       "daysSinceAudit": 179
+    }
+  ],
+  "untestedExternals": [
+    {
+      "name": "raindex.governance",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 11,
+      "testFiles": 1,
+      "sourcesUnparsed": 0,
+      "untested": [
+        {
+          "contract": "RaindexInventory",
+          "function": "addOrder4",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "orderExists",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "quote2",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "removeOrder3",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "unpause",
+          "file": "src/RaindexInventory.sol"
+        }
+      ]
+    },
+    {
+      "name": "rain.merkle",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 3,
+      "sourcesUnparsed": 0,
+      "untested": [
+        {
+          "contract": "MerkleWords",
+          "function": "describedByMetaV1",
+          "file": "src/concrete/MerkleWords.sol"
+        },
+        {
+          "contract": "MerkleWords",
+          "function": "supportsInterface",
+          "file": "src/concrete/MerkleWords.sol"
+        }
+      ]
+    },
+    {
+      "name": "rain.pyth",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 7,
+      "sourcesUnparsed": 0,
+      "untested": [
+        {
+          "contract": "PythWords",
+          "function": "describedByMetaV1",
+          "file": "src/concrete/PythWords.sol"
+        },
+        {
+          "contract": "PythWords",
+          "function": "supportsInterface",
+          "file": "src/concrete/PythWords.sol"
+        }
+      ]
+    },
+    {
+      "name": "rain.solver",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 1,
+      "testFiles": 0,
+      "sourcesUnparsed": 0,
+      "untested": [
+        {
+          "contract": "DiagOrder",
+          "function": "run",
+          "file": "diag/DiagOrder.sol"
+        }
+      ]
+    },
+    {
+      "name": "cyclo.sol",
+      "org": "cyclofinance",
+      "state": "analyzed",
+      "externalFunctions": 3,
+      "testFiles": 18,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "flow",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 3,
+      "testFiles": 24,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.datacontract",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 1,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.deploy",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 4,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.dia",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 18,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.erc1820",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 0,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.erc4626.words",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 32,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.extrospection",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 12,
+      "testFiles": 105,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.factory",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 6,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.factory.deploy",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 6,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.flare",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 20,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.intorastring",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 2,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.lib.hash",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 2,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.lib.memkv",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 6,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.lib.typecast",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 3,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.math.binary",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 1,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.math.fixedpoint",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 13,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.math.float",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 35,
+      "testFiles": 92,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.math.saturating",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 2,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.metadata",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 2,
+      "testFiles": 9,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.sol.binmaskflag",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 1,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.sol.codegen",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 6,
+      "sourcesUnparsed": 2,
+      "untested": []
+    },
+    {
+      "name": "rain.solmem",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 32,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.string",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 6,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.tier.interface",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 2,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.tofu.erc20-decimals",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 4,
+      "testFiles": 17,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.vats",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 38,
+      "testFiles": 133,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.vats.flare",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 5,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.verify",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 13,
+      "testFiles": 18,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.verify.interface",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 1,
+      "testFiles": 1,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.will-overflow",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 3,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "raindex",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 16,
+      "testFiles": 241,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "raindex.interface",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 0,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rainlang",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 28,
+      "testFiles": 269,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rainlang.interface",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 25,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "st0x-timelock-deploy",
+      "org": "S01-Issuer",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 0,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "st0x.deploy",
+      "org": "S01-Issuer",
+      "state": "analyzed",
+      "externalFunctions": 38,
+      "testFiles": 130,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "st0x.oracle",
+      "org": "ST0x-Technology",
+      "state": "analyzed",
+      "externalFunctions": 33,
+      "testFiles": 24,
+      "sourcesUnparsed": 0,
+      "untested": []
     }
   ]
 }
