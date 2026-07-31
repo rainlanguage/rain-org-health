@@ -133,9 +133,16 @@
   .pm-legend .sw.total { border-top: 1.5px dashed var(--ink-3); }
   .pm-legend .sw.boot { border-top: 1.25px dotted var(--ink-2); }
   .pm-legend .sw.ttl { border-top: 1.5px dashed var(--ink-2); }
+  /* The skip key mirrors the mark itself: a short vertical tick, not a line. */
+  .pm-legend .sw.skip { width: 0; height: 10px; border-top: 0; border-left: 1.5px solid var(--ink-3); }
   .pm-line.deg { stroke: var(--crit); }
   .pm-dot { fill: var(--ink); }
   .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
+  /* A skipped tick (the producer's usage gate paused it): an EVENT on the
+     timeline, never a run. Thin, muted, and a shape no run mark uses — runs
+     are dots on lines, a skip is a short vertical tick at the baseline — so
+     the cue is form, not colour alone, and it holds in both themes. */
+  .pm-skip { stroke: var(--ink-3); stroke-width: 1.5; }
   /* Qualified with .pm-chart so it outweighs `.pm-chart text` (0,1,1) — an
      unqualified .pm-endlabel (0,1,0) loses the cascade and renders muted. */
   .pm-chart text.pm-endlabel { fill: var(--ink); font-weight: 700; font-size: 11px; }
@@ -304,6 +311,9 @@ const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","
 // no run carries an absolute time, and it runs before the tiles and chart.
 let pmMode = "abs";
 let pmRuns = [];
+// Skipped ticks (rows the producer's usage gate paused) cached beside pmRuns
+// for the same reason: the unit toggle re-renders without re-fetching.
+let pmSkips = [];
 
 function parseRunId(id) {
   const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(id || "");
@@ -399,6 +409,25 @@ function ttlMin(r) {
 function outcomeWord(r) {
   return r.outcome || (r.stage && r.stage !== "final" ? "unfinished" : "ok");
 }
+// THE skip predicate — the page's one reading of "this row is a skipped tick,
+// not a run". The typed discriminant is `outcome: "skipped"`; the `skipped`
+// field (the gate kind, e.g. "usage-gate") is the fallback arm, so a row
+// carrying the gate fields without the typed outcome still reads as a skip.
+// On ordinary rows both fields are ABSENT, not null. The gate kind's VALUE is
+// never gated — an unknown kind still renders as a skip (fail-open on
+// display) while never counting as a run anywhere: pmPartition splits on this
+// once, and every aggregate downstream sees real runs only.
+function isSkip(r) {
+  return r != null && (r.outcome === "skipped" || r.skipped != null);
+}
+// Parsed records → { runs, skips }: the ONE partition between measurements and
+// events. Everything that aggregates — tiles, controls, the chart's y scale
+// and series — receives `runs`; `skips` reach the chart solely as timeline
+// marks. No renderer re-tests skip-ness, so a skip cannot leak into a
+// statistic without this split being broken first.
+function pmPartition(recs) {
+  return { runs: recs.filter((r) => !isSkip(r)), skips: recs.filter(isSkip) };
+}
 // One record per run. The emitter appends a PARTIAL record the moment each
 // number becomes known — `stage:"boot"` at the first tool call, `stage:"ttl"` at
 // the first productive act — and the complete `stage:"final"` record only at run
@@ -454,7 +483,7 @@ function renderPmControls(runs) {
       pmMode = m;
       renderPmControls(pmRuns);
       renderPmTiles(pmRuns);
-      renderPmChart(pmRuns);
+      renderPmChart(pmRuns, pmSkips);
     });
     group.append(b);
   }
@@ -573,7 +602,28 @@ function pmTip(r, abs) {
   return frag;
 }
 
-function renderPmChart(runs) {
+// The tooltip for a skipped tick. skipReason is the gate's PAUSE line VERBATIM
+// — producer-authored text this page does not own — so it lands via `append`'s
+// string form, a text node, like every other untrusted field here (CLAUDE.md
+// "Rendering untrusted data"). The KIND line is fail-open: "usage-gate" is
+// what the producer emits today, but an unknown kind names itself rather than
+// being dropped — it is a skip either way, and pmPartition already keeps it
+// out of every run statistic.
+function pmSkipTip(r) {
+  const frag = document.createDocumentFragment();
+  const lead = document.createElement("b");
+  lead.textContent = "skipped";
+  frag.append(lead, " — no run this tick", document.createElement("br"));
+  if (r.skipReason != null && r.skipReason !== "")
+    frag.append(String(r.skipReason), document.createElement("br"));
+  frag.append(`${fmtRunTime(r.runId)} · `);
+  const kind = document.createElement("span");
+  kind.textContent = typeof r.skipped === "string" && r.skipped ? r.skipped : "skip";
+  frag.append(kind);
+  return frag;
+}
+
+function renderPmChart(runs, skips = []) {
   const abs = pmMode === "abs";
   const VBW = 720, VBH = 210, PADL = abs ? 34 : 30, PADR = 46, PADT = 14, PADB = 24;
   const plotW = VBW - PADL - PADR, plotH = VBH - PADT - PADB;
@@ -608,12 +658,26 @@ function renderPmChart(runs) {
   const yOf = (v) => PADT + (1 - Math.max(0, Math.min(ymax, v)) / ymax) * plotH;
   const by = yOf(0);
 
+  // Position is time for EVERY event on the axis — runs and skipped ticks
+  // share one x scale, so a skip lands at its own timestamp (a pause at either
+  // end stretches the axis) instead of being squeezed in between runs.
   const times = runs.map((r) => { const d = parseRunId(r.runId); return d ? d.getTime() : null; });
-  const timed = times.every((t) => t != null);
-  let xOf;
-  if (runs.length === 1) xOf = () => PADL + plotW / 2;
-  else if (timed) { const mn = Math.min(...times), mx = Math.max(...times), sp = (mx - mn) || 1; xOf = (i) => PADL + ((times[i] - mn) / sp) * plotW; }
-  else xOf = (i) => PADL + (i / (runs.length - 1)) * plotW;
+  const skipTimes = skips.map((r) => { const d = parseRunId(r.runId); return d ? d.getTime() : null; });
+  const timed = times.every((t) => t != null) && skipTimes.every((t) => t != null);
+  const evCount = runs.length + skips.length;
+  let xOf, skipXs;
+  if (evCount === 1) { xOf = () => PADL + plotW / 2; skipXs = skips.map(() => PADL + plotW / 2); }
+  else if (timed) {
+    const all = times.concat(skipTimes);
+    const mn = Math.min(...all), mx = Math.max(...all), sp = (mx - mn) || 1;
+    const xAt = (t) => PADL + ((t - mn) / sp) * plotW;
+    xOf = (i) => xAt(times[i]);
+    skipXs = skipTimes.map(xAt);
+  } else {
+    // Unparseable ids have no timeline; an index scale, skips after the runs.
+    xOf = (i) => PADL + (i / (evCount - 1)) * plotW;
+    skipXs = skips.map((_, j) => PADL + ((runs.length + j) / (evCount - 1)) * plotW);
+  }
   // One entry per run; y == null marks a gap — no dot, and the line breaks.
   const pts = runs.map((r, i) => {
     const v = valOf(r);
@@ -707,30 +771,49 @@ function renderPmChart(runs) {
   }
   const dots = real.map((p) =>
     svgEl("circle", { class: "pm-dot" + (isDeg(p) ? " deg" : ""), cx: p.x, cy: p.y, r: p === real[real.length - 1] ? 4 : 3 }));
+  // Skipped ticks: a short vertical tick rising off the baseline — never a dot
+  // or a bar, which would read as a completed run with zero work. They have no
+  // y value on purpose (a skip is an event, not a measurement), so they join
+  // the hover list with y null, like a gap run, and mark in EVERY unit mode —
+  // no toggle can make an event meaningless.
+  const skipPts = skips.map((r, j) => ({ x: +skipXs[j].toFixed(1), y: null, run: r }));
+  const skipMarks = skipPts.map((p) =>
+    svgEl("line", { class: "pm-skip", x1: p.x, y1: (by - 12).toFixed(1), x2: p.x, y2: by }));
   const endlabel = [];
   if (real.length) {
     const l = real[real.length - 1];
     const lbl = abs ? l.v.toFixed(1) + "m" : l.v.toFixed(0) + "%";
     endlabel.push(svgEl("text", { class: "pm-endlabel", x: (l.x + 6).toFixed(1), y: (l.y + 3).toFixed(1) }, lbl));
   }
-  const xlabels = runs.length >= 2
+  // Axis endpoints span every event — a pause with no runs after it still
+  // dates the axis by its skipped ticks. Ids sort lexically = chronologically.
+  const evIds = runs.map((r) => r.runId || "").concat(skips.map((r) => r.runId || "")).sort();
+  const xlabels = evCount >= 2
     ? [
-      svgEl("text", { x: PADL, y: VBH - 7, "text-anchor": "start" }, fmtDayTime(runs[0].runId)),
-      svgEl("text", { x: VBW - PADR, y: VBH - 7, "text-anchor": "end" }, fmtDayTime(runs[runs.length - 1].runId)),
+      svgEl("text", { x: PADL, y: VBH - 7, "text-anchor": "start" }, fmtDayTime(evIds[0])),
+      svgEl("text", { x: VBW - PADR, y: VBH - 7, "text-anchor": "end" }, fmtDayTime(evIds[evIds.length - 1])),
     ]
-    : [svgEl("text", { x: PADL + plotW / 2, y: VBH - 7, "text-anchor": "middle" }, fmtDayTime(runs[0].runId))];
+    : [svgEl("text", { x: PADL + plotW / 2, y: VBH - 7, "text-anchor": "middle" }, fmtDayTime(evIds[0]))];
   const cur = svgEl("line", { class: "pm-cursor", id: "pmcursor", x1: 0, y1: PADT, x2: 0, y2: VBH - PADB });
-  const aria = abs
+  const aria = (abs
     ? "Producer run time in minutes per run over time: total wall clock, the startup portion within it, and startup's boot and ttl parts"
-    : "Producer startup overhead percent per run over time";
+    : "Producer startup overhead percent per run over time") +
+    (skipPts.length ? "; thin baseline ticks mark ticks the usage gate skipped" : "");
 
-  // A legend is mandatory once two series share the plot, so identity is never
-  // carried by the mark alone. Proportion mode has one series and gets none.
+  // A legend is mandatory once two marks share the plot, so identity is never
+  // carried by the mark alone. Proportion mode has one series and gets none —
+  // unless skipped ticks are on the axis, which are a second mark to name.
   const legend = [];
-  if (abs) {
+  const legendKeys = [];
+  if (runs.length) {
+    legendKeys.push(["sw", "startup"]);
+    if (abs) legendKeys.push(["sw boot", "boot"], ["sw ttl", "ttl"], ["sw total", "total run"]);
+  }
+  if (skipPts.length) legendKeys.push(["sw skip", "skipped tick"]);
+  if (legendKeys.length > 1 || skipPts.length) {
     const box = document.createElement("div");
     box.className = "pm-legend";
-    for (const [swatch, label] of [["sw", "startup"], ["sw boot", "boot"], ["sw ttl", "ttl"], ["sw total", "total run"]]) {
+    for (const [swatch, label] of legendKeys) {
       const k = document.createElement("span");
       k.className = "k";
       const sw = document.createElement("span");
@@ -748,7 +831,7 @@ function renderPmChart(runs) {
     role: "img",
     "aria-label": aria,
   });
-  svg.append(...grid, cur, ...areas, ...totalLines, ...lines, ...dots, ...endlabel, ...xlabels);
+  svg.append(...grid, cur, ...areas, ...totalLines, ...lines, ...skipMarks, ...dots, ...endlabel, ...xlabels);
   const tip = document.createElement("div");
   tip.className = "pm-tip";
   tip.id = "pmtip";
@@ -759,9 +842,13 @@ function renderPmChart(runs) {
     const rr = svg.getBoundingClientRect();
     if (!rr.width) return;
     const relX = ((e.clientX - rr.left) / rr.width) * VBW;
+    // Runs and skipped ticks share the hover surface; the tip then renders
+    // whichever KIND of event is nearest — isSkip is the same predicate the
+    // partition uses, so the two can never classify a row differently.
+    const hov = pts.concat(skipPts);
     let best = 0, bd = Infinity;
-    pts.forEach((p, i) => { const d = Math.abs(p.x - relX); if (d < bd) { bd = d; best = i; } });
-    const p = pts[best], r = p.run;
+    hov.forEach((p, i) => { const d = Math.abs(p.x - relX); if (d < bd) { bd = d; best = i; } });
+    const p = hov[best], r = p.run;
     // Anchor the cursor + tip on the run's plotted point; a gap run has no y, so
     // fall back to the baseline for the vertical anchor.
     const anchorY = p.y == null ? by : p.y;
@@ -769,7 +856,7 @@ function renderPmChart(runs) {
     const wr = wrap.getBoundingClientRect();
     tip.style.left = (rr.left - wr.left + (p.x / VBW) * rr.width) + "px";
     tip.style.top = (rr.top - wr.top + (anchorY / VBH) * rr.height - 10) + "px";
-    tip.replaceChildren(pmTip(r, abs));
+    tip.replaceChildren(isSkip(r) ? pmSkipTip(r) : pmTip(r, abs));
     tip.style.opacity = 1;
   });
   svg.addEventListener("mouseleave", () => { tip.style.opacity = 0; cur.style.opacity = 0; });
@@ -780,7 +867,7 @@ function renderPmChart(runs) {
 // nothing to describe and are dropped. The only data here is the run's outcome
 // and age, both from runs.jsonl, so both go in as text nodes; the literal
 // markup (the link, the emphasis, the code span) is built as elements.
-function renderPmNote(last) {
+function renderPmNote(last, skips = []) {
   const nodes = [];
   const tag = (name, text) => {
     const n = document.createElement(name);
@@ -820,6 +907,15 @@ function renderPmNote(last) {
       " and plot no boot or ttl. ",
     );
   }
+  // Named only when the file actually carries skips: historical files have
+  // none, and a sentence about an absent mark would send readers hunting for it.
+  if (skips.length) {
+    nodes.push(
+      `${skips.length} tick${skips.length === 1 ? " was" : "s were"} skipped by the producer's usage gate — ` +
+        "drawn as thin baseline ticks; hover one for the gate's reason verbatim. " +
+        "A skipped tick is an event, not a run: no statistic on this page counts it. ",
+    );
+  }
   const src = tag("a", "runs.jsonl");
   src.href = "https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl";
   src.rel = "noopener";
@@ -838,40 +934,48 @@ function renderPmNote(last) {
 // that was killed or timed out never reaches its final record, so requiring
 // startupPct dropped exactly the runs whose timings are most wanted — the
 // dashboard could only ever report successes.
+//
+// A SKIPPED tick (the usage gate paused the producer) carries neither number —
+// there was no run to measure — and earns its place by being a skip: dropping
+// it would render the pause as the unexplained dead stretch it exists to
+// explain. pmPartition then keeps it out of every run statistic.
 function pmRecords(text) {
   return collapseRuns(
     text.split("\n").map((l) => l.trim()).filter(Boolean)
       .map((l) => { try { return JSON.parse(l); } catch { return null; } })
       .filter((r) =>
         r && r.role === "producer" &&
-        (typeof r.startupPct === "number" || typeof r.bootMs === "number")
+        (isSkip(r) || typeof r.startupPct === "number" || typeof r.bootMs === "number")
       ),
   ).sort((a, b) => (a.runId || "").localeCompare(b.runId || ""));
 }
 
 async function loadMetrics() {
   const empty = $("pmempty");
-  let runs = [];
+  let runs = [], skips = [];
   try {
     const res = await fetch(PM_URL, { cache: "no-store" });
     if (!res.ok) throw new Error(res.status);
-    runs = pmRecords(await res.text());
+    ({ runs, skips } = pmPartition(pmRecords(await res.text())));
   } catch (e) {
     if (empty) empty.textContent = "could not load run metrics (metrics/runs.jsonl)";
     return;
   }
   pmRuns = runs;
+  pmSkips = skips;
   renderPmControls(runs);
   renderPmTiles(runs);
-  if (!runs.length) {
+  // A window that is ALL skips still charts — the pause is the story — but
+  // with no events of either kind there is nothing to draw.
+  if (!runs.length && !skips.length) {
     if (empty) empty.textContent =
       "No producer runs recorded yet. The first metric lands after the next producer cron run — " +
       "then this chart fills in, one point per run.";
     renderPmNote(null);
     return;
   }
-  renderPmChart(runs);
-  renderPmNote(runs[runs.length - 1]);
+  renderPmChart(runs, skips);
+  renderPmNote(runs.length ? runs[runs.length - 1] : null, skips);
 }
 loadMetrics();
 </script>
