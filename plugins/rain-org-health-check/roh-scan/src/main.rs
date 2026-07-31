@@ -20,6 +20,7 @@ mod owners;
 mod protofire;
 mod rpc;
 mod signals;
+mod untested;
 use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
     anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
@@ -957,15 +958,20 @@ fn sum_sol_loc(root: &std::path::Path) -> u64 {
     loc
 }
 
-/// Total non-test Solidity LOC at HEAD, counted from a shallow clone. #37 wants an
-/// accurate line count, not the tree API's byte size, so we shallow-clone the repo
-/// and count lines in every non-test `.sol` file. `None` on a failed clone
-/// (private/missing/network) — the repo's LOC is then unknown, not zero. Unlike the
-/// rest of the scan this is NOT clone-free; it is bounded to the repos that need a
-/// full-source count (never-audited Solidity projects).
-fn count_source_loc(org: &str, repo: &str) -> Option<u64> {
+/// Shallow-clone `org/repo` and run `f` on the checkout, always cleaning up the
+/// scratch dir. `None` on a failed clone (private/missing/network) — everything
+/// the closure would have measured is then unknown, not zero. The clone-based
+/// facts (#37 source LOC, the #54 untested-external check) share ONE clone per
+/// repo through this seam. Unlike the rest of the scan this is NOT clone-free;
+/// clones stay `--depth 1 --single-branch --no-tags` and submodule-free (so
+/// `lib/` dependencies are never present, let alone measured).
+fn with_shallow_clone<T>(
+    org: &str,
+    repo: &str,
+    f: impl FnOnce(&std::path::Path) -> T,
+) -> Option<T> {
     let dir = std::env::temp_dir().join(format!(
-        "rohloc-{}-{}",
+        "rohclone-{}-{}",
         repo.replace(['/', '.'], "-"),
         std::process::id()
     ));
@@ -973,7 +979,7 @@ fn count_source_loc(org: &str, repo: &str) -> Option<u64> {
     let url = format!("https://github.com/{org}/{repo}");
     // Bound the clone via `timeout` so one stalled network connection can't block a
     // scan worker indefinitely (a non-zero exit — including the 124 timeout — is
-    // treated as a failed clone, i.e. unknown LOC).
+    // treated as a failed clone, i.e. unknown).
     let ok = Command::new("timeout")
         .args([
             "120",
@@ -990,9 +996,49 @@ fn count_source_loc(org: &str, repo: &str) -> Option<u64> {
         .status()
         .map(|s| s.success())
         .unwrap_or(false);
-    let loc = ok.then(|| sum_sol_loc(&dir));
+    let out = ok.then(|| f(&dir));
     let _ = std::fs::remove_dir_all(&dir);
-    loc
+    out
+}
+
+/// Every `.sol` file in a checkout as `(repo-relative path, content)`, for the
+/// untested-external-surface check. A dumb reader: routing (source vs test vs
+/// vendored) is `untested`'s pure predicates, so it stays unit-testable. Skips
+/// `.git` and symlinks for the same reasons `sum_sol_loc` does; a file that
+/// cannot be read as UTF-8 text is omitted here and therefore contributes no
+/// enumeration and no coverage — never a parse-failure masquerade.
+fn collect_sol_files(root: &std::path::Path) -> Vec<(String, String)> {
+    fn walk(dir: &std::path::Path, root: &std::path::Path, acc: &mut Vec<(String, String)>) {
+        let Ok(entries) = std::fs::read_dir(dir) else {
+            return;
+        };
+        for entry in entries.flatten() {
+            let Ok(ft) = entry.file_type() else {
+                continue;
+            };
+            if ft.is_symlink() {
+                continue;
+            }
+            let path = entry.path();
+            if ft.is_dir() {
+                if path.file_name().and_then(|n| n.to_str()) != Some(".git") {
+                    walk(&path, root, acc);
+                }
+            } else if ft.is_file() {
+                if let Some(rel) = path.strip_prefix(root).ok().and_then(|p| p.to_str()) {
+                    if rel.to_ascii_lowercase().ends_with(".sol") {
+                        if let Ok(content) = std::fs::read_to_string(&path) {
+                            acc.push((rel.to_string(), content));
+                        }
+                    }
+                }
+            }
+        }
+    }
+    let mut files = Vec::new();
+    walk(root, root, &mut files);
+    files.sort_by(|a, b| a.0.cmp(&b.0));
+    files
 }
 
 /// A `ProtofireResult` for a repo with no usable PDF, carrying only the coverage
@@ -1239,6 +1285,11 @@ struct RepoResult {
     /// FULL non-test `.sol` LOC (#37), counted for never-audited Solidity repos;
     /// `None` for audited/non-Solidity repos (audited repos use drift instead).
     full_source_loc: Option<u64>,
+    /// The untested-external-surface check (claude-audit-skills#54), run for
+    /// every Foundry repo from the shared shallow clone. `None` = the clone
+    /// failed (or not a Foundry repo): UNKNOWN, which the report must keep
+    /// apart from "analyzed and clean".
+    untested: Option<untested::RepoUntested>,
     /// This repo's soldeer `[package].name` — what consumers name it by, so it
     /// is the audit graph's join key (#71).
     package: Option<String>,
@@ -1424,21 +1475,38 @@ fn main() {
         // Foundry/Solidity project — proxied by a foundry.toml, which fetch_inputs
         // already retrieves, so this gate adds no extra request (#54).
         let has_foundry = !inputs.foundry.trim().is_empty();
-        let signals = detect_signals(&inputs);
+        let mut signals = detect_signals(&inputs);
         let last_audit = fetch_last_audit(org, repo);
         let last_mutation = fetch_last_mutation(org, repo);
         let protofire = fetch_protofire_audit(&gh, org, repo);
-        // #37: a never-audited Solidity repo's FULL non-test .sol LOC (via a shallow
-        // clone) quantifies the coverage gap; audited repos use their drift instead.
-        // Only CONFIRMED never-audited repos get a LOC count. `!has_pdf` also matches
-        // `unknown` (the audit fetch FAILED), and an errored lookup must not be
-        // presented as a confirmed coverage gap with a source-LOC magnitude (cf #52).
-        let full_source_loc =
-            if has_foundry && protofire.external_audit == protofire::ExternalAudit::Never {
-                count_source_loc(org, repo)
-            } else {
-                None
-            };
+        // ONE shallow clone per Foundry repo feeds both clone-based facts:
+        // #37: a never-audited Solidity repo's FULL non-test .sol LOC quantifies
+        // the coverage gap; audited repos use their drift instead. Only CONFIRMED
+        // never-audited repos get a LOC count. `!has_pdf` also matches `unknown`
+        // (the audit fetch FAILED), and an errored lookup must not be presented
+        // as a confirmed coverage gap with a source-LOC magnitude (cf #52).
+        // #54 (claude-audit-skills): the untested-external-surface check, for
+        // EVERY Foundry repo. A failed clone leaves both `None` — unknown.
+        let count_loc = has_foundry && protofire.external_audit == protofire::ExternalAudit::Never;
+        let (full_source_loc, untested) = if has_foundry {
+            match with_shallow_clone(org, repo, |dir| {
+                (
+                    count_loc.then(|| sum_sol_loc(dir)),
+                    untested::analyze(&collect_sol_files(dir)),
+                )
+            }) {
+                Some((loc, report)) => (loc, Some(report)),
+                None => (None, None),
+            }
+        } else {
+            (None, None)
+        };
+        // The findings-table flag rides next to the workflow signals so the
+        // dashboard chips, the summary counts, and the skill's issue-filing
+        // marker convention all pick it up without a second mechanism.
+        if let Some(s) = untested::signal(untested.as_ref()) {
+            signals.push(s);
+        }
         RepoResult {
             name: repo.to_string(),
             org: org.clone(),
@@ -1458,6 +1526,7 @@ fn main() {
             protofire,
             has_foundry,
             full_source_loc,
+            untested,
         }
     });
     // findings view (owned) so we can re-sort `results` for audit recency afterwards
@@ -1582,6 +1651,52 @@ fn main() {
             r.name,
             p.external_audit.as_str()
         );
+    }
+
+    // Untested external surface (claude-audit-skills#54): every Foundry repo's
+    // concrete-contract external/public functions with NO test reference. The
+    // listing ENUMERATES the flagged functions — a sampled finding cannot be
+    // triaged. Repos whose clone failed are named as unknown, kept apart from
+    // "analyzed and clean" (#52).
+    let mut ue_view: Vec<&RepoResult> = results.iter().filter(|r| r.has_foundry).collect();
+    ue_view.sort_by(|a, b| {
+        let n = |r: &RepoResult| r.untested.as_ref().map_or(0, |u| u.untested.len());
+        (std::cmp::Reverse(n(a)), &a.name).cmp(&(std::cmp::Reverse(n(b)), &b.name))
+    });
+    let ue_analyzed = ue_view.iter().filter(|r| r.untested.is_some()).count();
+    let ue_flagged = ue_view
+        .iter()
+        .filter(|r| r.untested.as_ref().is_some_and(|u| !u.untested.is_empty()))
+        .count();
+    println!("\n============ untested external surface (public/external fns no test names) ======");
+    println!(
+        "  analyzed: {ue_analyzed} / {} Foundry repos ({} unknown — clone failed)",
+        ue_view.len(),
+        ue_view.len() - ue_analyzed
+    );
+    println!("  repos with untested externals: {ue_flagged} / {ue_analyzed}");
+    for r in &ue_view {
+        match &r.untested {
+            None => println!("  {:<28} unknown (clone failed)", r.name),
+            Some(u) if u.untested.is_empty() => {}
+            Some(u) => {
+                let unparsed = if u.sources_unparsed > 0 {
+                    format!(" · {} source file(s) unparsed", u.sources_unparsed)
+                } else {
+                    String::new()
+                };
+                println!(
+                    "  {:<28} {} untested / {} external·public · {} test files{unparsed}",
+                    r.name,
+                    u.untested.len(),
+                    u.external_count,
+                    u.test_files
+                );
+                for f in &u.untested {
+                    println!("      {}.{}  ({})", f.contract, f.function, f.file);
+                }
+            }
+        }
     }
 
     // JSON output — always written (populate by default)
@@ -2372,6 +2487,34 @@ fn main() {
                     "daysSinceAudit": days,
                 })
             }).collect::<Vec<_>>(),
+            // The untested-external-surface check (claude-audit-skills#54), one
+            // entry per Foundry repo. `state` keeps a failed clone (`unknown`)
+            // apart from a confirmed verdict (`analyzed`); the counts are null
+            // on unknown so nothing reads as a zero the scan never measured.
+            "untestedExternals": ue_view.iter().map(|r| match &r.untested {
+                None => json!({
+                    "name": r.name,
+                    "org": r.org,
+                    "state": "unknown",
+                    "externalFunctions": serde_json::Value::Null,
+                    "testFiles": serde_json::Value::Null,
+                    "sourcesUnparsed": serde_json::Value::Null,
+                    "untested": serde_json::Value::Null,
+                }),
+                Some(u) => json!({
+                    "name": r.name,
+                    "org": r.org,
+                    "state": "analyzed",
+                    "externalFunctions": u.external_count,
+                    "testFiles": u.test_files,
+                    "sourcesUnparsed": u.sources_unparsed,
+                    "untested": u.untested.iter().map(|f| json!({
+                        "contract": f.contract,
+                        "function": f.function,
+                        "file": f.file,
+                    })).collect::<Vec<_>>(),
+                }),
+            }).collect::<Vec<_>>(),
         });
         if let Some(parent) = std::path::Path::new(&path).parent() {
             let _ = std::fs::create_dir_all(parent);
@@ -2558,6 +2701,34 @@ mod tests {
             loc, 5,
             "3 (src/A.sol) + 2 (deploy/D.sol); tests, README, .git, and the symlink excluded"
         );
+    }
+
+    // ---- clone walk for the untested-external check: collect_sol_files ----
+    #[test]
+    fn collect_sol_files_reads_every_sol_with_relative_paths_sorted() {
+        let dir = std::env::temp_dir().join(format!("rohsol-unit-{}", std::process::id()));
+        let _ = std::fs::remove_dir_all(&dir);
+        std::fs::create_dir_all(dir.join("src")).unwrap();
+        std::fs::create_dir_all(dir.join("test")).unwrap();
+        std::fs::create_dir_all(dir.join(".git")).unwrap();
+        std::fs::write(dir.join("src/B.sol"), "contract B {}").unwrap();
+        std::fs::write(dir.join("src/A.sol"), "contract A {}").unwrap();
+        std::fs::write(dir.join("test/A.t.sol"), "contract AT {}").unwrap();
+        std::fs::write(dir.join("README.md"), "not sol").unwrap();
+        std::fs::write(dir.join(".git/junk.sol"), "not repo content").unwrap();
+        // A symlinked .sol must not be followed: the same file would otherwise be
+        // read twice (and a link could escape the clone).
+        #[cfg(unix)]
+        std::os::unix::fs::symlink(dir.join("src/A.sol"), dir.join("src/Link.sol")).unwrap();
+        let got = collect_sol_files(&dir);
+        let _ = std::fs::remove_dir_all(&dir);
+        let paths: Vec<&str> = got.iter().map(|(p, _)| p.as_str()).collect();
+        assert_eq!(
+            paths,
+            vec!["src/A.sol", "src/B.sol", "test/A.t.sol"],
+            "every real .sol, relative, sorted; .git, non-sol and the symlink excluded"
+        );
+        assert_eq!(got[0].1, "contract A {}", "content travels with the path");
     }
 
     // ---- external-call coverage: fetch_protofire_audit / collect_audit_pdfs ----
