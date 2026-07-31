@@ -1442,9 +1442,12 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     ),
     `producer states: ${JSON.stringify(producer.states)}`,
   );
+  // ai:relink is fully retired (issue-pr-cron#135/#139; last labelled PR migrated
+  // 2026-07-31): a lanes payload still carrying it renders in NO group, and its
+  // history folds into reject via HIST_FOLD.
   assert(
-    vetter.states.includes("ai:relink"),
-    `retired ai:relink awaits the vetter: ${JSON.stringify(vetter.states)}`,
+    groups.every((g) => !g.states.includes("ai:relink")),
+    `retired ai:relink renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
   );
   // Human owns the merge/ruling/close states + both close-candidate variants.
   assert(
@@ -1463,9 +1466,10 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
   // two owner-specific states the vetter verdict introduces (issue-pr-cron#73), plus the
   // FSM leak, promoted from a banner to a human-owned state, minus `awaiting-re-vet`,
   // collapsed into `un-vetted` by issue-pr-cron#128, minus `human:reject`, consolidated
-  // into `ai:reject` by issue-pr-cron#133/#138.
+  // into `ai:reject` by issue-pr-cron#133/#138, minus `ai:relink`, retired by
+  // issue-pr-cron#135/#139 (a relink IS a reject with a specific note).
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 15, `all 15 states filed once: ${total}`);
+  assert(total === 14, `all 14 states filed once: ${total}`);
   // Both directions, same as awaiting-re-vet: a reintroduction fails here.
   assert(
     groups.every((g) => !g.states.includes("human:reject")),
@@ -1597,6 +1601,42 @@ Deno.test("fsm history: retired human-reject samples fold into reject, so the se
     "folding a flat inventory raises no bottleneck flag",
   );
 });
+
+// Same shape a third time (issue-pr-cron#135/#139): a snapshot written before the relink
+// retirement carries `counts.relink` beside `counts.reject`; a relink IS a reject with a
+// specific note, so the folded series is their SUM and the 2026-07-31 migration of the last
+// labelled PR draws no cliff.
+Deno.test("fsm history: retired relink samples fold into reject too, so the series is continuous across the second retirement", () => {
+  const now = Date.parse("2026-07-31T10:10:00Z");
+  const at = (d) => now - d * DAY;
+  // Real inventory flat at 70 across the migration: split 28 + 42 before, one key after.
+  const history = [
+    { t: at(4), counts: { reject: 69, relink: 1 } },
+    { t: at(3), counts: { reject: 69, relink: 1 } },
+    { t: at(2), counts: { reject: 69, relink: 1 } },
+    { t: at(1), counts: { reject: 70 } },
+    { t: at(0), counts: { reject: 70 } },
+  ];
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, reject: 70 },
+    lanes: { "vetter-verdicts": { "ai:reject": { count: 70, prs: [] } } },
+  }, history);
+  const reject = collect(box, "fsm-state").find((b) => b.dataset.t === "ai:reject");
+  assert(reject, "ai:reject box rendered");
+  const line = tags(reject, "polyline")[0];
+  assert(line, "the folded series draws a line");
+  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
+  assert(
+    ys.every((y) => y === ys[0]),
+    `the line is continuous, with no cliff at the relink retirement: ${JSON.stringify(ys)}`,
+  );
+  assert(
+    !reject.classList.contains("rising"),
+    "folding a flat inventory raises no bottleneck flag",
+  );
+});
+
 
 // The fold must not INVENT samples: a refresh that carried neither key is still no point,
 // not a zero — the pre-existing contract every other state depends on. The rollup is fetched
@@ -1876,9 +1916,10 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
   const at = (d) => now - d * DAY; // d days before `now`
   // 8 daily samples ending at `now`:
   //   ai:ready   climbs 40→54     (slope ≈ +2/day)          → the constraint, flagged.
-  //   ai:reject  holds flat at 10 (slope 0)                 → not flagged.
-  //   ai:relink  flat 3 with a lone +1 blip on the last day (slope ≈ 0.11/day, below the
-  //              0.15 epsilon)                              → not flagged (anti-flap guard).
+  //   ai:reject  flat 10, PLUS the retired relink series (flat 3, lone +1 blip on the last
+  //              day) folded in via HIST_FOLD → folded 13..14, slope ≈ 0.11/day, below the
+  //              0.15 epsilon → not flagged (anti-flap guard survives the retirement: the
+  //              blip rides the fold).
   const ready = [40, 42, 44, 46, 48, 50, 52, 54];
   const relink = [3, 3, 3, 3, 3, 3, 3, 4];
   const history = ready.map((_, i) => ({
@@ -1899,8 +1940,8 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
   const readyBox = byKey("ai:ready"), rejectBox = byKey("ai:reject"), relinkBox = byKey("ai:relink");
   assert(readyBox.classList.contains("rising"), "up-trending ai:ready gets the rising border");
-  assert(!rejectBox.classList.contains("rising"), "flat ai:reject is not flagged");
-  assert(!relinkBox.classList.contains("rising"), "a lone +1 blip stays under epsilon, not flagged");
+  assert(!rejectBox.classList.contains("rising"), "the folded blip stays under epsilon, not flagged");
+  // (the under-epsilon blip rides reject's FOLDED series above — retired relink renders no box)
   // Never color-alone: a visible ▲ badge + an aria-label spell the flag out.
   assert(collect(readyBox, "fsm-rise").length === 1, "rising state carries a visible ▲ cue");
   assert(
@@ -1919,15 +1960,10 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
     !(collect(rejectBox, "fsm-rise")[0]?.getAttribute("title") || "").includes("rising"),
     "the ▲ on a fallback pick does not claim a trend either",
   );
-  // ai:relink now files under the VETTER (retired verdict, exits by re-vet — issue-pr-
-  // cron#135/#139), and in this fixture the vetter group has no un-vetted inventory, so
-  // relink IS that group's largest queue: it wears the fallback mark, but its series is a
-  // lone under-epsilon blip, so the one thing it must never carry is a trend CLAIM.
-  assert(collect(relinkBox, "fsm-rise").length === 1, "the vetter group's fallback pick carries the ▲ cue");
-  assert(
-    !(relinkBox.getAttribute("aria-label") || "").includes("rising"),
-    `a fallback pick never claims a trend: ${relinkBox.getAttribute("aria-label")}`,
-  );
+  // ai:relink is fully retired (issue-pr-cron#135/#139): the fixture still carries its
+  // lane data and history — an old snapshot — and it must render NO box at all; its
+  // history folds into reject's series via HIST_FOLD instead.
+  assert(relinkBox === undefined, "retired ai:relink draws no box, even from a snapshot that carries it");
 });
 
 // The fallback that keeps every working actor pointed somewhere. `sevenDaySlope` needs two
@@ -2028,10 +2064,10 @@ Deno.test("fsm lead fallback: an all-zero group gets nothing, and equal counts b
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
   assert(!byKey("ai:ready").classList.contains("lead"), "an all-zero group is never marked");
   assert(!byKey("ai:design").classList.contains("lead"), "no work really is nothing to do");
-  // ai:reject and ai:relink sit in DIFFERENT groups now (relink retired to the vetter —
-  // issue-pr-cron#135/#139), so equal counts mark independently: each leads its own group.
+  // ai:relink is fully retired (issue-pr-cron#135/#139): its equal count renders no box
+  // and leads nothing — reject leads its group with relink data present but inert.
   assert(byKey("ai:reject").classList.contains("lead"), "reject leads the producer group");
-  assert(byKey("ai:relink").classList.contains("lead"), "relink leads the vetter group");
+  assert(byKey("ai:relink") === undefined, "retired ai:relink draws no box and leads nothing");
   // Same-group ties still break toward the earlier STATES entry: human-decisions carries
   // two equal states, and human:design precedes human:close-candidate.
   assert(byKey("human:design").classList.contains("lead"), "ties break toward the earlier STATES entry");
@@ -2315,7 +2351,7 @@ Deno.test("pipeline FSM: every box's count equals the number of rows it expands 
     if (rows !== n) mismatches.push(`${b.dataset.t}: box ${n}, panel ${rows}`);
     b.click();
   }
-  assert(checked === 15, `the whole machine was walked, got ${checked} boxes`);
+  assert(checked === 14, `the whole machine was walked, got ${checked} boxes`);
   // Guard the guard: a fixture that zeroed everything would satisfy the invariant vacuously.
   assert(nonZero >= 8, `the fixture must exercise non-zero states, got ${nonZero}`);
   assert(
