@@ -2252,6 +2252,62 @@ Deno.test("fsm ages: an age series with NO count series still draws, alone", () 
   assert(lines.length === 1 && lines[0].className.includes("al"), "the age line draws alone");
 });
 
+// The snapshot is an artifact this page does not own, and `Number()` coercion would turn a
+// malformed `null`/`""` medianDays into a fabricated "0d" — the exact absence-becomes-zero
+// lie the recording side refuses to emit. Only a real, finite, non-negative JSON number
+// renders; everything else is absence.
+Deno.test("fsm ages: null, string and negative age values render nothing — never a fabricated 0d", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const bad = [null, "41", -5];
+  for (const v of bad) {
+    const history = [
+      { t: now - DAY, counts: { uncoveredIssues: 610 } },
+      { t: now, counts: { uncoveredIssues: 620 }, ages: { uncoveredIssues: { medianDays: v, oldestDays: v } } },
+    ];
+    const box = fsmBox(
+      { counts: { uncoveredIssues: 620 }, lanes: {}, ages: { uncoveredIssues: { medianDays: v, oldestDays: v } } },
+      history,
+    );
+    const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+    assert(tags(b, "polyline").every((l) => !l.className.includes("al")), `medianDays=${JSON.stringify(v)} draws no age line`);
+    assert(tags(b, "circle").every((d) => !d.className.includes("ad")), `medianDays=${JSON.stringify(v)} draws no age dot`);
+    assert(collect(box, "sg").length === 0, `medianDays=${JSON.stringify(v)} renders no label — a coerced 0d would lie`);
+  }
+  // A malformed oldest never poisons a good median: the label renders, the tooltip omits it.
+  const box = fsmBox(
+    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: { uncoveredIssues: { medianDays: 41.0, oldestDays: "-" } } },
+    [],
+  );
+  const label = collect(box, "sg");
+  assert(label.length === 1 && label[0].textContent === "median 41d", "the valid median still labels");
+  assert(!(label[0].getAttribute("title") || "").includes("oldest"), "no fabricated oldest in the tooltip");
+});
+
+// The legend describes marks on screen: an `ages` block that draws nothing (empty, or all
+// fields malformed) gets no legend sentence, and one that draws gets exactly one.
+Deno.test("fsm ages: the legend sentence appears only when an age mark is actually drawn", () => {
+  const now = Date.parse("2026-07-31T00:00:00Z");
+  const histNoAges = [
+    { t: now - DAY, counts: { uncoveredIssues: 610 } },
+    { t: now, counts: { uncoveredIssues: 620 } },
+  ];
+  // Empty block, nothing drawable: no legend.
+  let box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {}, ages: {} }, histNoAges);
+  assert(!textOf(box).includes("age in days"), "an empty ages block draws nothing, so it explains nothing");
+  // Malformed-only block: still no legend.
+  box = fsmBox(
+    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: { uncoveredIssues: { medianDays: null } } },
+    histNoAges,
+  );
+  assert(!textOf(box).includes("age in days"), "a malformed-only ages block gets no legend either");
+  // A drawable value: the legend appears.
+  box = fsmBox(
+    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: agesOf(41.0, 812.3) },
+    histNoAges,
+  );
+  assert(textOf(box).includes("age in days"), "a drawn age mark is explained");
+});
+
 // The bottleneck flag reads the COUNT trend and only that: a backlog ageing fast while its
 // size holds flat is stagnation, not accumulation, and must not trip the rising border.
 Deno.test("fsm ages: a rising age over a flat count never flags the bottleneck", () => {

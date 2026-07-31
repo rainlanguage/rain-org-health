@@ -401,16 +401,20 @@ function renderFsm(hq, history) {
   // backlog has no age and a fabricated 0 would draw a fresh one). `oldestDays` rides along
   // as `o` for the tooltip when finite. This is a different DIMENSION from a queue size, so
   // it is drawn with its own normalization and its own dashed style — see `sparkline`.
+  // An age VALUE from the untrusted artifact: a real JSON number, finite, and >= 0 — or null.
+  // Not `Number(x)`: that coerces `null`/`""` to 0, fabricating a "0d" age out of a malformed
+  // field — the exact absence-becomes-zero lie the recording side refuses to emit — and a
+  // negative "age" (nothing honest produces one) must not render at all.
+  const ageNum = (x) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? x : null);
   const ageSeriesFor = (ageKey) => {
     if (!ageKey) return [];
     const out = [];
     for (const p of hist) {
       const a = p && p.ages && p.ages[ageKey];
       if (!a || typeof a !== "object") continue;
-      const v = Number(a.medianDays);
-      if (!Number.isFinite(v)) continue;
-      const o = Number(a.oldestDays);
-      out.push({ t: Number(p.t), v, o: Number.isFinite(o) ? o : null });
+      const v = ageNum(a.medianDays);
+      if (v == null) continue;
+      out.push({ t: Number(p.t), v, o: ageNum(a.oldestDays) });
     }
     out.sort((a, b) => a.t - b.t);
     return out;
@@ -421,9 +425,9 @@ function renderFsm(hq, history) {
   // field is validated on the way in: the snapshot is an artifact this page does not own.
   const ageCurFor = (ageKey, series) => {
     const a = hq.ages && typeof hq.ages === "object" ? hq.ages[ageKey] : null;
-    if (a && typeof a === "object" && Number.isFinite(Number(a.medianDays))) {
-      const o = Number(a.oldestDays);
-      return { medianDays: Number(a.medianDays), oldestDays: Number.isFinite(o) ? o : null };
+    const m = a && typeof a === "object" ? ageNum(a.medianDays) : null;
+    if (m != null) {
+      return { medianDays: m, oldestDays: ageNum(a.oldestDays) };
     }
     const last = series.length ? series[series.length - 1] : null;
     return last ? { medianDays: last.v, oldestDays: last.o } : null;
@@ -552,8 +556,12 @@ function renderFsm(hq, history) {
     if (age && age.cur) {
       const fmtD = (v) => String(Math.round(v * 10) / 10).replace(/\.0$/, "") + "d";
       const g = el("div", "sg", "median " + fmtD(age.cur.medianDays));
+      // `oldestDays` is a validated number or null by construction (`ageNum` at both
+      // sources) — checked against null here, never re-coerced: `Number(null)` is a
+      // finite 0, and a "oldest 0d" out of a malformed field is the fabrication the
+      // validation exists to stop.
       let tip = "median age of this backlog: " + fmtD(age.cur.medianDays);
-      if (Number.isFinite(Number(age.cur.oldestDays))) tip += " · oldest " + fmtD(Number(age.cur.oldestDays));
+      if (age.cur.oldestDays != null) tip += " · oldest " + fmtD(age.cur.oldestDays);
       g.setAttribute("title", tip);
       b.append(g);
     }
@@ -707,6 +715,10 @@ function renderFsm(hq, history) {
   ];
 
   const grid = el("div"); // container appended into the panel below
+  // Whether any box actually drew an age mark (dashed line or labelled value) — the legend's
+  // guard, so it never describes a mark that is not there (a bare `"ages": {}`, or one whose
+  // every field is malformed, renders nothing and gets no legend).
+  let ageOnScreen = false;
   if (hasLanes) {
     OWNERS.forEach((O) => {
       const g = el("div", "fsm-grid");
@@ -735,6 +747,10 @@ function renderFsm(hq, history) {
         if (s.age) {
           const ageSeries = ageSeriesFor(s.age);
           age = { series: ageSeries, cur: ageCurFor(s.age, ageSeries) };
+          // The legend below describes only marks actually on screen, so it keys off what
+          // this box will really draw — an empty/malformed `ages` block draws nothing and
+          // must explain nothing.
+          if (age.series.length || age.cur) ageOnScreen = true;
         }
         const b = stateBox(s.state, label, count, s.act, s.kind, seriesFor(s.hist), age);
         boxes.push({ b, count, label });
@@ -850,10 +866,11 @@ function renderFsm(hq, history) {
       " bottleneck: rising WIP is where the system is constrained."
     );
   }
-  // Guarded on age data actually being on screen (its own guard, not `hist` — the snapshot
-  // alone can carry `ages` before the rollup does): the legend only ever describes marks the
-  // panel is drawing.
-  if ((hq.ages && typeof hq.ages === "object") || hist.some((p) => p && p.ages)) {
+  // Guarded on an age mark actually being on screen (its own flag, not `hist` and not the
+  // mere presence of an `ages` key — the snapshot alone can carry the block before the
+  // rollup does, and an empty/malformed block draws nothing): the legend only ever
+  // describes marks the panel is drawing.
+  if (ageOnScreen) {
     note.append(
       " The dashed line and the labelled ",
       el("b", null, "median …d"),
