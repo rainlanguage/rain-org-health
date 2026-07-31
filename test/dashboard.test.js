@@ -4586,11 +4586,13 @@ Deno.test("metrics tiles: a partial contributes no startup figure", () => {
 });
 
 // --- skipped ticks (usage-gate pauses) ---------------------------------------
-// What the producer emits for a tick its usage gate PAUSED: an event row, not
-// a run — no startup numbers, no duration, just the gate's verdict alongside
-// the standard identity fields. `skipped` is the discriminant; `skipReason` is
-// the gate's PAUSE line verbatim. Historical files carry no such rows and are
-// not back-filled, so the zero-skip rendering is pinned as hard as the marks.
+// A tick the producer's usage gate PAUSED leaves an event row, not a run.
+// `skipped` is the discriminant; `skipReason` is the gate's PAUSE line
+// verbatim. SKIP_TICK carries the contract's minimum — the skip pair plus the
+// identity fields — while REAL_SKIP below is the emitter's actual row shape
+// (issue-pr-cron#160), which also carries zeroed run fields. Both shapes must
+// partition as events. Historical files carry no skip rows and are not
+// back-filled, so the zero-skip rendering is pinned as hard as the marks.
 const SKIP_TICK = {
   runId: "20260731T090001Z",
   role: "producer",
@@ -4607,6 +4609,59 @@ const SKIP_TICK2 = {
   skipReason: "PAUSE: weekly usage 94% >= 90% budget until 2026-08-01T00:00Z",
   exitCode: 0,
 };
+
+// The emitter's real skip row: stage:"final" with every run field present but
+// ZEROED, plus the skip pair. Read as a run, startupPct 0.0 drags the median,
+// durationMs 0 dives the total line to the baseline, and outcome "skipped"
+// paints an errored run — the partition is what stands between the real row
+// and all three misreadings.
+const REAL_SKIP = {
+  trace: "/tmp/empty-trace-160.jsonl",
+  stage: "final",
+  toolCalls: 0,
+  startupToolCalls: 0,
+  startupPct: 0.0,
+  wakeupCalls: 0,
+  firstMutationIndex: null,
+  bootMs: null,
+  ttlMs: null,
+  startupMs: null,
+  durationMs: 0,
+  numTurns: 0,
+  tokensIn: 0,
+  tokensOut: 0,
+  cacheRead: 0,
+  cacheCreation: 0,
+  costUsd: 0.0,
+  runId: "20260731T130001Z",
+  role: "producer",
+  model: "claude-fable-5",
+  exitCode: 10,
+  outcome: "skipped",
+  skipped: "usage-gate",
+  skipReason:
+    "PAUSE: 91% of the weekly budget used (endpoint) — at/over the 90% ceiling",
+};
+
+Deno.test("metrics skip: the emitter's real row is an event, not a zero-work run", () => {
+  const { runs, skips } = pmPartitionReal(
+    pmRecordsReal(jsonl(RUN_SPLIT, REAL_SKIP, RUN_SPLIT2)),
+  );
+  assert(
+    runs.length === 2 && skips.length === 1,
+    "the real row must partition as a skip: " + runs.length + "/" +
+      skips.length,
+  );
+  // Tiles: its startupPct 0.0 must not drag the median of [61.5, 40] → 50.8.
+  const [render, box] = pmBind("renderPmTiles", "pmtiles", "pct");
+  render(runs);
+  const t = textOf(box);
+  assert(t.includes("50.8%"), "median stays over the runs alone: " + t);
+  // Chart: a tick — not a dot its outcome would paint red at the baseline.
+  const wrap = pmChart(runs, "abs", skips);
+  assert(collect(wrap, "pm-skip").length === 1, "the real row draws its mark");
+  assert(tags(wrap, "circle").length === 2, "and never a run dot");
+});
 
 Deno.test("metrics skip: the predicate is presence of `skipped`, nothing else", () => {
   // One discriminant for the whole page. Gating on the VALUE would silently
