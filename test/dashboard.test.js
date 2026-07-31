@@ -3639,12 +3639,21 @@ const collapseRunsReal = bind("metrics.html", "collapseRuns", [], []);
 // Shared by the tooltip and the caption, so the two can never disagree about
 // whether a run succeeded.
 const outcomeWordReal = bind("metrics.html", "outcomeWord", [], []);
-// The whole runs.jsonl → charted-runs pipeline: parse, filter, collapse, sort.
-// Bound with the real collapseRuns so the filter and the collapse are exercised
-// together, which is how they run.
-const pmRecordsReal = bind("metrics.html", "pmRecords", ["collapseRuns"], [
-  collapseRunsReal,
+// The skip discriminant and the runs/skips partition (usage-gate pauses),
+// bound from the page so the tests exercise the real predicate, not a copy.
+const isSkipReal = bind("metrics.html", "isSkip", [], []);
+const pmPartitionReal = bind("metrics.html", "pmPartition", ["isSkip"], [
+  isSkipReal,
 ]);
+// The whole runs.jsonl → charted-records pipeline: parse, filter, collapse,
+// sort. Bound with the real collapseRuns and isSkip so the filter and the
+// collapse are exercised together, which is how they run.
+const pmRecordsReal = bind(
+  "metrics.html",
+  "pmRecords",
+  ["collapseRuns", "isSkip"],
+  [collapseRunsReal, isSkipReal],
+);
 
 function pmBind(name, boxId, pmMode, extraParams = [], extraValues = []) {
   const box = makeEl("div");
@@ -3863,8 +3872,22 @@ function pmTipBox(run, abs) {
   return box;
 }
 
-// Render the real chart; returns the wrap element it built into.
-function pmChart(runs, pmMode = "pct") {
+// Bind the real pmSkipTip and run it, returning the box the fragment landed in.
+function pmSkipTipBox(run) {
+  const d = pmDeps();
+  const document = stubDocument();
+  const fn = bind("metrics.html", "pmSkipTip", ["document", "fmtRunTime"], [
+    document,
+    d.fmtRunTime,
+  ]);
+  const box = makeEl("div");
+  box.replaceChildren(fn(run));
+  return box;
+}
+
+// Render the real chart; returns the wrap element it built into. `skips` is the
+// partition's other half — skipped ticks, drawn as events on the timeline.
+function pmChart(runs, pmMode = "pct", skips = []) {
   const wrap = makeEl("div");
   const $ = (id) => (id === "pmwrap" ? wrap : makeEl("div"));
   const d = pmDeps();
@@ -3893,6 +3916,13 @@ function pmChart(runs, pmMode = "pct") {
       outcomeWordReal,
     ],
   );
+  const pmSkipTip = bind("metrics.html", "pmSkipTip", [
+    "document",
+    "fmtRunTime",
+  ], [
+    document,
+    d.fmtRunTime,
+  ]);
   bind(
     "metrics.html",
     "renderPmChart",
@@ -3901,6 +3931,8 @@ function pmChart(runs, pmMode = "pct") {
       "document",
       "pmMode",
       "pmTip",
+      "pmSkipTip",
+      "isSkip",
       "parseRunId",
       "fmtDayTime",
       "fmtRunTime",
@@ -3917,6 +3949,8 @@ function pmChart(runs, pmMode = "pct") {
       document,
       pmMode,
       pmTip,
+      pmSkipTip,
+      isSkipReal,
       d.parseRunId,
       d.fmtDayTime,
       d.fmtRunTime,
@@ -3928,7 +3962,7 @@ function pmChart(runs, pmMode = "pct") {
       d.bootMin,
       d.ttlMin,
     ],
-  )(runs);
+  )(runs, skips);
   return wrap;
 }
 
@@ -4551,6 +4585,329 @@ Deno.test("metrics tiles: a partial contributes no startup figure", () => {
   );
 });
 
+// --- skipped ticks (usage-gate pauses) ---------------------------------------
+// What the producer emits for a tick its usage gate PAUSED: an event row, not
+// a run — no startup numbers, no duration, just the gate's verdict alongside
+// the standard identity fields. `skipped` is the discriminant; `skipReason` is
+// the gate's PAUSE line verbatim. Historical files carry no such rows and are
+// not back-filled, so the zero-skip rendering is pinned as hard as the marks.
+const SKIP_TICK = {
+  runId: "20260731T090001Z",
+  role: "producer",
+  model: "claude-opus-5",
+  skipped: "usage-gate",
+  skipReason: "PAUSE: weekly usage 92% >= 90% budget until 2026-08-01T00:00Z",
+  exitCode: 0,
+};
+const SKIP_TICK2 = {
+  runId: "20260731T130001Z",
+  role: "producer",
+  model: "claude-opus-5",
+  skipped: "usage-gate",
+  skipReason: "PAUSE: weekly usage 94% >= 90% budget until 2026-08-01T00:00Z",
+  exitCode: 0,
+};
+
+Deno.test("metrics skip: the predicate is presence of `skipped`, nothing else", () => {
+  // One discriminant for the whole page. Gating on the VALUE would silently
+  // drop the first gate kind the producer grows; gating on anything else would
+  // misread a run. Fail-open on display, never counted as a run.
+  assert(isSkipReal(SKIP_TICK) === true, "a usage-gate row is a skip");
+  assert(
+    isSkipReal({ ...SKIP_TICK, skipped: "manual-hold" }) === true,
+    "an unknown skip kind is still a skip",
+  );
+  for (const r of [RUN_SPLIT, RUN_LONG, PARTIAL_BOOT, PARTIAL_TTL]) {
+    assert(
+      isSkipReal(r) === false,
+      "a run row is never a skip: " + JSON.stringify(r.runId),
+    );
+  }
+});
+
+Deno.test("metrics records: a skipped tick is admitted without startup numbers", () => {
+  // A skip row carries neither startupPct nor bootMs — the run filter alone
+  // would drop it, and the pause would render as the unexplained dead stretch
+  // it exists to explain.
+  const out = pmRecordsReal(jsonl(RUN_SPLIT, SKIP_TICK));
+  assert(out.length === 2, "the run AND the skip must load, got " + out.length);
+  const skip = out.find((r) => r.runId === SKIP_TICK.runId);
+  assert(
+    skip && skip.skipReason === SKIP_TICK.skipReason,
+    "the verbatim reason must survive the parse: " + JSON.stringify(skip),
+  );
+});
+
+Deno.test("metrics records: a vetter skip does not leak into the producer panel", () => {
+  const out = pmRecordsReal(jsonl({ ...SKIP_TICK, role: "vetter" }, RUN_SPLIT));
+  assert(
+    out.length === 1 && out[0].role === "producer" && !isSkipReal(out[0]),
+    "this panel is the producer's, skips included: " + JSON.stringify(out),
+  );
+});
+
+Deno.test("metrics partition: skips leave the runs side entirely", () => {
+  const { runs, skips } = pmPartitionReal(
+    pmRecordsReal(jsonl(RUN_SPLIT, SKIP_TICK, RUN_SPLIT2)),
+  );
+  assert(
+    runs.length === 2 && runs.every((r) => !isSkipReal(r)),
+    "runs must be exactly the measurements: " + JSON.stringify(runs),
+  );
+  assert(
+    skips.length === 1 && skips[0].skipped === "usage-gate",
+    "skips must be exactly the events: " + JSON.stringify(skips),
+  );
+});
+
+Deno.test("metrics aggregates: a skipped tick moves no tile", () => {
+  // The exclusion is structural — pmPartition strips skips before any renderer
+  // runs — so tiles fed the partitioned runs read exactly as if the skip had
+  // never been in the file: same median, same run count.
+  const rec = (runId, startupPct) => ({
+    runId,
+    role: "producer",
+    startupPct,
+    outcome: "ok",
+  });
+  const { runs } = pmPartitionReal(pmRecordsReal(
+    jsonl(rec("20260731T010001Z", 10), SKIP_TICK, rec("20260731T050001Z", 20)),
+  ));
+  const [render, box] = pmBind("renderPmTiles", "pmtiles", "pct");
+  render(runs);
+  const t = textOf(box);
+  assert(
+    t.includes("15.0%"),
+    "median over the two RUNS is 15 — a skip counted as 0 would drag it: " + t,
+  );
+  const counted = collect(box, "tile").find((tile) =>
+    textOf(tile).includes("runs recorded")
+  );
+  assert(counted, "expected a runs-recorded tile");
+  assert(
+    textOf(counted).startsWith("2"),
+    "runs recorded counts runs, not events: " + textOf(counted),
+  );
+});
+
+Deno.test("metrics chart: a skipped tick draws a baseline tick, never a run mark", () => {
+  const wrap = pmChart([RUN_SPLIT, RUN_SPLIT2], "abs", [SKIP_TICK]);
+  const marks = collect(wrap, "pm-skip");
+  assert(marks.length === 1, "one skip, one marker, got " + marks.length);
+  // Shape IS the cue: a line element, never a circle — colour does not carry
+  // the distinction alone.
+  assert(
+    marks[0].tagName === "line",
+    "the marker is a tick, got <" + marks[0].tagName + ">",
+  );
+  assert(
+    tags(wrap, "circle").length === 2,
+    "dots belong to runs only, got " + tags(wrap, "circle").length,
+  );
+  // At its own timestamp: later than both runs, so right of both dots.
+  const cxs = tags(wrap, "circle").map((c) => parseFloat(c.attrs.cx));
+  assert(
+    parseFloat(marks[0].attrs.x1) > Math.max(...cxs),
+    "the skip sits at its own (later) timestamp: " + marks[0].attrs.x1,
+  );
+  // Vertical and short at the baseline — not a bar rising to a value a reader
+  // could mistake for a measured zero-work run.
+  assert(marks[0].attrs.x1 === marks[0].attrs.x2, "the tick is vertical");
+  const h = Math.abs(
+    parseFloat(marks[0].attrs.y2) - parseFloat(marks[0].attrs.y1),
+  );
+  assert(h > 0 && h <= 16, "a thin tick, not a full-height bar: " + h);
+});
+
+Deno.test("metrics chart: skip ticks draw in proportion mode too", () => {
+  // A skip is a timeline event, not a measurement — no unit toggle can make an
+  // event meaningless, so it must not vanish when the chart shows proportions.
+  const wrap = pmChart([RUN_SPLIT, RUN_SPLIT2], "pct", [SKIP_TICK]);
+  assert(
+    collect(wrap, "pm-skip").length === 1,
+    "the skip must mark in pct mode",
+  );
+});
+
+Deno.test("metrics chart: an unknown skip kind still marks the timeline", () => {
+  // Fail-open on display: the producer may grow new gates. Not "usage-gate" is
+  // still a skip — generic, rendered, and (by the partition) never a run.
+  const odd = { ...SKIP_TICK, skipped: "manual-hold" };
+  const { runs, skips } = pmPartitionReal(
+    pmRecordsReal(jsonl(RUN_SPLIT, odd, RUN_SPLIT2)),
+  );
+  assert(
+    runs.length === 2 && skips.length === 1,
+    "the unknown kind partitions as a skip: " + JSON.stringify(skips),
+  );
+  const wrap = pmChart(runs, "abs", skips);
+  assert(
+    collect(wrap, "pm-skip").length === 1,
+    "the unknown kind still draws its marker",
+  );
+  assert(tags(wrap, "circle").length === 2, "and never a run mark");
+});
+
+Deno.test("metrics chart: a file of nothing but skips still draws the pause", () => {
+  // The renderer must be correct on files with zero, some, or ALL skip rows —
+  // a long enough pause is exactly the all-skips window.
+  const wrap = pmChart([], "pct", [SKIP_TICK, SKIP_TICK2]);
+  assert(collect(wrap, "pm-skip").length === 2, "every skip must mark");
+  assert(tags(wrap, "circle").length === 0, "no run marks exist");
+  const labels = pmTexts(wrap);
+  assert(
+    labels.some((t) => t.includes("09:00")) &&
+      labels.some((t) => t.includes("13:00")),
+    "the axis is dated by the skips: " + JSON.stringify(labels),
+  );
+});
+
+Deno.test("metrics chart: a skip's stray numbers never reach the y scale", () => {
+  // The contract pins skipped/skipReason but not what else a skip row carries.
+  // Whatever it carries, it is not a run: even a durationMs on the row must
+  // not stretch the minutes axis, because the exclusion is the partition, not
+  // a per-chart guard.
+  const noisy = {
+    ...SKIP_TICK,
+    durationMs: 36000000,
+    startupMs: 36000000,
+    bootMs: 36000000,
+    ttlMs: 36000000,
+    startupPct: 100,
+  };
+  const { runs, skips } = pmPartitionReal([RUN_SPLIT, RUN_SPLIT2, noisy]);
+  const wrap = pmChart(runs, "abs", skips);
+  const ticks = tags(wrap, "text")
+    .filter((t) => t.getAttribute("text-anchor") === "end")
+    .map((t) => parseFloat(t.textContent))
+    .filter((v) => !isNaN(v));
+  const top = Math.max(...ticks);
+  assert(top < 600, "a 600-minute skip row must not scale the axis: " + top);
+  assert(collect(wrap, "pm-skip").length === 1, "it still marks the timeline");
+});
+
+Deno.test("metrics chart: a file with no skip rows renders exactly as before", () => {
+  // The regression pin. Historical runs.jsonl files contain no skip rows, so
+  // everything skip-shaped must be absent — no marker, no legend entry — and
+  // the marks and labels the chart has always drawn must be untouched.
+  for (const mode of ["abs", "pct"]) {
+    const wrap = pmChart([RUN_SPLIT, RUN_SPLIT2], mode);
+    assert(
+      collect(wrap, "pm-skip").length === 0,
+      "no skip marker without skip rows",
+    );
+    const legends = collect(wrap, "pm-legend");
+    if (mode === "abs") {
+      assert(
+        legends.length === 1 && !textOf(legends[0]).includes("skip"),
+        "the legend gains no skip entry: " + textOf(legends[0]),
+      );
+    } else {
+      assert(legends.length === 0, "proportion mode keeps having no legend");
+    }
+    assert(tags(wrap, "circle").length === 2, "same dots as always");
+    assert(collect(wrap, "pm-line").length > 0, "same startup line as always");
+  }
+  const labels = pmTexts(pmChart([RUN_SPLIT, RUN_SPLIT2], "abs"));
+  assert(
+    labels.some((t) => t.includes("01:00")) &&
+      labels.some((t) => t.includes("05:00")),
+    "axis endpoints stay the runs' own timestamps: " + JSON.stringify(labels),
+  );
+});
+
+Deno.test("metrics legend: names the skip mark whenever skips are on the plot", () => {
+  const absLegend = collect(
+    pmChart([RUN_SPLIT, RUN_SPLIT2], "abs", [SKIP_TICK]),
+    "pm-legend",
+  )[0];
+  assert(
+    absLegend && textOf(absLegend).includes("skipped tick"),
+    "absolute mode must name the mark: " + (absLegend && textOf(absLegend)),
+  );
+  // Proportion mode normally has no legend — a second MARK on the plot is what
+  // forces one, so identity is never carried by the mark alone.
+  const pctLegend = collect(
+    pmChart([RUN_SPLIT, RUN_SPLIT2], "pct", [SKIP_TICK]),
+    "pm-legend",
+  )[0];
+  assert(
+    pctLegend && textOf(pctLegend).includes("skipped tick"),
+    "proportion mode must name it too: " + (pctLegend && textOf(pctLegend)),
+  );
+});
+
+Deno.test("metrics skip tip: carries the gate's reason verbatim", () => {
+  const t = textOf(pmSkipTipBox(SKIP_TICK));
+  assert(
+    t.includes(SKIP_TICK.skipReason),
+    "the PAUSE line must appear verbatim: " + t,
+  );
+  assert(t.includes("skipped"), "it names itself a skip: " + t);
+  assert(t.includes("usage-gate"), "the gate kind is named: " + t);
+  assert(t.includes("Jul 31 09:00 UTC"), "it is dated: " + t);
+  assert(
+    !t.includes("undefined") && !t.includes("NaN"),
+    "no undefined may reach the tip: " + t,
+  );
+});
+
+Deno.test("metrics skip tip: an unknown or unnameable kind still explains itself", () => {
+  const t = textOf(
+    pmSkipTipBox({ runId: "20260731T090001Z", skipped: "manual-hold" }),
+  );
+  assert(
+    t.includes("manual-hold"),
+    "the kind the row declares must show: " + t,
+  );
+  assert(!t.includes("undefined"), "an absent reason prints nothing: " + t);
+  // A non-string kind falls back to the generic word rather than "true".
+  const kind = tags(
+    pmSkipTipBox({ runId: "20260731T090001Z", skipped: true }),
+    "span",
+  )[0];
+  assert(
+    kind && kind.textContent === "skip",
+    "a non-string kind reads generically: " + (kind && kind.textContent),
+  );
+});
+
+Deno.test("metrics chart: hovering a skip yields its reason, not run numbers", () => {
+  // The integration half — pmSkipTip being right is worth nothing if the chart
+  // hands a skip to the RUN tooltip, which would report it as a measurement.
+  const wrap = pmChart([RUN_SPLIT, RUN_SPLIT2], "abs", [SKIP_TICK]);
+  const svg = pmSvg(wrap);
+  const rect = { left: 0, top: 0, width: 720, height: 210 };
+  svg._rect = rect;
+  wrap._rect = rect;
+  // The skip is the latest event, so the right edge is nearest to it.
+  svg.fire("mousemove", { clientX: 719, clientY: 10 });
+  const t = textOf(collect(wrap, "pm-tip")[0]);
+  assert(
+    t.includes(SKIP_TICK.skipReason),
+    "the verbatim reason is the tooltip: " + t,
+  );
+  assert(!t.includes("startup"), "no run phrasing on a skip: " + t);
+  assert(
+    !t.includes("undefined") && !t.includes("NaN"),
+    "no undefined on hover: " + t,
+  );
+});
+
+Deno.test("metrics caption: names the pause when skips exist, and only then", () => {
+  const withSkips = textOf(pmNoteBox(RUN_SPLIT, [SKIP_TICK, SKIP_TICK2]));
+  assert(
+    withSkips.includes("2 ticks"),
+    "the count of skipped ticks: " + withSkips,
+  );
+  assert(withSkips.includes("usage gate"), "names the cause: " + withSkips);
+  const without = textOf(pmNoteBox(RUN_SPLIT));
+  assert(
+    !without.includes("usage gate"),
+    "no phantom sentence when the file has no skips: " + without,
+  );
+});
+
 // An empty token set must EXPLAIN itself. The registry section silently
 // vanished from prod for days because the governed-vault parser stopped
 // matching an upstream refactor, the intersection emptied, and both the
@@ -4823,7 +5180,7 @@ function repoListBind(repos, org = "testorg") {
   return [fn, box];
 }
 
-function pmNoteBox(last) {
+function pmNoteBox(last, skips) {
   const box = makeEl("div");
   const $ = (id) => (id === "pmnote" ? box : makeEl("div"));
   const d = pmDeps();
@@ -4833,7 +5190,7 @@ function pmNoteBox(last) {
     "renderPmNote",
     ["$", "document", "fmtAgo", "parseRunId", "outcomeWord"],
     [$, stubDocument(), fmtAgo, d.parseRunId, outcomeWordReal],
-  )(last);
+  )(last, skips);
   return box;
 }
 
@@ -4978,6 +5335,39 @@ Deno.test("hostile input: an unparseable run id yields no axis label, not raw ma
     !pmTexts(wrap).some((t) => t.includes("<")),
     "an unparseable id formats to an empty label: " +
       JSON.stringify(pmTexts(wrap)),
+  );
+});
+
+Deno.test("hostile input: a skip's reason, kind and id render as tooltip text", () => {
+  // skipReason is carried VERBATIM by contract, from a repo this page does not
+  // own — the verbatim guarantee is exactly what makes it a markup carrier. A
+  // distinct payload per field, so a field that stopped rendering as text
+  // cannot pass on another field's copy.
+  const box = pmSkipTipBox({
+    runId: XSS_ATTR,
+    skipped: XSS_IMG,
+    skipReason: XSS_SCRIPT,
+  });
+  assertInert(box, XSS_IMG, "skip kind");
+  assertInert(box, XSS_SCRIPT, "skip reason");
+  assertInert(box, XSS_ATTR, "skip run id");
+});
+
+Deno.test("hostile input: hovering a hostile skip lands it in the tip as text", () => {
+  // The integration half: pmSkipTip being safe is worth nothing if the chart
+  // stops calling it and interpolates the skip row itself.
+  const skip = { ...SKIP_TICK, skipReason: XSS_SCRIPT };
+  const wrap = pmChart([RUN_SPLIT, RUN_SPLIT2], "abs", [skip]);
+  const svg = pmSvg(wrap);
+  const rect = { left: 0, top: 0, width: 720, height: 210 };
+  svg._rect = rect;
+  wrap._rect = rect;
+  svg.fire("mousemove", { clientX: 719, clientY: 10 });
+  assertInert(collect(wrap, "pm-tip")[0], XSS_SCRIPT, "skip tooltip on hover");
+  assert(
+    markupNodes(wrap).length === 0,
+    "no payload may become markup anywhere on the chart: " +
+      markupNodes(wrap).join(", "),
   );
 });
 
