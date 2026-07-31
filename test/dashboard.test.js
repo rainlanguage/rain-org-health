@@ -4587,11 +4587,12 @@ Deno.test("metrics tiles: a partial contributes no startup figure", () => {
 
 // --- skipped ticks (usage-gate pauses) ---------------------------------------
 // A tick the producer's usage gate PAUSED leaves an event row, not a run.
-// `skipped` is the discriminant; `skipReason` is the gate's PAUSE line
-// verbatim. SKIP_TICK carries the contract's minimum — the skip pair plus the
-// identity fields — while REAL_SKIP below is the emitter's actual row shape
-// (issue-pr-cron#160), which also carries zeroed run fields. Both shapes must
-// partition as events. Historical files carry no skip rows and are not
+// `outcome: "skipped"` is the typed discriminant; `skipped` names the gate
+// kind and `skipReason` is the gate's PAUSE line verbatim. SKIP_TICK carries
+// the gate fields without the typed outcome (the predicate's fallback arm),
+// while REAL_SKIP below is the emitter's actual full row shape
+// (issue-pr-cron#160/#163), which also carries zeroed run fields. Both shapes
+// must partition as events. Historical files carry no skip rows and are not
 // back-filled, so the zero-skip rendering is pinned as hard as the marks.
 const SKIP_TICK = {
   runId: "20260731T090001Z",
@@ -4663,21 +4664,71 @@ Deno.test("metrics skip: the emitter's real row is an event, not a zero-work run
   assert(tags(wrap, "circle").length === 2, "and never a run dot");
 });
 
-Deno.test("metrics skip: the predicate is presence of `skipped`, nothing else", () => {
-  // One discriminant for the whole page. Gating on the VALUE would silently
-  // drop the first gate kind the producer grows; gating on anything else would
-  // misread a run. Fail-open on display, never counted as a run.
-  assert(isSkipReal(SKIP_TICK) === true, "a usage-gate row is a skip");
+Deno.test("metrics skip: typed outcome or gate field marks a skip, nothing else", () => {
+  // One predicate for the whole page, keyed on the TYPED discriminant
+  // (outcome "skipped") with the gate field as the fallback arm. Gating on the
+  // gate kind's VALUE would silently drop the first gate the producer grows;
+  // gating on anything else would misread a run. Fail-open on display, never
+  // counted as a run.
+  assert(isSkipReal(REAL_SKIP) === true, "the emitter's real row is a skip");
+  assert(
+    isSkipReal({
+      runId: "20260731T090001Z",
+      role: "producer",
+      outcome: "skipped",
+    }) === true,
+    "the typed outcome alone marks a skip",
+  );
+  assert(
+    isSkipReal(SKIP_TICK) === true,
+    "the gate fields without the typed outcome still mark a skip",
+  );
   assert(
     isSkipReal({ ...SKIP_TICK, skipped: "manual-hold" }) === true,
     "an unknown skip kind is still a skip",
   );
-  for (const r of [RUN_SPLIT, RUN_LONG, PARTIAL_BOOT, PARTIAL_TTL]) {
+  // Ordinary rows carry NEITHER field — absent, not null — and a run's own
+  // outcome ("ok", "error", "session-limit") must never read as a skip.
+  for (
+    const r of [
+      RUN_SPLIT,
+      RUN_LONG,
+      PARTIAL_BOOT,
+      PARTIAL_TTL,
+      { ...RUN_SPLIT, outcome: "error" },
+      { ...RUN_SPLIT, outcome: "session-limit" },
+    ]
+  ) {
     assert(
       isSkipReal(r) === false,
-      "a run row is never a skip: " + JSON.stringify(r.runId),
+      "a run row is never a skip: " + JSON.stringify(r.outcome),
     );
   }
+});
+
+Deno.test("metrics records: the typed outcome alone routes a row to the skips", () => {
+  // A row with outcome "skipped" and no gate fields at all: still an event —
+  // it draws a generic skip mark and tooltip rather than being dropped or,
+  // worse, painted as an errored run.
+  const bare = {
+    runId: "20260731T090001Z",
+    role: "producer",
+    model: "claude-opus-5",
+    exitCode: 10,
+    outcome: "skipped",
+  };
+  const { runs, skips } = pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, bare)));
+  assert(
+    runs.length === 1 && skips.length === 1,
+    "the typed outcome must partition as a skip: " + JSON.stringify(skips),
+  );
+  const wrap = pmChart(runs, "abs", skips);
+  assert(collect(wrap, "pm-skip").length === 1, "it draws the skip mark");
+  const t = textOf(pmSkipTipBox(skips[0]));
+  assert(
+    t.includes("skipped") && !t.includes("undefined"),
+    "its tooltip is the generic skip, leak-free: " + t,
+  );
 });
 
 Deno.test("metrics records: a skipped tick is admitted without startup numbers", () => {

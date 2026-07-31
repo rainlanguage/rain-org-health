@@ -410,12 +410,15 @@ function outcomeWord(r) {
   return r.outcome || (r.stage && r.stage !== "final" ? "unfinished" : "ok");
 }
 // THE skip predicate — the page's one reading of "this row is a skipped tick,
-// not a run". Presence of `skipped` is the whole discriminant: the VALUE is
-// not gated, so an unknown gate kind still renders as a skip (fail-open on
-// display) while never counting as a run anywhere — pmPartition splits on this
+// not a run". The typed discriminant is `outcome: "skipped"`; the `skipped`
+// field (the gate kind, e.g. "usage-gate") is the fallback arm, so a row
+// carrying the gate fields without the typed outcome still reads as a skip.
+// On ordinary rows both fields are ABSENT, not null. The gate kind's VALUE is
+// never gated — an unknown kind still renders as a skip (fail-open on
+// display) while never counting as a run anywhere: pmPartition splits on this
 // once, and every aggregate downstream sees real runs only.
 function isSkip(r) {
-  return r != null && r.skipped != null;
+  return r != null && (r.outcome === "skipped" || r.skipped != null);
 }
 // Parsed records → { runs, skips }: the ONE partition between measurements and
 // events. Everything that aggregates — tiles, controls, the chart's y scale
