@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-03T15:19:47Z",
+  "generatedAt": "2026-08-03T18:09:49Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2743,11 +2743,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 12,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 1,
         "total": 13,
-        "state": "live"
+        "state": "partial"
       }
     ],
     "grantees": [
@@ -2784,7 +2784,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted"
+                "status": "unknown"
               }
             ]
           },
@@ -3123,19 +3123,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": null,
+          "ownerLabel": "unknown",
           "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
           "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "healthy"
+          "status": "unknown"
         },
         {
           "name": "Receipt-vault beacon",
