@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-04T12:21:47Z",
+  "generatedAt": "2026-08-04T15:39:12Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1222,7 +1222,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 30,
+        "openAuditIssues": 26,
         "lastMutation": {
           "timestamp": "2026-07-24T20:57:17Z",
           "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
@@ -2521,13 +2521,6 @@
         "stale": true,
         "pinned": "0.1.1",
         "latest": "0.1.5"
-      },
-      {
-        "from": "st0x.oracle",
-        "to": "rain.intorastring",
-        "stale": false,
-        "pinned": "0.1.0",
-        "latest": "0.1.0"
       },
       {
         "from": "st0x.oracle",
@@ -5038,7 +5031,7 @@
       "name": "st0x.oracle",
       "org": "ST0x-Technology",
       "lastAudit": null,
-      "openAuditIssues": 30,
+      "openAuditIssues": 26,
       "lastMutation": {
         "timestamp": "2026-07-24T20:57:17Z",
         "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
@@ -5610,7 +5603,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1465,
+      "fullSourceLoc": 1563,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -7002,7 +6995,7 @@
       "org": "ST0x-Technology",
       "state": "analyzed",
       "externalFunctions": 33,
-      "testFiles": 24,
+      "testFiles": 27,
       "sourcesUnparsed": 0,
       "untested": []
     }
