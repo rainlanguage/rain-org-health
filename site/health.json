@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-05T06:44:58Z",
+  "generatedAt": "2026-08-05T09:58:56Z",
   "auditGraph": {
     "nodes": [
       {
@@ -65,7 +65,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 9,
+        "openAuditIssues": 7,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -3970,16 +3970,16 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 115,
-  "reposWithFindings": 39,
+  "totalRepos": 114,
+  "reposWithFindings": 38,
   "reposWholeRepoAudited": 2,
-  "reposNeverAudited": 113,
+  "reposNeverAudited": 112,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 17,
   "summary": {
     "per-chain-etherscan-key": 12,
-    "old-actions-checkout": 9,
     "old-nix-installer": 9,
+    "old-actions-checkout": 8,
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
     "untested-externals": 4,
@@ -4243,13 +4243,6 @@
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "rain.webapp",
-      "org": "rainlanguage",
-      "signals": [
-        "old-actions-checkout"
       ]
     },
     {
@@ -4587,7 +4580,7 @@
       "name": "rain.dia",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 9,
+      "openAuditIssues": 7,
       "lastMutation": null
     },
     {
@@ -4835,13 +4828,6 @@
     },
     {
       "name": "rain.wasm",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "rain.webapp",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -5713,15 +5699,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.240-uc-v0.0.1-alpha.239",
-      "latestTagIso": "2026-07-20T16:09:38Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.242-uc-v0.0.1-alpha.241",
+      "latestTagIso": "2026-08-05T09:33:46Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 488,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 484,
       "sourceLocRemovedSinceAudit": 4,
       "filesChangedSinceAudit": 63,
-      "commitsSinceAudit": 138,
+      "commitsSinceAudit": 142,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 996,
       "commentLocRemovedSinceAudit": 315,
