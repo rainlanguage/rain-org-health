@@ -514,7 +514,7 @@ function renderFsm(hq, history) {
   //
   // The cost of per-chart scaling is that vertical position means nothing ACROSS charts, so
   // nothing invites the comparison: each chart sits on its own row, against its own number,
-  // with its own unit — and the level and the 3.4x mean-to-median gap are read off the two
+  // with its own unit — and the level and the 3.2x mean-to-median gap are read off the two
   // numbers, which are on screen as equals rather than one of them in a tooltip. What the
   // charts add is the thing numbers cannot show: whether each is moving, and whether the two
   // move TOGETHER (a backlog ageing uniformly) or apart (a long tail doing the work).
@@ -669,7 +669,7 @@ function renderFsm(hq, history) {
       // mean and median as EQUALS: the same row, built by the same function — same type
       // size, same weight, same chart geometry, in the order the recording half emits them.
       // Neither is a headline and neither is a footnote in a tooltip. The human's call was
-      // "we can do both", and both numbers sitting side by side is what makes the 3.4x gap
+      // "we can do both", and both numbers sitting side by side is what makes the 3.2x gap
       // between them readable at a glance.
       const stat = (name, v, pts, lineCls, dotCls, chartCls) => {
         if (v == null) return;
