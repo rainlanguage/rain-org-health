@@ -1280,31 +1280,26 @@ Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", (
   );
 });
 
-// #66: the close-candidate PR STATE and the close-candidate ISSUES group must not
-// share the identical "ai:close-candidate" label (they read as one contradictory
-// control otherwise).
+// #66: no two boxes may share a label (they read as one contradictory control
+// otherwise), and the bare, ambiguous "ai:close-candidate" never renders.
 Deno.test("pipeline FSM: the close-candidate states carry distinct labels", () => {
   const box = fsmBox({
     counts: { leaks: 0, ready: 0, closeCandidateUnvetted: 18, closeCandidateUpheld: 4 },
     lanes: {},
   });
   const labels = collect(box, "sk").map((s) => s.textContent);
-  // One flag, three distinct boxes: the PR variant, plus the issue variant split by
-  // vetting stage (issue-pr-cron#73). None may read as another.
-  for (const l of [
-    "ai:close-candidate (PRs)",
-    "ai:close-candidate (unvetted)",
-    "ai:close-candidate (upheld)",
-  ]) {
-    assert(labels.includes(l), `label missing: ${l} in ${JSON.stringify(labels)}`);
-  }
+  // One flag, two boxes, split by vetting stage (issue-pr-cron#73/#212/#213) — the ONLY
+  // close-candidate states the machine has. Exact set equality bans a third variant (a
+  // subject-type split, a bare label, a decided-close state) as hard as a missing one.
+  const cc = labels.filter((l) => l.includes("close-candidate")).sort();
+  assert(
+    JSON.stringify(cc) ===
+      JSON.stringify(["ai:close-candidate (unvetted)", "ai:close-candidate (upheld)"]),
+    `exactly the two close-candidate labels render: ${JSON.stringify(cc)}`,
+  );
   assert(
     new Set(labels).size === labels.length,
     `no two boxes share a label: ${JSON.stringify(labels)}`,
-  );
-  assert(
-    !labels.includes("ai:close-candidate"),
-    "the bare, ambiguous ai:close-candidate label must be gone",
   );
 });
 
@@ -1313,19 +1308,14 @@ Deno.test("pipeline FSM: the close-candidate states carry distinct labels", () =
 // which state the list belongs to is unambiguous (not attached to the last lane).
 Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header naming it + matching count", () => {
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateIssues: 2 },
-    lanes: {
-      "vetter-verdicts": {
-        "ai:close-candidate": {
-          count: 3,
-          prs: [
-            { repo: "o/a", number: 1, title: "pr one" },
-            { repo: "o/b", number: 2, title: "pr two" },
-            { repo: "o/c", number: 3, title: "pr three" },
-          ],
-        },
-      },
-    },
+    counts: { leaks: 0, ready: 0, closeCandidateUpheld: 3 },
+    lanes: { "vetter-verdicts": {} },
+    // A mixed upheld list — an issue, a PR (resolved url), another issue — one inbox.
+    closeCandidateUpheld: [
+      { repo: "o/a", number: 1, title: "flagged issue one" },
+      { repo: "o/b", number: 2, title: "flagged pr two", url: "https://github.com/o/b/pull/2" },
+      { repo: "o/c", number: 3, title: "flagged issue three" },
+    ],
     uncoveredIssues: [
       { repo: "o/x", number: 10, title: "issue ten" },
       { repo: "o/y", number: 11, title: "issue eleven" },
@@ -1337,23 +1327,23 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
   assert(detail, "detail panel exists");
   const detailHost = detail.parent; // the panel stays a child of this throughout
 
-  // Click the close-candidate PRs box (3 PRs).
-  const prBox = boxByT("ai:close-candidate");
-  prBox.click();
+  // Click the upheld box (3 mixed subjects).
+  const ccBox = boxByT("closeCandidateUpheld");
+  ccBox.click();
   assert(detail.classList.contains("open"), "detail is open");
   assert(
     detail.parent === detailHost,
     "the panel stays put (not relocated per click)",
   );
   assert(
-    collect(detail, "dhl")[0].textContent === "ai:close-candidate (PRs)",
+    collect(detail, "dhl")[0].textContent === "ai:close-candidate (upheld)",
     "header names the clicked state",
   );
   assert(
     collect(detail, "dhc")[0].textContent === "3 items",
-    "header count == the PR list length",
+    "header count == the upheld list length",
   );
-  assert(collect(detail, "li").length === 3, "renders exactly the 3 PRs");
+  assert(collect(detail, "li").length === 3, "renders exactly the 3 subjects");
 
   // Click an ISSUE-type box (2 issues) — the SAME bottom panel re-populates with that
   // state's own header + count, so PR and issue states never blur together.
@@ -1449,32 +1439,31 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     groups.every((g) => !g.states.includes("ai:relink")),
     `retired ai:relink renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
   );
-  // Human owns the merge/ruling/close states + both close-candidate variants.
+  // Human owns the merge/ruling/close states + the upheld close-candidate inbox.
   assert(
     [
       "ai:ready",
       "ai:design",
-      "ai:close-candidate (PRs)",
       "ai:close-candidate (upheld)",
       "human:design",
-      "human:close-candidate",
     ].every((s) => human.states.includes(s)),
     `human states: ${JSON.stringify(human.states)}`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
-  // 15 = the 15 original states, minus the combined close-candidate issues box, plus the
-  // two owner-specific states the vetter verdict introduces (issue-pr-cron#73), plus the
-  // FSM leak, promoted from a banner to a human-owned state, minus `awaiting-re-vet`,
-  // collapsed into `un-vetted` by issue-pr-cron#128, minus `human:reject`, consolidated
-  // into `ai:reject` by issue-pr-cron#133/#138, minus `ai:relink`, retired by
-  // issue-pr-cron#135/#139 (a relink IS a reject with a specific note).
+  // 12 = every STATES entry filed once: producer 2 (ai:reject, the untouched backlog),
+  // vetter 2 (un-vetted, the unvetted flags), human 8 (leak, ai:ready, ai:design, the
+  // three blocked states, human:design, the upheld flags).
   const total = groups.reduce((n, g) => n + g.states.length, 0);
-  assert(total === 14, `all 14 states filed once: ${total}`);
-  // Both directions, same as awaiting-re-vet: a reintroduction fails here.
-  assert(
-    groups.every((g) => !g.states.includes("human:reject")),
-    `the retired human:reject state renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
-  );
+  assert(total === 12, `all 12 states filed once: ${total}`);
+  // Both directions, same as awaiting-re-vet: a reintroduction fails here. Each retired
+  // lane key in the fixture above is a DECOY — a stale snapshot still carrying it must
+  // render it in NO group.
+  for (const retired of ["human:reject", "ai:close-candidate", "ai:close-candidate (PRs)", "human:close-candidate"]) {
+    assert(
+      groups.every((g) => !g.states.includes(retired)),
+      `retired ${retired} renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
+    );
+  }
 });
 
 // issue-pr-cron#128: `awaiting-re-vet` is not a state any more. Vetting is a pure function
@@ -1637,6 +1626,42 @@ Deno.test("fsm history: retired relink samples fold into reject too, so the seri
   );
 });
 
+
+// Same shape for the upheld merge (issue-pr-cron#212): a snapshot written before the
+// upheld inbox absorbed its PR half carries `counts.closeCandidatePrs` beside
+// `counts.closeCandidateUpheld`, counting disjoint subjects of the one inbox — so the
+// quantity the surviving box measures is their SUM at those samples, and the merge draws
+// no cliff.
+Deno.test("fsm history: pre-merge closeCandidatePrs samples fold into the upheld series, so the merge draws no cliff", () => {
+  const now = Date.parse("2026-08-05T12:00:00Z");
+  const at = (d) => now - d * DAY;
+  // Real inventory flat at 10 across the merge: split 6 + 4 before, one key after.
+  const history = [
+    { t: at(4), counts: { closeCandidateUpheld: 6, closeCandidatePrs: 4 } },
+    { t: at(3), counts: { closeCandidateUpheld: 6, closeCandidatePrs: 4 } },
+    { t: at(2), counts: { closeCandidateUpheld: 6, closeCandidatePrs: 4 } },
+    { t: at(1), counts: { closeCandidateUpheld: 10 } },
+    { t: at(0), counts: { closeCandidateUpheld: 10 } },
+  ];
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateUpheld: 10 },
+    lanes: {},
+  }, history);
+  const upheld = collect(box, "fsm-state").find((b) => b.dataset.t === "closeCandidateUpheld");
+  assert(upheld, "upheld box rendered");
+  const line = tags(upheld, "polyline")[0];
+  assert(line, "the folded series draws a line");
+  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
+  assert(
+    ys.every((y) => y === ys[0]),
+    `the line is continuous, with no cliff at the merge: ${JSON.stringify(ys)}`,
+  );
+  assert(
+    !upheld.classList.contains("rising"),
+    "folding a flat inventory raises no bottleneck flag",
+  );
+});
 
 // The fold must not INVENT samples: a refresh that carried neither key is still no point,
 // not a zero — the pre-existing contract every other state depends on. The rollup is fetched
@@ -1808,9 +1833,9 @@ Deno.test("fsm sparkline: a brand-new counts key with ONE history point draws it
   assert(tags(ready, "circle").length === 1, "a multi-sample sibling still draws its dot");
 });
 
-// issue-pr-cron#73: the close-candidate ISSUE lifecycle gains a vetter verdict, so the
-// single "all flagged issues" figure splits into two inboxes with DIFFERENT owners —
-// unvetted (the vetter judges the flag) and upheld (a human closes the issue).
+// issue-pr-cron#73: the close-candidate lifecycle gains a vetter verdict, so the single
+// "all flagged" figure splits into two inboxes with DIFFERENT owners — unvetted (the
+// vetter judges the flag) and upheld (a human closes the subject).
 Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a human inbox", () => {
   const box = fsmBox({
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
@@ -1838,6 +1863,12 @@ Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a 
   assert(
     (owner("ai:close-candidate (upheld)") || "").includes("Human action"),
     `upheld is the human's inbox: ${owner("ai:close-candidate (upheld)")}`,
+  );
+  // The upheld act is the bare close: the box holds issues and PRs alike, so an act
+  // naming one subject type would mislabel the other half of its own list.
+  assert(
+    collect(upheld, "sa")[0].textContent === "close",
+    `the upheld act is subject-type-neutral: ${collect(upheld, "sa")[0].textContent}`,
   );
 });
 
@@ -2049,7 +2080,7 @@ Deno.test("fsm lead fallback: an all-zero group gets nothing, and equal counts b
   // Every human-owned state is zero → nothing to do, so nothing is marked. The producer
   // group holds two EQUAL non-zero queues, which must resolve deterministically.
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, design: 0, closeCandidateIssues: 0 },
+    counts: { leaks: 0, ready: 0, design: 0, closeCandidateUpheld: 7 },
     lanes: {
       "vetter-verdicts": {
         "ai:reject": { count: 7, prs: [] },
@@ -2057,21 +2088,20 @@ Deno.test("fsm lead fallback: an all-zero group gets nothing, and equal counts b
       },
       "human-decisions": {
         "human:design": { count: 7, prs: [] },
-        "human:close-candidate": { count: 7, prs: [] },
       },
     },
   });
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
-  assert(!byKey("ai:ready").classList.contains("lead"), "an all-zero group is never marked");
+  assert(!byKey("un-vetted").classList.contains("lead"), "an all-zero group is never marked");
   assert(!byKey("ai:design").classList.contains("lead"), "no work really is nothing to do");
   // ai:relink is fully retired (issue-pr-cron#135/#139): its equal count renders no box
   // and leads nothing — reject leads its group with relink data present but inert.
   assert(byKey("ai:reject").classList.contains("lead"), "reject leads the producer group");
   assert(byKey("ai:relink") === undefined, "retired ai:relink draws no box and leads nothing");
-  // Same-group ties still break toward the earlier STATES entry: human-decisions carries
-  // two equal states, and human:design precedes human:close-candidate.
+  // Same-group ties still break toward the earlier STATES entry: the human group carries
+  // two equal states, and human:design precedes the upheld close-candidate box.
   assert(byKey("human:design").classList.contains("lead"), "ties break toward the earlier STATES entry");
-  assert(!byKey("human:close-candidate").classList.contains("lead"), "the later of two equal counts is not marked");
+  assert(!byKey("closeCandidateUpheld").classList.contains("lead"), "the later of two equal counts is not marked");
 });
 
 Deno.test("fsm flow layer: with no history rollup there are no sparklines and no trend borders", () => {
@@ -2675,8 +2705,8 @@ Deno.test("pipeline FSM: every box's count equals the number of rows it expands 
       "vetter-verdicts": {
         "ai:ready": laneCell("ready", 6),
         "ai:reject": laneCell("reject", 1),
-        // ai:design / ai:relink / ai:close-candidate deliberately absent: a sparse lane must
-        // render a zero box that expands to zero rows, which is the same invariant at n = 0.
+        // ai:design deliberately absent: a sparse lane must render a zero box that
+        // expands to zero rows, which is the same invariant at n = 0.
       },
       "producer-blocked": { "ai:blocked-deploy": laneCell("deploy", 3) },
       // Retired state in the data (old snapshot): must render NO box and NO rows, so it
@@ -2700,7 +2730,7 @@ Deno.test("pipeline FSM: every box's count equals the number of rows it expands 
     if (rows !== n) mismatches.push(`${b.dataset.t}: box ${n}, panel ${rows}`);
     b.click();
   }
-  assert(checked === 14, `the whole machine was walked, got ${checked} boxes`);
+  assert(checked === 12, `the whole machine was walked, got ${checked} boxes`);
   // Guard the guard: a fixture that zeroed everything would satisfy the invariant vacuously.
   assert(nonZero >= 8, `the fixture must exercise non-zero states, got ${nonZero}`);
   assert(

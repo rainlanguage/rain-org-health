@@ -351,8 +351,9 @@ function renderFsm(hq, history) {
   // Building it is safe for either population: github.com REDIRECTS between the two paths —
   // /issues/<n> on a PR number 302s to /pull/<n>, and /pull/<n> on an issue number 302s to
   // /issues/<n> (verified against this repo: /issues/137 → /pull/137, /pull/141 → /issues/141).
-  // That matters because `closeCandidateUnvetted` mixes issues and PRs and the item shape says
-  // nothing about which — so the `issue` flag only decides which path is tried FIRST.
+  // That matters because the `closeCandidateUnvetted` / `closeCandidateUpheld` arrays mix
+  // issues and PRs and the item shape says nothing about which — so the `issue` flag only
+  // decides which path is tried FIRST.
   //
   // `it` is an object by contract: `detailBody` screens each entry before it gets here, because
   // a malformed one has to be handled at the ROW (a link with a safe href whose very next line
@@ -394,7 +395,11 @@ function renderFsm(hq, history) {
   // shape is the tool's to declare, and this page does not own that vocabulary
   // (issue-pr-cron#130); the rollup is different because those samples are the only surviving
   // record of a machine that no longer exists.
-  const HIST_FOLD = new Map([["unvetted", ["awaitingReVet"]], ["reject", ["humanReject", "relink"]]]);
+  const HIST_FOLD = new Map([
+    ["unvetted", ["awaitingReVet"]],
+    ["reject", ["humanReject", "relink"]],
+    ["closeCandidateUpheld", ["closeCandidatePrs"]],
+  ]);
   // A state's inventory series from the rollup: one point per refresh that CARRIED this
   // state's counts key, or any key folded into it (a snapshot carrying NONE of them ⇒ no
   // point, not a zero).
@@ -810,22 +815,25 @@ function renderFsm(hq, history) {
     { owner: "human", state: "leak", fromCounts: "leaks", items: "leaks", issue: false, hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
-    { owner: "human", state: "ai:close-candidate", lane: "vetter-verdicts", hist: "closeCandidatePrs", act: "close PR", kind: "rule", label: "ai:close-candidate (PRs)" },
     { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
     { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", hist: "blockedInfra", act: "clear infra", kind: "blk" },
     { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", hist: "blockedOn", act: "merge dependency", kind: "blk" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
-    { owner: "human", state: "human:close-candidate", lane: "human-decisions", hist: "humanCloseCandidate", act: "close", kind: "rule" },
-    // Close-candidate ISSUES the vetter UPHELD (issue-pr-cron#73): the flag survived
-    // judgement, so a human genuinely has to dispose of it. Rejected flags need no state
-    // — the vetter strips the label and they fall back into `uncoveredIssues`.
-    // There is deliberately NO combined "all flagged issues" box: one flag now produces
-    // TWO inboxes with DIFFERENT owners (unvetted → vetter, upheld → human), so their sum
-    // is not a state anyone acts on — it is a number spanning two actors, which is exactly
-    // why it could never be added to an actor total. The legacy no-`lanes` branch below
-    // still renders `closeCandidateIssues`, because a human-queue.json old enough to lack
-    // `lanes` also predates the split keys.
-    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", items: "closeCandidateUpheld", issue: true, hist: "closeCandidateUpheld", act: "close issue", kind: "rule", label: "ai:close-candidate (upheld)" },
+    // Close-candidate flags the vetter UPHELD (issue-pr-cron#73/#212): the flag survived
+    // judgement, so a human disposes of the subject. ONE inbox for issues and PRs alike
+    // (issue-pr-cron#212): the act is the close whichever kind of subject it lands on, so a
+    // subject-type split would model an attribute, not a state. Like `closeCandidateUnvetted`,
+    // the array mixes both and `issue` only picks the URL path tried first — see `urlOf`.
+    // The retired PR-lane presentation's samples (`closeCandidatePrs`) measured this same
+    // inbox, so they fold into this series via HIST_FOLD above. Rejected flags need no state
+    // — the vetter strips the label and the subject falls back to its ordinary state.
+    // There is deliberately NO combined "all flagged" box: one flag produces TWO inboxes
+    // with DIFFERENT owners (unvetted → vetter, upheld → human), so their sum is not a
+    // state anyone acts on — it is a number spanning two actors, which is exactly why it
+    // could never be added to an actor total. The legacy no-`lanes` branch below still
+    // renders `closeCandidateIssues`, because a human-queue.json old enough to lack `lanes`
+    // also predates the split keys.
+    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", items: "closeCandidateUpheld", issue: true, hist: "closeCandidateUpheld", act: "close", kind: "rule", label: "ai:close-candidate (upheld)" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
