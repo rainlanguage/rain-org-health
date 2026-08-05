@@ -5768,3 +5768,39 @@ Deno.test("the bottleneck highlight and its fallback survive parsing with the re
     `the highlight declares the red inset ring: ${hit.body}`,
   );
 });
+
+// The tab row is hand-declared on each page (the duplication rain-org-health#150
+// catalogues), so nothing structural keeps one page's nav from drifting away from
+// the others'. One expectation, checked against every page that renders the nav:
+// the same five tabs in the same order, and the page's own tab — exactly one tab —
+// carrying the active styling. index.html is not in the set: it is a bare redirect
+// to pipeline.html and renders no nav.
+const NAV_TABS = [
+  ["pipeline.html", "Pipeline"],
+  ["audit.html", "Audit"],
+  ["metrics.html", "Metrics"],
+  ["repositories.html", "Repositories"],
+  ["deployments.html", "Deployments"],
+];
+
+Deno.test("every page renders the same five nav tabs in the same order, its own tab active", () => {
+  const want = NAV_TABS.map(([href, label]) => `${href}|${label}`).join(" ");
+  for (const [page] of NAV_TABS) {
+    const src = Deno.readTextFileSync(new URL(`../site/${page}`, import.meta.url));
+    const nav = src.match(/<nav class="nav">([\s\S]*?)<\/nav>/);
+    assert(nav, `${page}: has a <nav class="nav"> block`);
+    const tabs = [...nav[1].matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)]
+      .map((m) => ({ href: m[1], active: /\bclass="active"/.test(m[2]), label: m[3] }));
+    const got = tabs.map((t) => `${t.href}|${t.label}`).join(" ");
+    assert(
+      got === want,
+      `${page}: nav tabs are ${NAV_TABS.map(([, l]) => l).join(" · ")} in that order, got ` +
+        tabs.map((t) => t.label).join(" · "),
+    );
+    const active = tabs.filter((t) => t.active).map((t) => t.href);
+    assert(
+      active.length === 1 && active[0] === page,
+      `${page}: exactly its own tab carries class="active", got [${active.join(", ")}]`,
+    );
+  }
+});
