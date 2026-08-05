@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-05T15:30:31Z",
+  "generatedAt": "2026-08-05T17:56:07Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2736,11 +2736,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 0,
+        "granted": 13,
         "missing": 0,
-        "unknown": 13,
+        "unknown": 0,
         "total": 13,
-        "state": "unknown"
+        "state": "live"
       }
     ],
     "grantees": [
@@ -2761,7 +2761,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2777,7 +2777,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2793,7 +2793,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2809,7 +2809,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2825,7 +2825,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2841,7 +2841,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2857,7 +2857,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2873,7 +2873,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2889,7 +2889,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2905,7 +2905,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           }
@@ -2928,7 +2928,7 @@
               {
                 "network": "ethereum",
                 "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2944,7 +2944,7 @@
               {
                 "network": "ethereum",
                 "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           },
@@ -2960,7 +2960,7 @@
               {
                 "network": "ethereum",
                 "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
-                "status": "unknown"
+                "status": "granted"
               }
             ]
           }
@@ -3116,31 +3116,31 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 1,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
-          "implementation": null,
-          "implVersion": "unknown",
+          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+          "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": true,
+          "status": "healthy"
         },
         {
           "name": "Receipt-vault beacon",
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
-          "implVersion": "unknown",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
+          "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
+          "implVersion": "0.1.1",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": true,
+          "status": "healthy"
         },
         {
           "name": "Wrapped-token-vault beacon",
