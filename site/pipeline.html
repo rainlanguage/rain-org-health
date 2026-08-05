@@ -187,11 +187,11 @@
   .fsm-lane-h .lsub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-3); text-transform: none; letter-spacing: 0; margin-left: -4px; }
   .fsm-lane .fsm-grid { margin: 0; }
   /* ---- Open-issue population band (rain-org-health#140) ----
-     Every open issue in the pipeline's scope, and how old it runs. NOT a state box and
-     deliberately outside the actor lanes: this population spans all three actors (it holds
-     issues behind an open PR, behind a human ruling, and flagged close-candidate alongside
-     the untouched backlog), so its size is not an inbox anyone acts on and could never be
-     added to an actor total. */
+     Every open issue in the pipeline's scope outside an archived repo, and how old it runs.
+     NOT a state box and deliberately outside the actor lanes: this population spans all
+     three actors (it holds issues behind an open PR, behind a human ruling, and flagged
+     close-candidate alongside the untouched backlog), so its size is not an inbox anyone
+     acts on and could never be added to an actor total. */
   .fsm-open { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px;
               background: var(--surface); border: 1px solid var(--border); border-radius: 11px;
               padding: 14px 16px; margin: 12px 0 4px; }
@@ -417,12 +417,14 @@ function renderFsm(hq, history) {
   };
   // ---- Open-issue AGES (rain-org-health#140, recorded by issue-pr-cron#167).
   // The snapshot and every rollup line may carry an OPTIONAL sibling block beside `counts`:
-  //   "ages": { "openIssues": { "meanDays": 333.8, "medianDays": 99.0, "oldestDays": 1654.5 } }
+  //   "ages": { "openIssues": { "meanDays": 315.4, "medianDays": 99.0, "oldestDays": 1654.6 } }
   // computed over the SAME population `counts.openIssues` counts — every open issue in the
-  // pipeline's scope, with no coverage filter and no label filter. That is 180 issues wider
-  // than the producer backlog (`uncoveredIssues`), so it is drawn as its own band and never
-  // inside the backlog box: labelling a whole-population age with a backlog count is exactly
-  // the mismatch this key's rename was about.
+  // pipeline's scope outside an archived repo, with no coverage filter and no label filter.
+  // That is materially wider than the producer backlog (`uncoveredIssues`), which additionally
+  // drops everything covered by an open PR, flagged `ai:close-candidate` or carrying a
+  // `human:*` ruling — so it is drawn as its own band and never inside the backlog box:
+  // labelling a whole-population age with a backlog count is exactly the mismatch this key's
+  // rename was about.
   const AGE_POP = "openIssues";
   // A VALUE off the untrusted artifact: a real JSON number, finite, and >= 0 — or null.
   // Not `Number(x)`: that coerces `null`/`""` to 0, fabricating a "0d" age (or a "0 open
@@ -504,7 +506,7 @@ function renderFsm(hq, history) {
   //
   // Each is normalized to its OWN min/max, which is the same convention every state
   // sparkline above already uses, and it is what makes the chart worth drawing at all:
-  // these quantities barely move relative to their level. Live, the mean is 333.8 days and
+  // these quantities barely move relative to their level. Live, the mean is 315.4 days and
   // a month of drift is a few days — under 2% — so a chart anchored at zero, or one sharing
   // a ruler between mean and median, draws BOTH lines dead flat and tells a reader nothing
   // the two numbers beside them do not already say more precisely. Measured, not assumed:
@@ -615,16 +617,17 @@ function renderFsm(hq, history) {
   // It sits ABOVE the machine and outside the actor lanes on purpose. This population spans
   // all three actors: it holds issues already covered by an open PR, issues parked behind a
   // `human:*` ruling and issues flagged `ai:close-candidate` alongside the untouched backlog
-  // below (802 vs 617 live). A number spanning three actors is not an inbox anyone acts on
-  // and could never be added to an actor total — the same reason there is no combined
-  // close-candidate box in STATES.
+  // below, and so runs materially larger than it. A number spanning three actors is not an
+  // inbox anyone acts on and could never be added to an actor total — the same reason there
+  // is no combined close-candidate box in STATES.
   //
   // Degradation, identical in kind to the sparklines': a snapshot with neither the count nor
   // the ages (every one written before issue-pr-cron#167, and every refresh whose coverage
   // read FAILED — which omits both rather than reporting an org whose issues all closed at
   // once) renders NO band at all, which is exactly the page as it was. Nothing falls back to
-  // the retired `ages.uncoveredIssues`: that block measured the 617-issue backlog, and
-  // showing it under an 802-issue label would be a wrong number wearing a right one's copy.
+  // the retired `ages.uncoveredIssues`: that block measured the narrower producer backlog,
+  // and showing it under this population's label would be a wrong number wearing a right
+  // one's copy.
   const fmtD = (v) => String(Math.round(v * 10) / 10).replace(/\.0$/, "") + "d";
   // The current statistics, resolved once: the band draws them and the legend below is
   // guarded on them, so neither can describe what the other did not do.
@@ -645,7 +648,7 @@ function renderFsm(hq, history) {
     pop.append(el(
       "div",
       "oi-sub",
-      "every open issue in the pipeline's scope — including ones already covered by an open PR, parked on a human ruling, or flagged ai:close-candidate. The producer backlog below is the subset with none of those.",
+      "every open issue in the pipeline's scope outside archived repos, which take no writes — including ones already covered by an open PR, parked on a human ruling, or flagged ai:close-candidate. The producer backlog below is the subset with none of those.",
     ));
     band.append(pop);
 
@@ -773,9 +776,9 @@ function renderFsm(hq, history) {
     // broken box.
     //
     // No AGE is drawn here. The recorded ages (issue-pr-cron#167) are over `openIssues` —
-    // every open issue, 802 live against this box's 617 — so they belong to the band above
-    // the machine, not to this box: a whole-population median under a backlog count would be
-    // a number labelled as something it does not measure.
+    // every open issue outside an archived repo, a materially larger set than this box's — so
+    // they belong to the band above the machine, not to this box: a whole-population median
+    // under a backlog count would be a number labelled as something it does not measure.
     { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
     // Vetter inbox — the vetter records the next verdict. ONE vet-lifecycle state, not two:
     // issue-pr-cron#128 collapsed `awaiting-re-vet` into this one, because vetting is a pure
