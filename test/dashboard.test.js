@@ -2109,215 +2109,334 @@ Deno.test("fsm history: parseHistory keeps well-formed {ts,counts} lines, sorts 
   );
 });
 
-// ---- rain-org-health#140: backlog AGE beside backlog SIZE --------------------
+// ---- rain-org-health#140: OPEN-ISSUE AGE beside the population it measures ----
 //
-// The recording half (issue-pr-cron#165) emits an OPTIONAL `ages` block beside `counts` —
-// snapshot and rollup line alike: `ages.uncoveredIssues = {medianDays, oldestDays}`, computed
-// over the same population `counts.uncoveredIssues` counts. The panel draws the median as a
-// second, visually distinct series inside the backlog box (dashed `al`/`ad`, its OWN
-// normalization — days are not comparable to queue sizes) with the current value labelled
-// WITH ITS UNIT ("median 41d") and oldest in the tooltip. Every rollup line written before
-// the block existed (136+ at ship time) simply lacks the key, and that absence must degrade
-// to exactly today's render: no dashed line, no label, never a broken box.
+// The recording half (issue-pr-cron#167) emits an OPTIONAL `ages` block beside `counts` —
+// snapshot and rollup line alike — over the SAME population `counts.openIssues` counts:
+//
+//   "counts": { …, "openIssues": 802 },
+//   "ages": { "openIssues": { "meanDays": 333.8, "medianDays": 99.0, "oldestDays": 1654.5 } }
+//
+// That population is EVERY open issue in the pipeline's scope — no coverage filter, no label
+// filter, 180 issues wider than the producer backlog (802 vs 617 live) — so the panel draws
+// it as its own band above the machine and never inside the `untouched (no PR)` box, whose
+// count measures the narrower set. Mean and median are drawn as EQUALS — the same row, the
+// same type, and one small trend chart each, on its OWN scale (these quantities move by
+// ~1% of their level, so a shared or zero-anchored ruler draws both lines flat); oldest is
+// the tail number, in the band's visible detail, never in a tooltip.
+//
+// Degradation: a snapshot carrying neither the count nor the ages — all 136+ rollup lines
+// predating the block, and every refresh whose coverage read FAILED, which omits both rather
+// than reporting a population that just went to zero — draws NO band, which is exactly the
+// page as it was. Never a fabricated zero, and never a fallback to the retired
+// `ages.uncoveredIssues`: that block measured 622 issues and this label says 802.
 
-// The one-decimal `ages` block the tool emits, as a fixture.
-const agesOf = (median, oldest) => ({
-  uncoveredIssues: { medianDays: median, oldestDays: oldest },
+const agesOf = (mean, median, oldest) => ({
+  openIssues: { meanDays: mean, medianDays: median, oldestDays: oldest },
 });
+
+// The history fixture the band tests share: one line per refresh, every one carrying the
+// population SIZE, only some carrying the ages — the live shape of statistics that start
+// mid-history. `stats[i]` is [mean, median, oldest], or null for a refresh that reported none.
+function openHistory(now, sizes, stats) {
+  return sizes.map((n, i) => {
+    const p = { t: now - (sizes.length - 1 - i) * DAY, counts: { openIssues: n } };
+    if (stats[i]) p.ages = agesOf(stats[i][0], stats[i][1], stats[i][2]);
+    return p;
+  });
+}
+
+// Band chart geometry, hand-derived from the constants in site/pipeline.html (OI_PAD = 3;
+// the size chart is 120x34, each age trend 72x20) rather than read back through the render:
+// a series normalized to its own min/max spans [PAD, H - PAD] exactly — [3, 31] for the size
+// chart, [3, 17] for an age trend.
+const OI_SIZE = { w: 120, h: 34 }, OI_AGE = { w: 72, h: 20 }, OI_PAD = 3;
+const bandOf = (box) => collect(box, "fsm-open")[0];
+// Every chart is addressed by its OWN class: one quantity per chart is the property under
+// test, so a test that found a line by line-class alone could not tell which chart it was in.
+const chartOf = (band, which) => collect(band, which)[0];
+const ptsOf = (node, cls) => {
+  const l = tags(node, "polyline").find((x) => x.className.split(" ").includes(cls));
+  return l ? l.getAttribute("points").split(" ").map((p) => p.split(",").map(Number)) : null;
+};
 
 Deno.test("fsm ages: parseHistory carries a well-formed ages block and drops a malformed one — without costing the line its counts", () => {
   const text = [
-    '{"ts":"2026-07-28T00:00:00Z","counts":{"uncoveredIssues":600}}',
-    '{"ts":"2026-07-29T00:00:00Z","counts":{"uncoveredIssues":610},"ages":{"uncoveredIssues":{"medianDays":41.0,"oldestDays":812.3}}}',
-    '{"ts":"2026-07-30T00:00:00Z","counts":{"uncoveredIssues":620},"ages":"not an object"}',
+    '{"ts":"2026-07-28T00:00:00Z","counts":{"openIssues":800}}',
+    '{"ts":"2026-07-29T00:00:00Z","counts":{"openIssues":801},"ages":{"openIssues":{"meanDays":333.8,"medianDays":99.0,"oldestDays":1654.5}}}',
+    '{"ts":"2026-07-30T00:00:00Z","counts":{"openIssues":802},"ages":"not an object"}',
   ].join("\n");
   const pts = parseHistory(text);
   assert(pts.length === 3, `all three lines keep their counts: ${pts.length}`);
   assert(!("ages" in pts[0]), "a line without ages yields a point without the key — absence, not null");
   assert(
-    pts[1].ages.uncoveredIssues.medianDays === 41.0 &&
-      pts[1].ages.uncoveredIssues.oldestDays === 812.3,
-    "a well-formed ages block rides through verbatim",
+    pts[1].ages.openIssues.meanDays === 333.8 &&
+      pts[1].ages.openIssues.medianDays === 99.0 &&
+      pts[1].ages.openIssues.oldestDays === 1654.5,
+    "all three statistics ride through verbatim, as siblings",
   );
   assert(!("ages" in pts[2]), "a malformed ages block is dropped, not forwarded");
-  assert(pts[2].counts.uncoveredIssues === 620, "…and never invalidates the line's counts");
+  assert(pts[2].counts.openIssues === 802, "…and never invalidates the line's counts");
 });
 
-// The history fixture the drawing tests share: 3 daily refreshes, every one carrying the
-// count, only some carrying ages — the live shape of a series that starts mid-history.
-function agedHistory(now, counts, medians) {
-  return counts.map((c, i) => {
-    const p = { t: now - (counts.length - 1 - i) * DAY, counts: { uncoveredIssues: c } };
-    if (medians[i] != null) p.ages = agesOf(medians[i], medians[i] * 20);
-    return p;
-  });
-}
-
-Deno.test("fsm ages: history carrying ages draws a second, dashed-classed series with its own dot in the backlog box", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
-  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  assert(collect(b, "fsm-spark").length === 1, "ONE chart — the age line shares the box's spark, not a second chart");
-  const lines = tags(b, "polyline");
-  const sl = lines.filter((l) => l.className.includes("sl"));
-  const al = lines.filter((l) => l.className.includes("al"));
-  assert(sl.length === 1, "the count line still draws");
-  assert(al.length === 1, `the age line draws with its own class: ${lines.map((l) => l.className)}`);
-  const dots = tags(b, "circle");
-  assert(dots.filter((d) => d.className.includes("sd")).length === 1, "count endpoint dot");
-  assert(dots.filter((d) => d.className.includes("ad")).length === 1, "age endpoint dot, its own class");
-});
-
-Deno.test("fsm ages: the age series NEVER shares the count's normalization — each line spans its own scale", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  // Counts in the hundreds, ages in the tens: on a shared scale the 10→30d rise would be a
-  // flat smear pinned under the count line (or off the chart entirely). Per-series
-  // normalization must stretch BOTH lines across the full chart height [PAD, H-PAD] = [2,14].
-  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
-  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  const ys = (cls) =>
-    tags(b, "polyline")
-      .find((l) => l.className.includes(cls))
-      .getAttribute("points")
-      .split(" ")
-      .map((pt) => Number(pt.split(",")[1]));
-  for (const cls of ["sl", "al"]) {
-    const y = ys(cls);
-    assert(
-      Math.min(...y) === 2 && Math.max(...y) === 14,
-      `${cls} spans its OWN full scale [2,14], got [${Math.min(...y)},${Math.max(...y)}] — a shared normalization would flatten or eject the smaller-ranged series`,
-    );
-  }
-});
-
-Deno.test("fsm ages: the current value is labelled WITH ITS UNIT and the oldest rides in the tooltip", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
-  // The snapshot's own sibling block wins over the newest history sample, same as counts do.
+Deno.test("fsm open band: the open-issue population draws its size and BOTH statistics, as equals", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [320, 95, 1620], [333.8, 99.0, 1654.5]]);
   const box = fsmBox(
-    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: agesOf(41.0, 812.3) },
+    { counts: { openIssues: 802, uncoveredIssues: 617 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) },
     history,
   );
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  const label = collect(b, "sg");
-  assert(label.length === 1, "one age label in the backlog box");
+  const band = bandOf(box);
+  assert(band, "a snapshot carrying the population draws the band");
+  // Above the machine: this is the population the machine has to move, and the one figure on
+  // the panel that belongs to no actor's inbox.
+  assert(box.children[0] === band, "the band leads the panel, ahead of the actor lanes");
+  assert(collect(band, "oi-n")[0].textContent === "802", "the population's own size, from counts.openIssues");
   assert(
-    label[0].textContent === "median 41d",
-    `the value carries its unit, never a bare number a reader could take for a count: "${label[0].textContent}"`,
+    textOf(band).includes("every open issue in the pipeline's scope"),
+    `the copy says which population this is: "${textOf(band)}"`,
   );
-  const tip = label[0].getAttribute("title") || "";
-  assert(tip.includes("oldest 812.3d"), `oldest — the tail signal — rides in the tooltip: "${tip}"`);
-  assert(tip.includes("age"), `the tooltip says what the number IS: "${tip}"`);
+  const stats = collect(band, "oi-stat");
+  assert(stats.length === 2, `mean and median, both drawn: ${stats.length}`);
+  assert(textOf(stats[0]).includes("mean") && textOf(stats[0]).includes("333.8d"), `mean, unit attached: "${textOf(stats[0])}"`);
+  assert(textOf(stats[1]).includes("median") && textOf(stats[1]).includes("99d"), `median, unit attached: "${textOf(stats[1])}"`);
+  // EQUALS: same row class, same value class, one trend chart each — neither is a headline
+  // and neither is a footnote hidden in a tooltip.
+  assert(collect(band, "oi-sv").length === 2, "both values carry the same value class");
+  assert(
+    collect(band, "oi-mean").length === 1 && collect(band, "oi-med").length === 1,
+    "each statistic gets its own trend chart — one is never drawn without the other",
+  );
+  // The tail number is detail, and VISIBLE detail — a tooltip is unreadable on a touch
+  // screen and invisible in a screenshot.
+  assert(
+    collect(band, "oi-tail")[0].textContent === "oldest 1654.5d",
+    `oldest renders as visible text: "${collect(band, "oi-tail").map((n) => n.textContent)}"`,
+  );
 });
 
-Deno.test("fsm ages: with no snapshot block the label falls back to the newest history sample", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const history = agedHistory(now, [600, 610, 620], [10, 20, 30]);
-  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  const label = collect(b, "sg");
-  assert(label.length === 1, "the newest rollup sample still yields a current value");
-  assert(label[0].textContent === "median 30d", `newest sample, unit attached: "${label[0].textContent}"`);
-  assert((label[0].getAttribute("title") || "").includes("oldest 600d"), "its oldest rides along");
-});
-
-// The 136-historical-points case, and every state that never declares an age: absence
-// degrades to EXACTLY today's render.
-Deno.test("fsm ages: history without ages draws no age line, no age dot and no label — never a broken box", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const history = agedHistory(now, [600, 610, 620], [null, null, null]);
-  const box = fsmBox({ counts: { uncoveredIssues: 620, ready: 3 }, lanes: { "vetter-verdicts": { "ai:ready": { count: 3, prs: [] } } } }, history);
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  assert(collect(b, "fsm-spark").length === 1, "the count sparkline still draws");
-  assert(tags(b, "polyline").every((l) => !l.className.includes("al")), "no age line without age data");
-  assert(tags(b, "circle").every((d) => !d.className.includes("ad")), "no age dot without age data");
-  assert(collect(box, "sg").length === 0, "no age label anywhere — absence degrades to silence, not to 0d");
-});
-
-// A rollup line whose ages block reports on a refresh mid-window while the count key is
-// MISSING from every line (a rollup older than the count key, or a count that folded) must
-// still draw the age series rather than divide by an empty count range.
-Deno.test("fsm ages: an age series with NO count series still draws, alone", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const history = [1, 2].map((i) => {
-    const p = { t: now - (2 - i) * DAY, counts: { ready: 5 } };
-    p.ages = agesOf(10 * i, 100);
-    return p;
-  });
-  const box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {} }, history);
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  const lines = tags(b, "polyline");
-  assert(lines.length === 1 && lines[0].className.includes("al"), "the age line draws alone");
-});
-
-// The snapshot is an artifact this page does not own, and `Number()` coercion would turn a
-// malformed `null`/`""` medianDays into a fabricated "0d" — the exact absence-becomes-zero
-// lie the recording side refuses to emit. Only a real, finite, non-negative JSON number
-// renders; everything else is absence.
-Deno.test("fsm ages: null, string and negative age values render nothing — never a fabricated 0d", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const bad = [null, "41", -5];
-  for (const v of bad) {
-    const history = [
-      { t: now - DAY, counts: { uncoveredIssues: 610 } },
-      { t: now, counts: { uncoveredIssues: 620 }, ages: { uncoveredIssues: { medianDays: v, oldestDays: v } } },
-    ];
-    const box = fsmBox(
-      { counts: { uncoveredIssues: 620 }, lanes: {}, ages: { uncoveredIssues: { medianDays: v, oldestDays: v } } },
-      history,
+// The reason BOTH statistics are recorded is that they can move apart: a mean running well
+// above its median is a long tail doing the ageing. What a CHART can add to two numbers that
+// already say that is whether either is MOVING — and these quantities move by ~1% of their
+// level (live: a mean of 333.8 days drifting a few days a month), so a shared ruler between
+// mean and median, or one anchored at zero, renders both lines flat to within half a pixel
+// and shows nothing. Each therefore gets its own chart on its own min/max, which is exactly
+// the convention every state sparkline on this panel already uses.
+Deno.test("fsm open band: each statistic's trend is drawn on its OWN scale, so a small drift is still visible", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  // The live shape: a mean 3.4x its median, and each drifting by ~1% of its own level.
+  const history = openHistory(
+    now,
+    [800, 801, 802],
+    [[330.0, 97.0, 1650], [332.0, 98.0, 1652], [333.8, 99.0, 1654.5]],
+  );
+  const box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) }, history);
+  const band = bandOf(box);
+  for (const [chart, name] of [["oi-mean", "mean"], ["oi-med", "median"]]) {
+    const ys = ptsOf(chartOf(band, chart), "a-l").map((pt) => pt[1]);
+    assert(
+      Math.min(...ys) === OI_PAD && Math.max(...ys) === OI_AGE.h - OI_PAD,
+      `the ${name} trend spans its own full height [${OI_PAD},${OI_AGE.h - OI_PAD}], got [${Math.min(...ys)},${Math.max(...ys)}] — on a ruler set by the OTHER statistic's level it would be a flat smear`,
     );
-    const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-    assert(tags(b, "polyline").every((l) => !l.className.includes("al")), `medianDays=${JSON.stringify(v)} draws no age line`);
-    assert(tags(b, "circle").every((d) => !d.className.includes("ad")), `medianDays=${JSON.stringify(v)} draws no age dot`);
-    assert(collect(box, "sg").length === 0, `medianDays=${JSON.stringify(v)} renders no label — a coerced 0d would lie`);
   }
-  // A malformed oldest never poisons a good median: the label renders, the tooltip omits it.
+  // …and the two are drawn identically: same stroke class, same geometry. Nothing in the
+  // rendering ranks one above the other.
+  const geom = (chart) => {
+    const svg = chartOf(band, chart);
+    return svg.getAttribute("width") + "x" + svg.getAttribute("height");
+  };
+  assert(geom("oi-mean") === geom("oi-med"), `same chart geometry for both: ${geom("oi-mean")} vs ${geom("oi-med")}`);
+  assert(
+    tags(band, "polyline").filter((l) => l.className.split(" ").includes("a-l")).length === 2,
+    "both age trends draw in the same stroke — the names tell them apart, not a visual hierarchy",
+  );
+});
+
+Deno.test("fsm open band: one quantity per chart — no chart mixes days with items", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [320, 95, 1620], [333.8, 99.0, 1654.5]]);
   const box = fsmBox(
-    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: { uncoveredIssues: { medianDays: 41.0, oldestDays: "-" } } },
+    { counts: { openIssues: 802, uncoveredIssues: 617 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) },
+    history,
+  );
+  const band = bandOf(box);
+  assert(collect(band, "oi-chart").length === 3, "three quantities, three charts");
+  const cls = (n) => tags(n, "polyline").map((l) => l.className);
+  for (const [chart, want] of [["oi-size", "q-l"], ["oi-mean", "a-l"], ["oi-med", "a-l"]]) {
+    const c = chartOf(band, chart);
+    assert(c, `${chart} draws`);
+    assert(
+      cls(c).length === 1 && cls(c)[0].split(" ").includes(want),
+      `${chart} holds exactly one series, its own: ${cls(c)}`,
+    );
+  }
+  assert(cls(chartOf(band, "oi-size")).every((k) => !k.includes("a-l")), "no age line inside the queue-size chart");
+  // …and the machine's own sparklines are untouched: no age mark ever enters a state box.
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  assert(collect(b, "sg").length === 0, "no age label in the backlog box");
+  assert(
+    tags(b, "polyline").every((l) => l.className.split(" ").includes("sl")),
+    "the backlog box draws its own count line and nothing else",
+  );
+});
+
+// THREE charts, ONE time domain: a refresh must land at the same fraction of every chart's
+// width, or a series that starts mid-history reads as though it spanned the whole window.
+Deno.test("fsm open band: every chart shares one time domain, so a late-starting series starts late", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  // Four refreshes of the size; the ages only on the last two — the live rollout shape.
+  const history = openHistory(now, [800, 801, 802, 802], [null, null, [320, 95, 1600], [340, 100, 1654.5]]);
+  const box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(340, 100, 1654.5) }, history);
+  const band = bandOf(box);
+  const frac = (chart, cls, w) => {
+    const pts = ptsOf(chartOf(band, chart), cls);
+    return pts.map(([x]) => (x - OI_PAD) / (w - 2 * OI_PAD));
+  };
+  const size = frac("oi-size", "q-l", OI_SIZE.w), mean = frac("oi-mean", "a-l", OI_AGE.w);
+  assert(Math.abs(size[0]) < 0.02, `the size series starts at the left edge: ${size[0]}`);
+  assert(Math.abs(size[size.length - 1] - 1) < 0.02, `…and ends at the right: ${size[size.length - 1]}`);
+  assert(
+    Math.abs(mean[0] - 2 / 3) < 0.02,
+    `the ages start two thirds in, where their first refresh is — not at the left edge of their own private axis: ${mean[0]}`,
+  );
+  assert(Math.abs(mean[mean.length - 1] - 1) < 0.02, "…and end at the same right edge as the size");
+});
+
+Deno.test("fsm open band: the current statistics come from the snapshot, else the newest rollup line that carries them", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [320, 95, 1620], [333.8, 99.0, 1654.5]]);
+  // The snapshot is the present and wins, exactly as counts do.
+  let band = bandOf(fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(400, 120, 1700) }, history));
+  assert(textOf(band).includes("400d") && textOf(band).includes("120d"), `snapshot wins: "${textOf(band)}"`);
+  // No snapshot block: the newest rollup sample stands in.
+  band = bandOf(fsmBox({ counts: { openIssues: 802 }, lanes: {} }, history));
+  assert(
+    textOf(band).includes("333.8d") && textOf(band).includes("99d") && textOf(band).includes("oldest 1654.5d"),
+    `newest rollup sample: "${textOf(band)}"`,
+  );
+  // A newer refresh whose coverage read failed carries no ages — the newest line that HAS
+  // them is the current reading, not "no reading at all".
+  const stale = history.concat([{ t: now + DAY, counts: { openIssues: 803 } }]);
+  band = bandOf(fsmBox({ counts: { openIssues: 803 }, lanes: {} }, stale));
+  assert(textOf(band).includes("333.8d"), `the newest line that carried the ages: "${textOf(band)}"`);
+});
+
+// The 136+ historical rows, and every snapshot predating issue-pr-cron#167.
+Deno.test("fsm open band: a snapshot with neither the open count nor any ages draws NO band", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  const history = [
+    { t: now - DAY, counts: { uncoveredIssues: 610 } },
+    { t: now, counts: { uncoveredIssues: 617 } },
+  ];
+  const box = fsmBox({ counts: { uncoveredIssues: 617 }, lanes: {} }, history);
+  assert(collect(box, "fsm-open").length === 0, "no band — absence degrades to exactly the page as it was");
+  assert(collect(box, "oi-k").length === 0, "no population copy about a population the snapshot never reported");
+  assert(!textOf(box).includes("median age in days"), "and no legend describing a mark that is not on screen");
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  assert(collect(b, "fsm-spark").length === 1, "the machine's own sparkline still draws");
+});
+
+// The retired key measured the producer backlog (622). Reading it into a band labelled
+// "every open issue" would show a 622-issue number under an 802-issue heading — the one
+// failure mode worse than drawing nothing.
+Deno.test("fsm open band: the retired ages.uncoveredIssues is never read as this population's age", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  const history = [
+    { t: now - DAY, counts: { uncoveredIssues: 610 }, ages: { uncoveredIssues: { medianDays: 41.0, oldestDays: 812.3 } } },
+    { t: now, counts: { uncoveredIssues: 617 }, ages: { uncoveredIssues: { medianDays: 43.0, oldestDays: 813.3 } } },
+  ];
+  const box = fsmBox(
+    { counts: { uncoveredIssues: 617 }, lanes: {}, ages: { uncoveredIssues: { medianDays: 43.0, oldestDays: 813.3 } } },
+    history,
+  );
+  assert(collect(box, "fsm-open").length === 0, "the narrower population's ages are not this one's — no band");
+  assert(collect(box, "oi-stat").length === 0, "and no statistic anywhere on the page");
+});
+
+// `Number()` coercion would turn a malformed `null`/`""` into a fabricated 0 — for the ages
+// a "0d" the recording side refuses to emit, and for the size a claim that every issue in
+// the org closed at once, which is why a failed coverage read omits the key entirely.
+Deno.test("fsm open band: null, string and negative values render nothing — never a fabricated zero", () => {
+  for (const v of [null, "99", -5]) {
+    const box = fsmBox(
+      { counts: { openIssues: v, uncoveredIssues: 617 }, lanes: {}, ages: { openIssues: { meanDays: v, medianDays: v, oldestDays: v } } },
+      [],
+    );
+    assert(
+      collect(box, "fsm-open").length === 0,
+      `openIssues=${JSON.stringify(v)} draws no band — a coerced 0 would claim an empty, ageless backlog`,
+    );
+  }
+  // A size that did not arrive alongside statistics that did: the size reads as unreported,
+  // never as zero, and the statistics still draw.
+  const box = fsmBox({ counts: { openIssues: null, uncoveredIssues: 617 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) }, []);
+  assert(collect(box, "oi-n")[0].textContent === "—", `an unreported size is a dash: "${collect(box, "oi-n")[0].textContent}"`);
+  assert(collect(box, "oi-stat").length === 2, "…and both statistics still draw");
+  // A malformed oldest never costs the two statistics their rows.
+  const box2 = fsmBox(
+    { counts: { openIssues: 802 }, lanes: {}, ages: { openIssues: { meanDays: 333.8, medianDays: 99.0, oldestDays: "-" } } },
     [],
   );
-  const label = collect(box, "sg");
-  assert(label.length === 1 && label[0].textContent === "median 41d", "the valid median still labels");
-  assert(!(label[0].getAttribute("title") || "").includes("oldest"), "no fabricated oldest in the tooltip");
+  assert(collect(box2, "oi-stat").length === 2, "mean and median survive a malformed tail");
+  assert(collect(box2, "oi-tail").length === 0, "no fabricated oldest");
 });
 
-// The legend describes marks on screen: an `ages` block that draws nothing (empty, or all
-// fields malformed) gets no legend sentence, and one that draws gets exactly one.
-Deno.test("fsm ages: the legend sentence appears only when an age mark is actually drawn", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const histNoAges = [
-    { t: now - DAY, counts: { uncoveredIssues: 610 } },
-    { t: now, counts: { uncoveredIssues: 620 } },
-  ];
-  // Empty block, nothing drawable: no legend.
-  let box = fsmBox({ counts: { uncoveredIssues: 620 }, lanes: {}, ages: {} }, histNoAges);
-  assert(!textOf(box).includes("age in days"), "an empty ages block draws nothing, so it explains nothing");
-  // Malformed-only block: still no legend.
-  box = fsmBox(
-    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: { uncoveredIssues: { medianDays: null } } },
-    histNoAges,
+Deno.test("fsm open band: a refresh that carried no ages contributes no point — a gap is never plotted as zero", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  const history = openHistory(
+    now,
+    [800, 801, 802, 802],
+    [null, [300, 90, 1600], null, [340, 100, 1654.5]],
   );
-  assert(!textOf(box).includes("age in days"), "a malformed-only ages block gets no legend either");
-  // A drawable value: the legend appears.
-  box = fsmBox(
-    { counts: { uncoveredIssues: 620 }, lanes: {}, ages: agesOf(41.0, 812.3) },
-    histNoAges,
+  const box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(340, 100, 1654.5) }, history);
+  const band = bandOf(box);
+  const mean = ptsOf(chartOf(band, "oi-mean"), "a-l");
+  assert(mean.length === 2, `only the two refreshes that reported a mean are plotted: ${mean.length}`);
+  // A fabricated 0 for the missing refresh would be the series' minimum and would pin to the
+  // bottom of the chart; with only the two real readings, the LOWER of them is the minimum.
+  assert(
+    Math.max(...mean.map((pt) => pt[1])) === OI_AGE.h - OI_PAD &&
+      mean[0][1] === OI_AGE.h - OI_PAD,
+    `the earlier real reading is the series minimum — a gap plotted as 0d would take that place: ${mean.map((pt) => pt[1])}`,
   );
-  assert(textOf(box).includes("age in days"), "a drawn age mark is explained");
+  const size = ptsOf(chartOf(band, "oi-size"), "q-l");
+  assert(size.length === 4, `the size was carried on every line, so all four points draw: ${size.length}`);
 });
 
-// The bottleneck flag reads the COUNT trend and only that: a backlog ageing fast while its
-// size holds flat is stagnation, not accumulation, and must not trip the rising border.
-Deno.test("fsm ages: a rising age over a flat count never flags the bottleneck", () => {
-  const now = Date.parse("2026-07-31T00:00:00Z");
-  const counts = [600, 600, 600, 600, 600, 600, 600, 600];
-  const medians = [10, 20, 30, 40, 50, 60, 70, 80];
-  const history = agedHistory(now, counts, medians);
-  const box = fsmBox({ counts: { uncoveredIssues: 600 }, lanes: {} }, history);
+Deno.test("fsm open band: the legend explains the two age series only when they are drawn", () => {
+  // A size with no ages at all: the band reports the size and explains no age mark.
+  let box = fsmBox({ counts: { openIssues: 802 }, lanes: {} }, []);
+  assert(collect(box, "fsm-open").length === 1, "a reported size still draws, ages or not");
+  assert(collect(box, "oi-stat").length === 0, "no statistics to draw");
+  assert(collect(box, "oi-chart").length === 0, "and no chart: an empty series is no chart, never an empty frame");
+  assert(!textOf(box).includes("median age in days"), "…so nothing about them in the legend");
+  // An empty block draws nothing either, and explains nothing.
+  box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: {} }, []);
+  assert(!textOf(box).includes("median age in days"), "an empty ages block gets no legend");
+  // Drawable statistics: exactly one sentence, and it names what the reader is looking at.
+  box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) }, []);
+  const txt = textOf(box);
+  assert(txt.includes("median age in days") && txt.includes("mean"), `the drawn marks are explained: "${txt}"`);
+  assert(
+    txt.includes("own trend on its own scale"),
+    "…including the one property a reader must know before comparing two charts by eye",
+  );
+});
+
+// The bottleneck flag reads the COUNT trend of the state it is on, and only that: a
+// population ageing fast while the producer's backlog holds flat is stagnation, not
+// accumulation, and must not trip the rising border.
+Deno.test("fsm open band: a fast-ageing population never flags a bottleneck in the machine", () => {
+  const now = Date.parse("2026-08-05T00:00:00Z");
+  const history = [10, 20, 30, 40, 50, 60, 70, 80].map((m, i) => ({
+    t: now - (7 - i) * DAY,
+    counts: { uncoveredIssues: 600, openIssues: 802 },
+    ages: agesOf(m * 3, m, 1654.5),
+  }));
+  const box = fsmBox({ counts: { uncoveredIssues: 600, openIssues: 802 }, lanes: {}, ages: agesOf(240, 80, 1654.5) }, history);
   const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  assert(!b.classList.contains("rising"), "a flat count is not a bottleneck, however fast the backlog ages");
+  assert(!b.classList.contains("rising"), "a flat count is not a bottleneck, however fast the population ages");
+  assert(bandOf(box), "the band still draws the ageing it is measuring");
 });
 
 // Follow-up to #69: the producer's untouched backlog (open issues with no covering open PR,

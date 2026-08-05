@@ -158,17 +158,8 @@
   .fsm-spark { display: block; flex: none; overflow: visible; }
   .fsm-spark .sl { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
   .fsm-spark .sd { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
-  /* Median-AGE series (rain-org-health#140): a different DIMENSION (days, own per-series
-     scale) sharing the count's chart, so it must never read as another count — dashed,
-     thinner, muted, and deliberately NOT recolored by .rising/.lead below: the bottleneck
-     flag is about the COUNT trend, and a red age line would claim it for the wrong series. */
-  .fsm-spark .al { fill: none; stroke: var(--ink-3); stroke-width: 1; stroke-dasharray: 2 2; opacity: 0.7; }
-  .fsm-spark .ad { fill: var(--ink-3); }
   .fsm-state.rising .fsm-spark .sl, .fsm-state.lead .fsm-spark .sl { stroke: var(--crit); }
   .fsm-state.rising .fsm-spark .sd, .fsm-state.lead .fsm-spark .sd { fill: var(--crit); }
-  /* The age series' current-value label, unit attached — "median 41d" — so the number can
-     never be misread as a queue size. */
-  .fsm-state .sg { font-size: 11px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-top: 2px; }
   .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
   .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
@@ -195,6 +186,36 @@
   .fsm-lane-h .lct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 650; text-transform: none; letter-spacing: 0; }
   .fsm-lane-h .lsub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-3); text-transform: none; letter-spacing: 0; margin-left: -4px; }
   .fsm-lane .fsm-grid { margin: 0; }
+  /* ---- Open-issue population band (rain-org-health#140) ----
+     Every open issue in the pipeline's scope, and how old it runs. NOT a state box and
+     deliberately outside the actor lanes: this population spans all three actors (it holds
+     issues behind an open PR, behind a human ruling, and flagged close-candidate alongside
+     the untouched backlog), so its size is not an inbox anyone acts on and could never be
+     added to an actor total. */
+  .fsm-open { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px;
+              background: var(--surface); border: 1px solid var(--border); border-radius: 11px;
+              padding: 14px 16px; margin: 12px 0 4px; }
+  .fsm-open .oi-pop { flex: 1 1 230px; min-width: 200px; }
+  .fsm-open .oi-n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; }
+  .fsm-open .oi-k { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .fsm-open .oi-sub { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; margin-top: 4px; }
+  .fsm-open .oi-cell { display: flex; flex-direction: column; gap: 3px; flex: none; }
+  .fsm-open .oi-cap { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); }
+  .fsm-open .oi-ages { display: flex; flex-direction: column; gap: 5px; flex: none; }
+  .fsm-open .oi-stats { display: grid; gap: 3px; }
+  /* mean and median are EQUALS: the same row, the same type size and weight, the same chart
+     drawn in the same stroke. Nothing here ranks one above the other — they are told apart
+     by their own names, which is the page's rule for identity generally. */
+  .fsm-open .oi-stat { display: flex; align-items: center; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .fsm-open .oi-sn { color: var(--ink-3); min-width: 46px; }
+  .fsm-open .oi-sv { color: var(--ink); font-weight: 650; min-width: 56px; }
+  /* The tail number: visible detail, not a series and not a headline. */
+  .fsm-open .oi-tail { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .fsm-open .oi-chart { display: block; overflow: visible; flex: none; }
+  .fsm-open .q-l { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+  .fsm-open .q-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+  .fsm-open .a-l { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+  .fsm-open .a-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
   /* ---- External (Protofire) audit coverage ---- */
   .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
   .au-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); }
@@ -394,43 +415,60 @@ function renderFsm(hq, history) {
     out.sort((a, b) => a.t - b.t);
     return out;
   };
-  // A state's median-AGE series (days) from the rollup's optional sibling `ages` block
-  // (rain-org-health#140): one point per refresh whose line carried `ages.<key>.medianDays`
-  // as a finite number — every line written before the tool emitted the block, and every
-  // refresh with no age to report, contributes NO point (absence, never a zero: an empty
-  // backlog has no age and a fabricated 0 would draw a fresh one). `oldestDays` rides along
-  // as `o` for the tooltip when finite. This is a different DIMENSION from a queue size, so
-  // it is drawn with its own normalization and its own dashed style — see `sparkline`.
-  // An age VALUE from the untrusted artifact: a real JSON number, finite, and >= 0 — or null.
-  // Not `Number(x)`: that coerces `null`/`""` to 0, fabricating a "0d" age out of a malformed
-  // field — the exact absence-becomes-zero lie the recording side refuses to emit — and a
-  // negative "age" (nothing honest produces one) must not render at all.
-  const ageNum = (x) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? x : null);
-  const ageSeriesFor = (ageKey) => {
-    if (!ageKey) return [];
+  // ---- Open-issue AGES (rain-org-health#140, recorded by issue-pr-cron#167).
+  // The snapshot and every rollup line may carry an OPTIONAL sibling block beside `counts`:
+  //   "ages": { "openIssues": { "meanDays": 333.8, "medianDays": 99.0, "oldestDays": 1654.5 } }
+  // computed over the SAME population `counts.openIssues` counts — every open issue in the
+  // pipeline's scope, with no coverage filter and no label filter. That is 180 issues wider
+  // than the producer backlog (`uncoveredIssues`), so it is drawn as its own band and never
+  // inside the backlog box: labelling a whole-population age with a backlog count is exactly
+  // the mismatch this key's rename was about.
+  const AGE_POP = "openIssues";
+  // A VALUE off the untrusted artifact: a real JSON number, finite, and >= 0 — or null.
+  // Not `Number(x)`: that coerces `null`/`""` to 0, fabricating a "0d" age (or a "0 open
+  // issues" population) out of a malformed field — the exact absence-becomes-zero lie the
+  // recording side refuses to emit, which is why a FAILED coverage read omits both
+  // `counts.openIssues` and `ages` rather than reporting zero. A negative "age" (nothing
+  // honest produces one) must not render either.
+  const posNum = (x) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? x : null);
+  const ageBlock = (o) => {
+    const a = o && typeof o === "object" ? o[AGE_POP] : null;
+    return a && typeof a === "object" ? a : null;
+  };
+  // One age series (days) over the rollup: one point per refresh whose line carried this
+  // statistic as a finite number. Every line written before the block existed, and every
+  // refresh whose coverage read failed, contributes NO point — absence, never a zero.
+  const ageSeries = (field) => {
     const out = [];
     for (const p of hist) {
-      const a = p && p.ages && p.ages[ageKey];
-      if (!a || typeof a !== "object") continue;
-      const v = ageNum(a.medianDays);
+      const v = posNum((ageBlock(p && p.ages) || {})[field]);
       if (v == null) continue;
-      out.push({ t: Number(p.t), v, o: ageNum(a.oldestDays) });
+      out.push({ t: Number(p.t), v });
     }
     out.sort((a, b) => a.t - b.t);
     return out;
   };
-  // The CURRENT age stats for a state's label: the live snapshot's sibling `ages` block when
-  // it carries a well-formed entry (the same precedence counts get — the snapshot is the
-  // present, history the past), else the newest history sample, else null ⇒ no label. Every
-  // field is validated on the way in: the snapshot is an artifact this page does not own.
-  const ageCurFor = (ageKey, series) => {
-    const a = hq.ages && typeof hq.ages === "object" ? hq.ages[ageKey] : null;
-    const m = a && typeof a === "object" ? ageNum(a.medianDays) : null;
-    if (m != null) {
-      return { medianDays: m, oldestDays: ageNum(a.oldestDays) };
+  // The CURRENT statistics: the live snapshot's own `ages` block when it carries at least one
+  // of mean/median (the same precedence counts get — the snapshot is the present, history the
+  // past), else the newest rollup line that does, else null ⇒ no numbers. Every field is
+  // validated on the way in: the snapshot is an artifact this page does not own.
+  const ageCur = () => {
+    const read = (blk) => {
+      const a = ageBlock(blk);
+      if (!a) return null;
+      const cur = { mean: posNum(a.meanDays), median: posNum(a.medianDays), oldest: posNum(a.oldestDays) };
+      return cur.mean == null && cur.median == null ? null : cur;
+    };
+    const snap = read(hq.ages);
+    if (snap) return snap;
+    // By TIMESTAMP, not by array position: the rollup is append-only but this page never
+    // assumes the order it is handed, exactly as the series builders sort before drawing.
+    let best = null, bestT = -Infinity;
+    for (const p of hist) {
+      const h = read(p && p.ages);
+      if (h && Number(p.t) >= bestT) { best = h; bestT = Number(p.t); }
     }
-    const last = series.length ? series[series.length - 1] : null;
-    return last ? { medianDays: last.v, oldestDays: last.o } : null;
+    return best;
   };
   // Built as real SVG nodes (createElementNS + setAttribute) — never markup — matching
   // the rest of the dashboard, so nothing reaching the chart is parsed as markup.
@@ -441,44 +479,68 @@ function renderFsm(hq, history) {
   // metric a reader is most likely to be checking BECAUSE it is new. The lone dot is
   // unambiguous against a flat inventory, which has ≥2 points and so draws a horizontal
   // LINE through that same dot; it grows into a full line as the rollup fills in.
-  // `ageSeries` (optional, rain-org-health#140) is a second line in the same chart, but a
-  // different DIMENSION: days, not items. It gets its OWN vertical normalization — the
-  // per-series min/max scaling below is per line, never shared, so a 40-day median next to a
-  // 600-item queue still uses the full height and neither flattens the other — and its own
-  // recessive dashed style (`al`/`ad`, see the CSS), so it can never read as a second count.
-  // Only the time axis is shared: same chart, same window, aligned samples. Either series may
-  // be empty (ages start mid-history; a count key can be newer than the rollup) and the other
-  // still draws; both empty ⇒ no chart, never a broken box.
-  const sparkline = (series, ageSeries) => {
-    const winOf = (s) => {
-      const win = now ? s.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : s;
-      return win.length ? win : s;
-    };
-    const pts = series.length ? winOf(series) : [];
-    const apts = ageSeries && ageSeries.length ? winOf(ageSeries) : [];
-    if (!pts.length && !apts.length) return null;
+  const sparkline = (series) => {
+    const win = now ? series.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : series;
+    const pts = win.length ? win : series;
+    if (!pts.length) return null;
     const W = 56, H = 16, PAD = 2;
-    // ONE time axis across both series, so a shared instant lands on a shared x.
-    const ts = [...pts, ...apts].map((p) => p.t);
+    const ts = pts.map((p) => p.t), vs = pts.map((p) => p.v);
     const tMin = Math.min(...ts), tMax = Math.max(...ts);
+    const vMin = Math.min(...vs), vMax = Math.max(...vs);
     const xOf = (t) => tMax === tMin ? W - PAD : PAD + ((t - tMin) / (tMax - tMin)) * (W - 2 * PAD);
-    // Per-SERIES vertical scale: each line normalizes to its own min/max.
-    const yScale = (vs) => {
-      const vMin = Math.min(...vs), vMax = Math.max(...vs);
-      return (v) => vMax === vMin ? H / 2 : H - PAD - ((v - vMin) / (vMax - vMin)) * (H - 2 * PAD);
-    };
+    const yOf = (v) => vMax === vMin ? H / 2 : H - PAD - ((v - vMin) / (vMax - vMin)) * (H - 2 * PAD);
+    const xy = pts.map((p) => [xOf(p.t), yOf(p.v)]);
     const svg = svgEl("svg", { class: "fsm-spark", width: W, height: H, viewBox: `0 0 ${W} ${H}`, "aria-hidden": "true" });
     // One point is a dot, not a line — a single-vertex polyline paints nothing.
-    const draw = (p2, lineClass, dotClass, r) => {
-      const yOf = yScale(p2.map((p) => p.v));
-      const xy = p2.map((p) => [xOf(p.t), yOf(p.v)]);
-      if (xy.length > 1) svg.append(svgEl("polyline", { class: lineClass, points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
-      const last = xy[xy.length - 1];
-      svg.append(svgEl("circle", { class: dotClass, cx: last[0].toFixed(1), cy: last[1].toFixed(1), r }));
-    };
-    // Age under count: the count series is the box's headline signal and paints on top.
-    if (apts.length) draw(apts, "al", "ad", 1.5);
-    if (pts.length) draw(pts, "sl", "sd", 2);
+    if (xy.length > 1) svg.append(svgEl("polyline", { class: "sl", points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
+    const last = xy[xy.length - 1];
+    svg.append(svgEl("circle", { class: "sd", cx: last[0].toFixed(1), cy: last[1].toFixed(1), r: 2 }));
+    return svg;
+  };
+
+  // ---- The open-issue band's charts (rain-org-health#140).
+  // Three charts, one per QUANTITY: the population's size, its mean age, its median age.
+  // Never one chart holding several — that is the choice this panel keeps getting wrong.
+  //
+  // Each is normalized to its OWN min/max, which is the same convention every state
+  // sparkline above already uses, and it is what makes the chart worth drawing at all:
+  // these quantities barely move relative to their level. Live, the mean is 333.8 days and
+  // a month of drift is a few days — under 2% — so a chart anchored at zero, or one sharing
+  // a ruler between mean and median, draws BOTH lines dead flat and tells a reader nothing
+  // the two numbers beside them do not already say more precisely. Measured, not assumed:
+  // that variant was rendered first and its lines were flat to within half a pixel.
+  //
+  // The cost of per-chart scaling is that vertical position means nothing ACROSS charts, so
+  // nothing invites the comparison: each chart sits on its own row, against its own number,
+  // with its own unit — and the level and the 3.4x mean-to-median gap are read off the two
+  // numbers, which are on screen as equals rather than one of them in a tooltip. What the
+  // charts add is the thing numbers cannot show: whether each is moving, and whether the two
+  // move TOGETHER (a backlog ageing uniformly) or apart (a long tail doing the work).
+  const OI_PAD = 3;
+  // ONE time domain across all three, so a refresh lands at the same fraction of every
+  // chart's width and a series that starts mid-history (all of these do — `openIssues` and
+  // `ages` are new keys) reads as the short line at the right-hand edge that it is.
+  const oiWindow = (s) => {
+    const win = now ? s.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : s;
+    return win.length ? win : s;
+  };
+  const oiXOf = (w, tMin, tMax) => (t) =>
+    tMax === tMin ? w - OI_PAD : OI_PAD + ((t - tMin) / (tMax - tMin)) * (w - 2 * OI_PAD);
+  const oiYOf = (h, vs) => {
+    const vMin = Math.min(...vs), vMax = Math.max(...vs);
+    return (v) => vMax === vMin ? h / 2 : h - OI_PAD - ((v - vMin) / (vMax - vMin)) * (h - 2 * OI_PAD);
+  };
+  // One series, one chart. An empty series draws NOTHING — no chart, no fabricated point,
+  // never a broken box.
+  const oiChart = (cls, w, h, xOf, pts, lineCls, dotCls) => {
+    if (!pts.length) return null;
+    const yOf = oiYOf(h, pts.map((p) => p.v));
+    const xy = pts.map((p) => [xOf(p.t), yOf(p.v)]);
+    const svg = svgEl("svg", { class: "oi-chart " + cls, width: w, height: h, viewBox: `0 0 ${w} ${h}`, "aria-hidden": "true" });
+    // One point is a dot, not a line — a single-vertex polyline paints nothing.
+    if (xy.length > 1) svg.append(svgEl("polyline", { class: lineCls, points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
+    const last = xy[xy.length - 1];
+    svg.append(svgEl("circle", { class: dotCls, cx: last[0].toFixed(1), cy: last[1].toFixed(1), r: 2 }));
     return svg;
   };
 
@@ -522,16 +584,12 @@ function renderFsm(hq, history) {
     });
   const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
 
-  // `age` (optional, rain-org-health#140) = { series, cur } — the state's median-age series
-  // for the chart plus the CURRENT stats ({medianDays, oldestDays}, from the live snapshot
-  // when it carries them, else the newest history sample) for the labelled value. A state
-  // with no age data anywhere renders exactly as before: no dashed line, no label.
-  const stateBox = (key, label, count, act, kind, series, age) => {
+  const stateBox = (key, label, count, act, kind, series) => {
     const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
     b.dataset.t = key;
     const scRow = el("div", "fsm-scrow");
     scRow.append(el("div", "sc", String(Number(count))));
-    const spark = sparkline(series || [], age && age.series);
+    const spark = series ? sparkline(series) : null;
     if (spark) scRow.append(spark);
     // The bottleneck flag: inventory rising over the trailing 7d = the constraint.
     // Red warning border (via `.rising`) PLUS a ▲ badge and title/aria-label, so the
@@ -545,28 +603,93 @@ function renderFsm(hq, history) {
       b.setAttribute("title", "inventory rising over the last 7 days — likely the bottleneck");
       b.setAttribute("aria-label", label + ": inventory rising over the last 7 days (bottleneck)");
     }
-    b.append(scRow, el("div", "sk", label));
-    // The age series' current value, labelled WITH ITS UNIT so it can never be read as a
-    // queue size ("median 41d", never a bare number), oldest — the tail signal — in the
-    // tooltip. Rendered only when there is a real value: no age ⇒ no label, matching the
-    // series' own absence-degradation.
-    // Like the count, it lives in the button's TEXT (part of the accessible name by
-    // default) rather than an aria-label of its own, so it never fights the rising/lead
-    // branches, which own that attribute when they fire.
-    if (age && age.cur) {
-      const fmtD = (v) => String(Math.round(v * 10) / 10).replace(/\.0$/, "") + "d";
-      const g = el("div", "sg", "median " + fmtD(age.cur.medianDays));
-      // `oldestDays` is a validated number or null by construction (`ageNum` at both
-      // sources) — checked against null here, never re-coerced: `Number(null)` is a
-      // finite 0, and a "oldest 0d" out of a malformed field is the fabrication the
-      // validation exists to stop.
-      let tip = "median age of this backlog: " + fmtD(age.cur.medianDays);
-      if (age.cur.oldestDays != null) tip += " · oldest " + fmtD(age.cur.oldestDays);
-      g.setAttribute("title", tip);
-      b.append(g);
-    }
-    b.append(el("div", "sa", act));
+    b.append(scRow, el("div", "sk", label), el("div", "sa", act));
     return b;
+  };
+
+  // ---- The open-issue band (rain-org-health#140): how many issues are open, and how old
+  // they run. Three reads of ONE population — `counts.openIssues` for the size, and
+  // `ages.openIssues`'s mean / median / oldest for the age — so the number of issues and the
+  // age of those issues can never describe different sets.
+  //
+  // It sits ABOVE the machine and outside the actor lanes on purpose. This population spans
+  // all three actors: it holds issues already covered by an open PR, issues parked behind a
+  // `human:*` ruling and issues flagged `ai:close-candidate` alongside the untouched backlog
+  // below (802 vs 617 live). A number spanning three actors is not an inbox anyone acts on
+  // and could never be added to an actor total — the same reason there is no combined
+  // close-candidate box in STATES.
+  //
+  // Degradation, identical in kind to the sparklines': a snapshot with neither the count nor
+  // the ages (every one written before issue-pr-cron#167, and every refresh whose coverage
+  // read FAILED — which omits both rather than reporting an org whose issues all closed at
+  // once) renders NO band at all, which is exactly the page as it was. Nothing falls back to
+  // the retired `ages.uncoveredIssues`: that block measured the 617-issue backlog, and
+  // showing it under an 802-issue label would be a wrong number wearing a right one's copy.
+  const fmtD = (v) => String(Math.round(v * 10) / 10).replace(/\.0$/, "") + "d";
+  // The current statistics, resolved once: the band draws them and the legend below is
+  // guarded on them, so neither can describe what the other did not do.
+  const openAges = ageCur();
+  const openBand = () => {
+    const cur = openAges;
+    const meanPts = oiWindow(ageSeries("meanDays"));
+    const medPts = oiWindow(ageSeries("medianDays"));
+    const sizePts = oiWindow(seriesFor("openIssues"));
+    const size = posNum(c.openIssues);
+    if (size == null && !sizePts.length && !cur) return null;
+    const band = el("div", "fsm-open");
+
+    const pop = el("div", "oi-pop");
+    // No size ⇒ no fabricated number. The ages can arrive on a snapshot whose count did not.
+    pop.append(el("div", "oi-n", size == null ? "—" : String(size)));
+    pop.append(el("div", "oi-k", "open issues"));
+    pop.append(el(
+      "div",
+      "oi-sub",
+      "every open issue in the pipeline's scope — including ones already covered by an open PR, parked on a human ruling, or flagged ai:close-candidate. The producer backlog below is the subset with none of those.",
+    ));
+    band.append(pop);
+
+    // One time domain across all three charts.
+    const ts = [...sizePts, ...meanPts, ...medPts].map((p) => Number(p.t));
+    const tMin = ts.length ? Math.min(...ts) : 0, tMax = ts.length ? Math.max(...ts) : 0;
+
+    const sizeChart = oiChart("oi-size", 120, 34, oiXOf(120, tMin, tMax), sizePts, "q-l", "q-d");
+    if (sizeChart) {
+      const cell = el("div", "oi-cell");
+      cell.append(sizeChart, el("div", "oi-cap", "queue size · 4 weeks"));
+      band.append(cell);
+    }
+
+    if (cur) {
+      const ages = el("div", "oi-ages");
+      const stats = el("div", "oi-stats");
+      // mean and median as EQUALS: the same row, built by the same function — same type
+      // size, same weight, same chart geometry, in the order the recording half emits them.
+      // Neither is a headline and neither is a footnote in a tooltip. The human's call was
+      // "we can do both", and both numbers sitting side by side is what makes the 3.4x gap
+      // between them readable at a glance.
+      const stat = (name, v, pts, lineCls, dotCls, chartCls) => {
+        if (v == null) return;
+        const row = el("div", "oi-stat");
+        row.append(el("span", "oi-sn", name), el("span", "oi-sv", fmtD(v)));
+        const ch = oiChart(chartCls, 72, 20, oiXOf(72, tMin, tMax), pts, lineCls, dotCls);
+        // No recorded history yet ⇒ the number alone. A statistic with one refresh behind it
+        // draws its lone dot; with none it draws nothing rather than an empty frame.
+        if (ch) row.append(ch);
+        stats.append(row);
+      };
+      stat("mean", cur.mean, meanPts, "a-l", "a-d", "oi-mean");
+      stat("median", cur.median, medPts, "a-l", "a-d", "oi-med");
+      // The tail number, in the open rather than in a tooltip: it is the one figure that
+      // explains a mean running well above its median, and a tooltip is unreadable on a
+      // touch screen and invisible in a screenshot. Not a series — one issue's age has no
+      // trend worth a chart, it has a value.
+      if (cur.oldest != null) stats.append(el("div", "oi-tail", "oldest " + fmtD(cur.oldest)));
+      ages.append(stats);
+      ages.append(el("div", "oi-cap", "age in days · each trend on its own scale"));
+      band.append(ages);
+    }
+    return band;
   };
 
   // Per-actor FALLBACK emphasis: the bottleneck flag above only fires on a RISING series,
@@ -649,14 +772,11 @@ function renderFsm(hq, history) {
     // (past two inside the 7d window) the trend border; none at all → no spark, never a
     // broken box.
     //
-    // `age` (rain-org-health#140 / issue-pr-cron#165) = this state's key in the OPTIONAL
-    // sibling `ages` block ({medianDays, oldestDays}, snapshot and rollup alike): the count
-    // says how MUCH backlog there is, the median age says how OLD it runs — a queue turning
-    // over and one stagnating draw the same count line. Same degradation contract as `hist`:
-    // every point predating the block (all 136+ at ship time), and every refresh whose
-    // backlog had no age to report, contributes nothing — no dashed line, no label, never a
-    // broken box.
-    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", age: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
+    // No AGE is drawn here. The recorded ages (issue-pr-cron#167) are over `openIssues` —
+    // every open issue, 802 live against this box's 617 — so they belong to the band above
+    // the machine, not to this box: a whole-population median under a backlog count would be
+    // a number labelled as something it does not measure.
+    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
     // Vetter inbox — the vetter records the next verdict. ONE vet-lifecycle state, not two:
     // issue-pr-cron#128 collapsed `awaiting-re-vet` into this one, because vetting is a pure
     // function of the PR at its CURRENT head — a PR whose head moved, or whose verdict was
@@ -715,10 +835,10 @@ function renderFsm(hq, history) {
   ];
 
   const grid = el("div"); // container appended into the panel below
-  // Whether any box actually drew an age mark (dashed line or labelled value) — the legend's
-  // guard, so it never describes a mark that is not there (a bare `"ages": {}`, or one whose
-  // every field is malformed, renders nothing and gets no legend).
-  let ageOnScreen = false;
+  // Built before the machine so it renders above it; null when the snapshot carries neither
+  // the open-issue count nor any age — then the page is exactly what it was, and the legend
+  // below describes no mark that is not on screen.
+  const band = openBand();
   if (hasLanes) {
     OWNERS.forEach((O) => {
       const g = el("div", "fsm-grid");
@@ -741,18 +861,7 @@ function renderFsm(hq, history) {
         }
         ownerTotal += count;
         const label = s.label || s.state;
-        // A state that declares an `age` key gets its median-age series + current stats;
-        // the rest pass nothing and render exactly as before.
-        let age = null;
-        if (s.age) {
-          const ageSeries = ageSeriesFor(s.age);
-          age = { series: ageSeries, cur: ageCurFor(s.age, ageSeries) };
-          // The legend below describes only marks actually on screen, so it keys off what
-          // this box will really draw — an empty/malformed `ages` block draws nothing and
-          // must explain nothing.
-          if (age.series.length || age.cur) ageOnScreen = true;
-        }
-        const b = stateBox(s.state, label, count, s.act, s.kind, seriesFor(s.hist), age);
+        const b = stateBox(s.state, label, count, s.act, s.kind, seriesFor(s.hist));
         boxes.push({ b, count, label });
         g.append(b);
       });
@@ -866,17 +975,18 @@ function renderFsm(hq, history) {
       " bottleneck: rising WIP is where the system is constrained."
     );
   }
-  // Guarded on an age mark actually being on screen (its own flag, not `hist` and not the
-  // mere presence of an `ages` key — the snapshot alone can carry the block before the
-  // rollup does, and an empty/malformed block draws nothing): the legend only ever
-  // describes marks the panel is drawing.
-  if (ageOnScreen) {
+  // Guarded on the band actually drawing its ages (not on `hist`, and not on the mere
+  // presence of an `ages` key — an empty or all-malformed block draws nothing): the legend
+  // only ever describes marks the panel is putting on screen.
+  if (band && openAges) {
     note.append(
-      " The dashed line and the labelled ",
-      el("b", null, "median …d"),
-      " in the backlog box are its median ",
-      el("b", null, "age in days"),
-      " — a different dimension on its own scale, never comparable to a queue size; the oldest issue's age rides in the label's tooltip."
+      " The band above carries that population's ",
+      el("b", null, "mean"),
+      " and ",
+      el("b", null, "median age in days"),
+      " as equals: a mean running well above its median means a long tail is doing the ageing, a mean level with it means the backlog ages uniformly, and ",
+      el("b", null, "oldest"),
+      " is that tail. Each little chart is one quantity's own trend on its own scale — heights never compare across them, and days are never comparable to a queue size."
     );
   }
   // Deliberately OUTSIDE the `hist` guard: the fallback is exactly what fills the gap when no
@@ -891,6 +1001,10 @@ function renderFsm(hq, history) {
 
   const detail = el("div", "fsm-list");
   detail.id = "fsmdetail";
+  // The open-issue band leads: it is the population the machine below has to move, and the
+  // one number on this panel that is not an actor's inbox. Absent data ⇒ absent band, and
+  // the panel is byte-for-byte the machine it was.
+  if (band) box.append(band);
   box.append(grid, detail, note);
 
   // Header label for a clicked box: its own state label (.sk). Every [data-t] is a
@@ -923,10 +1037,11 @@ function renderFsm(hq, history) {
 // so the render can be tested against a plain fixture array.
 //
 // `ages` (rain-org-health#140) is OPTIONAL per line — every rollup written before the tool
-// emitted it lacks the key, and a refresh whose backlog had no age to report omits it too.
-// It rides through only as a well-formed object; a point without one simply has no `ages`
-// key, which is the absence `ageSeriesFor` degrades on. A malformed `ages` never invalidates
-// the line's counts: the count series is not hostage to the age block.
+// emitted it lacks the key, and a refresh whose coverage read failed omits it (along with
+// `counts.openIssues`) rather than reporting a zero-sized, zero-aged population. It rides
+// through only as a well-formed object; a point without one simply has no `ages` key, which
+// is the absence `ageSeries` degrades on. A malformed `ages` never invalidates the line's
+// counts: the count series is not hostage to the age block.
 function parseHistory(text) {
   if (typeof text !== "string" || !text) return [];
   const out = [];
