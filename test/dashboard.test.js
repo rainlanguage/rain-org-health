@@ -2319,6 +2319,14 @@ Deno.test("fsm open band: the current statistics come from the snapshot, else th
   const stale = history.concat([{ t: now + DAY, counts: { openIssues: 803 } }]);
   band = bandOf(fsmBox({ counts: { openIssues: 803 }, lanes: {} }, stale));
   assert(textOf(band).includes("333.8d"), `the newest line that carried the ages: "${textOf(band)}"`);
+  // Selection is by TIMESTAMP, never by array position: this page does not assume the order
+  // it is handed, the same way every series builder sorts before drawing. Reversed, the
+  // NEWEST reading is now the array's first element.
+  band = bandOf(fsmBox({ counts: { openIssues: 802 }, lanes: {} }, history.slice().reverse()));
+  assert(
+    textOf(band).includes("333.8d") && !textOf(band).includes("300d"),
+    `an out-of-order rollup still reads the newest reading, not the last element: "${textOf(band)}"`,
+  );
 });
 
 // The 136+ historical rows, and every snapshot predating issue-pr-cron#167.
@@ -2421,6 +2429,17 @@ Deno.test("fsm open band: the legend explains the two age series only when they 
     txt.includes("own trend on its own scale"),
     "…including the one property a reader must know before comparing two charts by eye",
   );
+  assert(txt.includes("is that tail"), "…and it names the tail number, which is on screen");
+  // A malformed oldest costs the two statistics nothing, draws no tail number — and must
+  // therefore cost the legend its tail clause too.
+  box = fsmBox(
+    { counts: { openIssues: 802 }, lanes: {}, ages: { openIssues: { meanDays: 333.8, medianDays: 99.0, oldestDays: "-" } } },
+    [],
+  );
+  const noTail = textOf(box);
+  assert(collect(box, "oi-tail").length === 0, "no tail number is drawn");
+  assert(noTail.includes("median age in days"), "the two statistics are still explained");
+  assert(!noTail.includes("is that tail"), `…and the legend names no tail that is not there: "${noTail}"`);
 });
 
 // The bottleneck flag reads the COUNT trend of the state it is on, and only that: a

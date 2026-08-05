@@ -984,9 +984,16 @@ function renderFsm(hq, history) {
       el("b", null, "mean"),
       " and ",
       el("b", null, "median age in days"),
-      " as equals: a mean running well above its median means a long tail is doing the ageing, a mean level with it means the backlog ages uniformly, and ",
-      el("b", null, "oldest"),
-      " is that tail. Each little chart is one quantity's own trend on its own scale — heights never compare across them, and days are never comparable to a queue size."
+      " as equals: a mean running well above its median means a long tail is doing the ageing, a mean level with it means the backlog ages uniformly."
+    );
+    // The tail clause has its OWN guard, because the band has its own: a malformed
+    // `oldestDays` costs the two statistics nothing but draws no tail number, and a legend
+    // naming a mark that is not on screen is the same defect at one remove.
+    if (openAges.oldest != null) {
+      note.append(" ", el("b", null, "oldest"), " is that tail.");
+    }
+    note.append(
+      " Each little chart is one quantity's own trend on its own scale — heights never compare across them, and days are never comparable to a queue size."
     );
   }
   // Deliberately OUTSIDE the `hist` guard: the fallback is exactly what fills the gap when no
