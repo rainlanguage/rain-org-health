@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-06T12:21:40Z",
+  "generatedAt": "2026-08-06T15:31:13Z",
   "auditGraph": {
     "nodes": [
       {
@@ -3176,7 +3176,7 @@
       "function": "LibTokenInvariants.productionReceiptVaults()",
       "governedCount": 29,
       "governedDeclared": 29,
-      "registryTokenCount": 34,
+      "registryTokenCount": 39,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
@@ -3245,6 +3245,46 @@
           "name": "Wrapped PIMCO Corporate & Income Opportunity Fund ST0x",
           "address": "0xb6D779A79E7493ed821a65D52bA419F0F6D5dD0a",
           "receiptVault": "0xb6021810971714cD48572af527307Acc324ecF61",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtHOOD",
+          "name": "Wrapped Robinhood Markets, Inc. ST0x",
+          "address": "0xd50f561322fe3235DBc9Ec8b3aB7693383d8A425",
+          "receiptVault": "0x5cEfd886dD05001c2Fc32c313E05360D07f37d8f",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtORCL",
+          "name": "Wrapped Oracle Corporation ST0x",
+          "address": "0xCB9571aB96aA47374eF30D8E9ACCC1cD51064726",
+          "receiptVault": "0x57573351f3fdD20a57dEE4a7f836de1cE9900d4B",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSMCI",
+          "name": "Wrapped Super Micro Computer, Inc. ST0x",
+          "address": "0xA759FAbbD866e6DB8bF76613C35825dC2e380bf0",
+          "receiptVault": "0x8518931497d2A8f07Bc607D1D3295b398D065A65",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtBABA",
+          "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
+          "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
+          "receiptVault": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtTQQQ",
+          "name": "Wrapped ProShares UltraPro QQQ ST0x",
+          "address": "0x295e9eCAb319006900a53b3f8D6Fcb0C131F4ada",
+          "receiptVault": "0xcA1A378F9a250131A2fE51c10f120FeF7EDCa56E",
           "wrapped": true,
           "reason": "receipt vault not in migration set"
         },
