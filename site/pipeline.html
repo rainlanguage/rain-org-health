@@ -1049,6 +1049,12 @@ function renderFsm(hq, history) {
     const misclaimed = (id, name, held) => {
       const n = claims.get(id) || 0;
       if (n === 1) return;
+      // Zero inventory renders nowhere VACUOUSLY — nothing is hidden. The live tool
+      // still emits drained retired counts keys at 0 (kept-while-nonzero applies to the
+      // descriptor list, not to the keys), so an unclaimed key holding nothing must not
+      // paint a permanent false defect on a healthy snapshot. A DOUBLE claim is
+      // STRUCTURAL — the same inventory wired twice — and stays a defect at any count.
+      if (n === 0 && !held) return;
       defects.push(
         name + " (" + held + " held) " +
           (n === 0

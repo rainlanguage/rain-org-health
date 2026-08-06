@@ -3613,6 +3613,56 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
   );
 });
 
+// Zero inventory renders nowhere VACUOUSLY: the live tool still emits drained retired
+// counts keys at 0 (kept-while-nonzero governs the descriptor list, not the keys), so an
+// unclaimed key holding nothing is not hidden inventory and must not paint a permanent
+// false defect on a healthy snapshot. The same keys NONZERO are the real hazard and
+// scream; a DOUBLE claim is structural — the same inventory wired twice — and defects at
+// any count, zero included.
+Deno.test("pipeline FSM: zero-held unclaimed occupancy is vacuously conserved; nonzero screams; a zero-held double claim still defects", () => {
+  const base = () => ({
+    counts: { ready: 2, blockedInfra: 0 },
+    lanes: {
+      "vetter-verdicts": { "ai:ready": { count: 2, prs: [] } },
+      "producer-blocked": { "ai:blocked-deploy": { count: 0, prs: [] } },
+    },
+    stateDescriptors: [
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  });
+  assert(
+    collect(fsmBox(base()), "fsm-defect").length === 0,
+    "a drained retired counts key and an empty unclaimed cell hide nothing — no band",
+  );
+
+  const held = base();
+  held.counts.blockedInfra = 2;
+  held.lanes["producer-blocked"]["ai:blocked-deploy"].count = 3;
+  const band = collect(fsmBox(held), "fsm-defect")[0];
+  assert(band, "the same keys nonzero surface");
+  const text = textOf(band);
+  assert(
+    text.includes("blockedInfra") && text.includes("2 held"),
+    `the nonzero drained key screams: ${text}`,
+  );
+  assert(
+    text.includes("ai:blocked-deploy") && text.includes("3 held"),
+    `the nonzero unclaimed cell screams: ${text}`,
+  );
+
+  const doubled = base();
+  doubled.stateDescriptors.push(
+    { key: "ai:blocked-deploy", owner: "human", act: "resolve deploy", kind: "blk", hist: "blockedDeploy", histFold: [], occupancy: { lane: "producer-blocked" } },
+    { key: "ai:blocked-deploy", owner: "producer", act: "resolve deploy", kind: "blk", hist: "", histFold: [], occupancy: { lane: "producer-blocked" } },
+  );
+  const band2 = collect(fsmBox(doubled), "fsm-defect")[0];
+  assert(band2, "a double claim on a zero-held cell still surfaces");
+  assert(
+    textOf(band2).includes("2 descriptors"),
+    `it reads as the structural defect it is: ${textOf(band2)}`,
+  );
+});
+
 // A counts-source descriptor's declared keys must RESOLVE in the snapshot: a tool that
 // emits a descriptor pointing at nothing has broken its own contract, and the count/list
 // it strands must not degrade into a quiet zero.
