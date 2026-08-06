@@ -395,6 +395,11 @@ function renderFsm(hq, history) {
   // shape is the tool's to declare, and this page does not own that vocabulary
   // (issue-pr-cron#130); the rollup is different because those samples are the only surviving
   // record of a machine that no longer exists.
+  //
+  // A fold maps a retired key onto the state that ABSORBED its inventory — so a retired key
+  // with no absorbing successor has NO entry. `blockedInfra`'s exit was the run ending
+  // (issue-pr-cron#108): no surviving inbox measures what it measured, summing it into any
+  // live series would misstate that series' past, and its samples are drawn nowhere.
   const HIST_FOLD = new Map([
     ["unvetted", ["awaitingReVet"]],
     ["reject", ["humanReject", "relink"]],
@@ -558,7 +563,7 @@ function renderFsm(hq, history) {
   // headings are those actors, so the panel answers "whose inbox is this in — who do I
   // nudge?" A state that cannot be filed under exactly one actor is a defect (an
   // un-owned inbox stalls its token), so there is deliberately NO fourth "misc" bucket;
-  // the four historically dual-owner states are each resolved to one owner in STATES
+  // the historically dual-owner states are each resolved to one owner in STATES
   // below, with the rationale inline.
   //
   // The tool's `human-queue --json` `lanes` object is still keyed by LIFECYCLE phase
@@ -739,13 +744,10 @@ function renderFsm(hq, history) {
 
   // Every modeled state → the actor whose inbox it sits in (`owner`), the human-queue
   // `lane` its items live under, the next `act`, and a display `kind` (flow = moving,
-  // rule = needs a human ruling, blk = a stuck/rework pile). The four dual-owner
+  // rule = needs a human ruling, blk = a stuck/rework pile). The dual-owner
   // resolutions (each defensible against the README FSM's own exit edges):
   //   ai:blocked-deploy → HUMAN  — FSM exit is "human resolves deploy → re-work"; the
   //       producer only DIAGNOSES the failed deploy, the human funds/dispatches it.
-  //   ai:blocked-infra  → HUMAN  — README's total-function fallback + a human-gated
-  //       state: "human clears infra / models a new state". A producer-fixable infra
-  //       blip (retrigger CI) never persists this label; a persisted one is a hand-off.
   //   ai:blocked-on     → HUMAN  — FSM exit is "dependency merges → producer re-works",
   //       and only the human merges a PR, so the human is the mover that unblocks it;
   //       the dependency PR's own work is tracked under the dependency's own token.
@@ -816,7 +818,6 @@ function renderFsm(hq, history) {
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
     { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
-    { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", hist: "blockedInfra", act: "clear infra", kind: "blk" },
     { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", hist: "blockedOn", act: "merge dependency", kind: "blk" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
     // Close-candidate flags the vetter UPHELD (issue-pr-cron#73/#212): the flag survived
@@ -834,6 +835,28 @@ function renderFsm(hq, history) {
     // renders `closeCandidateIssues`, because a human-queue.json old enough to lack `lanes`
     // also predates the split keys.
     { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", items: "closeCandidateUpheld", issue: true, hist: "closeCandidateUpheld", act: "close", kind: "rule", label: "ai:close-candidate (upheld)" },
+  ];
+
+  // Retired states whose FSM exit was "the run ends" — NOT a transition into a surviving
+  // state. `ai:blocked-infra` (issue-pr-cron#108): infrastructure being down is a property
+  // of the moment, not of a PR, so the producer records `infra-down` and ends the run.
+  // That exit shape is why these are not handled like the ABSORBED retirees
+  // (awaiting-re-vet, ai:relink, human:reject), whose stale cells are ignored outright: an
+  // absorbed retiree's tokens reappear in the surviving state's own cell (a PR that was
+  // awaiting-re-vet IS un-vetted), so its cell is a double-count — but a no-successor
+  // straggler reappears NOWHERE, so a snapshot still carrying a nonzero count (an old
+  // snapshot, or the label reapplied by hand) holds work no other box shows. Each entry
+  // renders ONLY while its count is nonzero: a `blk` box under the actor who clears the
+  // residue, registered like any state box so the click-to-expand lists its items. Zero or
+  // absent renders nothing — a retired state earns no permanent dimmed box describing a
+  // machine that no longer exists (rain-org-health#145). No `hist`, and no HIST_FOLD
+  // entry: no surviving series absorbed this inventory, so it is drawn nowhere. `lane` +
+  // `legacy` name where a stale snapshot carries the count — the lane cell (with its
+  // `prs`) on a `lanes` snapshot, the flat counts key on a pre-`lanes` one; a count that
+  // arrives with no list surfaces through detailBody's missing-list defect, never as an
+  // empty queue.
+  const RETIRED_NO_SUCCESSOR = [
+    { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", legacy: "blockedInfra", act: "strip the label", kind: "blk" },
   ];
 
   // Top-level headings = the three actors, in the #69 order (the two cron actors, then
@@ -876,6 +899,16 @@ function renderFsm(hq, history) {
         boxes.push({ b, count, label });
         g.append(b);
       });
+      RETIRED_NO_SUCCESSOR.filter((s) => s.owner === O.key).forEach((s) => {
+        const cell = laneState(s.lane, s.state);
+        const count = cell ? Number(cell.count) || 0 : Number(c[s.legacy]) || 0;
+        if (!count) return;
+        register(s.state, cell && cell.prs, false, count);
+        ownerTotal += count;
+        const b = stateBox(s.state, s.state, count, s.act, s.kind, null);
+        boxes.push({ b, count, label: s.state });
+        g.append(b);
+      });
       markLead(boxes);
       const lane = el("div", "fsm-lane");
       const h = el("div", "fsm-lane-h");
@@ -895,7 +928,6 @@ function renderFsm(hq, history) {
       { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
       { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, items: "closeCandidateIssues", issue: true, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
       { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
-      { key: "ai:blocked-infra", label: "ai:blocked-infra", n: c.blockedInfra, hist: "blockedInfra", act: "clear infra", kind: "blk" },
       { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, hist: "blockedOn", act: "merge dependency", kind: "blk" },
     ];
     const g = el("div", "fsm-grid");
@@ -905,6 +937,14 @@ function renderFsm(hq, history) {
       register(s.key, s.items ? hq[s.items] : hq.states && hq.states[s.key], s.issue, n);
       const b = stateBox(s.key, s.label, s.n, s.act, s.kind, seriesFor(s.hist));
       boxes.push({ b, count: n, label: s.label });
+      g.append(b);
+    });
+    RETIRED_NO_SUCCESSOR.filter((s) => s.owner === "human").forEach((s) => {
+      const count = Number(c[s.legacy]) || 0;
+      if (!count) return;
+      register(s.state, hq.states && hq.states[s.state], false, count);
+      const b = stateBox(s.state, s.state, count, s.act, s.kind, null);
+      boxes.push({ b, count, label: s.state });
       g.append(b);
     });
     markLead(boxes);
