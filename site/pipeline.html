@@ -748,9 +748,11 @@ function renderFsm(hq, history) {
   // resolutions (each defensible against the README FSM's own exit edges):
   //   ai:blocked-deploy → HUMAN  — FSM exit is "human resolves deploy → re-work"; the
   //       producer only DIAGNOSES the failed deploy, the human funds/dispatches it.
-  //   ai:blocked-on     → HUMAN  — FSM exit is "dependency merges → producer re-works",
-  //       and only the human merges a PR, so the human is the mover that unblocks it;
-  //       the dependency PR's own work is tracked under the dependency's own token.
+  //   ai:blocked-on     → VETTER — issue-pr-cron#161: deps are typed `--blocked-by` refs
+  //       and the vetter's state-load clears the flag the run after every dep merges or
+  //       closes, so the vetter's cron run is the mover and no human action sits on the
+  //       exit path; the dependency PR's own work is tracked under the dependency's own
+  //       token. The tool keys the lane cell under `vet-lifecycle` accordingly.
   //   (human:reject is RETIRED — issue-pr-cron#133/#138 consolidated it into ai:reject: a
   //       reject is a reject whoever ruled it, the producer is the mover either way, and
   //       authority lives in the sha-pinned human comment rather than the label spelling.)
@@ -802,6 +804,12 @@ function renderFsm(hq, history) {
     // only picks the path tried first and github's own /issues/↔/pull/ redirect resolves the
     // rest — see `urlOf`.
     { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", items: "closeCandidateUnvetted", issue: true, hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
+    // Vetter-owned per the dual-owner resolutions above (issue-pr-cron#161): the vetter's
+    // state-load clears the flag once every typed dep merges/closes, so the act is that
+    // clearance, not a human merge. The tool keys this cell under `vet-lifecycle`;
+    // `staleLane` keeps a snapshot from before that re-key readable — see the lane read
+    // below, where the CURRENT lane's cell wins whenever both carry the state.
+    { owner: "vetter", state: "ai:blocked-on", lane: "vet-lifecycle", staleLane: "producer-blocked", hist: "blockedOn", act: "clears when deps merge/close", kind: "blk" },
     // Human inbox — a human merge / ruling / close.
     // FSM CONFORMANCE LEAK, first because it is the loudest: producer PRs carrying a note
     // but no `ai:*` label, so they sit in NO modeled state. This was a banner beside the
@@ -818,7 +826,6 @@ function renderFsm(hq, history) {
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
     { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
-    { owner: "human", state: "ai:blocked-on", lane: "producer-blocked", hist: "blockedOn", act: "merge dependency", kind: "blk" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
     // Close-candidate flags the vetter UPHELD (issue-pr-cron#73/#212): the flag survived
     // judgement, so a human disposes of the subject. ONE inbox for issues and PRs alike
@@ -889,7 +896,13 @@ function renderFsm(hq, history) {
           // defect rather than passing off as an empty queue.
           register(s.state, hq[s.items], s.issue, count);
         } else {
-          const cell = laneState(s.lane, s.state);
+          // The CURRENT lane's cell wins outright; `staleLane` is read only when the
+          // current lane has no cell for the state — a snapshot from before an upstream
+          // lane re-key (ai:blocked-on's `producer-blocked` → `vet-lifecycle`,
+          // issue-pr-cron#161) renders its real count instead of a silent zero. One cell
+          // resolves either way, so the count and the click-to-expand list stay one box's.
+          const cell = laneState(s.lane, s.state) ||
+            (s.staleLane ? laneState(s.staleLane, s.state) : null);
           count = cell ? Number(cell.count) || 0 : 0;
           register(s.state, cell && cell.prs, false, count);
         }

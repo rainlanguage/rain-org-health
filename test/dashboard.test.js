@@ -1378,6 +1378,7 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
       "vet-lifecycle": {
         "un-vetted": { count: 2, prs: [] },
         "awaiting-re-vet": { count: 1, prs: [] },
+        "ai:blocked-on": { count: 1, prs: [] },
       },
       "vetter-verdicts": {
         "ai:ready": { count: 1, prs: [] },
@@ -1388,7 +1389,6 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
       },
       "producer-blocked": {
         "ai:blocked-deploy": { count: 1, prs: [] },
-        "ai:blocked-on": { count: 1, prs: [] },
       },
       "human-decisions": {
         "human:reject": { count: 1, prs: [] },
@@ -1421,6 +1421,13 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     !vetter.states.includes("awaiting-re-vet"),
     `the retired awaiting-re-vet state renders nowhere: ${JSON.stringify(vetter.states)}`,
   );
+  // ai:blocked-on is the vetter's too (issue-pr-cron#161): deps are typed `--blocked-by`
+  // refs and the vetter's state-load clears the flag the run after every dep merges or
+  // closes, so no human action sits on the exit path.
+  assert(
+    vetter.states.includes("ai:blocked-on"),
+    `ai:blocked-on files under the vetter: ${JSON.stringify(vetter.states)}`,
+  );
   // Producer owns the reject rework state + the untouched backlog. ai:relink is NOT
   // here: the verdict is retired (issue-pr-cron#135/#139), the producer has no relink
   // transition to execute, and the residue exits by the vetter re-vetting at current
@@ -1448,10 +1455,14 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     ].every((s) => human.states.includes(s)),
     `human states: ${JSON.stringify(human.states)}`,
   );
+  assert(
+    !human.states.includes("ai:blocked-on"),
+    `ai:blocked-on is not in the human's inbox: ${JSON.stringify(human.states)}`,
+  );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
   // 11 = every STATES entry filed once: producer 2 (ai:reject, the untouched backlog),
-  // vetter 2 (un-vetted, the unvetted flags), human 7 (leak, ai:ready, ai:design, the
-  // two blocked states, human:design, the upheld flags).
+  // vetter 3 (un-vetted, the unvetted flags, ai:blocked-on), human 6 (leak, ai:ready,
+  // ai:design, ai:blocked-deploy, human:design, the upheld flags).
   const total = groups.reduce((n, g) => n + g.states.length, 0);
   assert(total === 11, `all 11 states filed once: ${total}`);
   // Both directions, same as awaiting-re-vet: a reintroduction fails here. Each retired
@@ -1741,13 +1752,115 @@ Deno.test("pipeline FSM: ambiguous states resolve to a single owner", () => {
     owner("human:reject") === null,
     `retired human:reject renders in no group: ${owner("human:reject")}`,
   );
-  // The blocked states → human (the actor that actually unblocks each).
-  for (const s of ["ai:blocked-deploy", "ai:blocked-on"]) {
-    assert(
-      (owner(s) || "").includes("Human action"),
-      `${s} is human-owned: ${owner(s)}`,
-    );
-  }
+  // ai:blocked-deploy → human (the actor that actually unblocks it).
+  assert(
+    (owner("ai:blocked-deploy") || "").includes("Human action"),
+    `ai:blocked-deploy is human-owned: ${owner("ai:blocked-deploy")}`,
+  );
+  // ai:blocked-on → vetter (issue-pr-cron#161): the vetter's state-load clears the flag
+  // the run after every typed dep merges/closes. This fixture keys the cell under the
+  // pre-re-key `producer-blocked` lane, so the box surfacing at all is the stale-lane
+  // read working — an old snapshot files under the vetter too, never a fourth bucket.
+  assert(
+    (owner("ai:blocked-on") || "").includes("Vetter action"),
+    `ai:blocked-on is vetter-owned: ${owner("ai:blocked-on")}`,
+  );
+});
+
+// issue-pr-cron#161 re-keyed ai:blocked-on's lane cell (`producer-blocked` →
+// `vet-lifecycle`) when the state moved to the vetter. The box must read the CURRENT
+// key: a strict read of the dead key renders 0 (dimmed) under the wrong actor while the
+// real inventory renders nowhere — the exact defect this test exists to keep out.
+Deno.test("pipeline FSM: a vet-lifecycle blocked-on cell renders its count under Vetter action", () => {
+  const box = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
+    lanes: {
+      "vet-lifecycle": {
+        "un-vetted": { count: 2, prs: [] },
+        "ai:blocked-on": { count: 17, prs: [{ repo: "o/r", number: 1, url: "https://github.com/o/r/pull/1", title: "blocked" }] },
+      },
+    },
+  });
+  const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
+  const blocked = byKey("ai:blocked-on");
+  assert(blocked, "the blocked-on box renders");
+  assert(
+    collect(blocked, "sc")[0].textContent === "17",
+    `the box reads the vet-lifecycle cell's count: ${collect(blocked, "sc")[0].textContent}`,
+  );
+  assert(!blocked.className.includes("zero"), "17 blocked PRs never read as a dimmed zero");
+  // The act is the #161 exit — the vetter's state-load clearance, not a human merge.
+  assert(
+    collect(blocked, "sa")[0].textContent === "clears when deps merge/close",
+    `the act is the automated clearance: ${collect(blocked, "sa")[0].textContent}`,
+  );
+  const groups = ownerGroups(box);
+  const vetter = groups.find((g) => g.title.includes("Vetter action"));
+  const human = groups.find((g) => g.title.includes("Human action"));
+  assert(
+    vetter.states.includes("ai:blocked-on"),
+    `the box sits under Vetter action: ${JSON.stringify(vetter.states)}`,
+  );
+  // The count lands in the vetter's total (2 un-vetted + 17 blocked-on), not the human's.
+  assert(vetter.title.endsWith("19"), `vetter total carries the 17: ${vetter.title}`);
+  assert(human.title.endsWith("0"), `human total does not: ${human.title}`);
+  // The click-to-expand lists the cell's own prs — the moved read carries the list too.
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  blocked.click();
+  assert(
+    collect(detail, "li").length === 1,
+    `the box expands to its cell's rows: ${collect(detail, "li").length}`,
+  );
+});
+
+// An old snapshot from before the #161 re-key still carries the cell under
+// `producer-blocked`. That inventory must SURFACE — silently reading 0 while the
+// snapshot carries real blocked PRs is the failure mode the stale-lane read exists to
+// prevent — and when both keys are present the CURRENT lane's cell wins outright.
+Deno.test("pipeline FSM: a stale producer-blocked blocked-on cell still surfaces, and the current key wins", () => {
+  const stale = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
+    lanes: {
+      "producer-blocked": {
+        "ai:blocked-on": { count: 5, prs: [{ repo: "o/r", number: 2, url: "https://github.com/o/r/pull/2", title: "old snapshot" }] },
+      },
+    },
+  });
+  const byKey = (b, k) => collect(b, "fsm-state").find((x) => x.dataset.t === k);
+  const staleBox = byKey(stale, "ai:blocked-on");
+  assert(
+    collect(staleBox, "sc")[0].textContent === "5",
+    `the stale cell's count surfaces, never a silent 0: ${collect(staleBox, "sc")[0].textContent}`,
+  );
+  assert(!staleBox.className.includes("zero"), "5 blocked PRs on an old snapshot never dim to zero");
+  // It surfaces under the state's owner — the vetter — not under the lane's old actor.
+  const vetter = ownerGroups(stale).find((g) => g.title.includes("Vetter action"));
+  assert(
+    vetter.states.includes("ai:blocked-on"),
+    `the stale cell files under Vetter action: ${JSON.stringify(vetter.states)}`,
+  );
+  // The stale read carries the list too, so the count opens onto its own rows (#141).
+  const detail = stale.querySelectorAll("#fsmdetail")[0];
+  staleBox.click();
+  assert(
+    collect(detail, "li").length === 1,
+    `the stale cell expands to its rows: ${collect(detail, "li").length}`,
+  );
+  // Both keys present → ONE box reading the CURRENT lane's cell; the stale cell neither
+  // wins nor double-counts.
+  const both = fsmBox({
+    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
+    lanes: {
+      "vet-lifecycle": { "ai:blocked-on": { count: 3, prs: [] } },
+      "producer-blocked": { "ai:blocked-on": { count: 5, prs: [] } },
+    },
+  });
+  const boxes = collect(both, "fsm-state").filter((x) => x.dataset.t === "ai:blocked-on");
+  assert(boxes.length === 1, `one box, whichever keys the snapshot carries: ${boxes.length}`);
+  assert(
+    collect(boxes[0], "sc")[0].textContent === "3",
+    `the current lane's cell wins, no sum with the stale one: ${collect(boxes[0], "sc")[0].textContent}`,
+  );
 });
 
 // issue-pr-cron#108: `ai:blocked-infra` is retired with NO successor state — infra being
