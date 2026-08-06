@@ -3048,9 +3048,11 @@ function descHq() {
         occupancy: { lane: "vet-lifecycle" },
       },
       { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
-      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "leaks", histFold: [], occupancy: { counts: "leaks", items: "leaks" } },
-      // Sparse-absent lane cell: the state renders 0, dimmed — the shape stays visible.
+      // Sparse-absent lane cell (renders 0, dimmed) deliberately BETWEEN two non-zero
+      // states: descriptor order is NOT count order, so an ordering mutant cannot pass by
+      // sorting.
       { key: "ai:design", owner: "human", act: "rule on design Q", kind: "rule", hist: "design", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "leaks", histFold: [], occupancy: { counts: "leaks", items: "leaks" } },
     ],
   };
 }
@@ -3062,7 +3064,7 @@ Deno.test("pipeline FSM: stateDescriptors drive the machine — owner grouping, 
   const keys = box.querySelectorAll("[data-t]").map((b) => b.dataset.t);
   assert(
     JSON.stringify(keys) ===
-      JSON.stringify(["uncoveredIssues", "ai:blocked-on", "ai:ready", "leak", "ai:design"]),
+      JSON.stringify(["uncoveredIssues", "ai:blocked-on", "ai:ready", "ai:design", "leak"]),
     `descriptor order is render order, and only descriptor states render: ${JSON.stringify(keys)}`,
   );
   const groups = ownerGroups(box);
@@ -3079,7 +3081,7 @@ Deno.test("pipeline FSM: stateDescriptors drive the machine — owner grouping, 
     `blocked-on is vetter-owned by descriptor: ${JSON.stringify(vetter.states)}`,
   );
   assert(
-    JSON.stringify(human.states) === JSON.stringify(["ai:ready", "leak", "ai:design"]),
+    JSON.stringify(human.states) === JSON.stringify(["ai:ready", "ai:design", "leak"]),
     `human states in descriptor order: ${JSON.stringify(human.states)}`,
   );
   // Counts come from each descriptor's DECLARED source: the vet-lifecycle cell (3), never
@@ -3367,6 +3369,34 @@ Deno.test("pipeline FSM: a descriptor's kind is clamped to the display kinds —
   }
 });
 
+// The occupancy pair exists because the two names CAN disagree (the leak state's key and
+// array already do): a descriptor claims both its counts key and its items array, so a
+// conserved snapshot with a differently-named items array raises no spurious defect.
+Deno.test("pipeline FSM: a descriptor claims BOTH its counts key and a differently-named items array", () => {
+  const box = fsmBox({
+    counts: { leakCount: 2, leakItems: 2 },
+    lanes: {},
+    leakItems: fcItems("leak", 2),
+    stateDescriptors: [
+      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "", histFold: [], occupancy: { counts: "leakCount", items: "leakItems" } },
+    ],
+  });
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    "the items array is claimed too — no spurious defect",
+  );
+  assert(
+    collect(box, "sc")[0].textContent === "2",
+    "the count reads from counts.<counts>",
+  );
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  box.querySelectorAll("[data-t]")[0].click();
+  assert(
+    textOf(detail).includes("leak 1"),
+    "the click lists from the named items array",
+  );
+});
+
 // The frozen fallback: a descriptor-less snapshot renders the hand table exactly as
 // before this change — same boxes, same order — with no conservation band. Junk (a
 // non-array) is not a descriptor list and falls back the same way.
@@ -3445,7 +3475,7 @@ Deno.test("pipeline FSM: descriptor boxes keep sparklines and the lead fallback"
     collect(ready, "fsm-spark").length === 1,
     "the descriptor's hist key draws a sparkline",
   );
-  // Human group: ready 5, leak 2, design 0 — nothing rising, so the largest queue leads.
+  // Human group: ready 5, design 0, leak 2 — nothing rising, so the largest queue leads.
   assert(
     ready.classList.contains("lead"),
     "the lead fallback marks the actor's largest queue",
