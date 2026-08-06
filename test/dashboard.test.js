@@ -3186,7 +3186,7 @@ Deno.test("pipeline FSM: a descriptor's histFold folds retired-key samples into 
     { t: at(0), counts: { current: 10 } },
   ];
   const box = fsmBox({
-    counts: { ready: 0 },
+    counts: {},
     lanes: { "vet-lifecycle": { st: { count: 10, prs: [] } } },
     stateDescriptors: [
       { key: "st", owner: "vetter", act: "vet", kind: "flow", hist: "current", histFold: ["retiredKey"], occupancy: { lane: "vet-lifecycle" } },
@@ -3217,7 +3217,7 @@ Deno.test("pipeline FSM: a descriptor's empty histFold folds nothing — the han
     { t: at(0), counts: { reject: 28 } },
   ];
   const box = fsmBox({
-    counts: { ready: 0 },
+    counts: {},
     lanes: { "vetter-verdicts": { "ai:reject": { count: 28, prs: [] } } },
     stateDescriptors: [
       { key: "ai:reject", owner: "producer", act: "rework per note", kind: "blk", hist: "reject", histFold: [], occupancy: { lane: "vetter-verdicts" } },
@@ -3262,12 +3262,12 @@ Deno.test("pipeline FSM: a lane cell no descriptor claims surfaces as a loud def
   );
 });
 
-Deno.test("pipeline FSM: a counted top-level array no descriptor claims is a defect; uncounted arrays and stateDescriptors itself are not occupancy", () => {
+Deno.test("pipeline FSM: a counts key no descriptor claims is a defect; a bare top-level array is not occupancy", () => {
   const hq = descHq();
-  // Drop the leak descriptor: counts.leaks + the leaks array go unclaimed.
+  // Drop the leak descriptor: counts.leaks (and with it the leaks array) goes unclaimed.
   hq.stateDescriptors = hq.stateDescriptors.filter((d) => d.key !== "leak");
-  // An UNcounted top-level array (no counts key) is not occupancy the page knows how to
-  // count — it must not be reported. Neither must the descriptor array itself.
+  // A top-level array with no counts entry is not occupancy the page knows how to count
+  // — it must not be reported. Neither may the descriptor array itself ever be.
   hq.sideChannel = [{ repo: "o/x", number: 1 }];
   const box = fsmBox(hq);
   const band = collect(box, "fsm-defect")[0];
@@ -3375,7 +3375,7 @@ Deno.test("pipeline FSM: a descriptor's kind is clamped to the display kinds —
 // only this shape catches a dropped `|| 0`.
 Deno.test("pipeline FSM: a descriptor lane cell with a junk count renders 0, never NaN", () => {
   const box = fsmBox({
-    counts: { ready: 0 },
+    counts: {},
     lanes: { "vetter-verdicts": { "ai:ready": { count: "junk", prs: [] } } },
     stateDescriptors: [
       { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "", histFold: [], occupancy: { lane: "vetter-verdicts" } },
@@ -3398,7 +3398,7 @@ Deno.test("pipeline FSM: a descriptor lane cell with a junk count renders 0, nev
 // conserved snapshot with a differently-named items array raises no spurious defect.
 Deno.test("pipeline FSM: a descriptor claims BOTH its counts key and a differently-named items array", () => {
   const box = fsmBox({
-    counts: { leakCount: 2, leakItems: 2 },
+    counts: { leakCount: 2 },
     lanes: {},
     leakItems: fcItems("leak", 2),
     stateDescriptors: [
@@ -3418,6 +3418,110 @@ Deno.test("pipeline FSM: a descriptor claims BOTH its counts key and a different
   assert(
     textOf(detail).includes("leak 1"),
     "the click lists from the named items array",
+  );
+});
+
+// The retired-residue contract (issue-pr-cron#130, 2026-08-06 clarification): a retired
+// state's descriptor is EMITTED ONLY WHILE its occupancy is nonzero, so the consumer
+// renders every emitted descriptor and carries NO retired-detection of its own — the
+// residue is a state like any other while it lasts, and it leaves the shape when the
+// tool stops emitting it (together with its cell and counts key).
+Deno.test("pipeline FSM: a residue descriptor renders while emitted; drained, its absence renders nothing and nothing screams", () => {
+  const withResidue = {
+    counts: { blockedInfra: 2, ready: 1 },
+    lanes: {
+      "producer-blocked": { "ai:blocked-infra": { count: 2, prs: fcItems("residue", 2) } },
+      "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } },
+    },
+    stateDescriptors: [
+      { key: "ai:blocked-infra", owner: "producer", act: "strip the label", kind: "blk", hist: "blockedInfra", histFold: [], occupancy: { lane: "producer-blocked" }, label: "ai:blocked-infra (retired #108)" },
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  };
+  const box = fsmBox(withResidue);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "ai:blocked-infra");
+  assert(b, "the residue renders while the tool emits its descriptor");
+  assert(
+    collect(b, "sc")[0].textContent === "2",
+    `it carries its cell's count: ${collect(b, "sc")[0].textContent}`,
+  );
+  assert(
+    collect(b, "sk")[0].textContent === "ai:blocked-infra (retired #108)",
+    `the retired suffix rides the emitted label: ${collect(b, "sk")[0].textContent}`,
+  );
+  assert(collect(box, "fsm-defect").length === 0, "a claimed residue is conserved");
+
+  // Drained: the tool drops the descriptor, the cell and the counts key TOGETHER.
+  const drained = {
+    counts: { ready: 1 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } } },
+    stateDescriptors: [
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  };
+  const box2 = fsmBox(drained);
+  assert(
+    !collect(box2, "fsm-state").some((x) => x.dataset.t === "ai:blocked-infra"),
+    "no box for the drained retired state — no permanent dimmed residue",
+  );
+  assert(
+    collect(box2, "fsm-state").some((x) => x.dataset.t === "ai:ready"),
+    "the live machine still renders",
+  );
+  assert(collect(box2, "fsm-defect").length === 0, "and nothing screams: nothing unclaimed remains");
+});
+
+// The counts-side scoping the ratified contract froze: exactly four named keys may go
+// unclaimed — the non-state metrics (totalProducerPrs, openIssues, archivedRepoPrs) and
+// the legacy duplicate of claimed inventory (closeCandidateIssues). Anything else is
+// state-shaped occupancy rendering nowhere.
+Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other unclaimed counts key does", () => {
+  const conserved = () => ({
+    counts: { ready: 2, totalProducerPrs: 145, openIssues: 767, archivedRepoPrs: 4, closeCandidateIssues: 0 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 2, prs: [] } } },
+    closeCandidateIssues: [],
+    archivedRepoPrs: fcItems("archived", 4),
+    stateDescriptors: [
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  });
+  assert(
+    collect(fsmBox(conserved()), "fsm-defect").length === 0,
+    "the four frozen-legacy keys are the whole exception — no defect band",
+  );
+  const drifted = conserved();
+  drifted.counts.blockedOn = 17;
+  const band = collect(fsmBox(drifted), "fsm-defect")[0];
+  assert(band, "an unclaimed state-shaped counts key surfaces");
+  const text = textOf(band);
+  assert(
+    text.includes("blockedOn") && text.includes("17 held") && text.includes("renders nowhere"),
+    `it names the key and its held inventory: ${text}`,
+  );
+});
+
+// A counts-source descriptor's declared keys must RESOLVE in the snapshot: a tool that
+// emits a descriptor pointing at nothing has broken its own contract, and the count/list
+// it strands must not degrade into a quiet zero.
+Deno.test("pipeline FSM: a descriptor whose counts or items source does not resolve is a loud defect", () => {
+  const box = fsmBox({
+    counts: {},
+    lanes: {},
+    stateDescriptors: [
+      { key: "uncoveredIssues", owner: "producer", act: "open a PR", kind: "flow", hist: "", histFold: [], occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true } },
+    ],
+  });
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "unresolved sources surface");
+  const rows = collect(band, "fd-li").map((r) => r.textContent);
+  assert(rows.length === 2, `both unresolved sources report: ${JSON.stringify(rows)}`);
+  assert(
+    rows.some((r) => r.includes('counts source "uncoveredIssues"') && r.includes("does not resolve")),
+    `the counts source is named: ${JSON.stringify(rows)}`,
+  );
+  assert(
+    rows.some((r) => r.includes('items source "uncoveredIssues"') && r.includes("does not resolve")),
+    `the items source is named: ${JSON.stringify(rows)}`,
   );
 });
 

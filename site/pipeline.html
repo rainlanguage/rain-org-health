@@ -965,23 +965,43 @@ function renderFsm(hq, history) {
       }
     });
     // CONSERVATION (the invariant that would have made the blocked-on drift scream
-    // instead of hiding 17 PRs): every occupancy key in the snapshot — each `lanes` cell
-    // and each counted top-level array (a top-level array with a same-named `counts`
-    // entry) — must be claimed by exactly ONE descriptor. Unclaimed occupancy is
-    // inventory the machine renders NOWHERE; a double claim renders the same inventory
-    // twice. Both are the tool's defects, and both surface in the defect band.
+    // instead of hiding 17 PRs), per the ratified contract's scoping
+    // (issue-pr-cron#130): every `lanes` cell must be claimed by exactly ONE descriptor
+    // — zero exceptions (the tool stopped emitting its one redundant cell in the same
+    // change that added descriptors) — and every `counts` key must be claimed by exactly
+    // one descriptor through the keys it READS (its occupancy `counts` source, or the
+    // `hist` mirror a lane state's series draws from), outside the named frozen-legacy
+    // set below. A counts-source descriptor's declared `counts`/`items` keys must also
+    // RESOLVE in the snapshot. Unclaimed occupancy is inventory the machine renders
+    // NOWHERE; a double claim renders the same inventory twice; an unresolved source is a
+    // count with no list (or no count at all). All are the tool's defects, and all
+    // surface in the defect band.
     const claims = new Map();
     const claim = (id) => claims.set(id, (claims.get(id) || 0) + 1);
-    // Claim ids are JSON-encoded so no lane/state/array spelling can collide or forge
+    // Claim ids are JSON-encoded so no lane/state/counts spelling can collide or forge
     // another key's id.
     const laneId = (lane, state) => "lane " + JSON.stringify([lane, state]);
-    const arrId = (k) => "array " + JSON.stringify(k);
+    const countsId = (k) => "counts " + JSON.stringify(k);
     for (const p of parsed) {
       if (p.source.lane) claim(laneId(p.source.lane, p.key));
       else {
-        claim(arrId(p.source.counts));
-        if (p.source.items !== p.source.counts) claim(arrId(p.source.items));
+        if (!Object.prototype.hasOwnProperty.call(c, p.source.counts)) {
+          defects.push(
+            'descriptor "' + p.key + '" names counts source "' + p.source.counts + '" which does not resolve in the snapshot',
+          );
+        }
+        if (!Array.isArray(hq[p.source.items])) {
+          defects.push(
+            'descriptor "' + p.key + '" names items source "' + p.source.items + '" which does not resolve in the snapshot',
+          );
+        }
       }
+      // Every counts key this descriptor reads is claimed — deduped, because a
+      // counts-source descriptor's `hist` usually IS its counts key.
+      const read = new Set();
+      if (p.source.counts) read.add(p.source.counts);
+      if (p.hist) read.add(p.hist);
+      for (const k of read) claim(countsId(k));
     }
 
     OWNERS.forEach((O) => {
@@ -1040,10 +1060,23 @@ function renderFsm(hq, history) {
         }
       }
     }
-    for (const k of Object.keys(hq)) {
-      if (k === "stateDescriptors" || !Array.isArray(hq[k])) continue;
-      if (!Object.prototype.hasOwnProperty.call(c, k)) continue; // only COUNTED arrays are occupancy
-      misclaimed(arrId(k), k, Number(c[k]) || 0);
+    // The FROZEN-LEGACY exception the ratified contract names (issue-pr-cron#130,
+    // 2026-08-06 clarification) — the ONLY counts keys allowed to go unclaimed:
+    //   - non-state metrics: population/rollup numbers, not inboxes anyone acts on
+    //     (`totalProducerPrs`, `openIssues` — the band above draws it — and
+    //     `archivedRepoPrs`);
+    //   - `closeCandidateIssues`: the legacy duplicate of inventory the two
+    //     close-candidate descriptors already claim.
+    // Any OTHER unclaimed counts key is state-shaped inventory rendering nowhere.
+    const LEGACY_UNCLAIMED = new Set([
+      "totalProducerPrs",
+      "openIssues",
+      "archivedRepoPrs",
+      "closeCandidateIssues",
+    ]);
+    for (const k of Object.keys(c)) {
+      if (LEGACY_UNCLAIMED.has(k)) continue;
+      misclaimed(countsId(k), 'counts["' + k + '"]', Number(c[k]) || 0);
     }
     if (defects.length) {
       const dbox = el("div", "fsm-defect");
