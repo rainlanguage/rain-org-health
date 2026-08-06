@@ -3369,6 +3369,30 @@ Deno.test("pipeline FSM: a descriptor's kind is clamped to the display kinds —
   }
 });
 
+// The snapshot is untrusted field by field: a lane cell that EXISTS but carries a junk or
+// missing `count` renders 0 (dimmed), never NaN — the same coercion the sparse-absent cell
+// gets, asserted separately because Number(null) is 0 while Number(undefined) is NaN, so
+// only this shape catches a dropped `|| 0`.
+Deno.test("pipeline FSM: a descriptor lane cell with a junk count renders 0, never NaN", () => {
+  const box = fsmBox({
+    counts: { ready: 0 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: "junk", prs: [] } } },
+    stateDescriptors: [
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  });
+  const b = collect(box, "fsm-state")[0];
+  assert(b, "the box renders");
+  assert(
+    collect(b, "sc")[0].textContent === "0",
+    `a junk count coerces to 0: ${collect(b, "sc")[0].textContent}`,
+  );
+  assert(
+    b.className.split(" ").includes("zero"),
+    `and the box dims like any zero state: ${b.className}`,
+  );
+});
+
 // The occupancy pair exists because the two names CAN disagree (the leak state's key and
 // array already do): a descriptor claims both its counts key and its items array, so a
 // conserved snapshot with a differently-named items array raises no spurious defect.
