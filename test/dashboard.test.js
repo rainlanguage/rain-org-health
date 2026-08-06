@@ -2820,6 +2820,463 @@ Deno.test("pipeline FSM: a malformed item renders as a malformed row, taking no 
   );
 });
 
+// ---- rain-org-health#164: the machine rendered from emitted stateDescriptors ----------
+//
+// The consumer half of issue-pr-cron#130. A snapshot carrying `stateDescriptors` IS the
+// machine: owner grouping, box (key/label/act/kind), occupancy from the descriptor's
+// declared source, history folds from `histFold`, descriptor order as render order. The
+// hand-written STATES table is the FROZEN fallback for descriptor-less snapshots only.
+// Fixtures carry DECOY values on the source a state must NOT read (a counts mirror beside
+// a lane cell), so a wrong-source read changes a rendered number instead of passing.
+
+// A canonical descriptor snapshot: both occupancy kinds, a re-laned state (ai:blocked-on
+// under the VETTER reading `vet-lifecycle` — the exact drift the frozen table could not
+// follow), and a sparse-absent lane state.
+function descHq() {
+  return {
+    counts: {
+      // Decoy mirrors for the lane states: the lane CELL is the declared source.
+      ready: 99,
+      blockedOn: 99,
+      uncoveredIssues: 4,
+      leaks: 2,
+    },
+    lanes: {
+      "vetter-verdicts": { "ai:ready": { count: 5, prs: fcItems("ready", 5) } },
+      "vet-lifecycle": { "ai:blocked-on": { count: 3, prs: fcItems("blocked", 3) } },
+    },
+    uncoveredIssues: fcItems("uncovered", 4),
+    leaks: fcItems("leak", 2),
+    stateDescriptors: [
+      {
+        key: "uncoveredIssues",
+        owner: "producer",
+        act: "open a PR",
+        kind: "flow",
+        hist: "uncoveredIssues",
+        histFold: [],
+        occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true },
+        label: "untouched (no PR)",
+      },
+      {
+        key: "ai:blocked-on",
+        owner: "vetter",
+        act: "clears when every typed dep merges/closes",
+        kind: "blk",
+        hist: "blockedOn",
+        histFold: [],
+        occupancy: { lane: "vet-lifecycle" },
+      },
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "leaks", histFold: [], occupancy: { counts: "leaks", items: "leaks" } },
+      // Sparse-absent lane cell: the state renders 0, dimmed — the shape stays visible.
+      { key: "ai:design", owner: "human", act: "rule on design Q", kind: "rule", hist: "design", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  };
+}
+
+Deno.test("pipeline FSM: stateDescriptors drive the machine — owner grouping, act, count, and descriptor order", () => {
+  const box = fsmBox(descHq());
+  // Exactly the descriptor states render, in owner-group order then descriptor order —
+  // and NONE of the frozen table's other boxes (un-vetted, closeCandidateUpheld, …).
+  const keys = box.querySelectorAll("[data-t]").map((b) => b.dataset.t);
+  assert(
+    JSON.stringify(keys) ===
+      JSON.stringify(["uncoveredIssues", "ai:blocked-on", "ai:ready", "leak", "ai:design"]),
+    `descriptor order is render order, and only descriptor states render: ${JSON.stringify(keys)}`,
+  );
+  const groups = ownerGroups(box);
+  assert(groups.length === 3, `three actor groups: ${groups.length}`);
+  const [producer, vetter, human] = groups;
+  assert(
+    JSON.stringify(producer.states) === JSON.stringify(["untouched (no PR)"]),
+    `producer files the descriptor's own states: ${JSON.stringify(producer.states)}`,
+  );
+  // The re-laned state files under the VETTER — the descriptor's owner, not the frozen
+  // table's human resolution.
+  assert(
+    JSON.stringify(vetter.states) === JSON.stringify(["ai:blocked-on"]),
+    `blocked-on is vetter-owned by descriptor: ${JSON.stringify(vetter.states)}`,
+  );
+  assert(
+    JSON.stringify(human.states) === JSON.stringify(["ai:ready", "leak", "ai:design"]),
+    `human states in descriptor order: ${JSON.stringify(human.states)}`,
+  );
+  // Counts come from each descriptor's DECLARED source: the vet-lifecycle cell (3), never
+  // the counts mirror (99) and never the frozen table's producer-blocked lane (absent).
+  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  assert(
+    collect(byT("ai:blocked-on"), "sc")[0].textContent === "3",
+    `blocked-on reads its declared lane cell: ${collect(byT("ai:blocked-on"), "sc")[0].textContent}`,
+  );
+  assert(vetter.title.endsWith("3"), `the vetter total is the cell's count: ${vetter.title}`);
+  assert(
+    collect(byT("ai:ready"), "sc")[0].textContent === "5",
+    `ready reads its lane cell, not the 99 decoy mirror: ${collect(byT("ai:ready"), "sc")[0].textContent}`,
+  );
+  assert(
+    collect(byT("uncoveredIssues"), "sc")[0].textContent === "4",
+    `a counts-source state reads counts.<key>: ${collect(byT("uncoveredIssues"), "sc")[0].textContent}`,
+  );
+  // act + kind ride the descriptor.
+  assert(
+    collect(byT("ai:blocked-on"), "sa")[0].textContent === "clears when every typed dep merges/closes",
+    `the act is the descriptor's: ${collect(byT("ai:blocked-on"), "sa")[0].textContent}`,
+  );
+  assert(
+    byT("ai:blocked-on").className.split(" ").includes("blk"),
+    `the kind is the descriptor's: ${byT("ai:blocked-on").className}`,
+  );
+  // Sparse-absent lane cell ⇒ 0, dimmed — the existing empty-state language.
+  assert(collect(byT("ai:design"), "sc")[0].textContent === "0", "sparse-absent reads 0");
+  assert(
+    byT("ai:design").className.split(" ").includes("zero"),
+    `a zero descriptor state dims like any other: ${byT("ai:design").className}`,
+  );
+  // Everything claimed ⇒ no conservation band.
+  assert(collect(box, "fsm-defect").length === 0, "a conserved snapshot draws no defect band");
+});
+
+Deno.test("pipeline FSM: descriptor occupancy reads its declared source — lane prs and counts+items alike, itemsAreIssues picking the path", () => {
+  const box = fsmBox(descHq());
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+
+  // Lane source: the cell's own prs, linked as PRs.
+  byT("ai:blocked-on").click();
+  assert(
+    collect(detail, "li").length === 3,
+    `the lane cell's 3 prs list: ${collect(detail, "li").length}`,
+  );
+  assert(textOf(detail).includes("blocked 1"), `the cell's OWN items: ${textOf(detail)}`);
+  assert(
+    collect(detail, "li")[0].href === "https://github.com/o/blocked/pull/1",
+    `lane items link as PRs: ${collect(detail, "li")[0].href}`,
+  );
+  byT("ai:blocked-on").click();
+
+  // Counts source, itemsAreIssues: true — the /issues/ path is tried first.
+  byT("uncoveredIssues").click();
+  assert(
+    collect(detail, "li").length === 4,
+    `the named top-level array lists: ${collect(detail, "li").length}`,
+  );
+  assert(
+    collect(detail, "li")[0].href === "https://github.com/o/uncovered/issues/1",
+    `itemsAreIssues links as issues: ${collect(detail, "li")[0].href}`,
+  );
+  byT("uncoveredIssues").click();
+
+  // Counts source, itemsAreIssues absent — items link as PRs.
+  byT("leak").click();
+  assert(
+    collect(detail, "li")[0].href === "https://github.com/o/leak/pull/1",
+    `absent itemsAreIssues links as PRs: ${collect(detail, "li")[0].href}`,
+  );
+  byT("leak").click();
+
+  // A counts-source descriptor whose named array never arrived: the count still renders
+  // and the click reads as detailBody's missing-list defect — never as an empty queue.
+  const noList = descHq();
+  delete noList.leaks;
+  const box2 = fsmBox(noList);
+  const detail2 = box2.querySelectorAll("#fsmdetail")[0];
+  box2.querySelectorAll("[data-t]").find((b) => b.dataset.t === "leak").click();
+  assert(
+    textOf(detail2).includes("missing, not empty"),
+    `a count with no list reads as the missing-list defect: ${textOf(detail2)}`,
+  );
+});
+
+// The part a naive consumer gets wrong (the schema contract calls it out): retired history
+// keys fold into the descriptor's series per ITS histFold — generic keys with no HIST_FOLD
+// entry prove the fold is the descriptor's, not the hand Map's.
+Deno.test("pipeline FSM: a descriptor's histFold folds retired-key samples into its series", () => {
+  const now = Date.parse("2026-08-06T00:00:00Z");
+  const at = (d) => now - d * DAY;
+  // Real inventory flat at 10 across a collapse: split 1 + 9 before, one key after.
+  // Folded ⇒ flat line; unfolded ⇒ a 1 → 10 cliff and a false bottleneck.
+  const history = [
+    { t: at(4), counts: { current: 1, retiredKey: 9 } },
+    { t: at(3), counts: { current: 1, retiredKey: 9 } },
+    { t: at(2), counts: { current: 1, retiredKey: 9 } },
+    { t: at(1), counts: { current: 10 } },
+    { t: at(0), counts: { current: 10 } },
+  ];
+  const box = fsmBox({
+    counts: { ready: 0 },
+    lanes: { "vet-lifecycle": { st: { count: 10, prs: [] } } },
+    stateDescriptors: [
+      { key: "st", owner: "vetter", act: "vet", kind: "flow", hist: "current", histFold: ["retiredKey"], occupancy: { lane: "vet-lifecycle" } },
+    ],
+  }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "st");
+  assert(b, "the descriptor box renders");
+  const line = tags(b, "polyline")[0];
+  assert(line, "the folded series draws a line");
+  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  assert(ys.length === 5, `all five samples plot: ${ys.length}`);
+  assert(
+    ys.every((y) => y === ys[0]),
+    `the folded line is continuous, no cliff at the collapse: ${JSON.stringify(ys)}`,
+  );
+  assert(!b.classList.contains("rising"), "a folded flat inventory raises no bottleneck flag");
+});
+
+Deno.test("pipeline FSM: a descriptor's empty histFold folds nothing — the hand-maintained fallback Map never applies", () => {
+  const now = Date.parse("2026-08-06T00:00:00Z");
+  const at = (d) => now - d * DAY;
+  // `reject` HAS a HIST_FOLD entry (humanReject folds in on the frozen fallback). A
+  // descriptor naming hist "reject" with histFold [] must read ONLY reject: flat 28.
+  // Falling back to the Map would draw 70, 70, 28 — a cliff the tool never declared.
+  const history = [
+    { t: at(2), counts: { reject: 28, humanReject: 42 } },
+    { t: at(1), counts: { reject: 28, humanReject: 42 } },
+    { t: at(0), counts: { reject: 28 } },
+  ];
+  const box = fsmBox({
+    counts: { ready: 0 },
+    lanes: { "vetter-verdicts": { "ai:reject": { count: 28, prs: [] } } },
+    stateDescriptors: [
+      { key: "ai:reject", owner: "producer", act: "rework per note", kind: "blk", hist: "reject", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  }, history);
+  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "ai:reject");
+  const line = tags(b, "polyline")[0];
+  assert(line, "the series draws");
+  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  assert(
+    ys.length === 3 && ys.every((y) => y === ys[0]),
+    `an empty histFold reads the bare key — flat, no Map fold: ${JSON.stringify(ys)}`,
+  );
+});
+
+// CONSERVATION, the invariant that would have made the blocked-on drift scream instead of
+// hiding 17 PRs: every lanes cell and every counted top-level array is claimed by exactly
+// one descriptor, or the panel says so loudly.
+Deno.test("pipeline FSM: a lane cell no descriptor claims surfaces as a loud defect, never silence", () => {
+  const hq = descHq();
+  // The tool re-laned a state but its descriptor list missed the old cell: 17 real PRs
+  // sit in occupancy nothing renders.
+  hq.lanes["producer-blocked"] = { "ai:blocked-on": { count: 17, prs: fcItems("stranded", 17) } };
+  const box = fsmBox(hq);
+  const bands = collect(box, "fsm-defect");
+  assert(bands.length === 1, `one defect band renders: ${bands.length}`);
+  const text = textOf(bands[0]);
+  assert(
+    text.includes('lanes["producer-blocked"]["ai:blocked-on"]'),
+    `it names the unclaimed cell: ${text}`,
+  );
+  assert(text.includes("17"), `it names the held inventory: ${text}`);
+  assert(text.includes("renders nowhere"), `it says the failure in words: ${text}`);
+  assert(
+    collect(bands[0], "fd-li").length === 1,
+    `exactly the one unclaimed key is reported: ${collect(bands[0], "fd-li").length}`,
+  );
+  // The band ADDS to the machine — every claimed state still renders beside it.
+  assert(
+    collect(box, "fsm-state").length === 5,
+    `the claimed machine still renders: ${collect(box, "fsm-state").length}`,
+  );
+});
+
+Deno.test("pipeline FSM: a counted top-level array no descriptor claims is a defect; uncounted arrays and stateDescriptors itself are not occupancy", () => {
+  const hq = descHq();
+  // Drop the leak descriptor: counts.leaks + the leaks array go unclaimed.
+  hq.stateDescriptors = hq.stateDescriptors.filter((d) => d.key !== "leak");
+  // An UNcounted top-level array (no counts key) is not occupancy the page knows how to
+  // count — it must not be reported. Neither must the descriptor array itself.
+  hq.sideChannel = [{ repo: "o/x", number: 1 }];
+  const box = fsmBox(hq);
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the defect band renders");
+  const rows = collect(band, "fd-li").map((r) => r.textContent);
+  assert(rows.length === 1, `exactly the leaks row is reported: ${JSON.stringify(rows)}`);
+  assert(
+    rows[0].includes("leaks") && rows[0].includes("2 held") && rows[0].includes("renders nowhere"),
+    `it names the array and its held inventory: ${rows[0]}`,
+  );
+});
+
+Deno.test("pipeline FSM: occupancy claimed by TWO descriptors is a defect too — exactly one claims each key", () => {
+  const hq = descHq();
+  hq.stateDescriptors.push({
+    key: "ai:ready",
+    owner: "producer",
+    act: "merge again",
+    kind: "flow",
+    hist: "",
+    histFold: [],
+    occupancy: { lane: "vetter-verdicts" },
+  });
+  const box = fsmBox(hq);
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "a double claim surfaces");
+  const text = textOf(band);
+  assert(
+    text.includes("2 descriptors") && text.includes("renders 2 times"),
+    `it says the inventory double-renders: ${text}`,
+  );
+});
+
+Deno.test("pipeline FSM: a malformed descriptor renders no state but is reported — and takes no good descriptor with it", () => {
+  const box = fsmBox({
+    counts: { uncoveredIssues: 4 },
+    lanes: {},
+    uncoveredIssues: fcItems("uncovered", 4),
+    stateDescriptors: [
+      "junk",
+      { key: "no-occupancy", owner: "human", act: "x", kind: "blk", occupancy: {} },
+      { key: "bad-owner", owner: "misc", act: "x", kind: "blk", occupancy: { lane: "vet-lifecycle" } },
+      {
+        key: "uncoveredIssues",
+        owner: "producer",
+        act: "open a PR",
+        kind: "flow",
+        hist: "uncoveredIssues",
+        histFold: [],
+        occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true },
+        label: "untouched (no PR)",
+      },
+    ],
+  });
+  const keys = box.querySelectorAll("[data-t]").map((b) => b.dataset.t);
+  assert(
+    JSON.stringify(keys) === JSON.stringify(["uncoveredIssues"]),
+    `only the well-formed descriptor renders a state: ${JSON.stringify(keys)}`,
+  );
+  assert(
+    collect(box, "sc")[0].textContent === "4",
+    `and it renders its real count: ${collect(box, "sc")[0].textContent}`,
+  );
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "malformed descriptors surface in the defect band");
+  const text = textOf(band);
+  for (const i of [0, 1, 2]) {
+    assert(
+      text.includes("stateDescriptors[" + i + "]"),
+      `descriptor ${i} is reported by index: ${text}`,
+    );
+  }
+});
+
+Deno.test("pipeline FSM: a descriptor's kind is clamped to the display kinds — snapshot content cannot smuggle a class onto a box", () => {
+  const box = fsmBox({
+    counts: { uncoveredIssues: 4 },
+    lanes: {},
+    uncoveredIssues: fcItems("uncovered", 4),
+    stateDescriptors: [
+      {
+        key: "uncoveredIssues",
+        owner: "producer",
+        act: "open a PR",
+        // Not a display kind: must not land in className, where it would dim a box
+        // holding 4 real items (or fake a bottleneck / a selection).
+        kind: "zero",
+        hist: "",
+        histFold: [],
+        occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true },
+      },
+    ],
+  });
+  const b = collect(box, "fsm-state")[0];
+  assert(b, "the box renders, with the neutral default border");
+  const classes = b.className.split(" ");
+  for (const cls of ["zero", "rising", "sel", "lead"]) {
+    assert(!classes.includes(cls), `unknown kind never lands as .${cls}: ${b.className}`);
+  }
+});
+
+// The frozen fallback: a descriptor-less snapshot renders the hand table exactly as
+// before this change — same boxes, same order — with no conservation band. Junk (a
+// non-array) is not a descriptor list and falls back the same way.
+Deno.test("pipeline FSM: a descriptor-less snapshot renders the frozen hand table, defect-free — junk stateDescriptors falls back too", () => {
+  const lanesHq = () => ({
+    counts: { leaks: 1, ready: 2, uncoveredIssues: 3, closeCandidateUnvetted: 0, closeCandidateUpheld: 0 },
+    lanes: {
+      "vetter-verdicts": {
+        "ai:ready": { count: 2, prs: [] },
+        "ai:reject": { count: 1, prs: [] },
+      },
+    },
+    leaks: fcItems("leak", 1),
+    uncoveredIssues: fcItems("uncovered", 3),
+  });
+  const frozen = (box, what) => {
+    const keys = box.querySelectorAll("[data-t]").map((b) => b.dataset.t);
+    assert(
+      JSON.stringify(keys) === JSON.stringify([
+        "ai:reject",
+        "uncoveredIssues",
+        "un-vetted",
+        "closeCandidateUnvetted",
+        "leak",
+        "ai:ready",
+        "ai:design",
+        "ai:blocked-deploy",
+        "ai:blocked-infra",
+        "ai:blocked-on",
+        "human:design",
+        "closeCandidateUpheld",
+      ]),
+      `the frozen table renders whole and in order (${what}): ${JSON.stringify(keys)}`,
+    );
+    assert(
+      collect(box, "fsm-defect").length === 0,
+      `no conservation band on the fallback (${what})`,
+    );
+  };
+  frozen(fsmBox(lanesHq()), "absent");
+  frozen(fsmBox({ ...lanesHq(), stateDescriptors: "junk" }), "junk descriptors");
+});
+
+// An EMPTY stateDescriptors array is a present — broken — declaration: the machine claims
+// zero states while the snapshot holds occupancy. The hand table must not resurrect
+// (vocabulary lives in the tool), and the conservation band must scream instead.
+Deno.test("pipeline FSM: an empty stateDescriptors array screams via conservation rather than resurrecting the hand table", () => {
+  const box = fsmBox({
+    counts: { ready: 2 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 2, prs: [] } } },
+    stateDescriptors: [],
+  });
+  assert(
+    collect(box, "fsm-state").length === 0,
+    `no hand-table box resurrects: ${collect(box, "fsm-state").length}`,
+  );
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the unclaimed occupancy surfaces");
+  assert(
+    textOf(band).includes("ai:ready"),
+    `it names the stranded cell: ${textOf(band)}`,
+  );
+});
+
+// The panel's existing behaviors survive descriptor mode: sparklines draw from the
+// descriptor's hist key, and the per-actor lead fallback marks the largest flat queue.
+Deno.test("pipeline FSM: descriptor boxes keep sparklines and the lead fallback", () => {
+  const now = Date.parse("2026-08-06T00:00:00Z");
+  const history = [
+    { t: now - 2 * DAY, counts: { ready: 5 } },
+    { t: now, counts: { ready: 5 } },
+  ];
+  const box = fsmBox(descHq(), history);
+  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const ready = byT("ai:ready");
+  assert(
+    collect(ready, "fsm-spark").length === 1,
+    "the descriptor's hist key draws a sparkline",
+  );
+  // Human group: ready 5, leak 2, design 0 — nothing rising, so the largest queue leads.
+  assert(
+    ready.classList.contains("lead"),
+    "the lead fallback marks the actor's largest queue",
+  );
+  assert(
+    !byT("leak").classList.contains("lead"),
+    "and only that one",
+  );
+});
+
 // ---- deployments.html: known owners ----
 
 // renderDeployments takes (document, $, data) as its own params, so bind with no

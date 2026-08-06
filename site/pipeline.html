@@ -179,6 +179,14 @@
      --crit (defined in both themes) plus wording that says which — the colour is never the
      only carrier. Two classes deep so it outweighs `.fsm-list .empty`'s own colour. */
   .fsm-list .empty.miswired { color: var(--crit); }
+  /* Conservation defect (rain-org-health#164): occupancy the snapshot carries that its own
+     descriptor list does not claim — inventory the machine renders NOWHERE, the exact shape
+     of the blocked-on drift that hid 17 PRs. Semantic --crit (defined in every theme scope)
+     plus wording that names what is unclaimed: the colour is never the only carrier. */
+  .fsm-defect { border: 1.5px solid var(--crit); border-radius: 11px; padding: 12px 14px;
+                margin: 12px 0 4px; color: var(--crit); font-size: 13px; line-height: 1.5; }
+  .fsm-defect .fd-h { font-weight: 650; }
+  .fsm-defect .fd-li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; margin-top: 4px; }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
   .fsm-lane { margin: 14px 0 2px; }
@@ -395,6 +403,10 @@ function renderFsm(hq, history) {
   // shape is the tool's to declare, and this page does not own that vocabulary
   // (issue-pr-cron#130); the rollup is different because those samples are the only surviving
   // record of a machine that no longer exists.
+  //
+  // FALLBACK-ONLY: a snapshot carrying `stateDescriptors` names each state's folds itself
+  // (`histFold`, rain-org-health#164) and the descriptor path passes that list to
+  // `seriesFor`, so this Map applies only when the frozen STATES table below renders.
   const HIST_FOLD = new Map([
     ["unvetted", ["awaitingReVet"]],
     ["reject", ["humanReject", "relink"]],
@@ -402,10 +414,13 @@ function renderFsm(hq, history) {
   ]);
   // A state's inventory series from the rollup: one point per refresh that CARRIED this
   // state's counts key, or any key folded into it (a snapshot carrying NONE of them ⇒ no
-  // point, not a zero).
-  const seriesFor = (histKey) => {
+  // point, not a zero). `fold` — when the caller passes one — is the descriptor's own
+  // `histFold` list and REPLACES the Map lookup outright: an empty list folds nothing,
+  // never falls back to the hand-maintained entries. Callers rendering the frozen
+  // fallback pass no fold and get the Map.
+  const seriesFor = (histKey, fold) => {
     if (!histKey) return [];
-    const keys = [histKey, ...(HIST_FOLD.get(histKey) || [])];
+    const keys = [histKey, ...(fold || HIST_FOLD.get(histKey) || [])];
     const out = [];
     for (const p of hist) {
       const counts = p && p.counts;
@@ -563,14 +578,21 @@ function renderFsm(hq, history) {
   //
   // The tool's `human-queue --json` `lanes` object is still keyed by LIFECYCLE phase
   // (vet-lifecycle / vetter-verdicts / producer-blocked / human-decisions) and is SPARSE
-  // (only non-empty states emitted). So each state descriptor carries `lane` = where its
+  // (only non-empty states emitted). So each state entry carries `lane` = where its
   // { count, prs:[{repo,number,url,title}] } is READ from, independent of `owner` = how
-  // it is GROUPED. STATES is the canonical shape — a state absent from the JSON renders
-  // zero (dimmed), keeping the machine's whole shape visible. laneItems maps a state key
-  // -> its PR list for the click-to-expand detail. (Ownership lives in this map until the
-  // tool emits an `owner` per state as the single source of truth — an issue-pr-cron
-  // follow-up, which would also split the two dual-owner states called out below.)
+  // it is GROUPED. laneItems maps a state key -> its item list for the click-to-expand
+  // detail.
+  //
+  // WHERE THE SHAPE COMES FROM (issue-pr-cron#130 / rain-org-health#164): a snapshot
+  // carrying `stateDescriptors` IS the machine — the tool emits each state's owner,
+  // label, act, kind, occupancy source and history folds, and the panel renders exactly
+  // that, in that order, so adding/renaming/re-laning/retiring a state propagates on the
+  // next refresh with no edit here. The hand-written STATES table below survives ONLY as
+  // the FROZEN fallback for descriptor-less snapshots (the same posture as the legacy
+  // no-`lanes` branch): on such a snapshot a state absent from the JSON renders zero
+  // (dimmed), keeping the machine's whole shape visible.
   const hasLanes = hq.lanes && typeof hq.lanes === "object";
+  const descriptors = Array.isArray(hq.stateDescriptors) ? hq.stateDescriptors : null;
   // EVERY rendered state registers its item list here, whichever branch built it — a lane
   // cell's `prs` for a lane state, the named top-level array for a `fromCounts` state. The
   // click-to-expand reads ONLY this map, so registration is the single wiring point instead of
@@ -589,7 +611,12 @@ function renderFsm(hq, history) {
       issue: !!issue,
       count: Number(count) || 0,
     });
-  const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
+  // Total over ANY snapshot: the descriptor path reads lane occupancy even when `lanes`
+  // is absent or junk (sparse-absent ⇒ null ⇒ the box renders 0).
+  const laneState = (lane, state) => {
+    const l = hasLanes ? hq.lanes[lane] : null;
+    return (l && typeof l === "object" && l[state]) || null;
+  };
 
   const stateBox = (key, label, count, act, kind, series) => {
     const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
@@ -737,6 +764,11 @@ function renderFsm(hq, history) {
     lead.b.setAttribute("aria-label", lead.label + ": largest queue for this actor (start here)");
   };
 
+  // FROZEN (rain-org-health#164): this table renders ONLY for a snapshot with no
+  // `stateDescriptors` — the same posture as the legacy no-`lanes` branch below. The live
+  // vocabulary is the tool's own descriptor list; a new, renamed, re-laned or retired
+  // state reaches the page as data, never as an edit here.
+  //
   // Every modeled state → the actor whose inbox it sits in (`owner`), the human-queue
   // `lane` its items live under, the next `act`, and a display `kind` (flow = moving,
   // rule = needs a human ruling, blk = a stuck/rework pile). The four dual-owner
@@ -850,7 +882,153 @@ function renderFsm(hq, history) {
   // the open-issue count nor any age — then the page is exactly what it was, and the legend
   // below describes no mark that is not on screen.
   const band = openBand();
-  if (hasLanes) {
+  if (descriptors) {
+    // ---- Descriptor-driven machine (issue-pr-cron#130 / rain-org-health#164): the tool
+    // emitted the machine's shape as data, so the panel renders exactly that — descriptor
+    // order is render order within each owner group. Every field is UNTRUSTED (the
+    // snapshot is another repo's artifact), so each descriptor is screened on the way in.
+    // A malformed one renders NO state and is REPORTED in the defect band below — never
+    // silently dropped, because a dropped descriptor is a vanished state, the drift this
+    // path exists to kill (any occupancy it meant to claim goes unclaimed, which the
+    // conservation sweep also reports). `kind` is clamped to the three display kinds so
+    // snapshot content can never smuggle a meaningful class (`zero`, `rising`, `sel`)
+    // onto a box; an unknown kind renders with the neutral default border.
+    const KINDS = new Set(["flow", "rule", "blk"]);
+    const OWNER_KEYS = new Set(OWNERS.map((o) => o.key));
+    const readDescriptor = (d) => {
+      if (!d || typeof d !== "object" || typeof d.key !== "string" || !d.key) return null;
+      if (!OWNER_KEYS.has(d.owner)) return null;
+      // `occupancy` is exactly one of {lane} (count + items from that lane's cell, keyed
+      // by the state key — sparse-absent ⇒ 0) or {counts, items, itemsAreIssues} (count
+      // from `counts.<counts>`, click-through list from the named top-level array,
+      // `itemsAreIssues` picking which URL path `urlOf` tries first).
+      const occ = d.occupancy;
+      let source = null;
+      if (occ && typeof occ === "object") {
+        if (typeof occ.lane === "string" && occ.lane) {
+          source = { lane: occ.lane };
+        } else if (
+          typeof occ.counts === "string" && occ.counts &&
+          typeof occ.items === "string" && occ.items
+        ) {
+          source = { counts: occ.counts, items: occ.items, issue: !!occ.itemsAreIssues };
+        }
+      }
+      if (!source) return null;
+      return {
+        key: d.key,
+        owner: d.owner,
+        label: typeof d.label === "string" && d.label ? d.label : d.key,
+        act: typeof d.act === "string" ? d.act : "",
+        kind: KINDS.has(d.kind) ? d.kind : "",
+        hist: typeof d.hist === "string" ? d.hist : "",
+        histFold: Array.isArray(d.histFold) ? d.histFold.filter((k) => typeof k === "string") : [],
+        source,
+      };
+    };
+    const defects = [];
+    const parsed = [];
+    descriptors.forEach((d, i) => {
+      const p = readDescriptor(d);
+      if (p) parsed.push(p);
+      else {
+        defects.push(
+          "stateDescriptors[" + i + "] is malformed — it renders no state, and occupancy it meant to claim reports as unclaimed",
+        );
+      }
+    });
+    // CONSERVATION (the invariant that would have made the blocked-on drift scream
+    // instead of hiding 17 PRs): every occupancy key in the snapshot — each `lanes` cell
+    // and each counted top-level array (a top-level array with a same-named `counts`
+    // entry) — must be claimed by exactly ONE descriptor. Unclaimed occupancy is
+    // inventory the machine renders NOWHERE; a double claim renders the same inventory
+    // twice. Both are the tool's defects, and both surface in the defect band.
+    const claims = new Map();
+    const claim = (id) => claims.set(id, (claims.get(id) || 0) + 1);
+    // Claim ids are JSON-encoded so no lane/state/array spelling can collide or forge
+    // another key's id.
+    const laneId = (lane, state) => "lane " + JSON.stringify([lane, state]);
+    const arrId = (k) => "array " + JSON.stringify(k);
+    for (const p of parsed) {
+      if (p.source.lane) claim(laneId(p.source.lane, p.key));
+      else {
+        claim(arrId(p.source.counts));
+        if (p.source.items !== p.source.counts) claim(arrId(p.source.items));
+      }
+    }
+
+    OWNERS.forEach((O) => {
+      const own = parsed.filter((p) => p.owner === O.key);
+      if (!own.length) return; // an actor the tool files no state under draws no empty heading
+      const g = el("div", "fsm-grid");
+      let ownerTotal = 0;
+      const boxes = [];
+      own.forEach((p) => {
+        let count;
+        if (p.source.lane) {
+          const cell = laneState(p.source.lane, p.key);
+          count = cell ? Number(cell.count) || 0 : 0;
+          register(p.key, cell && cell.prs, false, count);
+        } else {
+          // Registration is UNCONDITIONAL on both branches (#141): a count whose list
+          // never arrived reads as detailBody's missing-list defect, never as an empty
+          // queue.
+          count = Number(c[p.source.counts]) || 0;
+          register(p.key, hq[p.source.items], p.source.issue, count);
+        }
+        ownerTotal += count;
+        // The descriptor names its own series key AND its own retired-key folds —
+        // HIST_FOLD serves only the frozen fallback. An empty histFold folds nothing.
+        const b = stateBox(p.key, p.label, count, p.act, p.kind, seriesFor(p.hist, p.histFold));
+        boxes.push({ b, count, label: p.label });
+        g.append(b);
+      });
+      markLead(boxes);
+      const lane = el("div", "fsm-lane");
+      const h = el("div", "fsm-lane-h");
+      h.append(el("span", null, O.title), el("span", "lsub", O.sub), el("span", "lct", String(ownerTotal)));
+      lane.append(h, g);
+      grid.append(lane);
+    });
+
+    // The conservation sweep, over the snapshot's own occupancy keys.
+    const misclaimed = (id, name, held) => {
+      const n = claims.get(id) || 0;
+      if (n === 1) return;
+      defects.push(
+        name + " (" + held + " held) " +
+          (n === 0
+            ? "is claimed by no descriptor — its inventory renders nowhere"
+            : "is claimed by " + n + " descriptors — its inventory renders " + n + " times"),
+      );
+    };
+    if (hasLanes) {
+      for (const lane of Object.keys(hq.lanes)) {
+        const cells = hq.lanes[lane];
+        if (!cells || typeof cells !== "object") continue;
+        for (const state of Object.keys(cells)) {
+          const cell = cells[state];
+          const held = cell && typeof cell === "object" ? Number(cell.count) || 0 : 0;
+          misclaimed(laneId(lane, state), 'lanes["' + lane + '"]["' + state + '"]', held);
+        }
+      }
+    }
+    for (const k of Object.keys(hq)) {
+      if (k === "stateDescriptors" || !Array.isArray(hq[k])) continue;
+      if (!Object.prototype.hasOwnProperty.call(c, k)) continue; // only COUNTED arrays are occupancy
+      misclaimed(arrId(k), k, Number(c[k]) || 0);
+    }
+    if (defects.length) {
+      const dbox = el("div", "fsm-defect");
+      dbox.append(el(
+        "div",
+        "fd-h",
+        "Snapshot defect — the tool's stateDescriptors do not cover its own occupancy. Fix the tool's emit; nothing here is ignored:",
+      ));
+      for (const t of defects) dbox.append(el("div", "fd-li", t));
+      grid.append(dbox);
+    }
+  } else if (hasLanes) {
     OWNERS.forEach((O) => {
       const g = el("div", "fsm-grid");
       let ownerTotal = 0;
@@ -977,6 +1155,13 @@ function renderFsm(hq, history) {
   );
   if (hq.sample) note.append(" ", el("b", null, "(sample data — live once issue-pr-cron#41 lands)"));
   note.append(".");
+  if (descriptors) {
+    note.append(
+      " The machine's shape above is the tool's own ",
+      el("code", null, "stateDescriptors"),
+      " — states appear, move between actors, and retire on the tool's say-so, with no edit to this page.",
+    );
+  }
   if (hist.length) {
     note.append(
       " Each state carries an inventory sparkline (trailing 4 weeks); a ",
