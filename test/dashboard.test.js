@@ -3613,6 +3613,76 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
   );
 });
 
+// A descriptor also READS its `histFold` keys — that is where its series draws the
+// absorbed retirees' samples from — so those counts keys are claimed by it. The live
+// shape that makes this load-bearing: `ai:reject` folds `humanReject`/`relink` while the
+// residue rows carry NO `hist` of their own (the successor draws the past, so the same
+// history is not rendered twice). Without the fold claim, a nonzero absorbed-retiree
+// count paints a FALSE defect on a healthy snapshot.
+Deno.test("pipeline FSM: a folded retired counts key is claimed by the folding descriptor, nonzero and all", () => {
+  const hq = {
+    counts: { reject: 66, humanReject: 4, relink: 0 },
+    lanes: {
+      "vetter-verdicts": { "ai:reject": { count: 66, prs: [] } },
+      "human-decisions": { "human:reject": { count: 4, prs: fcItems("hreject", 4) } },
+    },
+    stateDescriptors: [
+      // The live row folds both retired keys and owns the continuous series.
+      { key: "ai:reject", owner: "producer", act: "rework per note", kind: "blk", hist: "reject", histFold: ["humanReject", "relink"], occupancy: { lane: "vetter-verdicts" } },
+      // The residue row: its LANE cell is its occupancy; it carries no hist, because the
+      // successor above already draws its past.
+      { key: "human:reject", owner: "human", act: "strip the label", kind: "blk", hist: "", histFold: [], occupancy: { lane: "human-decisions" }, label: "human:reject (retired #133)" },
+    ],
+  };
+  const box = fsmBox(hq);
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    `a folded nonzero retired key is claimed, not a defect: ${textOf(collect(box, "fsm-defect")[0] || makeEl("div"))}`,
+  );
+  // Both rows render, each off its own lane cell.
+  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  assert(collect(byT("ai:reject"), "sc")[0].textContent === "66", "the live row reads its cell");
+  assert(collect(byT("human:reject"), "sc")[0].textContent === "4", "the residue row reads its cell");
+
+  // And the fold is not a blanket amnesty: a retired counts key NO descriptor folds or
+  // reads still screams when it holds inventory.
+  const stranded = JSON.parse(JSON.stringify(hq));
+  stranded.counts.awaitingReVet = 7;
+  const band = collect(fsmBox(stranded), "fsm-defect")[0];
+  assert(band, "an unfolded, unclaimed retired key still surfaces");
+  assert(
+    textOf(band).includes("awaitingReVet") && textOf(band).includes("7 held"),
+    `it names the stranded key: ${textOf(band)}`,
+  );
+});
+
+// The fold claim must not weaken the double-claim direction: a key claimed BOTH as one
+// descriptor's fold and as another's live hist is the same inventory wired twice — the
+// producer side is held to fold keys being retired (never a live row's hist), so this
+// reads as the structural defect it is.
+Deno.test("pipeline FSM: a counts key claimed as both a fold and another descriptor's hist is still a double claim", () => {
+  const box = fsmBox({
+    counts: { reject: 66, humanReject: 4 },
+    lanes: {
+      "vetter-verdicts": { "ai:reject": { count: 66, prs: [] } },
+      "human-decisions": { "human:reject": { count: 4, prs: [] } },
+    },
+    stateDescriptors: [
+      { key: "ai:reject", owner: "producer", act: "rework per note", kind: "blk", hist: "reject", histFold: ["humanReject"], occupancy: { lane: "vetter-verdicts" } },
+      // Illegal per the contract: the residue row draws the SAME history the fold above
+      // already absorbed, so humanReject's inventory would render twice.
+      { key: "human:reject", owner: "human", act: "strip the label", kind: "blk", hist: "humanReject", histFold: [], occupancy: { lane: "human-decisions" } },
+    ],
+  });
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the double claim surfaces");
+  const text = textOf(band);
+  assert(
+    text.includes("humanReject") && text.includes("2 descriptors") && text.includes("renders 2 times"),
+    `it names the key and says it renders twice: ${text}`,
+  );
+});
+
 // Zero inventory renders nowhere VACUOUSLY: the live tool still emits drained retired
 // counts keys at 0 (kept-while-nonzero governs the descriptor list, not the keys), so an
 // unclaimed key holding nothing is not hidden inventory and must not paint a permanent

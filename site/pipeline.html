@@ -1003,11 +1003,24 @@ function renderFsm(hq, history) {
           );
         }
       }
-      // Every counts key this descriptor reads is claimed — deduped, because a
+      // Every counts key this descriptor READS is claimed — deduped, because a
       // counts-source descriptor's `hist` usually IS its counts key.
+      //
+      // `histFold` counts too: those keys are where this state's series draws the
+      // ABSORBED retirees' samples from, so their inventory does reach the screen — as
+      // part of this state's line. Leaving them out flags a nonzero absorbed-retiree
+      // count as unclaimed on a perfectly healthy snapshot: the successor draws the past
+      // (`ai:reject` folds `humanReject`/`relink`) while the residue rows carry no `hist`
+      // of their own, precisely so the same history is not rendered twice. Their lane
+      // cells are claimed by those residue descriptors; their counts keys are claimed
+      // here. The invariant stays honest in BOTH directions — exactly one descriptor
+      // claims a fold key, because a fold key must not also be a live row's `hist` (the
+      // producer side is held to that), so a key claimed as both still reads as the
+      // double claim it is.
       const read = new Set();
       if (p.source.counts) read.add(p.source.counts);
       if (p.hist) read.add(p.hist);
+      for (const k of p.histFold) read.add(k);
       for (const k of read) claim(countsId(k));
     }
 
