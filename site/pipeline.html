@@ -162,7 +162,10 @@
   .fsm-state.rising .fsm-spark .sd, .fsm-state.lead .fsm-spark .sd { fill: var(--crit); }
   .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-  .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  /* A box's label comes off the snapshot too (a descriptor's `label`/`key`), so it wraps
+     inside its box instead of overflowing the grid. */
+  .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px;
+                   overflow-wrap: anywhere; word-break: break-word; }
   .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
   .fsm-list { margin: 18px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
   .fsm-list.open { display: block; }
@@ -179,6 +182,17 @@
      --crit (defined in both themes) plus wording that says which — the colour is never the
      only carrier. Two classes deep so it outweighs `.fsm-list .empty`'s own colour. */
   .fsm-list .empty.miswired { color: var(--crit); }
+  /* Conservation defect (rain-org-health#164): occupancy the snapshot carries that its own
+     descriptor list does not claim — inventory the machine renders NOWHERE, the exact shape
+     of the blocked-on drift that hid 17 PRs. Semantic --crit (defined in every theme scope)
+     plus wording that names what is unclaimed: the colour is never the only carrier. */
+  .fsm-defect { border: 1.5px solid var(--crit); border-radius: 11px; padding: 12px 14px;
+                margin: 12px 0 4px; color: var(--crit); font-size: 13px; line-height: 1.5; }
+  .fsm-defect .fd-h { font-weight: 650; }
+  /* The band quotes UNTRUSTED snapshot strings (state keys, lane names, counts keys), so
+     one long unbroken token must wrap rather than push the panel sideways. */
+  .fsm-defect .fd-li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; margin-top: 4px;
+                       overflow-wrap: anywhere; word-break: break-word; }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
   .fsm-lane { margin: 14px 0 2px; }
@@ -397,9 +411,14 @@ function renderFsm(hq, history) {
   // record of a machine that no longer exists.
   //
   // A fold maps a retired key onto the state that ABSORBED its inventory — so a retired key
-  // with no absorbing successor has NO entry. `blockedInfra`'s exit was the run ending
-  // (issue-pr-cron#108): no surviving inbox measures what it measured, summing it into any
-  // live series would misstate that series' past, and its samples are drawn nowhere.
+  // with no absorbing successor has NO entry. `blockedDeploy` (issue-pr-cron#225) and
+  // `blockedInfra` (issue-pr-cron#108) have none — see RETIRED_NO_SUCCESSOR below: no
+  // surviving inbox measures what either measured, summing them into any live series would
+  // misstate that series' past, and their samples are drawn nowhere.
+  //
+  // FALLBACK-ONLY: a snapshot carrying `stateDescriptors` names each state's folds itself
+  // (`histFold`, rain-org-health#164) and the descriptor path passes that list to
+  // `seriesFor`, so this Map applies only when the frozen STATES table below renders.
   const HIST_FOLD = new Map([
     ["unvetted", ["awaitingReVet"]],
     ["reject", ["humanReject", "relink"]],
@@ -407,10 +426,13 @@ function renderFsm(hq, history) {
   ]);
   // A state's inventory series from the rollup: one point per refresh that CARRIED this
   // state's counts key, or any key folded into it (a snapshot carrying NONE of them ⇒ no
-  // point, not a zero).
-  const seriesFor = (histKey) => {
+  // point, not a zero). `fold` — when the caller passes one — is the descriptor's own
+  // `histFold` list and REPLACES the Map lookup outright: an empty list folds nothing,
+  // never falls back to the hand-maintained entries. Callers rendering the frozen
+  // fallback pass no fold and get the Map.
+  const seriesFor = (histKey, fold) => {
     if (!histKey) return [];
-    const keys = [histKey, ...(HIST_FOLD.get(histKey) || [])];
+    const keys = [histKey, ...(fold || HIST_FOLD.get(histKey) || [])];
     const out = [];
     for (const p of hist) {
       const counts = p && p.counts;
@@ -568,14 +590,21 @@ function renderFsm(hq, history) {
   //
   // The tool's `human-queue --json` `lanes` object is still keyed by LIFECYCLE phase
   // (vet-lifecycle / vetter-verdicts / producer-blocked / human-decisions) and is SPARSE
-  // (only non-empty states emitted). So each state descriptor carries `lane` = where its
+  // (only non-empty states emitted). So each state entry carries `lane` = where its
   // { count, prs:[{repo,number,url,title}] } is READ from, independent of `owner` = how
-  // it is GROUPED. STATES is the canonical shape — a state absent from the JSON renders
-  // zero (dimmed), keeping the machine's whole shape visible. laneItems maps a state key
-  // -> its PR list for the click-to-expand detail. (Ownership lives in this map until the
-  // tool emits an `owner` per state as the single source of truth — an issue-pr-cron
-  // follow-up, which would also split the two dual-owner states called out below.)
+  // it is GROUPED. laneItems maps a state key -> its item list for the click-to-expand
+  // detail.
+  //
+  // WHERE THE SHAPE COMES FROM (issue-pr-cron#130 / rain-org-health#164): a snapshot
+  // carrying `stateDescriptors` IS the machine — the tool emits each state's owner,
+  // label, act, kind, occupancy source and history folds, and the panel renders exactly
+  // that, in that order, so adding/renaming/re-laning/retiring a state propagates on the
+  // next refresh with no edit here. The hand-written STATES table below survives ONLY as
+  // the FROZEN fallback for descriptor-less snapshots (the same posture as the legacy
+  // no-`lanes` branch): on such a snapshot a state absent from the JSON renders zero
+  // (dimmed), keeping the machine's whole shape visible.
   const hasLanes = hq.lanes && typeof hq.lanes === "object";
+  const descriptors = Array.isArray(hq.stateDescriptors) ? hq.stateDescriptors : null;
   // EVERY rendered state registers its item list here, whichever branch built it — a lane
   // cell's `prs` for a lane state, the named top-level array for a `fromCounts` state. The
   // click-to-expand reads ONLY this map, so registration is the single wiring point instead of
@@ -594,7 +623,12 @@ function renderFsm(hq, history) {
       issue: !!issue,
       count: Number(count) || 0,
     });
-  const laneState = (lane, state) => (hq.lanes[lane] && hq.lanes[lane][state]) || null;
+  // Total over ANY snapshot: the descriptor path reads lane occupancy even when `lanes`
+  // is absent or junk (sparse-absent ⇒ null ⇒ the box renders 0).
+  const laneState = (lane, state) => {
+    const l = hasLanes ? hq.lanes[lane] : null;
+    return (l && typeof l === "object" && l[state]) || null;
+  };
 
   const stateBox = (key, label, count, act, kind, series) => {
     const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
@@ -742,12 +776,15 @@ function renderFsm(hq, history) {
     lead.b.setAttribute("aria-label", lead.label + ": largest queue for this actor (start here)");
   };
 
+  // FROZEN (rain-org-health#164): this table renders ONLY for a snapshot with no
+  // `stateDescriptors` — the same posture as the legacy no-`lanes` branch below. The live
+  // vocabulary is the tool's own descriptor list; a new, renamed, re-laned or retired
+  // state reaches the page as data, never as an edit here.
+  //
   // Every modeled state → the actor whose inbox it sits in (`owner`), the human-queue
   // `lane` its items live under, the next `act`, and a display `kind` (flow = moving,
   // rule = needs a human ruling, blk = a stuck/rework pile). The dual-owner
-  // resolutions (each defensible against the README FSM's own exit edges):
-  //   ai:blocked-deploy → HUMAN  — FSM exit is "human resolves deploy → re-work"; the
-  //       producer only DIAGNOSES the failed deploy, the human funds/dispatches it.
+  // resolution (defensible against the README FSM's own exit edges):
   //   ai:blocked-on     → VETTER — issue-pr-cron#161: deps are typed `--blocked-by` refs
   //       and the vetter's state-load clears the flag the run after every dep merges or
   //       closes, so the vetter's cron run is the mover and no human action sits on the
@@ -804,7 +841,7 @@ function renderFsm(hq, history) {
     // only picks the path tried first and github's own /issues/↔/pull/ redirect resolves the
     // rest — see `urlOf`.
     { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", items: "closeCandidateUnvetted", issue: true, hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
-    // Vetter-owned per the dual-owner resolutions above (issue-pr-cron#161): the vetter's
+    // Vetter-owned per the dual-owner resolution above (issue-pr-cron#161): the vetter's
     // state-load clears the flag once every typed dep merges/closes, so the act is that
     // clearance, not a human merge. The tool keys this cell under `vet-lifecycle`;
     // `staleLane` keeps a snapshot from before that re-key readable — see the lane read
@@ -825,7 +862,6 @@ function renderFsm(hq, history) {
     { owner: "human", state: "leak", fromCounts: "leaks", items: "leaks", issue: false, hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
-    { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
     // Close-candidate flags the vetter UPHELD (issue-pr-cron#73/#212): the flag survived
     // judgement, so a human disposes of the subject. ONE inbox for issues and PRs alike
@@ -844,10 +880,15 @@ function renderFsm(hq, history) {
     { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", items: "closeCandidateUpheld", issue: true, hist: "closeCandidateUpheld", act: "close", kind: "rule", label: "ai:close-candidate (upheld)" },
   ];
 
-  // Retired states whose FSM exit was "the run ends" — NOT a transition into a surviving
-  // state. `ai:blocked-infra` (issue-pr-cron#108): infrastructure being down is a property
-  // of the moment, not of a PR, so the producer records `infra-down` and ends the run.
-  // That exit shape is why these are not handled like the ABSORBED retirees
+  // Retired states NO surviving state absorbed — retiring each of these moved its inventory
+  // into no successor inbox:
+  //   ai:blocked-deploy (issue-pr-cron#225) — not in the machine at all: no label, no
+  //       classifier arm, no counts emission, no parking transition. `ai:reject` is not its
+  //       successor: a reject is a verdict on the PR's code, not a fact about a deploy, so
+  //       no surviving series measures what this one measured.
+  //   ai:blocked-infra (issue-pr-cron#108) — infrastructure being down is a property of the
+  //       moment, not of a PR, so the producer records `infra-down` and ends the run.
+  // That absence of a successor is why these are not handled like the ABSORBED retirees
   // (awaiting-re-vet, ai:relink, human:reject), whose stale cells are ignored outright: an
   // absorbed retiree's tokens reappear in the surviving state's own cell (a PR that was
   // awaiting-re-vet IS un-vetted), so its cell is a double-count — but a no-successor
@@ -862,7 +903,12 @@ function renderFsm(hq, history) {
   // `prs`) on a `lanes` snapshot, the flat counts key on a pre-`lanes` one; a count that
   // arrives with no list surfaces through detailBody's missing-list defect, never as an
   // empty queue.
+  //
+  // FALLBACK-ONLY, like STATES: on a snapshot carrying `stateDescriptors` a stale cell
+  // for a retired state is occupancy no descriptor claims, and it surfaces through the
+  // conservation defect band instead of through this table.
   const RETIRED_NO_SUCCESSOR = [
+    { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", legacy: "blockedDeploy", act: "strip the label", kind: "blk" },
     { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", legacy: "blockedInfra", act: "strip the label", kind: "blk" },
   ];
 
@@ -880,7 +926,305 @@ function renderFsm(hq, history) {
   // the open-issue count nor any age — then the page is exactly what it was, and the legend
   // below describes no mark that is not on screen.
   const band = openBand();
-  if (hasLanes) {
+  if (descriptors) {
+    // ---- Descriptor-driven machine (issue-pr-cron#130 / rain-org-health#164): the tool
+    // emitted the machine's shape as data, so the panel renders exactly that — descriptor
+    // order is render order within each owner group. Every field is UNTRUSTED (the
+    // snapshot is another repo's artifact), so each descriptor is screened on the way in.
+    // A malformed one renders NO state and is REPORTED in the defect band below — never
+    // silently dropped, because a dropped descriptor is a vanished state, the drift this
+    // path exists to kill (any occupancy it meant to claim goes unclaimed, which the
+    // conservation sweep also reports). `kind` is clamped to the three display kinds so
+    // snapshot content can never smuggle a meaningful class (`zero`, `rising`, `sel`)
+    // onto a box; an unknown kind renders with the neutral default border.
+    const KINDS = new Set(["flow", "rule", "blk"]);
+    const OWNER_KEYS = new Set(OWNERS.map((o) => o.key));
+    const readDescriptor = (d) => {
+      if (!d || typeof d !== "object" || typeof d.key !== "string" || !d.key) return null;
+      if (!OWNER_KEYS.has(d.owner)) return null;
+      // `occupancy` is exactly one of {lane} (count + items from that lane's cell, keyed
+      // by the state key — sparse-absent ⇒ 0) or {counts, items, itemsAreIssues} (count
+      // from `counts.<counts>`, click-through list from the named top-level array,
+      // `itemsAreIssues` picking which URL path `urlOf` tries first).
+      const occ = d.occupancy;
+      let source = null;
+      if (occ && typeof occ === "object") {
+        if (typeof occ.lane === "string" && occ.lane) {
+          source = { lane: occ.lane };
+        } else if (
+          typeof occ.counts === "string" && occ.counts &&
+          typeof occ.items === "string" && occ.items
+        ) {
+          source = { counts: occ.counts, items: occ.items, issue: !!occ.itemsAreIssues };
+        }
+      }
+      if (!source) return null;
+      return {
+        key: d.key,
+        owner: d.owner,
+        label: typeof d.label === "string" && d.label ? d.label : d.key,
+        act: typeof d.act === "string" ? d.act : "",
+        kind: KINDS.has(d.kind) ? d.kind : "",
+        hist: typeof d.hist === "string" ? d.hist : "",
+        histFold: Array.isArray(d.histFold) ? d.histFold.filter((k) => typeof k === "string") : [],
+        source,
+      };
+    };
+    const defects = [];
+    const parsed = [];
+    // Keys already taken. A state key is the panel's IDENTITY for a state: the box's
+    // `data-t`, and the `register`/`itemsFor` map key the click-to-expand reads. So two
+    // descriptors sharing one key do not merely duplicate a box — the second's
+    // registration OVERWRITES the first's, and the first box then opens onto the
+    // second's list. That is #141's exact failure (a count that opens onto something
+    // that is not its own list) and neither claim check would catch it: with different
+    // occupancy sources the two claims are different ids, so both read as singly
+    // claimed. So a repeat renders NO state and is REPORTED, exactly like a malformed
+    // entry — and, like a malformed entry, its claim is never registered, so the sweep
+    // additionally names the cell or counts key it meant to claim. FIRST occurrence
+    // wins: array order is render order, so the first is the one the tool put first.
+    const seenKeys = new Set();
+    descriptors.forEach((d, i) => {
+      const p = readDescriptor(d);
+      if (!p) {
+        defects.push(
+          "stateDescriptors[" + i + "] is malformed — it renders no state, and occupancy it meant to claim reports as unclaimed",
+        );
+        return;
+      }
+      if (seenKeys.has(p.key)) {
+        defects.push(
+          'stateDescriptors[' + i + '] repeats the key "' + p.key +
+            '" — it renders no state, and occupancy it meant to claim reports as unclaimed',
+        );
+        return;
+      }
+      seenKeys.add(p.key);
+      parsed.push(p);
+    });
+    // CONSERVATION (the invariant that would have made the blocked-on drift scream
+    // instead of hiding 17 PRs), per the ratified contract's scoping
+    // (issue-pr-cron#130): every `lanes` cell must be claimed by exactly ONE descriptor
+    // — zero exceptions (the tool stopped emitting its one redundant cell in the same
+    // change that added descriptors) — and every `counts` key must be claimed by exactly
+    // one descriptor through the keys it READS (its occupancy `counts` source, or the
+    // `hist` mirror a lane state's series draws from), outside the named frozen-legacy
+    // set below. A counts-source descriptor's declared `counts`/`items` keys must also
+    // RESOLVE in the snapshot. Unclaimed occupancy is inventory the machine renders
+    // NOWHERE; a double claim renders the same inventory twice; an unresolved source is a
+    // count with no list (or no count at all). All are the tool's defects, and all
+    // surface in the defect band.
+    const claims = new Map();
+    const itemClaims = new Map();
+    const claim = (id) => claims.set(id, (claims.get(id) || 0) + 1);
+    // The occupancy a lane-sourced descriptor RENDERS, resolved once so the sweep's
+    // cross-check below and the render loop can never read it two different ways.
+    const laneCount = (p) => {
+      const cell = laneState(p.source.lane, p.key);
+      if (!cell) return 0;
+      // A cell carries its own two numbers: the `count` it STATES and the `prs` it
+      // actually holds. `Number(cell.count) || 0` cannot tell a missing or non-numeric
+      // count from a real zero, so a broken count over a populated list would render 0
+      // while the click expanded onto PRs. Render the LARGER: a count that arrives
+      // broken must never hide inventory the list proves is there, and the box must
+      // agree with what it opens onto. The disagreement itself is reported below.
+      const stated = Number(cell.count) || 0;
+      const listed = Array.isArray(cell.prs) ? cell.prs.length : 0;
+      return Math.max(stated, listed);
+    };
+    // Claim ids are JSON-encoded so no lane/state/counts spelling can collide or forge
+    // another key's id.
+    const laneId = (lane, state) => "lane " + JSON.stringify([lane, state]);
+    const countsId = (k) => "counts " + JSON.stringify(k);
+    for (const p of parsed) {
+      if (p.source.lane) claim(laneId(p.source.lane, p.key));
+      else {
+        if (!Object.prototype.hasOwnProperty.call(c, p.source.counts)) {
+          defects.push(
+            'descriptor "' + p.key + '" names counts source "' + p.source.counts + '" which does not resolve in the snapshot',
+          );
+        }
+        if (!Array.isArray(hq[p.source.items])) {
+          defects.push(
+            'descriptor "' + p.key + '" names items source "' + p.source.items + '" which does not resolve in the snapshot',
+          );
+        }
+      }
+      // Every counts key this descriptor READS is claimed — deduped, because a
+      // counts-source descriptor's `hist` usually IS its counts key.
+      //
+      // `histFold` counts too: those keys are where this state's series draws the
+      // ABSORBED retirees' samples from, so their inventory does reach the screen — as
+      // part of this state's line. Leaving them out flags a nonzero absorbed-retiree
+      // count as unclaimed on a perfectly healthy snapshot: the successor draws the past
+      // (`ai:reject` folds `humanReject`/`relink`) while the residue rows carry no `hist`
+      // of their own, precisely so the same history is not rendered twice. Their lane
+      // cells are claimed by those residue descriptors; their counts keys are claimed
+      // here. The invariant stays honest in BOTH directions — exactly one descriptor
+      // claims a fold key, because a fold key must not also be a live row's `hist` (the
+      // producer side is held to that), so a key claimed as both still reads as the
+      // double claim it is.
+      const read = new Set();
+      if (p.source.counts) read.add(p.source.counts);
+      if (p.hist) read.add(p.hist);
+      for (const k of p.histFold) read.add(k);
+      for (const k of read) claim(countsId(k));
+      // The top-level array a counts-source descriptor lists from is claimed too. It is
+      // not swept for absence (an array with no `counts` entry is not occupancy this page
+      // knows how to count), but two descriptors naming the SAME array is a defect the
+      // other checks cannot see: their keys differ, their counts keys may differ, and yet
+      // both boxes open onto one list — a count that opens onto something that is not its
+      // own list, which is #141 again.
+      if (p.source.items) itemClaims.set(p.source.items, (itemClaims.get(p.source.items) || 0) + 1);
+      // ---- The page holds TWO numbers for a lane state and is the only place they meet.
+      // The lane cell is the OCCUPANCY it renders; `hist` names the `counts` key its
+      // SERIES is drawn from — and the tool computes those two ways (issue-pr-cron#228:
+      // `counts.ready` off the label bucket, the lane cell off `classify_lane`). When
+      // they disagree, the box draws one number under a sparkline sitting at the other,
+      // and every claim check passes because each key is claimed exactly once. Only a
+      // comparison catches it, so the page makes the disagreement VISIBLE — it does not
+      // guess which number is right, and it does not drop the claim (every lane state's
+      // `hist` mirrors a counts key, so dropping it would paint false defects across a
+      // healthy snapshot). States that agree stay silent.
+      // The SAME class one level down: a cell's stated `count` against the `prs` it
+      // carries. The sweep cannot catch this — a claimed cell leaves `misclaimed` at
+      // n === 1 — so the box would read one number while its click-through showed
+      // another, silently. Only checked when the list is non-empty: a count over an
+      // EMPTY list is the missing-list case, which detailBody already reports at the
+      // click ("the list is missing, not empty") rather than as a snapshot defect.
+      if (p.source.lane) {
+        const cell = laneState(p.source.lane, p.key);
+        const stated = cell ? Number(cell.count) || 0 : 0;
+        const listed = cell && Array.isArray(cell.prs) ? cell.prs.length : 0;
+        if (listed > 0 && stated !== listed) {
+          defects.push(
+            'lanes["' + p.source.lane + '"]["' + p.key + '"] states count ' + stated +
+              " but carries " + listed + " PRs — the box renders " + Math.max(stated, listed) +
+              ", the larger, so a broken count cannot hide inventory the list proves is there",
+          );
+        }
+      }
+      if (p.source.lane && p.hist && Object.prototype.hasOwnProperty.call(c, p.hist)) {
+        const shown = laneCount(p);
+        const mirrored = Number(c[p.hist]) || 0;
+        if (shown !== mirrored) {
+          defects.push(
+            'state "' + p.key + '" is counted two ways and the snapshot disagrees with itself: ' +
+              'the rendered occupancy lanes["' + p.source.lane + '"]["' + p.key + '"] holds ' + shown +
+              ', while counts["' + p.hist + '"] — the key this box\'s series is drawn from — says ' + mirrored +
+              '. The box renders ' + shown + '; fix the tool\'s emit (issue-pr-cron#228)',
+          );
+        }
+      }
+    }
+
+    OWNERS.forEach((O) => {
+      const own = parsed.filter((p) => p.owner === O.key);
+      if (!own.length) return; // an actor the tool files no state under draws no empty heading
+      const g = el("div", "fsm-grid");
+      let ownerTotal = 0;
+      const boxes = [];
+      own.forEach((p) => {
+        let count;
+        if (p.source.lane) {
+          const cell = laneState(p.source.lane, p.key);
+          count = laneCount(p);
+          register(p.key, cell && cell.prs, false, count);
+        } else {
+          // Registration is UNCONDITIONAL on both branches (#141): a count whose list
+          // never arrived reads as detailBody's missing-list defect, never as an empty
+          // queue.
+          count = Number(c[p.source.counts]) || 0;
+          register(p.key, hq[p.source.items], p.source.issue, count);
+        }
+        ownerTotal += count;
+        // The descriptor names its own series key AND its own retired-key folds —
+        // HIST_FOLD serves only the frozen fallback. An empty histFold folds nothing.
+        const b = stateBox(p.key, p.label, count, p.act, p.kind, seriesFor(p.hist, p.histFold));
+        boxes.push({ b, count, label: p.label });
+        g.append(b);
+      });
+      markLead(boxes);
+      const lane = el("div", "fsm-lane");
+      const h = el("div", "fsm-lane-h");
+      h.append(el("span", null, O.title), el("span", "lsub", O.sub), el("span", "lct", String(ownerTotal)));
+      lane.append(h, g);
+      grid.append(lane);
+    });
+
+    // The conservation sweep, over the snapshot's own occupancy keys. `legacy` marks a
+    // key the ratified contract lets go UNCLAIMED — it never licenses a double claim.
+    const misclaimed = (id, name, held, legacy) => {
+      const n = claims.get(id) || 0;
+      if (n === 1) return;
+      // Zero inventory renders nowhere VACUOUSLY — nothing is hidden. The live tool
+      // still emits drained retired counts keys at 0 (kept-while-nonzero applies to the
+      // descriptor list, not to the keys), so an unclaimed key holding nothing must not
+      // paint a permanent false defect on a healthy snapshot. A DOUBLE claim is
+      // STRUCTURAL — the same inventory wired twice — and stays a defect at any count,
+      // frozen-legacy keys included: two descriptors both drawing `openIssues` would
+      // render the open-issue population as two state series, which no exception covers.
+      if (n === 0 && (!held || legacy)) return;
+      defects.push(
+        name + " (" + held + " held) " +
+          (n === 0
+            ? "is claimed by no descriptor — its inventory renders nowhere"
+            : "is claimed by " + n + " descriptors — its inventory renders " + n + " times"),
+      );
+    };
+    if (hasLanes) {
+      for (const lane of Object.keys(hq.lanes)) {
+        const cells = hq.lanes[lane];
+        if (!cells || typeof cells !== "object") continue;
+        for (const state of Object.keys(cells)) {
+          const cell = cells[state];
+          // What the cell HOLDS is the larger of its stated count and the list it
+          // actually carries: a cell whose `count` was dropped or arrived non-numeric
+          // still holds every PR in `prs`, and scoring that 0 would let the zero-held
+          // carve-out swallow real stranded inventory. This is the one place the sweep
+          // has the list in hand, so it uses it.
+          const held = cell && typeof cell === "object"
+            ? Math.max(Number(cell.count) || 0, Array.isArray(cell.prs) ? cell.prs.length : 0)
+            : 0;
+          misclaimed(laneId(lane, state), 'lanes["' + lane + '"]["' + state + '"]', held);
+        }
+      }
+    }
+    // The FROZEN-LEGACY exception the ratified contract names (issue-pr-cron#130,
+    // 2026-08-06 clarification) — the ONLY counts keys allowed to go unclaimed:
+    //   - non-state metrics: population/rollup numbers, not inboxes anyone acts on
+    //     (`totalProducerPrs`, `openIssues` — the band above draws it — and
+    //     `archivedRepoPrs`);
+    //   - `closeCandidateIssues`: the legacy duplicate of inventory the two
+    //     close-candidate descriptors already claim.
+    // Any OTHER unclaimed counts key is state-shaped inventory rendering nowhere.
+    const LEGACY_UNCLAIMED = new Set([
+      "totalProducerPrs",
+      "openIssues",
+      "archivedRepoPrs",
+      "closeCandidateIssues",
+    ]);
+    for (const k of Object.keys(c)) {
+      misclaimed(countsId(k), 'counts["' + k + '"]', Number(c[k]) || 0, LEGACY_UNCLAIMED.has(k));
+    }
+    for (const [k, n] of itemClaims) {
+      if (n < 2) continue;
+      defects.push(
+        'the top-level array "' + k + '" is named by ' + n +
+          " descriptors — their boxes open onto the same list",
+      );
+    }
+    if (defects.length) {
+      const dbox = el("div", "fsm-defect");
+      dbox.append(el(
+        "div",
+        "fd-h",
+        "Snapshot defect — the tool's stateDescriptors do not cover its own occupancy. Fix the tool's emit; nothing here is ignored:",
+      ));
+      for (const t of defects) dbox.append(el("div", "fd-li", t));
+      grid.append(dbox);
+    }
+  } else if (hasLanes) {
     OWNERS.forEach((O) => {
       const g = el("div", "fsm-grid");
       let ownerTotal = 0;
@@ -930,7 +1274,7 @@ function renderFsm(hq, history) {
       grid.append(lane);
     });
   } else {
-    // Backward-compat: an older human-queue.json with no `lanes` — render the 6 states
+    // Backward-compat: an older human-queue.json with no `lanes` — render the 5 states
     // the legacy `counts` keys carry (all human-owned under the actor mapping) from
     // `counts`, so the panel never blanks.
     // `items` names a top-level array as in STATES; an entry with none lists from the flat
@@ -940,7 +1284,6 @@ function renderFsm(hq, history) {
       { key: "ai:ready", label: "ai:ready", n: c.ready, hist: "ready", act: "merge", kind: "flow" },
       { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
       { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, items: "closeCandidateIssues", issue: true, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
-      { key: "ai:blocked-deploy", label: "ai:blocked-deploy", n: c.blockedDeploy, hist: "blockedDeploy", act: "resolve deploy", kind: "blk" },
       { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, hist: "blockedOn", act: "merge dependency", kind: "blk" },
     ];
     const g = el("div", "fsm-grid");
@@ -1030,6 +1373,13 @@ function renderFsm(hq, history) {
   );
   if (hq.sample) note.append(" ", el("b", null, "(sample data — live once issue-pr-cron#41 lands)"));
   note.append(".");
+  if (descriptors) {
+    note.append(
+      " The machine's shape above is the tool's own ",
+      el("code", null, "stateDescriptors"),
+      " — states appear, move between actors, and retire on the tool's say-so, with no edit to this page.",
+    );
+  }
   if (hist.length) {
     note.append(
       " Each state carries an inventory sparkline (trailing 4 weeks); a ",
