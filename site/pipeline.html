@@ -162,7 +162,10 @@
   .fsm-state.rising .fsm-spark .sd, .fsm-state.lead .fsm-spark .sd { fill: var(--crit); }
   .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
   .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-  .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  /* A box's label comes off the snapshot too (a descriptor's `label`/`key`), so it wraps
+     inside its box instead of overflowing the grid. */
+  .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px;
+                   overflow-wrap: anywhere; word-break: break-word; }
   .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
   .fsm-list { margin: 18px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
   .fsm-list.open { display: block; }
@@ -186,7 +189,10 @@
   .fsm-defect { border: 1.5px solid var(--crit); border-radius: 11px; padding: 12px 14px;
                 margin: 12px 0 4px; color: var(--crit); font-size: 13px; line-height: 1.5; }
   .fsm-defect .fd-h { font-weight: 650; }
-  .fsm-defect .fd-li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; margin-top: 4px; }
+  /* The band quotes UNTRUSTED snapshot strings (state keys, lane names, counts keys), so
+     one long unbroken token must wrap rather than push the panel sideways. */
+  .fsm-defect .fd-li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; margin-top: 4px;
+                       overflow-wrap: anywhere; word-break: break-word; }
   .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
   .fsm-note a, .fsm-note code { color: var(--ink-3); }
   .fsm-lane { margin: 14px 0 2px; }
@@ -1005,7 +1011,14 @@ function renderFsm(hq, history) {
     // count with no list (or no count at all). All are the tool's defects, and all
     // surface in the defect band.
     const claims = new Map();
+    const itemClaims = new Map();
     const claim = (id) => claims.set(id, (claims.get(id) || 0) + 1);
+    // The occupancy a lane-sourced descriptor RENDERS, resolved once so the sweep's
+    // cross-check below and the render loop can never read it two different ways.
+    const laneCount = (p) => {
+      const cell = laneState(p.source.lane, p.key);
+      return cell ? Number(cell.count) || 0 : 0;
+    };
     // Claim ids are JSON-encoded so no lane/state/counts spelling can collide or forge
     // another key's id.
     const laneId = (lane, state) => "lane " + JSON.stringify([lane, state]);
@@ -1043,6 +1056,35 @@ function renderFsm(hq, history) {
       if (p.hist) read.add(p.hist);
       for (const k of p.histFold) read.add(k);
       for (const k of read) claim(countsId(k));
+      // The top-level array a counts-source descriptor lists from is claimed too. It is
+      // not swept for absence (an array with no `counts` entry is not occupancy this page
+      // knows how to count), but two descriptors naming the SAME array is a defect the
+      // other checks cannot see: their keys differ, their counts keys may differ, and yet
+      // both boxes open onto one list — a count that opens onto something that is not its
+      // own list, which is #141 again.
+      if (p.source.items) itemClaims.set(p.source.items, (itemClaims.get(p.source.items) || 0) + 1);
+      // ---- The page holds TWO numbers for a lane state and is the only place they meet.
+      // The lane cell is the OCCUPANCY it renders; `hist` names the `counts` key its
+      // SERIES is drawn from — and the tool computes those two ways (issue-pr-cron#228:
+      // `counts.ready` off the label bucket, the lane cell off `classify_lane`). When
+      // they disagree, the box draws one number under a sparkline sitting at the other,
+      // and every claim check passes because each key is claimed exactly once. Only a
+      // comparison catches it, so the page makes the disagreement VISIBLE — it does not
+      // guess which number is right, and it does not drop the claim (every lane state's
+      // `hist` mirrors a counts key, so dropping it would paint false defects across a
+      // healthy snapshot). States that agree stay silent.
+      if (p.source.lane && p.hist && Object.prototype.hasOwnProperty.call(c, p.hist)) {
+        const shown = laneCount(p);
+        const mirrored = Number(c[p.hist]) || 0;
+        if (shown !== mirrored) {
+          defects.push(
+            'state "' + p.key + '" is counted two ways and the snapshot disagrees with itself: ' +
+              'the rendered occupancy lanes["' + p.source.lane + '"]["' + p.key + '"] holds ' + shown +
+              ', while counts["' + p.hist + '"] — the key this box\'s series is drawn from — says ' + mirrored +
+              '. The box renders ' + shown + '; fix the tool\'s emit (issue-pr-cron#228)',
+          );
+        }
+      }
     }
 
     OWNERS.forEach((O) => {
@@ -1055,7 +1097,7 @@ function renderFsm(hq, history) {
         let count;
         if (p.source.lane) {
           const cell = laneState(p.source.lane, p.key);
-          count = cell ? Number(cell.count) || 0 : 0;
+          count = laneCount(p);
           register(p.key, cell && cell.prs, false, count);
         } else {
           // Registration is UNCONDITIONAL on both branches (#141): a count whose list
@@ -1079,16 +1121,19 @@ function renderFsm(hq, history) {
       grid.append(lane);
     });
 
-    // The conservation sweep, over the snapshot's own occupancy keys.
-    const misclaimed = (id, name, held) => {
+    // The conservation sweep, over the snapshot's own occupancy keys. `legacy` marks a
+    // key the ratified contract lets go UNCLAIMED — it never licenses a double claim.
+    const misclaimed = (id, name, held, legacy) => {
       const n = claims.get(id) || 0;
       if (n === 1) return;
       // Zero inventory renders nowhere VACUOUSLY — nothing is hidden. The live tool
       // still emits drained retired counts keys at 0 (kept-while-nonzero applies to the
       // descriptor list, not to the keys), so an unclaimed key holding nothing must not
       // paint a permanent false defect on a healthy snapshot. A DOUBLE claim is
-      // STRUCTURAL — the same inventory wired twice — and stays a defect at any count.
-      if (n === 0 && !held) return;
+      // STRUCTURAL — the same inventory wired twice — and stays a defect at any count,
+      // frozen-legacy keys included: two descriptors both drawing `openIssues` would
+      // render the open-issue population as two state series, which no exception covers.
+      if (n === 0 && (!held || legacy)) return;
       defects.push(
         name + " (" + held + " held) " +
           (n === 0
@@ -1102,7 +1147,14 @@ function renderFsm(hq, history) {
         if (!cells || typeof cells !== "object") continue;
         for (const state of Object.keys(cells)) {
           const cell = cells[state];
-          const held = cell && typeof cell === "object" ? Number(cell.count) || 0 : 0;
+          // What the cell HOLDS is the larger of its stated count and the list it
+          // actually carries: a cell whose `count` was dropped or arrived non-numeric
+          // still holds every PR in `prs`, and scoring that 0 would let the zero-held
+          // carve-out swallow real stranded inventory. This is the one place the sweep
+          // has the list in hand, so it uses it.
+          const held = cell && typeof cell === "object"
+            ? Math.max(Number(cell.count) || 0, Array.isArray(cell.prs) ? cell.prs.length : 0)
+            : 0;
           misclaimed(laneId(lane, state), 'lanes["' + lane + '"]["' + state + '"]', held);
         }
       }
@@ -1122,8 +1174,14 @@ function renderFsm(hq, history) {
       "closeCandidateIssues",
     ]);
     for (const k of Object.keys(c)) {
-      if (LEGACY_UNCLAIMED.has(k)) continue;
-      misclaimed(countsId(k), 'counts["' + k + '"]', Number(c[k]) || 0);
+      misclaimed(countsId(k), 'counts["' + k + '"]', Number(c[k]) || 0, LEGACY_UNCLAIMED.has(k));
+    }
+    for (const [k, n] of itemClaims) {
+      if (n < 2) continue;
+      defects.push(
+        'the top-level array "' + k + '" is named by ' + n +
+          " descriptors — their boxes open onto the same list",
+      );
     }
     if (defects.length) {
       const dbox = el("div", "fsm-defect");

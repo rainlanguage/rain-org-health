@@ -3128,9 +3128,12 @@ Deno.test("pipeline FSM: a malformed item renders as a malformed row, taking no 
 function descHq() {
   return {
     counts: {
-      // Decoy mirrors for the lane states: the lane CELL is the declared source.
-      ready: 99,
-      blockedOn: 99,
+      // The lane states' `hist` mirrors, AGREEING with their cells — a self-consistent
+      // snapshot. A mirror that contradicts its cell is itself a reported defect now
+      // (the cross-check), so the wrong-source read is discriminated there rather than
+      // by a decoy that would make every fixture using descHq render a defect band.
+      ready: 5,
+      blockedOn: 3,
       uncoveredIssues: 4,
       leaks: 2,
     },
@@ -3207,7 +3210,7 @@ Deno.test("pipeline FSM: stateDescriptors drive the machine — owner grouping, 
   assert(vetter.title.endsWith("3"), `the vetter total is the cell's count: ${vetter.title}`);
   assert(
     collect(byT("ai:ready"), "sc")[0].textContent === "5",
-    `ready reads its lane cell, not the 99 decoy mirror: ${collect(byT("ai:ready"), "sc")[0].textContent}`,
+    `ready reads its lane cell: ${collect(byT("ai:ready"), "sc")[0].textContent}`,
   );
   assert(
     collect(byT("uncoveredIssues"), "sc")[0].textContent === "4",
@@ -3621,6 +3624,195 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
   assert(
     text.includes("blockedOn") && text.includes("17 held") && text.includes("renders nowhere"),
     `it names the key and its held inventory: ${text}`,
+  );
+});
+
+// The page holds TWO numbers for a lane state — the lane cell it RENDERS and the `counts`
+// key its SERIES is drawn from — and the tool computes them two ways
+// (issue-pr-cron#228). Every claim check passes when they disagree (each key is claimed
+// exactly once), so only a comparison catches it: the box would draw one number under a
+// sparkline sitting at the other, silently. The live witness the moment the producer side
+// lands: `counts.ready` is 23 off the label bucket while the `vetter-verdicts` cell is
+// ABSENT (all 23 are un-vetted at head), so the box renders 0, dimmed, under a line at 23.
+Deno.test("pipeline FSM: a lane state whose counts mirror contradicts its rendered cell is a loud defect naming both numbers", () => {
+  const box = fsmBox({
+    // The label bucket says 23; classify_lane routed all of them to un-vetted, so the
+    // vetter-verdicts cell for ai:ready is absent entirely.
+    counts: { ready: 23, unvetted: 24 },
+    lanes: { "vet-lifecycle": { "un-vetted": { count: 24, prs: [] } } },
+    stateDescriptors: [
+      { key: "un-vetted", owner: "vetter", act: "vet at current head", kind: "flow", hist: "unvetted", histFold: [], occupancy: { lane: "vet-lifecycle" } },
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  });
+  // The box renders its DECLARED occupancy — the cell, not the mirror.
+  const ready = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:ready");
+  assert(
+    collect(ready, "sc")[0].textContent === "0",
+    `the box renders the lane cell, absent ⇒ 0: ${collect(ready, "sc")[0].textContent}`,
+  );
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the disagreement surfaces");
+  const text = textOf(band);
+  assert(text.includes('counts["ready"]') && text.includes("23"), `it names the mirror and its number: ${text}`);
+  assert(
+    text.includes('lanes["vetter-verdicts"]["ai:ready"]') && text.includes("holds 0"),
+    `it names the rendered occupancy and its number: ${text}`,
+  );
+  assert(text.includes("renders 0"), `it says which number is on screen: ${text}`);
+  assert(
+    text.includes("disagrees with itself"),
+    `it reports a snapshot contradiction, not a guess at the right number: ${text}`,
+  );
+  // The agreeing state says nothing.
+  assert(
+    !text.includes("un-vetted"),
+    `a state whose two numbers agree stays silent: ${text}`,
+  );
+  // And the claim is KEPT: no "unclaimed counts key" defect rides along.
+  assert(!text.includes("renders nowhere"), `the mirror is still claimed: ${text}`);
+});
+
+Deno.test("pipeline FSM: lane states whose counts mirror agrees draw no divergence defect", () => {
+  // descHq's mirrors agree with their cells (ready 5, blockedOn 3), and ai:design has a
+  // sparse-absent cell with no mirror at all — neither shape may report.
+  assert(
+    collect(fsmBox(descHq()), "fsm-defect").length === 0,
+    "a self-consistent snapshot stays silent",
+  );
+});
+
+// The frozen-legacy exception licenses a key going UNCLAIMED; it never licenses the same
+// inventory being wired twice. Two descriptors both drawing `openIssues` would render the
+// open-issue population as two state series.
+Deno.test("pipeline FSM: a frozen-legacy counts key is exempt from unclaimed, never from a DOUBLE claim", () => {
+  const box = fsmBox({
+    counts: { openIssues: 767, ready: 0 },
+    lanes: {},
+    stateDescriptors: [
+      { key: "a", owner: "producer", act: "x", kind: "flow", hist: "openIssues", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      { key: "b", owner: "vetter", act: "y", kind: "flow", hist: "openIssues", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+    ],
+  });
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the double claim on a frozen-legacy key surfaces");
+  const text = textOf(band);
+  assert(
+    text.includes('counts["openIssues"]') && text.includes("2 descriptors"),
+    `it names the key and the double claim: ${text}`,
+  );
+});
+
+// Two descriptors naming the same top-level array: distinct keys, possibly distinct
+// counts keys, and yet both boxes open onto ONE list — #141 by another route, invisible
+// to the lane and counts checks.
+Deno.test("pipeline FSM: two descriptors naming the same items array is a defect", () => {
+  const box = fsmBox({
+    counts: { leaks: 2, alsoLeaks: 2 },
+    lanes: {},
+    leaks: fcItems("leak", 2),
+    stateDescriptors: [
+      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "leaks", histFold: [], occupancy: { counts: "leaks", items: "leaks" } },
+      { key: "leak-copy", owner: "producer", act: "model it", kind: "blk", hist: "alsoLeaks", histFold: [], occupancy: { counts: "alsoLeaks", items: "leaks" } },
+    ],
+  });
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the shared list surfaces");
+  const text = textOf(band);
+  assert(
+    text.includes('"leaks" is named by 2 descriptors') && text.includes("open onto the same list"),
+    `it names the array and the collision: ${text}`,
+  );
+  // One array named once is not a defect.
+  assert(
+    collect(fsmBox(descHq()), "fsm-defect").length === 0,
+    "distinct arrays stay silent",
+  );
+});
+
+// The zero-held carve-out must not swallow a cell that HOLDS PRs behind a dropped or
+// non-numeric count — the one place the sweep has the list in hand to check.
+Deno.test("pipeline FSM: an unclaimed cell holding PRs with no usable count still screams", () => {
+  for (const [what, cell] of [
+    ["absent count", { prs: fcItems("stranded", 17) }],
+    ["junk count", { count: "many", prs: fcItems("stranded", 17) }],
+  ]) {
+    const box = fsmBox({
+      counts: { ready: 1 },
+      lanes: {
+        "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } },
+        "producer-blocked": { "ai:blocked-on": cell },
+      },
+      stateDescriptors: [
+        { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      ],
+    });
+    const band = collect(box, "fsm-defect")[0];
+    assert(band, `the stranded cell surfaces (${what})`);
+    assert(
+      textOf(band).includes("17 held"),
+      `the list it carries is what it holds (${what}): ${textOf(band)}`,
+    );
+  }
+});
+
+// Prototype-shaped strings off the untrusted snapshot must be ordinary data everywhere
+// they are used as a lookup or a set member. The code is written to be immune (Map/Set,
+// hasOwnProperty.call, Array.isArray); this pins it so a refactor to plain objects —
+// where `__proto__` and `constructor` are not ordinary keys — fails loudly instead of
+// silently mis-claiming, mis-rendering or throwing.
+Deno.test("pipeline FSM: prototype-shaped keys, counts, items and lane names are ordinary data", () => {
+  // Built through JSON.parse — the only way to get a genuine OWN `__proto__` key (an
+  // object literal's `__proto__:` sets the prototype instead), and exactly how the page
+  // receives the snapshot: `fetch(...).then((r) => r.json())`.
+  const box = fsmBox(JSON.parse(JSON.stringify({
+    counts: { PROTO: 3, constructor: 2, toString: 0 },
+    lanes: { constructor: { PROTO: { count: 4, prs: fcItems("proto", 4) } } },
+    PROTO: fcItems("protoitems", 3),
+    stateDescriptors: [
+      // A lane-sourced state whose key AND lane are prototype-shaped.
+      { key: "PROTO", owner: "vetter", act: "vet", kind: "flow", hist: "", histFold: [], occupancy: { lane: "constructor" } },
+      // A counts-sourced state whose counts key and items array are prototype-shaped.
+      { key: "protoCounts", owner: "producer", act: "open a PR", kind: "flow", hist: "constructor", histFold: [], occupancy: { counts: "constructor", items: "PROTO", itemsAreIssues: true } },
+    ],
+  }).replace(/PROTO/g, "__proto__")));
+  const keys = box.querySelectorAll("[data-t]").map((b) => b.dataset.t);
+  assert(
+    JSON.stringify(keys) === JSON.stringify(["protoCounts", "__proto__"]),
+    `both states render, keyed by their own strings: ${JSON.stringify(keys)}`,
+  );
+  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  assert(
+    collect(byT("__proto__"), "sc")[0].textContent === "4",
+    `a prototype-shaped lane+key resolves its own cell: ${collect(byT("__proto__"), "sc")[0].textContent}`,
+  );
+  assert(
+    collect(byT("protoCounts"), "sc")[0].textContent === "2",
+    `a prototype-shaped counts key resolves its own number: ${collect(byT("protoCounts"), "sc")[0].textContent}`,
+  );
+  // Each opens onto its OWN list — registration is keyed by these strings too.
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  byT("__proto__").click();
+  assert(textOf(detail).includes("proto 1"), `the lane cell's own list: ${textOf(detail)}`);
+  byT("__proto__").click();
+  byT("protoCounts").click();
+  assert(textOf(detail).includes("protoitems 1"), `the named array's own list: ${textOf(detail)}`);
+  // The sweep treats them as data: `counts.__proto__` (3 held) is claimed by nobody and
+  // reports; the claimed `constructor` does not; `toString` holds 0 and is skipped.
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the unclaimed prototype-shaped counts key reports");
+  const rows = collect(band, "fd-li").map((r) => r.textContent);
+  assert(
+    rows.some((r) => r.includes('counts["__proto__"]') && r.includes("3 held")),
+    `it names the unclaimed prototype-shaped key: ${JSON.stringify(rows)}`,
+  );
+  assert(
+    !rows.some((r) => r.includes('counts["constructor"]')),
+    `a claimed prototype-shaped key is not reported: ${JSON.stringify(rows)}`,
+  );
+  assert(
+    !rows.some((r) => r.includes('counts["toString"]')),
+    `a zero-held prototype-shaped key is skipped like any other: ${JSON.stringify(rows)}`,
   );
 });
 
