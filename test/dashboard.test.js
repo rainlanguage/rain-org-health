@@ -3627,6 +3627,58 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
   );
 });
 
+// The same class one level down: a lane cell carries its own two numbers — the `count` it
+// STATES and the `prs` it HOLDS. A claimed cell leaves the sweep early (n === 1), so a
+// broken or absent count over a populated list would render 0 while the click expanded
+// onto real PRs, in silence.
+Deno.test("pipeline FSM: a lane cell whose count disagrees with its prs is reported, and the box renders the larger", () => {
+  for (const [what, count] of [["junk count", "many"], ["absent count", undefined]]) {
+    const cell = { prs: fcItems("stranded", 17) };
+    if (count !== undefined) cell.count = count;
+    const box = fsmBox({
+      counts: {},
+      lanes: { "vet-lifecycle": { "ai:blocked-on": cell } },
+      stateDescriptors: [
+        { key: "ai:blocked-on", owner: "vetter", act: "clears when deps merge/close", kind: "blk", hist: "", histFold: [], occupancy: { lane: "vet-lifecycle" } },
+      ],
+    });
+    const b = collect(box, "fsm-state").find((x) => x.dataset.t === "ai:blocked-on");
+    assert(b, `the box renders (${what})`);
+    // The box shows the larger, so the list cannot hide inventory behind a broken count.
+    assert(
+      collect(b, "sc")[0].textContent === "17",
+      `the box renders the PRs it holds, not 0 (${what}): ${collect(b, "sc")[0].textContent}`,
+    );
+    // …and the count-vs-rows invariant holds: the number on the box is the number of rows.
+    const detail = box.querySelectorAll("#fsmdetail")[0];
+    b.click();
+    assert(
+      collect(detail, "li").length === 17,
+      `the box's number equals the rows it expands to (${what}): ${collect(detail, "li").length}`,
+    );
+    const band = collect(box, "fsm-defect")[0];
+    assert(band, `the disagreement is reported (${what})`);
+    const text = textOf(band);
+    assert(
+      text.includes("states count 0") && text.includes("carries 17 PRs") && text.includes("renders 17"),
+      `it names both numbers and which was rendered (${what}): ${text}`,
+    );
+  }
+});
+
+Deno.test("pipeline FSM: a lane cell whose count agrees with its prs reports nothing", () => {
+  const box = fsmBox({
+    counts: {},
+    lanes: { "vet-lifecycle": { "ai:blocked-on": { count: 3, prs: fcItems("blocked", 3) } } },
+    stateDescriptors: [
+      { key: "ai:blocked-on", owner: "vetter", act: "clears when deps merge/close", kind: "blk", hist: "", histFold: [], occupancy: { lane: "vet-lifecycle" } },
+    ],
+  });
+  assert(collect(box, "fsm-defect").length === 0, "an agreeing cell draws no band");
+  const b = collect(box, "fsm-state")[0];
+  assert(collect(b, "sc")[0].textContent === "3", "and renders its stated count");
+});
+
 // The page holds TWO numbers for a lane state — the lane cell it RENDERS and the `counts`
 // key its SERIES is drawn from — and the tool computes them two ways
 // (issue-pr-cron#228). Every claim check passes when they disagree (each key is claimed

@@ -1017,7 +1017,16 @@ function renderFsm(hq, history) {
     // cross-check below and the render loop can never read it two different ways.
     const laneCount = (p) => {
       const cell = laneState(p.source.lane, p.key);
-      return cell ? Number(cell.count) || 0 : 0;
+      if (!cell) return 0;
+      // A cell carries its own two numbers: the `count` it STATES and the `prs` it
+      // actually holds. `Number(cell.count) || 0` cannot tell a missing or non-numeric
+      // count from a real zero, so a broken count over a populated list would render 0
+      // while the click expanded onto PRs. Render the LARGER: a count that arrives
+      // broken must never hide inventory the list proves is there, and the box must
+      // agree with what it opens onto. The disagreement itself is reported below.
+      const stated = Number(cell.count) || 0;
+      const listed = Array.isArray(cell.prs) ? cell.prs.length : 0;
+      return Math.max(stated, listed);
     };
     // Claim ids are JSON-encoded so no lane/state/counts spelling can collide or forge
     // another key's id.
@@ -1073,6 +1082,24 @@ function renderFsm(hq, history) {
       // guess which number is right, and it does not drop the claim (every lane state's
       // `hist` mirrors a counts key, so dropping it would paint false defects across a
       // healthy snapshot). States that agree stay silent.
+      // The SAME class one level down: a cell's stated `count` against the `prs` it
+      // carries. The sweep cannot catch this — a claimed cell leaves `misclaimed` at
+      // n === 1 — so the box would read one number while its click-through showed
+      // another, silently. Only checked when the list is non-empty: a count over an
+      // EMPTY list is the missing-list case, which detailBody already reports at the
+      // click ("the list is missing, not empty") rather than as a snapshot defect.
+      if (p.source.lane) {
+        const cell = laneState(p.source.lane, p.key);
+        const stated = cell ? Number(cell.count) || 0 : 0;
+        const listed = cell && Array.isArray(cell.prs) ? cell.prs.length : 0;
+        if (listed > 0 && stated !== listed) {
+          defects.push(
+            'lanes["' + p.source.lane + '"]["' + p.key + '"] states count ' + stated +
+              " but carries " + listed + " PRs — the box renders " + Math.max(stated, listed) +
+              ", the larger, so a broken count cannot hide inventory the list proves is there",
+          );
+        }
+      }
       if (p.source.lane && p.hist && Object.prototype.hasOwnProperty.call(c, p.hist)) {
         const shown = laneCount(p);
         const mirrored = Number(c[p.hist]) || 0;
