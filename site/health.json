@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-07T15:12:00Z",
+  "generatedAt": "2026-08-07T16:11:12Z",
   "auditGraph": {
     "nodes": [
       {
@@ -5664,17 +5664,17 @@
       "latestTag": "sol-v0.1.29",
       "latestTagIso": "2026-07-24T13:46:43Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4271,
+      "sourceLocChangedSinceAudit": 4289,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3874,
+      "sourceLocAddedSinceAudit": 3892,
       "sourceLocRemovedSinceAudit": 397,
-      "filesChangedSinceAudit": 76,
-      "commitsSinceAudit": 344,
+      "filesChangedSinceAudit": 77,
+      "commitsSinceAudit": 349,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 3418,
-      "commentLocRemovedSinceAudit": 255,
-      "codeLocAddedSinceAudit": 3260,
-      "codeLocRemovedSinceAudit": 372,
+      "commentLocAddedSinceAudit": 3472,
+      "commentLocRemovedSinceAudit": 256,
+      "codeLocAddedSinceAudit": 3273,
+      "codeLocRemovedSinceAudit": 374,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
       "daysSinceAudit": 79
@@ -7012,7 +7012,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 130,
+      "testFiles": 131,
       "sourcesUnparsed": 0,
       "untested": []
     },
