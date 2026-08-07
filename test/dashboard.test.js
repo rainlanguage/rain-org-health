@@ -3393,14 +3393,21 @@ Deno.test("pipeline FSM: a counts key no descriptor claims is a defect; a bare t
   );
 });
 
+// Two DISTINCT descriptors reading one counts key: the same inventory wired into two
+// series, so it renders twice. Distinct keys are what makes this the double-claim defect
+// rather than the duplicate-key one — a lane claim id embeds the claiming state's own
+// key, so two descriptors can only collide on a lane id by REPEATING a key, which the
+// duplicate guard catches first and more specifically. The counts side has no such
+// structural protection: the id is the counts key alone.
 Deno.test("pipeline FSM: occupancy claimed by TWO descriptors is a defect too — exactly one claims each key", () => {
   const hq = descHq();
   hq.stateDescriptors.push({
-    key: "ai:ready",
+    key: "ai:ready-mirror",
     owner: "producer",
     act: "merge again",
     kind: "flow",
-    hist: "",
+    // The SAME series `ai:ready` already draws.
+    hist: "ready",
     histFold: [],
     occupancy: { lane: "vetter-verdicts" },
   });
@@ -3409,8 +3416,12 @@ Deno.test("pipeline FSM: occupancy claimed by TWO descriptors is a defect too �
   assert(band, "a double claim surfaces");
   const text = textOf(band);
   assert(
-    text.includes("2 descriptors") && text.includes("renders 2 times"),
-    `it says the inventory double-renders: ${text}`,
+    text.includes('counts["ready"]') && text.includes("2 descriptors") && text.includes("renders 2 times"),
+    `it names the key and says the inventory double-renders: ${text}`,
+  );
+  assert(
+    !text.includes("repeats the key"),
+    `distinct keys read as a double CLAIM, not a duplicate key: ${text}`,
   );
 });
 
@@ -3613,6 +3624,60 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
   );
 });
 
+// A state key is the panel's IDENTITY for a state — the box's `data-t` and the
+// register/itemsFor map key the click-to-expand reads — so two descriptors sharing one
+// key let the second's registration OVERWRITE the first's, and the first box opens onto
+// the second's list. #141's exact failure, and neither claim check sees it: with
+// different occupancy sources the two claims are different ids, so both read as singly
+// claimed. The repeat therefore renders no state and is reported, first occurrence wins.
+Deno.test("pipeline FSM: a repeated descriptor key renders one box and is reported, with the loser's occupancy named unclaimed", () => {
+  const box = fsmBox({
+    counts: { ready: 5, readyDupe: 9 },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 5, prs: fcItems("first", 5) } } },
+    readyDupe: fcItems("second", 9),
+    stateDescriptors: [
+      // FIRST wins: array order is render order.
+      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      // Same key, a DIFFERENT occupancy source — so the two claims are different ids and
+      // the sweep alone would call both singly claimed.
+      { key: "ai:ready", owner: "producer", act: "open a PR", kind: "flow", hist: "readyDupe", histFold: [], occupancy: { counts: "readyDupe", items: "readyDupe", itemsAreIssues: true } },
+    ],
+  });
+  const boxes = box.querySelectorAll("[data-t]").filter((b) => b.dataset.t === "ai:ready");
+  assert(boxes.length === 1, `exactly one box carries the key: ${boxes.length}`);
+  assert(
+    collect(boxes[0], "sc")[0].textContent === "5",
+    `the FIRST descriptor's occupancy renders: ${collect(boxes[0], "sc")[0].textContent}`,
+  );
+  // Its click-through is its OWN list, not the repeat's — the overwrite this guard exists
+  // to prevent.
+  const detail = box.querySelectorAll("#fsmdetail")[0];
+  boxes[0].click();
+  assert(collect(detail, "li").length === 5, `it opens onto its own 5 rows: ${collect(detail, "li").length}`);
+  assert(textOf(detail).includes("first 1"), `and onto its own items: ${textOf(detail)}`);
+  assert(!textOf(detail).includes("second 1"), "never the repeat's list");
+
+  const band = collect(box, "fsm-defect")[0];
+  assert(band, "the repeat is reported");
+  const rows = collect(band, "fd-li").map((r) => r.textContent);
+  assert(
+    rows.some((r) => r.includes("stateDescriptors[1]") && r.includes('repeats the key "ai:ready"')),
+    `named by index and key: ${JSON.stringify(rows)}`,
+  );
+  // Its claim was never registered, so the occupancy it meant to claim reads unclaimed.
+  assert(
+    rows.some((r) => r.includes("readyDupe") && r.includes("9 held") && r.includes("renders nowhere")),
+    `the loser's occupancy is named unclaimed: ${JSON.stringify(rows)}`,
+  );
+});
+
+Deno.test("pipeline FSM: all-distinct descriptor keys draw no duplicate-key defect", () => {
+  assert(
+    collect(fsmBox(descHq()), "fsm-defect").length === 0,
+    "a conserved, distinctly-keyed snapshot still renders no band",
+  );
+});
+
 // A descriptor also READS its `histFold` keys — that is where its series draws the
 // absorbed retirees' samples from — so those counts keys are claimed by it. The live
 // shape that makes this load-bearing: `ai:reject` folds `humanReject`/`relink` while the
@@ -3720,10 +3785,12 @@ Deno.test("pipeline FSM: zero-held unclaimed occupancy is vacuously conserved; n
     `the nonzero unclaimed cell screams: ${text}`,
   );
 
+  // Two DISTINCT descriptors reading the SAME zero-held counts key — a double claim, not
+  // a duplicate key (which is its own, earlier defect).
   const doubled = base();
   doubled.stateDescriptors.push(
-    { key: "ai:blocked-deploy", owner: "human", act: "resolve deploy", kind: "blk", hist: "blockedDeploy", histFold: [], occupancy: { lane: "producer-blocked" } },
-    { key: "ai:blocked-deploy", owner: "producer", act: "resolve deploy", kind: "blk", hist: "", histFold: [], occupancy: { lane: "producer-blocked" } },
+    { key: "ai:blocked-infra", owner: "human", act: "strip the label", kind: "blk", hist: "blockedInfra", histFold: [], occupancy: { lane: "producer-blocked" } },
+    { key: "ai:blocked-infra-mirror", owner: "producer", act: "strip the label", kind: "blk", hist: "blockedInfra", histFold: [], occupancy: { lane: "producer-blocked" } },
   );
   const band2 = collect(fsmBox(doubled), "fsm-defect")[0];
   assert(band2, "a double claim on a zero-held cell still surfaces");

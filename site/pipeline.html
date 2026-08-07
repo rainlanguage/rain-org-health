@@ -962,14 +962,35 @@ function renderFsm(hq, history) {
     };
     const defects = [];
     const parsed = [];
+    // Keys already taken. A state key is the panel's IDENTITY for a state: the box's
+    // `data-t`, and the `register`/`itemsFor` map key the click-to-expand reads. So two
+    // descriptors sharing one key do not merely duplicate a box — the second's
+    // registration OVERWRITES the first's, and the first box then opens onto the
+    // second's list. That is #141's exact failure (a count that opens onto something
+    // that is not its own list) and neither claim check would catch it: with different
+    // occupancy sources the two claims are different ids, so both read as singly
+    // claimed. So a repeat renders NO state and is REPORTED, exactly like a malformed
+    // entry — and, like a malformed entry, its claim is never registered, so the sweep
+    // additionally names the cell or counts key it meant to claim. FIRST occurrence
+    // wins: array order is render order, so the first is the one the tool put first.
+    const seenKeys = new Set();
     descriptors.forEach((d, i) => {
       const p = readDescriptor(d);
-      if (p) parsed.push(p);
-      else {
+      if (!p) {
         defects.push(
           "stateDescriptors[" + i + "] is malformed — it renders no state, and occupancy it meant to claim reports as unclaimed",
         );
+        return;
       }
+      if (seenKeys.has(p.key)) {
+        defects.push(
+          'stateDescriptors[' + i + '] repeats the key "' + p.key +
+            '" — it renders no state, and occupancy it meant to claim reports as unclaimed',
+        );
+        return;
+      }
+      seenKeys.add(p.key);
+      parsed.push(p);
     });
     // CONSERVATION (the invariant that would have made the blocked-on drift scream
     // instead of hiding 17 PRs), per the ratified contract's scoping
