@@ -5624,6 +5624,10 @@ const isSkipReal = bind("metrics.html", "isSkip", [], []);
 // Bound from the page for the same reason isSkip is: the tests must exercise
 // the real predicate, never a copy that could drift from it.
 const isForcedReal = bind("metrics.html", "isForced", [], []);
+// The two shape-coercing readers behind the tooltip. Bound from the page for
+// the same reason the predicate is: a copy here could drift from what ships.
+const forcedKindsReal = bind("metrics.html", "forcedKinds", [], []);
+const forcedReasonsReal = bind("metrics.html", "forcedReasons", [], []);
 const pmPartitionReal = bind("metrics.html", "pmPartition", ["isSkip"], [
   isSkipReal,
 ]);
@@ -5838,6 +5842,8 @@ function pmTipBox(run, abs) {
       "ttlMin",
       "outcomeWord",
       "isForced",
+      "forcedKinds",
+      "forcedReasons",
     ],
     [
       document,
@@ -5849,6 +5855,8 @@ function pmTipBox(run, abs) {
       d.ttlMin,
       outcomeWordReal,
       isForcedReal,
+      forcedKindsReal,
+      forcedReasonsReal,
     ],
   );
   const box = makeEl("div");
@@ -5889,6 +5897,8 @@ function pmChart(runs, pmMode = "pct", skips = []) {
       "ttlMin",
       "outcomeWord",
       "isForced",
+      "forcedKinds",
+      "forcedReasons",
     ],
     [
       document,
@@ -5900,6 +5910,8 @@ function pmChart(runs, pmMode = "pct", skips = []) {
       d.ttlMin,
       outcomeWordReal,
       isForcedReal,
+      forcedKindsReal,
+      forcedReasonsReal,
     ],
   );
   const pmSkipTip = bind("metrics.html", "pmSkipTip", [
@@ -7009,9 +7021,15 @@ const FORCED_RUN = {
   startupToolCalls: 45,
   numTurns: 60,
   outcome: "ok",
-  forced: "usage-gate",
-  forceReason:
+  // PARALLEL LISTS: index i of `forced` is a stop's kind and index i of
+  // `forceReason` is that stop's own line. A single forced run can walk past
+  // both the kill switch and a gate pause (issue-pr-cron#245 as ruled), which
+  // is why neither is a single value any more.
+  forced: ["disabled", "usage-gate"],
+  forceReason: [
+    "DISABLED flag present",
     "PAUSE: 91% of the weekly budget used (endpoint) — at/over the 90% ceiling",
+  ],
 };
 
 Deno.test("metrics forced: the gate field marks a forced run and nothing else", () => {
@@ -7021,8 +7039,8 @@ Deno.test("metrics forced: the gate field marks a forced run and nothing else", 
   // every row written before the field existed rendering exactly as it did.
   assert(isForcedReal(FORCED_RUN) === true, "the emitter's forced row is forced");
   assert(
-    isForcedReal({ ...FORCED_RUN, forced: "some-future-gate" }) === true,
-    "an unknown gate kind is still a force",
+    isForcedReal({ ...FORCED_RUN, forced: ["some-future-stop"] }) === true,
+    "an unknown stop kind is still a force",
   );
   for (const r of [RUN_SPLIT, RUN_LONG, PARTIAL_BOOT, SKIP_TICK, REAL_SKIP]) {
     assert(
@@ -7098,8 +7116,8 @@ Deno.test("metrics forced: a forced run with no plotted value gets no ring", () 
     role: "producer",
     stage: "boot",
     bootMs: 1200,
-    forced: "usage-gate",
-    forceReason: "PAUSE: 91% of the weekly budget used (endpoint)",
+    forced: ["usage-gate"],
+    forceReason: ["PAUSE: 91% of the weekly budget used (endpoint)"],
   };
   const { runs } = pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, gap)));
   assert(runs.length === 2, "the partial forced run still loads");
@@ -7137,14 +7155,18 @@ Deno.test("metrics forced: the end label clears the ring on a forced last run", 
   );
 });
 
-Deno.test("metrics forced: the tooltip carries the gate's line verbatim", () => {
+Deno.test("metrics forced: the tooltip names EVERY stop, each with its own line", () => {
   const t = textOf(pmTipBox(FORCED_RUN, true));
-  assert(
-    t.includes(FORCED_RUN.forceReason),
-    "the reason must be the gate's own line, verbatim: " + t,
-  );
+  for (const why of FORCED_RUN.forceReason) {
+    assert(
+      t.includes(why),
+      "every stop's own line, verbatim — dropping one hides an override: " + t,
+    );
+  }
   assert(t.includes("forced past"), "and say what it was forced past: " + t);
-  assert(t.includes("usage-gate"), "naming the gate kind: " + t);
+  for (const kind of FORCED_RUN.forced) {
+    assert(t.includes(kind), `naming the stop kind ${kind}: ` + t);
+  }
   // Forcing describes how the run STARTED. The outcome is a separate reading
   // and must still be there, unchanged — otherwise "forced" reads as a verdict.
   assert(t.includes("ok"), "the outcome still renders: " + t);
@@ -7160,13 +7182,60 @@ Deno.test("metrics forced: the tooltip carries the gate's line verbatim", () => 
   );
 });
 
-Deno.test("metrics forced: a gate kind that is not a string still names itself", () => {
+Deno.test("metrics forced: a stop kind that is not a string still names itself", () => {
   // Fail-open on display, like the skip tip's kind line: the row is forced
   // whatever the field's shape, and printing "undefined" (or dropping the line)
   // would hide that.
-  const t = textOf(pmTipBox({ ...FORCED_RUN, forced: true }, true));
+  const t = textOf(pmTipBox({ ...FORCED_RUN, forced: [true, null] }, true));
   assert(t.includes("forced past"), "the line is still drawn: " + t);
   assert(!t.includes("undefined"), "and carries no leak: " + t);
+  assert(!t.includes("null"), "and no null element leaks either: " + t);
+});
+
+Deno.test("metrics forced: a run that overrode NOTHING still says a human started it", () => {
+  // The ordinary forced run once the crons are back: `--force` typed to watch a
+  // run, with nothing in the way. The emitter writes `"forced": []`, and the
+  // row's first job is still to say the schedule did not start it. Rendering
+  // this as an ordinary tick is the corruption the whole field exists to
+  // prevent, so the empty case gets its own words rather than an empty clause.
+  const bare = { ...FORCED_RUN, forced: [], forceReason: [] };
+  assert(isForcedReal(bare) === true, "empty is forced, not unforced");
+  const t = textOf(pmTipBox(bare, true));
+  assert(
+    t.includes("forced"),
+    "the tip still says the run was forced: " + t,
+  );
+  assert(
+    !t.includes("forced past"),
+    "…without claiming it walked past anything: " + t,
+  );
+  assert(!t.includes("undefined"), "no leak: " + t);
+  // And it is still ringed and still counted.
+  const { runs } = pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, bare)));
+  assert(runs.length === 2, "an empty-override forced row is still a run");
+  assert(
+    collect(pmChart(runs, "abs"), "pm-forced").length === 1,
+    "and still carries the ring",
+  );
+});
+
+Deno.test("metrics forced: a legacy single-value row still renders", () => {
+  // The emitter shipped `forced` as a bare string before the kill switch became
+  // overridable (issue-pr-cron#246). No such row reached the live file, but the
+  // page must not be the thing that decides that — a shape it cannot read would
+  // render `undefined` beside a real run.
+  const legacy = {
+    ...FORCED_RUN,
+    forced: "usage-gate",
+    forceReason: "PAUSE: 91% of the weekly budget used (endpoint)",
+  };
+  const t = textOf(pmTipBox(legacy, true));
+  assert(t.includes("forced past usage-gate"), "the kind still reads: " + t);
+  assert(
+    t.includes("PAUSE: 91% of the weekly budget used (endpoint)"),
+    "and its line: " + t,
+  );
+  assert(!t.includes("undefined"), "no leak: " + t);
 });
 
 Deno.test("metrics forced: a file with no forced runs renders exactly as before", () => {
@@ -7191,10 +7260,17 @@ Deno.test("metrics forced: a file with no forced runs renders exactly as before"
 Deno.test("metrics forced caption: counts them, and says they still count", () => {
   const runs = [RUN_SPLIT, FORCED_RUN];
   const t = textOf(pmNoteBox(FORCED_RUN, [], runs));
-  assert(t.includes("1 run was forced"), "the count: " + t);
+  assert(t.includes("1 run was started by hand"), "the count: " + t);
   assert(
     t.includes("counts in every figure"),
     "and the reading that separates it from a skip: " + t,
+  );
+  // The caption no longer names the usage gate, because the gate is no longer
+  // the only stop a force can walk past — the kill switch is one too. Naming
+  // one would mislabel a run that overrode the other.
+  assert(
+    !t.includes("forced past the usage gate"),
+    "the caption must not claim one particular stop: " + t,
   );
 });
 
