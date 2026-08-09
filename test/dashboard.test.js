@@ -4332,6 +4332,120 @@ Deno.test("pipeline FSM: presentable rows list under the design box", () => {
   assert(collect(box, "fsm-defect").length === 0, "a clean split draws no defect band");
 });
 
+Deno.test("pipeline FSM: a malformed presentable falls back to the raw cell, never a fabricated zero inbox", () => {
+  const hq = splitHq();
+  // A number-shaped STRING is the emit fault that matters: `Number()` coercion would turn
+  // it into a real-looking 0 inbox over six labelled PRs, which is the reading the raw
+  // count at least does not fake. `presentable` is the whole gate now, so an unreadable
+  // one degrades the cell to exactly the pre-split rendering.
+  hq.lanes["vetter-verdicts"]["ai:design"].breakdown.presentable = "0";
+  const box = fsmBox(hq);
+  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
+  assert(
+    collect(design, "sc")[0].textContent === "6",
+    `an unreadable split renders the whole cell: ${collect(design, "sc")[0].textContent}`,
+  );
+  design.click();
+  assert(textOf(box).includes("o/design#6"), "and opens onto the whole cell's PRs");
+});
+
+Deno.test("pipeline FSM: a breakdown carrying only presentable still renders the inbox", () => {
+  const hq = splitHq();
+  // `presentable` is the only bucket this page reads, so it is the only one a snapshot has
+  // to carry for the inbox to draw: the withheld vocabulary is /ndd's, and a tool that
+  // stopped emitting it — or emitted a bucket named something else — must not cost the
+  // human inbox its number.
+  hq.lanes["vetter-verdicts"]["ai:design"] = {
+    count: 6,
+    prs: [
+      ...fcItems("design", 4).map((e) => ({ ...e, bucket: "noQuestion" })),
+      ...fcItems("present", 2).map((e) => ({ ...e, bucket: "presentable" })),
+    ],
+    breakdown: { presentable: 2 },
+  };
+  hq.counts.designPresentable = 2;
+  delete hq.counts.designNoQuestion;
+  const box = fsmBox(hq);
+  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
+  assert(collect(design, "sc")[0].textContent === "2", "the inbox draws off the one bucket");
+  design.click();
+  assert(textOf(box).includes("o/present#1"), "and opens onto its rows");
+  assert(collect(box, "fsm-defect").length === 0, "and nothing screams over the absent buckets");
+});
+
+Deno.test("pipeline FSM: a presentable count broken low cannot hide the rows annotated into it", () => {
+  const hq = splitHq();
+  hq.lanes["vetter-verdicts"]["ai:design"] = {
+    count: 6,
+    prs: [
+      ...fcItems("design", 4).map((e) => ({ ...e, bucket: "noQuestion" })),
+      { repo: "o/present", number: 5, title: "present 5", bucket: "presentable" },
+      { repo: "o/present", number: 6, title: "present 6", bucket: "presentable" },
+    ],
+    breakdown: { presentable: 0, noQuestion: 4, draft: 0, unaddressable: 0, fetchErrors: 0 },
+  };
+  hq.counts.designPresentable = 2;
+  hq.counts.designNoQuestion = 4;
+  const box = fsmBox(hq);
+  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
+  // The bucket's stated count says nobody is servable; two rows are annotated into it. The
+  // box renders the larger, so a broken count cannot hide an inbox the list proves is
+  // there — and it opens onto exactly those rows.
+  assert(collect(design, "sc")[0].textContent === "2", "the box renders the larger");
+  design.click();
+  assert(textOf(box).includes("o/present#5"), "and opens onto the annotated rows");
+  const defects = textOf(collect(box, "fsm-defect")[0] || makeEl("div"));
+  assert(
+    defects.includes("breakdown.presentable states 0 but 2"),
+    `the disagreement is named rather than rendered silently: ${defects}`,
+  );
+});
+
+Deno.test("pipeline FSM: the design box's trend is drawn from designPresentable, not the raw label series", () => {
+  const now = Date.parse("2026-08-09T00:00:00Z");
+  const at = (d) => now - d * DAY;
+  const rise = [1, 2, 3, 4, 5, 6, 7, 8];
+  const cell = (presentable, noQuestion) => {
+    const hq = splitHq();
+    hq.lanes["vetter-verdicts"]["ai:design"] = {
+      count: presentable + noQuestion,
+      prs: [
+        ...fcItems("present", presentable).map((e) => ({ ...e, bucket: "presentable" })),
+        ...fcItems("design", noQuestion).map((e) => ({ ...e, bucket: "noQuestion" })),
+      ],
+      breakdown: { presentable, noQuestion, draft: 0, unaddressable: 0, fetchErrors: 0 },
+    };
+    hq.counts.design = presentable + noQuestion;
+    hq.counts.designPresentable = presentable;
+    hq.counts.designNoQuestion = noQuestion;
+    return hq;
+  };
+  const designOf = (box) => collect(box, "fsm-state").find((b) => b.dataset.t === "ai:design");
+  // The raw label total climbs 9→16 while the half the box draws sits at 0: every new PR
+  // is withheld. A rising border here would announce a bottleneck in a queue no human
+  // command serves — the exact claim issue-pr-cron#240 removed from this box.
+  const withheldClimb = rise.map((n, i) => ({
+    t: at(7 - i),
+    counts: { design: n + 8, designPresentable: 0, designNoQuestion: n + 8, ready: 5, leaks: 2 },
+  }));
+  assert(
+    !designOf(fsmBox(cell(0, 16), withheldClimb)).classList.contains("rising"),
+    "a climbing withheld pile is not this box's trend",
+  );
+  // The same shape the other way round: the presentable half climbs 1→8 under a label
+  // total that never moves, and the box flags the bottleneck it does own.
+  const presentableClimb = rise.map((n, i) => ({
+    t: at(7 - i),
+    counts: { design: 16, designPresentable: n, designNoQuestion: 16 - n, ready: 5, leaks: 2 },
+  }));
+  const flagged = designOf(fsmBox(cell(8, 8), presentableClimb));
+  assert(flagged.classList.contains("rising"), "a filling /ndd inbox is");
+  assert(
+    (flagged.getAttribute("aria-label") || "").includes("rising"),
+    `and says so in words: ${flagged.getAttribute("aria-label")}`,
+  );
+});
+
 Deno.test("pipeline FSM: a split whose counts mirror disagrees is a loud defect naming both numbers", () => {
   const hq = splitHq();
   // The series key says 3; the breakdown the box renders says 0. The box draws the
