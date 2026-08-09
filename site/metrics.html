@@ -135,6 +135,8 @@
   .pm-legend .sw.ttl { border-top: 1.5px dashed var(--ink-2); }
   /* The skip key mirrors the mark itself: a short vertical tick, not a line. */
   .pm-legend .sw.skip { width: 0; height: 10px; border-top: 0; border-left: 1.5px solid var(--ink-3); }
+  /* …and the forced key mirrors its mark too: a hollow ring, not a line. */
+  .pm-legend .sw.forced { width: 9px; height: 9px; border: 1.25px solid var(--ink-3); border-radius: 50%; }
   .pm-line.deg { stroke: var(--crit); }
   .pm-dot { fill: var(--ink); }
   .pm-dot.deg { fill: var(--crit); stroke: var(--surface); stroke-width: 1.5; }
@@ -143,6 +145,14 @@
      are dots on lines, a skip is a short vertical tick at the baseline — so
      the cue is form, not colour alone, and it holds in both themes. */
   .pm-skip { stroke: var(--ink-3); stroke-width: 1.5; }
+  /* A FORCED run (a human ran the producer past the usage gate with `--force`):
+     a real run, on the line, with real measurements — so it keeps its dot and
+     counts in every statistic. What it is not is a tick the SCHEDULE produced,
+     so it carries an added ring around that dot. An ADDED mark rather than an
+     altered one, for two reasons: hue on this chart already means "this run
+     errored", and a forced run can also error — a ring composes with the red
+     dot, where a recoloured dot would have to choose. */
+  .pm-forced { fill: none; stroke: var(--ink-3); stroke-width: 1.25; }
   /* Qualified with .pm-chart so it outweighs `.pm-chart text` (0,1,1) — an
      unqualified .pm-endlabel (0,1,0) loses the cascade and renders muted. */
   .pm-chart text.pm-endlabel { fill: var(--ink); font-weight: 700; font-size: 11px; }
@@ -420,6 +430,18 @@ function outcomeWord(r) {
 function isSkip(r) {
   return r != null && (r.outcome === "skipped" || r.skipped != null);
 }
+// THE forced predicate — "a human started this run past the usage gate", the
+// emitter's `forced` field (the gate kind it was run past, e.g. "usage-gate").
+// The OPPOSITE of a skip, and never both: a skip is a tick the pipeline
+// declined to run, a force is one it was told to run anyway, and the emitter
+// refuses a row carrying both. So a forced run is a run — it keeps its dot, its
+// place on the line, and its weight in every statistic, because it really
+// happened and really spent budget. What the mark says is only that it was not
+// on the schedule. ABSENT, not null, on every scheduled row, so a row written
+// before the field existed reads exactly as it always has.
+function isForced(r) {
+  return r != null && r.forced != null;
+}
 // Parsed records → { runs, skips }: the ONE partition between measurements and
 // events. Everything that aggregates — tiles, controls, the chart's y scale
 // and series — receives `runs`; `skips` reach the chart solely as timeline
@@ -592,6 +614,24 @@ function pmTip(r, abs) {
       `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
       document.createElement("br"),
     );
+  // The FORCED line, when a human ran this one past the gate. It sits ABOVE the
+  // outcome rather than beside it: how a run was started and how it turned out
+  // are separate readings, and folding them into one clause would let "forced"
+  // read as a verdict. `forceReason` is the gate's own line VERBATIM and
+  // `forced` is its kind — both producer-authored text this page does not own,
+  // so both land through `append`'s string form as text nodes, exactly like
+  // `skipReason` in pmSkipTip (CLAUDE.md "Rendering untrusted data"). The kind
+  // is fail-open for the same reason it is there: an unknown kind names itself
+  // rather than being dropped.
+  if (isForced(r)) {
+    frag.append(
+      "forced past ",
+      typeof r.forced === "string" && r.forced ? String(r.forced) : "the gate",
+      document.createElement("br"),
+    );
+    if (r.forceReason != null && r.forceReason !== "")
+      frag.append(String(r.forceReason), document.createElement("br"));
+  }
   frag.append(`${fmtRunTime(r.runId)} · `);
   const outcome = document.createElement("span");
   const word = outcomeWord(r);
@@ -771,6 +811,13 @@ function renderPmChart(runs, skips = []) {
   }
   const dots = real.map((p) =>
     svgEl("circle", { class: "pm-dot" + (isDeg(p) ? " deg" : ""), cx: p.x, cy: p.y, r: p === real[real.length - 1] ? 4 : 3 }));
+  // Forced runs: a ring around the run's own dot, drawn UNDER it so the dot
+  // (and its errored colour) stays whole. Only over `real` — a forced run with
+  // no plotted value is a gap like any other, and a ring hovering at a y the
+  // run never had would invent a measurement. The radius tracks the dot's, so
+  // the newest run's larger dot keeps its ring concentric.
+  const forcedMarks = real.filter((p) => isForced(p.run)).map((p) =>
+    svgEl("circle", { class: "pm-forced", cx: p.x, cy: p.y, r: (p === real[real.length - 1] ? 4 : 3) + 3.5 }));
   // Skipped ticks: a short vertical tick rising off the baseline — never a dot
   // or a bar, which would read as a completed run with zero work. They have no
   // y value on purpose (a skip is an event, not a measurement), so they join
@@ -783,7 +830,13 @@ function renderPmChart(runs, skips = []) {
   if (real.length) {
     const l = real[real.length - 1];
     const lbl = abs ? l.v.toFixed(1) + "m" : l.v.toFixed(0) + "%";
-    endlabel.push(svgEl("text", { class: "pm-endlabel", x: (l.x + 6).toFixed(1), y: (l.y + 3).toFixed(1) }, lbl));
+    // Clear of the mark, whichever mark it is. 6 clears the 4px dot; a FORCED
+    // last run also carries a 7.5px ring, and the label at 6 lands inside it —
+    // the ring reads as a glyph glued to the number instead of as a mark on the
+    // point. Read off the render, not derived: the two radii are literals a few
+    // lines up, so a change to either has to come back through here.
+    const clear = isForced(l.run) ? 12 : 6;
+    endlabel.push(svgEl("text", { class: "pm-endlabel", x: (l.x + clear).toFixed(1), y: (l.y + 3).toFixed(1) }, lbl));
   }
   // Axis endpoints span every event — a pause with no runs after it still
   // dates the axis by its skipped ticks. Ids sort lexically = chronologically.
@@ -798,7 +851,8 @@ function renderPmChart(runs, skips = []) {
   const aria = (abs
     ? "Producer run time in minutes per run over time: total wall clock, the startup portion within it, and startup's boot and ttl parts"
     : "Producer startup overhead percent per run over time") +
-    (skipPts.length ? "; thin baseline ticks mark ticks the usage gate skipped" : "");
+    (skipPts.length ? "; thin baseline ticks mark ticks the usage gate skipped" : "") +
+    (forcedMarks.length ? "; ringed points are runs a human forced past the usage gate" : "");
 
   // A legend is mandatory once two marks share the plot, so identity is never
   // carried by the mark alone. Proportion mode has one series and gets none —
@@ -810,7 +864,8 @@ function renderPmChart(runs, skips = []) {
     if (abs) legendKeys.push(["sw boot", "boot"], ["sw ttl", "ttl"], ["sw total", "total run"]);
   }
   if (skipPts.length) legendKeys.push(["sw skip", "skipped tick"]);
-  if (legendKeys.length > 1 || skipPts.length) {
+  if (forcedMarks.length) legendKeys.push(["sw forced", "forced run"]);
+  if (legendKeys.length > 1 || skipPts.length || forcedMarks.length) {
     const box = document.createElement("div");
     box.className = "pm-legend";
     for (const [swatch, label] of legendKeys) {
@@ -831,7 +886,7 @@ function renderPmChart(runs, skips = []) {
     role: "img",
     "aria-label": aria,
   });
-  svg.append(...grid, cur, ...areas, ...totalLines, ...lines, ...skipMarks, ...dots, ...endlabel, ...xlabels);
+  svg.append(...grid, cur, ...areas, ...totalLines, ...lines, ...skipMarks, ...forcedMarks, ...dots, ...endlabel, ...xlabels);
   const tip = document.createElement("div");
   tip.className = "pm-tip";
   tip.id = "pmtip";
@@ -866,8 +921,10 @@ function renderPmChart(runs, skips = []) {
 // no data yet — with none, the toggle sentence and the latest-run lead have
 // nothing to describe and are dropped. The only data here is the run's outcome
 // and age, both from runs.jsonl, so both go in as text nodes; the literal
-// markup (the link, the emphasis, the code span) is built as elements.
-function renderPmNote(last, skips = []) {
+// markup (the link, the emphasis, the code span) is built as elements. `runs`
+// is the whole charted set, needed because the forced sentence counts a
+// property of every run rather than of the newest one.
+function renderPmNote(last, skips = [], runs = []) {
   const nodes = [];
   const tag = (name, text) => {
     const n = document.createElement(name);
@@ -914,6 +971,19 @@ function renderPmNote(last, skips = []) {
       `${skips.length} tick${skips.length === 1 ? " was" : "s were"} skipped by the producer's usage gate — ` +
         "drawn as thin baseline ticks; hover one for the gate's reason verbatim. " +
         "A skipped tick is an event, not a run: no statistic on this page counts it. ",
+    );
+  }
+  // Same rule as the skip sentence: named only when the file actually carries
+  // forced runs, so a reader is never sent hunting for an absent mark. The
+  // "counts everywhere" half is the part worth saying out loud — it is the
+  // opposite of the skip sentence above, and the two marks are easy to conflate
+  // otherwise.
+  const forced = runs.filter(isForced);
+  if (forced.length) {
+    nodes.push(
+      `${forced.length} run${forced.length === 1 ? " was" : "s were"} forced past the usage gate by hand — ` +
+        "ringed points; hover one for the gate's line at the moment it was overridden. " +
+        "A forced run is a run and counts in every figure here; the ring says only that the schedule did not start it. ",
     );
   }
   const src = tag("a", "runs.jsonl");
@@ -975,7 +1045,7 @@ async function loadMetrics() {
     return;
   }
   renderPmChart(runs, skips);
-  renderPmNote(runs.length ? runs[runs.length - 1] : null, skips);
+  renderPmNote(runs.length ? runs[runs.length - 1] : null, skips, runs);
 }
 loadMetrics();
 </script>
