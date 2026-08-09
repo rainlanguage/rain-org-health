@@ -3689,13 +3689,15 @@ Deno.test("pipeline FSM: a residue descriptor renders while emitted; drained, it
   assert(collect(box2, "fsm-defect").length === 0, "and nothing screams: nothing unclaimed remains");
 });
 
-// The counts-side scoping the ratified contract froze: exactly four named keys may go
-// unclaimed — the non-state metrics (totalProducerPrs, openIssues, archivedRepoPrs) and
-// the legacy duplicate of claimed inventory (closeCandidateIssues). Anything else is
+// The counts-side scoping the ratified contract froze: exactly five named keys may go
+// unclaimed — the non-state metrics (totalProducerPrs, openIssues, archivedRepoPrs), the
+// legacy duplicate of claimed inventory (closeCandidateIssues), and `designNoQuestion`
+// (issue-pr-cron#240), the size of the ai:design half /ndd withholds, whose PRs the
+// ai:design cell already claims and which no box here draws. Anything else is
 // state-shaped occupancy rendering nowhere.
 Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other unclaimed counts key does", () => {
   const conserved = () => ({
-    counts: { ready: 2, totalProducerPrs: 145, openIssues: 767, archivedRepoPrs: 4, closeCandidateIssues: 0 },
+    counts: { ready: 2, totalProducerPrs: 145, openIssues: 767, archivedRepoPrs: 4, closeCandidateIssues: 0, designNoQuestion: 6 },
     lanes: { "vetter-verdicts": { "ai:ready": { count: 2, prs: [] } } },
     closeCandidateIssues: [],
     archivedRepoPrs: fcItems("archived", 4),
@@ -3705,7 +3707,7 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
   });
   assert(
     collect(fsmBox(conserved()), "fsm-defect").length === 0,
-    "the four frozen-legacy keys are the whole exception — no defect band",
+    "the five frozen-legacy keys are the whole exception — no defect band",
   );
   const drifted = conserved();
   drifted.counts.blockedOn = 17;
@@ -4249,9 +4251,11 @@ Deno.test("pipeline FSM: descriptor boxes keep sparklines and the lead fallback"
 });
 
 // descHq() with the design cell carrying the /ndd split (issue-pr-cron#240): six
-// labelled PRs, zero presentable, six with no trusted question — the measured
-// 2026-08-09 shape that motivated the change — plus the two counts keys the split's
-// series draw from. Callers mutate the cell/counts for their own variants.
+// labelled PRs, zero presentable, six withheld with no trusted question — the measured
+// 2026-08-09 shape that motivated the change — plus the counts keys the tool emits
+// beside it. The whole breakdown is present because the tool emits the whole breakdown;
+// the page reads the one bucket it draws. Callers mutate the cell/counts for their own
+// variants.
 function splitHq() {
   const hq = descHq();
   hq.lanes["vetter-verdicts"]["ai:design"] = {
@@ -4274,22 +4278,24 @@ Deno.test("pipeline FSM: the design box is the /ndd inbox — presentable, never
   // dims like any other empty inbox.
   assert(collect(design, "sc")[0].textContent === "0", "the inbox is presentable, not 6");
   assert(design.className.split(" ").includes("zero"), "an empty inbox dims");
-  // The human owner total counts the inbox, not the withheld rows: ready 5 + design 0 +
-  // leak 2.
-  const human = ownerGroups(box).find((g) => g.title.startsWith("Human action"));
-  assert(human.title.endsWith("7"), `the human total excludes withheld rows: ${human.title}`);
-  // The withheld group renders OUTSIDE the actor groups, with the noQuestion defect box
-  // carrying the six and their click-through list.
-  const withheld = ownerGroups(box).find((g) => g.title.includes("withheld from /ndd"));
-  assert(withheld, "the withheld group renders");
-  const nq = byT("designNoQuestion");
-  assert(collect(nq, "sc")[0].textContent === "6", "the defect bucket carries the six");
-  assert(nq.className.split(" ").includes("blk"), "a defect bucket is a blocked pile");
-  nq.click();
+  // The human owner total counts the inbox: ready 5 + design 0 + leak 2.
+  const groups = ownerGroups(box);
+  const human = groups.find((g) => g.title.startsWith("Human action"));
+  assert(human.title.endsWith("7"), `the human total is the inbox: ${human.title}`);
+  // The withheld rows are drawn NOWHERE: no extra group beside the three actors, no box
+  // of their own, and no listing under the design box, which opens onto the presentable
+  // rows and holds none.
+  assert(groups.length === 3, `the three actor groups are the whole machine: ${groups.length}`);
+  assert(
+    !byT("designNoQuestion") && !byT("designDraft") && !byT("designFetchErrors") &&
+      !byT("designUnaddressable"),
+    "no box is built out of the rows /ndd withholds",
+  );
+  design.click();
   const text = textOf(box);
-  assert(text.includes("o/design#6"), `the noQuestion PRs list under the defect box: ${text.slice(0, 400)}`);
-  // A conserved split snapshot draws no defect band: both new counts keys are claimed by
-  // the boxes that draw them.
+  assert(!text.includes("o/design#"), `no withheld row is listed: ${text.slice(0, 400)}`);
+  // A conserved split snapshot draws no defect band: the key the box draws is claimed by
+  // it, and the withheld half's key is the ratified unclaimed one below.
   assert(collect(box, "fsm-defect").length === 0, "no conservation defect on a clean split");
 });
 
@@ -4303,14 +4309,12 @@ Deno.test("pipeline FSM: a snapshot without the split renders the design cell ex
     collect(design, "sc")[0].textContent === "2",
     "without a breakdown the raw cell count renders, as it always did",
   );
-  assert(
-    !ownerGroups(box).some((g) => g.title.includes("withheld")),
-    "no withheld group is invented for a pre-split snapshot",
-  );
+  design.click();
+  assert(textOf(box).includes("o/design#1"), "and opens onto the whole cell's PRs");
   assert(collect(box, "fsm-defect").length === 0, "and nothing screams");
 });
 
-Deno.test("pipeline FSM: presentable rows list under the design box; a drained defect bucket shows its zero", () => {
+Deno.test("pipeline FSM: presentable rows list under the design box", () => {
   const hq = splitHq();
   hq.lanes["vetter-verdicts"]["ai:design"] = {
     count: 2,
@@ -4321,38 +4325,11 @@ Deno.test("pipeline FSM: presentable rows list under the design box; a drained d
   hq.counts.designPresentable = 2;
   hq.counts.designNoQuestion = 0;
   const box = fsmBox(hq);
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
-  const design = byT("ai:design");
+  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
   assert(collect(design, "sc")[0].textContent === "2", "two presentable rows are the inbox");
   design.click();
   assert(textOf(box).includes("o/design#1"), "the inbox lists the presentable rows");
-  // Health stays visible: the defect box renders its zero (dimmed) rather than leaving —
-  // the same always-there contract the leak box holds.
-  const nq = byT("designNoQuestion");
-  assert(collect(nq, "sc")[0].textContent === "0", "the defect bucket shows its zero");
-  assert(nq.className.split(" ").includes("zero"), "a zero defect bucket dims");
   assert(collect(box, "fsm-defect").length === 0, "a clean split draws no defect band");
-});
-
-Deno.test("pipeline FSM: withheld buckets beyond noQuestion render only while they hold anything", () => {
-  const hq = splitHq();
-  hq.lanes["vetter-verdicts"]["ai:design"].prs = [
-    ...fcItems("design", 5).map((e) => ({ ...e, bucket: "noQuestion" })),
-    { repo: "o/design", number: 6, title: "design 6", bucket: "draft" },
-  ];
-  hq.lanes["vetter-verdicts"]["ai:design"].breakdown = {
-    presentable: 0, noQuestion: 5, draft: 1, unaddressable: 0, fetchErrors: 0,
-  };
-  hq.counts.designNoQuestion = 5;
-  const box = fsmBox(hq);
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
-  const draft = byT("designDraft");
-  assert(draft, "a nonzero draft bucket surfaces");
-  assert(collect(draft, "sc")[0].textContent === "1", "with its own count");
-  draft.click();
-  assert(textOf(box).includes("o/design#6"), "and its own click-through row");
-  assert(!byT("designFetchErrors") && !byT("designUnaddressable"),
-    "empty buckets draw no box — only noQuestion has the always-there defect contract");
 });
 
 Deno.test("pipeline FSM: a split whose counts mirror disagrees is a loud defect naming both numbers", () => {
@@ -4369,17 +4346,26 @@ Deno.test("pipeline FSM: a split whose counts mirror disagrees is a loud defect 
   );
 });
 
-Deno.test("pipeline FSM: split counts keys without a breakdown behind them sweep as unclaimed occupancy", () => {
-  const hq = descHq();
-  // The tool emitted the series keys but the cell carries no breakdown (or a malformed
-  // one): nothing renders those six, and the conservation sweep must say so rather than
-  // let the count vanish.
-  hq.counts.designNoQuestion = 6;
-  const box = fsmBox(hq);
-  const defects = textOf(collect(box, "fsm-defect")[0] || makeEl("div"));
+Deno.test("pipeline FSM: the drawn split key must be claimed; the withheld half's key is ratified unclaimed", () => {
+  // `designPresentable` is the key the inbox box's series is DRAWN from. Emitted with no
+  // breakdown behind it, no box draws it and the sweep says so rather than let the count
+  // vanish.
+  const orphan = descHq();
+  orphan.counts.designPresentable = 3;
+  const named = textOf(collect(fsmBox(orphan), "fsm-defect")[0] || makeEl("div"));
   assert(
-    defects.includes("designNoQuestion") && defects.includes("claimed by no descriptor"),
-    `an orphaned split key screams: ${defects}`,
+    named.includes("designPresentable") && named.includes("claimed by no descriptor"),
+    `an orphaned inbox key screams: ${named}`,
+  );
+  // `designNoQuestion` counts the rows /ndd withholds. Nothing here draws it: those PRs
+  // are claimed as inventory by the ai:design cell, and /ndd reports the withholding
+  // itself, so the key is one of the named frozen-legacy set and a nonzero one is silent
+  // — with a breakdown behind it and without.
+  const withheld = descHq();
+  withheld.counts.designNoQuestion = 6;
+  assert(
+    collect(fsmBox(withheld), "fsm-defect").length === 0,
+    "the withheld half's size is ratified unclaimed, not a defect",
   );
 });
 
@@ -7707,13 +7693,14 @@ Deno.test("hostile input: hovering a hostile forced run lands it in the tip as t
   );
 });
 
-// The design split (issue-pr-cron#240) put PR titles and repo names on TWO new render
-// paths — the inbox box's presentable rows and the withheld group's per-bucket rows — and
-// both open onto lists built from the same snapshot fields every other list here is built
-// from, i.e. attacker-influenceable PR content. A payload is planted in each path
-// separately, and they are DIFFERENT payloads: one shared string would let a path that
-// stopped rendering as text pass on the other path's copy.
-Deno.test("hostile input: a design row's title and repo render as text in both split paths", () => {
+// The design split (issue-pr-cron#240) put PR titles and repo names on a new render path
+// — the design box now opens onto the cell's `presentable` rows rather than the whole
+// cell — built from the same attacker-influenceable snapshot fields every other list here
+// is built from. The payload is planted in a presentable row, and DIFFERENT payloads ride
+// the withheld rows the page draws nowhere: a filter that leaked a withheld row onto the
+// panel would carry its payload with it, and one shared string could not tell the two
+// apart.
+Deno.test("hostile input: a design row's title and repo render as text on the presentable path", () => {
   const hq = descHq();
   hq.lanes["vetter-verdicts"]["ai:design"] = {
     count: 3,
@@ -7728,16 +7715,13 @@ Deno.test("hostile input: a design row's title and repo render as text in both s
   hq.counts.designPresentable = 1;
   hq.counts.designNoQuestion = 1;
   const box = fsmBox(hq);
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
-  // The inbox path: the design box now opens onto the presentable rows.
-  byT("ai:design").click();
+  box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design").click();
   assertInert(box, XSS_IMG, "presentable row title");
-  // The withheld paths, one bucket at a time — each is its own box with its own list, so a
-  // sink introduced in one is invisible to a test that only opens the other.
-  byT("designNoQuestion").click();
-  assertInert(box, XSS_ATTR, "withheld noQuestion row repo");
-  byT("designDraft").click();
-  assertInert(box, XSS_SCRIPT, "withheld draft row title");
+  const text = textOf(box);
+  assert(
+    !text.includes(XSS_ATTR) && !text.includes(XSS_SCRIPT),
+    "a withheld row reaches the panel by no path at all, payload included",
+  );
   assert(
     markupNodes(box).length === 0,
     "no payload may become markup anywhere on the panel: " + markupNodes(box).join(", "),
