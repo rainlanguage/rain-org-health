@@ -7455,6 +7455,43 @@ Deno.test("hostile input: hovering a hostile skip lands it in the tip as text", 
   );
 });
 
+// The design split (issue-pr-cron#240) put PR titles and repo names on TWO new render
+// paths — the inbox box's presentable rows and the withheld group's per-bucket rows — and
+// both open onto lists built from the same snapshot fields every other list here is built
+// from, i.e. attacker-influenceable PR content. A payload is planted in each path
+// separately, and they are DIFFERENT payloads: one shared string would let a path that
+// stopped rendering as text pass on the other path's copy.
+Deno.test("hostile input: a design row's title and repo render as text in both split paths", () => {
+  const hq = descHq();
+  hq.lanes["vetter-verdicts"]["ai:design"] = {
+    count: 3,
+    prs: [
+      { repo: "o/design", number: 1, title: XSS_IMG, bucket: "presentable" },
+      { repo: XSS_ATTR, number: 2, title: "withheld one", bucket: "noQuestion" },
+      { repo: "o/design", number: 3, title: XSS_SCRIPT, bucket: "draft" },
+    ],
+    breakdown: { presentable: 1, noQuestion: 1, draft: 1, unaddressable: 0, fetchErrors: 0 },
+  };
+  hq.counts.design = 3;
+  hq.counts.designPresentable = 1;
+  hq.counts.designNoQuestion = 1;
+  const box = fsmBox(hq);
+  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  // The inbox path: the design box now opens onto the presentable rows.
+  byT("ai:design").click();
+  assertInert(box, XSS_IMG, "presentable row title");
+  // The withheld paths, one bucket at a time — each is its own box with its own list, so a
+  // sink introduced in one is invisible to a test that only opens the other.
+  byT("designNoQuestion").click();
+  assertInert(box, XSS_ATTR, "withheld noQuestion row repo");
+  byT("designDraft").click();
+  assertInert(box, XSS_SCRIPT, "withheld draft row title");
+  assert(
+    markupNodes(box).length === 0,
+    "no payload may become markup anywhere on the panel: " + markupNodes(box).join(", "),
+  );
+});
+
 // A page may not so much as NAME a markup sink in its code. Matching the
 // assignment (`.innerHTML =`) instead would have to enumerate the ways one can
 // be written — `+=`, `||=`, `??=`, `el["innerHTML"] = x`, `Object.assign(el, {
