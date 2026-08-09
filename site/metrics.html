@@ -442,6 +442,28 @@ function isSkip(r) {
 function isForced(r) {
   return r != null && r.forced != null;
 }
+// The stop KINDS this run walked past, as display strings. `forced` is a list
+// (a run can override both the kill switch and a gate pause) but this page does
+// not own the file: a bare string, a number, a null element or a non-list all
+// have to render as something a reader can act on rather than as `undefined` or
+// as nothing at all. So the shape is coerced to a list here, once, and every
+// element to a string — which also means the emitter can grow a third stop kind
+// without this page learning its name.
+function forcedKinds(r) {
+  const raw = r == null ? null : r.forced;
+  const list = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
+  return list.filter((k) => k != null && k !== "").map((k) => String(k));
+}
+// …and each stop's own line, paired with the kinds BY INDEX. Coerced the same
+// way and for the same reason. Deliberately NOT zipped into the kind line: the
+// emitter refuses a mismatched pair, so zipping here would be a second place
+// that believes the two are the same length, and the failure of that belief
+// would silently drop a reason rather than showing it.
+function forcedReasons(r) {
+  const raw = r == null ? null : r.forceReason;
+  const list = Array.isArray(raw) ? raw : raw == null ? [] : [raw];
+  return list.filter((w) => w != null && w !== "").map((w) => String(w));
+}
 // Parsed records → { runs, skips }: the ONE partition between measurements and
 // events. Everything that aggregates — tiles, controls, the chart's y scale
 // and series — receives `runs`; `skips` reach the chart solely as timeline
@@ -614,23 +636,33 @@ function pmTip(r, abs) {
       `${r.startupToolCalls}/${r.toolCalls} tool calls · ${r.numTurns} turns`,
       document.createElement("br"),
     );
-  // The FORCED line, when a human ran this one past the gate. It sits ABOVE the
+  // The FORCED lines, when a human started this one by hand. They sit ABOVE the
   // outcome rather than beside it: how a run was started and how it turned out
   // are separate readings, and folding them into one clause would let "forced"
-  // read as a verdict. `forceReason` is the gate's own line VERBATIM and
-  // `forced` is its kind — both producer-authored text this page does not own,
-  // so both land through `append`'s string form as text nodes, exactly like
-  // `skipReason` in pmSkipTip (CLAUDE.md "Rendering untrusted data"). The kind
-  // is fail-open for the same reason it is there: an unknown kind names itself
-  // rather than being dropped.
+  // read as a verdict.
+  //
+  // `forced` is the LIST of policy stops the run walked past and `forceReason`
+  // is the matching list of those stops' own lines, VERBATIM, paired by index —
+  // a single run can override both the kill switch and a gate pause. Both are
+  // producer-authored text this page does not own, so every element lands
+  // through `append`'s string form as a text node, exactly like `skipReason` in
+  // pmSkipTip (CLAUDE.md "Rendering untrusted data").
+  //
+  // EMPTY is the ordinary case, not a missing one: a human started the run and
+  // nothing was in the way. It still says so, because "the schedule did not
+  // start this" is the fact the marker exists to carry — the stops are detail
+  // on top of it. Everything here is fail-open: a kind that is not a string,
+  // and a field that is not a list at all (a row from an older emitter), name
+  // themselves rather than being dropped.
   if (isForced(r)) {
+    const kinds = forcedKinds(r);
     frag.append(
-      "forced past ",
-      typeof r.forced === "string" && r.forced ? String(r.forced) : "the gate",
+      kinds.length ? "forced past " + kinds.join(", ") : "forced — nothing to override",
       document.createElement("br"),
     );
-    if (r.forceReason != null && r.forceReason !== "")
-      frag.append(String(r.forceReason), document.createElement("br"));
+    for (const why of forcedReasons(r)) {
+      frag.append(String(why), document.createElement("br"));
+    }
   }
   frag.append(`${fmtRunTime(r.runId)} · `);
   const outcome = document.createElement("span");
@@ -852,7 +884,7 @@ function renderPmChart(runs, skips = []) {
     ? "Producer run time in minutes per run over time: total wall clock, the startup portion within it, and startup's boot and ttl parts"
     : "Producer startup overhead percent per run over time") +
     (skipPts.length ? "; thin baseline ticks mark ticks the usage gate skipped" : "") +
-    (forcedMarks.length ? "; ringed points are runs a human forced past the usage gate" : "");
+    (forcedMarks.length ? "; ringed points are runs a human started by hand" : "");
 
   // A legend is mandatory once two marks share the plot, so identity is never
   // carried by the mark alone. Proportion mode has one series and gets none —
@@ -981,8 +1013,8 @@ function renderPmNote(last, skips = [], runs = []) {
   const forced = runs.filter(isForced);
   if (forced.length) {
     nodes.push(
-      `${forced.length} run${forced.length === 1 ? " was" : "s were"} forced past the usage gate by hand — ` +
-        "ringed points; hover one for the gate's line at the moment it was overridden. " +
+      `${forced.length} run${forced.length === 1 ? " was" : "s were"} started by hand with --force — ` +
+        "ringed points; hover one for which stops it overrode, each with that stop's own line. " +
         "A forced run is a run and counts in every figure here; the ring says only that the schedule did not start it. ",
     );
   }
