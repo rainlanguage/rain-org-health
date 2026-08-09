@@ -629,6 +629,47 @@ function renderFsm(hq, history) {
     const l = hasLanes ? hq.lanes[lane] : null;
     return (l && typeof l === "object" && l[state]) || null;
   };
+  // ---- The design cell's split (issue-pr-cron#240). The tool attaches /ndd's own
+  // partition to the ai:design cell — a `breakdown` object beside `count` (every bucket,
+  // zeros included) and a `bucket` annotation on each `prs` entry, spelled identically —
+  // because the raw label total is not a human inbox: /ndd serves only the `presentable`
+  // rows, and a row it withholds is either a defect (`noQuestion`: the label is on the PR
+  // and no trusted comment raises a question) or waiting on another actor (`draft`) or on
+  // the next refresh (`fetchErrors`). Reading BOTH halves — the stated numbers and the
+  // annotated rows — is what lets every consumer below render the larger of a bucket's
+  // count and its list, the same posture `laneCount` holds for the cell itself.
+  //
+  // Every field is UNTRUSTED snapshot content: numbers are validated the way `posNum`
+  // validates ages (a malformed `presentable` must not coerce to a fabricated 0 inbox),
+  // and a cell without a well-formed split — every snapshot written before the tool
+  // carried it — returns null, on which every split consumer below renders exactly the
+  // pre-split page.
+  const designSplit = (cell) => {
+    if (!cell || typeof cell !== "object") return null;
+    const b = cell.breakdown;
+    if (!b || typeof b !== "object") return null;
+    const presentable = posNum(b.presentable);
+    const noQuestion = posNum(b.noQuestion);
+    if (presentable == null || noQuestion == null) return null;
+    const prs = Array.isArray(cell.prs) ? cell.prs : [];
+    const rows = (bucket) =>
+      prs.filter((e) => e && typeof e === "object" && e.bucket === bucket);
+    // One entry per bucket: the stated count, the annotated rows, and the larger of the
+    // two — the number a box renders so a broken count cannot hide inventory the list
+    // proves is there. Buckets beyond the two headline ones surface through the withheld
+    // group below only while they hold anything.
+    const bucketOf = (name, stated) => {
+      const listed = rows(name);
+      return { stated, listed, shown: Math.max(stated, listed.length) };
+    };
+    return {
+      presentable: bucketOf("presentable", presentable),
+      noQuestion: bucketOf("noQuestion", noQuestion),
+      draft: bucketOf("draft", posNum(b.draft) || 0),
+      unaddressable: bucketOf("unaddressable", posNum(b.unaddressable) || 0),
+      fetchErrors: bucketOf("fetchErrors", posNum(b.fetchErrors) || 0),
+    };
+  };
 
   const stateBox = (key, label, count, act, kind, series) => {
     const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
@@ -848,6 +889,15 @@ function renderFsm(hq, history) {
     // below, where the CURRENT lane's cell wins whenever both carry the state.
     { owner: "vetter", state: "ai:blocked-on", lane: "vet-lifecycle", staleLane: "producer-blocked", hist: "blockedOn", act: "clears when deps merge/close", kind: "blk" },
     // Human inbox — a human merge / ruling / close.
+    //
+    // THE INVARIANT for this owner (issue-pr-cron#240): every count filed under
+    // owner "human" is a count some human command will present — /nr serves ai:ready,
+    // /ndd serves the design inbox, /ncc + human-close serve the upheld flags, /nm
+    // serves the leaks. If no command serves a number, it is not an inbox, and
+    // displaying it as one manufactures work that cannot be done; such a number renders
+    // as a defect bucket outside every actor total (the design cell's `noQuestion`
+    // split, below in the descriptor path) or not at all.
+    //
     // FSM CONFORMANCE LEAK, first because it is the loudest: producer PRs carrying a note
     // but no `ai:*` label, so they sit in NO modeled state. This was a banner beside the
     // machine, which read as a footnote and got ignored; but "not modelled" is not an
@@ -861,6 +911,11 @@ function renderFsm(hq, history) {
     // These are producer PRs, so `issue` stays false.
     { owner: "human", state: "leak", fromCounts: "leaks", items: "leaks", issue: false, hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
     { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
+    // Draws the whole ai:design cell. A snapshot old enough to lack `stateDescriptors`
+    // also predates the design split (issue-pr-cron#240 shipped long after descriptors
+    // did), so the raw count is everything such a snapshot can say; the split — the
+    // presentable inbox and the withheld group — renders on the descriptor path, where
+    // every snapshot that carries it arrives.
     { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
     { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
     // Close-candidate flags the vetter UPHELD (issue-pr-cron#73/#212): the flag survived
@@ -1037,6 +1092,15 @@ function renderFsm(hq, history) {
     const laneId = (lane, state) => "lane " + JSON.stringify([lane, state]);
     const countsId = (k) => "counts " + JSON.stringify(k);
     for (const p of parsed) {
+      // The design split (issue-pr-cron#240), resolved ONCE per descriptor and stored on
+      // it, so this sweep and the render loop below can never read the cell two different
+      // ways. Scoped to the ai:design lane row: the split's series keys are fixed
+      // vocabulary (designPresentable / designNoQuestion), so a breakdown arriving on any
+      // other cell is ignored rather than drawn against another state's series. Null on
+      // every snapshot without the split, on which all of this is inert.
+      p.split = p.source.lane && p.key === "ai:design"
+        ? designSplit(laneState(p.source.lane, p.key))
+        : null;
       if (p.source.lane) claim(laneId(p.source.lane, p.key));
       else {
         if (!Object.prototype.hasOwnProperty.call(c, p.source.counts)) {
@@ -1068,6 +1132,14 @@ function renderFsm(hq, history) {
       if (p.source.counts) read.add(p.source.counts);
       if (p.hist) read.add(p.hist);
       for (const k of p.histFold) read.add(k);
+      // With the split present the box renders the PRESENTABLE half and the withheld
+      // group below renders the rest, so the two split series are read occupancy too —
+      // claimed here, exactly once, or a nonzero designNoQuestion would sweep as
+      // inventory rendering nowhere while a box is drawing it.
+      if (p.split) {
+        read.add("designPresentable");
+        read.add("designNoQuestion");
+      }
       for (const k of read) claim(countsId(k));
       // The top-level array a counts-source descriptor lists from is claimed too. It is
       // not swept for absence (an array with no `counts` entry is not occupancy this page
@@ -1104,7 +1176,43 @@ function renderFsm(hq, history) {
           );
         }
       }
-      if (p.source.lane && p.hist && Object.prototype.hasOwnProperty.call(c, p.hist)) {
+      if (p.split) {
+        // The same two comparisons, one level further down, on the pairs the SPLIT
+        // renders. A bucket's stated count against the rows annotated into it (the box
+        // renders the larger, exactly as the cell-level check above)…
+        for (const [name, b] of [
+          ["presentable", p.split.presentable],
+          ["noQuestion", p.split.noQuestion],
+        ]) {
+          if (b.listed.length > 0 && b.stated !== b.listed.length) {
+            defects.push(
+              'lanes["' + p.source.lane + '"]["' + p.key + '"].breakdown.' + name +
+                " states " + b.stated + " but " + b.listed.length +
+                " prs entries carry that bucket — the box renders " + b.shown +
+                ", the larger, so a broken count cannot hide inventory the list proves is there",
+            );
+          }
+        }
+        // …and the two-numbers comparison: with the split present the design box draws
+        // the presentable half and the withheld group the noQuestion half, so THOSE are
+        // each checked against the counts key their series is drawn from — `hist` still
+        // mirrors the raw cell, a pair nothing renders any more.
+        for (const [key, b, what] of [
+          ["designPresentable", p.split.presentable, "the design inbox box"],
+          ["designNoQuestion", p.split.noQuestion, "the no-question defect box"],
+        ]) {
+          if (!Object.prototype.hasOwnProperty.call(c, key)) continue;
+          const mirrored = Number(c[key]) || 0;
+          if (b.shown !== mirrored) {
+            defects.push(
+              'state "' + p.key + '" is counted two ways and the snapshot disagrees with itself: ' +
+                what + " renders " + b.shown + " from the cell's breakdown, while counts[\"" + key +
+                '"] — the key its series is drawn from — says ' + mirrored +
+                ". Fix the tool's emit (issue-pr-cron#240)",
+            );
+          }
+        }
+      } else if (p.source.lane && p.hist && Object.prototype.hasOwnProperty.call(c, p.hist)) {
         const shown = laneCount(p);
         const mirrored = Number(c[p.hist]) || 0;
         if (shown !== mirrored) {
@@ -1126,21 +1234,36 @@ function renderFsm(hq, history) {
       const boxes = [];
       own.forEach((p) => {
         let count;
-        if (p.source.lane) {
+        let series;
+        if (p.split) {
+          // The split cell's box is the INBOX: the presentable rows — the population
+          // /ndd serves, which reads zero when a human drains the queue — with its
+          // series drawn from the counts key measuring exactly that population. The
+          // withheld rows render in their own group below, outside this owner's total:
+          // none of them is work this actor's command presents (the invariant at the
+          // STATES human section), and adding them here would recreate the number
+          // issue-pr-cron#240 measured — six "design questions to rule on" over a
+          // command with nothing to present.
+          count = p.split.presentable.shown;
+          register(p.key, p.split.presentable.listed, false, count);
+          series = seriesFor("designPresentable");
+        } else if (p.source.lane) {
           const cell = laneState(p.source.lane, p.key);
           count = laneCount(p);
           register(p.key, cell && cell.prs, false, count);
+          // The descriptor names its own series key AND its own retired-key folds —
+          // HIST_FOLD serves only the frozen fallback. An empty histFold folds nothing.
+          series = seriesFor(p.hist, p.histFold);
         } else {
-          // Registration is UNCONDITIONAL on both branches (#141): a count whose list
+          // Registration is UNCONDITIONAL on every branch (#141): a count whose list
           // never arrived reads as detailBody's missing-list defect, never as an empty
           // queue.
           count = Number(c[p.source.counts]) || 0;
           register(p.key, hq[p.source.items], p.source.issue, count);
+          series = seriesFor(p.hist, p.histFold);
         }
         ownerTotal += count;
-        // The descriptor names its own series key AND its own retired-key folds —
-        // HIST_FOLD serves only the frozen fallback. An empty histFold folds nothing.
-        const b = stateBox(p.key, p.label, count, p.act, p.kind, seriesFor(p.hist, p.histFold));
+        const b = stateBox(p.key, p.label, count, p.act, p.kind, series);
         boxes.push({ b, count, label: p.label });
         g.append(b);
       });
@@ -1151,6 +1274,43 @@ function renderFsm(hq, history) {
       lane.append(h, g);
       grid.append(lane);
     });
+
+    // ---- The design cell's withheld half (issue-pr-cron#240): everything /ndd will NOT
+    // serve, in its own group OUTSIDE every actor total — no actor's command presents any
+    // of it, and inside an owner group it would read as an inbox again. `noQuestion` is
+    // the headline and renders even at zero: a labelled PR no trusted comment raises a
+    // question for is claimed by no command at all, so it carries the leak box's own
+    // contract — a defect metric that should read zero, sparkline and rising border off
+    // its own series. The other buckets render only while they hold anything (a draft's
+    // answer would be spent against code its author is still shaping; an unread row is
+    // this refresh's failure; an unaddressable ref is a row nothing can act on), each
+    // registered so its click-through lists its own rows.
+    const split = (parsed.find((p) => p.split) || {}).split;
+    if (split) {
+      const withheld = [
+        { key: "designNoQuestion", b: split.noQuestion, hist: "designNoQuestion", label: "no trusted question raised", act: "defect — no command serves it", kind: "blk", always: true },
+        { key: "designDraft", b: split.draft, label: "draft — code still forming", act: "producer finishes the draft", kind: "flow" },
+        { key: "designFetchErrors", b: split.fetchErrors, label: "unread this refresh", act: "re-read next refresh", kind: "blk" },
+        { key: "designUnaddressable", b: split.unaddressable, label: "unparseable PR ref", act: "fix the ref", kind: "blk" },
+      ];
+      const g = el("div", "fsm-grid");
+      let total = 0;
+      for (const w of withheld) {
+        if (!w.always && w.b.shown === 0) continue;
+        register(w.key, w.b.listed, false, w.b.shown);
+        total += w.b.shown;
+        g.append(stateBox(w.key, w.label, w.b.shown, w.act, w.kind, w.hist ? seriesFor(w.hist) : null));
+      }
+      const lane = el("div", "fsm-lane");
+      const h = el("div", "fsm-lane-h");
+      h.append(
+        el("span", null, "ai:design — withheld from /ndd"),
+        el("span", "lsub", "not an inbox"),
+        el("span", "lct", String(total)),
+      );
+      lane.append(h, g);
+      grid.append(lane);
+    }
 
     // The conservation sweep, over the snapshot's own occupancy keys. `legacy` marks a
     // key the ratified contract lets go UNCLAIMED — it never licenses a double claim.
@@ -1282,6 +1442,9 @@ function renderFsm(hq, history) {
     const legacy = [
       { key: "leak", label: "not in any modeled state", n: c.leaks, items: "leaks", hist: "leaks", act: "model it", kind: "blk" },
       { key: "ai:ready", label: "ai:ready", n: c.ready, hist: "ready", act: "merge", kind: "flow" },
+      // `counts.design` is the raw label total. A pre-`lanes` snapshot predates the
+      // design split (issue-pr-cron#240) by even more than it predates descriptors, so
+      // the raw number is everything it carries — see the frozen STATES row above.
       { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
       { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, items: "closeCandidateIssues", issue: true, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
       { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, hist: "blockedOn", act: "merge dependency", kind: "blk" },
