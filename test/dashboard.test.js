@@ -5620,6 +5620,10 @@ const outcomeWordReal = bind("metrics.html", "outcomeWord", [], []);
 // The skip discriminant and the runs/skips partition (usage-gate pauses),
 // bound from the page so the tests exercise the real predicate, not a copy.
 const isSkipReal = bind("metrics.html", "isSkip", [], []);
+// The forced discriminant (a human ran the producer past the usage gate).
+// Bound from the page for the same reason isSkip is: the tests must exercise
+// the real predicate, never a copy that could drift from it.
+const isForcedReal = bind("metrics.html", "isForced", [], []);
 const pmPartitionReal = bind("metrics.html", "pmPartition", ["isSkip"], [
   isSkipReal,
 ]);
@@ -5833,6 +5837,7 @@ function pmTipBox(run, abs) {
       "bootMin",
       "ttlMin",
       "outcomeWord",
+      "isForced",
     ],
     [
       document,
@@ -5843,6 +5848,7 @@ function pmTipBox(run, abs) {
       d.bootMin,
       d.ttlMin,
       outcomeWordReal,
+      isForcedReal,
     ],
   );
   const box = makeEl("div");
@@ -5882,6 +5888,7 @@ function pmChart(runs, pmMode = "pct", skips = []) {
       "bootMin",
       "ttlMin",
       "outcomeWord",
+      "isForced",
     ],
     [
       document,
@@ -5892,6 +5899,7 @@ function pmChart(runs, pmMode = "pct", skips = []) {
       d.bootMin,
       d.ttlMin,
       outcomeWordReal,
+      isForcedReal,
     ],
   );
   const pmSkipTip = bind("metrics.html", "pmSkipTip", [
@@ -5911,6 +5919,7 @@ function pmChart(runs, pmMode = "pct", skips = []) {
       "pmTip",
       "pmSkipTip",
       "isSkip",
+      "isForced",
       "parseRunId",
       "fmtDayTime",
       "fmtRunTime",
@@ -5929,6 +5938,7 @@ function pmChart(runs, pmMode = "pct", skips = []) {
       pmTip,
       pmSkipTip,
       isSkipReal,
+      isForcedReal,
       d.parseRunId,
       d.fmtDayTime,
       d.fmtRunTime,
@@ -6978,6 +6988,216 @@ Deno.test("metrics chart: hovering a skip yields its reason, not run numbers", (
   );
 });
 
+// --- forced runs (a human ran the producer past the usage gate) ---------------
+// `--force` (issue-pr-cron#245) runs one tick past the gate's PAUSE on purpose,
+// so a human can watch it. The row carries `forced` (the gate kind it was run
+// past) and `forceReason` (that gate's own line, VERBATIM). It is the OPPOSITE
+// of a skip: a skip is a tick the pipeline declined to run, a force is one it
+// was told to run anyway — so a forced row is a RUN, with real measurements,
+// and must keep its dot and its weight in every statistic. What it must not do
+// is look like a tick the schedule produced.
+const FORCED_RUN = {
+  runId: "20260806T114500Z",
+  role: "producer",
+  stage: "final",
+  startupPct: 22.5,
+  startupMs: 90000,
+  bootMs: 900,
+  ttlMs: 60000,
+  durationMs: 1800000,
+  toolCalls: 200,
+  startupToolCalls: 45,
+  numTurns: 60,
+  outcome: "ok",
+  forced: "usage-gate",
+  forceReason:
+    "PAUSE: 91% of the weekly budget used (endpoint) — at/over the 90% ceiling",
+};
+
+Deno.test("metrics forced: the gate field marks a forced run and nothing else", () => {
+  // Keyed on the field's PRESENCE, never its value — gating on "usage-gate"
+  // would silently stop marking the first other gate a force is ever aimed at.
+  // Ordinary rows carry it not-at-all (absent, not null), which is what keeps
+  // every row written before the field existed rendering exactly as it did.
+  assert(isForcedReal(FORCED_RUN) === true, "the emitter's forced row is forced");
+  assert(
+    isForcedReal({ ...FORCED_RUN, forced: "some-future-gate" }) === true,
+    "an unknown gate kind is still a force",
+  );
+  for (const r of [RUN_SPLIT, RUN_LONG, PARTIAL_BOOT, SKIP_TICK, REAL_SKIP]) {
+    assert(
+      isForcedReal(r) === false,
+      "an unforced row is never forced: " + JSON.stringify(r.runId),
+    );
+  }
+  // And the two are never confused for each other in either direction.
+  assert(isSkipReal(FORCED_RUN) === false, "a forced run is not a skip");
+});
+
+Deno.test("metrics forced: a forced run is a run — it charts, and it counts", () => {
+  // The whole distinction from a skip. A skip is stripped before any renderer
+  // sees it; a forced run really happened and really spent budget, so it stays
+  // on the runs side and moves the tiles like any other.
+  const { runs, skips } = pmPartitionReal(
+    pmRecordsReal(jsonl(RUN_SPLIT, FORCED_RUN)),
+  );
+  assert(
+    runs.length === 2 && skips.length === 0,
+    "a forced row belongs to the runs: " + JSON.stringify({ runs, skips }),
+  );
+  const [render, box] = pmBind("renderPmTiles", "pmtiles", "pct");
+  render(runs);
+  assert(
+    textOf(box).includes("2"),
+    "and is counted among the runs recorded: " + textOf(box),
+  );
+});
+
+Deno.test("metrics forced: the chart rings the forced run, and only it", () => {
+  const { runs } = pmPartitionReal(
+    pmRecordsReal(jsonl(RUN_SPLIT, FORCED_RUN, RUN_SPLIT2)),
+  );
+  const wrap = pmChart(runs, "abs");
+  assert(
+    collect(wrap, "pm-forced").length === 1,
+    "exactly one ring, for the one forced run",
+  );
+  assert(
+    collect(wrap, "pm-dot").length === 3,
+    "every run still draws its own dot, forced included",
+  );
+  // A second mark on the plot means the legend must name it, or identity rests
+  // on the mark alone.
+  assert(
+    textOf(wrap).includes("forced run"),
+    "the legend names the ring: " + textOf(wrap),
+  );
+});
+
+Deno.test("metrics forced: the ring is ADDED to an errored run, never instead of it", () => {
+  // Hue on this chart means "this run errored". A forced run can also error, so
+  // the two cues have to compose: recolouring the dot for forcedness would make
+  // the chart choose between two facts it must show at once.
+  const { runs } = pmPartitionReal(pmRecordsReal(
+    jsonl({ ...FORCED_RUN, outcome: "error" }),
+  ));
+  const wrap = pmChart(runs, "abs");
+  assert(collect(wrap, "pm-forced").length === 1, "the ring is drawn");
+  assert(
+    collect(wrap, "deg").length >= 1,
+    "and the errored styling survives beside it",
+  );
+});
+
+Deno.test("metrics forced: a forced run with no plotted value gets no ring", () => {
+  // A ring hovering at a y the run never had would invent a measurement. The
+  // run is still admitted (its bootMs is real) — it is the MARK that is absent,
+  // exactly as the dot is for any gap run.
+  const gap = {
+    runId: "20260806T154500Z",
+    role: "producer",
+    stage: "boot",
+    bootMs: 1200,
+    forced: "usage-gate",
+    forceReason: "PAUSE: 91% of the weekly budget used (endpoint)",
+  };
+  const { runs } = pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, gap)));
+  assert(runs.length === 2, "the partial forced run still loads");
+  const wrap = pmChart(runs, "pct");
+  assert(
+    collect(wrap, "pm-forced").length === 0,
+    "no ring without a point to ring",
+  );
+});
+
+Deno.test("metrics forced: the end label clears the ring on a forced last run", () => {
+  // Caught by READING the render, not by reasoning about it: at the unforced
+  // offset the label sits inside the 7.5px ring and the two read as one glyph.
+  const { runs } = pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, FORCED_RUN)));
+  const forcedWrap = pmChart(runs, "abs");
+  const plainWrap = pmChart(
+    pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, RUN_SPLIT2))).runs,
+    "abs",
+  );
+  const labelX = (wrap) =>
+    Number(collect(wrap, "pm-endlabel")[0].attrs.x);
+  const dotX = (wrap) => {
+    const dots = collect(wrap, "pm-dot");
+    return Number(dots[dots.length - 1].attrs.cx);
+  };
+  const forcedGap = labelX(forcedWrap) - dotX(forcedWrap);
+  const plainGap = labelX(plainWrap) - dotX(plainWrap);
+  assert(
+    forcedGap > plainGap,
+    `a ringed last point pushes its label further out: ${forcedGap} vs ${plainGap}`,
+  );
+  assert(
+    forcedGap > 7.5,
+    "and past the ring's outer edge, not merely further: " + forcedGap,
+  );
+});
+
+Deno.test("metrics forced: the tooltip carries the gate's line verbatim", () => {
+  const t = textOf(pmTipBox(FORCED_RUN, true));
+  assert(
+    t.includes(FORCED_RUN.forceReason),
+    "the reason must be the gate's own line, verbatim: " + t,
+  );
+  assert(t.includes("forced past"), "and say what it was forced past: " + t);
+  assert(t.includes("usage-gate"), "naming the gate kind: " + t);
+  // Forcing describes how the run STARTED. The outcome is a separate reading
+  // and must still be there, unchanged — otherwise "forced" reads as a verdict.
+  assert(t.includes("ok"), "the outcome still renders: " + t);
+  assert(
+    !t.includes("undefined") && !t.includes("NaN"),
+    "no leaks on hover: " + t,
+  );
+  // An unforced run says nothing about forcing at all.
+  const plain = textOf(pmTipBox(RUN_SPLIT, true));
+  assert(
+    !plain.includes("forced"),
+    "no phantom clause on an ordinary run: " + plain,
+  );
+});
+
+Deno.test("metrics forced: a gate kind that is not a string still names itself", () => {
+  // Fail-open on display, like the skip tip's kind line: the row is forced
+  // whatever the field's shape, and printing "undefined" (or dropping the line)
+  // would hide that.
+  const t = textOf(pmTipBox({ ...FORCED_RUN, forced: true }, true));
+  assert(t.includes("forced past"), "the line is still drawn: " + t);
+  assert(!t.includes("undefined"), "and carries no leak: " + t);
+});
+
+Deno.test("metrics forced: a file with no forced runs renders exactly as before", () => {
+  // Backward compatibility is the whole reason the fields are ABSENT rather
+  // than null on an ordinary row: every historical file has none, and none of
+  // them is back-filled.
+  const { runs, skips } = pmPartitionReal(
+    pmRecordsReal(jsonl(RUN_SPLIT, SKIP_TICK, RUN_SPLIT2)),
+  );
+  const wrap = pmChart(runs, "abs", skips);
+  assert(collect(wrap, "pm-forced").length === 0, "no rings");
+  assert(
+    !textOf(wrap).includes("forced run"),
+    "and no legend key for a mark that is not on the plot: " + textOf(wrap),
+  );
+  assert(
+    !textOf(pmNoteBox(RUN_SPLIT2, skips, runs)).includes("forced"),
+    "and no caption sentence",
+  );
+});
+
+Deno.test("metrics forced caption: counts them, and says they still count", () => {
+  const runs = [RUN_SPLIT, FORCED_RUN];
+  const t = textOf(pmNoteBox(FORCED_RUN, [], runs));
+  assert(t.includes("1 run was forced"), "the count: " + t);
+  assert(
+    t.includes("counts in every figure"),
+    "and the reading that separates it from a skip: " + t,
+  );
+});
+
 Deno.test("metrics caption: names the pause when skips exist, and only then", () => {
   const withSkips = textOf(pmNoteBox(RUN_SPLIT, [SKIP_TICK, SKIP_TICK2]));
   assert(
@@ -7264,7 +7484,7 @@ function repoListBind(repos, org = "testorg") {
   return [fn, box];
 }
 
-function pmNoteBox(last, skips) {
+function pmNoteBox(last, skips, runs) {
   const box = makeEl("div");
   const $ = (id) => (id === "pmnote" ? box : makeEl("div"));
   const d = pmDeps();
@@ -7272,9 +7492,9 @@ function pmNoteBox(last, skips) {
   bind(
     "metrics.html",
     "renderPmNote",
-    ["$", "document", "fmtAgo", "parseRunId", "outcomeWord"],
-    [$, stubDocument(), fmtAgo, d.parseRunId, outcomeWordReal],
-  )(last, skips);
+    ["$", "document", "fmtAgo", "parseRunId", "outcomeWord", "isForced"],
+    [$, stubDocument(), fmtAgo, d.parseRunId, outcomeWordReal, isForcedReal],
+  )(last, skips, runs);
   return box;
 }
 
@@ -7448,6 +7668,38 @@ Deno.test("hostile input: hovering a hostile skip lands it in the tip as text", 
   wrap._rect = rect;
   svg.fire("mousemove", { clientX: 719, clientY: 10 });
   assertInert(collect(wrap, "pm-tip")[0], XSS_SCRIPT, "skip tooltip on hover");
+  assert(
+    markupNodes(wrap).length === 0,
+    "no payload may become markup anywhere on the chart: " +
+      markupNodes(wrap).join(", "),
+  );
+});
+
+Deno.test("hostile input: a forced run's gate and reason render as tooltip text", () => {
+  // forceReason is carried VERBATIM by contract, from a repo this page does not
+  // own — the same verbatim guarantee that makes skipReason a markup carrier.
+  // A distinct payload per field, so a field that stopped rendering as text
+  // cannot pass on another field's copy.
+  const box = pmTipBox({
+    ...FORCED_RUN,
+    forced: XSS_IMG,
+    forceReason: XSS_SCRIPT,
+  }, true);
+  assertInert(box, XSS_IMG, "forced gate kind");
+  assertInert(box, XSS_SCRIPT, "force reason");
+});
+
+Deno.test("hostile input: hovering a hostile forced run lands it in the tip as text", () => {
+  // The integration half: pmTip being safe is worth nothing if the chart stops
+  // calling it and interpolates the row itself.
+  const run = { ...FORCED_RUN, forceReason: XSS_SCRIPT };
+  const wrap = pmChart([RUN_SPLIT, run], "abs");
+  const svg = pmSvg(wrap);
+  const rect = { left: 0, top: 0, width: 720, height: 210 };
+  svg._rect = rect;
+  wrap._rect = rect;
+  svg.fire("mousemove", { clientX: 719, clientY: 10 });
+  assertInert(collect(wrap, "pm-tip")[0], XSS_SCRIPT, "forced tooltip on hover");
   assert(
     markupNodes(wrap).length === 0,
     "no payload may become markup anywhere on the chart: " +
