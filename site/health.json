@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T08:53:36Z",
+  "generatedAt": "2026-08-10T10:38:47Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1216,56 +1216,6 @@
         ]
       },
       {
-        "repo": "st0x.oracle",
-        "org": "ST0x-Technology",
-        "package": null,
-        "audit": "never",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 26,
-        "lastMutation": {
-          "timestamp": "2026-07-24T20:57:17Z",
-          "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
-          "skillVersion": "0.26.0",
-          "scope": "whole repo (src/)"
-        },
-        "blockedBy": [
-          "rain.datacontract",
-          "rain.deploy",
-          "rain.extrospection",
-          "rain.math.fixedpoint",
-          "rain.math.float",
-          "rain.sol.codegen",
-          "rain.solmem",
-          "rain.string",
-          "rain.tofu.erc20-decimals",
-          "rain.vats",
-          "st0x.deploy"
-        ],
-        "staleDeps": [
-          {
-            "repo": "rain.factory",
-            "pinned": "0.1.1",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.1.1",
-            "latest": "0.1.7"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.1.5",
-            "latest": "0.2.0"
-          },
-          {
-            "repo": "st0x.deploy",
-            "pinned": "0.1.1",
-            "latest": "0.1.29"
-          }
-        ]
-      },
-      {
         "repo": "rain.math.binary",
         "org": "rainlanguage",
         "package": "rain-math-binary",
@@ -1308,6 +1258,61 @@
         },
         "blockedBy": [],
         "staleDeps": []
+      },
+      {
+        "repo": "st0x.oracle",
+        "org": "ST0x-Technology",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-07-26T08:23:39Z",
+          "auditedCommit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
+          "skillVersion": "0.12.0",
+          "stale": true
+        },
+        "openAuditIssues": 20,
+        "lastMutation": {
+          "timestamp": "2026-07-24T20:57:17Z",
+          "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
+          "skillVersion": "0.26.0",
+          "scope": "whole repo (src/)"
+        },
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.math.fixedpoint",
+          "rain.math.float",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "rain.tofu.erc20-decimals",
+          "rain.vats",
+          "st0x.deploy"
+        ],
+        "staleDeps": [
+          {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.5"
+          },
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.1.1",
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.vats",
+            "pinned": "0.1.5",
+            "latest": "0.2.0"
+          },
+          {
+            "repo": "st0x.deploy",
+            "pinned": "0.1.1",
+            "latest": "0.1.29"
+          }
+        ]
       }
     ],
     "edges": [
@@ -4012,8 +4017,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 114,
   "reposWithFindings": 38,
-  "reposWholeRepoAudited": 2,
-  "reposNeverAudited": 112,
+  "reposWholeRepoAudited": 3,
+  "reposNeverAudited": 111,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 17,
   "summary": {
@@ -5054,18 +5059,6 @@
       "lastMutation": null
     },
     {
-      "name": "st0x.oracle",
-      "org": "ST0x-Technology",
-      "lastAudit": null,
-      "openAuditIssues": 26,
-      "lastMutation": {
-        "timestamp": "2026-07-24T20:57:17Z",
-        "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
-        "skillVersion": "0.26.0",
-        "scope": "whole repo (src/)"
-      }
-    },
-    {
       "name": "st0x.pricing-types",
       "org": "ST0x-Technology",
       "lastAudit": null,
@@ -5145,6 +5138,23 @@
         "auditedAt": "2026-07-25T21:19:18Z",
         "auditedCommit": "30ecd99afee3d549b74b6f4e86cc178f99524a6e",
         "skillVersion": "0.17.0",
+        "stale": true
+      }
+    },
+    {
+      "name": "st0x.oracle",
+      "org": "ST0x-Technology",
+      "openAuditIssues": 20,
+      "lastMutation": {
+        "timestamp": "2026-07-24T20:57:17Z",
+        "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
+        "skillVersion": "0.26.0",
+        "scope": "whole repo (src/)"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-07-26T08:23:39Z",
+        "auditedCommit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
+        "skillVersion": "0.12.0",
         "stale": true
       }
     }
@@ -5629,7 +5639,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1563,
+      "fullSourceLoc": 1704,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -7021,7 +7031,7 @@
       "org": "ST0x-Technology",
       "state": "analyzed",
       "externalFunctions": 33,
-      "testFiles": 27,
+      "testFiles": 28,
       "sourcesUnparsed": 0,
       "untested": []
     }
