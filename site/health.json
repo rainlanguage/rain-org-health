@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T10:38:47Z",
+  "generatedAt": "2026-08-10T12:02:03Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1271,7 +1271,7 @@
           "skillVersion": "0.12.0",
           "stale": true
         },
-        "openAuditIssues": 20,
+        "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-07-24T20:57:17Z",
           "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
@@ -2722,18 +2722,18 @@
     "repo": "st0x.deploy",
     "source": "src/lib/LibAuthoriserInvariants.sol",
     "function": "expectedGrants(address)",
-    "pinnedCount": 13,
-    "declaredCount": 13,
+    "pinnedCount": 16,
+    "declaredCount": 16,
     "chains": [
       {
         "network": "base",
         "authoriser": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
         "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
         "rpcHost": "mainnet.base.org",
-        "granted": 13,
+        "granted": 16,
         "missing": 0,
         "unknown": 0,
-        "total": 13,
+        "total": 16,
         "state": "live"
       },
       {
@@ -2741,11 +2741,22 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 16,
         "missing": 0,
         "unknown": 0,
-        "total": 13,
+        "total": 16,
         "state": "live"
+      },
+      {
+        "network": "hyperevm",
+        "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+        "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        "rpcHost": null,
+        "granted": 0,
+        "missing": 0,
+        "unknown": 16,
+        "total": 16,
+        "state": "unknown"
       }
     ],
     "grantees": [
@@ -2767,6 +2778,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2783,6 +2799,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2799,6 +2820,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2815,6 +2841,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2831,6 +2862,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2847,6 +2883,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2863,6 +2904,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2879,6 +2925,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2895,6 +2946,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           },
@@ -2911,6 +2967,11 @@
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "unknown"
               }
             ]
           }
@@ -2934,6 +2995,11 @@
                 "network": "ethereum",
                 "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "unknown"
               }
             ]
           },
@@ -2950,6 +3016,11 @@
                 "network": "ethereum",
                 "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "unknown"
               }
             ]
           },
@@ -2966,6 +3037,81 @@
                 "network": "ethereum",
                 "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
                 "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x1c66D6708914C40239D54919320b4C48cAE3D1A9",
+                "status": "unknown"
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ident": "GRANTEE_SERVICE_3D0C",
+        "kind": "constant",
+        "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+        "roles": [
+          {
+            "role": "DEPOSIT",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "unknown"
+              }
+            ]
+          },
+          {
+            "role": "WITHDRAW",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "unknown"
+              }
+            ]
+          },
+          {
+            "role": "CERTIFY",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted"
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted"
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "unknown"
               }
             ]
           }
@@ -5144,7 +5290,7 @@
     {
       "name": "st0x.oracle",
       "org": "ST0x-Technology",
-      "openAuditIssues": 20,
+      "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-07-24T20:57:17Z",
         "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
@@ -5674,16 +5820,16 @@
       "latestTag": "sol-v0.1.29",
       "latestTagIso": "2026-07-24T13:46:43Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4289,
+      "sourceLocChangedSinceAudit": 4584,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3892,
+      "sourceLocAddedSinceAudit": 4187,
       "sourceLocRemovedSinceAudit": 397,
-      "filesChangedSinceAudit": 77,
-      "commitsSinceAudit": 349,
+      "filesChangedSinceAudit": 78,
+      "commitsSinceAudit": 356,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 3472,
+      "commentLocAddedSinceAudit": 3604,
       "commentLocRemovedSinceAudit": 256,
-      "codeLocAddedSinceAudit": 3273,
+      "codeLocAddedSinceAudit": 3428,
       "codeLocRemovedSinceAudit": 374,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -7022,7 +7168,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 131,
+      "testFiles": 133,
       "sourcesUnparsed": 0,
       "untested": []
     },
