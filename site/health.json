@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-10T18:06:32Z",
+  "generatedAt": "2026-08-10T19:20:11Z",
   "auditGraph": {
     "nodes": [
       {
@@ -5785,7 +5785,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1828,
+      "fullSourceLoc": 1830,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
