@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-11T19:28:29Z",
+  "generatedAt": "2026-08-11T21:07:13Z",
   "auditGraph": {
     "nodes": [
       {
@@ -76,6 +76,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rainlang"
         ],
@@ -152,6 +153,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rainlang"
         ],
@@ -308,6 +310,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rainlang"
         ],
@@ -427,7 +430,10 @@
         "lastAudit": null,
         "openAuditIssues": 0,
         "lastMutation": null,
-        "blockedBy": [],
+        "blockedBy": [
+          "rain.solmem",
+          "rain.string"
+        ],
         "staleDeps": [
           {
             "repo": "rain.math.saturating",
@@ -449,7 +455,8 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.sol.codegen",
-          "rain.solmem"
+          "rain.solmem",
+          "rain.string"
         ],
         "staleDeps": [
           {
@@ -504,6 +511,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rainlang"
         ],
@@ -588,6 +596,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rainlang"
         ],
@@ -659,6 +668,38 @@
         "staleDeps": []
       },
       {
+        "repo": "rain.solver",
+        "org": "rainlanguage",
+        "package": null,
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [],
+        "staleDeps": []
+      },
+      {
+        "repo": "rain.string",
+        "org": "rainlanguage",
+        "package": "rain-string",
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [
+          "rain.solmem"
+        ],
+        "staleDeps": [
+          {
+            "repo": "rain.solmem",
+            "pinned": "0.1.3",
+            "latest": "0.1.9"
+          }
+        ]
+      },
+      {
         "repo": "rain.tier.interface",
         "org": "rainlanguage",
         "package": null,
@@ -718,7 +759,8 @@
           "rain.math.fixedpoint",
           "rain.math.float",
           "rain.sol.codegen",
-          "rain.solmem"
+          "rain.solmem",
+          "rain.string"
         ],
         "staleDeps": [
           {
@@ -758,6 +800,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rain.vats",
           "rainlang"
@@ -803,6 +846,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rainlang"
         ],
@@ -901,7 +945,9 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
+          "raindex.interface",
           "rainlang"
         ],
         "staleDeps": [
@@ -936,9 +982,70 @@
             "latest": "0.1.9"
           },
           {
+            "repo": "raindex.interface",
+            "pinned": "0.1.1",
+            "latest": "0.1.3"
+          },
+          {
             "repo": "rainlang",
             "pinned": "0.1.5",
             "latest": "0.1.8"
+          }
+        ]
+      },
+      {
+        "repo": "raindex.governance",
+        "org": "rainlanguage",
+        "package": "raindex-governance",
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.math.float",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string",
+          "raindex.interface"
+        ],
+        "staleDeps": [
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.1.1",
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "raindex.interface",
+            "pinned": "0.1.2",
+            "latest": "0.1.3"
+          }
+        ]
+      },
+      {
+        "repo": "raindex.interface",
+        "org": "rainlanguage",
+        "package": "raindex-interface",
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.math.float",
+          "rain.sol.codegen",
+          "rain.solmem",
+          "rain.string"
+        ],
+        "staleDeps": [
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.1.1",
+            "latest": "0.1.7"
           }
         ]
       },
@@ -960,6 +1067,7 @@
           "rain.metadata",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals"
         ],
         "staleDeps": [
@@ -987,6 +1095,37 @@
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.sol.codegen",
+            "pinned": "0.1.0",
+            "latest": "0.1.4"
+          },
+          {
+            "repo": "rain.solmem",
+            "pinned": "0.1.3",
+            "latest": "0.1.9"
+          }
+        ]
+      },
+      {
+        "repo": "rainlang.interface",
+        "org": "rainlanguage",
+        "package": "rainlang-interface",
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [
+          "rain.sol.codegen",
+          "rain.solmem"
+        ],
+        "staleDeps": [
+          {
+            "repo": "rain.math.binary",
+            "pinned": "0.1.1",
+            "latest": "0.1.3"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1029,6 +1168,7 @@
           "rain.math.float",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rain.vats"
         ],
@@ -1146,6 +1286,7 @@
           "rain.math.float",
           "rain.sol.codegen",
           "rain.solmem",
+          "rain.string",
           "rain.tofu.erc20-decimals",
           "rain.vats",
           "st0x.deploy"
@@ -1261,6 +1402,13 @@
       },
       {
         "from": "rain.dia",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "rain.dia",
         "to": "rain.tofu.erc20-decimals",
         "stale": false,
         "pinned": "0.1.1",
@@ -1349,6 +1497,13 @@
         "stale": true,
         "pinned": "0.1.3",
         "latest": "0.1.9"
+      },
+      {
+        "from": "rain.erc4626.words",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
       },
       {
         "from": "rain.erc4626.words",
@@ -1513,6 +1668,13 @@
       },
       {
         "from": "rain.flare",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "rain.flare",
         "to": "rain.tofu.erc20-decimals",
         "stale": false,
         "pinned": "0.1.1",
@@ -1554,6 +1716,13 @@
         "latest": "0.1.2"
       },
       {
+        "from": "rain.math.fixedpoint",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
         "from": "rain.math.float",
         "to": "rain.datacontract",
         "stale": false,
@@ -1580,6 +1749,13 @@
         "stale": true,
         "pinned": "0.1.3",
         "latest": "0.1.9"
+      },
+      {
+        "from": "rain.math.float",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
       },
       {
         "from": "rain.merkle",
@@ -1657,6 +1833,13 @@
         "stale": true,
         "pinned": "0.1.3",
         "latest": "0.1.9"
+      },
+      {
+        "from": "rain.merkle",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
       },
       {
         "from": "rain.merkle",
@@ -1758,6 +1941,13 @@
       },
       {
         "from": "rain.pyth",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "rain.pyth",
         "to": "rain.tofu.erc20-decimals",
         "stale": false,
         "pinned": "0.1.1",
@@ -1769,6 +1959,13 @@
         "stale": true,
         "pinned": "0.1.2",
         "latest": "0.1.8"
+      },
+      {
+        "from": "rain.string",
+        "to": "rain.solmem",
+        "stale": true,
+        "pinned": "0.1.3",
+        "latest": "0.1.9"
       },
       {
         "from": "rain.tofu.erc20-decimals",
@@ -1821,6 +2018,13 @@
       },
       {
         "from": "rain.vats",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "rain.vats",
         "to": "rain.verify.interface",
         "stale": false,
         "pinned": "0.1.0",
@@ -1860,6 +2064,13 @@
         "stale": true,
         "pinned": "0.1.1",
         "latest": "0.1.7"
+      },
+      {
+        "from": "rain.vats.flare",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
       },
       {
         "from": "rain.vats.flare",
@@ -1961,6 +2172,13 @@
       },
       {
         "from": "rain.verify",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "rain.verify",
         "to": "rain.tofu.erc20-decimals",
         "stale": false,
         "pinned": "0.1.1",
@@ -2052,6 +2270,13 @@
       },
       {
         "from": "raindex",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "raindex",
         "to": "rain.tofu.erc20-decimals",
         "stale": false,
         "pinned": "0.1.1",
@@ -2059,10 +2284,38 @@
       },
       {
         "from": "raindex",
+        "to": "raindex.interface",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "raindex",
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.5",
         "latest": "0.1.8"
+      },
+      {
+        "from": "raindex.governance",
+        "to": "rain.math.float",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.7"
+      },
+      {
+        "from": "raindex.governance",
+        "to": "raindex.interface",
+        "stale": true,
+        "pinned": "0.1.2",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "raindex.interface",
+        "to": "rain.math.float",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.7"
       },
       {
         "from": "rainlang",
@@ -2150,10 +2403,52 @@
       },
       {
         "from": "rainlang",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "rainlang",
         "to": "rain.tofu.erc20-decimals",
         "stale": false,
         "pinned": "0.1.1",
         "latest": "0.1.1"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.lib.hash",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.lib.typecast",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.math.binary",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.3"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.sol.codegen",
+        "stale": true,
+        "pinned": "0.1.0",
+        "latest": "0.1.4"
+      },
+      {
+        "from": "rainlang.interface",
+        "to": "rain.solmem",
+        "stale": true,
+        "pinned": "0.1.3",
+        "latest": "0.1.9"
       },
       {
         "from": "st0x.deploy",
@@ -2360,7 +2655,7 @@
       {
         "id": "authoriser",
         "title": "Operational access — authoriser",
-        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. The live authorizer() read failed, so no clone is marked active — status unknown, not assumed.",
+        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. Which clone is live is read from a production vault's authorizer() on Base.",
         "entries": [
           {
             "role": "V3-era authoriser clone",
@@ -2380,7 +2675,7 @@
             "role": "V4 authoriser clone",
             "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
             "network": "base",
-            "status": "unknown",
+            "status": "active",
             "note": "the V4 upgrade rewires every vault onto this"
           },
           {
@@ -2571,7 +2866,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2591,11 +2886,11 @@
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
           "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
-          "implVersion": "unknown",
-          "targetImpl": null,
+          "implVersion": "0.1.1",
+          "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": true,
+          "status": "healthy"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -3466,20 +3761,20 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 114,
-  "reposWithFindings": 37,
+  "reposWithFindings": 38,
   "reposWholeRepoAudited": 3,
   "reposNeverAudited": 111,
   "reposExternallyAudited": 25,
-  "reposNeverExternallyAudited": 14,
+  "reposNeverExternallyAudited": 17,
   "summary": {
-    "per-chain-etherscan-key": 11,
+    "per-chain-etherscan-key": 12,
     "old-nix-installer": 9,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
+    "untested-externals": 4,
+    "bespoke-ci": 3,
     "private-key-dev": 3,
-    "bespoke-ci": 2,
-    "untested-externals": 2,
     "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
@@ -3535,10 +3830,34 @@
       ]
     },
     {
+      "name": "rain.solver",
+      "org": "rainlanguage",
+      "signals": [
+        "telegram-secret-drift",
+        "untested-externals"
+      ]
+    },
+    {
       "name": "raindex",
       "org": "rainlanguage",
       "signals": [
         "old-actions-checkout",
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "raindex.governance",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key",
+        "untested-externals"
+      ]
+    },
+    {
+      "name": "rainix",
+      "org": "rainlanguage",
+      "signals": [
+        "bespoke-ci",
         "per-chain-etherscan-key"
       ]
     },
@@ -3696,13 +4015,6 @@
       ]
     },
     {
-      "name": "rain.solver",
-      "org": "rainlanguage",
-      "signals": [
-        "telegram-secret-drift"
-      ]
-    },
-    {
       "name": "rain.subgraph.docker",
       "org": "rainlanguage",
       "signals": [
@@ -3728,13 +4040,6 @@
       "org": "rainlanguage",
       "signals": [
         "old-actions-checkout"
-      ]
-    },
-    {
-      "name": "raindex.governance",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
       ]
     },
     {
@@ -4833,6 +5138,35 @@
       "daysSinceAudit": null
     },
     {
+      "name": "rain.solver",
+      "org": "rainlanguage",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 18,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
       "name": "rain.tier.interface",
       "org": "rainlanguage",
       "hasProtofireAudit": false,
@@ -4935,6 +5269,64 @@
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": 41,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "raindex.governance",
+      "org": "rainlanguage",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 283,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "raindex.interface",
+      "org": "rainlanguage",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 3782,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5957,6 +6349,41 @@
   ],
   "untestedExternals": [
     {
+      "name": "raindex.governance",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 11,
+      "testFiles": 1,
+      "sourcesUnparsed": 0,
+      "untested": [
+        {
+          "contract": "RaindexInventory",
+          "function": "addOrder4",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "orderExists",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "quote2",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "removeOrder3",
+          "file": "src/RaindexInventory.sol"
+        },
+        {
+          "contract": "RaindexInventory",
+          "function": "unpause",
+          "file": "src/RaindexInventory.sol"
+        }
+      ]
+    },
+    {
       "name": "rain.merkle",
       "org": "rainlanguage",
       "state": "analyzed",
@@ -5993,6 +6420,21 @@
           "contract": "PythWords",
           "function": "supportsInterface",
           "file": "src/concrete/PythWords.sol"
+        }
+      ]
+    },
+    {
+      "name": "rain.solver",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 1,
+      "testFiles": 0,
+      "sourcesUnparsed": 0,
+      "untested": [
+        {
+          "contract": "DiagOrder",
+          "function": "run",
+          "file": "diag/DiagOrder.sol"
         }
       ]
     },
@@ -6204,6 +6646,15 @@
       "untested": []
     },
     {
+      "name": "rain.string",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 6,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
       "name": "rain.tier.interface",
       "org": "rainlanguage",
       "state": "analyzed",
@@ -6276,11 +6727,29 @@
       "untested": []
     },
     {
+      "name": "raindex.interface",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 0,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
       "name": "rainlang",
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 28,
       "testFiles": 269,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rainlang.interface",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 25,
       "sourcesUnparsed": 0,
       "untested": []
     },
