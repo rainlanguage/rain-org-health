@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-11T07:40:43Z",
+  "generatedAt": "2026-08-11T09:16:50Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1266,17 +1266,17 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": {
-          "auditedAt": "2026-07-26T08:23:39Z",
-          "auditedCommit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
-          "skillVersion": "0.12.0",
+          "auditedAt": "2026-08-11T08:42:04Z",
+          "auditedCommit": "05bb66bfd8d0fc046478309e99a57eaaea27fb09",
+          "skillVersion": "0.34.0",
           "stale": true
         },
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-07-24T20:57:17Z",
-          "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
-          "skillVersion": "0.26.0",
-          "scope": "whole repo (src/)"
+          "timestamp": "2026-08-11T08:42:04Z",
+          "commit": "05bb66bfd8d0e",
+          "skillVersion": "0.30.0",
+          "scope": "whole repo (src/ + script/)"
         },
         "blockedBy": [
           "rain.datacontract",
@@ -5292,15 +5292,15 @@
       "org": "ST0x-Technology",
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-07-24T20:57:17Z",
-        "commit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
-        "skillVersion": "0.26.0",
-        "scope": "whole repo (src/)"
+        "timestamp": "2026-08-11T08:42:04Z",
+        "commit": "05bb66bfd8d0e",
+        "skillVersion": "0.30.0",
+        "scope": "whole repo (src/ + script/)"
       },
       "lastAudit": {
-        "auditedAt": "2026-07-26T08:23:39Z",
-        "auditedCommit": "31441bb47015b13ab9a8a5e004e601a51522a32e",
-        "skillVersion": "0.12.0",
+        "auditedAt": "2026-08-11T08:42:04Z",
+        "auditedCommit": "05bb66bfd8d0fc046478309e99a57eaaea27fb09",
+        "skillVersion": "0.34.0",
         "stale": true
       }
     }
@@ -5785,7 +5785,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1830,
+      "fullSourceLoc": 1834,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5895,15 +5895,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.242-uc-v0.0.1-alpha.241",
-      "latestTagIso": "2026-08-05T09:33:46Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.243-uc-v0.0.1-alpha.242",
+      "latestTagIso": "2026-08-11T08:26:38Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 488,
+      "sourceLocChangedSinceAudit": 463,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 484,
+      "sourceLocAddedSinceAudit": 459,
       "sourceLocRemovedSinceAudit": 4,
       "filesChangedSinceAudit": 63,
-      "commitsSinceAudit": 142,
+      "commitsSinceAudit": 144,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 996,
       "commentLocRemovedSinceAudit": 315,
