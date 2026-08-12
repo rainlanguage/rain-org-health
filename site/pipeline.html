@@ -230,6 +230,27 @@
   .fsm-open .q-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
   .fsm-open .a-l { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
   .fsm-open .a-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+  /* ---- Tokens-per-landed-item band ----
+     The machine's throughput priced in the one unit the pipeline can optimize: tokens
+     spent per unit of work that LANDED. It sits beside the open-issue band and shares
+     its visual language — a lead number, then rows of statistics — because the two are
+     the same kind of thing: whole-machine measures, not any actor's inbox. */
+  .fsm-spend { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px;
+               background: var(--surface); border: 1px solid var(--border); border-radius: 11px;
+               padding: 14px 16px; margin: 12px 0 4px; }
+  .fsm-spend .sp-pop { flex: 1 1 230px; min-width: 200px; }
+  .fsm-spend .sp-n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; }
+  .fsm-spend .sp-k { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .fsm-spend .sp-sub { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; margin-top: 4px; }
+  .fsm-spend .sp-stats { display: grid; gap: 2px; flex: 1 1 280px; min-width: 250px; }
+  /* The two windows are EQUALS — same row shape, same type size and weight, told apart
+     by their own names, which is the page's rule for identity generally. */
+  .fsm-spend .sp-stat { display: flex; align-items: baseline; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .fsm-spend .sp-sn { color: var(--ink-3); min-width: 30px; }
+  .fsm-spend .sp-sv { color: var(--ink); font-weight: 650; }
+  /* The ratio's auditable parts: visible detail under each window's row, never a tooltip. */
+  .fsm-spend .sp-parts { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin: 0 0 5px 40px; overflow-wrap: anywhere; }
+  .fsm-spend .sp-cav { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; margin-top: 3px; }
   /* ---- External (Protofire) audit coverage ---- */
   .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
   .au-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); }
@@ -323,7 +344,7 @@ $("theme").addEventListener("click", () => {
 // content). This panel builds the DOM directly (createElement / textContent / .append / .href),
 // matching the rest of the dashboard — so escaping is BY CONSTRUCTION and there is no hand-rolled
 // HTML escaper to keep correct at every sink.
-function renderFsm(hq, history) {
+function renderFsm(hq, history, spendBand) {
   const box = $("fsm");
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -355,6 +376,9 @@ function renderFsm(hq, history) {
       " lands and the scan folds it into health.json."
     );
     box.append(empty);
+    // The spend band reads different artifacts than the snapshot, so a missing
+    // snapshot must not take it down with it.
+    if (spendBand) box.append(spendBand);
     return;
   }
   const c = hq.counts;
@@ -1527,6 +1551,15 @@ function renderFsm(hq, history) {
       " Each little chart is one quantity's own trend on its own scale — heights never compare across them, and days are never comparable to a queue size."
     );
   }
+  // Guarded on the spend band actually rendering, exactly as the age sentence is guarded on
+  // the age band: the legend only ever describes marks the panel is putting on screen.
+  if (spendBand) {
+    note.append(
+      " The ",
+      el("b", null, "tokens per landed item"),
+      " band beside the population is the machine's throughput in the one unit the pipeline can optimize — all four token classes counted, with the parts beside the ratio so the total stays checkable.",
+    );
+  }
   // Deliberately OUTSIDE the `hist` guard: the fallback is exactly what fills the gap when no
   // trend is computable, so it can appear on a page with no sparklines at all. The sentence
   // is not optional — without it the legend above would state a single meaning for the red
@@ -1541,8 +1574,11 @@ function renderFsm(hq, history) {
   detail.id = "fsmdetail";
   // The open-issue band leads: it is the population the machine below has to move, and the
   // one number on this panel that is not an actor's inbox. Absent data ⇒ absent band, and
-  // the panel is byte-for-byte the machine it was.
+  // the panel is byte-for-byte the machine it was. The tokens band sits directly beside it —
+  // the same kind of number, a whole-machine measure rather than an inbox: the population is
+  // what the machine must move, the ratio is what moving one unit of it costs.
   if (band) box.append(band);
+  if (spendBand) box.append(spendBand);
   box.append(grid, detail, note);
 
   // Header label for a clicked box: its own state label (.sk). Every [data-t] is a
@@ -1625,6 +1661,238 @@ function sevenDaySlope(series, nowMs) {
   return num / den;
 }
 
+// ---- Tokens per landed item (the band beside the open-issue population).
+//
+// runs.jsonl text → one spend record per run: its timestamp (from the runId, the same
+// stamp metrics.html parses), the four token classes SEPARATELY, and whether the
+// numbers are exact. A malformed line is skipped rather than failing the whole fetch:
+// the file is appended to by a live cron and a half-written last line is normal.
+//
+// The emitter appends up to several PARTIAL lines per run (stage:"boot"/"ttl"/usage
+// snapshots) before the complete final record — cumulative snapshots of ONE run, not
+// increments — so summing raw lines would multiply a run's spend by its line count.
+// Collapse first, to the most complete line per runId+role, exactly the discipline
+// metrics.html's collapseRuns established: final beats ttl beats boot; a record with
+// no stage is a legacy (pre-split) record written at run end, ranked as the final it
+// is; the LAST line wins a rank tie, being the later snapshot.
+//
+// The four classes are kept apart end-to-end because they price ~10–25x apart — the
+// band sums them into ONE headline only because the ruling asked for total tokens,
+// and it shows the parts beside it so the total stays checkable by eye.
+//
+// `exact` is the lower-bound flag's input: a row is exact only when the harness
+// measured the WHOLE run (accuracy "whole-run") and every class arrived as a real
+// number. A main-thread-only row understates whole-run spend (subagent tokens are
+// missing — cache reads by 5–76x on the traceless historical rows), and a partial
+// row from a killed run carries only what it knew; both make a window's total a
+// floor, never a lie. A skipped tick is the one exception: there was no run, its
+// zeros are the truth, and it must not poison a window into "lower bound".
+//
+// tokensOut vs outputTokens: the same measure under an old and a new name — the live
+// emitter writes both, rows before the rename carry only tokensOut. Prefer the long
+// -lived key, fall back to the alias, never sum the pair.
+function parseRunSpend(text) {
+  if (typeof text !== "string" || !text) return [];
+  const rows = [];
+  for (const line of text.split("\n")) {
+    const s = line.trim();
+    if (!s) continue;
+    let r;
+    try { r = JSON.parse(s); } catch { continue; }
+    if (!r || typeof r !== "object") continue;
+    const m = /^(\d{4})(\d{2})(\d{2})T(\d{2})(\d{2})(\d{2})Z$/.exec(typeof r.runId === "string" ? r.runId : "");
+    if (!m) continue;
+    const t = Date.parse(m[1] + "-" + m[2] + "-" + m[3] + "T" + m[4] + ":" + m[5] + ":" + m[6] + "Z");
+    if (!Number.isFinite(t)) continue;
+    rows.push({ t, r });
+  }
+  const rank = (r) => (r.stage === "boot" ? 0 : r.stage === "ttl" ? 1 : 2);
+  const best = new Map();
+  for (const e of rows) {
+    const k = e.r.runId + " " + e.r.role;
+    const cur = best.get(k);
+    if (!cur || rank(e.r) >= rank(cur.r)) best.set(k, e);
+  }
+  // A VALUE off the untrusted artifact: a real JSON number, finite, >= 0 — or null.
+  // Never Number(x): that coerces null/"" to 0, and 0-because-absent is the lie the
+  // `exact` flag exists to keep out of the totals.
+  const num = (x) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? x : null);
+  const out = [];
+  for (const e of best.values()) {
+    const r = e.r;
+    // The skip predicate, verbatim from metrics.html's isSkip: the typed discriminant
+    // first, the gate-kind field as the fallback arm.
+    if (r.outcome === "skipped" || r.skipped != null) {
+      out.push({ t: e.t, tin: 0, tout: 0, cr: 0, cc: 0, exact: true });
+      continue;
+    }
+    const tin = num(r.tokensIn);
+    const toutRaw = num(r.tokensOut);
+    const tout = toutRaw != null ? toutRaw : num(r.outputTokens);
+    const cr = num(r.cacheRead);
+    const cc = num(r.cacheCreation);
+    out.push({
+      t: e.t,
+      tin: tin != null ? tin : 0,
+      tout: tout != null ? tout : 0,
+      cr: cr != null ? cr : 0,
+      cc: cc != null ? cc : 0,
+      exact: r.accuracy === "whole-run" && tin != null && tout != null && cr != null && cc != null,
+    });
+  }
+  // Deliberately unsorted: every consumer (the window filter, the latest-sample scan)
+  // is order-independent, and an order no reader needs is a contract no test can pin.
+  return out;
+}
+
+// landed-history.jsonl text → the landed units of pipeline work, one event per line
+// ({ts, kind:"pr"|"issue", repo, number} — a merged producer PR, or an issue closed
+// standalone by an upheld close-candidate; a PR-merge and the issue it closes are ONE
+// item, the emitter's rule). Only the timestamp and the kind are read; kind is clamped
+// to the two known values so no other field of another repo's artifact reaches the
+// page. Returns null when the text yields no events — the file is not yet published,
+// or holds nothing usable — and the caller words that state honestly rather than
+// rendering a fabricated zero.
+//
+// coverageStartMs is the earliest ts present: the backfill seeds the file from the
+// snapshot-history start, so everything before the first event is UNOBSERVED, not
+// zero — a window reaching before it must refuse the ratio, not undercount it.
+function parseLanded(text) {
+  if (typeof text !== "string" || !text) return null;
+  const events = [];
+  for (const line of text.split("\n")) {
+    const s = line.trim();
+    if (!s) continue;
+    let o;
+    try { o = JSON.parse(s); } catch { continue; }
+    if (!o || typeof o !== "object") continue;
+    if (o.kind !== "pr" && o.kind !== "issue") continue;
+    const t = Date.parse(o.ts);
+    if (!Number.isFinite(t)) continue;
+    events.push({ t, kind: o.kind });
+  }
+  if (!events.length) return null;
+  // A min-scan, not a sort: the file is append-only but this page never assumes the
+  // order it is handed, and nothing downstream reads the events in order.
+  let coverageStartMs = Infinity;
+  for (const e of events) if (e.t < coverageStartMs) coverageStartMs = e.t;
+  return { events, coverageStartMs };
+}
+
+// One trailing window's aggregation, [nowMs - days, nowMs] inclusive at both edges.
+// Spend always sums (the runs ledger predates every window this page draws); the
+// landed side is null unless the window is COVERED — landed-history's coverage began
+// at or before the window's start — because counting events over a partly-unobserved
+// window understates the denominator and flatters the ratio.
+function spendWindow(recs, landed, days, nowMs) {
+  const from = nowMs - days * 864e5;
+  let tin = 0, tout = 0, cr = 0, cc = 0, exact = true;
+  for (const r of recs) {
+    if (!(r.t >= from && r.t <= nowMs)) continue;
+    tin += r.tin; tout += r.tout; cr += r.cr; cc += r.cc;
+    if (!r.exact) exact = false;
+  }
+  const w = { days, tin, tout, cr, cc, total: tin + tout + cr + cc, exact, landed: null, covered: false };
+  if (landed) {
+    w.covered = landed.coverageStartMs <= from;
+    if (w.covered) w.landed = landed.events.filter((e) => e.t >= from && e.t <= nowMs).length;
+  }
+  return w;
+}
+
+// Compact token count: 412, 41.2k, 6.8M, 1.2B. One decimal (String() of a rounded JS
+// number never renders a trailing .0, so 2000 reads "2k"), and a value that rounds to
+// 1000 of its unit carries into the next — "1M", never "1000k".
+function fmtTok(n) {
+  if (!(typeof n === "number" && Number.isFinite(n) && n >= 0)) return "—";
+  if (n < 1000) return String(Math.round(n));
+  const f = (v) => String(Math.round(v * 10) / 10);
+  if (n < 1e6) { const s = f(n / 1e3); return s === "1000" ? "1M" : s + "k"; }
+  if (n < 1e9) { const s = f(n / 1e6); return s === "1000" ? "1B" : s + "M"; }
+  return f(n / 1e9) + "B";
+}
+
+// The tokens-per-landed-item band: the machine's throughput priced in the one unit
+// the pipeline can optimize. Returns the band node, or null with no run metrics at
+// all — absent data is an absent band, never a frame of dashes (the openBand rule).
+//
+// Two trailing windows, 7d and 30d, as equals. Each row carries the ratio AND its
+// auditable parts — the landed count and the four token classes separately — so the
+// one summed number can be checked by eye against figures that price ~10–25x apart.
+// "Now" is the LATEST sample across both artifacts, not wall-clock: a stalled feed
+// must not silently slide the trailing window off the data.
+//
+// The honest states, never fabricated:
+//   - landed-history unpublished/empty  → spend renders, the ratio says why not;
+//   - window starting before coverage   → the ratio refuses and names the start;
+//   - covered window where nothing landed → "0 landed" beside real spend — the
+//     pressure state, not an error;
+//   - a window holding any inexact row  → the ratio and total wear ≥, and one
+//     caveat line under the rows says what is missing.
+function renderSpendBand(runsText, landedText) {
+  const recs = parseRunSpend(runsText);
+  if (!recs.length) return null;
+  const landed = parseLanded(landedText);
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  let nowMs = -Infinity;
+  for (const r of recs) if (r.t > nowMs) nowMs = r.t;
+  if (landed) for (const e of landed.events) if (e.t > nowMs) nowMs = e.t;
+  const MON = ["Jan", "Feb", "Mar", "Apr", "May", "Jun", "Jul", "Aug", "Sep", "Oct", "Nov", "Dec"];
+  const fmtDay = (ms) => { const d = new Date(ms); return MON[d.getUTCMonth()] + " " + d.getUTCDate(); };
+  const windows = [spendWindow(recs, landed, 7, nowMs), spendWindow(recs, landed, 30, nowMs)];
+  const ratio = (w) => (w.landed != null && w.landed > 0 ? (w.exact ? "" : "≥") + fmtTok(w.total / w.landed) : null);
+
+  const band = el("div", "fsm-spend");
+  const pop = el("div", "sp-pop");
+  const head = ratio(windows[0]);
+  pop.append(el("div", "sp-n", head != null ? head : "—"));
+  pop.append(el("div", "sp-k", "tokens per landed item · 7d"));
+  pop.append(el(
+    "div",
+    "sp-sub",
+    "every token both crons spent — input, output, cache read and cache write, idle and skipped ticks included — over each unit of pipeline work that landed: a merged producer PR, or an issue closed standalone by an upheld close-candidate.",
+  ));
+  band.append(pop);
+
+  const stats = el("div", "sp-stats");
+  let anyInexact = false;
+  for (const w of windows) {
+    const row = el("div", "sp-stat");
+    row.append(el("span", "sp-sn", w.days + "d"));
+    const r = ratio(w);
+    let v;
+    if (r != null) v = r + " /item";
+    else if (!landed) v = "landed-history not yet published";
+    else if (!w.covered) v = "coverage starts " + fmtDay(landed.coverageStartMs);
+    else v = "nothing landed in this window";
+    row.append(el("span", "sp-sv", v));
+    stats.append(row);
+    stats.append(el(
+      "div",
+      "sp-parts",
+      (w.landed != null ? w.landed + " landed · " : "") +
+        "in " + fmtTok(w.tin) + " · out " + fmtTok(w.tout) +
+        " · cache-read " + fmtTok(w.cr) + " · cache-write " + fmtTok(w.cc) +
+        (w.exact ? "" : " · lower bound"),
+    ));
+    if (!w.exact) anyInexact = true;
+  }
+  if (anyInexact) {
+    stats.append(el(
+      "div",
+      "sp-cav",
+      "≥ / lower bound: some runs in the window logged main-thread tokens only, so subagent spend is missing and the true totals are higher.",
+    ));
+  }
+  band.append(stats);
+  return band;
+}
+
 // FSM-conformance state is issue-pr-cron's OWN artifact, fetched at runtime like the producer
 // metrics below — never baked into this repo or computed here (CLAUDE.md: the dashboard is a
 // consumer, not a producer, of data; new data ⇒ new fetch, not new baking). The history
@@ -1632,11 +1900,20 @@ function sevenDaySlope(series, nowMs) {
 // missing/older the panel simply renders no sparklines and no trend borders.
 const HQ_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue.json";
 const HIST_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue-history.jsonl";
+// The spend band's two artifacts, fetched the same way: the run ledger metrics.html
+// already reads, and the landed-history the pipeline's refresh tick publishes. A
+// failed/empty runs fetch renders no band; a failed landed fetch is passed through as
+// null so the band can SAY the file is not yet published instead of faking zeros.
+const SPEND_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/metrics/runs.jsonl";
+const LANDED_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/landed-history.jsonl";
 $("meta").textContent = "pipeline conformance · issue-pr-cron";
 Promise.all([
   fetch(HQ_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
   fetch(HIST_URL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => ""),
-]).then(([hq, histText]) => renderFsm(hq, parseHistory(histText)));
+  fetch(SPEND_URL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => ""),
+  fetch(LANDED_URL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : null)).catch(() => null),
+]).then(([hq, histText, runsText, landedText]) =>
+  renderFsm(hq, parseHistory(histText), renderSpendBand(runsText, landedText)));
 </script>
 </body>
 </html>

@@ -237,7 +237,7 @@ function auditBox(data) {
   return box;
 }
 
-function fsmBox(hq, history) {
+function fsmBox(hq, history, spendBand) {
   const box = makeEl("div");
   const document = {
     createElement: (t) => makeEl(t),
@@ -251,14 +251,15 @@ function fsmBox(hq, history) {
   const $ = (id) => (id === "fsm" ? box : makeEl("div"));
   // renderFsm calls the sibling top-level `sevenDaySlope` (the #32 trend). The harness
   // evals each function standalone, so inject that sibling as a param — in the browser
-  // it resolves from module scope. `history` is optional (an older/unfetched rollup).
+  // it resolves from module scope. `history` is optional (an older/unfetched rollup),
+  // and so is `spendBand` (the pre-built tokens-per-landed-item band node, or null).
   const slope = bind("pipeline.html", "sevenDaySlope", [], []);
   bind(
     "pipeline.html",
     "renderFsm",
     ["document", "$", "sevenDaySlope"],
     [document, $, slope],
-  )(hq, history);
+  )(hq, history, spendBand);
   return box;
 }
 
@@ -8208,4 +8209,331 @@ Deno.test("every page renders the same five nav tabs in the same order, its own 
       `${page}: exactly its own tab carries class="active", got [${active.join(", ")}]`,
     );
   }
+});
+
+// ---- Tokens per landed item (the pipeline band beside the open-issue population).
+//
+// The band's logic is four top-level functions plus a renderer, extracted and driven
+// exactly like the FSM's: parse each artifact, aggregate a trailing window, format,
+// render. Fixtures below anchor "now" at 2026-08-10T00:00:00Z via the newest record —
+// the band reads its clock off the DATA (latest sample, never wall-clock), so the
+// tests are deterministic by construction.
+
+const parseRunSpendFn = bind("pipeline.html", "parseRunSpend", [], []);
+const parseLandedFn = bind("pipeline.html", "parseLanded", [], []);
+const spendWindowFn = bind("pipeline.html", "spendWindow", [], []);
+const fmtTokFn = bind("pipeline.html", "fmtTok", [], []);
+
+function spendBox(runsText, landedText) {
+  const document = stubDocument();
+  return bind(
+    "pipeline.html",
+    "renderSpendBand",
+    ["document", "parseRunSpend", "parseLanded", "spendWindow", "fmtTok"],
+    [document, parseRunSpendFn, parseLandedFn, spendWindowFn, fmtTokFn],
+  )(runsText, landedText);
+}
+
+// One runs.jsonl line. Defaults are a complete, whole-run-accurate final record; a
+// test overrides exactly the field it is about.
+function runLine(over) {
+  return JSON.stringify(Object.assign({
+    runId: "20260810T000000Z",
+    role: "producer",
+    stage: "final",
+    accuracy: "whole-run",
+    tokensIn: 0,
+    tokensOut: 0,
+    cacheRead: 0,
+    cacheCreation: 0,
+  }, over));
+}
+
+function landedLine(over) {
+  return JSON.stringify(Object.assign(
+    { ts: "2026-08-09T00:00:00Z", kind: "pr", repo: "org/repo", number: 1 },
+    over,
+  ));
+}
+
+Deno.test("spend parse: staged appends collapse to one record per run, never summed", () => {
+  // Three lines, ONE run: cumulative snapshots (boot → ttl → final). Summing them
+  // would triple-count; the final line alone is the run's spend.
+  const text = [
+    runLine({ stage: "boot", tokensIn: null, tokensOut: null, cacheRead: 5, cacheCreation: null }),
+    runLine({ stage: "ttl", tokensIn: 1, tokensOut: 10, cacheRead: 50, cacheCreation: 2 }),
+    runLine({ tokensIn: 2, tokensOut: 100, cacheRead: 500, cacheCreation: 20 }),
+  ].join("\n");
+  const recs = parseRunSpendFn(text);
+  assert(recs.length === 1, "one record per runId+role, got " + recs.length);
+  assert(recs[0].tout === 100 && recs[0].cr === 500, "the final line's numbers win the collapse");
+  assert(recs[0].exact === true, "a complete whole-run final record is exact");
+});
+
+Deno.test("spend parse: of two full-rank lines the LAST wins — the later snapshot", () => {
+  // A run killed mid-flight leaves several rank-tied cumulative snapshots (usage
+  // rows, a legacy no-stage record); the later line is the more complete count.
+  const text = [
+    runLine({ stage: "usage", tokensOut: 10 }),
+    runLine({ stage: undefined, tokensOut: 99 }),
+  ].join("\n");
+  const recs = parseRunSpendFn(text);
+  assert(recs.length === 1 && recs[0].tout === 99, "the later rank-tied line wins the collapse");
+});
+
+Deno.test("spend parse: same runId, two roles — two records", () => {
+  const text = [
+    runLine({ tokensOut: 100 }),
+    runLine({ role: "vetter", tokensOut: 7 }),
+  ].join("\n");
+  const recs = parseRunSpendFn(text);
+  assert(recs.length === 2, "producer and vetter sharing a stamp stay separate runs");
+});
+
+Deno.test("spend parse: a skipped tick is exact zeros on both discriminant arms", () => {
+  // A skip row arrives flagged main-thread-only with zero fields — but there WAS no
+  // run, so its zeros are the truth and must not poison a window into "lower bound".
+  const text = [
+    runLine({ outcome: "skipped", accuracy: "main-thread-only" }),
+    runLine({ runId: "20260810T010000Z", skipped: "usage-gate", accuracy: "main-thread-only" }),
+  ].join("\n");
+  const recs = parseRunSpendFn(text);
+  assert(recs.length === 2, "both skip arms parse");
+  for (const r of recs) {
+    assert(r.tin === 0 && r.tout === 0 && r.cr === 0 && r.cc === 0, "a skip spends nothing");
+    assert(r.exact === true, "a skip's zeros are exact, not a lower bound");
+  }
+});
+
+Deno.test("spend parse: tokensOut wins, outputTokens is the fallback, never the sum", () => {
+  const text = [
+    runLine({ tokensOut: 100, outputTokens: 100 }),
+    runLine({ runId: "20260810T010000Z", tokensOut: null, outputTokens: 40 }),
+  ].join("\n");
+  const recs = parseRunSpendFn(text);
+  assert(recs[0].tout === 100, "both names present reads ONE value, not 200");
+  assert(recs[1].tout === 40, "a row carrying only the alias still counts its output");
+});
+
+Deno.test("spend parse: malformed lines and unparseable runIds are dropped, not zeroed", () => {
+  const text = [
+    "not json {",
+    JSON.stringify({ role: "producer", tokensOut: 9999 }),
+    runLine({ runId: "<img src=x onerror=alert(1)>", tokensOut: 9999 }),
+    runLine({ tokensOut: 5 }),
+  ].join("\n");
+  const recs = parseRunSpendFn(text);
+  assert(recs.length === 1 && recs[0].tout === 5, "only the well-formed run survives");
+});
+
+Deno.test("spend parse: an absent or hostile class is 0-but-inexact, never 0-and-exact", () => {
+  const text = [
+    runLine({ cacheRead: null }),
+    runLine({ runId: "20260810T010000Z", tokensIn: -5 }),
+    runLine({ runId: "20260810T020000Z", tokensOut: "1e9" }),
+    runLine({ runId: "20260810T030000Z", accuracy: "main-thread-only", tokensOut: 10 }),
+  ].join("\n");
+  const recs = parseRunSpendFn(text);
+  assert(recs.length === 4, "all four rows parse");
+  for (const r of recs) assert(r.exact === false, "absence/negatives/strings/main-thread-only all mark inexact");
+  assert(recs[0].cr === 0, "an absent class contributes nothing");
+  assert(recs[1].tin === 0, "a negative count contributes nothing");
+  assert(recs[2].tout === 0, "a string count contributes nothing");
+});
+
+Deno.test("landed parse: kind clamps, bad timestamps drop, coverage starts at the earliest event", () => {
+  // The earliest event arrives LAST: the page never assumes the order it is handed.
+  const text = [
+    landedLine({ ts: "2026-08-05T00:00:00Z", kind: "issue" }),
+    landedLine({ kind: "<script>alert(1)</script>" }),
+    landedLine({ ts: "not a date" }),
+    "garbage",
+    landedLine({ ts: "2026-08-01T00:00:00Z" }),
+  ].join("\n");
+  const parsed = parseLandedFn(text);
+  assert(parsed.events.length === 2, "only the two clamped, dated events count");
+  assert(parsed.coverageStartMs === Date.parse("2026-08-01T00:00:00Z"), "coverage = earliest ts present, any line order");
+});
+
+Deno.test("landed parse: unpublished, empty, or all-malformed text is null, never zero events", () => {
+  assert(parseLandedFn(null) === null, "a 404 passes through as null");
+  assert(parseLandedFn("") === null, "an empty file is null");
+  assert(parseLandedFn("junk\n{}") === null, "no usable event is null");
+});
+
+Deno.test("spend window: inclusive edges, per-window sums, exactness aggregation", () => {
+  const now = Date.parse("2026-08-10T00:00:00Z");
+  const day = 864e5;
+  const rec = (t, tokens, exact) => ({ t, tin: tokens, tout: 0, cr: 0, cc: 0, exact });
+  const recs = [
+    rec(now - 7 * day, 100, true), // exactly on the 7d edge — included
+    rec(now - 7 * day - 1, 1000, false), // just outside 7d, inside 30d
+    rec(now - 31 * day, 1e9, false), // outside both
+    rec(now, 5, true),
+  ];
+  const landed = {
+    coverageStartMs: now - 31 * day,
+    events: [{ t: now - 7 * day, kind: "pr" }, { t: now - 8 * day, kind: "pr" }, { t: now, kind: "issue" }],
+  };
+  const w7 = spendWindowFn(recs, landed, 7, now);
+  assert(w7.total === 105, "7d sums its own rows only, edge inclusive: " + w7.total);
+  assert(w7.exact === true, "every 7d row exact");
+  assert(w7.landed === 2, "the edge event and the now event land in 7d");
+  const w30 = spendWindowFn(recs, landed, 30, now);
+  assert(w30.total === 1105, "30d adds the mid row, not the ancient one");
+  assert(w30.exact === false, "one inexact row makes the window a lower bound");
+  assert(w30.landed === 3, "all three events inside 30d");
+});
+
+Deno.test("spend window: coverage after the window start refuses the landed count", () => {
+  const now = Date.parse("2026-08-10T00:00:00Z");
+  const day = 864e5;
+  const landed = { coverageStartMs: now - 3 * day, events: [{ t: now - day, kind: "pr" }] };
+  const w = spendWindowFn([], landed, 7, now);
+  assert(w.covered === false && w.landed === null, "a partly-unobserved window has no landed count");
+  const w3 = spendWindowFn([], landed, 3, now);
+  assert(w3.covered === true && w3.landed === 1, "a window inside coverage counts");
+  const none = spendWindowFn([], null, 7, now);
+  assert(none.covered === false && none.landed === null, "no landed artifact, no coverage");
+});
+
+Deno.test("fmtTok: compact units with the carry, dashes for garbage", () => {
+  assert(fmtTokFn(999) === "999", "sub-thousand is verbatim");
+  assert(fmtTokFn(1000) === "1k", "1k");
+  assert(fmtTokFn(41234) === "41.2k", "one decimal");
+  assert(fmtTokFn(999960) === "1M", "a value rounding to 1000k carries to 1M");
+  assert(fmtTokFn(6800000) === "6.8M", "6.8M");
+  assert(fmtTokFn(1.23e9) === "1.2B", "1.2B");
+  assert(fmtTokFn(-1) === "—" && fmtTokFn(NaN) === "—" && fmtTokFn("5") === "—", "garbage is a dash");
+});
+
+// Fixture text for the render tests: two exact runs inside 7d totalling 20k tokens,
+// one exact run 15d back totalling 40k; landed events — two inside 7d, one more
+// inside 30d; coverage from 31d back. Hand-computed: 7d = 20k/2 = "10k /item",
+// 30d = 60k/3 = "20k /item".
+const SPEND_RUNS = [
+  runLine({ runId: "20260809T000000Z", tokensIn: 1000, tokensOut: 2000, cacheRead: 3000, cacheCreation: 4000 }),
+  runLine({ runId: "20260810T000000Z", tokensIn: 1000, tokensOut: 2000, cacheRead: 3000, cacheCreation: 4000 }),
+  runLine({ runId: "20260726T000000Z", tokensIn: 10000, tokensOut: 10000, cacheRead: 10000, cacheCreation: 10000 }),
+].join("\n");
+const SPEND_LANDED = [
+  landedLine({ ts: "2026-07-10T00:00:00Z" }), // seeds coverage 31d back; outside 30d
+  landedLine({ ts: "2026-07-20T00:00:00Z" }),
+  landedLine({ ts: "2026-08-08T00:00:00Z" }),
+  landedLine({ ts: "2026-08-09T12:00:00Z", kind: "issue" }),
+].join("\n");
+
+Deno.test("spend band: the happy path — ratio headline, two windows, auditable parts", () => {
+  const band = spendBox(SPEND_RUNS, SPEND_LANDED);
+  assert(band && band.className === "fsm-spend", "the band renders");
+  assert(collect(band, "sp-n")[0]._text === "10k", "headline = 7d total over 7d landed");
+  const rows = collect(band, "sp-stat");
+  assert(rows.length === 2, "two windows, as equals");
+  assert(textOf(rows[0]).includes("7d") && textOf(rows[0]).includes("10k /item"), "7d row: " + textOf(rows[0]));
+  assert(textOf(rows[1]).includes("30d") && textOf(rows[1]).includes("20k /item"), "30d row: " + textOf(rows[1]));
+  const parts = collect(band, "sp-parts");
+  assert(parts[0]._text === "2 landed · in 2k · out 4k · cache-read 6k · cache-write 8k", "7d parts: " + parts[0]._text);
+  assert(parts[1]._text === "3 landed · in 12k · out 14k · cache-read 16k · cache-write 18k", "30d parts: " + parts[1]._text);
+  assert(collect(band, "sp-cav").length === 0, "all-exact windows carry no caveat");
+  assert(!textOf(band).includes("≥"), "no lower-bound mark on exact numbers");
+});
+
+Deno.test("spend band: a main-thread-only run makes its window a marked lower bound", () => {
+  const runs = SPEND_RUNS + "\n" +
+    runLine({ runId: "20260808T000000Z", accuracy: "main-thread-only", tokensOut: 0 });
+  const band = spendBox(runs, SPEND_LANDED);
+  assert(collect(band, "sp-n")[0]._text === "≥10k", "the headline wears the floor mark");
+  const parts = collect(band, "sp-parts");
+  assert(parts[0]._text.includes(" · lower bound"), "the window's parts say lower bound");
+  assert(collect(band, "sp-cav").length === 1, "one caveat line explains the mark");
+  assert(
+    collect(band, "sp-cav")[0]._text.includes("main-thread tokens only"),
+    "the caveat names the cause",
+  );
+});
+
+Deno.test("spend band: unpublished landed-history says so — spend still shows, nothing fakes zero", () => {
+  const band = spendBox(SPEND_RUNS, null);
+  assert(band, "the band still renders its spend half");
+  assert(collect(band, "sp-n")[0]._text === "—", "no ratio without a denominator");
+  const vals = collect(band, "sp-sv").map((n) => n._text);
+  assert(vals.every((v) => v === "landed-history not yet published"), "both rows say why: " + vals);
+  const parts = collect(band, "sp-parts");
+  assert(!parts[0]._text.includes("landed"), "no fabricated landed count");
+  assert(parts[0]._text.includes("in 2k"), "the spend parts still render");
+});
+
+Deno.test("spend band: a window reaching before coverage refuses and names the start", () => {
+  // Coverage starts 10d back: 7d computes, 30d refuses.
+  const landed = [
+    landedLine({ ts: "2026-07-31T00:00:00Z" }),
+    landedLine({ ts: "2026-08-08T00:00:00Z" }),
+  ].join("\n");
+  const band = spendBox(SPEND_RUNS, landed);
+  const vals = collect(band, "sp-sv").map((n) => n._text);
+  // One landed event (Aug 8) inside 7d over the window's 20k tokens.
+  assert(vals[0] === "20k /item", "7d sits inside coverage and computes: " + vals[0]);
+  assert(vals[1] === "coverage starts Jul 31", "30d refuses and names the day: " + vals[1]);
+  const parts = collect(band, "sp-parts");
+  assert(!parts[1]._text.includes("landed"), "the refused window counts nothing");
+  assert(parts[1]._text.includes("in 12k"), "the refused window still shows its spend");
+});
+
+Deno.test("spend band: a covered window where nothing landed is the pressure state, not an error", () => {
+  const landed = landedLine({ ts: "2026-07-01T00:00:00Z" }); // covers 30d; nothing since
+  const band = spendBox(SPEND_RUNS, landed);
+  const vals = collect(band, "sp-sv").map((n) => n._text);
+  assert(vals[0] === "nothing landed in this window", "the words say it plainly: " + vals[0]);
+  const parts = collect(band, "sp-parts");
+  assert(parts[0]._text.startsWith("0 landed · "), "the zero is a real, counted zero");
+  assert(collect(band, "sp-n")[0]._text === "—", "no ratio out of a zero denominator");
+});
+
+Deno.test("spend band: no run metrics, no band", () => {
+  assert(spendBox("", SPEND_LANDED) === null, "empty runs text renders nothing");
+  assert(spendBox("junk\n{}", SPEND_LANDED) === null, "no usable run renders nothing");
+});
+
+Deno.test("hostile input: landed and runs payloads never reach the band's text", () => {
+  const payload = '<img src=x onerror=alert(1)>"&';
+  const runs = SPEND_RUNS + "\n" + runLine({ runId: payload, tokensOut: 9e9 });
+  const landed = SPEND_LANDED + "\n" +
+    JSON.stringify({ ts: "2026-08-09T00:00:00Z", kind: payload, repo: payload, number: payload }) + "\n" +
+    landedLine({ ts: "2026-08-09T00:00:00Z", repo: payload, title: payload });
+  const band = spendBox(runs, landed);
+  assert(band, "the band renders around the hostile rows");
+  assert(!textOf(band).includes(payload), "no payload lands anywhere in the band");
+  // The hostile-kind row was clamped OUT; the hostile-repo row is a real pr event and
+  // counts — its repo/title just never render.
+  assert(collect(band, "sp-parts")[0]._text.startsWith("3 landed"), "counting is by clamped kind alone");
+});
+
+Deno.test("spend band in the machine: it sits directly after the open-issue band", () => {
+  const spend = spendBox(SPEND_RUNS, SPEND_LANDED);
+  const hq = {
+    counts: { openIssues: 5, ready: 1 },
+    ages: { openIssues: { meanDays: 10, medianDays: 5, oldestDays: 20 } },
+    lanes: { "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } } },
+  };
+  const box = fsmBox(hq, [], spend);
+  const kids = box.children.filter((c) => c && typeof c === "object");
+  const iOpen = kids.findIndex((c) => c.className === "fsm-open");
+  const iSpend = kids.findIndex((c) => c.className === "fsm-spend");
+  assert(iOpen >= 0 && iSpend === iOpen + 1, "spend band directly follows the age band");
+  const note = collect(box, "fsm-note")[0];
+  assert(textOf(note).includes("tokens per landed item"), "the legend describes the band");
+});
+
+Deno.test("spend band in the machine: a missing snapshot does not take the band down", () => {
+  const spend = spendBox(SPEND_RUNS, SPEND_LANDED);
+  const box = fsmBox(null, [], spend);
+  assert(collect(box, "fsm-spend").length === 1, "the band renders beside the not-wired notice");
+});
+
+Deno.test("spend band absent: the machine and its legend are exactly what they were", () => {
+  const hq = { counts: { ready: 1 }, lanes: { "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } } } };
+  const box = fsmBox(hq, []);
+  assert(collect(box, "fsm-spend").length === 0, "no band node appears");
+  const note = collect(box, "fsm-note")[0];
+  assert(!textOf(note).includes("tokens per landed item"), "the legend names no absent mark");
 });
