@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-12T10:29:36Z",
+  "generatedAt": "2026-08-12T12:02:18Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1000,7 +1000,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 2,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -4667,7 +4667,7 @@
       "name": "raindex.governance",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 2,
       "lastMutation": null
     },
     {
