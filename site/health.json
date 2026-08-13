@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-13T06:48:11Z",
+  "generatedAt": "2026-08-13T08:46:19Z",
   "auditGraph": {
     "nodes": [
       {
@@ -872,11 +872,6 @@
             "latest": "0.1.1"
           },
           {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.3"
-          },
-          {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.1.7"
@@ -1122,11 +1117,6 @@
           "rain.solmem"
         ],
         "staleDeps": [
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.1",
-            "latest": "0.1.3"
-          },
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
@@ -2138,8 +2128,8 @@
       {
         "from": "rain.verify",
         "to": "rain.math.binary",
-        "stale": true,
-        "pinned": "0.1.1",
+        "stale": false,
+        "pinned": "0.1.3",
         "latest": "0.1.3"
       },
       {
@@ -2432,8 +2422,8 @@
       {
         "from": "rainlang.interface",
         "to": "rain.math.binary",
-        "stale": true,
-        "pinned": "0.1.1",
+        "stale": false,
+        "pinned": "0.1.3",
         "latest": "0.1.3"
       },
       {
@@ -5794,15 +5784,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.1",
-      "latestTagIso": "2026-07-29T14:49:28Z",
+      "latestTag": "sol-v0.2.2",
+      "latestTagIso": "2026-08-13T07:51:53Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 54,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 36,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 29,
+      "commitsSinceAudit": 34,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 23,
       "commentLocRemovedSinceAudit": 7,
