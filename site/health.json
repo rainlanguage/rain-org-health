@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-14T16:08:17Z",
+  "generatedAt": "2026-08-14T17:14:26Z",
   "auditGraph": {
     "nodes": [
       {
@@ -53,7 +53,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 1,
+        "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-07-25T20:20:00Z",
           "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
@@ -2852,19 +2852,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
-          "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
-          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-          "implVersion": "0.1.1",
+          "address": null,
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Receipt-vault beacon",
@@ -4342,7 +4342,7 @@
       "name": "rain.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 1,
+      "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-07-25T20:20:00Z",
         "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
@@ -5446,14 +5446,14 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-30T17:14:57Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 2462,
+      "sourceLocChangedSinceAudit": 2490,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 2417,
+      "sourceLocAddedSinceAudit": 2445,
       "sourceLocRemovedSinceAudit": 45,
       "filesChangedSinceAudit": 16,
-      "commitsSinceAudit": 98,
+      "commitsSinceAudit": 109,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 1352,
+      "commentLocAddedSinceAudit": 1380,
       "commentLocRemovedSinceAudit": 7,
       "codeLocAddedSinceAudit": 889,
       "codeLocRemovedSinceAudit": 23,
