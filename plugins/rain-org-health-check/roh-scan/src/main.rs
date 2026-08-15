@@ -82,8 +82,22 @@ enum GhFailure {
 }
 
 /// Classify a failed `gh` invocation from its stderr.
+///
+/// An EMPTY repository is the second genuine absence, and it does not arrive as
+/// a 404. `git/trees` answers `409 Git Repository is empty.` for a repo that has
+/// been created but never pushed to, and the org listings contain several. Read
+/// as retryable that is wrong twice over: four backed-off attempts are spent on
+/// a permanent condition, and the repo then lands in `Failed` — so the
+/// `consumers` sweep reported three empty repos as "could not list files",
+/// printed INCOMPLETE and exited 1 over an answer that was in fact complete.
+/// Making a complete answer read as incomplete corrodes the exit status exactly
+/// as much as the reverse.
+///
+/// Matched on the status AND the message: 409 is a general conflict code, and
+/// only the empty-repository conflict is a settled absence.
 fn classify_gh_failure(stderr: &str) -> GhFailure {
-    if stderr.contains("HTTP 404") {
+    let empty_repo = stderr.contains("HTTP 409") && stderr.contains("Git Repository is empty");
+    if stderr.contains("HTTP 404") || empty_repo {
         GhFailure::NotFound
     } else {
         GhFailure::Retryable
@@ -378,11 +392,25 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     let soldeer_published = revision.as_ref().map(|r| r.is_some());
     let soldeer_version = revision.flatten();
 
+    // These two go through the TYPED fetch rather than `gh_file`, which returns
+    // "" for an absent file and a failed one alike. `stale-foundry-lock` fires
+    // on the absence of a `.gitmodules` entry, so that conflation would turn a
+    // rate-limited fetch into a finding against a repo whose submodules are all
+    // present.
+    let gh = GhCli::new();
+    let read = |path: &str| match gh_raw_file(&gh, org, repo, path) {
+        FetchOutcome::Found(c) => signals::RepoFile::Present(c),
+        FetchOutcome::NotFound => signals::RepoFile::Absent,
+        FetchOutcome::Failed => signals::RepoFile::Unreadable,
+    };
+
     RepoInputs {
         workflows,
         foundry,
         soldeer_published,
         soldeer_version,
+        foundry_lock: read("foundry.lock"),
+        gitmodules: read(".gitmodules"),
     }
 }
 
@@ -3276,8 +3304,13 @@ mod tests {
         );
     }
 
-    /// An empty repo (no default branch → 404 on the tree) genuinely declares
-    /// nothing. That is an ANSWER, and must not be conflated with a failure.
+    /// An empty repo genuinely declares nothing. That is an ANSWER, and must not
+    /// be conflated with a failure.
+    ///
+    /// It reaches here as `NotFound` because `classify_gh_failure` settles the
+    /// `409 Git Repository is empty.` the trees API really answers with — this
+    /// test's premise used to be that the API 404s, which it does not, so the
+    /// case passed here while failing on every live run.
     #[test]
     fn an_empty_repo_is_a_clean_non_consumer_not_an_error() {
         let gh = FakeGh::new(vec![("git/trees", FetchOutcome::NotFound)]);
@@ -3802,6 +3835,24 @@ mod tests {
             GhFailure::Retryable
         );
         assert_eq!(classify_gh_failure(""), GhFailure::Retryable);
+    }
+
+    /// The stderr `gh` actually prints for an empty repo, verbatim from a live
+    /// run against `rainlanguage/rain.classic.interpreter`. Classified as
+    /// retryable it burned four backed-off attempts and then reported the repo
+    /// as unreadable, which made the `consumers` sweep print INCOMPLETE and exit
+    /// 1 over a complete answer.
+    #[test]
+    fn an_empty_repository_is_a_settled_absence_not_a_retryable_failure() {
+        assert_eq!(
+            classify_gh_failure("gh: Git Repository is empty. (HTTP 409)"),
+            GhFailure::NotFound
+        );
+        // …but 409 alone is not: only the empty-repository conflict is settled.
+        assert_eq!(
+            classify_gh_failure("gh: merge conflict (HTTP 409)"),
+            GhFailure::Retryable
+        );
     }
 
     #[test]
