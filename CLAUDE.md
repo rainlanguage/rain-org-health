@@ -74,8 +74,14 @@ ERROR carried into the report, never an empty dependency list.
 Two more rules that hold for anything added here:
 
 - **GitHub code search is not a source of truth.** It indexes default branches
-  only and under-returns without saying so (7 of 16 known `rain-solmem`
-  consumers, missing `raindex`). Read manifests and clone sources instead.
+  only and under-returns without saying so. Measured: `rain-solmem
+  org:rainlanguage` returns 11 of the 17 rainlanguage repos that actually
+  declare it, and 5 of the 6 it drops (`rain.dia`, `rain.erc4626.words`,
+  `rain.intorastring`, `rain.merkle`, `rain.verify`) carry the literal string
+  `rain-solmem` in their default-branch `foundry.toml` — so this is not a
+  spelling or a branch problem, the index simply does not have them. Treat the
+  exact counts as a snapshot, not a constant; the property is that a miss is
+  silent. Read manifests and clone sources instead.
 - **`gh api …/contents/<path>` prints its 404 body to STDOUT.** An existence
   check that tests output emptiness reports every file as present. Check the
   exit status — `GhApi::api_jq` already does, which is why it returns a typed
