@@ -2,9 +2,9 @@
 //! Signal detection lives in signals.rs (pure, tested); this file is the gh/network
 //! orchestration and output rendering (text report + optional JSON).
 //!
-//! Usage:
-//!   roh-scan [--json <path>] [repo ...]
-//! Env: ORG (default rainlanguage), PAR (default 12), JSON_OUT (default site/health.json).
+//!
+//! The command line is parsed in `cli.rs` and documented by `roh-scan --help`,
+//! which is the reference material — not a comment here that drifts from it.
 
 // `json!` nests one macro expansion per key; the health.json documents are
 // wide enough to exceed the default 128-deep limit.
@@ -12,6 +12,7 @@
 
 mod audit;
 mod blobs;
+mod cli;
 mod commentloc;
 mod deployhealth;
 mod graph;
@@ -1388,23 +1389,67 @@ where
     results.into_inner().unwrap()
 }
 
-fn main() {
-    let args: Vec<String> = std::env::args().skip(1).collect();
-    let mut json_flag: Option<String> = None;
-    let mut repos_arg: Vec<String> = Vec::new();
-    let mut i = 0;
-    while i < args.len() {
-        match args[i].as_str() {
-            "--json" => {
-                json_flag = args.get(i + 1).cloned();
-                i += 2;
-            }
-            r => {
-                repos_arg.push(r.to_string());
-                i += 1;
-            }
+/// Whether a named repo could be confirmed to exist. `Unverified` is NOT
+/// `Missing`: a rate-limited or offline check knows nothing, and turning that
+/// into "no such repo" would abort a legitimate scan (the mirror image of #52 —
+/// an errored fetch must never become a confident verdict, in either direction).
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+enum RepoCheck {
+    Exists,
+    Missing,
+    Unverified,
+}
+
+fn classify_repo_check(outcome: &FetchOutcome) -> RepoCheck {
+    match outcome {
+        FetchOutcome::Found(_) => RepoCheck::Exists,
+        FetchOutcome::NotFound => RepoCheck::Missing,
+        FetchOutcome::Failed => RepoCheck::Unverified,
+    }
+}
+
+/// Partition explicitly-named repos into (missing, unverified). Pure: the
+/// caller supplies the existence check, so the decision is testable without gh.
+///
+/// A named repo that does not exist used to be scanned anyway and reported as
+/// "no findings" — a typo produced a clean bill of health. Missing repos are
+/// therefore fatal to the caller; unverified ones are only a warning.
+fn partition_named_repos<F>(
+    repos: &[(String, String)],
+    check: F,
+) -> (Vec<String>, Vec<String>)
+where
+    F: Fn(&str, &str) -> RepoCheck,
+{
+    let mut missing = Vec::new();
+    let mut unverified = Vec::new();
+    for (org, repo) in repos {
+        match check(org, repo) {
+            RepoCheck::Exists => {}
+            RepoCheck::Missing => missing.push(format!("{org}/{repo}")),
+            RepoCheck::Unverified => unverified.push(format!("{org}/{repo}")),
         }
     }
+    (missing, unverified)
+}
+
+fn main() {
+    let argv: Vec<String> = std::env::args().skip(1).collect();
+    let command = match cli::parse_args(&argv) {
+        Ok(c) => c,
+        Err(e) => {
+            eprintln!("roh-scan: {e}\n");
+            eprint!("{}", cli::usage());
+            std::process::exit(2);
+        }
+    };
+    match command {
+        cli::Command::Help => print!("{}", cli::usage()),
+        cli::Command::Scan { json, repos } => run_scan(json, repos),
+    }
+}
+
+fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
     // POPULATE by default: a bare run writes site/health.json (never print-and-discard);
     // JSON_OUT overrides the default; --json <path> overrides both.
     let json_out = resolve_json_out(std::env::var("JSON_OUT").ok(), json_flag);
@@ -1458,16 +1503,34 @@ fn main() {
         v
     };
     let total = repo_pairs.len();
-    eprintln!(
-        "Scanning {total} repos across {} org(s): {} (parallel={par})...",
-        orgs.len(),
-        orgs.join(", ")
-    );
 
     // One shared `gh` fetcher borrowed by every worker (`GhApi: Sync`). It retries
     // the secondary-rate-limit failure that `par` concurrent subprocesses provoke,
     // so a transient error surfaces as `unknown`, never a false `never`.
     let gh = GhCli::new();
+
+    // Explicitly-named repos are confirmed to exist BEFORE scanning. A typo'd or
+    // renamed repo used to be scanned anyway and reported "no findings", i.e. a
+    // clean bill of health for something that is not there.
+    if partial_scan {
+        let (missing, unverified) = partition_named_repos(&repo_pairs, |org, repo| {
+            classify_repo_check(&gh.api_jq(&["api", &format!("repos/{org}/{repo}"), "--jq", ".name"]))
+        });
+        for r in &unverified {
+            eprintln!("roh-scan: warning: could not verify {r} exists (network/rate limit)");
+        }
+        if !missing.is_empty() {
+            eprintln!("roh-scan: no such repo: {}", missing.join(", "));
+            eprintln!("roh-scan: refusing to report a scan of repos that do not exist");
+            std::process::exit(2);
+        }
+    }
+
+    eprintln!(
+        "Scanning {total} repos across {} org(s): {} (parallel={par})...",
+        orgs.len(),
+        orgs.join(", ")
+    );
     let mut results: Vec<RepoResult> = scan_repos(repo_pairs, par, |(org, repo)| {
         let repo = repo.as_str();
         let inputs = fetch_inputs(org, repo);
@@ -2529,6 +2592,66 @@ fn main() {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    // ---- named-repo validation ----
+
+    /// The three fetch outcomes must stay three: a 404 is a real absence, a
+    /// failed fetch knows nothing. Collapsing them either aborts a legitimate
+    /// scan on a rate limit, or scans a repo that does not exist and calls it
+    /// clean — the defect this check exists for.
+    #[test]
+    fn a_failed_existence_check_is_unverified_not_missing() {
+        assert_eq!(
+            classify_repo_check(&FetchOutcome::Found("rain.dia".into())),
+            RepoCheck::Exists
+        );
+        assert_eq!(
+            classify_repo_check(&FetchOutcome::NotFound),
+            RepoCheck::Missing
+        );
+        assert_eq!(
+            classify_repo_check(&FetchOutcome::Failed),
+            RepoCheck::Unverified
+        );
+    }
+
+    #[test]
+    fn named_repos_partition_into_missing_and_unverified() {
+        let named = vec![
+            ("rainlanguage".to_string(), "rain.dia".to_string()),
+            ("rainlanguage".to_string(), "rain.nope".to_string()),
+            ("rainlanguage".to_string(), "rain.flaky".to_string()),
+        ];
+        let (missing, unverified) = partition_named_repos(&named, |_org, repo| match repo {
+            "rain.nope" => RepoCheck::Missing,
+            "rain.flaky" => RepoCheck::Unverified,
+            _ => RepoCheck::Exists,
+        });
+        assert_eq!(missing, vec!["rainlanguage/rain.nope".to_string()]);
+        assert_eq!(unverified, vec!["rainlanguage/rain.flaky".to_string()]);
+    }
+
+    /// The reported bug: `roh-scan --help` used to scan a repo called `--help`
+    /// and print "no findings, 0/1 repos". `--help` never reaches the repo list
+    /// now, and were any nonexistent name to reach it, the scan aborts instead
+    /// of reporting it clean.
+    #[test]
+    fn a_nonexistent_named_repo_is_fatal_never_a_clean_result() {
+        let named = vec![("rainlanguage".to_string(), "--help".to_string())];
+        let (missing, _) = partition_named_repos(&named, |_, _| RepoCheck::Missing);
+        assert_eq!(
+            missing,
+            vec!["rainlanguage/--help".to_string()],
+            "an unknown repo name must be reported, not scanned"
+        );
+    }
+
+    #[test]
+    fn every_repo_existing_partitions_to_nothing() {
+        let named = vec![("rainlanguage".to_string(), "rain.dia".to_string())];
+        let (missing, unverified) = partition_named_repos(&named, |_, _| RepoCheck::Exists);
+        assert!(missing.is_empty() && unverified.is_empty());
+    }
 
     /// The graph's staleness ceiling is the newest PUBLISHED revision, so the parse
     /// must distinguish published / unpublished / unreadable. Collapsing the last
