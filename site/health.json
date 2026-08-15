@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T11:36:40Z",
+  "generatedAt": "2026-08-15T13:01:39Z",
   "auditGraph": {
     "nodes": [
       {
@@ -45,25 +45,6 @@
             "latest": "0.1.9"
           }
         ]
-      },
-      {
-        "repo": "rain.deploy",
-        "org": "rainlanguage",
-        "package": "rain-deploy",
-        "audit": "stale",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 0,
-        "lastMutation": {
-          "timestamp": "2026-07-25T20:20:00Z",
-          "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
-          "skillVersion": "0.27.0",
-          "scope": "whole repo"
-        },
-        "blockedBy": [
-          "rain.sol.codegen"
-        ],
-        "staleDeps": []
       },
       {
         "repo": "rain.dia",
@@ -1313,6 +1294,30 @@
             "latest": "0.1.29"
           }
         ]
+      },
+      {
+        "repo": "rain.deploy",
+        "org": "rainlanguage",
+        "package": "rain-deploy",
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-08-15T11:41:01Z",
+          "auditedCommit": "440e90b5ce0875871dfcb37fbee680a23494f08f",
+          "skillVersion": "0.35.0",
+          "stale": true
+        },
+        "openAuditIssues": 42,
+        "lastMutation": {
+          "timestamp": "2026-07-25T20:20:00Z",
+          "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
+          "skillVersion": "0.27.0",
+          "scope": "whole repo"
+        },
+        "blockedBy": [
+          "rain.sol.codegen"
+        ],
+        "staleDeps": []
       }
     ],
     "edges": [
@@ -3956,8 +3961,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 114,
   "reposWithFindings": 38,
-  "reposWholeRepoAudited": 3,
-  "reposNeverAudited": 111,
+  "reposWholeRepoAudited": 4,
+  "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 17,
   "summary": {
@@ -4547,18 +4552,6 @@
       "lastMutation": null
     },
     {
-      "name": "rain.deploy",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": {
-        "timestamp": "2026-07-25T20:20:00Z",
-        "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
-        "skillVersion": "0.27.0",
-        "scope": "whole repo"
-      }
-    },
-    {
       "name": "rain.dex.solve",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -5099,6 +5092,23 @@
         "auditedAt": "2026-08-11T08:42:04Z",
         "auditedCommit": "05bb66bfd8d0fc046478309e99a57eaaea27fb09",
         "skillVersion": "0.34.0",
+        "stale": true
+      }
+    },
+    {
+      "name": "rain.deploy",
+      "org": "rainlanguage",
+      "openAuditIssues": 42,
+      "lastMutation": {
+        "timestamp": "2026-07-25T20:20:00Z",
+        "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
+        "skillVersion": "0.27.0",
+        "scope": "whole repo"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-08-15T11:41:01Z",
+        "auditedCommit": "440e90b5ce0875871dfcb37fbee680a23494f08f",
+        "skillVersion": "0.35.0",
         "stale": true
       }
     }
@@ -5659,7 +5669,7 @@
       "sourceLocAddedSinceAudit": 3374,
       "sourceLocRemovedSinceAudit": 45,
       "filesChangedSinceAudit": 22,
-      "commitsSinceAudit": 137,
+      "commitsSinceAudit": 138,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 2078,
       "commentLocRemovedSinceAudit": 7,
