@@ -14,6 +14,7 @@ mod audit;
 mod blobs;
 mod cli;
 mod commentloc;
+mod consumers;
 mod deployhealth;
 mod graph;
 mod mutation;
@@ -1446,6 +1447,463 @@ fn main() {
     match command {
         cli::Command::Help => print!("{}", cli::usage()),
         cli::Command::Scan { json, repos } => run_scan(json, repos),
+        cli::Command::Consumers(a) => std::process::exit(run_consumers(&a)),
+    }
+}
+
+// ===================== consumers mode =====================
+
+/// Which orgs the `consumers` sweep covers: `--orgs` wins, then `ORGS`, then
+/// `ORG`, then every rain org. Pure, so the precedence is testable without env.
+///
+/// The final fallback is deliberately NOT `rainlanguage`: a reverse-dependency
+/// answer scoped to one org is wrong rather than partial, and says nothing
+/// about the orgs it never looked at.
+fn consumer_orgs(
+    flag: Option<&[String]>,
+    orgs_env: Option<String>,
+    org_env: Option<String>,
+) -> Vec<String> {
+    let split = |s: &str| -> Vec<String> {
+        s.split_whitespace().map(str::to_string).collect::<Vec<_>>()
+    };
+    if let Some(v) = flag.filter(|v| !v.is_empty()) {
+        return v.to_vec();
+    }
+    if let Some(v) = orgs_env.map(|s| split(&s)).filter(|v| !v.is_empty()) {
+        return v;
+    }
+    if let Some(o) = org_env.filter(|s| !s.trim().is_empty()) {
+        return vec![o.trim().to_string()];
+    }
+    cli::RAIN_ORGS.iter().map(|s| s.to_string()).collect()
+}
+
+/// A repo's whole file listing, or why it is unknown. `Truncated` is carried
+/// rather than silently accepted: the trees API caps very large repos, and a
+/// capped listing may omit the very manifest that makes the repo a consumer.
+enum TreeListing {
+    Found { paths: Vec<String>, truncated: bool },
+    NotFound,
+    Failed,
+}
+
+/// Every blob path in a repo's default branch, via ONE recursive trees call.
+/// Manifests are found at any depth this way, so a monorepo that keeps its
+/// Solidity under `contracts/` is not silently skipped.
+fn gh_tree_paths<F: GhApi>(gh: &F, org: &str, repo: &str) -> TreeListing {
+    // The first output line is `.truncated`; the rest are blob paths.
+    let out = match gh.api_jq(&[
+        "api",
+        &format!("repos/{org}/{repo}/git/trees/HEAD?recursive=1"),
+        "--jq",
+        r#".truncated, (.tree[]|select(.type=="blob")|.path)"#,
+    ]) {
+        FetchOutcome::Found(s) => s,
+        // No default branch / no such repo: genuinely nothing to read.
+        FetchOutcome::NotFound => return TreeListing::NotFound,
+        FetchOutcome::Failed => return TreeListing::Failed,
+    };
+    let mut lines = out.lines();
+    let truncated = lines.next().is_some_and(|l| l.trim() == "true");
+    TreeListing::Found {
+        paths: lines.map(str::to_string).collect(),
+        truncated,
+    }
+}
+
+/// One file's raw content. `Accept: application/vnd.github.raw` skips the
+/// base64 envelope; the outcome is typed because a 404 body is printed to
+/// STDOUT by `gh` — an existence check that tests output emptiness reports every
+/// file as present. Only the exit status distinguishes them.
+fn gh_raw_file<F: GhApi>(gh: &F, org: &str, repo: &str, path: &str) -> FetchOutcome {
+    gh.api_jq(&[
+        "api",
+        "-H",
+        "Accept: application/vnd.github.raw",
+        &format!("repos/{org}/{repo}/contents/{path}"),
+    ])
+}
+
+/// One repo's answer to the query.
+struct ConsumerRepo {
+    org: String,
+    repo: String,
+    matched: consumers::RepoMatch,
+    /// Why this repo's answer is incomplete, if it is. Non-empty means the repo
+    /// may be a consumer this run could not see — never reported as a clean
+    /// non-consumer.
+    unreadable: Vec<String>,
+    /// Per-symbol usage, once the sources have been read. `None` when no symbol
+    /// was asked for, or when the clone failed (which lands in `unreadable`).
+    symbols: Option<Vec<consumers::SymbolUsage>>,
+}
+
+impl ConsumerRepo {
+    fn full_name(&self) -> String {
+        format!("{}/{}", self.org, self.repo)
+    }
+}
+
+/// Read one repo's manifests and match them against the query.
+fn consumer_repo_match<F: GhApi>(
+    gh: &F,
+    org: &str,
+    repo: &str,
+    package: &str,
+) -> (consumers::RepoMatch, Vec<String>) {
+    let mut unreadable: Vec<String> = Vec::new();
+    let paths = match gh_tree_paths(gh, org, repo) {
+        TreeListing::Found { paths, truncated } => {
+            if truncated {
+                unreadable.push("file listing truncated by the trees API".into());
+            }
+            paths
+        }
+        // An empty repo genuinely declares nothing.
+        TreeListing::NotFound => Vec::new(),
+        TreeListing::Failed => {
+            unreadable.push("could not list files".into());
+            Vec::new()
+        }
+    };
+    let manifests: Vec<(
+        String,
+        consumers::ManifestKind,
+        Result<consumers::ManifestFacts, consumers::ManifestError>,
+    )> = paths
+        .iter()
+        .filter_map(|p| consumers::ManifestKind::from_path(p).map(|k| (p.clone(), k)))
+        .filter(|(p, _)| !consumers::is_vendored_manifest(p))
+        .map(|(p, kind)| {
+            let parsed = match gh_raw_file(gh, org, repo, &p) {
+                FetchOutcome::Found(c) => consumers::parse_manifest(kind, &c),
+                // Listed in the tree but absent from the contents API, or a
+                // failed fetch: either way its dependencies are UNKNOWN.
+                FetchOutcome::NotFound => Err(consumers::ManifestError(
+                    "listed in the tree but the contents API returned 404".into(),
+                )),
+                FetchOutcome::Failed => Err(consumers::ManifestError("could not fetch".into())),
+            };
+            (p, kind, parsed)
+        })
+        .collect();
+    (consumers::match_repo(package, &manifests), unreadable)
+}
+
+/// The `consumers` mode. Returns the process exit code: 1 when any repo could
+/// not be fully read (the answer is incomplete), else 0.
+fn run_consumers(args: &cli::ConsumersArgs) -> i32 {
+    let orgs = consumer_orgs(
+        args.orgs.as_deref(),
+        std::env::var("ORGS").ok(),
+        std::env::var("ORG").ok(),
+    );
+    let par: usize = std::env::var("PAR")
+        .ok()
+        .and_then(|s| s.parse().ok())
+        .unwrap_or(12);
+
+    // An org whose listing failed is not an org with no repos. Answering the
+    // question over a silently-shortened repo set is the failure mode this mode
+    // exists to replace, so it is fatal.
+    let mut repo_pairs: Vec<(String, String)> = Vec::new();
+    for org in &orgs {
+        let Some(names) = gh_stdout(&[
+            "repo",
+            "list",
+            org,
+            "--no-archived",
+            "--limit",
+            "500",
+            "--json",
+            "name,isFork",
+            "-q",
+            ".[]|select(.isFork==false)|.name",
+        ]) else {
+            eprintln!("roh-scan: could not list repos in org `{org}`");
+            eprintln!("roh-scan: refusing to answer a cross-org question over an incomplete repo set");
+            return 1;
+        };
+        for name in names.lines().map(str::trim).filter(|n| !n.is_empty()) {
+            repo_pairs.push((org.clone(), name.to_string()));
+        }
+    }
+    repo_pairs.sort();
+    let scanned = repo_pairs.len();
+    eprintln!(
+        "Reading manifests in {scanned} repos across {} org(s): {} (parallel={par})...",
+        orgs.len(),
+        orgs.join(", ")
+    );
+
+    let gh = GhCli::new();
+    let mut results: Vec<ConsumerRepo> = scan_repos(repo_pairs, par, |(org, repo)| {
+        let (matched, unreadable) = consumer_repo_match(&gh, org, repo, &args.package);
+        ConsumerRepo {
+            org: org.clone(),
+            repo: repo.clone(),
+            matched,
+            unreadable,
+            symbols: None,
+        }
+    });
+    // A manifest that would not parse (or could not be fetched) leaves this
+    // repo's dependencies unknown, which is an incomplete answer for the whole
+    // run — folded in here so there is ONE definition of "unreadable".
+    for r in &mut results {
+        for (path, why) in &r.matched.errors {
+            r.unreadable.push(format!("{path}: {why}"));
+        }
+    }
+    results.sort_by(|a, b| a.full_name().cmp(&b.full_name()));
+
+    // The source layer, for the repos that matter: only a repo that declares the
+    // package can be a consumer of its symbols, and cloning 200 unrelated repos
+    // to grep them would cost minutes for nothing.
+    if !args.symbols.is_empty() {
+        let targets: Vec<(String, String)> = results
+            .iter()
+            .filter(|r| r.matched.role.is_some())
+            .map(|r| (r.org.clone(), r.repo.clone()))
+            .collect();
+        eprintln!(
+            "Reading Solidity sources in {} repo(s) for {}...",
+            targets.len(),
+            args.symbols.join(", ")
+        );
+        let scanned_symbols: Vec<(String, Option<Vec<consumers::SymbolUsage>>)> =
+            scan_repos(targets, par, |(org, repo)| {
+                let usage = with_shallow_clone(org, repo, |dir| {
+                    let files = collect_sol_files(dir);
+                    args.symbols
+                        .iter()
+                        .map(|s| consumers::symbol_usage(&files, s))
+                        .collect::<Vec<_>>()
+                });
+                (format!("{org}/{repo}"), usage)
+            });
+        let by_name: std::collections::HashMap<String, Option<Vec<consumers::SymbolUsage>>> =
+            scanned_symbols.into_iter().collect();
+        for r in &mut results {
+            let Some(entry) = by_name.get(&r.full_name()) else {
+                continue;
+            };
+            match entry {
+                Some(u) => r.symbols = Some(u.clone()),
+                // A failed clone is not "references nothing".
+                None => r.unreadable.push("could not clone the sources".into()),
+            }
+        }
+    }
+
+    let report = render_consumers(args, &orgs, scanned, &results);
+    print!("{report}");
+
+    if let Some(path) = &args.json {
+        write_consumers_json(path, args, &orgs, scanned, &results);
+    }
+
+    let unreadable = results.iter().filter(|r| !r.unreadable.is_empty()).count();
+    i32::from(unreadable > 0)
+}
+
+/// The text report. Split out from the driver so its shape is a function of the
+/// results rather than of the network.
+fn render_consumers(
+    args: &cli::ConsumersArgs,
+    orgs: &[String],
+    scanned: usize,
+    results: &[ConsumerRepo],
+) -> String {
+    use std::fmt::Write;
+    let mut o = String::new();
+    let producers: Vec<&ConsumerRepo> = results
+        .iter()
+        .filter(|r| r.matched.role == Some(consumers::Role::Producer))
+        .collect();
+    let consumers_list: Vec<&ConsumerRepo> = results
+        .iter()
+        .filter(|r| r.matched.role == Some(consumers::Role::Consumer))
+        .collect();
+    let unreadable: Vec<&ConsumerRepo> = results
+        .iter()
+        .filter(|r| !r.unreadable.is_empty())
+        .collect();
+
+    let _ = writeln!(o, "\n================ consumers of `{}` ================", args.package);
+    let _ = writeln!(o, "orgs:  {}", orgs.join(" "));
+    let _ = writeln!(
+        o,
+        "repos: {scanned} listed, {} fully read, {} unreadable",
+        scanned - unreadable.len(),
+        unreadable.len()
+    );
+
+    for p in &producers {
+        let _ = writeln!(o, "\nproducer: {} (declares [package].name)", p.full_name());
+    }
+    if producers.is_empty() {
+        let _ = writeln!(
+            o,
+            "\nproducer: none found in the scanned orgs — `{}` may be third-party, \
+             renamed, or published from a repo outside them",
+            args.package
+        );
+    }
+
+    let _ = writeln!(o, "\nconsumers ({})", consumers_list.len());
+    if consumers_list.is_empty() {
+        let _ = writeln!(o, "  (none)");
+    }
+    for c in &consumers_list {
+        let versions = if c.matched.versions.is_empty() {
+            // Every hit pinned by rev/submodule rather than a version.
+            "(no version)".to_string()
+        } else {
+            c.matched.versions.join(",")
+        };
+        let mut shapes: Vec<&str> = c
+            .matched
+            .hits
+            .iter()
+            .map(|h| h.kind.file_name())
+            .collect();
+        shapes.dedup();
+        let _ = writeln!(
+            o,
+            "  {:<38} {:<12} {}",
+            c.full_name(),
+            versions,
+            shapes.join(" ")
+        );
+    }
+    // Disagreement between a repo's own manifests is drift worth naming: a
+    // remappings.txt still pointing at a version foundry.toml no longer pins.
+    for c in consumers_list.iter().filter(|c| c.matched.versions.len() > 1) {
+        let _ = writeln!(
+            o,
+            "  ! {} pins {} in different manifests",
+            c.full_name(),
+            c.matched.versions.join(" and ")
+        );
+    }
+
+    for (i, symbol) in args.symbols.iter().enumerate() {
+        let _ = writeln!(o, "\nsymbol `{symbol}` in each consumer's own Solidity");
+        let mut referencing = 0usize;
+        for c in results.iter().filter(|r| r.matched.role.is_some()) {
+            let role = match c.matched.role {
+                Some(consumers::Role::Producer) => "(producer)",
+                _ => "",
+            };
+            let Some(usage) = c.symbols.as_ref().and_then(|u| u.get(i)) else {
+                let _ = writeln!(o, "  {:<38} unknown — sources not read {role}", c.full_name());
+                continue;
+            };
+            if usage.own_refs == 0 {
+                let vendored = if usage.vendored_files > 0 {
+                    format!(" (vendored copy only: {} file(s))", usage.vendored_files)
+                } else {
+                    String::new()
+                };
+                let _ = writeln!(o, "  {:<38} -{vendored} {role}", c.full_name());
+                continue;
+            }
+            if c.matched.role == Some(consumers::Role::Consumer) {
+                referencing += 1;
+            }
+            let where_ = if usage.own_test_files == usage.own_files.len() {
+                "tests only"
+            } else if usage.own_test_files > 0 {
+                "src+test"
+            } else {
+                "src"
+            };
+            let _ = writeln!(
+                o,
+                "  {:<38} {:>4} refs in {} file(s), {where_} {role}",
+                c.full_name(),
+                usage.own_refs,
+                usage.own_files.len()
+            );
+        }
+        let _ = writeln!(
+            o,
+            "  → referenced by {referencing} / {} consumers",
+            consumers_list.len()
+        );
+    }
+
+    if !unreadable.is_empty() {
+        let _ = writeln!(o, "\nINCOMPLETE — these repos could not be fully read:");
+        for r in &unreadable {
+            for why in &r.unreadable {
+                let _ = writeln!(o, "  {:<38} {why}", r.full_name());
+            }
+        }
+        let _ = writeln!(
+            o,
+            "  A repo listed here may be a consumer this run could not see. \
+             Exit status is 1 so this answer is not taken as complete."
+        );
+    }
+    o
+}
+
+/// The same result as JSON, for a caller that wants to diff or join it.
+fn write_consumers_json(
+    path: &str,
+    args: &cli::ConsumersArgs,
+    orgs: &[String],
+    scanned: usize,
+    results: &[ConsumerRepo],
+) {
+    let repo_json = |r: &ConsumerRepo| {
+        json!({
+            "repo": r.full_name(),
+            "role": match r.matched.role {
+                Some(consumers::Role::Producer) => "producer",
+                Some(consumers::Role::Consumer) => "consumer",
+                None => "none",
+            },
+            "versions": r.matched.versions,
+            "declarations": r.matched.hits.iter().map(|h| json!({
+                "manifest": h.manifest,
+                "shape": h.kind.file_name(),
+                "declaredAs": h.declared_as,
+                "version": h.version,
+                "rev": h.rev,
+            })).collect::<Vec<_>>(),
+            "symbols": r.symbols.as_ref().map(|us| us.iter().map(|u| json!({
+                "symbol": u.symbol,
+                "ownRefs": u.own_refs,
+                "ownFiles": u.own_files,
+                "ownTestFiles": u.own_test_files,
+                "vendoredFiles": u.vendored_files,
+            })).collect::<Vec<_>>()),
+            "unreadable": r.unreadable,
+        })
+    };
+    let doc = json!({
+        "generatedAt": now_iso(),
+        "package": args.package,
+        "symbols": args.symbols,
+        "orgs": orgs,
+        "reposListed": scanned,
+        "complete": results.iter().all(|r| r.unreadable.is_empty()),
+        "repos": results
+            .iter()
+            .filter(|r| r.matched.role.is_some() || !r.unreadable.is_empty())
+            .map(repo_json)
+            .collect::<Vec<_>>(),
+    });
+    if let Some(parent) = std::path::Path::new(path).parent() {
+        let _ = std::fs::create_dir_all(parent);
+    }
+    match std::fs::write(path, serde_json::to_string_pretty(&doc).unwrap()) {
+        Ok(()) => eprintln!("wrote {path}"),
+        Err(e) => eprintln!("roh-scan: could not write {path}: {e}"),
     }
 }
 
@@ -2651,6 +3109,349 @@ mod tests {
         let named = vec![("rainlanguage".to_string(), "rain.dia".to_string())];
         let (missing, unverified) = partition_named_repos(&named, |_, _| RepoCheck::Exists);
         assert!(missing.is_empty() && unverified.is_empty());
+    }
+
+    // ---- consumers mode: org resolution ----
+
+    /// The final fallback must span every rain org. Defaulting to `rainlanguage`
+    /// alone answers a cross-org question wrongly and silently — S01-Issuer's
+    /// st0x.deploy is a real consumer of rainlanguage packages.
+    #[test]
+    fn consumer_orgs_falls_back_to_every_rain_org_not_just_rainlanguage() {
+        let got = consumer_orgs(None, None, None);
+        assert_eq!(got.len(), cli::RAIN_ORGS.len());
+        assert!(got.contains(&"S01-Issuer".to_string()));
+        assert!(got.contains(&"rainlanguage".to_string()));
+    }
+
+    #[test]
+    fn consumer_orgs_precedence_is_flag_then_orgs_then_org() {
+        let flag = vec!["only-this".to_string()];
+        assert_eq!(
+            consumer_orgs(Some(&flag), Some("a b".into()), Some("c".into())),
+            vec!["only-this".to_string()]
+        );
+        assert_eq!(
+            consumer_orgs(None, Some("a b".into()), Some("c".into())),
+            vec!["a".to_string(), "b".to_string()]
+        );
+        assert_eq!(
+            consumer_orgs(None, None, Some("c".into())),
+            vec!["c".to_string()]
+        );
+        // an empty/blank env var is not a selection, so the default still applies
+        assert_eq!(
+            consumer_orgs(None, Some("   ".into()), None).len(),
+            cli::RAIN_ORGS.len()
+        );
+    }
+
+    // ---- consumers mode: reading one repo's manifests ----
+
+    /// The jq-processed shape `gh_tree_paths` reads: `.truncated` on the first
+    /// line, then one blob path per line.
+    fn tree_paths(paths: &[&str], truncated: bool) -> FetchOutcome {
+        let mut out = format!("{truncated}\n");
+        for p in paths {
+            out.push_str(p);
+            out.push('\n');
+        }
+        FetchOutcome::Found(out)
+    }
+
+    fn file(content: &str) -> FetchOutcome {
+        FetchOutcome::Found(content.to_string())
+    }
+
+    /// The failure that motivated this mode, end to end: rainlanguage/rainlang
+    /// has NO foundry.lock. A foundry.lock-shaped sweep finds no file, reads
+    /// that as "no dependencies" and drops a real consumer — wrong answer, exit
+    /// 0, no error. Every other shape it does have must find it.
+    #[test]
+    fn a_consumer_with_no_foundry_lock_is_still_found() {
+        let gh = FakeGh::new(vec![
+            (
+                "git/trees",
+                tree_paths(
+                    &["foundry.toml", "soldeer.lock", "remappings.txt", "src/A.sol"],
+                    false,
+                ),
+            ),
+            (
+                "contents/foundry.toml",
+                file("[package]\nname = \"rainlang\"\n\n[dependencies]\n\"rain-solmem\" = \"0.1.3\"\n"),
+            ),
+            (
+                "contents/soldeer.lock",
+                file("[[dependencies]]\nname = \"rain-solmem\"\nversion = \"0.1.3\"\n"),
+            ),
+            (
+                "contents/remappings.txt",
+                file("rain-solmem-0.1.3/=dependencies/rain-solmem-0.1.3/\n"),
+            ),
+        ]);
+        let (matched, unreadable) =
+            consumer_repo_match(&gh, "rainlanguage", "rainlang", "rain-solmem");
+        assert_eq!(matched.role, Some(consumers::Role::Consumer));
+        assert_eq!(matched.versions, vec!["0.1.3".to_string()]);
+        assert_eq!(
+            matched.hits.len(),
+            3,
+            "all three shapes it DOES have report the dependency: {:?}",
+            matched.hits
+        );
+        assert!(unreadable.is_empty(), "{unreadable:?}");
+        assert_eq!(
+            gh.count("contents/foundry.toml"),
+            1,
+            "only manifests are fetched, once each"
+        );
+    }
+
+    /// A vendored copy of the library carries the library's own foundry.toml.
+    /// Reading it would make every consumer look like a second PRODUCER of the
+    /// package.
+    #[test]
+    fn a_vendored_manifest_never_makes_a_consumer_look_like_the_producer() {
+        let gh = FakeGh::new(vec![
+            (
+                "git/trees",
+                tree_paths(
+                    &[
+                        "foundry.toml",
+                        "dependencies/rain-solmem-0.1.3/foundry.toml",
+                        "lib/forge-std/foundry.toml",
+                    ],
+                    false,
+                ),
+            ),
+            (
+                "contents/dependencies/rain-solmem-0.1.3/foundry.toml",
+                file("[package]\nname = \"rain-solmem\"\n"),
+            ),
+            (
+                "contents/foundry.toml",
+                file("[package]\nname = \"raindex\"\n\n[dependencies]\n\"rain-solmem\" = \"0.1.3\"\n"),
+            ),
+        ]);
+        let (matched, _) = consumer_repo_match(&gh, "rainlanguage", "raindex", "rain-solmem");
+        assert_eq!(matched.role, Some(consumers::Role::Consumer));
+        assert_eq!(
+            gh.count("contents/dependencies/rain-solmem-0.1.3/foundry.toml"),
+            0,
+            "the vendored manifest was not even fetched"
+        );
+    }
+
+    /// A repo whose listing FAILED is unknown, not a clean non-consumer. This is
+    /// the #52 rule applied to the reverse lookup: the whole point of the mode
+    /// is that a missed consumer must never pass as an answer.
+    #[test]
+    fn a_repo_that_cannot_be_listed_is_unreadable_never_a_clean_non_consumer() {
+        let gh = FakeGh::new(vec![("git/trees", FetchOutcome::Failed)]);
+        let (matched, unreadable) = consumer_repo_match(&gh, "rainlanguage", "flaky", "rain-solmem");
+        assert_eq!(matched.role, None);
+        assert_eq!(unreadable, vec!["could not list files".to_string()]);
+    }
+
+    /// The trees API caps very large repos. A capped listing may omit the very
+    /// manifest that makes the repo a consumer, so it is reported, not accepted.
+    #[test]
+    fn a_truncated_file_listing_is_reported_as_incomplete() {
+        let gh = FakeGh::new(vec![("git/trees", tree_paths(&["README.md"], true))]);
+        let (_, unreadable) = consumer_repo_match(&gh, "rainlanguage", "huge", "rain-solmem");
+        assert_eq!(
+            unreadable,
+            vec!["file listing truncated by the trees API".to_string()]
+        );
+    }
+
+    /// An empty repo (no default branch → 404 on the tree) genuinely declares
+    /// nothing. That is an ANSWER, and must not be conflated with a failure.
+    #[test]
+    fn an_empty_repo_is_a_clean_non_consumer_not_an_error() {
+        let gh = FakeGh::new(vec![("git/trees", FetchOutcome::NotFound)]);
+        let (matched, unreadable) = consumer_repo_match(&gh, "rainlanguage", "empty", "rain-solmem");
+        assert_eq!(matched.role, None);
+        assert!(unreadable.is_empty());
+    }
+
+    /// A manifest listed in the tree but unfetchable leaves the repo's
+    /// dependencies unknown — it is carried out as an error, not skipped.
+    #[test]
+    fn an_unfetchable_manifest_makes_the_repo_unreadable() {
+        let gh = FakeGh::new(vec![
+            ("git/trees", tree_paths(&["foundry.toml"], false)),
+            ("contents/foundry.toml", FetchOutcome::Failed),
+        ]);
+        let (matched, _) = consumer_repo_match(&gh, "rainlanguage", "x", "rain-solmem");
+        assert_eq!(matched.role, None, "no evidence was readable…");
+        assert_eq!(matched.errors.len(), 1, "…and that is recorded, not ignored");
+    }
+
+    // ---- consumers mode: the report ----
+
+    fn consumer_repo(
+        org: &str,
+        repo: &str,
+        matched: consumers::RepoMatch,
+        unreadable: Vec<String>,
+        symbols: Option<Vec<consumers::SymbolUsage>>,
+    ) -> ConsumerRepo {
+        ConsumerRepo {
+            org: org.into(),
+            repo: repo.into(),
+            matched,
+            unreadable,
+            symbols,
+        }
+    }
+
+    fn a_match(
+        role: consumers::Role,
+        versions: &[&str],
+        kind: consumers::ManifestKind,
+    ) -> consumers::RepoMatch {
+        consumers::RepoMatch {
+            role: Some(role),
+            hits: vec![consumers::Hit {
+                manifest: kind.file_name().to_string(),
+                kind,
+                declared_as: "rain-solmem".into(),
+                version: versions.first().map(|v| (*v).to_string()),
+                rev: None,
+            }],
+            versions: versions.iter().map(|v| (*v).to_string()).collect(),
+            errors: Vec::new(),
+        }
+    }
+
+    /// An incomplete run says so IN the report and in the exit status. A quiet
+    /// short answer is the exact failure this mode replaces.
+    #[test]
+    fn the_report_and_exit_status_both_announce_an_incomplete_run() {
+        let args = cli::ConsumersArgs {
+            package: "rain-solmem".into(),
+            symbols: vec![],
+            orgs: None,
+            json: None,
+        };
+        let results = vec![
+            consumer_repo(
+                "rainlanguage",
+                "raindex",
+                a_match(
+                    consumers::Role::Consumer,
+                    &["0.1.3"],
+                    consumers::ManifestKind::FoundryToml,
+                ),
+                vec![],
+                None,
+            ),
+            consumer_repo(
+                "rainlanguage",
+                "flaky",
+                consumers::RepoMatch::default(),
+                vec!["could not list files".into()],
+                None,
+            ),
+        ];
+        let out = render_consumers(&args, &["rainlanguage".to_string()], 2, &results);
+        assert!(out.contains("INCOMPLETE"), "{out}");
+        assert!(out.contains("rainlanguage/flaky"), "{out}");
+        assert!(out.contains("2 listed, 1 fully read, 1 unreadable"), "{out}");
+        assert!(out.contains("consumers (1)"), "{out}");
+    }
+
+    /// The producer is reported as the producer, never counted as one of its own
+    /// consumers — and its own definition of the symbol is not a consumer's use.
+    #[test]
+    fn the_report_separates_the_producer_from_the_consumers() {
+        let args = cli::ConsumersArgs {
+            package: "rain-solmem".into(),
+            symbols: vec!["unsafeList".into()],
+            orgs: None,
+            json: None,
+        };
+        let usage = |refs: usize, files: &[&str], test_files: usize, vendored: usize| {
+            Some(vec![consumers::SymbolUsage {
+                symbol: "unsafeList".into(),
+                own_refs: refs,
+                own_files: files.iter().map(|f| (*f).to_string()).collect(),
+                own_test_files: test_files,
+                vendored_files: vendored,
+            }])
+        };
+        let results = vec![
+            consumer_repo(
+                "rainlanguage",
+                "rain.solmem",
+                a_match(
+                    consumers::Role::Producer,
+                    &[],
+                    consumers::ManifestKind::FoundryToml,
+                ),
+                vec![],
+                usage(9, &["src/lib/LibUint256Array.sol"], 0, 0),
+            ),
+            consumer_repo(
+                "rainlanguage",
+                "raindex",
+                a_match(
+                    consumers::Role::Consumer,
+                    &["0.1.3"],
+                    consumers::ManifestKind::SoldeerLock,
+                ),
+                vec![],
+                usage(4, &["src/A.sol", "test/A.t.sol"], 1, 2),
+            ),
+            consumer_repo(
+                "rainlanguage",
+                "rain.dia",
+                a_match(
+                    consumers::Role::Consumer,
+                    &["0.1.3"],
+                    consumers::ManifestKind::SoldeerLock,
+                ),
+                vec![],
+                usage(0, &[], 0, 1),
+            ),
+        ];
+        let out = render_consumers(&args, &["rainlanguage".to_string()], 3, &results);
+        assert!(out.contains("producer: rainlanguage/rain.solmem"), "{out}");
+        assert!(out.contains("consumers (2)"), "{out}");
+        assert!(
+            out.contains("referenced by 1 / 2 consumers"),
+            "the producer's own definition is not a consumer reference:\n{out}"
+        );
+        assert!(
+            out.contains("vendored copy only: 1 file(s)"),
+            "a vendored-only hit is shown as such, not as a reference:\n{out}"
+        );
+    }
+
+    /// Two manifests pinning different versions is drift, and the report names
+    /// it rather than picking a winner.
+    #[test]
+    fn the_report_names_a_repo_whose_manifests_disagree_about_the_version() {
+        let args = cli::ConsumersArgs {
+            package: "rain-solmem".into(),
+            symbols: vec![],
+            orgs: None,
+            json: None,
+        };
+        let mut m = a_match(
+            consumers::Role::Consumer,
+            &["0.1.2"],
+            consumers::ManifestKind::FoundryToml,
+        );
+        m.versions = vec!["0.1.2".into(), "0.1.3".into()];
+        let results = vec![consumer_repo("rainlanguage", "drifty", m, vec![], None)];
+        let out = render_consumers(&args, &["rainlanguage".to_string()], 1, &results);
+        assert!(
+            out.contains("pins 0.1.2 and 0.1.3 in different manifests"),
+            "{out}"
+        );
     }
 
     /// The graph's staleness ceiling is the newest PUBLISHED revision, so the parse

@@ -37,9 +37,11 @@ as a Claude plugin (`.claude-plugin/`, `plugins/rain-org-health-check/`).
 ## Build / test / run
 
 ```
+nix run .#roh-scan -- --help                 # every mode, flag, env var, exit status
 nix run .#roh-scan                          # scan the whole org (default ORG=rainlanguage) → writes site/health.json
 nix run .#roh-scan -- rain.dia rain.flare   # scan specific repos
 nix run .#roh-scan -- --json /tmp/h.json     # write elsewhere
+nix run .#roh-scan -- consumers rain-solmem --symbol unsafeList   # reverse dependency + symbol lookup
 nix run .#screenshot -- site out.png         # headless render of the dashboard (pinned chromium + fonts)
 nix develop -c cargo test                    # roh-scan unit + mutation tests
 nix develop -c pre-commit run --all-files    # reproduces CI's rs-static suite (rustfmt/clippy/prettier/nixfmt/…)
@@ -50,6 +52,34 @@ nix develop -c pre-commit run --all-files    # reproduces CI's rs-static suite (
 print-and-discards). Read-only on GitHub; the caller supplies an org-read-authed
 `gh`. It also reads each repo's `.audit/last-run.json` whole-repo stamp for the
 audit-recency column.
+
+**`--help` is the reference material**, not a reminder — the CLI is parsed in
+`cli.rs` as a pure `argv -> Command` function, and a test asserts the help text
+names every mode, flag, env var and manifest shape. Anything unrecognised (an
+unknown flag, a repo that does not exist) exits 2. Never document a mode only in
+a prompt or a skill file: if `--help` does not have it, the tool is
+undiscoverable and someone hand-rolls a shell loop instead.
+
+## Never answer a cross-repo question from ONE manifest shape
+
+`consumers.rs` exists because a repo's Solidity dependencies live in at least
+five places and no repo uses all of them: `foundry.toml` `[dependencies]` (and
+`remappings` inside a `[profile.*]`), `soldeer.lock`, `foundry.lock`,
+`remappings.txt`, `.gitmodules`. A sweep of one shape under-returns silently —
+grepping `foundry.lock` misses `rainlanguage/rainlang`, which has none at all.
+Every shape is parsed and unioned, names are normalized (`rain.solmem` ==
+`rain-solmem` == `lib/rain.solmem`), and a manifest that will not parse is an
+ERROR carried into the report, never an empty dependency list.
+
+Two more rules that hold for anything added here:
+
+- **GitHub code search is not a source of truth.** It indexes default branches
+  only and under-returns without saying so (7 of 16 known `rain-solmem`
+  consumers, missing `raindex`). Read manifests and clone sources instead.
+- **`gh api …/contents/<path>` prints its 404 body to STDOUT.** An existence
+  check that tests output emptiness reports every file as present. Check the
+  exit status — `GhApi::api_jq` already does, which is why it returns a typed
+  `Found`/`NotFound`/`Failed` rather than an `Option<String>`.
 
 ## CI
 
