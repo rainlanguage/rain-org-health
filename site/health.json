@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-15T07:47:18Z",
+  "generatedAt": "2026-08-15T08:48:28Z",
   "auditGraph": {
     "nodes": [
       {
@@ -5654,16 +5654,16 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-30T17:14:57Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 2490,
+      "sourceLocChangedSinceAudit": 3419,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 2445,
+      "sourceLocAddedSinceAudit": 3374,
       "sourceLocRemovedSinceAudit": 45,
-      "filesChangedSinceAudit": 16,
-      "commitsSinceAudit": 115,
+      "filesChangedSinceAudit": 22,
+      "commitsSinceAudit": 130,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 1380,
+      "commentLocAddedSinceAudit": 2078,
       "commentLocRemovedSinceAudit": 7,
-      "codeLocAddedSinceAudit": 889,
+      "codeLocAddedSinceAudit": 1078,
       "codeLocRemovedSinceAudit": 23,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -6668,8 +6668,8 @@
       "name": "rain.deploy",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 2,
-      "testFiles": 22,
+      "externalFunctions": 5,
+      "testFiles": 30,
       "sourcesUnparsed": 0,
       "untested": []
     },
