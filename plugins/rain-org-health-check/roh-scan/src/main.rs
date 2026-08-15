@@ -1415,10 +1415,7 @@ fn classify_repo_check(outcome: &FetchOutcome) -> RepoCheck {
 /// A named repo that does not exist used to be scanned anyway and reported as
 /// "no findings" — a typo produced a clean bill of health. Missing repos are
 /// therefore fatal to the caller; unverified ones are only a warning.
-fn partition_named_repos<F>(
-    repos: &[(String, String)],
-    check: F,
-) -> (Vec<String>, Vec<String>)
+fn partition_named_repos<F>(repos: &[(String, String)], check: F) -> (Vec<String>, Vec<String>)
 where
     F: Fn(&str, &str) -> RepoCheck,
 {
@@ -1464,9 +1461,8 @@ fn consumer_orgs(
     orgs_env: Option<String>,
     org_env: Option<String>,
 ) -> Vec<String> {
-    let split = |s: &str| -> Vec<String> {
-        s.split_whitespace().map(str::to_string).collect::<Vec<_>>()
-    };
+    let split =
+        |s: &str| -> Vec<String> { s.split_whitespace().map(str::to_string).collect::<Vec<_>>() };
     if let Some(v) = flag.filter(|v| !v.is_empty()) {
         return v.to_vec();
     }
@@ -1622,7 +1618,9 @@ fn run_consumers(args: &cli::ConsumersArgs) -> i32 {
             ".[]|select(.isFork==false)|.name",
         ]) else {
             eprintln!("roh-scan: could not list repos in org `{org}`");
-            eprintln!("roh-scan: refusing to answer a cross-org question over an incomplete repo set");
+            eprintln!(
+                "roh-scan: refusing to answer a cross-org question over an incomplete repo set"
+            );
             return 1;
         };
         for name in names.lines().map(str::trim).filter(|n| !n.is_empty()) {
@@ -1656,7 +1654,7 @@ fn run_consumers(args: &cli::ConsumersArgs) -> i32 {
             r.unreadable.push(format!("{path}: {why}"));
         }
     }
-    results.sort_by(|a, b| a.full_name().cmp(&b.full_name()));
+    results.sort_by_key(|a| a.full_name());
 
     // The source layer, for the repos that matter: only a repo that declares the
     // package can be a consumer of its symbols, and cloning 200 unrelated repos
@@ -1731,7 +1729,11 @@ fn render_consumers(
         .filter(|r| !r.unreadable.is_empty())
         .collect();
 
-    let _ = writeln!(o, "\n================ consumers of `{}` ================", args.package);
+    let _ = writeln!(
+        o,
+        "\n================ consumers of `{}` ================",
+        args.package
+    );
     let _ = writeln!(o, "orgs:  {}", orgs.join(" "));
     let _ = writeln!(
         o,
@@ -1763,12 +1765,7 @@ fn render_consumers(
         } else {
             c.matched.versions.join(",")
         };
-        let mut shapes: Vec<&str> = c
-            .matched
-            .hits
-            .iter()
-            .map(|h| h.kind.file_name())
-            .collect();
+        let mut shapes: Vec<&str> = c.matched.hits.iter().map(|h| h.kind.file_name()).collect();
         shapes.dedup();
         let _ = writeln!(
             o,
@@ -1780,7 +1777,10 @@ fn render_consumers(
     }
     // Disagreement between a repo's own manifests is drift worth naming: a
     // remappings.txt still pointing at a version foundry.toml no longer pins.
-    for c in consumers_list.iter().filter(|c| c.matched.versions.len() > 1) {
+    for c in consumers_list
+        .iter()
+        .filter(|c| c.matched.versions.len() > 1)
+    {
         let _ = writeln!(
             o,
             "  ! {} pins {} in different manifests",
@@ -1798,7 +1798,11 @@ fn render_consumers(
                 _ => "",
             };
             let Some(usage) = c.symbols.as_ref().and_then(|u| u.get(i)) else {
-                let _ = writeln!(o, "  {:<38} unknown — sources not read {role}", c.full_name());
+                let _ = writeln!(
+                    o,
+                    "  {:<38} unknown — sources not read {role}",
+                    c.full_name()
+                );
                 continue;
             };
             if usage.own_refs == 0 {
@@ -1972,7 +1976,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
     // clean bill of health for something that is not there.
     if partial_scan {
         let (missing, unverified) = partition_named_repos(&repo_pairs, |org, repo| {
-            classify_repo_check(&gh.api_jq(&["api", &format!("repos/{org}/{repo}"), "--jq", ".name"]))
+            classify_repo_check(&gh.api_jq(&[
+                "api",
+                &format!("repos/{org}/{repo}"),
+                "--jq",
+                ".name",
+            ]))
         });
         for r in &unverified {
             eprintln!("roh-scan: warning: could not verify {r} exists (network/rate limit)");
@@ -3249,7 +3258,8 @@ mod tests {
     #[test]
     fn a_repo_that_cannot_be_listed_is_unreadable_never_a_clean_non_consumer() {
         let gh = FakeGh::new(vec![("git/trees", FetchOutcome::Failed)]);
-        let (matched, unreadable) = consumer_repo_match(&gh, "rainlanguage", "flaky", "rain-solmem");
+        let (matched, unreadable) =
+            consumer_repo_match(&gh, "rainlanguage", "flaky", "rain-solmem");
         assert_eq!(matched.role, None);
         assert_eq!(unreadable, vec!["could not list files".to_string()]);
     }
@@ -3271,7 +3281,8 @@ mod tests {
     #[test]
     fn an_empty_repo_is_a_clean_non_consumer_not_an_error() {
         let gh = FakeGh::new(vec![("git/trees", FetchOutcome::NotFound)]);
-        let (matched, unreadable) = consumer_repo_match(&gh, "rainlanguage", "empty", "rain-solmem");
+        let (matched, unreadable) =
+            consumer_repo_match(&gh, "rainlanguage", "empty", "rain-solmem");
         assert_eq!(matched.role, None);
         assert!(unreadable.is_empty());
     }
@@ -3286,7 +3297,11 @@ mod tests {
         ]);
         let (matched, _) = consumer_repo_match(&gh, "rainlanguage", "x", "rain-solmem");
         assert_eq!(matched.role, None, "no evidence was readable…");
-        assert_eq!(matched.errors.len(), 1, "…and that is recorded, not ignored");
+        assert_eq!(
+            matched.errors.len(),
+            1,
+            "…and that is recorded, not ignored"
+        );
     }
 
     // ---- consumers mode: the report ----
@@ -3359,7 +3374,10 @@ mod tests {
         let out = render_consumers(&args, &["rainlanguage".to_string()], 2, &results);
         assert!(out.contains("INCOMPLETE"), "{out}");
         assert!(out.contains("rainlanguage/flaky"), "{out}");
-        assert!(out.contains("2 listed, 1 fully read, 1 unreadable"), "{out}");
+        assert!(
+            out.contains("2 listed, 1 fully read, 1 unreadable"),
+            "{out}"
+        );
         assert!(out.contains("consumers (1)"), "{out}");
     }
 

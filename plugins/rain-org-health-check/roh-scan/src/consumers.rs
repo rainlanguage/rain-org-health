@@ -79,7 +79,9 @@ impl ManifestKind {
     /// that is not a dependency manifest.
     pub fn from_path(path: &str) -> Option<ManifestKind> {
         let name = path.rsplit('/').next().unwrap_or(path).to_ascii_lowercase();
-        ManifestKind::ALL.into_iter().find(|k| k.file_name() == name)
+        ManifestKind::ALL
+            .into_iter()
+            .find(|k| k.file_name() == name)
     }
 }
 
@@ -212,7 +214,11 @@ fn parse_foundry_toml(content: &str) -> Result<ManifestFacts, ManifestError> {
             let Some(arr) = profile.get("remappings").and_then(|r| r.as_array()) else {
                 continue;
             };
-            deps.extend(arr.iter().filter_map(|e| e.as_str()).filter_map(parse_remapping));
+            deps.extend(
+                arr.iter()
+                    .filter_map(|e| e.as_str())
+                    .filter_map(parse_remapping),
+            );
         }
     }
     Ok(ManifestFacts {
@@ -247,7 +253,10 @@ fn parse_soldeer_lock(content: &str) -> Result<ManifestFacts, ManifestError> {
                         .get("version")
                         .and_then(|v| v.as_str())
                         .map(str::to_string),
-                    rev: entry.get("rev").and_then(|r| r.as_str()).map(str::to_string),
+                    rev: entry
+                        .get("rev")
+                        .and_then(|r| r.as_str())
+                        .map(str::to_string),
                 });
             }
             out
@@ -321,25 +330,10 @@ fn parse_gitmodules(content: &str) -> Vec<Declared> {
     let mut out: Vec<Declared> = Vec::new();
     let mut path: Option<String> = None;
     let mut url: Option<String> = None;
-    let mut flush = |path: &mut Option<String>, url: &mut Option<String>, out: &mut Vec<Declared>| {
-        let from_path = path.take().map(|p| basename(&p).to_string());
-        let from_url = url.take().map(|u| {
-            let u = u.trim_end_matches('/').trim_end_matches(".git");
-            basename(u).to_string()
-        });
-        for name in [from_path.clone(), from_url] {
-            let Some(name) = name.filter(|n| !n.is_empty()) else {
-                continue;
-            };
-            if !out.iter().any(|d| normalize_name(&d.name) == normalize_name(&name)) {
-                out.push(Declared::new(name));
-            }
-        }
-    };
     for line in content.lines() {
         let t = line.trim();
         if t.starts_with('[') {
-            flush(&mut path, &mut url, &mut out);
+            flush_submodule(&mut path, &mut url, &mut out);
             continue;
         }
         if let Some(v) = t.strip_prefix("path").and_then(strip_eq) {
@@ -348,8 +342,29 @@ fn parse_gitmodules(content: &str) -> Vec<Declared> {
             url = Some(v.to_string());
         }
     }
-    flush(&mut path, &mut url, &mut out);
+    flush_submodule(&mut path, &mut url, &mut out);
     out
+}
+
+/// Emit the submodule accumulated so far under both the names it can be known
+/// by, skipping either if it duplicates a name already emitted.
+fn flush_submodule(path: &mut Option<String>, url: &mut Option<String>, out: &mut Vec<Declared>) {
+    let from_path = path.take().map(|p| basename(&p).to_string());
+    let from_url = url.take().map(|u| {
+        let u = u.trim_end_matches('/').trim_end_matches(".git");
+        basename(u).to_string()
+    });
+    for name in [from_path, from_url] {
+        let Some(name) = name.filter(|n| !n.is_empty()) else {
+            continue;
+        };
+        if !out
+            .iter()
+            .any(|d| normalize_name(&d.name) == normalize_name(&name))
+        {
+            out.push(Declared::new(name));
+        }
+    }
 }
 
 fn strip_eq(rest: &str) -> Option<&str> {
@@ -520,7 +535,8 @@ pub fn match_repo(
             });
         }
     }
-    out.hits.sort_by(|a, b| (a.kind, &a.manifest).cmp(&(b.kind, &b.manifest)));
+    out.hits
+        .sort_by(|a, b| (a.kind, &a.manifest).cmp(&(b.kind, &b.manifest)));
     out.versions = versions.into_iter().collect();
     // A repo that publishes the package is its PRODUCER even if it also names
     // itself in a self-remapping — it is not a consumer of itself.
@@ -600,7 +616,10 @@ mod tests {
 
     fn found(f: &ManifestFacts, name: &str) -> Option<Declared> {
         let want = normalize_name(name);
-        f.deps.iter().find(|d| normalize_name(&d.name) == want).cloned()
+        f.deps
+            .iter()
+            .find(|d| normalize_name(&d.name) == want)
+            .cloned()
     }
 
     // ---- name normalization: the shapes spell the same package differently ----
@@ -618,8 +637,14 @@ mod tests {
             assert_eq!(normalize_name(spelling), key, "{spelling} did not fold");
         }
         // …and distinct packages must NOT collide.
-        assert_ne!(normalize_name("rain.string"), normalize_name("rain.intorastring"));
-        assert_ne!(normalize_name("rain.math.float"), normalize_name("rain.math.fixedpoint"));
+        assert_ne!(
+            normalize_name("rain.string"),
+            normalize_name("rain.intorastring")
+        );
+        assert_ne!(
+            normalize_name("rain.math.float"),
+            normalize_name("rain.math.fixedpoint")
+        );
         // a leading @ is a scope marker, not part of the identity
         assert_eq!(
             normalize_name("@openzeppelin-contracts"),
@@ -679,7 +704,10 @@ inline-form = { version = "0.1.0", url = "https://example.invalid/x.zip" }
         assert!(parse_manifest(ManifestKind::FoundryLock, "not json [[[").is_err());
         // …while a genuinely empty declaration is a real, readable answer.
         assert_eq!(
-            parse_manifest(ManifestKind::FoundryToml, "[profile.default]\nsrc = 'src'\n"),
+            parse_manifest(
+                ManifestKind::FoundryToml,
+                "[profile.default]\nsrc = 'src'\n"
+            ),
             Ok(ManifestFacts::default())
         );
         assert_eq!(
@@ -874,7 +902,10 @@ rain.solmem/=lib/rain.solmem/src/
             "packages/app/dependencies/rain-solmem-0.1.3/soldeer.lock",
             "out/foundry.lock",
         ] {
-            assert!(is_vendored_manifest(vendored), "{vendored} read as first-party");
+            assert!(
+                is_vendored_manifest(vendored),
+                "{vendored} read as first-party"
+            );
         }
         for own in [
             "foundry.toml",
@@ -984,7 +1015,12 @@ rain.solmem/=lib/rain.solmem/src/
         let got = match_repo("rain-solmem", &manifests);
         assert_eq!(got.role, Some(Role::Consumer));
         assert_eq!(got.versions, vec!["0.1.3".to_string()]);
-        assert_eq!(got.hits.len(), 2, "both shapes are reported: {:?}", got.hits);
+        assert_eq!(
+            got.hits.len(),
+            2,
+            "both shapes are reported: {:?}",
+            got.hits
+        );
     }
 
     /// A query in either spelling must find the same consumer — the manifests
@@ -1125,7 +1161,10 @@ rain.solmem/=lib/rain.solmem/src/
     /// is not a reference to it.
     #[test]
     fn a_longer_identifier_is_not_a_reference() {
-        let files = vec![sol("src/A.sol", "unsafeListOf(); myUnsafeList(); x.unsafeList();")];
+        let files = vec![sol(
+            "src/A.sol",
+            "unsafeListOf(); myUnsafeList(); x.unsafeList();",
+        )];
         assert_eq!(symbol_usage(&files, "unsafeList").own_refs, 1);
     }
 
