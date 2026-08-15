@@ -469,6 +469,42 @@ mod tests {
         assert!(dead_foundry_lock_pins(lock, "[submodule \"lib/forge-std\"]\n").is_empty());
     }
 
+    /// A trailing slash is a spelling of the path, not a different path. It is
+    /// trimmed on BOTH sides before they are compared, because the comparison is
+    /// what condemns a pin: leave either side untrimmed and `lib/forge-std/`
+    /// fails to match `lib/forge-std`, so a pin whose submodule is right there
+    /// gets reported dead. This signal's whole value is that it does not invent
+    /// findings, and a string-equality detail is enough to break that.
+    #[test]
+    fn a_trailing_slash_is_the_same_path_on_either_side() {
+        // Slash on the PIN.
+        assert!(
+            dead_foundry_lock_pins(
+                r#"{"lib/forge-std/": {"rev": "a"}}"#,
+                "[submodule \"x\"]\n\tpath = lib/forge-std\n"
+            )
+            .is_empty(),
+            "a pin written with a trailing slash is the same path as the submodule"
+        );
+        // Slash on the SUBMODULE.
+        assert!(
+            dead_foundry_lock_pins(
+                r#"{"lib/forge-std": {"rev": "a"}}"#,
+                "[submodule \"x\"]\n\tpath = lib/forge-std/\n"
+            )
+            .is_empty(),
+            "a submodule path written with a trailing slash still declares the pin"
+        );
+        // …and the normalisation does not make DIFFERENT paths equal.
+        assert_eq!(
+            dead_foundry_lock_pins(
+                r#"{"lib/forge-std/": {"rev": "a"}}"#,
+                "[submodule \"x\"]\n\tpath = lib/rain.solmem/\n"
+            ),
+            vec!["lib/forge-std".to_string()]
+        );
+    }
+
     /// An unreadable input is not evidence. A rate-limited `.gitmodules` fetch
     /// read as "this repo has no submodules" would condemn every pin in a repo
     /// whose submodules are all present — a finding manufactured from a network
