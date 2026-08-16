@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T11:37:23Z",
+  "generatedAt": "2026-08-16T13:03:25Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1307,7 +1307,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 42,
+        "openAuditIssues": 36,
         "lastMutation": {
           "timestamp": "2026-07-25T20:20:00Z",
           "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
@@ -2857,19 +2857,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
-          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-          "implVersion": "0.1.1",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Receipt-vault beacon",
@@ -5098,7 +5098,7 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 42,
+      "openAuditIssues": 36,
       "lastMutation": {
         "timestamp": "2026-07-25T20:20:00Z",
         "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
@@ -5664,16 +5664,16 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-30T17:14:57Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 3503,
+      "sourceLocChangedSinceAudit": 3532,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3458,
+      "sourceLocAddedSinceAudit": 3487,
       "sourceLocRemovedSinceAudit": 45,
       "filesChangedSinceAudit": 22,
-      "commitsSinceAudit": 141,
+      "commitsSinceAudit": 154,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 2155,
+      "commentLocAddedSinceAudit": 2176,
       "commentLocRemovedSinceAudit": 7,
-      "codeLocAddedSinceAudit": 1082,
+      "codeLocAddedSinceAudit": 1089,
       "codeLocRemovedSinceAudit": 23,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
