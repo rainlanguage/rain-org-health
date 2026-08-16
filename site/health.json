@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T13:47:51Z",
+  "generatedAt": "2026-08-16T14:42:34Z",
   "auditGraph": {
     "nodes": [
       {
@@ -637,7 +637,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 10,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
@@ -4721,7 +4721,7 @@
       "name": "rain.sol.codegen",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 10,
       "lastMutation": null
     },
     {
@@ -5669,7 +5669,7 @@
       "sourceLocAddedSinceAudit": 3711,
       "sourceLocRemovedSinceAudit": 47,
       "filesChangedSinceAudit": 22,
-      "commitsSinceAudit": 230,
+      "commitsSinceAudit": 235,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 2368,
       "commentLocRemovedSinceAudit": 9,
