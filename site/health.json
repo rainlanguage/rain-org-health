@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T17:36:59Z",
+  "generatedAt": "2026-08-16T18:49:38Z",
   "auditGraph": {
     "nodes": [
       {
@@ -97,7 +97,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -174,7 +174,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -262,7 +262,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -317,7 +317,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -441,7 +441,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -518,7 +518,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -604,7 +604,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -627,23 +627,6 @@
         "lastAudit": null,
         "openAuditIssues": 0,
         "lastMutation": null,
-        "blockedBy": [],
-        "staleDeps": []
-      },
-      {
-        "repo": "rain.sol.codegen",
-        "org": "rainlanguage",
-        "package": "rain-sol-codegen",
-        "audit": "stale",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 1,
-        "lastMutation": {
-          "timestamp": "2026-08-16T14:55:16Z",
-          "commit": "c72eb89b029c9c7733d4c6deff849cc5da93dd5b",
-          "skillVersion": "0.30.0",
-          "scope": "whole repo"
-        },
         "blockedBy": [],
         "staleDeps": []
       },
@@ -873,7 +856,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -963,7 +946,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -1088,7 +1071,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -1114,7 +1097,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -1186,7 +1169,7 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.3",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.solmem",
@@ -1326,9 +1309,31 @@
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.6",
-            "latest": "0.1.11"
+            "latest": "0.1.16"
           }
         ]
+      },
+      {
+        "repo": "rain.sol.codegen",
+        "org": "rainlanguage",
+        "package": "rain-sol-codegen",
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-08-16T18:02:33Z",
+          "auditedCommit": "7aa85a427d82ddeafab8499ccf313c7306c4b513",
+          "skillVersion": "0.35.0",
+          "stale": true
+        },
+        "openAuditIssues": 36,
+        "lastMutation": {
+          "timestamp": "2026-08-16T14:55:16Z",
+          "commit": "c72eb89b029c9c7733d4c6deff849cc5da93dd5b",
+          "skillVersion": "0.30.0",
+          "scope": "whole repo"
+        },
+        "blockedBy": [],
+        "staleDeps": []
       }
     ],
     "edges": [
@@ -1344,7 +1349,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.6",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.dia",
@@ -1414,7 +1419,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.dia",
@@ -1512,7 +1517,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.erc4626.words",
@@ -1589,7 +1594,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.flare",
@@ -1659,7 +1664,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.flare",
@@ -1743,7 +1748,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.math.float",
@@ -1827,7 +1832,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.merkle",
@@ -1932,7 +1937,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.pyth",
@@ -2163,7 +2168,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.verify",
@@ -2261,7 +2266,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "raindex",
@@ -2394,7 +2399,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rainlang",
@@ -2443,7 +2448,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "rainlang.interface",
@@ -2492,7 +2497,7 @@
         "to": "rain.sol.codegen",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.11"
+        "latest": "0.1.16"
       },
       {
         "from": "st0x.deploy",
@@ -3972,8 +3977,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 114,
   "reposWithFindings": 39,
-  "reposWholeRepoAudited": 4,
-  "reposNeverAudited": 110,
+  "reposWholeRepoAudited": 5,
+  "reposNeverAudited": 109,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 17,
   "summary": {
@@ -4307,7 +4312,7 @@
       "name": "adversarial-mutation-test",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 1,
       "lastMutation": null
     },
     {
@@ -4736,18 +4741,6 @@
       "lastMutation": null
     },
     {
-      "name": "rain.sol.codegen",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 1,
-      "lastMutation": {
-        "timestamp": "2026-08-16T14:55:16Z",
-        "commit": "c72eb89b029c9c7733d4c6deff849cc5da93dd5b",
-        "skillVersion": "0.30.0",
-        "scope": "whole repo"
-      }
-    },
-    {
       "name": "rain.solver",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -4896,7 +4889,7 @@
       "name": "rainix",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 2,
       "lastMutation": null
     },
     {
@@ -5131,6 +5124,23 @@
       "lastAudit": {
         "auditedAt": "2026-08-15T11:41:01Z",
         "auditedCommit": "440e90b5ce0875871dfcb37fbee680a23494f08f",
+        "skillVersion": "0.35.0",
+        "stale": true
+      }
+    },
+    {
+      "name": "rain.sol.codegen",
+      "org": "rainlanguage",
+      "openAuditIssues": 36,
+      "lastMutation": {
+        "timestamp": "2026-08-16T14:55:16Z",
+        "commit": "c72eb89b029c9c7733d4c6deff849cc5da93dd5b",
+        "skillVersion": "0.30.0",
+        "scope": "whole repo"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-08-16T18:02:33Z",
+        "auditedCommit": "7aa85a427d82ddeafab8499ccf313c7306c4b513",
         "skillVersion": "0.35.0",
         "stale": true
       }
@@ -5798,20 +5808,20 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T09:46:43Z",
-      "latestTag": "sol-v0.1.11",
-      "latestTagIso": "2026-08-16T17:23:42Z",
+      "latestTag": "sol-v0.1.16",
+      "latestTagIso": "2026-08-16T18:45:20Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 333,
+      "sourceLocChangedSinceAudit": 365,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 262,
-      "sourceLocRemovedSinceAudit": 71,
+      "sourceLocAddedSinceAudit": 291,
+      "sourceLocRemovedSinceAudit": 74,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 80,
+      "commitsSinceAudit": 100,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 142,
-      "commentLocRemovedSinceAudit": 27,
-      "codeLocAddedSinceAudit": 109,
-      "codeLocRemovedSinceAudit": 43,
+      "commentLocAddedSinceAudit": 159,
+      "commentLocRemovedSinceAudit": 29,
+      "codeLocAddedSinceAudit": 120,
+      "codeLocRemovedSinceAudit": 44,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/35ec46f26376309ff5bdf946fadb2d447e09ebd8...main",
       "daysSinceAudit": 199
@@ -6864,7 +6874,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 22,
+      "testFiles": 24,
       "sourcesUnparsed": 2,
       "untested": []
     },
