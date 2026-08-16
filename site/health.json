@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-16T07:48:03Z",
+  "generatedAt": "2026-08-16T08:49:36Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1180,7 +1180,7 @@
           },
           {
             "repo": "rain.sol.codegen",
-            "pinned": "0.1.0",
+            "pinned": "0.1.3",
             "latest": "0.1.6"
           },
           {
@@ -2480,7 +2480,7 @@
         "from": "st0x.deploy",
         "to": "rain.sol.codegen",
         "stale": true,
-        "pinned": "0.1.0",
+        "pinned": "0.1.3",
         "latest": "0.1.6"
       },
       {
@@ -2857,7 +2857,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2873,15 +2873,15 @@
         },
         {
           "name": "Receipt-vault beacon",
-          "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
-          "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
-          "implVersion": "0.1.1",
+          "address": null,
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -5628,17 +5628,17 @@
       "latestTag": "sol-v0.1.29",
       "latestTagIso": "2026-07-24T13:46:43Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6067,
+      "sourceLocChangedSinceAudit": 6085,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 5720,
-      "sourceLocRemovedSinceAudit": 347,
+      "sourceLocAddedSinceAudit": 5726,
+      "sourceLocRemovedSinceAudit": 359,
       "filesChangedSinceAudit": 83,
-      "commitsSinceAudit": 486,
+      "commitsSinceAudit": 488,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 4797,
       "commentLocRemovedSinceAudit": 256,
-      "codeLocAddedSinceAudit": 4669,
-      "codeLocRemovedSinceAudit": 374,
+      "codeLocAddedSinceAudit": 4676,
+      "codeLocRemovedSinceAudit": 386,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
       "daysSinceAudit": 88
