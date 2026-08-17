@@ -1290,8 +1290,8 @@ struct RepoResult {
     /// failed (or not a Foundry repo): UNKNOWN, which the report must keep
     /// apart from "analyzed and clean".
     untested: Option<untested::RepoUntested>,
-    /// This repo's soldeer `[package].name` — what consumers name it by, so it
-    /// is the audit graph's join key (#71).
+    /// This repo's soldeer package name (`signals::foundry_package_name`) — what
+    /// consumers name it by, so it is the audit graph's join key (#71).
     package: Option<String>,
     /// The newest revision of this repo's package published to the soldeer
     /// registry — the newest version a consumer can pin, and so what a dependant's
