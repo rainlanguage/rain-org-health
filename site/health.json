@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T13:57:32Z",
+  "generatedAt": "2026-08-17T14:49:06Z",
   "auditGraph": {
     "nodes": [
       {
@@ -363,7 +363,7 @@
         "repo": "rain.math.fixedpoint",
         "org": "rainlanguage",
         "package": "rain-math-fixedpoint",
-        "audit": "current",
+        "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
         "openAuditIssues": 0,
@@ -652,6 +652,7 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.binary",
+          "rain.math.fixedpoint",
           "rain.math.saturating",
           "rain.solmem"
         ],
@@ -693,6 +694,7 @@
           "rain.factory",
           "rain.flare",
           "rain.math.binary",
+          "rain.math.fixedpoint",
           "rain.math.saturating",
           "rain.solmem",
           "rain.vats"
@@ -1015,6 +1017,7 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.binary",
+          "rain.math.fixedpoint",
           "rain.math.saturating",
           "rain.solmem",
           "rain.vats"
@@ -1125,6 +1128,7 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.binary",
+          "rain.math.fixedpoint",
           "rain.math.saturating",
           "rain.solmem",
           "rain.vats",
@@ -1163,7 +1167,7 @@
           "auditedAt": "2026-08-15T11:41:01Z",
           "auditedCommit": "440e90b5ce0875871dfcb37fbee680a23494f08f",
           "skillVersion": "0.35.0",
-          "stale": null
+          "stale": true
         },
         "openAuditIssues": 2,
         "lastMutation": {
@@ -2644,7 +2648,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2660,15 +2664,15 @@
         },
         {
           "name": "Receipt-vault beacon",
-          "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
-          "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
-          "implVersion": "0.1.1",
+          "address": null,
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -3759,8 +3763,8 @@
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
     "untested-externals": 4,
+    "bespoke-ci": 3,
     "private-key-dev": 3,
-    "bespoke-ci": 2,
     "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
@@ -3837,6 +3841,14 @@
       "signals": [
         "per-chain-etherscan-key",
         "untested-externals"
+      ]
+    },
+    {
+      "name": "rainix",
+      "org": "rainlanguage",
+      "signals": [
+        "bespoke-ci",
+        "per-chain-etherscan-key"
       ]
     },
     {
@@ -4025,13 +4037,6 @@
       "org": "rainlanguage",
       "signals": [
         "old-actions-checkout"
-      ]
-    },
-    {
-      "name": "rainix",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
       ]
     },
     {
@@ -4895,7 +4900,7 @@
         "auditedAt": "2026-08-15T11:41:01Z",
         "auditedCommit": "440e90b5ce0875871dfcb37fbee680a23494f08f",
         "skillVersion": "0.35.0",
-        "stale": null
+        "stale": true
       }
     },
     {
@@ -5409,6 +5414,42 @@
       "driftFullyClassified": false,
       "compareUrl": null,
       "daysSinceAudit": null
+    },
+    {
+      "name": "rain.math.fixedpoint",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.math.fixedpoint.1752e9fbd635901ac7eb177699681ed97290e12e.jan-2026.pdf",
+          "path": "audit/protofire/rain.math.fixedpoint.1752e9fbd635901ac7eb177699681ed97290e12e.jan-2026.pdf",
+          "lastCommitIso": "2026-07-15T13:13:11Z",
+          "auditDateIso": "2025-12-01T01:02:55Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "1752e9fbd635901ac7eb177699681ed97290e12e",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2025-12-01T01:02:55Z",
+      "latestTag": "sol-v0.2.1",
+      "latestTagIso": "2026-07-09T20:42:51Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 20,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 11,
+      "sourceLocRemovedSinceAudit": 9,
+      "filesChangedSinceAudit": 5,
+      "commitsSinceAudit": 24,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 0,
+      "commentLocRemovedSinceAudit": 0,
+      "codeLocAddedSinceAudit": 9,
+      "codeLocRemovedSinceAudit": 9,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/1752e9fbd635901ac7eb177699681ed97290e12e...main",
+      "daysSinceAudit": 259
     },
     {
       "name": "rain.deploy",
@@ -5979,24 +6020,24 @@
       "auditedRef": "33e17004ed6f9248d5cbb139c93da7190770c1f4",
       "anchorKind": "commit",
       "tagConventionAbsent": true,
-      "auditedDate": "2026-07-14T10:43:35Z",
+      "auditedDate": "2026-01-29T13:36:12Z",
       "latestTag": "v0.1.0",
       "latestTagIso": "2026-05-12T16:20:54Z",
       "isStale": false,
-      "sourceLocChangedSinceAudit": null,
+      "sourceLocChangedSinceAudit": 0,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
+      "sourceLocAddedSinceAudit": 0,
+      "sourceLocRemovedSinceAudit": 0,
+      "filesChangedSinceAudit": 0,
+      "commitsSinceAudit": 13,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
+      "commentLocAddedSinceAudit": 0,
+      "commentLocRemovedSinceAudit": 0,
+      "codeLocAddedSinceAudit": 0,
+      "codeLocRemovedSinceAudit": 0,
+      "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
-      "daysSinceAudit": 34
+      "daysSinceAudit": 200
     },
     {
       "name": "rain.lib.memkv",
@@ -6069,42 +6110,6 @@
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
       "daysSinceAudit": 34
-    },
-    {
-      "name": "rain.math.fixedpoint",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "current",
-      "auditPdfs": [
-        {
-          "filename": "rain.math.fixedpoint.1752e9fbd635901ac7eb177699681ed97290e12e.jan-2026.pdf",
-          "path": "audit/protofire/rain.math.fixedpoint.1752e9fbd635901ac7eb177699681ed97290e12e.jan-2026.pdf",
-          "lastCommitIso": "2026-07-15T13:13:11Z",
-          "auditDateIso": "2025-12-01T01:02:55Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "1752e9fbd635901ac7eb177699681ed97290e12e",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-07-15T13:13:11Z",
-      "latestTag": "sol-v0.2.1",
-      "latestTagIso": "2026-07-09T20:42:51Z",
-      "isStale": false,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/1752e9fbd635901ac7eb177699681ed97290e12e...main",
-      "daysSinceAudit": 33
     },
     {
       "name": "rain.math.float",
