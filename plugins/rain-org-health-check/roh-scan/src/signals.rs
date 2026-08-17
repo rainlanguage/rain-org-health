@@ -332,6 +332,11 @@ mod tests {
             ),
             Some("rain-x".to_string())
         );
+        // an empty name is not a package name — nothing joins on ""
+        assert_eq!(
+            foundry_package_name("[external.package]\nname = \"\""),
+            None
+        );
         // `[external]` is a whole tree of other tools' config: only `package` in it
         // is the release metadata.
         assert_eq!(
