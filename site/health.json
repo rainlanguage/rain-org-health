@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-17T01:58:04Z",
+  "generatedAt": "2026-08-17T03:15:51Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1325,7 +1325,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 33,
+        "openAuditIssues": 31,
         "lastMutation": {
           "timestamp": "2026-08-16T14:55:16Z",
           "commit": "c72eb89b029c9c7733d4c6deff849cc5da93dd5b",
@@ -5131,7 +5131,7 @@
     {
       "name": "rain.sol.codegen",
       "org": "rainlanguage",
-      "openAuditIssues": 33,
+      "openAuditIssues": 31,
       "lastMutation": {
         "timestamp": "2026-08-16T14:55:16Z",
         "commit": "c72eb89b029c9c7733d4c6deff849cc5da93dd5b",
@@ -5816,7 +5816,7 @@
       "sourceLocAddedSinceAudit": 312,
       "sourceLocRemovedSinceAudit": 80,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 107,
+      "commitsSinceAudit": 116,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 174,
       "commentLocRemovedSinceAudit": 29,
