@@ -50,8 +50,11 @@ pub struct Node {
     /// returns it — not `owner/name`. The scan is org-scoped, so the org is
     /// implicit and the bare name is the identity everything else keys on.
     pub repo: String,
-    /// The soldeer `[package].name` this repo publishes, if any. This is what
-    /// consumers name it by, so it is the graph's join key.
+    /// The soldeer package name this repo publishes, if any — read by
+    /// `signals::foundry_package_name`, which accepts either table the org's
+    /// manifests keep release metadata in. This is what consumers name it by, so
+    /// it is the graph's join key: `None` drops the repo from `package_index`,
+    /// and every edge into it with it.
     pub package: Option<String>,
     /// The newest revision of this repo's package PUBLISHED to the soldeer
     /// registry — the newest version a consumer can pin, and so the "latest" a

@@ -13,18 +13,18 @@ pub struct RepoInputs {
     pub workflows: String,
     /// `foundry.toml` content ("" if absent).
     pub foundry: String,
-    /// Registry lookup for the foundry `[package] name`: Some(true) published,
+    /// Registry lookup for `foundry_package_name`: Some(true) published,
     /// Some(false) unpublished, None if there is no package name or it wasn't queried.
     pub soldeer_published: Option<bool>,
-    /// The newest revision the registry has for this repo's `[package] name` — the
+    /// The newest revision the registry has for `foundry_package_name` — the
     /// newest version a consumer can actually pin, and so the ceiling a dependant's
     /// pin is judged stale against (#79). `None` when unpublished, unqueried, or
     /// the query failed; an unknown ceiling flags nobody.
     ///
-    /// NOT `[package].version` from HEAD. Under the org's release lifecycle that
-    /// field is the NEXT, unreleased version — bumped straight after each publish —
-    /// so judging pins against it marks every consumer stale for failing to pin a
-    /// version that does not exist (#86).
+    /// NOT the manifest's own `version` from HEAD. Under the org's release
+    /// lifecycle that field is the NEXT, unreleased version — bumped straight
+    /// after each publish — so judging pins against it marks every consumer stale
+    /// for failing to pin a version that does not exist (#86).
     pub soldeer_version: Option<String>,
 }
 
@@ -32,33 +32,58 @@ fn re(pattern: &str) -> Regex {
     Regex::new(pattern).expect("static signal regex")
 }
 
-/// Extract the `[package] name = "..."` value from foundry.toml (section-scoped), if any.
+/// Extract the soldeer package `name` from a foundry.toml, if any.
 pub fn foundry_package_name(foundry: &str) -> Option<String> {
     foundry_package_field(foundry, "name")
 }
 
-/// The value of a scalar `key = "..."` under `[package]`, section-scoped.
+/// The value of a scalar `key = "..."` in the manifest's soldeer release-metadata
+/// table, which is `[external.package]` or `[package]`.
+///
+/// Both spellings are live in the org and BOTH must read, because this scanner
+/// reads repos it does not control and the rename is landing repo by repo. The
+/// package name is the dependency graph's join key: a `None` here does not
+/// degrade the node, it deletes it — the repo drops out of `package_index`, and
+/// every edge INTO it disappears with it, so its consumers read as standing on
+/// clear ground.
+///
+/// `[external.*]` is the tree foundry reserves for other tools' config and
+/// ignores, which is why the release metadata belongs there: a bare `[package]`
+/// is not reserved, so forge reads it as a profile and warns on every
+/// invocation, and `forge config --fix` rewrites it to `[profile.package]` —
+/// which is a profile named "package" and no longer release metadata at all.
+/// `[profile.package]` therefore must NOT read as the package table.
+///
+/// Parsed as TOML rather than scanned line-wise. The line scanner this replaced
+/// compared each section header to the literal `[package]`, so it saw a rename
+/// as an absence — and would equally miss `[ external.package ]`,
+/// `["external"."package"]` or the dotted `external.package.name = "..."`, all
+/// of which are the same table to every tool that actually reads the file.
+/// Matching the TOML structure instead of the bytes is what makes those
+/// equivalent here too, and it is already how `graph::foundry_dependencies`
+/// reads `[dependencies]` out of this same file — so a manifest that will not
+/// parse is now unreadable to both, rather than half-read by one.
 fn foundry_package_field(foundry: &str, key: &str) -> Option<String> {
-    let mut in_package = false;
-    for line in foundry.lines() {
-        let t = line.trim();
-        if t.starts_with('[') {
-            in_package = t == "[package]";
-            continue;
-        }
-        if in_package {
-            if let Some(rest) = t.strip_prefix(key) {
-                let rest = rest.trim_start();
-                if let Some(v) = rest.strip_prefix('=') {
-                    let v = v.trim().trim_matches('"').trim_matches('\'');
-                    if !v.is_empty() {
-                        return Some(v.to_string());
-                    }
-                }
-            }
-        }
-    }
-    None
+    let doc: toml::Table = foundry.parse().ok()?;
+    let external = doc.get("external").and_then(toml::Value::as_table);
+    // `[package]` is checked first only to make the two-spelling case
+    // deterministic; a manifest carrying both is mid-rename, and either answer
+    // is the same package.
+    let found = [doc.get("package"), external.and_then(|e| e.get("package"))]
+        .into_iter()
+        .flatten()
+        .filter_map(toml::Value::as_table)
+        // A table that carries no usable value for `key` is not an answer, so the
+        // other spelling still gets its turn.
+        .find_map(|t| {
+            t.get(key)
+                .and_then(toml::Value::as_str)
+                .filter(|v| !v.is_empty())
+        })
+        .map(str::to_string);
+    // Bound, not returned as the tail expression: the borrow of `doc` inside the
+    // iterator has to end before `doc` itself does (E0597).
+    found
 }
 
 /// Detect every signal present in `inputs`, in the canonical (scan.sh) order.
@@ -113,7 +138,8 @@ pub fn detect_signals(inputs: &RepoInputs) -> Vec<&'static str> {
     if wf.contains("soldeer push") && re_skip.is_match(wf) {
         out.push("soldeer-skip-warnings");
     }
-    // soldeer-unpublished: a [package] exists but the registry has no revision.
+    // soldeer-unpublished: the manifest names a package but the registry has no
+    // revision of it.
     if inputs.soldeer_published == Some(false) {
         out.push("soldeer-unpublished");
     }
@@ -258,13 +284,116 @@ mod tests {
             foundry_package_name("[package]\nname = \"rain.vats\"\nversion = \"1.0\""),
             Some("rain.vats".to_string())
         );
-        // name outside [package] (e.g. in [profile.default]) must NOT match
+        // name outside the package table (e.g. in [profile.default]) must NOT match
         assert_eq!(
             foundry_package_name("[profile.default]\nname = \"nope\""),
             None
         );
         assert_eq!(foundry_package_name("[dependencies]\nfoo = \"1\""), None);
         assert_eq!(foundry_package_name(""), None);
+    }
+
+    /// The org moves soldeer release metadata out of a bare `[package]` (which
+    /// forge warns about, and `forge config --fix` rewrites into
+    /// `[profile.package]`) and into the `[external.*]` tree it reserves for
+    /// other tools. Both spellings must read: the rename lands repo by repo, and
+    /// a name this reader misses deletes the repo from the dependency graph
+    /// along with every edge into it.
+    #[test]
+    fn foundry_package_name_reads_the_external_package_table() {
+        assert_eq!(
+            foundry_package_name(
+                "[external.package]\nname = \"rain-sol-codegen\"\nversion = \"0.1.36\""
+            ),
+            Some("rain-sol-codegen".to_string())
+        );
+        // dotted key and quoted-segment header are the SAME table to every tool
+        // that reads the file, so they are the same table here.
+        assert_eq!(
+            foundry_package_name("external.package.name = \"rain-sol-codegen\""),
+            Some("rain-sol-codegen".to_string())
+        );
+        assert_eq!(
+            foundry_package_name("[\"external\".\"package\"]\nname = \"rain-sol-codegen\""),
+            Some("rain-sol-codegen".to_string())
+        );
+        // mid-rename, carrying both, is one package either way
+        assert_eq!(
+            foundry_package_name(
+                "[package]\nname = \"rain-x\"\n[external.package]\nname = \"rain-x\""
+            ),
+            Some("rain-x".to_string())
+        );
+        // a package table with no usable name is not an answer — the other
+        // spelling still gets its turn
+        assert_eq!(
+            foundry_package_name(
+                "[package]\nversion = \"0.1.0\"\n[external.package]\nname = \"rain-x\""
+            ),
+            Some("rain-x".to_string())
+        );
+        // an empty name is not a package name — nothing joins on ""
+        assert_eq!(
+            foundry_package_name("[external.package]\nname = \"\""),
+            None
+        );
+        // `[external]` is a whole tree of other tools' config: only `package` in it
+        // is the release metadata.
+        assert_eq!(
+            foundry_package_name("[external.other-tool]\nname = \"nope\""),
+            None
+        );
+        // what `forge config --fix` turns a bare `[package]` INTO: a profile named
+        // "package", which is foundry config and not release metadata.
+        assert_eq!(
+            foundry_package_name("[profile.package]\nname = \"nope\""),
+            None
+        );
+    }
+
+    /// The real rain.sol.codegen manifest shape, which the previous line-wise
+    /// section match read as "no package at all" — detaching the node and all 13
+    /// edges into it from the audit graph. `[dependencies]` reads the same either
+    /// way, so the fixture pins both halves at once.
+    #[test]
+    fn external_package_manifest_keeps_name_and_dependencies() {
+        const CODEGEN: &str = r#"
+# Release metadata, not foundry config.
+[external.package]
+name = "rain-sol-codegen"
+version = "0.1.36"
+
+[profile.default]
+src = 'src'
+solc = "0.8.25"
+
+[dependencies]
+forge-std = "1.16.2"
+
+[soldeer]
+recursive_deps = false
+"#;
+        assert_eq!(
+            foundry_package_name(CODEGEN),
+            Some("rain-sol-codegen".to_string())
+        );
+        assert_eq!(
+            crate::graph::foundry_dependencies(CODEGEN).unwrap(),
+            vec![crate::graph::Dep {
+                package: "forge-std".to_string(),
+                version_req: "1.16.2".to_string(),
+            }]
+        );
+    }
+
+    /// A manifest that will not parse yields no name — the same answer
+    /// `graph::foundry_dependencies` gives it for `[dependencies]`, so one broken
+    /// file cannot be half-read as authoritative by one reader and rejected by
+    /// the other.
+    #[test]
+    fn unparseable_manifest_yields_no_package_name() {
+        assert_eq!(foundry_package_name("[package]\nname = "), None);
+        assert!(crate::graph::foundry_dependencies("[package]\nname = ").is_err());
     }
 
     #[test]

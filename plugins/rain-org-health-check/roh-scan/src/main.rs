@@ -1290,8 +1290,8 @@ struct RepoResult {
     /// failed (or not a Foundry repo): UNKNOWN, which the report must keep
     /// apart from "analyzed and clean".
     untested: Option<untested::RepoUntested>,
-    /// This repo's soldeer `[package].name` — what consumers name it by, so it
-    /// is the audit graph's join key (#71).
+    /// This repo's soldeer package name (`signals::foundry_package_name`) — what
+    /// consumers name it by, so it is the audit graph's join key (#71).
     package: Option<String>,
     /// The newest revision of this repo's package published to the soldeer
     /// registry — the newest version a consumer can pin, and so what a dependant's
@@ -1704,8 +1704,9 @@ fn main() {
         let path = json_out;
         // roh-scan is the producer of SCAN data only. It does NOT compute pipeline/FSM state and
         // does NOT call pr-review-report: the dashboard's FSM panel fetches issue-pr-cron's own
-        // `human-queue.json` artifact at runtime (see CLAUDE.md — the dashboard is a consumer, not
-        // a producer, of data). Do not re-add a `humanQueue` block to health.json here.
+        // `human-queue.json` artifact at runtime (see .claude/rules/data-flow.md — the dashboard is
+        // a consumer, not a producer, of data). Do not re-add a `humanQueue` block to health.json
+        // here.
         //
         // `protofireAudits` is scan-cadence data (same producer/cadence as the rest of health.json),
         // so it belongs IN health.json — the dashboard already fetches it, no new artifact/fetch.
