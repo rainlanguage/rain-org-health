@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T10:49:30Z",
+  "generatedAt": "2026-08-18T11:44:07Z",
   "auditGraph": {
     "nodes": [
       {
@@ -42,7 +42,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -102,7 +102,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "rainlang",
@@ -179,7 +179,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "rainlang",
@@ -216,7 +216,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -327,7 +327,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "rainlang",
@@ -352,7 +352,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -384,7 +384,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -451,7 +451,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -528,7 +528,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "rainlang",
@@ -614,7 +614,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "rainlang",
@@ -663,7 +663,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -708,7 +708,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -871,7 +871,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "rainlang",
@@ -961,7 +961,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "raindex.interface",
@@ -1086,7 +1086,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -1117,7 +1117,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           }
         ]
       },
@@ -1189,7 +1189,7 @@
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
-            "latest": "0.1.13"
+            "latest": "0.1.16"
           },
           {
             "repo": "rain.vats",
@@ -1232,7 +1232,7 @@
           "skillVersion": "0.17.0",
           "stale": true
         },
-        "openAuditIssues": 29,
+        "openAuditIssues": 22,
         "lastMutation": {
           "timestamp": "2026-07-20T15:41:05Z",
           "commit": "b3bd859",
@@ -1351,7 +1351,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.deploy",
@@ -1435,7 +1435,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.dia",
@@ -1533,7 +1533,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.erc4626.words",
@@ -1575,7 +1575,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.factory.deploy",
@@ -1680,7 +1680,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.flare",
@@ -1708,7 +1708,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.lib.memkv",
@@ -1722,7 +1722,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.math.fixedpoint",
@@ -1764,7 +1764,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.math.float",
@@ -1848,7 +1848,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.merkle",
@@ -1953,7 +1953,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.pyth",
@@ -1981,7 +1981,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.tofu.erc20-decimals",
@@ -2002,7 +2002,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.vats",
@@ -2184,7 +2184,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.verify",
@@ -2282,7 +2282,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "raindex",
@@ -2415,7 +2415,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "rainlang",
@@ -2464,7 +2464,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "st0x.deploy",
@@ -2513,7 +2513,7 @@
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.13"
+        "latest": "0.1.16"
       },
       {
         "from": "st0x.deploy",
@@ -5089,7 +5089,7 @@
     {
       "name": "rain.solmem",
       "org": "rainlanguage",
-      "openAuditIssues": 29,
+      "openAuditIssues": 22,
       "lastMutation": {
         "timestamp": "2026-07-20T15:41:05Z",
         "commit": "b3bd859",
@@ -5811,20 +5811,20 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-06T16:02:23Z",
-      "latestTag": "sol-v0.1.13",
-      "latestTagIso": "2026-08-18T08:38:37Z",
+      "latestTag": "sol-v0.1.16",
+      "latestTagIso": "2026-08-18T11:30:18Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 457,
+      "sourceLocChangedSinceAudit": 590,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 261,
-      "sourceLocRemovedSinceAudit": 196,
-      "filesChangedSinceAudit": 7,
-      "commitsSinceAudit": 132,
+      "sourceLocAddedSinceAudit": 362,
+      "sourceLocRemovedSinceAudit": 228,
+      "filesChangedSinceAudit": 9,
+      "commitsSinceAudit": 149,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 206,
-      "commentLocRemovedSinceAudit": 121,
-      "codeLocAddedSinceAudit": 48,
-      "codeLocRemovedSinceAudit": 66,
+      "commentLocAddedSinceAudit": 294,
+      "commentLocRemovedSinceAudit": 138,
+      "codeLocAddedSinceAudit": 61,
+      "codeLocRemovedSinceAudit": 78,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.solmem/compare/228b35c6725877e7fbcd2432b4c692357f16f510...main",
       "daysSinceAudit": 255
@@ -6892,7 +6892,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 37,
+      "testFiles": 40,
       "sourcesUnparsed": 0,
       "untested": []
     },
