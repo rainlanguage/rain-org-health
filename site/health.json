@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T18:59:45Z",
+  "generatedAt": "2026-08-18T19:43:51Z",
   "auditGraph": {
     "nodes": [
       {
@@ -5785,8 +5785,8 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-08T12:06:53Z",
-      "latestTag": "sol-v0.1.5",
-      "latestTagIso": "2026-07-30T17:14:57Z",
+      "latestTag": "sol-v0.1.6",
+      "latestTagIso": "2026-08-18T18:02:42Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 4542,
       "fullSourceLoc": null,
