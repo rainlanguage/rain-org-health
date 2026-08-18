@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T14:55:28Z",
+  "generatedAt": "2026-08-18T15:49:31Z",
   "auditGraph": {
     "nodes": [
       {
@@ -53,7 +53,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 7,
+        "openAuditIssues": 6,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -130,7 +130,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 17,
+        "openAuditIssues": 11,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -195,7 +195,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 39,
+        "openAuditIssues": 35,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -3979,10 +3979,10 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 114,
+  "totalRepos": 115,
   "reposWithFindings": 39,
   "reposWholeRepoAudited": 5,
-  "reposNeverAudited": 109,
+  "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 17,
   "summary": {
@@ -4589,7 +4589,7 @@
       "name": "rain.dia",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 7,
+      "openAuditIssues": 6,
       "lastMutation": null
     },
     {
@@ -4610,7 +4610,7 @@
       "name": "rain.erc4626.words",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 17,
+      "openAuditIssues": 11,
       "lastMutation": null
     },
     {
@@ -4624,7 +4624,14 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 39,
+      "openAuditIssues": 35,
+      "lastMutation": null
+    },
+    {
+      "name": "rain.extrospection.deploy",
+      "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 0,
       "lastMutation": null
     },
     {
@@ -5282,7 +5289,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 605,
+      "fullSourceLoc": 629,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5665,16 +5672,16 @@
       "latestTag": "sol-v0.1.29",
       "latestTagIso": "2026-07-24T13:46:43Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6085,
+      "sourceLocChangedSinceAudit": 6386,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 5726,
+      "sourceLocAddedSinceAudit": 6027,
       "sourceLocRemovedSinceAudit": 359,
-      "filesChangedSinceAudit": 83,
-      "commitsSinceAudit": 488,
+      "filesChangedSinceAudit": 87,
+      "commitsSinceAudit": 489,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4797,
+      "commentLocAddedSinceAudit": 4974,
       "commentLocRemovedSinceAudit": 256,
-      "codeLocAddedSinceAudit": 4676,
+      "codeLocAddedSinceAudit": 4833,
       "codeLocRemovedSinceAudit": 386,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -5701,16 +5708,16 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-30T17:14:57Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4498,
+      "sourceLocChangedSinceAudit": 4534,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 4442,
+      "sourceLocAddedSinceAudit": 4478,
       "sourceLocRemovedSinceAudit": 56,
       "filesChangedSinceAudit": 24,
-      "commitsSinceAudit": 293,
+      "commitsSinceAudit": 298,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 2807,
+      "commentLocAddedSinceAudit": 2829,
       "commentLocRemovedSinceAudit": 10,
-      "codeLocAddedSinceAudit": 1364,
+      "codeLocAddedSinceAudit": 1378,
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -6252,7 +6259,7 @@
       "sourceLocAddedSinceAudit": 1,
       "sourceLocRemovedSinceAudit": 1,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 26,
+      "commitsSinceAudit": 37,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
@@ -6402,7 +6409,7 @@
       "sourceLocAddedSinceAudit": 7,
       "sourceLocRemovedSinceAudit": 1,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 37,
+      "commitsSinceAudit": 39,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 8,
       "commentLocRemovedSinceAudit": 2,
@@ -6752,7 +6759,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 12,
-      "testFiles": 106,
+      "testFiles": 107,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -7013,7 +7020,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 146,
+      "testFiles": 147,
       "sourcesUnparsed": 0,
       "untested": []
     },
