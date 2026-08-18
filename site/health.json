@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T13:59:46Z",
+  "generatedAt": "2026-08-18T14:55:28Z",
   "auditGraph": {
     "nodes": [
       {
@@ -195,7 +195,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 37,
+        "openAuditIssues": 39,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -266,7 +266,7 @@
           },
           {
             "repo": "rain.sol.codegen",
-            "pinned": "0.1.0",
+            "pinned": "0.1.3",
             "latest": "0.1.36"
           }
         ]
@@ -1305,11 +1305,11 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 1,
+        "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-07-25T20:20:00Z",
-          "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
-          "skillVersion": "0.27.0",
+          "timestamp": "2026-08-18T13:31:09Z",
+          "commit": "ed91bfa5161fa94c5180d57a54e2a4341ba8e876",
+          "skillVersion": "0.33.0",
           "scope": "whole repo"
         },
         "blockedBy": [
@@ -1597,7 +1597,7 @@
         "from": "rain.factory.deploy",
         "to": "rain.sol.codegen",
         "stale": true,
-        "pinned": "0.1.0",
+        "pinned": "0.1.3",
         "latest": "0.1.36"
       },
       {
@@ -4624,7 +4624,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 37,
+      "openAuditIssues": 39,
       "lastMutation": null
     },
     {
@@ -5118,11 +5118,11 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 1,
+      "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-07-25T20:20:00Z",
-        "commit": "4422e291234e776de79d3bd8ffa4249a2a9d2abb",
-        "skillVersion": "0.27.0",
+        "timestamp": "2026-08-18T13:31:09Z",
+        "commit": "ed91bfa5161fa94c5180d57a54e2a4341ba8e876",
+        "skillVersion": "0.33.0",
         "scope": "whole repo"
       },
       "lastAudit": {
@@ -5311,7 +5311,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 332,
+      "fullSourceLoc": 326,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5701,17 +5701,17 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-30T17:14:57Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4416,
+      "sourceLocChangedSinceAudit": 4498,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 4369,
-      "sourceLocRemovedSinceAudit": 47,
-      "filesChangedSinceAudit": 23,
-      "commitsSinceAudit": 275,
+      "sourceLocAddedSinceAudit": 4442,
+      "sourceLocRemovedSinceAudit": 56,
+      "filesChangedSinceAudit": 24,
+      "commitsSinceAudit": 293,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 2787,
-      "commentLocRemovedSinceAudit": 9,
-      "codeLocAddedSinceAudit": 1321,
-      "codeLocRemovedSinceAudit": 23,
+      "commentLocAddedSinceAudit": 2807,
+      "commentLocRemovedSinceAudit": 10,
+      "codeLocAddedSinceAudit": 1364,
+      "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
       "daysSinceAudit": 191
@@ -6716,7 +6716,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 7,
-      "testFiles": 41,
+      "testFiles": 47,
       "sourcesUnparsed": 0,
       "untested": []
     },
