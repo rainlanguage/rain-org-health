@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-18T07:07:35Z",
+  "generatedAt": "2026-08-18T07:57:04Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1232,7 +1232,7 @@
           "skillVersion": "0.17.0",
           "stale": true
         },
-        "openAuditIssues": 31,
+        "openAuditIssues": 30,
         "lastMutation": {
           "timestamp": "2026-07-20T15:41:05Z",
           "commit": "b3bd859",
@@ -5095,7 +5095,7 @@
     {
       "name": "rain.solmem",
       "org": "rainlanguage",
-      "openAuditIssues": 31,
+      "openAuditIssues": 30,
       "lastMutation": {
         "timestamp": "2026-07-20T15:41:05Z",
         "commit": "b3bd859",
@@ -5823,15 +5823,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.243-uc-v0.0.1-alpha.242",
-      "latestTagIso": "2026-08-11T08:26:38Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.245-uc-v0.0.1-alpha.244",
+      "latestTagIso": "2026-08-18T07:33:23Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 463,
+      "sourceLocChangedSinceAudit": 442,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 459,
+      "sourceLocAddedSinceAudit": 438,
       "sourceLocRemovedSinceAudit": 4,
       "filesChangedSinceAudit": 63,
-      "commitsSinceAudit": 146,
+      "commitsSinceAudit": 148,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 996,
       "commentLocRemovedSinceAudit": 315,
@@ -5867,7 +5867,7 @@
       "sourceLocAddedSinceAudit": 233,
       "sourceLocRemovedSinceAudit": 188,
       "filesChangedSinceAudit": 7,
-      "commitsSinceAudit": 126,
+      "commitsSinceAudit": 128,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 180,
       "commentLocRemovedSinceAudit": 115,
