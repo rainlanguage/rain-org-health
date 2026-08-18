@@ -59,6 +59,12 @@ fn gh_stdout(args: &[&str]) -> Option<String> {
 /// (a genuine 404) separate from `Failed` (rate-limit/network/spawn error after
 /// retries) is the crux of issue #52: an errored fetch must never masquerade as
 /// an empty resource and become a false coverage claim.
+///
+/// This is also why the outcome is typed rather than an `Option<String>`:
+/// `gh api …/contents/<path>` prints its 404 body to STDOUT, so an existence
+/// check that tests the output for emptiness reports every file as PRESENT.
+/// The exit status is the only thing that distinguishes them, and every fetch
+/// here goes through a seam that checks it.
 #[derive(Debug, Clone, PartialEq)]
 enum FetchOutcome {
     Found(String),

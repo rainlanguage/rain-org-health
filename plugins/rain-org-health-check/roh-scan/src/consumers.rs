@@ -21,8 +21,14 @@
 //! carried to the report, never an empty dependency list.
 //!
 //! GitHub code search is deliberately not a source here: it indexes default
-//! branches only and under-returns without saying so (it returned 7 of 16 known
-//! consumers of `rain-solmem`, missing `raindex`).
+//! branches only and under-returns without saying so. Measured: `rain-solmem
+//! org:rainlanguage` returns 11 of the 17 rainlanguage repos that actually
+//! declare it, and 5 of the 6 it drops (`rain.dia`, `rain.erc4626.words`,
+//! `rain.intorastring`, `rain.merkle`, `rain.verify`) carry the literal string
+//! `rain-solmem` in their default-branch `foundry.toml` — so this is not a
+//! spelling or a branch problem, the index simply does not have them, and it
+//! answers 200 anyway. Treat the exact counts as a snapshot, not a constant;
+//! the durable property is that a miss is SILENT.
 //!
 //! ## Names
 //! The shapes disagree about spelling: soldeer writes `rain-solmem`, a git
