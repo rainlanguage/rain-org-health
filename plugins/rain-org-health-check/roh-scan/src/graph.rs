@@ -67,12 +67,15 @@ pub struct Node {
     /// judging pins against it marks every consumer stale for failing to pin a
     /// version that does not exist yet (#86).
     pub version: Option<String>,
-    /// This repo's `[dependencies]`, each with the version it pins. Empty with
-    /// `deps_known == false` means the manifest would not parse, NOT that the
-    /// repo has no dependencies.
+    /// This repo's IMMEDIATE dependencies: the `[dependencies]` entries whose
+    /// package its own code imports (`immediate_deps`), each with the version
+    /// the manifest pins. Empty with `deps_known == false` means the
+    /// dependencies are UNKNOWN, not that the repo has none.
     pub deps: Vec<Dep>,
-    /// False when `foundry.toml` would not parse. Its dependencies are unknown,
-    /// so nothing may claim its ground is clear.
+    /// False when the dependency set could not be determined: `foundry.toml`
+    /// would not parse, or it declares dependencies but the repo's tree could
+    /// not be read to tell direct entries from closure-only ones. Either way
+    /// nothing may claim its ground is clear.
     pub deps_known: bool,
     /// The verdict from `protofire::classify_external_audit`.
     pub audit: protofire::ExternalAudit,
@@ -171,6 +174,128 @@ pub fn foundry_dependencies(foundry: &str) -> Result<Vec<Dep>, MalformedManifest
             }
         })
         .collect())
+}
+
+/// Every import path in one Solidity source, as the compiler would see them.
+///
+/// Parsed with [`solang_parser`]'s real AST, so a commented-out import or an
+/// import-shaped string literal is not a use. A file the GRAMMAR rejects
+/// (solang can lag solc's newest syntax) still lexes, and an import directive
+/// is lexically the `import` keyword with exactly one string literal before
+/// its `;` — so the fallback reads the token stream rather than returning
+/// nothing. Missing a real import here would silently drop a direct edge,
+/// which is the exact failure this module exists to prevent.
+fn sol_import_paths(src: &str) -> Vec<String> {
+    if let Ok((unit, _comments)) = solang_parser::parse(src, 0) {
+        return unit
+            .0
+            .iter()
+            .filter_map(|part| {
+                let solang_parser::pt::SourceUnitPart::ImportDirective(imp) = part else {
+                    return None;
+                };
+                imp.literal().map(|l| l.string.clone())
+            })
+            .collect();
+    }
+    let mut comments = Vec::new();
+    let mut errors = Vec::new();
+    let mut out = Vec::new();
+    let mut in_import = false;
+    for (_, token, _) in solang_parser::lexer::Lexer::new(src, 0, &mut comments, &mut errors) {
+        match token {
+            solang_parser::lexer::Token::Import => in_import = true,
+            solang_parser::lexer::Token::Semicolon => in_import = false,
+            solang_parser::lexer::Token::StringLiteral(_, s) if in_import => {
+                out.push(s.to_string());
+                in_import = false;
+            }
+            _ => {}
+        }
+    }
+    out
+}
+
+/// The import-path prefixes (first `/`-segment of each import target) used by
+/// a repo's OWN code, over the `(path, source)` pairs a clone walk collected.
+///
+/// "Own" is by the shared vendored-tree predicate (`untested::is_vendored`):
+/// everything outside top-level `lib/`, `dependencies/`, `node_modules/`,
+/// `out/` and `cache/` — which is `src/`, `script/` and `test/` in the org's
+/// layout, without dropping own code that lives elsewhere. A vendored file's
+/// imports are its OWN package's dependencies resolving through the consumer's
+/// remappings — counting them would re-admit the whole soldeer closure this
+/// set exists to cut away. Relative imports (leading `.`) name no package and
+/// are skipped.
+pub fn imported_prefixes(files: &[(String, String)]) -> BTreeSet<String> {
+    let mut out = BTreeSet::new();
+    for (path, src) in files {
+        if crate::untested::is_vendored(path) {
+            continue;
+        }
+        for import in sol_import_paths(src) {
+            let first = import.split('/').next().unwrap_or("");
+            if first.is_empty() || first.starts_with('.') {
+                continue;
+            }
+            out.insert(first.to_string());
+        }
+    }
+    out
+}
+
+/// Whether an imported path prefix is a use of `package`.
+///
+/// The org's versioned-import convention writes a direct use as
+/// `import … from "<package>-<version>/…"`, so `rain-solmem-0.1.3` is a use of
+/// `rain-solmem`. The version half is recognised by its leading digit, never
+/// split on a hyphen: package names carry hyphens (`rain-math-float`) and
+/// pre-release versions do too (`0.0.1-alpha.5`), so `rain-math-float-0.0.1`
+/// is not a use of `rain-math`, while `rain-math-float-0.0.1-alpha.5` is one
+/// of `rain-math-float`. Deliberately version-AGNOSTIC beyond that: a prefix
+/// pinning an older version than the manifest is still a direct use, and the
+/// bare `<package>` form (an unversioned remapping) counts too.
+pub fn import_package_matches(prefix: &str, package: &str) -> bool {
+    if prefix == package {
+        return true;
+    }
+    prefix
+        .strip_prefix(package)
+        .and_then(|rest| rest.strip_prefix('-'))
+        .is_some_and(|version| version.starts_with(|c: char| c.is_ascii_digit()))
+}
+
+/// The subset of a manifest's `[dependencies]` the repo's own code imports —
+/// its IMMEDIATE dependencies.
+///
+/// Soldeer does not resolve transitive dependencies, so an org manifest
+/// declares the FULL closure: packages only a dependency's internal imports
+/// need. An entry whose package no own file imports is such a closure entry,
+/// and drawing it as an edge misstates who stands on what. This is decided
+/// from DATA (the imports that exist), never from graph shape: a package both
+/// imported directly AND reachable transitively keeps its edge, so this is not
+/// transitive reduction.
+///
+/// `None` when immediacy cannot be determined: dependencies are declared but
+/// the repo's tree could not be read (`imports` is `None`). That is the same
+/// "deps unknown" state an unparseable manifest yields, and the caller must
+/// flag it rather than keep or drop the closure silently. A manifest declaring
+/// NO dependencies needs no tree to confirm that.
+pub fn immediate_deps(deps: &[Dep], imports: Option<&BTreeSet<String>>) -> Option<Vec<Dep>> {
+    if deps.is_empty() {
+        return Some(Vec::new());
+    }
+    let imports = imports?;
+    Some(
+        deps.iter()
+            .filter(|d| {
+                imports
+                    .iter()
+                    .any(|prefix| import_package_matches(prefix, &d.package))
+            })
+            .cloned()
+            .collect(),
+    )
 }
 
 /// Whether `pinned` is an earlier semver than `current` — the test for a stale
@@ -572,5 +697,338 @@ recursive_deps = false
             protofire::ExternalAudit::Never,
         )];
         assert!(blockers(&nodes).unwrap()["app"].is_empty());
+    }
+
+    fn deps(names: &[&str]) -> Vec<Dep> {
+        names
+            .iter()
+            .map(|d| Dep {
+                package: d.to_string(),
+                version_req: String::new(),
+            })
+            .collect()
+    }
+
+    fn prefixes(items: &[&str]) -> BTreeSet<String> {
+        items.iter().map(|s| s.to_string()).collect()
+    }
+
+    /// Real import forms from org repos — plain, braced-from, glob-as and
+    /// plain-as — are all read; relative imports name no package; a vendored
+    /// file's imports belong to ITS package, not this repo, and counting them
+    /// would re-admit the soldeer closure this set exists to cut away.
+    #[test]
+    fn imported_prefixes_reads_every_import_form_from_own_files_only() {
+        let files = vec![
+            (
+                "src/Lib.sol".to_string(),
+                r#"pragma solidity ^0.8.25;
+import {LibMemCpy} from "rain-solmem-0.1.3/src/lib/LibMemCpy.sol";
+import "forge-std-1.16.1/src/Test.sol";
+contract L {}
+"#
+                .to_string(),
+            ),
+            (
+                "script/Deploy.sol".to_string(),
+                "import * as D from \"rain-deploy-0.1.2/src/D.sol\";\n".to_string(),
+            ),
+            (
+                "test/Lib.t.sol".to_string(),
+                "import \"rain-factory-0.1.1/src/F.sol\" as F;\n".to_string(),
+            ),
+            (
+                "src/Local.sol".to_string(),
+                "import \"./Sibling.sol\";\nimport \"../weird/Up.sol\";\n".to_string(),
+            ),
+            (
+                "dependencies/rain-solmem-0.1.3/src/Inner.sol".to_string(),
+                "import \"rain-lib-hash-0.1.0/src/H.sol\";\n".to_string(),
+            ),
+            (
+                "lib/forge-std/src/Test.sol".to_string(),
+                "import \"ds-test-1.0.0/src/test.sol\";\n".to_string(),
+            ),
+        ];
+        assert_eq!(
+            imported_prefixes(&files),
+            prefixes(&[
+                "rain-solmem-0.1.3",
+                "forge-std-1.16.1",
+                "rain-deploy-0.1.2",
+                "rain-factory-0.1.1",
+            ]),
+            "own-file imports only, every directive form, no relative or vendored entries"
+        );
+    }
+
+    /// A commented-out import and an import-shaped string literal are not uses:
+    /// extraction reads the AST, and a line-scan would keep a phantom edge for
+    /// each of these.
+    #[test]
+    fn a_commented_or_quoted_import_is_not_a_use() {
+        let files = vec![(
+            "src/C.sol".to_string(),
+            r#"pragma solidity ^0.8.25;
+// import "ghost-1.0.0/G.sol";
+/* import "ghost2-2.0.0/G.sol"; */
+contract C {
+    string constant S = 'import "ghost3-3.0.0/G.sol";';
+}
+"#
+            .to_string(),
+        )];
+        assert_eq!(
+            imported_prefixes(&files),
+            BTreeSet::new(),
+            "no comment or string literal may fake a direct use"
+        );
+    }
+
+    /// A file solang's GRAMMAR rejects still lexes, and its import directives
+    /// are still real uses — returning nothing for it would silently drop a
+    /// direct edge, the exact failure this module exists to prevent.
+    #[test]
+    fn a_file_the_grammar_rejects_still_yields_its_imports() {
+        let src = "import {Thing} from \"rain-solmem-0.1.3/src/T.sol\";\n\
+                   contract Broken { this is not solidity %% }\n";
+        assert!(
+            solang_parser::parse(src, 0).is_err(),
+            "fixture must actually fail the grammar or the fallback is untested"
+        );
+        let files = vec![("src/Broken.sol".to_string(), src.to_string())];
+        assert_eq!(
+            imported_prefixes(&files),
+            prefixes(&["rain-solmem-0.1.3"]),
+            "lexer fallback must still find the import"
+        );
+    }
+
+    /// The lexer fallback stops collecting at the import's `;`: a string
+    /// literal later in a grammar-rejected file is not an import target, and
+    /// collecting past the semicolon would fake a direct edge from any string
+    /// that happens to follow an import-shaped statement.
+    #[test]
+    fn the_lexer_fallback_stops_at_the_imports_semicolon() {
+        let src = "import X;\n\
+                   contract Broken { this is not solidity %% }\n\
+                   string constant S = \"phantom-9.9.9/x.sol\";\n";
+        assert!(
+            solang_parser::parse(src, 0).is_err(),
+            "fixture must actually fail the grammar or the fallback is untested"
+        );
+        let files = vec![("src/Broken.sol".to_string(), src.to_string())];
+        assert_eq!(
+            imported_prefixes(&files),
+            BTreeSet::new(),
+            "a string after the import's `;` is not an import target"
+        );
+    }
+
+    /// An import naming no package — an empty target or an absolute `/` path —
+    /// contributes no prefix: neither is a soldeer package use, and an empty
+    /// prefix would sit in the set as an entry no manifest package can match.
+    #[test]
+    fn an_empty_or_absolute_import_contributes_no_prefix() {
+        let files = vec![(
+            "src/C.sol".to_string(),
+            r#"pragma solidity ^0.8.25;
+import "";
+import "/abs/X.sol";
+contract C {}
+"#
+            .to_string(),
+        )];
+        assert_eq!(
+            imported_prefixes(&files),
+            BTreeSet::new(),
+            "empty and absolute import targets name no package"
+        );
+    }
+
+    /// The version half of a prefix is recognised by its leading digit, never by
+    /// splitting on hyphens: package names carry hyphens and pre-release
+    /// versions do too, and either shortcut misassigns a use to the wrong
+    /// package.
+    #[test]
+    fn import_package_matches_versions_not_name_extensions() {
+        // versioned, unversioned-remap, and pre-release forms are all uses
+        assert!(import_package_matches("rain-solmem-0.1.3", "rain-solmem"));
+        assert!(import_package_matches("rain-solmem", "rain-solmem"));
+        assert!(import_package_matches(
+            "rain-math-float-0.0.1-alpha.5",
+            "rain-math-float"
+        ));
+        assert!(import_package_matches(
+            "@openzeppelin-contracts-5.6.1",
+            "@openzeppelin-contracts"
+        ));
+        // a LONGER package name is not a use of its prefix
+        assert!(!import_package_matches(
+            "rain-math-float-0.0.1",
+            "rain-math"
+        ));
+        assert!(!import_package_matches(
+            "rain-verify-interface-0.1.0",
+            "rain-verify"
+        ));
+        assert!(!import_package_matches(
+            "@openzeppelin-contracts-upgradeable-5.6.1",
+            "@openzeppelin-contracts"
+        ));
+        // an unrelated package is never a use
+        assert!(!import_package_matches(
+            "rain-solmem-0.1.3",
+            "rain-lib-hash"
+        ));
+    }
+
+    /// THE FIX: soldeer manifests declare the full transitive closure, so a
+    /// `[dependencies]` entry imported nowhere in the repo's own code is a
+    /// closure-only entry and draws no edge; an imported one keeps its edge.
+    /// The import prefix matches by PACKAGE, not exact pin — a lagging version
+    /// in the import path is still a direct use.
+    #[test]
+    fn closure_only_entries_are_dropped_and_direct_ones_kept() {
+        let declared = deps(&["direct-dep", "closure-only", "also-direct"]);
+        let got = immediate_deps(
+            &declared,
+            Some(&prefixes(&["direct-dep-0.1.0", "also-direct"])),
+        )
+        .expect("imports are known");
+        let names: Vec<&str> = got.iter().map(|d| d.package.as_str()).collect();
+        assert_eq!(
+            names,
+            vec!["direct-dep", "also-direct"],
+            "imported entries survive, closure-only entries do not"
+        );
+    }
+
+    /// NOT transitive reduction: a package imported directly AND reachable
+    /// through another dependency keeps its edge — everything imports solmem,
+    /// and reduction would hide those real direct edges. Immediacy is decided
+    /// from the imports that exist, never from graph shape.
+    #[test]
+    fn a_direct_dep_also_transitively_reachable_keeps_its_edge() {
+        let mut app = node("app", Some("app"), &[], protofire::ExternalAudit::Never);
+        app.deps = immediate_deps(
+            &deps(&["lib", "core"]),
+            Some(&prefixes(&["lib-1.0.0", "core-1.0.0"])),
+        )
+        .unwrap();
+        let mut lib = node("lib", Some("lib"), &[], protofire::ExternalAudit::Never);
+        lib.deps = immediate_deps(&deps(&["core"]), Some(&prefixes(&["core-1.0.0"]))).unwrap();
+        let core = node("core", Some("core"), &[], protofire::ExternalAudit::Never);
+        let edges = graph_edges(&[app, lib, core]).unwrap();
+        let pairs: Vec<(&str, &str)> = edges
+            .iter()
+            .map(|e| (e.from.as_str(), e.to.as_str()))
+            .collect();
+        assert_eq!(
+            pairs,
+            vec![("app", "core"), ("app", "lib"), ("lib", "core")],
+            "app→core is a real direct edge even though app→lib→core also reaches core"
+        );
+    }
+
+    /// Declared dependencies with an unreadable tree are UNKNOWN — the same
+    /// state an unparseable manifest yields — never a silently kept or dropped
+    /// closure. A manifest declaring nothing needs no tree to confirm it.
+    #[test]
+    fn an_unreadable_tree_leaves_declared_deps_unknown_not_kept_or_dropped() {
+        assert_eq!(
+            immediate_deps(&deps(&["some-dep"]), None),
+            None,
+            "declared deps with no readable tree are unknown"
+        );
+        assert_eq!(
+            immediate_deps(&[], None),
+            Some(Vec::new()),
+            "no declared deps is a real answer with or without a tree"
+        );
+    }
+
+    /// Reachability over direct edges equals reachability over closure edges —
+    /// a closure entry is by definition reachable through the direct entries —
+    /// so collapsing manifests to their direct deps must leave every blocker
+    /// set unchanged while the edge list shrinks.
+    #[test]
+    fn blockers_unchanged_when_closure_deps_collapse_to_direct() {
+        // chain app→lib→core→leaf, each manifest declaring its full closure
+        let audits = [
+            ("app", protofire::ExternalAudit::Never),
+            ("lib", protofire::ExternalAudit::Current),
+            ("core", protofire::ExternalAudit::Never),
+            ("leaf", protofire::ExternalAudit::Stale),
+        ];
+        let closures: &[(&str, &[&str])] = &[
+            ("app", &["lib", "core", "leaf"]),
+            ("lib", &["core", "leaf"]),
+            ("core", &["leaf"]),
+            ("leaf", &[]),
+        ];
+        let imports: &[(&str, &[&str])] = &[
+            ("app", &["lib-1.0.0"]),
+            ("lib", &["core-1.0.0"]),
+            ("core", &["leaf-1.0.0"]),
+            ("leaf", &[]),
+        ];
+        let closure_nodes: Vec<Node> = closures
+            .iter()
+            .zip(audits)
+            .map(|((repo, declared), (_, audit))| node(repo, Some(repo), declared, audit))
+            .collect();
+        let direct_nodes: Vec<Node> = closure_nodes
+            .iter()
+            .zip(imports)
+            .map(|(n, (_, imported))| Node {
+                deps: immediate_deps(&n.deps, Some(&prefixes(imported))).unwrap(),
+                ..n.clone()
+            })
+            .collect();
+        assert_eq!(
+            blockers(&closure_nodes).unwrap(),
+            blockers(&direct_nodes).unwrap(),
+            "the same repos block, whether edges are closure or direct"
+        );
+        assert_eq!(graph_edges(&closure_nodes).unwrap().len(), 6);
+        assert_eq!(
+            graph_edges(&direct_nodes).unwrap().len(),
+            3,
+            "the closure's transitive entries stop drawing edges"
+        );
+    }
+
+    /// #79 keeps working on surviving edges: the stale flag and the pinned/
+    /// latest pair still come from the MANIFEST entry, and dropping a
+    /// closure-only entry does not disturb them.
+    #[test]
+    fn stale_pins_survive_the_immediacy_filter_on_kept_edges() {
+        let mut consumer = node_v("consumer", "consumer", "1.0.0", &[]);
+        consumer.deps = immediate_deps(
+            &[
+                Dep {
+                    package: "core".into(),
+                    version_req: "0.1.7".into(),
+                },
+                Dep {
+                    package: "closure-only".into(),
+                    version_req: "0.0.1".into(),
+                },
+            ],
+            // the import path pins an older core than the manifest — still a use
+            Some(&prefixes(&["core-0.1.0"])),
+        )
+        .unwrap();
+        let core = node_v("core", "core", "0.2.0", &[]);
+        let closure_only = node_v("closure-only", "closure-only", "0.9.0", &[]);
+        let edges = graph_edges(&[consumer, core, closure_only]).unwrap();
+        assert_eq!(edges.len(), 1, "only the direct edge survives: {edges:?}");
+        assert!(
+            edges[0].stale,
+            "consumer pins core 0.1.7 while core is 0.2.0"
+        );
+        assert_eq!(edges[0].pinned, "0.1.7");
+        assert_eq!(edges[0].latest, "0.2.0");
     }
 }

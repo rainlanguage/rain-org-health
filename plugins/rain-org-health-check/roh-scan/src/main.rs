@@ -1298,9 +1298,14 @@ struct RepoResult {
     /// pin is judged stale against (#79). `None` when unpublished or unknown, which
     /// flags nobody: there is no ceiling to be behind.
     version: Option<String>,
-    /// This repo's `[dependencies]`, each with its pinned version (#71, #79).
+    /// This repo's IMMEDIATE dependencies (#71, #79): the `[dependencies]`
+    /// entries its own code imports, each with its pinned version. Soldeer
+    /// manifests declare the full transitive closure, so the rest are
+    /// closure-only entries that draw no edge.
     deps: Vec<graph::Dep>,
-    /// False when `foundry.toml` would not parse: deps unknown, not absent.
+    /// False when the dependency set is UNKNOWN, not absent: `foundry.toml`
+    /// would not parse, or deps are declared but the repo's tree could not be
+    /// read to tell direct entries from closure-only ones.
     deps_known: bool,
 }
 
@@ -1346,6 +1351,40 @@ fn latest_revision_from_response(body: &[u8]) -> Option<Option<String>> {
             .and_then(|version| version.as_str())
             .map(str::to_string),
     )
+}
+
+/// How a repo's drawable dependency set resolved — a typed discriminant, so the
+/// two ways of being unknown stay apart from each other and from "known, none".
+#[derive(Debug, PartialEq)]
+enum DepsResolution {
+    /// The manifest parsed and immediacy is decided: these entries (possibly
+    /// none) are what the repo's own code imports.
+    Known(Vec<graph::Dep>),
+    /// `foundry.toml` would not parse — dependencies unknown, not absent.
+    ManifestUnparseable,
+    /// The manifest declares dependencies but the repo's tree could not be
+    /// read, so none of them can be told direct from closure-only. Carries the
+    /// declared count for the operator log.
+    TreeUnreadable { declared: usize },
+}
+
+/// The graph node's dependency set from a repo's manifest and the import
+/// prefixes its own code was seen to use (`None` = the tree was unreadable).
+/// Split from the scan loop so each arm is a testable fact rather than
+/// worker-thread glue.
+fn resolve_node_deps(
+    foundry: &str,
+    imports: Option<&std::collections::BTreeSet<String>>,
+) -> DepsResolution {
+    match graph::foundry_dependencies(foundry) {
+        Err(_) => DepsResolution::ManifestUnparseable,
+        Ok(declared) => match graph::immediate_deps(&declared, imports) {
+            Some(direct) => DepsResolution::Known(direct),
+            None => DepsResolution::TreeUnreadable {
+                declared: declared.len(),
+            },
+        },
+    }
 }
 
 /// Resolve where the dashboard JSON is written. A bare run POPULATES `site/health.json` (the scan
@@ -1487,19 +1526,25 @@ fn main() {
         // as a confirmed coverage gap with a source-LOC magnitude (cf #52).
         // #54 (claude-audit-skills): the untested-external-surface check, for
         // EVERY Foundry repo. A failed clone leaves both `None` — unknown.
+        // The SAME clone walk also yields the import-path prefixes the repo's
+        // own code uses (`graph::imported_prefixes`), which tell a directly-
+        // imported `[dependencies]` entry from a soldeer-closure-only one —
+        // zero extra fetches. A failed clone leaves them `None`: unknown.
         let count_loc = has_foundry && protofire.external_audit == protofire::ExternalAudit::Never;
-        let (full_source_loc, untested) = if has_foundry {
+        let (full_source_loc, untested, imports) = if has_foundry {
             match with_shallow_clone(org, repo, |dir| {
+                let files = collect_sol_files(dir);
                 (
                     count_loc.then(|| sum_sol_loc(dir)),
-                    untested::analyze(&collect_sol_files(dir)),
+                    untested::analyze(&files),
+                    graph::imported_prefixes(&files),
                 )
             }) {
-                Some((loc, report)) => (loc, Some(report)),
-                None => (None, None),
+                Some((loc, report, imports)) => (loc, Some(report), Some(imports)),
+                None => (None, None, None),
             }
         } else {
-            (None, None)
+            (None, None, None)
         };
         // The findings-table flag rides next to the workflow signals so the
         // dashboard chips, the summary counts, and the skill's issue-filing
@@ -1507,6 +1552,23 @@ fn main() {
         if let Some(s) = untested::signal(untested.as_ref()) {
             signals.push(s);
         }
+        // The graph draws IMMEDIATE dependencies: the declared entries the
+        // repo's own code imports. Two ways to be unknown, both flagged and
+        // never collapsed into "none": a manifest that will not parse, and a
+        // manifest declaring dependencies whose repo tree could not be read —
+        // keeping (or dropping) the whole closure silently would misstate who
+        // stands on what.
+        let (deps, deps_known) = match resolve_node_deps(&inputs.foundry, imports.as_ref()) {
+            DepsResolution::Known(direct) => (direct, true),
+            DepsResolution::ManifestUnparseable => (Vec::new(), false),
+            DepsResolution::TreeUnreadable { declared } => {
+                eprintln!(
+                    "::warning::{org}/{repo}: tree unreadable; its {declared} declared \
+                     dependencies cannot be told direct from closure-only — deps unknown"
+                );
+                (Vec::new(), false)
+            }
+        };
         RepoResult {
             name: repo.to_string(),
             org: org.clone(),
@@ -1516,10 +1578,8 @@ fn main() {
             // judging pins against it marks every consumer stale for not pinning a
             // version that does not exist (#86).
             version: inputs.soldeer_version.clone(),
-            // A manifest that will not parse leaves deps UNKNOWN — not none.
-            // Collapsing the two lets a broken manifest read as clear ground.
-            deps: graph::foundry_dependencies(&inputs.foundry).unwrap_or_default(),
-            deps_known: graph::foundry_dependencies(&inputs.foundry).is_ok(),
+            deps,
+            deps_known,
             signals,
             last_audit,
             last_mutation,
@@ -3008,6 +3068,47 @@ mod tests {
         assert_eq!(
             resolve_json_out(None, Some("flag.json".into())),
             "flag.json"
+        );
+    }
+
+    // ---- graph-node dependency resolution: resolve_node_deps ----
+
+    /// The three resolutions stay distinct: a parsed manifest with a readable
+    /// tree yields the imported subset; an unparseable manifest and an
+    /// unreadable tree are each UNKNOWN, never an empty "none".
+    #[test]
+    fn resolve_node_deps_keeps_the_three_states_apart() {
+        let foundry = "[dependencies]\n\"rain-solmem\" = \"0.1.3\"\nrainlang = \"0.1.5\"\n";
+        let imports: std::collections::BTreeSet<String> =
+            std::iter::once("rain-solmem-0.1.3".to_string()).collect();
+        // readable tree → only the imported entry survives
+        match resolve_node_deps(foundry, Some(&imports)) {
+            DepsResolution::Known(deps) => {
+                let names: Vec<&str> = deps.iter().map(|d| d.package.as_str()).collect();
+                assert_eq!(
+                    names,
+                    vec!["rain-solmem"],
+                    "closure-only rainlang is dropped"
+                );
+            }
+            other => panic!("readable tree must resolve Known, got {other:?}"),
+        }
+        // unreadable tree with declared deps → unknown, carrying the count
+        assert_eq!(
+            resolve_node_deps(foundry, None),
+            DepsResolution::TreeUnreadable { declared: 2 },
+            "declared deps with no readable tree are unknown, not kept or dropped"
+        );
+        // unparseable manifest → its own unknown, tree or no tree
+        assert_eq!(
+            resolve_node_deps("not toml {{{", Some(&imports)),
+            DepsResolution::ManifestUnparseable
+        );
+        // no declared deps needs no tree to stay known
+        assert_eq!(
+            resolve_node_deps("[profile.default]\nsolc = \"0.8.25\"\n", None),
+            DepsResolution::Known(Vec::new()),
+            "declaring nothing is a real answer even with an unreadable tree"
         );
     }
 }

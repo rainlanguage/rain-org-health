@@ -105,7 +105,9 @@ fn is_script(path: &str) -> bool {
         .is_some_and(|seg| SCRIPT_DIRS.contains(&seg))
 }
 
-/// Vendored/generated trees that must count neither as surface nor as tests:
+/// Vendored/generated trees that must count neither as surface nor as tests,
+/// nor as the repo's own imports (`graph::imported_prefixes` shares this
+/// predicate):
 /// `lib/` (git submodule deps — forge-std's OWN test dir would otherwise fake
 /// coverage), `dependencies/` (soldeer), `node_modules/`, and build output.
 ///
@@ -114,7 +116,7 @@ fn is_script(path: &str) -> bool {
 /// `src/lib/LibFoo.sol` and `test/src/lib/…` are the org's own layout, and an
 /// any-depth `lib` match silently dropped rain.math.binary's entire
 /// `test/src/lib/` corpus in the first live run of this check.
-fn is_vendored(path: &str) -> bool {
+pub fn is_vendored(path: &str) -> bool {
     const VENDOR_DIRS: [&str; 5] = ["lib", "dependencies", "node_modules", "out", "cache"];
     path.to_ascii_lowercase()
         .split('/')
