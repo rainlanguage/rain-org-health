@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T09:51:53Z",
+  "generatedAt": "2026-08-19T10:48:45Z",
   "auditGraph": {
     "nodes": [
       {
@@ -155,7 +155,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 15,
+        "openAuditIssues": 10,
         "lastMutation": null,
         "blockedBy": [
           "rain.solmem"
@@ -3977,7 +3977,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 15,
+      "openAuditIssues": 10,
       "lastMutation": null
     },
     {
@@ -5058,11 +5058,11 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 6027,
       "sourceLocRemovedSinceAudit": 359,
-      "filesChangedSinceAudit": 87,
-      "commitsSinceAudit": 489,
+      "filesChangedSinceAudit": 88,
+      "commitsSinceAudit": 493,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4974,
-      "commentLocRemovedSinceAudit": 256,
+      "commentLocAddedSinceAudit": 4975,
+      "commentLocRemovedSinceAudit": 257,
       "codeLocAddedSinceAudit": 4833,
       "codeLocRemovedSinceAudit": 386,
       "driftFullyClassified": false,
@@ -5246,17 +5246,17 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-25T18:03:11Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 628,
+      "sourceLocChangedSinceAudit": 691,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 380,
-      "sourceLocRemovedSinceAudit": 248,
-      "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 114,
+      "sourceLocAddedSinceAudit": 430,
+      "sourceLocRemovedSinceAudit": 261,
+      "filesChangedSinceAudit": 9,
+      "commitsSinceAudit": 136,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 358,
-      "commentLocRemovedSinceAudit": 122,
-      "codeLocAddedSinceAudit": 17,
-      "codeLocRemovedSinceAudit": 103,
+      "commentLocAddedSinceAudit": 397,
+      "commentLocRemovedSinceAudit": 129,
+      "codeLocAddedSinceAudit": 28,
+      "codeLocRemovedSinceAudit": 109,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
       "daysSinceAudit": 99
@@ -6141,7 +6141,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 99,
+      "testFiles": 102,
       "sourcesUnparsed": 0,
       "untested": []
     },
