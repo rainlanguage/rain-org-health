@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T10:48:45Z",
+  "generatedAt": "2026-08-19T11:44:12Z",
   "auditGraph": {
     "nodes": [
       {
@@ -155,7 +155,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 10,
+        "openAuditIssues": 8,
         "lastMutation": null,
         "blockedBy": [
           "rain.solmem"
@@ -3977,7 +3977,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 10,
+      "openAuditIssues": 8,
       "lastMutation": null
     },
     {
@@ -4671,7 +4671,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 397,
+      "fullSourceLoc": 440,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5246,17 +5246,17 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-25T18:03:11Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 691,
+      "sourceLocChangedSinceAudit": 738,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 430,
-      "sourceLocRemovedSinceAudit": 261,
+      "sourceLocAddedSinceAudit": 457,
+      "sourceLocRemovedSinceAudit": 281,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 136,
+      "commitsSinceAudit": 146,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 397,
-      "commentLocRemovedSinceAudit": 129,
-      "codeLocAddedSinceAudit": 28,
-      "codeLocRemovedSinceAudit": 109,
+      "commentLocAddedSinceAudit": 418,
+      "commentLocRemovedSinceAudit": 146,
+      "codeLocAddedSinceAudit": 34,
+      "codeLocRemovedSinceAudit": 112,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
       "daysSinceAudit": 99
@@ -6141,7 +6141,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 102,
+      "testFiles": 105,
       "sourcesUnparsed": 0,
       "untested": []
     },
