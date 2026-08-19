@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T07:56:57Z",
+  "generatedAt": "2026-08-19T08:57:04Z",
   "auditGraph": {
     "nodes": [
       {
@@ -155,19 +155,12 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 20,
+        "openAuditIssues": 15,
         "lastMutation": null,
         "blockedBy": [
-          "rain.deploy",
-          "rain.sol.codegen",
           "rain.solmem"
         ],
         "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.3",
-            "latest": "0.1.7"
-          },
           {
             "repo": "rain.solmem",
             "pinned": "0.1.3",
@@ -1267,13 +1260,6 @@
         "stale": true,
         "pinned": "0.1.2",
         "latest": "0.1.8"
-      },
-      {
-        "from": "rain.extrospection",
-        "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.3",
-        "latest": "0.1.7"
       },
       {
         "from": "rain.extrospection",
@@ -3347,13 +3333,13 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 115,
-  "reposWithFindings": 40,
+  "reposWithFindings": 39,
   "reposWholeRepoAudited": 5,
   "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 18,
   "summary": {
-    "per-chain-etherscan-key": 13,
+    "per-chain-etherscan-key": 12,
     "old-nix-installer": 10,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
@@ -3584,13 +3570,6 @@
       "org": "rainlanguage",
       "signals": [
         "removed-rainix-task"
-      ]
-    },
-    {
-      "name": "rain.extrospection",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
       ]
     },
     {
@@ -3998,7 +3977,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 20,
+      "openAuditIssues": 15,
       "lastMutation": null
     },
     {
@@ -5267,17 +5246,17 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-25T18:03:11Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 392,
+      "sourceLocChangedSinceAudit": 628,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 324,
-      "sourceLocRemovedSinceAudit": 68,
-      "filesChangedSinceAudit": 7,
-      "commitsSinceAudit": 93,
+      "sourceLocAddedSinceAudit": 380,
+      "sourceLocRemovedSinceAudit": 248,
+      "filesChangedSinceAudit": 8,
+      "commitsSinceAudit": 114,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 299,
-      "commentLocRemovedSinceAudit": 56,
-      "codeLocAddedSinceAudit": 20,
-      "codeLocRemovedSinceAudit": 12,
+      "commentLocAddedSinceAudit": 358,
+      "commentLocRemovedSinceAudit": 122,
+      "codeLocAddedSinceAudit": 17,
+      "codeLocRemovedSinceAudit": 103,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
       "daysSinceAudit": 99
@@ -6161,8 +6140,8 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 12,
-      "testFiles": 113,
+      "externalFunctions": 0,
+      "testFiles": 99,
       "sourcesUnparsed": 0,
       "untested": []
     },
