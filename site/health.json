@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T15:49:12Z",
+  "generatedAt": "2026-08-19T16:50:05Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2233,7 +2233,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2250,14 +2250,14 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
-          "implVersion": "unknown",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
+          "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
+          "implVersion": "0.1.1",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": true,
+          "status": "healthy"
         },
         {
           "name": "Wrapped-token-vault beacon",
