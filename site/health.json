@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T04:02:21Z",
+  "generatedAt": "2026-08-19T04:55:05Z",
   "auditGraph": {
     "nodes": [
       {
@@ -195,7 +195,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 35,
+        "openAuditIssues": 29,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -4665,7 +4665,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 35,
+      "openAuditIssues": 29,
       "lastMutation": null
     },
     {
@@ -5778,16 +5778,16 @@
       "latestTag": "sol-v0.1.6",
       "latestTagIso": "2026-08-18T18:02:42Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4542,
+      "sourceLocChangedSinceAudit": 4593,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 4486,
+      "sourceLocAddedSinceAudit": 4537,
       "sourceLocRemovedSinceAudit": 56,
-      "filesChangedSinceAudit": 24,
-      "commitsSinceAudit": 301,
+      "filesChangedSinceAudit": 25,
+      "commitsSinceAudit": 303,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 2831,
+      "commentLocAddedSinceAudit": 2877,
       "commentLocRemovedSinceAudit": 10,
-      "codeLocAddedSinceAudit": 1382,
+      "codeLocAddedSinceAudit": 1386,
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -5986,6 +5986,54 @@
       "daysSinceAudit": 190
     },
     {
+      "name": "rain.extrospection",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
+          "path": "audit/protofire/rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-02-10T12:58:40Z"
+        },
+        {
+          "filename": "rain.extrospection.f2c4f5a.feb-2026.pdf",
+          "path": "audit/protofire/rain.extrospection.f2c4f5a.feb-2026.pdf",
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-02-06T16:54:18Z"
+        },
+        {
+          "filename": "rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
+          "path": "audit/protofire/rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-05-12T15:16:31Z"
+        }
+      ],
+      "referencePdfIndex": 2,
+      "auditedRef": "v0.1.1",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-05-12T15:16:31Z",
+      "latestTag": "sol-v0.1.5",
+      "latestTagIso": "2026-07-25T18:03:11Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 207,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 182,
+      "sourceLocRemovedSinceAudit": 25,
+      "filesChangedSinceAudit": 5,
+      "commitsSinceAudit": 54,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 171,
+      "commentLocRemovedSinceAudit": 18,
+      "codeLocAddedSinceAudit": 10,
+      "codeLocRemovedSinceAudit": 7,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
+      "daysSinceAudit": 99
+    },
+    {
       "name": "rain.vats",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -6131,7 +6179,7 @@
       "sourceLocAddedSinceAudit": 36,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 37,
+      "commitsSinceAudit": 42,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 23,
       "commentLocRemovedSinceAudit": 7,
@@ -6290,54 +6338,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/3bff30782e408386f73b9353c5122e2e0ab24df2...main",
       "daysSinceAudit": 193
-    },
-    {
-      "name": "rain.extrospection",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
-          "path": "audit/protofire/rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z",
-          "auditDateIso": "2026-02-10T12:58:40Z"
-        },
-        {
-          "filename": "rain.extrospection.f2c4f5a.feb-2026.pdf",
-          "path": "audit/protofire/rain.extrospection.f2c4f5a.feb-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z",
-          "auditDateIso": "2026-02-06T16:54:18Z"
-        },
-        {
-          "filename": "rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
-          "path": "audit/protofire/rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z",
-          "auditDateIso": "2026-05-12T15:16:31Z"
-        }
-      ],
-      "referencePdfIndex": 2,
-      "auditedRef": "v0.1.1",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-05-12T15:16:31Z",
-      "latestTag": "sol-v0.1.5",
-      "latestTagIso": "2026-07-25T18:03:11Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 2,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 1,
-      "sourceLocRemovedSinceAudit": 1,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 39,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 0,
-      "commentLocRemovedSinceAudit": 0,
-      "codeLocAddedSinceAudit": 1,
-      "codeLocRemovedSinceAudit": 1,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 99
     },
     {
       "name": "raindex",
@@ -6793,7 +6793,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 7,
-      "testFiles": 47,
+      "testFiles": 48,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -6829,7 +6829,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 12,
-      "testFiles": 107,
+      "testFiles": 111,
       "sourcesUnparsed": 0,
       "untested": []
     },
