@@ -804,6 +804,48 @@ contract C {
         );
     }
 
+    /// The lexer fallback stops collecting at the import's `;`: a string
+    /// literal later in a grammar-rejected file is not an import target, and
+    /// collecting past the semicolon would fake a direct edge from any string
+    /// that happens to follow an import-shaped statement.
+    #[test]
+    fn the_lexer_fallback_stops_at_the_imports_semicolon() {
+        let src = "import X;\n\
+                   contract Broken { this is not solidity %% }\n\
+                   string constant S = \"phantom-9.9.9/x.sol\";\n";
+        assert!(
+            solang_parser::parse(src, 0).is_err(),
+            "fixture must actually fail the grammar or the fallback is untested"
+        );
+        let files = vec![("src/Broken.sol".to_string(), src.to_string())];
+        assert_eq!(
+            imported_prefixes(&files),
+            BTreeSet::new(),
+            "a string after the import's `;` is not an import target"
+        );
+    }
+
+    /// An import naming no package — an empty target or an absolute `/` path —
+    /// contributes no prefix: neither is a soldeer package use, and an empty
+    /// prefix would sit in the set as an entry no manifest package can match.
+    #[test]
+    fn an_empty_or_absolute_import_contributes_no_prefix() {
+        let files = vec![(
+            "src/C.sol".to_string(),
+            r#"pragma solidity ^0.8.25;
+import "";
+import "/abs/X.sol";
+contract C {}
+"#
+            .to_string(),
+        )];
+        assert_eq!(
+            imported_prefixes(&files),
+            BTreeSet::new(),
+            "empty and absolute import targets name no package"
+        );
+    }
+
     /// The version half of a prefix is recognised by its leading digit, never by
     /// splitting on hyphens: package names carry hyphens and pre-release
     /// versions do too, and either shortcut misassigns a use to the wrong
