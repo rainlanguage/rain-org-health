@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T01:55:51Z",
+  "generatedAt": "2026-08-19T03:14:13Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2926,13 +2926,13 @@
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-          "implVersion": "0.1.1",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": true,
+          "atTarget": null,
           "status": "unknown"
         },
         {
