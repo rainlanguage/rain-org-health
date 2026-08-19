@@ -3085,7 +3085,11 @@ mod tests {
         match resolve_node_deps(foundry, Some(&imports)) {
             DepsResolution::Known(deps) => {
                 let names: Vec<&str> = deps.iter().map(|d| d.package.as_str()).collect();
-                assert_eq!(names, vec!["rain-solmem"], "closure-only rainlang is dropped");
+                assert_eq!(
+                    names,
+                    vec!["rain-solmem"],
+                    "closure-only rainlang is dropped"
+                );
             }
             other => panic!("readable tree must resolve Known, got {other:?}"),
         }
