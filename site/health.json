@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T14:00:36Z",
+  "generatedAt": "2026-08-19T14:56:08Z",
   "auditGraph": {
     "nodes": [
       {
@@ -154,7 +154,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 1,
+        "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-08-18T14:11:41Z",
           "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
@@ -185,7 +185,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.6",
-            "latest": "0.1.11"
+            "latest": "0.1.12"
           }
         ]
       },
@@ -226,7 +226,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.12"
           },
           {
             "repo": "rain.factory",
@@ -591,7 +591,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.12"
           }
         ]
       },
@@ -619,7 +619,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.12"
           },
           {
             "repo": "rain.factory",
@@ -889,7 +889,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.12"
           },
           {
             "repo": "rain.lib.memkv",
@@ -987,7 +987,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.12"
           },
           {
             "repo": "rain.factory",
@@ -1290,7 +1290,7 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.6",
-        "latest": "0.1.11"
+        "latest": "0.1.12"
       },
       {
         "from": "rain.factory.deploy",
@@ -1304,7 +1304,7 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.12"
       },
       {
         "from": "rain.factory.deploy",
@@ -1528,14 +1528,14 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.12"
       },
       {
         "from": "rain.vats",
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.12"
       },
       {
         "from": "rain.vats",
@@ -1731,7 +1731,7 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.12"
       },
       {
         "from": "rainlang",
@@ -1850,7 +1850,7 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.12"
       },
       {
         "from": "st0x.deploy",
@@ -2233,7 +2233,7 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
@@ -2252,12 +2252,12 @@
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
-          "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
-          "implVersion": "0.1.1",
+          "implementation": null,
+          "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -3985,7 +3985,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 1,
+      "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-08-18T14:11:41Z",
         "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
@@ -5256,19 +5256,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-12T15:16:31Z",
-      "latestTag": "sol-v0.1.11",
-      "latestTagIso": "2026-08-19T13:46:25Z",
+      "latestTag": "sol-v0.1.12",
+      "latestTagIso": "2026-08-19T14:05:35Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 886,
+      "sourceLocChangedSinceAudit": 928,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 597,
+      "sourceLocAddedSinceAudit": 639,
       "sourceLocRemovedSinceAudit": 289,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 167,
+      "commitsSinceAudit": 171,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 531,
-      "commentLocRemovedSinceAudit": 152,
-      "codeLocAddedSinceAudit": 58,
+      "commentLocAddedSinceAudit": 558,
+      "commentLocRemovedSinceAudit": 153,
+      "codeLocAddedSinceAudit": 72,
       "codeLocRemovedSinceAudit": 115,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
