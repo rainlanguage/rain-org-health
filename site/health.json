@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T03:14:13Z",
+  "generatedAt": "2026-08-19T04:02:21Z",
   "auditGraph": {
     "nodes": [
       {
@@ -207,11 +207,6 @@
             "repo": "rain.deploy",
             "pinned": "0.1.3",
             "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
           },
           {
             "repo": "rain.solmem",
@@ -1123,11 +1118,6 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.math.binary",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
-          },
-          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
             "latest": "0.1.36"
@@ -1584,8 +1574,8 @@
       {
         "from": "rain.extrospection",
         "to": "rain.math.binary",
-        "stale": true,
-        "pinned": "0.1.3",
+        "stale": false,
+        "pinned": "0.1.4",
         "latest": "0.1.4"
       },
       {
@@ -2487,8 +2477,8 @@
       {
         "from": "rainlang.interface",
         "to": "rain.math.binary",
-        "stale": true,
-        "pinned": "0.1.3",
+        "stale": false,
+        "pinned": "0.1.4",
         "latest": "0.1.4"
       },
       {
@@ -2921,19 +2911,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
-          "implementation": null,
-          "implVersion": "unknown",
+          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+          "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": true,
+          "status": "healthy"
         },
         {
           "name": "Receipt-vault beacon",
@@ -6133,15 +6123,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.2",
-      "latestTagIso": "2026-08-13T07:51:53Z",
+      "latestTag": "sol-v0.2.3",
+      "latestTagIso": "2026-08-19T03:51:34Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 54,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 36,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 34,
+      "commitsSinceAudit": 37,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 23,
       "commentLocRemovedSinceAudit": 7,
@@ -6339,7 +6329,7 @@
       "sourceLocAddedSinceAudit": 1,
       "sourceLocRemovedSinceAudit": 1,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 37,
+      "commitsSinceAudit": 39,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
