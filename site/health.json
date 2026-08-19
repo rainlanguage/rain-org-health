@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-19T07:10:28Z",
+  "generatedAt": "2026-08-19T07:56:57Z",
   "auditGraph": {
     "nodes": [
       {
@@ -155,7 +155,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 21,
+        "openAuditIssues": 20,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -190,13 +190,7 @@
           "rain.sol.codegen",
           "rain.solmem"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.5",
-            "latest": "0.1.7"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.factory",
@@ -1298,8 +1292,8 @@
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.5",
+        "stale": false,
+        "pinned": "0.1.7",
         "latest": "0.1.7"
       },
       {
@@ -4004,7 +3998,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 21,
+      "openAuditIssues": 20,
       "lastMutation": null
     },
     {
@@ -4698,7 +4692,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 163,
+      "fullSourceLoc": 397,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5273,14 +5267,14 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-07-25T18:03:11Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 388,
+      "sourceLocChangedSinceAudit": 392,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 320,
+      "sourceLocAddedSinceAudit": 324,
       "sourceLocRemovedSinceAudit": 68,
       "filesChangedSinceAudit": 7,
-      "commitsSinceAudit": 84,
+      "commitsSinceAudit": 93,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 295,
+      "commentLocAddedSinceAudit": 299,
       "commentLocRemovedSinceAudit": 56,
       "codeLocAddedSinceAudit": 20,
       "codeLocRemovedSinceAudit": 12,
@@ -6177,7 +6171,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 12,
-      "testFiles": 17,
+      "testFiles": 24,
       "sourcesUnparsed": 0,
       "untested": []
     },
