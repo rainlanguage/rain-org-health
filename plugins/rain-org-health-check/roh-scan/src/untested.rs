@@ -105,7 +105,9 @@ fn is_script(path: &str) -> bool {
         .is_some_and(|seg| SCRIPT_DIRS.contains(&seg))
 }
 
-/// Vendored/generated trees that must count neither as surface nor as tests:
+/// Vendored/generated trees that must count neither as surface nor as tests,
+/// nor as the repo's own imports (`graph::imported_prefixes` shares this
+/// predicate):
 /// `lib/` (git submodule deps — forge-std's OWN test dir would otherwise fake
 /// coverage), `dependencies/` (soldeer), `node_modules/`, and build output.
 ///

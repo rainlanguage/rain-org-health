@@ -764,9 +764,19 @@ function nodeEl(n, p) {
   }
   box.append(meta);
   if (n.depsKnown === false) {
-    // Its manifest would not parse, so its dependencies are unknown — the graph
-    // cannot claim its ground is clear, and must not look like it does.
-    box.append(el("span", "gn-warn", "manifest unreadable — deps unknown"));
+    // Its dependencies are unknown — the manifest would not parse, or the
+    // repo's tree could not be read to tell direct deps from closure-only
+    // entries — so the graph cannot claim its ground is clear, and must not
+    // look like it does.
+    box.append(el("span", "gn-warn", "deps unknown — manifest or tree unreadable"));
+  }
+  if (n.packageKnown === false) {
+    // The repo publishes a package — it has a package-release workflow — whose
+    // NAME could not be read (rainix#335 moved the name out of foundry.toml
+    // into the workflow's soldeer-package input). With no name to join on,
+    // every edge INTO this node is missing, so its consumers may read as
+    // standing on clear ground. UNKNOWN, never "publishes nothing".
+    box.append(el("span", "gn-warn", "package unknown — release metadata unavailable; edges into this repo may be missing"));
   }
   const stale = n.staleDeps ?? [];
   if (stale.length) {
@@ -819,7 +829,7 @@ function nodeEl(n, p) {
 }
 
 // What is worth auditing NOW: clear ground beneath, not already current, and a
-// readable manifest. Ranked by how many repos inherit it — a counted fact, not
+// known dependency set. Ranked by how many repos inherit it — a counted fact, not
 // an invented order.
 function renderGraphSummary(nodes, pf) {
   const box = $("graphsum");

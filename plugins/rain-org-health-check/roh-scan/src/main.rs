@@ -29,7 +29,7 @@ use protofire::{
     counts_as_source_drift, days_between, is_stale, newest_pdf_index, source_drift, AuditAnchor,
     AuditPdf, CompareFile,
 };
-use signals::{detect_signals, foundry_package_name, RepoInputs};
+use signals::{detect_signals, RepoInputs};
 
 use serde_json::json;
 use std::process::Command;
@@ -371,8 +371,12 @@ fn supports_interface(session: Session, address: &str, interface_id: [u8; 4]) ->
 }
 
 fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
-    // workflows: list, then concat every *.yml/*.yaml body
+    // workflows: list, then concat every *.yml/*.yaml body. The package-release
+    // workflow's body is ALSO kept apart from the concatenation: once rainix#335
+    // drops the manifest's release metadata, its `soldeer-package:` input is the
+    // canonical home of the package name (`signals::resolve_package_name`).
     let mut workflows = String::new();
+    let mut release_workflow: Option<String> = None;
     if let Some(names) = gh_stdout(&[
         "api",
         &format!("repos/{org}/{repo}/contents/.github/workflows"),
@@ -382,21 +386,19 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
         for name in names.lines() {
             let name = name.trim();
             if name.ends_with(".yml") || name.ends_with(".yaml") {
+                let body = gh_file(org, repo, &format!(".github/workflows/{name}"));
+                if name == "package-release.yaml" || name == "package-release.yml" {
+                    // The listing named the file, so from here on an unreadable
+                    // body is Some("") — package UNKNOWN — never "no release
+                    // workflow", which would read as "publishes nothing".
+                    release_workflow = Some(body.clone());
+                }
                 workflows.push('\n');
-                workflows.push_str(&gh_file(org, repo, &format!(".github/workflows/{name}")));
+                workflows.push_str(&body);
             }
         }
     }
     let foundry = gh_file(org, repo, "foundry.toml");
-
-    // One soldeer registry lookup, only when a package name exists. It answers both
-    // questions the scan has about the package: whether it is published at all (a
-    // signal), and the newest revision that exists (the ceiling the graph judges a
-    // dependant's pin against). Derived together from the one query so the two can
-    // never disagree.
-    let revision = foundry_package_name(&foundry).and_then(|pkg| soldeer_latest_revision(&pkg));
-    let soldeer_published = revision.as_ref().map(|r| r.is_some());
-    let soldeer_version = revision.flatten();
 
     // These two go through the TYPED fetch rather than `gh_file`, which returns
     // "" for an absent file and a failed one alike. `stale-foundry-lock` fires
@@ -410,14 +412,25 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
         FetchOutcome::Failed => signals::RepoFile::Unreadable,
     };
 
-    RepoInputs {
+    let mut inputs = RepoInputs {
         workflows,
         foundry,
-        soldeer_published,
-        soldeer_version,
+        release_workflow,
+        soldeer_published: None,
+        soldeer_version: None,
         foundry_lock: read("foundry.lock"),
         gitmodules: read(".gitmodules"),
-    }
+    };
+    // One soldeer registry lookup, only when a package name resolved. It answers
+    // both questions the scan has about the package: whether it is published at
+    // all (a signal), and the newest revision that exists (the ceiling the graph
+    // judges a dependant's pin against). Derived together from the one query so
+    // the two can never disagree.
+    let package = inputs.package();
+    let revision = package.name().and_then(soldeer_latest_revision);
+    inputs.soldeer_published = revision.as_ref().map(|r| r.is_some());
+    inputs.soldeer_version = revision.flatten();
+    inputs
 }
 
 /// Read the audit skill's run stamp and return the whole-repo audit if present.
@@ -1326,17 +1339,30 @@ struct RepoResult {
     /// failed (or not a Foundry repo): UNKNOWN, which the report must keep
     /// apart from "analyzed and clean".
     untested: Option<untested::RepoUntested>,
-    /// This repo's soldeer package name (`signals::foundry_package_name`) — what
+    /// This repo's soldeer package name (`signals::resolve_package_name`: the
+    /// manifest's release-metadata table, or the release workflow's
+    /// `soldeer-package:` input once rainix#335 drops that table) — what
     /// consumers name it by, so it is the audit graph's join key (#71).
     package: Option<String>,
+    /// False when the repo evidently publishes a package — it has a
+    /// package-release workflow — whose name could not be read: UNKNOWN, kept
+    /// apart from "publishes nothing" exactly as `deps_known` keeps unknown
+    /// deps apart from zero deps. `package == None` with this true is a real
+    /// non-publisher.
+    package_known: bool,
     /// The newest revision of this repo's package published to the soldeer
     /// registry — the newest version a consumer can pin, and so what a dependant's
     /// pin is judged stale against (#79). `None` when unpublished or unknown, which
     /// flags nobody: there is no ceiling to be behind.
     version: Option<String>,
-    /// This repo's `[dependencies]`, each with its pinned version (#71, #79).
+    /// This repo's IMMEDIATE dependencies (#71, #79): the `[dependencies]`
+    /// entries its own code imports, each with its pinned version. Soldeer
+    /// manifests declare the full transitive closure, so the rest are
+    /// closure-only entries that draw no edge.
     deps: Vec<graph::Dep>,
-    /// False when `foundry.toml` would not parse: deps unknown, not absent.
+    /// False when the dependency set is UNKNOWN, not absent: `foundry.toml`
+    /// would not parse, or deps are declared but the repo's tree could not be
+    /// read to tell direct entries from closure-only ones.
     deps_known: bool,
 }
 
@@ -1361,7 +1387,10 @@ fn soldeer_latest_revision(pkg: &str) -> Option<Option<String>> {
     // the newest version a consumer could pin.
     let url =
         format!("https://api.soldeer.xyz/api/v1/revision?project_name={pkg}&offset=0&limit=1");
-    let out = Command::new("curl").args(["-fsSL", &url]).output().ok()?;
+    let out = Command::new("curl")
+        .args(["-fsSL", "-m", "25", &url])
+        .output()
+        .ok()?;
     if !out.status.success() {
         return None;
     }
@@ -1382,6 +1411,40 @@ fn latest_revision_from_response(body: &[u8]) -> Option<Option<String>> {
             .and_then(|version| version.as_str())
             .map(str::to_string),
     )
+}
+
+/// How a repo's drawable dependency set resolved — a typed discriminant, so the
+/// two ways of being unknown stay apart from each other and from "known, none".
+#[derive(Debug, PartialEq)]
+enum DepsResolution {
+    /// The manifest parsed and immediacy is decided: these entries (possibly
+    /// none) are what the repo's own code imports.
+    Known(Vec<graph::Dep>),
+    /// `foundry.toml` would not parse — dependencies unknown, not absent.
+    ManifestUnparseable,
+    /// The manifest declares dependencies but the repo's tree could not be
+    /// read, so none of them can be told direct from closure-only. Carries the
+    /// declared count for the operator log.
+    TreeUnreadable { declared: usize },
+}
+
+/// The graph node's dependency set from a repo's manifest and the import
+/// prefixes its own code was seen to use (`None` = the tree was unreadable).
+/// Split from the scan loop so each arm is a testable fact rather than
+/// worker-thread glue.
+fn resolve_node_deps(
+    foundry: &str,
+    imports: Option<&std::collections::BTreeSet<String>>,
+) -> DepsResolution {
+    match graph::foundry_dependencies(foundry) {
+        Err(_) => DepsResolution::ManifestUnparseable,
+        Ok(declared) => match graph::immediate_deps(&declared, imports) {
+            Some(direct) => DepsResolution::Known(direct),
+            None => DepsResolution::TreeUnreadable {
+                declared: declared.len(),
+            },
+        },
+    }
 }
 
 /// Resolve where the dashboard JSON is written. A bare run POPULATES `site/health.json` (the scan
@@ -2051,19 +2114,25 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // as a confirmed coverage gap with a source-LOC magnitude (cf #52).
         // #54 (claude-audit-skills): the untested-external-surface check, for
         // EVERY Foundry repo. A failed clone leaves both `None` — unknown.
+        // The SAME clone walk also yields the import-path prefixes the repo's
+        // own code uses (`graph::imported_prefixes`), which tell a directly-
+        // imported `[dependencies]` entry from a soldeer-closure-only one —
+        // zero extra fetches. A failed clone leaves them `None`: unknown.
         let count_loc = has_foundry && protofire.external_audit == protofire::ExternalAudit::Never;
-        let (full_source_loc, untested) = if has_foundry {
+        let (full_source_loc, untested, imports) = if has_foundry {
             match with_shallow_clone(org, repo, |dir| {
+                let files = collect_sol_files(dir);
                 (
                     count_loc.then(|| sum_sol_loc(dir)),
-                    untested::analyze(&collect_sol_files(dir)),
+                    untested::analyze(&files),
+                    graph::imported_prefixes(&files),
                 )
             }) {
-                Some((loc, report)) => (loc, Some(report)),
-                None => (None, None),
+                Some((loc, report, imports)) => (loc, Some(report), Some(imports)),
+                None => (None, None, None),
             }
         } else {
-            (None, None)
+            (None, None, None)
         };
         // The findings-table flag rides next to the workflow signals so the
         // dashboard chips, the summary counts, and the skill's issue-filing
@@ -2071,19 +2140,40 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         if let Some(s) = untested::signal(untested.as_ref()) {
             signals.push(s);
         }
+        // The graph draws IMMEDIATE dependencies: the declared entries the
+        // repo's own code imports. Two ways to be unknown, both flagged and
+        // never collapsed into "none": a manifest that will not parse, and a
+        // manifest declaring dependencies whose repo tree could not be read —
+        // keeping (or dropping) the whole closure silently would misstate who
+        // stands on what.
+        let (deps, deps_known) = match resolve_node_deps(&inputs.foundry, imports.as_ref()) {
+            DepsResolution::Known(direct) => (direct, true),
+            DepsResolution::ManifestUnparseable => (Vec::new(), false),
+            DepsResolution::TreeUnreadable { declared } => {
+                eprintln!(
+                    "::warning::{org}/{repo}: tree unreadable; its {declared} declared \
+                     dependencies cannot be told direct from closure-only — deps unknown"
+                );
+                (Vec::new(), false)
+            }
+        };
+        // The graph's join key, resolved from the manifest's release-metadata
+        // table or — once rainix#335 drops that table — from the release
+        // workflow's `soldeer-package:` input. `Unknown` (a release workflow
+        // whose name could not be read) is kept apart from "publishes nothing".
+        let package = inputs.package();
         RepoResult {
             name: repo.to_string(),
             org: org.clone(),
-            package: foundry_package_name(&inputs.foundry),
+            package: package.name().map(str::to_string),
+            package_known: package.known(),
             // The published revision, NOT `[package].version` from HEAD: that field
             // is the next, unreleased version under the org's release lifecycle, so
             // judging pins against it marks every consumer stale for not pinning a
             // version that does not exist (#86).
             version: inputs.soldeer_version.clone(),
-            // A manifest that will not parse leaves deps UNKNOWN — not none.
-            // Collapsing the two lets a broken manifest read as clear ground.
-            deps: graph::foundry_dependencies(&inputs.foundry).unwrap_or_default(),
-            deps_known: graph::foundry_dependencies(&inputs.foundry).is_ok(),
+            deps,
+            deps_known,
             signals,
             last_audit,
             last_mutation,
@@ -2288,6 +2378,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             .map(|r| graph::Node {
                 repo: r.name.clone(),
                 package: r.package.clone(),
+                package_known: r.package_known,
                 version: r.version.clone(),
                 deps: r.deps.clone(),
                 deps_known: r.deps_known,
@@ -2322,6 +2413,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         "repo": n.repo,
                         "org": r.org,
                         "package": n.package,
+                        "packageKnown": n.package_known,
                         "audit": n.audit.as_str(),
                         "depsKnown": n.deps_known,
                         // When the audit skill last ran whole-repo here, and how
@@ -4007,6 +4099,47 @@ mod tests {
         assert_eq!(
             resolve_json_out(None, Some("flag.json".into())),
             "flag.json"
+        );
+    }
+
+    // ---- graph-node dependency resolution: resolve_node_deps ----
+
+    /// The three resolutions stay distinct: a parsed manifest with a readable
+    /// tree yields the imported subset; an unparseable manifest and an
+    /// unreadable tree are each UNKNOWN, never an empty "none".
+    #[test]
+    fn resolve_node_deps_keeps_the_three_states_apart() {
+        let foundry = "[dependencies]\n\"rain-solmem\" = \"0.1.3\"\nrainlang = \"0.1.5\"\n";
+        let imports: std::collections::BTreeSet<String> =
+            std::iter::once("rain-solmem-0.1.3".to_string()).collect();
+        // readable tree → only the imported entry survives
+        match resolve_node_deps(foundry, Some(&imports)) {
+            DepsResolution::Known(deps) => {
+                let names: Vec<&str> = deps.iter().map(|d| d.package.as_str()).collect();
+                assert_eq!(
+                    names,
+                    vec!["rain-solmem"],
+                    "closure-only rainlang is dropped"
+                );
+            }
+            other => panic!("readable tree must resolve Known, got {other:?}"),
+        }
+        // unreadable tree with declared deps → unknown, carrying the count
+        assert_eq!(
+            resolve_node_deps(foundry, None),
+            DepsResolution::TreeUnreadable { declared: 2 },
+            "declared deps with no readable tree are unknown, not kept or dropped"
+        );
+        // unparseable manifest → its own unknown, tree or no tree
+        assert_eq!(
+            resolve_node_deps("not toml {{{", Some(&imports)),
+            DepsResolution::ManifestUnparseable
+        );
+        // no declared deps needs no tree to stay known
+        assert_eq!(
+            resolve_node_deps("[profile.default]\nsolc = \"0.8.25\"\n", None),
+            DepsResolution::Known(Vec::new()),
+            "declaring nothing is a real answer even with an unreadable tree"
         );
     }
 }
