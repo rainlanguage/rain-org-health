@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T17:48:50Z",
+  "generatedAt": "2026-08-20T19:03:13Z",
   "auditGraph": {
     "nodes": [
       {
@@ -85,7 +85,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.3"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.sol.codegen",
@@ -149,7 +149,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.3"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.sol.codegen",
@@ -277,7 +277,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.3"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.sol.codegen",
@@ -492,7 +492,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.3"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.sol.codegen",
@@ -554,7 +554,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.3"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.sol.codegen",
@@ -844,7 +844,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.3"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.sol.codegen",
@@ -979,7 +979,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.3"
+            "latest": "0.1.5"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1289,7 +1289,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.dia",
@@ -1331,7 +1331,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.erc4626.words",
@@ -1422,7 +1422,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.flare",
@@ -1548,7 +1548,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.merkle",
@@ -1597,7 +1597,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.pyth",
@@ -1758,7 +1758,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.5"
       },
       {
         "from": "raindex",
@@ -1877,7 +1877,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.3"
+        "latest": "0.1.5"
       },
       {
         "from": "rainlang",
@@ -2337,19 +2337,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
-          "implementation": null,
-          "implVersion": "unknown",
+          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+          "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": true,
+          "status": "healthy"
         },
         {
           "name": "Receipt-vault beacon",
@@ -3447,8 +3447,8 @@
   "reposNeverExternallyAudited": 19,
   "summary": {
     "per-chain-etherscan-key": 13,
-    "stale-foundry-lock": 11,
     "old-nix-installer": 10,
+    "stale-foundry-lock": 10,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
@@ -3516,14 +3516,6 @@
       "signals": [
         "removed-rainix-task",
         "untested-externals"
-      ]
-    },
-    {
-      "name": "rain.metadata",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key",
-        "stale-foundry-lock"
       ]
     },
     {
@@ -3751,6 +3743,13 @@
       "org": "rainlanguage",
       "signals": [
         "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.metadata",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key"
       ]
     },
     {
@@ -5583,20 +5582,20 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T12:12:35Z",
-      "latestTag": "sol-v0.1.3",
-      "latestTagIso": "2026-07-09T16:32:31Z",
+      "latestTag": "sol-v0.1.5",
+      "latestTagIso": "2026-08-20T18:34:00Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 180,
+      "sourceLocChangedSinceAudit": 240,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 158,
-      "sourceLocRemovedSinceAudit": 22,
-      "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 154,
+      "sourceLocAddedSinceAudit": 215,
+      "sourceLocRemovedSinceAudit": 25,
+      "filesChangedSinceAudit": 9,
+      "commitsSinceAudit": 162,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 79,
+      "commentLocAddedSinceAudit": 123,
       "commentLocRemovedSinceAudit": 9,
-      "codeLocAddedSinceAudit": 69,
-      "codeLocRemovedSinceAudit": 13,
+      "codeLocAddedSinceAudit": 80,
+      "codeLocRemovedSinceAudit": 16,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
       "daysSinceAudit": 203
@@ -6487,7 +6486,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 1,
-      "testFiles": 8,
+      "testFiles": 11,
       "sourcesUnparsed": 0,
       "untested": []
     },
