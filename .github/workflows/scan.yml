@@ -37,7 +37,7 @@ jobs:
             # Only the scan touches health.json, so rebasing onto the latest master
             # and retrying is conflict-free and makes the race unable to fail the scan.
             for attempt in 1 2 3 4 5; do
-              if git pull --rebase origin master && git push; then
+              if git pull --rebase origin "${GITHUB_REF_NAME}" && git push; then
                 exit 0
               fi
               echo "push race (attempt ${attempt}/5) — rebased onto master, retrying…"

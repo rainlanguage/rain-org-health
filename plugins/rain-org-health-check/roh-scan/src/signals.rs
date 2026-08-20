@@ -13,10 +13,19 @@ pub struct RepoInputs {
     pub workflows: String,
     /// `foundry.toml` content ("" if absent).
     pub foundry: String,
-    /// Registry lookup for `foundry_package_name`: Some(true) published,
+    /// `.github/workflows/package-release.yaml` (or `.yml`) content, kept apart
+    /// from the concatenation: its `soldeer-package:` input is the canonical
+    /// home of the package name once rainix#335 drops the manifest's release
+    /// metadata (`resolve_package_name`). `None` when the workflow listing has
+    /// no such file — a repo with no release workflow publishes nothing.
+    /// `Some("")` when the file is listed but its body could not be read, which
+    /// is UNKNOWN, not absence.
+    pub release_workflow: Option<String>,
+    /// Registry lookup for the resolved package name (`RepoInputs::package`):
+    /// Some(true) published,
     /// Some(false) unpublished, None if there is no package name or it wasn't queried.
     pub soldeer_published: Option<bool>,
-    /// The newest revision the registry has for `foundry_package_name` — the
+    /// The newest revision the registry has for the resolved package name — the
     /// newest version a consumer can actually pin, and so the ceiling a dependant's
     /// pin is judged stale against (#79). `None` when unpublished, unqueried, or
     /// the query failed; an unknown ceiling flags nobody.
@@ -42,10 +51,13 @@ pub fn foundry_package_name(foundry: &str) -> Option<String> {
 ///
 /// Both spellings are live in the org and BOTH must read, because this scanner
 /// reads repos it does not control and the rename is landing repo by repo. The
-/// package name is the dependency graph's join key: a `None` here does not
+/// package name is the dependency graph's join key: a name lost here does not
 /// degrade the node, it deletes it — the repo drops out of `package_index`, and
 /// every edge INTO it disappears with it, so its consumers read as standing on
-/// clear ground.
+/// clear ground. A `None` from this reader alone no longer decides that:
+/// `resolve_package_name` falls through to the release workflow's
+/// `soldeer-package:` input, because rainix#335 removes this table from
+/// migrated manifests entirely.
 ///
 /// `[external.*]` is the tree foundry reserves for other tools' config and
 /// ignores, which is why the release metadata belongs there: a bare `[package]`
@@ -84,6 +96,98 @@ fn foundry_package_field(foundry: &str, key: &str) -> Option<String> {
     // Bound, not returned as the tail expression: the borrow of `doc` inside the
     // iterator has to end before `doc` itself does (E0597).
     found
+}
+
+/// How a repo's soldeer package name resolved. The name is the dependency
+/// graph's join key, so the two ways of not having one are DIFFERENT answers
+/// and must not collapse: a repo with no release lifecycle genuinely publishes
+/// nothing, while a repo whose name merely could not be read still publishes a
+/// package its consumers pin — dropping it from `graph::package_index` deletes
+/// every edge into it and its consumers read as standing on clear ground.
+#[derive(Clone, Debug, PartialEq, Eq)]
+pub enum PackageResolution {
+    /// The name, from the manifest's release-metadata table or, failing that,
+    /// the release workflow's `soldeer-package:` input.
+    Named(String),
+    /// A release workflow exists — the repo publishes SOMETHING — but no name
+    /// could be read from the manifest or the workflow. Per the same rule that
+    /// keeps a missing `[dependencies]` from reading as zero deps
+    /// (`deps_known`): this renders as UNKNOWN, never as "no package".
+    Unknown,
+    /// No release metadata and no release workflow: the repo publishes
+    /// nothing, and drawing no edges into it is the truth rather than a hole.
+    NoPackage,
+}
+
+impl PackageResolution {
+    /// The resolved name, if any.
+    pub fn name(&self) -> Option<&str> {
+        match self {
+            PackageResolution::Named(name) => Some(name),
+            PackageResolution::Unknown | PackageResolution::NoPackage => None,
+        }
+    }
+
+    /// False only for `Unknown`: a `NoPackage` repo's absence is a KNOWN fact,
+    /// exactly as an empty dependency list with `deps_known == true` is.
+    pub fn known(&self) -> bool {
+        !matches!(self, PackageResolution::Unknown)
+    }
+}
+
+impl RepoInputs {
+    /// This repo's package resolution, from the content the scan fetched.
+    pub fn package(&self) -> PackageResolution {
+        resolve_package_name(&self.foundry, self.release_workflow.as_deref())
+    }
+}
+
+/// Resolve the repo's soldeer package name: the manifest's release-metadata
+/// table first (both spellings, `foundry_package_name`), then the release
+/// workflow's `soldeer-package:` input.
+///
+/// rainix#335 drops the release-metadata table from `foundry.toml` entirely —
+/// version intent moves to `next-v*` tags — so a migrated repo's manifest has
+/// nothing to say about the package and the workflow input is the canonical
+/// name. Both release lifecycles pass it (`rainix-autopublish` on merge to
+/// main, `rainix-tag-release` on `sol-v*` tags), so the fallback covers every
+/// publishing repo, migrated or not.
+pub fn resolve_package_name(foundry: &str, release_workflow: Option<&str>) -> PackageResolution {
+    if let Some(name) = foundry_package_name(foundry) {
+        return PackageResolution::Named(name);
+    }
+    match release_workflow {
+        None => PackageResolution::NoPackage,
+        Some(workflow) => match release_workflow_package_name(workflow) {
+            Some(name) => PackageResolution::Named(name),
+            None => PackageResolution::Unknown,
+        },
+    }
+}
+
+/// Extract the `soldeer-package:` input value from a release workflow, if one
+/// can be read.
+///
+/// Line-anchored like the rest of the workflow readers (`detect_signals`), not
+/// a YAML parse: the input is a `with:` scalar both reusable lifecycles take,
+/// and the shapes that occur are a bare name, a quoted name, and a trailing
+/// comment. The guards carry meaning: a commented-out line is not an input,
+/// and a `${{ … }}` expression is a reference the scan cannot evaluate —
+/// joining on its literal text would join nothing. Both read as "no name
+/// here", which the caller keeps apart from "no workflow at all".
+pub fn release_workflow_package_name(workflow: &str) -> Option<String> {
+    static RE_SOLDEER_PKG: OnceLock<Regex> = OnceLock::new();
+    // `[ \t]` rather than `\s` around the separator: `\s` matches newlines,
+    // and a key with no value on its line must not swallow the next line.
+    let re_pkg = RE_SOLDEER_PKG.get_or_init(|| {
+        re(r#"(?m)^[ \t]*["']?soldeer-package["']?[ \t]*:[ \t]*("[^"\n]*"|'[^'\n]*'|[^#\s]+)"#)
+    });
+    let raw = re_pkg.captures(workflow)?.get(1)?.as_str();
+    let name = raw.trim_matches(|c| c == '"' || c == '\'').trim();
+    if name.is_empty() || name.contains("${{") {
+        return None;
+    }
+    Some(name.to_string())
 }
 
 /// Detect every signal present in `inputs`, in the canonical (scan.sh) order.
@@ -401,6 +505,7 @@ recursive_deps = false
         let clean = RepoInputs {
             workflows: "uses: rainlanguage/rainix/.github/workflows/rainix-sol-test.yaml@main\nuses: actions/checkout@v4".into(),
             foundry: "[profile.default]\nsrc = \"src\"".into(),
+            release_workflow: None,
             soldeer_published: Some(true),
             soldeer_version: Some("0.1.3".into()),
         };
@@ -425,5 +530,315 @@ recursive_deps = false
             .position(|s| *s == "old-actions-checkout")
             .unwrap();
         assert!(dead < installer && installer < checkout);
+    }
+
+    /// The real rain.factory files after rainlanguage/rain.factory#54
+    /// (rainix#335): the manifest carries NO release-metadata table in either
+    /// spelling, and the release workflow (merge lifecycle,
+    /// `rainix-autopublish`) is the only thing that names the package.
+    const FACTORY_FOUNDRY: &str = r#"
+[profile.default]
+src = 'src'
+test = 'test'
+out = 'out'
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+
+solc = "0.8.25"
+optimizer = true
+optimizer_runs = 100000
+
+evm_version = "cancun"
+
+bytecode_hash = "none"
+cbor_metadata = false
+
+libs = ["dependencies"]
+
+[fuzz]
+runs = 2048
+
+# Library repo: the ICloneable* interface surface only. The concrete CloneFactory,
+# its deploy-pin snapshots and deploy scripts live in rain.factory.deploy
+# (rainlanguage/rain.factory#46). Interfaces import nothing, so there are no
+# Solidity dependencies beyond the test harness.
+[dependencies]
+forge-std = "1.16.1"
+
+[soldeer]
+recursive_deps = false
+"#;
+
+    const FACTORY_RELEASE: &str = r#"
+name: Package Release
+on:
+  push:
+    branches:
+      - main
+jobs:
+  release:
+    uses: rainlanguage/rainix/.github/workflows/rainix-autopublish.yaml@main
+    with:
+      # Library repo: the ICloneable* interface surface. `foundry.toml` version is
+      # the NEXT (in-development) release; on a content change on merge, autopublish
+      # publishes it and bumps to the next. The deploy half (concrete + deploy-pin
+      # snapshots) lives in rain.factory.deploy (rainlanguage/rain.factory#46).
+      soldeer-package: rain-factory
+    secrets: inherit
+"#;
+
+    /// The real rain.factory.deploy release workflow: the OTHER lifecycle
+    /// (`rainix-tag-release` on `sol-v*` tags), passing the same input.
+    const DEPLOY_RELEASE: &str = r#"
+name: Package Release
+# Deploy repo: a manual `sol-v*` tag is the sole release trigger. The tag names
+# the version; rainix-tag-release verifies prod exists at the regenerated pins,
+# publishes rain-factory-deploy to Soldeer, and commits the frozen snapshot back
+# to main. The on-chain deploy is separate and manual (rainix-manual-sol-artifacts
+# dispatch), run before tagging. Nothing publishes on merge, so [package].version
+# and the frozen src/generated/<tag>/ snapshot it names only ever move together.
+on:
+  push:
+    tags:
+      - sol-v*
+jobs:
+  release:
+    uses: rainlanguage/rainix/.github/workflows/rainix-tag-release.yaml@main
+    with:
+      soldeer-package: rain-factory-deploy
+      snapshot-generate-cmd: forge script ./script/BuildPointers.sol && forge fmt
+    secrets: inherit
+"#;
+
+    /// The real rain.factory.deploy manifest: unmigrated (still carrying
+    /// `[package]`), pinning `rain-factory = "0.1.5"` — the consumer side of
+    /// the edge the 2026-08-19 scan lost.
+    const DEPLOY_FOUNDRY: &str = r#"
+[package]
+name = "rain-factory-deploy"
+version = "0.1.5"
+
+[profile.default]
+src = 'src'
+test = 'test'
+out = 'out'
+
+# See more config options https://github.com/foundry-rs/foundry/tree/master/config
+
+solc = "0.8.25"
+optimizer = true
+optimizer_runs = 100000
+
+evm_version = "cancun"
+
+bytecode_hash = "none"
+cbor_metadata = false
+
+# BuildPointers reads the version from foundry.toml and writes the generated
+# per-tag snapshots + the current-pin lib under src/. Nothing else in this repo
+# touches the filesystem.
+fs_permissions = [
+  { access = "read", path = "./foundry.toml" },
+  { access = "read-write", path = "./src" },
+]
+libs = ["dependencies"]
+
+[fuzz]
+runs = 2048
+
+[dependencies]
+forge-std = "1.16.1"
+"@openzeppelin-contracts" = "5.6.1"
+"rain-extrospection" = "0.1.1"
+"rain-deploy" = "0.1.3"
+"rain-sol-codegen" = "0.1.3"
+"rain-factory" = "0.1.5"
+
+[soldeer]
+recursive_deps = false
+
+[rpc_endpoints]
+arbitrum = "${ARBITRUM_RPC_URL}"
+base = "${BASE_RPC_URL}"
+base_sepolia = "${BASE_SEPOLIA_RPC_URL}"
+flare = "${FLARE_RPC_URL}"
+polygon = "${POLYGON_RPC_URL}"
+
+[etherscan]
+arbitrum = { key = "${CI_DEPLOY_ARBITRUM_ETHERSCAN_API_KEY}" }
+base = { key = "${CI_DEPLOY_BASE_ETHERSCAN_API_KEY}" }
+base_sepolia = { key = "${CI_DEPLOY_BASE_SEPOLIA_ETHERSCAN_API_KEY}" }
+flare = { key = "${CI_DEPLOY_FLARE_ETHERSCAN_API_KEY}" }
+polygon = { key = "${CI_DEPLOY_POLYGON_ETHERSCAN_API_KEY}" }
+"#;
+
+    /// Both live release lifecycles name the package the same way, so one
+    /// reader covers the org: `rainix-autopublish` on merge (rain.factory) and
+    /// `rainix-tag-release` on `sol-v*` tags (rain.factory.deploy), each
+    /// passing `soldeer-package:` to the reusable workflow.
+    #[test]
+    fn release_workflow_package_name_reads_both_lifecycles() {
+        assert_eq!(
+            release_workflow_package_name(FACTORY_RELEASE),
+            Some("rain-factory".to_string())
+        );
+        assert_eq!(
+            release_workflow_package_name(DEPLOY_RELEASE),
+            Some("rain-factory-deploy".to_string())
+        );
+    }
+
+    /// What must and must not read as the input: quoting is YAML's business,
+    /// a trailing comment is not part of the name, a commented-out line is not
+    /// an input at all, and a `${{ … }}` expression is a reference the scan
+    /// cannot evaluate — resolving it to the literal would join nothing.
+    #[test]
+    fn release_workflow_package_name_guards() {
+        assert_eq!(
+            release_workflow_package_name("      soldeer-package: \"rain-factory\""),
+            Some("rain-factory".to_string())
+        );
+        assert_eq!(
+            release_workflow_package_name("      soldeer-package: 'rain-factory'"),
+            Some("rain-factory".to_string())
+        );
+        assert_eq!(
+            release_workflow_package_name("      soldeer-package: rain-factory # the name"),
+            Some("rain-factory".to_string())
+        );
+        assert_eq!(
+            release_workflow_package_name("      # soldeer-package: rain-factory"),
+            None
+        );
+        assert_eq!(
+            release_workflow_package_name("      soldeer-package: ${{ inputs.pkg }}"),
+            None
+        );
+        // a key with no value on its line must not swallow the NEXT line
+        assert_eq!(
+            release_workflow_package_name("      soldeer-package:\n      other: value"),
+            None
+        );
+        assert_eq!(release_workflow_package_name(""), None);
+        assert_eq!(
+            release_workflow_package_name("      soldeer-package: \"\""),
+            None
+        );
+    }
+
+    /// The regression itself, on the real post-#335 rain.factory pair: the
+    /// manifest alone yields no name (that is rainix#335's whole point), and
+    /// the resolution must come through the workflow instead of deleting the
+    /// node from the graph.
+    #[test]
+    fn migrated_repo_resolves_package_from_release_workflow() {
+        // premise: the migrated manifest genuinely has no release metadata
+        assert_eq!(foundry_package_name(FACTORY_FOUNDRY), None);
+        assert_eq!(
+            resolve_package_name(FACTORY_FOUNDRY, Some(FACTORY_RELEASE)),
+            PackageResolution::Named("rain-factory".to_string())
+        );
+        let inputs = RepoInputs {
+            foundry: FACTORY_FOUNDRY.into(),
+            release_workflow: Some(FACTORY_RELEASE.into()),
+            ..Default::default()
+        };
+        assert_eq!(
+            inputs.package(),
+            PackageResolution::Named("rain-factory".to_string())
+        );
+    }
+
+    /// An unmigrated repo keeps resolving from the manifest — the workflow is
+    /// the fallback, not a second authority — and an unparseable manifest does
+    /// not block the workflow answer.
+    #[test]
+    fn manifest_name_resolves_first_when_present() {
+        assert_eq!(
+            resolve_package_name(
+                "[package]\nname = \"rain-factory-deploy\"\nversion = \"0.1.5\"",
+                Some(DEPLOY_RELEASE)
+            ),
+            PackageResolution::Named("rain-factory-deploy".to_string())
+        );
+        assert_eq!(
+            resolve_package_name("[package]\nname = ", Some(FACTORY_RELEASE)),
+            PackageResolution::Named("rain-factory".to_string())
+        );
+        // sources that DISAGREE pin the ruled order: the manifest speaks first,
+        // and the workflow only when the manifest lacks the name (rainix#335
+        // ruling: "resolve from there when foundry.toml lacks the name").
+        assert_eq!(
+            resolve_package_name("[package]\nname = \"manifest-name\"", Some(FACTORY_RELEASE)),
+            PackageResolution::Named("manifest-name".to_string())
+        );
+    }
+
+    /// Per the repo's own rule that a missing `[dependencies]` must not read
+    /// as zero deps: a release workflow that exists but yields no name is
+    /// UNKNOWN, never "publishes nothing". Only a repo with no release
+    /// workflow at all is a known non-publisher.
+    #[test]
+    fn unreadable_release_workflow_is_unknown_never_no_package() {
+        // listed but unreadable body
+        assert_eq!(
+            resolve_package_name("", Some("")),
+            PackageResolution::Unknown
+        );
+        // readable but passing only an expression the scan cannot evaluate
+        assert_eq!(
+            resolve_package_name(
+                "",
+                Some("jobs:\n  release:\n    with:\n      soldeer-package: ${{ inputs.pkg }}\n")
+            ),
+            PackageResolution::Unknown
+        );
+        assert!(!resolve_package_name("", Some("")).known());
+        assert_eq!(resolve_package_name("", Some("")).name(), None);
+        // no release workflow, no metadata: a real non-publisher, and KNOWN
+        assert_eq!(resolve_package_name("", None), PackageResolution::NoPackage);
+        assert!(resolve_package_name("", None).known());
+        assert_eq!(resolve_package_name("", None).name(), None);
+    }
+
+    /// End to end over the real file shapes on both sides: rain.factory's
+    /// package resolves through its release workflow, so the
+    /// `rain.factory.deploy -> rain.factory` edge that vanished from the
+    /// 2026-08-19 scan (the manifest's release metadata was dropped by
+    /// rainlanguage/rain.factory#54) is drawn again.
+    #[test]
+    fn workflow_resolved_package_restores_the_consumer_edge() {
+        use crate::graph::{graph_edges, Node};
+        use crate::protofire::ExternalAudit;
+
+        let resolved = resolve_package_name(FACTORY_FOUNDRY, Some(FACTORY_RELEASE));
+        let factory = Node {
+            repo: "rain.factory".to_string(),
+            package: resolved.name().map(str::to_string),
+            package_known: resolved.known(),
+            version: None,
+            deps: crate::graph::foundry_dependencies(FACTORY_FOUNDRY).unwrap(),
+            deps_known: true,
+            audit: ExternalAudit::Never,
+        };
+        let deploy = Node {
+            repo: "rain.factory.deploy".to_string(),
+            package: resolve_package_name(DEPLOY_FOUNDRY, Some(DEPLOY_RELEASE))
+                .name()
+                .map(str::to_string),
+            package_known: true,
+            version: None,
+            deps: crate::graph::foundry_dependencies(DEPLOY_FOUNDRY).unwrap(),
+            deps_known: true,
+            audit: ExternalAudit::Never,
+        };
+        let edges = graph_edges(&[factory, deploy]).unwrap();
+        assert!(
+            edges
+                .iter()
+                .any(|e| e.from == "rain.factory.deploy" && e.to == "rain.factory"),
+            "the rain.factory.deploy -> rain.factory edge must survive the manifest \
+             losing its release metadata: {edges:?}"
+        );
     }
 }

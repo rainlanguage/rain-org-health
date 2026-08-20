@@ -50,12 +50,20 @@ pub struct Node {
     /// returns it — not `owner/name`. The scan is org-scoped, so the org is
     /// implicit and the bare name is the identity everything else keys on.
     pub repo: String,
-    /// The soldeer package name this repo publishes, if any — read by
-    /// `signals::foundry_package_name`, which accepts either table the org's
-    /// manifests keep release metadata in. This is what consumers name it by, so
-    /// it is the graph's join key: `None` drops the repo from `package_index`,
-    /// and every edge into it with it.
+    /// The soldeer package name this repo publishes, if any — resolved by
+    /// `signals::resolve_package_name` from the manifest's release-metadata
+    /// table (either spelling) or, once rainix#335 drops that table, from the
+    /// release workflow's `soldeer-package:` input. This is what consumers name
+    /// it by, so it is the graph's join key: `None` drops the repo from
+    /// `package_index`, and every edge into it with it.
     pub package: Option<String>,
+    /// False when this repo evidently publishes a package (it has a
+    /// package-release workflow) whose name could not be read. There is then no
+    /// key to join on — the edges into this node are MISSING, not absent — so
+    /// nothing standing above it may read as standing on clear ground. The
+    /// package analogue of `deps_known`. `package == None` with this true is a
+    /// repo that genuinely publishes nothing.
+    pub package_known: bool,
     /// The newest revision of this repo's package PUBLISHED to the soldeer
     /// registry — the newest version a consumer can pin, and so the "latest" a
     /// pin is judged stale against. `None` when the repo publishes no versioned
@@ -424,6 +432,7 @@ mod tests {
         Node {
             repo: repo.to_string(),
             package: package.map(str::to_string),
+            package_known: true,
             version: None,
             deps: deps
                 .iter()
@@ -442,6 +451,7 @@ mod tests {
         Node {
             repo: repo.to_string(),
             package: Some(package.to_string()),
+            package_known: true,
             version: Some(version.to_string()),
             deps: deps
                 .iter()

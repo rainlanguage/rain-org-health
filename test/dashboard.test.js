@@ -519,6 +519,38 @@ Deno.test("graph node: a never-run skill says so, and an unknown backlog is not 
   );
 });
 
+Deno.test("graph node: an unresolvable package renders as UNKNOWN, not as no-package", () => {
+  // rainix#335 moves the soldeer package name out of foundry.toml into the
+  // release workflow's `soldeer-package:` input. A workflow that exists but
+  // yields no name means edges INTO this node may be missing — its consumers
+  // can read as standing on clear ground — and the node must say so, the same
+  // way depsKnown keeps unknown deps apart from zero deps.
+  const box = graphNode(
+    { repo: "migrated", org: "o", audit: "never", depsKnown: true, packageKnown: false },
+    null,
+  );
+  const t = textOf(box);
+  assert(t.includes("package unknown"), "must flag the unreadable package: " + t);
+  // a resolved (or genuinely absent) package renders no flag…
+  const known = graphNode(
+    { repo: "plain", org: "o", audit: "never", depsKnown: true, packageKnown: true },
+    null,
+  );
+  assert(
+    !textOf(known).includes("package unknown"),
+    "a known package renders no flag: " + textOf(known),
+  );
+  // …and neither does old health.json data without the field.
+  const oldData = graphNode(
+    { repo: "old", org: "o", audit: "never", depsKnown: true },
+    null,
+  );
+  assert(
+    !textOf(oldData).includes("package unknown"),
+    "pre-field data renders no flag: " + textOf(oldData),
+  );
+});
+
 // A backlog of open audit findings is a DEFECT the repo is still carrying, not a
 // status line, so the count renders in the dashboard's semantic critical token —
 // the same `--crit` the pipeline's rising-WIP flag uses. And never on colour alone.

@@ -770,6 +770,14 @@ function nodeEl(n, p) {
     // look like it does.
     box.append(el("span", "gn-warn", "deps unknown — manifest or tree unreadable"));
   }
+  if (n.packageKnown === false) {
+    // The repo publishes a package — it has a package-release workflow — whose
+    // NAME could not be read (rainix#335 moved the name out of foundry.toml
+    // into the workflow's soldeer-package input). With no name to join on,
+    // every edge INTO this node is missing, so its consumers may read as
+    // standing on clear ground. UNKNOWN, never "publishes nothing".
+    box.append(el("span", "gn-warn", "package unknown — release metadata unavailable; edges into this repo may be missing"));
+  }
   const stale = n.staleDeps ?? [];
   if (stale.length) {
     // Pins a dependency below its current version, so this repo's real closure
