@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T07:09:51Z",
+  "generatedAt": "2026-08-20T07:59:37Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1013,55 +1013,6 @@
         "staleDeps": []
       },
       {
-        "repo": "st0x.oracle",
-        "org": "ST0x-Technology",
-        "package": null,
-        "audit": "never",
-        "depsKnown": true,
-        "lastAudit": {
-          "auditedAt": "2026-08-11T08:42:04Z",
-          "auditedCommit": "05bb66bfd8d0fc046478309e99a57eaaea27fb09",
-          "skillVersion": "0.34.0",
-          "stale": true
-        },
-        "openAuditIssues": 0,
-        "lastMutation": {
-          "timestamp": "2026-08-11T08:42:04Z",
-          "commit": "05bb66bfd8d0e",
-          "skillVersion": "0.30.0",
-          "scope": "whole repo (src/ + script/)"
-        },
-        "blockedBy": [
-          "rain.deploy",
-          "rain.extrospection",
-          "rain.math.fixedpoint",
-          "rain.math.float",
-          "rain.sol.codegen",
-          "rain.solmem",
-          "rain.string",
-          "rain.tofu.erc20-decimals",
-          "rain.vats",
-          "st0x.deploy"
-        ],
-        "staleDeps": [
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.1.1",
-            "latest": "0.1.7"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.1.5",
-            "latest": "0.2.0"
-          },
-          {
-            "repo": "st0x.deploy",
-            "pinned": "0.1.1",
-            "latest": "0.1.29"
-          }
-        ]
-      },
-      {
         "repo": "rain.deploy",
         "org": "rainlanguage",
         "package": "rain-deploy",
@@ -1808,27 +1759,6 @@
         "stale": false,
         "pinned": "0.1.0",
         "latest": "0.1.0"
-      },
-      {
-        "from": "st0x.oracle",
-        "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.1.1",
-        "latest": "0.1.7"
-      },
-      {
-        "from": "st0x.oracle",
-        "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.1.5",
-        "latest": "0.2.0"
-      },
-      {
-        "from": "st0x.oracle",
-        "to": "st0x.deploy",
-        "stale": true,
-        "pinned": "0.1.1",
-        "latest": "0.1.29"
       }
     ]
   },
@@ -2141,19 +2071,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": null,
-          "ownerLabel": "unknown",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
           "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
           "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "unknown"
+          "status": "healthy"
         },
         {
           "name": "Receipt-vault beacon",
@@ -3248,7 +3178,7 @@
   "reposWholeRepoAudited": 5,
   "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
-  "reposNeverExternallyAudited": 18,
+  "reposNeverExternallyAudited": 17,
   "summary": {
     "per-chain-etherscan-key": 12,
     "old-nix-installer": 10,
@@ -4926,35 +4856,6 @@
       "daysSinceAudit": null
     },
     {
-      "name": "st0x.oracle",
-      "org": "ST0x-Technology",
-      "hasProtofireAudit": false,
-      "externalAudit": "never",
-      "auditPdfs": [],
-      "referencePdfIndex": null,
-      "auditedRef": null,
-      "anchorKind": null,
-      "tagConventionAbsent": false,
-      "auditedDate": null,
-      "latestTag": null,
-      "latestTagIso": null,
-      "isStale": null,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1834,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": null,
-      "commitsSinceAudit": null,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
-      "compareUrl": null,
-      "daysSinceAudit": null
-    },
-    {
       "name": "st0x.deploy",
       "org": "S01-Issuer",
       "hasProtofireAudit": true,
@@ -6333,15 +6234,6 @@
       "state": "analyzed",
       "externalFunctions": 38,
       "testFiles": 147,
-      "sourcesUnparsed": 0,
-      "untested": []
-    },
-    {
-      "name": "st0x.oracle",
-      "org": "ST0x-Technology",
-      "state": "analyzed",
-      "externalFunctions": 33,
-      "testFiles": 30,
       "sourcesUnparsed": 0,
       "untested": []
     }
