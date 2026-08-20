@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T19:03:13Z",
+  "generatedAt": "2026-08-20T19:49:17Z",
   "auditGraph": {
     "nodes": [
       {
@@ -518,6 +518,23 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
+          "rain.sol.codegen"
+        ],
+        "staleDeps": []
+      },
+      {
+        "repo": "rain.metadata.deploy",
+        "org": "rainlanguage",
+        "package": "rain-metadata-deploy",
+        "packageKnown": true,
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [
+          "rain.deploy",
+          "rain.metadata",
           "rain.sol.codegen"
         ],
         "staleDeps": []
@@ -1572,6 +1589,20 @@
         "latest": "0.1.7"
       },
       {
+        "from": "rain.metadata.deploy",
+        "to": "rain.deploy",
+        "stale": false,
+        "pinned": "0.1.7",
+        "latest": "0.1.7"
+      },
+      {
+        "from": "rain.metadata.deploy",
+        "to": "rain.metadata",
+        "stale": false,
+        "pinned": "0.1.5",
+        "latest": "0.1.5"
+      },
+      {
         "from": "rain.pyth",
         "to": "rain.intorastring",
         "stale": false,
@@ -2337,19 +2368,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": null,
+          "ownerLabel": "unknown",
           "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
           "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "healthy"
+          "status": "unknown"
         },
         {
           "name": "Receipt-vault beacon",
@@ -3439,14 +3470,14 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 116,
-  "reposWithFindings": 48,
+  "totalRepos": 117,
+  "reposWithFindings": 49,
   "reposWholeRepoAudited": 5,
-  "reposNeverAudited": 111,
+  "reposNeverAudited": 112,
   "reposExternallyAudited": 25,
-  "reposNeverExternallyAudited": 19,
+  "reposNeverExternallyAudited": 20,
   "summary": {
-    "per-chain-etherscan-key": 13,
+    "per-chain-etherscan-key": 14,
     "old-nix-installer": 10,
     "stale-foundry-lock": 10,
     "old-actions-checkout": 8,
@@ -3747,6 +3778,13 @@
     },
     {
       "name": "rain.metadata",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.metadata.deploy",
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
@@ -4275,6 +4313,13 @@
     },
     {
       "name": "rain.metadata",
+      "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "rain.metadata.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -4949,6 +4994,35 @@
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": 659,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.metadata.deploy",
+      "org": "rainlanguage",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 328,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -6487,6 +6561,15 @@
       "state": "analyzed",
       "externalFunctions": 1,
       "testFiles": 11,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.metadata.deploy",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 1,
+      "testFiles": 7,
       "sourcesUnparsed": 0,
       "untested": []
     },
