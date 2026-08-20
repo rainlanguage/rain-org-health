@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T14:59:52Z",
+  "generatedAt": "2026-08-20T15:51:19Z",
   "auditGraph": {
     "nodes": [
       {
@@ -229,11 +229,6 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.deploy",
-            "pinned": "0.1.3",
-            "latest": "0.1.7"
-          },
-          {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
             "latest": "0.1.13"
@@ -242,11 +237,6 @@
             "repo": "rain.factory",
             "pinned": "0.1.5",
             "latest": "0.1.8"
-          },
-          {
-            "repo": "rain.sol.codegen",
-            "pinned": "0.1.3",
-            "latest": "0.1.36"
           }
         ]
       },
@@ -1338,8 +1328,8 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.3",
+        "stale": false,
+        "pinned": "0.1.7",
         "latest": "0.1.7"
       },
       {
@@ -1355,13 +1345,6 @@
         "stale": true,
         "pinned": "0.1.5",
         "latest": "0.1.8"
-      },
-      {
-        "from": "rain.factory.deploy",
-        "to": "rain.sol.codegen",
-        "stale": true,
-        "pinned": "0.1.3",
-        "latest": "0.1.36"
       },
       {
         "from": "rain.flare",
@@ -4816,7 +4799,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 326,
+      "fullSourceLoc": 382,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5410,16 +5393,16 @@
       "latestTag": "sol-v0.1.8",
       "latestTagIso": "2026-08-20T14:50:12Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 616,
+      "sourceLocChangedSinceAudit": 801,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 284,
+      "sourceLocAddedSinceAudit": 469,
       "sourceLocRemovedSinceAudit": 332,
       "filesChangedSinceAudit": 10,
-      "commitsSinceAudit": 30,
+      "commitsSinceAudit": 40,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 250,
+      "commentLocAddedSinceAudit": 350,
       "commentLocRemovedSinceAudit": 108,
-      "codeLocAddedSinceAudit": 26,
+      "codeLocAddedSinceAudit": 98,
       "codeLocRemovedSinceAudit": 178,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
@@ -6275,7 +6258,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 1,
+      "testFiles": 9,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -6284,7 +6267,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 2,
-      "testFiles": 6,
+      "testFiles": 8,
       "sourcesUnparsed": 0,
       "untested": []
     },
