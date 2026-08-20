@@ -36,6 +36,17 @@
 //! `dependencies/rain-solmem-0.1.3/`. [`normalize_name`] folds all of them onto
 //! one key so a query in any spelling finds all of them.
 //!
+//! ## The producer side
+//! The repo that PUBLISHES the queried package is its producer, never a
+//! consumer of itself. rainix#335 removes the release-metadata table from
+//! migrated manifests, so the published name is read from `foundry.toml` AND
+//! from the release workflow's `soldeer-package:` input
+//! (`.github/workflows/package-release.yaml`/`.yml`, the same input the org
+//! graph resolves through `signals::resolve_package_name`) and unioned like
+//! every other shape — a migrated producer whose manifest no longer names its
+//! package must not start reading as a consumer of itself through a
+//! self-remapping.
+//!
 //! Pure: the caller fetches, this parses and relates.
 
 use crate::untested;
@@ -47,8 +58,9 @@ use std::collections::BTreeSet;
 /// exhaustive, so a new shape cannot be silently skipped by the driver.
 #[derive(Clone, Copy, Debug, PartialEq, Eq, PartialOrd, Ord, Hash)]
 pub enum ManifestKind {
-    /// `[dependencies]`, and `remappings` inside a `[profile.*]`. Also the only
-    /// shape that says what the repo itself PUBLISHES (`[package].name`).
+    /// `[dependencies]`, and `remappings` inside a `[profile.*]`. Also says
+    /// what the repo itself PUBLISHES (`[package].name`) — until rainix#335,
+    /// which moves that fact to [`ManifestKind::ReleaseWorkflow`].
     FoundryToml,
     /// Soldeer's resolved lock: `[[dependencies]]` name/version tables.
     SoldeerLock,
@@ -58,10 +70,18 @@ pub enum ManifestKind {
     Remappings,
     /// Git submodule dependencies: `path` + `url` per `[submodule "…"]`.
     GitModules,
+    /// The package-release workflow. Declares no dependencies — it carries the
+    /// name the repo PUBLISHES (its `soldeer-package:` input, read by
+    /// `signals::release_workflow_package_name`), which is the producer fact
+    /// rainix#335 removes from the manifest. Without this shape a migrated
+    /// producer reads as a consumer of itself the moment it self-remaps.
+    ReleaseWorkflow,
 }
 
 impl ManifestKind {
-    /// The file name this shape is written in.
+    /// The canonical repo-relative spelling of this shape: a bare file name
+    /// for the shapes found at any depth, the full anchored path for the
+    /// release workflow (`from_path` explains why).
     pub fn file_name(self) -> &'static str {
         match self {
             ManifestKind::FoundryToml => "foundry.toml",
@@ -69,24 +89,37 @@ impl ManifestKind {
             ManifestKind::FoundryLock => "foundry.lock",
             ManifestKind::Remappings => "remappings.txt",
             ManifestKind::GitModules => ".gitmodules",
+            ManifestKind::ReleaseWorkflow => ".github/workflows/package-release.yaml",
         }
     }
 
     /// Every shape, so the driver and the docs enumerate one list.
-    pub const ALL: [ManifestKind; 5] = [
+    pub const ALL: [ManifestKind; 6] = [
         ManifestKind::FoundryToml,
         ManifestKind::SoldeerLock,
         ManifestKind::FoundryLock,
         ManifestKind::Remappings,
         ManifestKind::GitModules,
+        ManifestKind::ReleaseWorkflow,
     ];
 
-    /// Which shape a repo-relative path is, by file name. `None` for anything
-    /// that is not a dependency manifest.
+    /// Which shape a repo-relative path is. The dependency shapes match by
+    /// file name at any depth (the caller filters vendored trees); the release
+    /// workflow matches only at its anchored path, because GitHub only runs
+    /// workflows from `.github/workflows/` and a same-named file anywhere else
+    /// is not a release lifecycle — it must not invent a producer. `None` for
+    /// anything that is not a manifest.
     pub fn from_path(path: &str) -> Option<ManifestKind> {
-        let name = path.rsplit('/').next().unwrap_or(path).to_ascii_lowercase();
+        let lower = path.to_ascii_lowercase();
+        if lower == ".github/workflows/package-release.yaml"
+            || lower == ".github/workflows/package-release.yml"
+        {
+            return Some(ManifestKind::ReleaseWorkflow);
+        }
+        let name = lower.rsplit('/').next().unwrap_or(&lower);
         ManifestKind::ALL
             .into_iter()
+            .filter(|k| *k != ManifestKind::ReleaseWorkflow)
             .find(|k| k.file_name() == name)
     }
 }
@@ -166,8 +199,9 @@ impl Declared {
 /// What one manifest says.
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct ManifestFacts {
-    /// The package this repo PUBLISHES, if the shape declares one (foundry.toml
-    /// `[package].name` only).
+    /// The package this repo PUBLISHES, if the shape declares one: foundry.toml
+    /// `[package].name`, or the release workflow's `soldeer-package:` input
+    /// (rainix#335 removes the former; either marks the producer).
     pub package: Option<String>,
     /// Every dependency the manifest declares.
     pub deps: Vec<Declared>,
@@ -192,6 +226,15 @@ pub fn parse_manifest(kind: ManifestKind, content: &str) -> Result<ManifestFacts
         ManifestKind::GitModules => Ok(ManifestFacts {
             package: None,
             deps: parse_gitmodules(content),
+        }),
+        // No dependencies to read here at all — only the published name. It is
+        // `None` when the input is missing or an unevaluable `${{ … }}`
+        // expression, the same "no name here" the org graph reads
+        // (`signals::release_workflow_package_name`); that is not a parse
+        // error, the workflow read fine and said nothing.
+        ManifestKind::ReleaseWorkflow => Ok(ManifestFacts {
+            package: crate::signals::release_workflow_package_name(content),
+            deps: Vec::new(),
         }),
     }
 }
@@ -1065,6 +1108,80 @@ rain.solmem/=lib/rain.solmem/src/
         assert_eq!(
             match_repo("rain-solmem", &manifests).role,
             Some(Role::Producer)
+        );
+    }
+
+    /// rainix#335 removes the manifest's release-metadata table, so a migrated
+    /// producer's name lives ONLY in its release workflow. Without the
+    /// ReleaseWorkflow shape this repo reads as a CONSUMER of its own package
+    /// through its self-remapping — the exact misread the Producer role exists
+    /// to prevent.
+    #[test]
+    fn a_migrated_producer_is_recognised_from_its_release_workflow() {
+        let manifests = [
+            // The migrated manifest: no release-metadata table in either
+            // spelling.
+            m(
+                "foundry.toml",
+                ManifestKind::FoundryToml,
+                "[profile.default]\nsrc = \"src\"\n[dependencies]\nforge-std = \"1.16.1\"\n",
+            ),
+            m(
+                "remappings.txt",
+                ManifestKind::Remappings,
+                "rain-factory/=src/\n",
+            ),
+            m(
+                ".github/workflows/package-release.yaml",
+                ManifestKind::ReleaseWorkflow,
+                "jobs:\n  release:\n    uses: rainlanguage/rainix/.github/workflows/rainix-autopublish.yaml@main\n    with:\n      soldeer-package: rain-factory\n    secrets: inherit\n",
+            ),
+        ];
+        assert_eq!(
+            match_repo("rain-factory", &manifests).role,
+            Some(Role::Producer)
+        );
+        // The workflow's spelling joins through normalize_name like every
+        // other shape's: the dotted repo-name query still finds the producer.
+        assert_eq!(
+            match_repo("rain.factory", &manifests).role,
+            Some(Role::Producer)
+        );
+    }
+
+    /// A `${{ … }}` expression is a reference the scan cannot evaluate, and an
+    /// absent input is no name at all: neither may invent a producer, and
+    /// neither is a parse error — the workflow read fine and said nothing.
+    #[test]
+    fn a_workflow_that_names_no_package_flags_no_producer() {
+        let manifests = [m(
+            ".github/workflows/package-release.yml",
+            ManifestKind::ReleaseWorkflow,
+            "jobs:\n  release:\n    with:\n      soldeer-package: ${{ inputs.name }}\n",
+        )];
+        let got = match_repo("rain-factory", &manifests);
+        assert_eq!(got.role, None);
+        assert!(got.errors.is_empty());
+    }
+
+    /// The release workflow is a WORKFLOW: GitHub only runs it from
+    /// `.github/workflows/`, so only that anchored path is the shape — a
+    /// same-named file anywhere else must not invent a producer. Both
+    /// extensions are live in the org.
+    #[test]
+    fn the_release_workflow_is_recognised_only_at_its_anchored_path() {
+        assert_eq!(
+            ManifestKind::from_path(".github/workflows/package-release.yaml"),
+            Some(ManifestKind::ReleaseWorkflow)
+        );
+        assert_eq!(
+            ManifestKind::from_path(".github/workflows/package-release.yml"),
+            Some(ManifestKind::ReleaseWorkflow)
+        );
+        assert_eq!(ManifestKind::from_path("package-release.yaml"), None);
+        assert_eq!(
+            ManifestKind::from_path("templates/package-release.yaml"),
+            None
         );
     }
 

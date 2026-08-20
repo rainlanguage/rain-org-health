@@ -63,10 +63,14 @@ Dependencies are read from **every** manifest shape and unioned: `foundry.toml`
 `[dependencies]` and `[profile.*] remappings`, `soldeer.lock`, `foundry.lock`,
 `remappings.txt`, `.gitmodules`. Handling one shape is the defect this mode
 exists to prevent — `rainlanguage/rainlang` has no `foundry.lock` at all, so a
-`foundry.lock`-only sweep drops it with no error. GitHub code search is not used
-(default branches only, and it under-returns silently). A repo that could not be
-read is reported and the exit status is 1, so an incomplete answer cannot pass
-as a complete one.
+`foundry.lock`-only sweep drops it with no error. The package's own home repo is
+reported as its **producer**, never as a consumer of itself — recognised from
+`foundry.toml`'s release-metadata table or, after rainix#335 removes that table,
+from `.github/workflows/package-release.yaml`/`.yml`'s `soldeer-package:` input,
+the same fallback the org graph uses. GitHub code search is not used (default
+branches only, and it under-returns silently). A repo that could not be read is
+reported and the exit status is 1, so an incomplete answer cannot pass as a
+complete one.
 
 ## Layout
 

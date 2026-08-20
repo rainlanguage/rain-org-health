@@ -259,6 +259,12 @@ MODES
       is not used: it indexes default branches only and under-returns without
       saying so.
 
+      The repo that PUBLISHES <package> is reported as its producer, never as
+      a consumer of itself. The published name is read from foundry.toml's
+      release-metadata table and from the release workflow's soldeer-package:
+      input (.github/workflows/package-release.yaml or .yml), because
+      rainix#335 removes the table from migrated manifests.
+
       --symbol <name>   A Solidity identifier to look for in each consumer's own
                         sources (repeatable). Matched as a WHOLE identifier, so
                         `unsafeList` is not satisfied by `unsafeListOf`.
@@ -532,6 +538,7 @@ mod tests {
             "foundry.lock",
             "remappings.txt",
             ".gitmodules",
+            "package-release.yaml",
         ] {
             assert!(u.contains(token), "--help never mentions {token}");
         }
