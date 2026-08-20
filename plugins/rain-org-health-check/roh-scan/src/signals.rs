@@ -35,6 +35,117 @@ pub struct RepoInputs {
     /// after each publish — so judging pins against it marks every consumer stale
     /// for failing to pin a version that does not exist (#86).
     pub soldeer_version: Option<String>,
+    /// `foundry.lock` — the git SUBMODULE lockfile.
+    pub foundry_lock: RepoFile,
+    /// `.gitmodules` — the definition of which paths are submodules at all.
+    pub gitmodules: RepoFile,
+}
+
+/// A repo file the scan tried to read.
+///
+/// `Absent` and `Unreadable` are three-way rather than an `Option<String>`
+/// deliberately. [`stale_foundry_lock`] fires on the ABSENCE of a `.gitmodules`
+/// entry, so an unread `.gitmodules` collapsed into "this repo has no
+/// submodules" would turn a rate-limited fetch into a finding — the #52 rule
+/// (an errored fetch must never masquerade as an empty resource) applied to the
+/// input side.
+#[derive(Debug, Clone, PartialEq, Eq, Default)]
+pub enum RepoFile {
+    /// Read, with this content.
+    Present(String),
+    /// Read as a genuine absence: the repo does not have this file.
+    Absent,
+    /// The fetch failed. NOTHING may be concluded from it.
+    #[default]
+    Unreadable,
+}
+
+impl RepoFile {
+    /// The content of a file that is known to be there, `Some("")` for one known
+    /// to be absent, and `None` when the read failed and neither is known.
+    fn known(&self) -> Option<&str> {
+        match self {
+            RepoFile::Present(s) => Some(s),
+            RepoFile::Absent => Some(""),
+            RepoFile::Unreadable => None,
+        }
+    }
+}
+
+/// The `foundry.lock` pins that name a path the repo does not have as a
+/// submodule — every one of them dead.
+///
+/// `foundry.lock` is Foundry's GIT SUBMODULE lockfile: it maps a vendored
+/// `lib/<name>` path to the commit `forge install`/`forge update` should
+/// restore. It says nothing about soldeer, which resolves through `soldeer.lock`
+/// into `dependencies/`. So once a repo migrates off submodules the file keeps
+/// pinning paths that no longer exist, and it is not silent — `forge build`
+/// emits `Dependency '<path>' not found at expected path` once per entry. Worse,
+/// it is an active lie about what the build uses: rain.solmem's dead pin names
+/// forge-std v1.14.0 while the build actually resolves 1.16.1 through soldeer.
+///
+/// Judged PER PIN against `.gitmodules` rather than by the presence of the file,
+/// because that is the property that makes a pin dead. A repo that still uses
+/// submodules keeps a live `foundry.lock` (rainlanguage/flow pins six paths and
+/// declares all six as submodules) and must not be flagged, while a repo
+/// half-way through the migration has some live pins and some dead ones and the
+/// dead ones are still worth naming.
+///
+/// An unparseable lock yields no pins: this signal claims that specific paths
+/// are dead, and it cannot make that claim about a file it could not read.
+pub fn dead_foundry_lock_pins(foundry_lock: &str, gitmodules: &str) -> Vec<String> {
+    let submodules = submodule_paths(gitmodules);
+    // TOP-LEVEL keys only. A pin's value nests its own `tag`/`rev` keys, so a
+    // grep for quoted keys would report `tag` as a pinned path.
+    let Ok(serde_json::Value::Object(pins)) =
+        serde_json::from_str::<serde_json::Value>(foundry_lock)
+    else {
+        return Vec::new();
+    };
+    pins.keys()
+        .map(|p| p.trim_end_matches('/').to_string())
+        .filter(|p| !p.is_empty() && !submodules.contains(p))
+        .collect()
+}
+
+/// Every path `.gitmodules` declares as a submodule.
+///
+/// Both the `path =` value and the `[submodule "…"]` section name are taken:
+/// git writes the two identically in practice, but a section whose `path` line
+/// is missing would otherwise read as declaring no submodule at all, and this is
+/// the set whose ABSENCE condemns a pin.
+fn submodule_paths(gitmodules: &str) -> std::collections::BTreeSet<String> {
+    let mut out = std::collections::BTreeSet::new();
+    for line in gitmodules.lines() {
+        let t = line.trim();
+        let found = if let Some(rest) = t.strip_prefix("[submodule") {
+            rest.trim_end_matches(']').trim().trim_matches('"').trim()
+        } else if let Some(rest) = t.strip_prefix("path") {
+            match rest.trim_start().strip_prefix('=') {
+                Some(v) => v.trim(),
+                None => continue,
+            }
+        } else {
+            continue;
+        };
+        let found = found.trim_end_matches('/');
+        if !found.is_empty() {
+            out.insert(found.to_string());
+        }
+    }
+    out
+}
+
+/// Whether this repo carries a `foundry.lock` with at least one dead pin.
+///
+/// Both files must have been READ. If either is unreadable the answer is
+/// unknown, and an unknown answer flags nobody.
+fn stale_foundry_lock(inputs: &RepoInputs) -> bool {
+    let (Some(lock), Some(modules)) = (inputs.foundry_lock.known(), inputs.gitmodules.known())
+    else {
+        return false;
+    };
+    !dead_foundry_lock_pins(lock, modules).is_empty()
 }
 
 fn re(pattern: &str) -> Regex {
@@ -247,6 +358,9 @@ pub fn detect_signals(inputs: &RepoInputs) -> Vec<&'static str> {
     if inputs.soldeer_published == Some(false) {
         out.push("soldeer-unpublished");
     }
+    if stale_foundry_lock(inputs) {
+        out.push("stale-foundry-lock");
+    }
     out
 }
 
@@ -382,6 +496,183 @@ mod tests {
         assert!(!detect_signals(&unknown).contains(&"soldeer-unpublished"));
     }
 
+    // ---- stale-foundry-lock ----
+
+    fn locked(lock: &str, gitmodules: RepoFile) -> RepoInputs {
+        RepoInputs {
+            foundry_lock: RepoFile::Present(lock.into()),
+            gitmodules,
+            ..Default::default()
+        }
+    }
+
+    /// Verbatim from rainlanguage/rain.solmem: one pin, no `.gitmodules`, so the
+    /// pin restores nothing and `forge build` warns about it. The rev is
+    /// forge-std v1.14.0 while the build actually resolves 1.16.1 through
+    /// soldeer — the file is not merely dead, it disagrees with the build.
+    #[test]
+    fn a_pin_with_no_submodule_to_restore_is_stale() {
+        let lock = r#"{
+  "lib/forge-std": {
+    "rev": "1801b0541f4fda118a10798fd3486bb7051c5dd6"
+  }
+}"#;
+        assert_eq!(
+            dead_foundry_lock_pins(lock, ""),
+            vec!["lib/forge-std".to_string()]
+        );
+        assert!(detect_signals(&locked(lock, RepoFile::Absent)).contains(&"stale-foundry-lock"));
+    }
+
+    /// Verbatim from rainlanguage/flow: six pins, and `.gitmodules` declares all
+    /// six. The lockfile is doing its job and this repo is NOT in debt — judging
+    /// by the mere PRESENCE of `foundry.lock` would flag it wrongly.
+    #[test]
+    fn a_lockfile_whose_pins_are_real_submodules_is_live() {
+        let lock = r#"{
+  "lib/forge-std": { "rev": "1d9650e951204a0ddce9ff89c32f1997984cef4d" },
+  "lib/rain.solmem": { "rev": "6414ab88a017eacf2b263e9e08d0787fbd677192" }
+}"#;
+        let gitmodules = "\
+[submodule \"lib/forge-std\"]
+\tpath = lib/forge-std
+\turl = https://github.com/foundry-rs/forge-std
+[submodule \"lib/rain.solmem\"]
+\tpath = lib/rain.solmem
+\turl = https://github.com/rainprotocol/rain.solmem
+";
+        assert!(dead_foundry_lock_pins(lock, gitmodules).is_empty());
+        assert!(
+            !detect_signals(&locked(lock, RepoFile::Present(gitmodules.into())))
+                .contains(&"stale-foundry-lock")
+        );
+    }
+
+    /// Half-migrated: one submodule removed, its pin left behind. The live pin
+    /// must not excuse the dead one — `forge build` still warns about it.
+    #[test]
+    fn only_the_pins_without_a_submodule_are_reported() {
+        let lock = r#"{"lib/forge-std": {"rev": "a"}, "lib/rain.solmem": {"rev": "b"}}"#;
+        let gitmodules = "[submodule \"lib/forge-std\"]\n\tpath = lib/forge-std\n";
+        assert_eq!(
+            dead_foundry_lock_pins(lock, gitmodules),
+            vec!["lib/rain.solmem".to_string()]
+        );
+        assert!(
+            detect_signals(&locked(lock, RepoFile::Present(gitmodules.into())))
+                .contains(&"stale-foundry-lock")
+        );
+    }
+
+    /// Verbatim from ST0x-Technology/st0x.issuance, which carries a `foundry.lock`
+    /// holding `{}`. It pins nothing, so nothing is dead and `forge build` emits
+    /// no warning — an empty lockfile is not debt, and a rule keyed on the file
+    /// existing would invent a finding here.
+    #[test]
+    fn an_empty_lockfile_pins_nothing_and_is_not_stale() {
+        assert!(dead_foundry_lock_pins("{}", "").is_empty());
+        assert!(!detect_signals(&locked("{}", RepoFile::Absent)).contains(&"stale-foundry-lock"));
+    }
+
+    /// Verbatim from ST0x-Technology/st0x.liquidity, whose pins nest `tag` as an
+    /// object. Only TOP-LEVEL keys are paths: a scan that walked nested keys
+    /// would report a pinned path literally named `tag`.
+    #[test]
+    fn a_nested_tag_object_is_not_mistaken_for_a_pinned_path() {
+        let lock = r#"{
+  "lib/forge-std": {
+    "tag": { "name": "v1.14.0", "rev": "1801b0541f4fda118a10798fd3486bb7051c5dd6" }
+  }
+}"#;
+        assert_eq!(
+            dead_foundry_lock_pins(lock, ""),
+            vec!["lib/forge-std".to_string()],
+            "the nested `tag` key is a pin's VALUE, never a path"
+        );
+    }
+
+    /// A section whose `path` line is missing still declares a submodule, and
+    /// the section name is where its path is written.
+    #[test]
+    fn a_submodule_is_recognised_by_its_section_name_too() {
+        let lock = r#"{"lib/forge-std": {"rev": "a"}}"#;
+        assert!(dead_foundry_lock_pins(lock, "[submodule \"lib/forge-std\"]\n").is_empty());
+    }
+
+    /// A trailing slash is a spelling of the path, not a different path. It is
+    /// trimmed on BOTH sides before they are compared, because the comparison is
+    /// what condemns a pin: leave either side untrimmed and `lib/forge-std/`
+    /// fails to match `lib/forge-std`, so a pin whose submodule is right there
+    /// gets reported dead. This signal's whole value is that it does not invent
+    /// findings, and a string-equality detail is enough to break that.
+    #[test]
+    fn a_trailing_slash_is_the_same_path_on_either_side() {
+        // Slash on the PIN.
+        assert!(
+            dead_foundry_lock_pins(
+                r#"{"lib/forge-std/": {"rev": "a"}}"#,
+                "[submodule \"x\"]\n\tpath = lib/forge-std\n"
+            )
+            .is_empty(),
+            "a pin written with a trailing slash is the same path as the submodule"
+        );
+        // Slash on the SUBMODULE.
+        assert!(
+            dead_foundry_lock_pins(
+                r#"{"lib/forge-std": {"rev": "a"}}"#,
+                "[submodule \"x\"]\n\tpath = lib/forge-std/\n"
+            )
+            .is_empty(),
+            "a submodule path written with a trailing slash still declares the pin"
+        );
+        // …and the normalisation does not make DIFFERENT paths equal.
+        assert_eq!(
+            dead_foundry_lock_pins(
+                r#"{"lib/forge-std/": {"rev": "a"}}"#,
+                "[submodule \"x\"]\n\tpath = lib/rain.solmem/\n"
+            ),
+            vec!["lib/forge-std".to_string()]
+        );
+    }
+
+    /// An unreadable input is not evidence. A rate-limited `.gitmodules` fetch
+    /// read as "this repo has no submodules" would condemn every pin in a repo
+    /// whose submodules are all present — a finding manufactured from a network
+    /// blip.
+    #[test]
+    fn an_unreadable_input_flags_nobody() {
+        let lock = r#"{"lib/forge-std": {"rev": "a"}}"#;
+        assert!(!detect_signals(&RepoInputs {
+            foundry_lock: RepoFile::Present(lock.into()),
+            gitmodules: RepoFile::Unreadable,
+            ..Default::default()
+        })
+        .contains(&"stale-foundry-lock"));
+        // …and the same when it is the lock itself that could not be read.
+        assert!(!detect_signals(&RepoInputs {
+            foundry_lock: RepoFile::Unreadable,
+            gitmodules: RepoFile::Absent,
+            ..Default::default()
+        })
+        .contains(&"stale-foundry-lock"));
+    }
+
+    /// A lock that will not parse leaves its pins UNKNOWN. This signal names
+    /// specific dead paths, so it cannot make that claim about a file it could
+    /// not read — and must not silently invent one either.
+    #[test]
+    fn an_unparseable_lock_claims_nothing() {
+        for junk in ["not json [[[", "[1,2,3]", "\"a string\"", ""] {
+            assert!(
+                dead_foundry_lock_pins(junk, "").is_empty(),
+                "{junk} produced pins"
+            );
+            assert!(
+                !detect_signals(&locked(junk, RepoFile::Absent)).contains(&"stale-foundry-lock")
+            );
+        }
+    }
+
     #[test]
     fn foundry_package_name_parsing() {
         assert_eq!(
@@ -508,6 +799,8 @@ recursive_deps = false
             release_workflow: None,
             soldeer_published: Some(true),
             soldeer_version: Some("0.1.3".into()),
+            foundry_lock: RepoFile::Absent,
+            gitmodules: RepoFile::Absent,
         };
         assert!(detect_signals(&clean).is_empty());
     }

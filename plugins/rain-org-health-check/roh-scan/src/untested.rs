@@ -111,13 +111,19 @@ fn is_script(path: &str) -> bool {
 /// `lib/` (git submodule deps — forge-std's OWN test dir would otherwise fake
 /// coverage), `dependencies/` (soldeer), `node_modules/`, and build output.
 ///
+/// One list, shared with [`crate::consumers`], because "which directories are
+/// somebody else's code" is one org-wide fact: two copies would let a directory
+/// be vendored for the source check and first-party for the manifest check.
+pub const VENDOR_DIRS: [&str; 5] = ["lib", "dependencies", "node_modules", "out", "cache"];
+
+/// Whether a SOURCE path sits in a vendored tree.
+///
 /// Judged by the TOP-LEVEL path segment ONLY. Foundry vendors at the repo root,
 /// while first-party code legitimately nests the same names deeper —
 /// `src/lib/LibFoo.sol` and `test/src/lib/…` are the org's own layout, and an
 /// any-depth `lib` match silently dropped rain.math.binary's entire
 /// `test/src/lib/` corpus in the first live run of this check.
 pub fn is_vendored(path: &str) -> bool {
-    const VENDOR_DIRS: [&str; 5] = ["lib", "dependencies", "node_modules", "out", "cache"];
     path.to_ascii_lowercase()
         .split('/')
         .next()
@@ -182,23 +188,40 @@ pub fn external_functions(file: &str, src: &str) -> Option<Vec<ExternalFn>> {
 /// `reformat`). This is the grep-the-test-dir restraint: ANY whole-identifier
 /// mention, in code or comment, counts as a reference.
 pub fn referenced(corpus: &str, name: &str) -> bool {
+    scan_identifier(corpus, name, true) > 0
+}
+
+/// How many times `name` occurs in `corpus` as a whole identifier. Same
+/// boundary rule as [`referenced`] — one matcher, so a coverage claim and a
+/// usage count can never disagree about what counts as a reference.
+pub fn identifier_occurrences(corpus: &str, name: &str) -> usize {
+    scan_identifier(corpus, name, false)
+}
+
+/// The ONE whole-identifier matcher. `first_only` stops at the first hit, which
+/// is all [`referenced`] needs; the boundary decision itself is shared.
+fn scan_identifier(corpus: &str, name: &str, first_only: bool) -> usize {
     if name.is_empty() {
-        return false;
+        return 0;
     }
     let is_ident = |c: char| c.is_ascii_alphanumeric() || c == '_' || c == '$';
     let bytes = corpus.as_bytes();
     let mut from = 0;
+    let mut hits = 0;
     while let Some(pos) = corpus[from..].find(name) {
         let start = from + pos;
         let end = start + name.len();
         let before_ok = start == 0 || !is_ident(bytes[start - 1] as char);
         let after_ok = end == bytes.len() || !is_ident(bytes[end] as char);
         if before_ok && after_ok {
-            return true;
+            hits += 1;
+            if first_only {
+                return hits;
+            }
         }
         from = start + 1;
     }
-    false
+    hits
 }
 
 /// Analyze one repo's `.sol` files (repo-relative path, content): enumerate the
@@ -383,6 +406,20 @@ mod tests {
         );
         assert!(!referenced("", "format"));
         assert!(!referenced("form at", "format"));
+    }
+
+    /// The count and the boolean are the SAME matcher: whatever `referenced`
+    /// calls a reference, `identifier_occurrences` counts, and nothing else.
+    #[test]
+    fn occurrences_counts_exactly_what_referenced_accepts() {
+        let corpus = "format(1); x.format(2); formatted(3); reformat(4); // format\n";
+        assert_eq!(identifier_occurrences(corpus, "format"), 3);
+        assert!(referenced(corpus, "format"));
+        // and they agree on the negatives
+        for (c, n) in [("formatted only", "format"), ("", "format"), ("x", "")] {
+            assert_eq!(identifier_occurrences(c, n), 0);
+            assert!(!referenced(c, n));
+        }
     }
 
     #[test]

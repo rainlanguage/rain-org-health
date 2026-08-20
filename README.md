@@ -36,10 +36,41 @@ with org read access, plus `curl` and `python3`. The scan is **read-only**.
 You can also run the scanner directly (a Rust binary, no wrapper script):
 
 ```sh
+nix run github:rainlanguage/rain-org-health#roh-scan -- --help         # every mode + flag
 nix run github:rainlanguage/rain-org-health#roh-scan                    # whole org
 nix run github:rainlanguage/rain-org-health#roh-scan -- rain.dia rain.flare  # specific repos
 nix run .#roh-scan -- --json site/health.json                          # refresh dashboard data
 ```
+
+`--help` is the reference material for the tool — modes, flags, env vars, exit
+statuses. An unknown flag or a repo name that does not exist is an error, never
+a clean empty result.
+
+### Who consumes a package, and who uses a symbol from it
+
+```sh
+nix run .#roh-scan -- consumers rain-solmem                       # the consumer list, per org
+nix run .#roh-scan -- consumers rain-solmem --symbol unsafeList   # …and who actually references it
+```
+
+Two layers, because a consumer list alone does not answer "does anything call
+`unsafeList`": the **manifest** layer (which repos declare the package, at which
+version) and the **source** layer (which of them name the symbol in their own
+Solidity, with vendored copies of the library — which contain the symbol's
+definition — counted separately rather than as callers).
+
+Dependencies are read from **every** manifest shape and unioned: `foundry.toml`
+`[dependencies]` and `[profile.*] remappings`, `soldeer.lock`, `foundry.lock`,
+`remappings.txt`, `.gitmodules`. Handling one shape is the defect this mode
+exists to prevent — `rainlanguage/rainlang` has no `foundry.lock` at all, so a
+`foundry.lock`-only sweep drops it with no error. The package's own home repo is
+reported as its **producer**, never as a consumer of itself — recognised from
+`foundry.toml`'s release-metadata table or, after rainix#335 removes that table,
+from `.github/workflows/package-release.yaml`/`.yml`'s `soldeer-package:` input,
+the same fallback the org graph uses. GitHub code search is not used (default
+branches only, and it under-returns silently). A repo that could not be read is
+reported and the exit status is 1, so an incomplete answer cannot pass as a
+complete one.
 
 ## Layout
 

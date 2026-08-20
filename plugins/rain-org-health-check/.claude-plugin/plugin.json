@@ -1,7 +1,7 @@
 {
   "name": "rain-org-health-check",
   "description": "Audit the health of all rainlanguage GitHub org repos and produce a prioritized modernization report.",
-  "version": "0.3.0",
+  "version": "0.4.0",
   "author": {
     "name": "rainlanguage"
   },
