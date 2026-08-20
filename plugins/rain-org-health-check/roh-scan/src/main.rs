@@ -1351,7 +1351,10 @@ fn soldeer_latest_revision(pkg: &str) -> Option<Option<String>> {
     // the newest version a consumer could pin.
     let url =
         format!("https://api.soldeer.xyz/api/v1/revision?project_name={pkg}&offset=0&limit=1");
-    let out = Command::new("curl").args(["-fsSL", "-m", "25", &url]).output().ok()?;
+    let out = Command::new("curl")
+        .args(["-fsSL", "-m", "25", &url])
+        .output()
+        .ok()?;
     if !out.status.success() {
         return None;
     }
