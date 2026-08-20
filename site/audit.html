@@ -776,7 +776,7 @@ function nodeEl(n, p) {
     // into the workflow's soldeer-package input). With no name to join on,
     // every edge INTO this node is missing, so its consumers may read as
     // standing on clear ground. UNKNOWN, never "publishes nothing".
-    box.append(el("span", "gn-warn", "package unknown — release workflow unreadable; edges into this repo may be missing"));
+    box.append(el("span", "gn-warn", "package unknown — release metadata unavailable; edges into this repo may be missing"));
   }
   const stale = n.staleDeps ?? [];
   if (stale.length) {
