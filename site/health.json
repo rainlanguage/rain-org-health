@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T13:59:32Z",
+  "generatedAt": "2026-08-20T14:02:39Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1108,7 +1108,7 @@
           "skillVersion": "0.34.0",
           "stale": true
         },
-        "openAuditIssues": 0,
+        "openAuditIssues": 2,
         "lastMutation": {
           "timestamp": "2026-08-11T08:42:04Z",
           "commit": "05bb66bfd8d0e",
@@ -4517,7 +4517,7 @@
     {
       "name": "st0x.oracle",
       "org": "ST0x-Technology",
-      "openAuditIssues": 0,
+      "openAuditIssues": 2,
       "lastMutation": {
         "timestamp": "2026-08-11T08:42:04Z",
         "commit": "05bb66bfd8d0e",
