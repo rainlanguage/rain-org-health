@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T12:22:47Z",
+  "generatedAt": "2026-08-20T13:59:32Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1098,7 +1098,7 @@
       {
         "repo": "st0x.oracle",
         "org": "ST0x-Technology",
-        "package": null,
+        "package": "st0x-oracle",
         "packageKnown": true,
         "audit": "never",
         "depsKnown": true,
@@ -5075,7 +5075,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 2076,
+      "fullSourceLoc": 2203,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -6476,7 +6476,7 @@
       "org": "ST0x-Technology",
       "state": "analyzed",
       "externalFunctions": 31,
-      "testFiles": 30,
+      "testFiles": 32,
       "sourcesUnparsed": 0,
       "untested": []
     }
