@@ -379,6 +379,7 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
     RepoInputs {
         workflows,
         foundry,
+        release_workflow: None,
         soldeer_published,
         soldeer_version,
     }
