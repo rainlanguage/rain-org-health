@@ -27,7 +27,7 @@ use protofire::{
     counts_as_source_drift, days_between, is_stale, newest_pdf_index, source_drift, AuditAnchor,
     AuditPdf, CompareFile,
 };
-use signals::{detect_signals, foundry_package_name, RepoInputs};
+use signals::{detect_signals, RepoInputs};
 
 use serde_json::json;
 use std::process::Command;
@@ -349,8 +349,12 @@ fn supports_interface(session: Session, address: &str, interface_id: [u8; 4]) ->
 }
 
 fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
-    // workflows: list, then concat every *.yml/*.yaml body
+    // workflows: list, then concat every *.yml/*.yaml body. The package-release
+    // workflow's body is ALSO kept apart from the concatenation: once rainix#335
+    // drops the manifest's release metadata, its `soldeer-package:` input is the
+    // canonical home of the package name (`signals::resolve_package_name`).
     let mut workflows = String::new();
+    let mut release_workflow: Option<String> = None;
     if let Some(names) = gh_stdout(&[
         "api",
         &format!("repos/{org}/{repo}/contents/.github/workflows"),
@@ -360,29 +364,37 @@ fn fetch_inputs(org: &str, repo: &str) -> RepoInputs {
         for name in names.lines() {
             let name = name.trim();
             if name.ends_with(".yml") || name.ends_with(".yaml") {
+                let body = gh_file(org, repo, &format!(".github/workflows/{name}"));
+                if name == "package-release.yaml" || name == "package-release.yml" {
+                    // The listing named the file, so from here on an unreadable
+                    // body is Some("") — package UNKNOWN — never "no release
+                    // workflow", which would read as "publishes nothing".
+                    release_workflow = Some(body.clone());
+                }
                 workflows.push('\n');
-                workflows.push_str(&gh_file(org, repo, &format!(".github/workflows/{name}")));
+                workflows.push_str(&body);
             }
         }
     }
     let foundry = gh_file(org, repo, "foundry.toml");
 
-    // One soldeer registry lookup, only when a package name exists. It answers both
-    // questions the scan has about the package: whether it is published at all (a
-    // signal), and the newest revision that exists (the ceiling the graph judges a
-    // dependant's pin against). Derived together from the one query so the two can
-    // never disagree.
-    let revision = foundry_package_name(&foundry).and_then(|pkg| soldeer_latest_revision(&pkg));
-    let soldeer_published = revision.as_ref().map(|r| r.is_some());
-    let soldeer_version = revision.flatten();
-
-    RepoInputs {
+    let mut inputs = RepoInputs {
         workflows,
         foundry,
-        release_workflow: None,
-        soldeer_published,
-        soldeer_version,
-    }
+        release_workflow,
+        soldeer_published: None,
+        soldeer_version: None,
+    };
+    // One soldeer registry lookup, only when a package name resolved. It answers
+    // both questions the scan has about the package: whether it is published at
+    // all (a signal), and the newest revision that exists (the ceiling the graph
+    // judges a dependant's pin against). Derived together from the one query so
+    // the two can never disagree.
+    let package = inputs.package();
+    let revision = package.name().and_then(soldeer_latest_revision);
+    inputs.soldeer_published = revision.as_ref().map(|r| r.is_some());
+    inputs.soldeer_version = revision.flatten();
+    inputs
 }
 
 /// Read the audit skill's run stamp and return the whole-repo audit if present.
@@ -1291,9 +1303,17 @@ struct RepoResult {
     /// failed (or not a Foundry repo): UNKNOWN, which the report must keep
     /// apart from "analyzed and clean".
     untested: Option<untested::RepoUntested>,
-    /// This repo's soldeer package name (`signals::foundry_package_name`) — what
+    /// This repo's soldeer package name (`signals::resolve_package_name`: the
+    /// manifest's release-metadata table, or the release workflow's
+    /// `soldeer-package:` input once rainix#335 drops that table) — what
     /// consumers name it by, so it is the audit graph's join key (#71).
     package: Option<String>,
+    /// False when the repo evidently publishes a package — it has a
+    /// package-release workflow — whose name could not be read: UNKNOWN, kept
+    /// apart from "publishes nothing" exactly as `deps_known` keeps unknown
+    /// deps apart from zero deps. `package == None` with this true is a real
+    /// non-publisher.
+    package_known: bool,
     /// The newest revision of this repo's package published to the soldeer
     /// registry — the newest version a consumer can pin, and so what a dependant's
     /// pin is judged stale against (#79). `None` when unpublished or unknown, which
@@ -1570,10 +1590,16 @@ fn main() {
                 (Vec::new(), false)
             }
         };
+        // The graph's join key, resolved from the manifest's release-metadata
+        // table or — once rainix#335 drops that table — from the release
+        // workflow's `soldeer-package:` input. `Unknown` (a release workflow
+        // whose name could not be read) is kept apart from "publishes nothing".
+        let package = inputs.package();
         RepoResult {
             name: repo.to_string(),
             org: org.clone(),
-            package: foundry_package_name(&inputs.foundry),
+            package: package.name().map(str::to_string),
+            package_known: package.known(),
             // The published revision, NOT `[package].version` from HEAD: that field
             // is the next, unreleased version under the org's release lifecycle, so
             // judging pins against it marks every consumer stale for not pinning a
@@ -1785,6 +1811,7 @@ fn main() {
             .map(|r| graph::Node {
                 repo: r.name.clone(),
                 package: r.package.clone(),
+                package_known: r.package_known,
                 version: r.version.clone(),
                 deps: r.deps.clone(),
                 deps_known: r.deps_known,
@@ -1819,6 +1846,7 @@ fn main() {
                         "repo": n.repo,
                         "org": r.org,
                         "package": n.package,
+                        "packageKnown": n.package_known,
                         "audit": n.audit.as_str(),
                         "depsKnown": n.deps_known,
                         // When the audit skill last ran whole-repo here, and how

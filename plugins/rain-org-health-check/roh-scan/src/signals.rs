@@ -21,10 +21,11 @@ pub struct RepoInputs {
     /// `Some("")` when the file is listed but its body could not be read, which
     /// is UNKNOWN, not absence.
     pub release_workflow: Option<String>,
-    /// Registry lookup for `foundry_package_name`: Some(true) published,
+    /// Registry lookup for the resolved package name (`RepoInputs::package`):
+    /// Some(true) published,
     /// Some(false) unpublished, None if there is no package name or it wasn't queried.
     pub soldeer_published: Option<bool>,
-    /// The newest revision the registry has for `foundry_package_name` — the
+    /// The newest revision the registry has for the resolved package name — the
     /// newest version a consumer can actually pin, and so the ceiling a dependant's
     /// pin is judged stale against (#79). `None` when unpublished, unqueried, or
     /// the query failed; an unknown ceiling flags nobody.
@@ -50,10 +51,13 @@ pub fn foundry_package_name(foundry: &str) -> Option<String> {
 ///
 /// Both spellings are live in the org and BOTH must read, because this scanner
 /// reads repos it does not control and the rename is landing repo by repo. The
-/// package name is the dependency graph's join key: a `None` here does not
+/// package name is the dependency graph's join key: a name lost here does not
 /// degrade the node, it deletes it — the repo drops out of `package_index`, and
 /// every edge INTO it disappears with it, so its consumers read as standing on
-/// clear ground.
+/// clear ground. A `None` from this reader alone no longer decides that:
+/// `resolve_package_name` falls through to the release workflow's
+/// `soldeer-package:` input, because rainix#335 removes this table from
+/// migrated manifests entirely.
 ///
 /// `[external.*]` is the tree foundry reserves for other tools' config and
 /// ignores, which is why the release metadata belongs there: a bare `[package]`
@@ -149,16 +153,41 @@ impl RepoInputs {
 /// main, `rainix-tag-release` on `sol-v*` tags), so the fallback covers every
 /// publishing repo, migrated or not.
 pub fn resolve_package_name(foundry: &str, release_workflow: Option<&str>) -> PackageResolution {
-    let _ = (foundry, release_workflow);
-    todo!("red stage: resolve manifest first, then the release workflow")
+    if let Some(name) = foundry_package_name(foundry) {
+        return PackageResolution::Named(name);
+    }
+    match release_workflow {
+        None => PackageResolution::NoPackage,
+        Some(workflow) => match release_workflow_package_name(workflow) {
+            Some(name) => PackageResolution::Named(name),
+            None => PackageResolution::Unknown,
+        },
+    }
 }
 
 /// Extract the `soldeer-package:` input value from a release workflow, if one
 /// can be read.
 ///
+/// Line-anchored like the rest of the workflow readers (`detect_signals`), not
+/// a YAML parse: the input is a `with:` scalar both reusable lifecycles take,
+/// and the shapes that occur are a bare name, a quoted name, and a trailing
+/// comment. The guards carry meaning: a commented-out line is not an input,
+/// and a `${{ … }}` expression is a reference the scan cannot evaluate —
+/// joining on its literal text would join nothing. Both read as "no name
+/// here", which the caller keeps apart from "no workflow at all".
 pub fn release_workflow_package_name(workflow: &str) -> Option<String> {
-    let _ = workflow;
-    todo!("red stage: read the soldeer-package input")
+    static RE_SOLDEER_PKG: OnceLock<Regex> = OnceLock::new();
+    // `[ \t]` rather than `\s` around the separator: `\s` matches newlines,
+    // and a key with no value on its line must not swallow the next line.
+    let re_pkg = RE_SOLDEER_PKG.get_or_init(|| {
+        re(r#"(?m)^[ \t]*["']?soldeer-package["']?[ \t]*:[ \t]*("[^"\n]*"|'[^'\n]*'|[^#\s]+)"#)
+    });
+    let raw = re_pkg.captures(workflow)?.get(1)?.as_str();
+    let name = raw.trim_matches(|c| c == '"' || c == '\'').trim();
+    if name.is_empty() || name.contains("${{") {
+        return None;
+    }
+    Some(name.to_string())
 }
 
 /// Detect every signal present in `inputs`, in the canonical (scan.sh) order.
@@ -691,7 +720,10 @@ polygon = { key = "${CI_DEPLOY_POLYGON_ETHERSCAN_API_KEY}" }
             None
         );
         assert_eq!(release_workflow_package_name(""), None);
-        assert_eq!(release_workflow_package_name("      soldeer-package: \"\""), None);
+        assert_eq!(
+            release_workflow_package_name("      soldeer-package: \"\""),
+            None
+        );
     }
 
     /// The regression itself, on the real post-#335 rain.factory pair: the
@@ -733,6 +765,13 @@ polygon = { key = "${CI_DEPLOY_POLYGON_ETHERSCAN_API_KEY}" }
             resolve_package_name("[package]\nname = ", Some(FACTORY_RELEASE)),
             PackageResolution::Named("rain-factory".to_string())
         );
+        // sources that DISAGREE pin the ruled order: the manifest speaks first,
+        // and the workflow only when the manifest lacks the name (rainix#335
+        // ruling: "resolve from there when foundry.toml lacks the name").
+        assert_eq!(
+            resolve_package_name("[package]\nname = \"manifest-name\"", Some(FACTORY_RELEASE)),
+            PackageResolution::Named("manifest-name".to_string())
+        );
     }
 
     /// Per the repo's own rule that a missing `[dependencies]` must not read
@@ -742,7 +781,10 @@ polygon = { key = "${CI_DEPLOY_POLYGON_ETHERSCAN_API_KEY}" }
     #[test]
     fn unreadable_release_workflow_is_unknown_never_no_package() {
         // listed but unreadable body
-        assert_eq!(resolve_package_name("", Some("")), PackageResolution::Unknown);
+        assert_eq!(
+            resolve_package_name("", Some("")),
+            PackageResolution::Unknown
+        );
         // readable but passing only an expression the scan cannot evaluate
         assert_eq!(
             resolve_package_name(
@@ -773,6 +815,7 @@ polygon = { key = "${CI_DEPLOY_POLYGON_ETHERSCAN_API_KEY}" }
         let factory = Node {
             repo: "rain.factory".to_string(),
             package: resolved.name().map(str::to_string),
+            package_known: resolved.known(),
             version: None,
             deps: crate::graph::foundry_dependencies(FACTORY_FOUNDRY).unwrap(),
             deps_known: true,
@@ -783,6 +826,7 @@ polygon = { key = "${CI_DEPLOY_POLYGON_ETHERSCAN_API_KEY}" }
             package: resolve_package_name(DEPLOY_FOUNDRY, Some(DEPLOY_RELEASE))
                 .name()
                 .map(str::to_string),
+            package_known: true,
             version: None,
             deps: crate::graph::foundry_dependencies(DEPLOY_FOUNDRY).unwrap(),
             deps_known: true,
