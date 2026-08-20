@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-20T14:02:39Z",
+  "generatedAt": "2026-08-20T14:59:52Z",
   "auditGraph": {
     "nodes": [
       {
@@ -241,7 +241,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.sol.codegen",
@@ -651,7 +651,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.math.fixedpoint",
@@ -730,7 +730,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.6"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1030,7 +1030,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.6"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.math.float",
@@ -1108,7 +1108,7 @@
           "skillVersion": "0.34.0",
           "stale": true
         },
-        "openAuditIssues": 2,
+        "openAuditIssues": 5,
         "lastMutation": {
           "timestamp": "2026-08-11T08:42:04Z",
           "commit": "05bb66bfd8d0e",
@@ -1133,7 +1133,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.6"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.math.float",
@@ -1354,7 +1354,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.8"
       },
       {
         "from": "rain.factory.deploy",
@@ -1585,7 +1585,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.8"
       },
       {
         "from": "rain.vats",
@@ -1648,7 +1648,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.6"
+        "latest": "0.1.8"
       },
       {
         "from": "rain.verify",
@@ -1900,7 +1900,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.6"
+        "latest": "0.1.8"
       },
       {
         "from": "st0x.deploy",
@@ -1942,7 +1942,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.6"
+        "latest": "0.1.8"
       },
       {
         "from": "st0x.oracle",
@@ -3379,13 +3379,14 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 115,
-  "reposWithFindings": 39,
+  "reposWithFindings": 47,
   "reposWholeRepoAudited": 5,
   "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 18,
   "summary": {
     "per-chain-etherscan-key": 12,
+    "stale-foundry-lock": 11,
     "old-nix-installer": 10,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
@@ -3405,6 +3406,15 @@
         "old-nix-installer",
         "removed-rainix-task",
         "private-key-dev"
+      ]
+    },
+    {
+      "name": "st0x.liquidity",
+      "org": "ST0x-Technology",
+      "signals": [
+        "dead-magic-nix-cache",
+        "old-nix-installer",
+        "stale-foundry-lock"
       ]
     },
     {
@@ -3432,11 +3442,27 @@
       ]
     },
     {
+      "name": "rain.math.float",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key",
+        "stale-foundry-lock"
+      ]
+    },
+    {
       "name": "rain.merkle",
       "org": "rainlanguage",
       "signals": [
         "removed-rainix-task",
         "untested-externals"
+      ]
+    },
+    {
+      "name": "rain.metadata",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key",
+        "stale-foundry-lock"
       ]
     },
     {
@@ -3509,14 +3535,6 @@
       "signals": [
         "old-nix-installer",
         "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "st0x.liquidity",
-      "org": "ST0x-Technology",
-      "signals": [
-        "dead-magic-nix-cache",
-        "old-nix-installer"
       ]
     },
     {
@@ -3626,17 +3644,59 @@
       ]
     },
     {
-      "name": "rain.math.float",
+      "name": "rain.intorastring",
       "org": "rainlanguage",
       "signals": [
-        "per-chain-etherscan-key"
+        "stale-foundry-lock"
       ]
     },
     {
-      "name": "rain.metadata",
+      "name": "rain.lib.hash",
       "org": "rainlanguage",
       "signals": [
-        "per-chain-etherscan-key"
+        "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.lib.memkv",
+      "org": "rainlanguage",
+      "signals": [
+        "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.lib.typecast",
+      "org": "rainlanguage",
+      "signals": [
+        "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.math.fixedpoint",
+      "org": "rainlanguage",
+      "signals": [
+        "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.math.saturating",
+      "org": "rainlanguage",
+      "signals": [
+        "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.sol.binmaskflag",
+      "org": "rainlanguage",
+      "signals": [
+        "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.string",
+      "org": "rainlanguage",
+      "signals": [
+        "stale-foundry-lock"
       ]
     },
     {
@@ -4517,7 +4577,7 @@
     {
       "name": "st0x.oracle",
       "org": "ST0x-Technology",
-      "openAuditIssues": 2,
+      "openAuditIssues": 5,
       "lastMutation": {
         "timestamp": "2026-08-11T08:42:04Z",
         "commit": "05bb66bfd8d0e",
@@ -5347,19 +5407,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.1.6",
-      "latestTagIso": "2026-08-13T09:56:23Z",
+      "latestTag": "sol-v0.1.8",
+      "latestTagIso": "2026-08-20T14:50:12Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 332,
+      "sourceLocChangedSinceAudit": 616,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 0,
+      "sourceLocAddedSinceAudit": 284,
       "sourceLocRemovedSinceAudit": 332,
-      "filesChangedSinceAudit": 7,
-      "commitsSinceAudit": 15,
+      "filesChangedSinceAudit": 10,
+      "commitsSinceAudit": 30,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 0,
+      "commentLocAddedSinceAudit": 250,
       "commentLocRemovedSinceAudit": 108,
-      "codeLocAddedSinceAudit": 0,
+      "codeLocAddedSinceAudit": 26,
       "codeLocRemovedSinceAudit": 178,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
@@ -6215,7 +6275,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 0,
+      "testFiles": 1,
       "sourcesUnparsed": 0,
       "untested": []
     },
