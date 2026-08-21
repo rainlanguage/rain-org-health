@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T10:52:01Z",
+  "generatedAt": "2026-08-21T11:45:26Z",
   "auditGraph": {
     "nodes": [
       {
@@ -72,6 +72,11 @@
           "rainlang"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.2",
+            "latest": "0.1.7"
+          },
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
@@ -194,7 +199,13 @@
           "rain.sol.codegen",
           "rain.solmem"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.6",
+            "latest": "0.1.13"
+          }
+        ]
       },
       {
         "repo": "rain.factory",
@@ -226,7 +237,13 @@
           "rain.sol.codegen",
           "rain.solmem"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.1",
+            "latest": "0.1.13"
+          }
+        ]
       },
       {
         "repo": "rain.flare",
@@ -383,6 +400,16 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.datacontract",
+            "pinned": "0.1.0",
+            "latest": "0.1.3"
+          },
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.3",
+            "latest": "0.1.7"
+          },
+          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
             "latest": "0.1.36"
@@ -412,7 +439,13 @@
           "rain.solmem",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.datacontract",
+            "pinned": "0.1.0",
+            "latest": "0.1.3"
+          }
+        ]
       },
       {
         "repo": "rain.math.saturating",
@@ -625,7 +658,18 @@
           "rain.sol.codegen",
           "rain.solmem"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.3",
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.1",
+            "latest": "0.1.13"
+          }
+        ]
       },
       {
         "repo": "rain.vats",
@@ -649,6 +693,16 @@
           "rain.string"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.1",
+            "latest": "0.1.13"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.1.5",
+            "latest": "0.1.9"
+          },
           {
             "repo": "rain.math.fixedpoint",
             "pinned": "0.2.0",
@@ -719,6 +773,16 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.2",
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.9"
+          },
+          {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
             "latest": "0.1.36"
@@ -787,6 +851,11 @@
           "rainlang.interface"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.2",
+            "latest": "0.1.7"
+          },
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
@@ -903,6 +972,16 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.3",
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.1",
+            "latest": "0.1.13"
+          },
+          {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
             "latest": "0.1.1"
@@ -998,6 +1077,21 @@
           "rain.vats"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.4",
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.1",
+            "latest": "0.1.13"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.9"
+          },
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
@@ -1097,6 +1191,11 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.9"
+          },
+          {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.1.7"
@@ -1105,6 +1204,11 @@
             "repo": "rain.vats",
             "pinned": "0.1.5",
             "latest": "0.2.0"
+          },
+          {
+            "repo": "st0x.deploy",
+            "pinned": "0.1.1",
+            "latest": "0.1.29"
           }
         ]
       },
@@ -1175,9 +1279,9 @@
       {
         "from": "rain.dia",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.2",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.dia",
@@ -1282,35 +1386,35 @@
         "to": "rain.deploy",
         "stale": false,
         "pinned": "0.1.7",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.6",
-        "latest": ""
+        "latest": "0.1.13"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
         "stale": false,
         "pinned": "0.1.7",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.13"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.factory",
         "stale": false,
         "pinned": "0.1.9",
-        "latest": ""
+        "latest": "0.1.9"
       },
       {
         "from": "rain.flare",
@@ -1392,16 +1496,16 @@
       {
         "from": "rain.math.float",
         "to": "rain.datacontract",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.0",
-        "latest": ""
+        "latest": "0.1.3"
       },
       {
         "from": "rain.math.float",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.3",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.math.float",
@@ -1427,16 +1531,16 @@
       {
         "from": "rain.math.float.deploy",
         "to": "rain.datacontract",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.0",
-        "latest": ""
+        "latest": "0.1.3"
       },
       {
         "from": "rain.math.float.deploy",
         "to": "rain.deploy",
         "stale": false,
         "pinned": "0.1.7",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1485,7 +1589,7 @@
         "to": "rain.deploy",
         "stale": false,
         "pinned": "0.1.7",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1546,30 +1650,30 @@
       {
         "from": "rain.tofu.erc20-decimals",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.3",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.tofu.erc20-decimals",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.13"
       },
       {
         "from": "rain.vats",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.13"
       },
       {
         "from": "rain.vats",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.5",
-        "latest": ""
+        "latest": "0.1.9"
       },
       {
         "from": "rain.vats",
@@ -1623,16 +1727,16 @@
       {
         "from": "rain.verify",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.2",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.9"
       },
       {
         "from": "rain.verify",
@@ -1658,9 +1762,9 @@
       {
         "from": "raindex",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.2",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "raindex",
@@ -1749,16 +1853,16 @@
       {
         "from": "rainlang",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.3",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "rainlang",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.13"
       },
       {
         "from": "rainlang",
@@ -1868,23 +1972,23 @@
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.4",
-        "latest": ""
+        "latest": "0.1.7"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.13"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.9"
       },
       {
         "from": "st0x.deploy",
@@ -1924,9 +2028,9 @@
       {
         "from": "st0x.oracle",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.9"
       },
       {
         "from": "st0x.oracle",
@@ -1945,9 +2049,9 @@
       {
         "from": "st0x.oracle",
         "to": "st0x.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.29"
       }
     ]
   },
@@ -3378,6 +3482,7 @@
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
+    "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
   "repos": [
@@ -3414,6 +3519,14 @@
       "signals": [
         "dead-magic-nix-cache",
         "old-nix-installer"
+      ]
+    },
+    {
+      "name": "rain.factory.deploy",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key",
+        "soldeer-unpublished"
       ]
     },
     {
@@ -3605,13 +3718,6 @@
     },
     {
       "name": "rain.extrospection.deploy",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
