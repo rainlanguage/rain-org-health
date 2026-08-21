@@ -340,7 +340,7 @@ mod tests {
         // repo contents and solang-parser accepts this permissively — so the
         // FunctionTy gate must exclude it even when a visibility attribute is
         // present. (Constructor/receive/fallback are already unnamed in the
-        // AST; this is the one function-like item where the gate is load-bearing.)
+        // AST; this is the one function-like item the gate alone excludes.)
         let got = external_functions(
             "src/P.sol",
             "contract C { modifier m() external { _; } function real() external {} }",
