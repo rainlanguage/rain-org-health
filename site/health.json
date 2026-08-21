@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T15:51:25Z",
+  "generatedAt": "2026-08-21T16:54:40Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2409,19 +2409,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 2,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": null,
+          "ownerLabel": "unknown",
           "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
           "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "healthy"
+          "status": "unknown"
         },
         {
           "name": "Receipt-vault beacon",
@@ -3512,7 +3512,7 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 117,
-  "reposWithFindings": 48,
+  "reposWithFindings": 47,
   "reposWholeRepoAudited": 5,
   "reposNeverAudited": 112,
   "reposExternallyAudited": 25,
@@ -3520,7 +3520,7 @@
   "summary": {
     "per-chain-etherscan-key": 13,
     "old-nix-installer": 10,
-    "stale-foundry-lock": 10,
+    "stale-foundry-lock": 9,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
@@ -3784,13 +3784,6 @@
     },
     {
       "name": "rain.lib.memkv",
-      "org": "rainlanguage",
-      "signals": [
-        "stale-foundry-lock"
-      ]
-    },
-    {
-      "name": "rain.lib.typecast",
       "org": "rainlanguage",
       "signals": [
         "stale-foundry-lock"
@@ -4974,7 +4967,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 404,
+      "fullSourceLoc": 447,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -6087,7 +6080,7 @@
       "sourceLocAddedSinceAudit": 64,
       "sourceLocRemovedSinceAudit": 2,
       "filesChangedSinceAudit": 2,
-      "commitsSinceAudit": 27,
+      "commitsSinceAudit": 29,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 64,
       "commentLocRemovedSinceAudit": 2,
