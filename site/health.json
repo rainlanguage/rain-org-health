@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T16:54:40Z",
+  "generatedAt": "2026-08-21T17:48:39Z",
   "auditGraph": {
     "nodes": [
       {
@@ -912,6 +912,11 @@
             "latest": "0.1.26"
           },
           {
+            "repo": "rain.tofu.erc20-decimals",
+            "pinned": "0.1.1",
+            "latest": "0.1.3"
+          },
+          {
             "repo": "raindex.interface",
             "pinned": "0.1.3",
             "latest": "0.1.4"
@@ -1050,6 +1055,11 @@
             "repo": "rain.solmem",
             "pinned": "0.1.3",
             "latest": "0.1.26"
+          },
+          {
+            "repo": "rain.tofu.erc20-decimals",
+            "pinned": "0.1.1",
+            "latest": "0.1.3"
           }
         ]
       },
@@ -1146,6 +1156,11 @@
             "repo": "rain.sol.codegen",
             "pinned": "0.1.3",
             "latest": "0.1.36"
+          },
+          {
+            "repo": "rain.tofu.erc20-decimals",
+            "pinned": "0.1.1",
+            "latest": "0.1.3"
           },
           {
             "repo": "rain.vats",
@@ -1849,9 +1864,9 @@
       {
         "from": "raindex",
         "to": "rain.tofu.erc20-decimals",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.1"
+        "latest": "0.1.3"
       },
       {
         "from": "raindex",
@@ -1975,9 +1990,9 @@
       {
         "from": "rainlang",
         "to": "rain.tofu.erc20-decimals",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.1"
+        "latest": "0.1.3"
       },
       {
         "from": "rainlang.interface",
@@ -2052,9 +2067,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.tofu.erc20-decimals",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.1"
+        "latest": "0.1.3"
       },
       {
         "from": "st0x.deploy",
@@ -2409,19 +2424,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": null,
-          "ownerLabel": "unknown",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
           "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
           "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
           "atTarget": true,
-          "status": "unknown"
+          "status": "healthy"
         },
         {
           "name": "Receipt-vault beacon",
@@ -3527,7 +3542,6 @@
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
-    "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
   "repos": [
@@ -3564,14 +3578,6 @@
       "signals": [
         "dead-magic-nix-cache",
         "old-nix-installer"
-      ]
-    },
-    {
-      "name": "rain.factory.deploy",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key",
-        "soldeer-unpublished"
       ]
     },
     {
@@ -3763,6 +3769,13 @@
     },
     {
       "name": "rain.extrospection.deploy",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
@@ -5420,7 +5433,7 @@
       "sourceLocAddedSinceAudit": 4623,
       "sourceLocRemovedSinceAudit": 56,
       "filesChangedSinceAudit": 27,
-      "commitsSinceAudit": 306,
+      "commitsSinceAudit": 308,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 2899,
       "commentLocRemovedSinceAudit": 10,
@@ -5652,15 +5665,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-10T16:11:44Z",
-      "latestTag": "v0.1.1",
-      "latestTagIso": "2026-05-12T15:43:12Z",
+      "latestTag": "sol-v0.1.3",
+      "latestTagIso": "2026-08-21T17:26:04Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 269,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 194,
       "sourceLocRemovedSinceAudit": 75,
       "filesChangedSinceAudit": 5,
-      "commitsSinceAudit": 61,
+      "commitsSinceAudit": 71,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 130,
       "commentLocRemovedSinceAudit": 42,
