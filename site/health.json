@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T21:42:42Z",
+  "generatedAt": "2026-08-21T22:44:57Z",
   "auditGraph": {
     "nodes": [
       {
@@ -3563,7 +3563,6 @@
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
-    "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
   "repos": [
@@ -3616,14 +3615,6 @@
       "signals": [
         "removed-rainix-task",
         "untested-externals"
-      ]
-    },
-    {
-      "name": "rain.metadata.deploy",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key",
-        "soldeer-unpublished"
       ]
     },
     {
@@ -3851,6 +3842,13 @@
       "org": "rainlanguage",
       "signals": [
         "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.metadata.deploy",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key"
       ]
     },
     {
@@ -5097,7 +5095,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 328,
+      "fullSourceLoc": 371,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
