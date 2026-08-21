@@ -4049,8 +4049,8 @@ Deno.test("pipeline FSM: all-distinct descriptor keys draw no duplicate-key defe
 
 // A descriptor also READS its `histFold` keys — that is where its series draws the
 // absorbed retirees' samples from — so those counts keys are claimed by it. The live
-// shape that makes this load-bearing: `ai:reject` folds `humanReject`/`relink` while the
-// residue rows carry NO `hist` of their own (the successor draws the past, so the same
+// shape behind this: `ai:reject` folds `humanReject`/`relink` while the residue
+// rows carry NO `hist` of their own (the successor draws the past, so the same
 // history is not rendered twice). Without the fold claim, a nonzero absorbed-retiree
 // count paints a FALSE defect on a healthy snapshot.
 Deno.test("pipeline FSM: a folded retired counts key is claimed by the folding descriptor, nonzero and all", () => {
