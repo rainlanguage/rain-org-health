@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-21T04:57:55Z",
+  "generatedAt": "2026-08-21T05:50:29Z",
   "auditGraph": {
     "nodes": [
       {
@@ -516,10 +516,7 @@
         "lastAudit": null,
         "openAuditIssues": 0,
         "lastMutation": null,
-        "blockedBy": [
-          "rain.deploy",
-          "rain.sol.codegen"
-        ],
+        "blockedBy": [],
         "staleDeps": []
       },
       {
@@ -1580,13 +1577,6 @@
         "stale": true,
         "pinned": "0.1.2",
         "latest": "0.1.8"
-      },
-      {
-        "from": "rain.metadata",
-        "to": "rain.deploy",
-        "stale": false,
-        "pinned": "0.1.7",
-        "latest": "0.1.7"
       },
       {
         "from": "rain.metadata.deploy",
@@ -3471,13 +3461,13 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 117,
-  "reposWithFindings": 49,
+  "reposWithFindings": 48,
   "reposWholeRepoAudited": 5,
   "reposNeverAudited": 112,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 20,
   "summary": {
-    "per-chain-etherscan-key": 14,
+    "per-chain-etherscan-key": 13,
     "old-nix-installer": 10,
     "stale-foundry-lock": 10,
     "old-actions-checkout": 8,
@@ -3774,13 +3764,6 @@
       "org": "rainlanguage",
       "signals": [
         "stale-foundry-lock"
-      ]
-    },
-    {
-      "name": "rain.metadata",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
       ]
     },
     {
@@ -5659,17 +5642,17 @@
       "latestTag": "sol-v0.1.5",
       "latestTagIso": "2026-08-20T18:34:00Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 240,
+      "sourceLocChangedSinceAudit": 188,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 215,
-      "sourceLocRemovedSinceAudit": 25,
-      "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 162,
+      "sourceLocAddedSinceAudit": 139,
+      "sourceLocRemovedSinceAudit": 49,
+      "filesChangedSinceAudit": 8,
+      "commitsSinceAudit": 167,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 123,
-      "commentLocRemovedSinceAudit": 9,
-      "codeLocAddedSinceAudit": 80,
-      "codeLocRemovedSinceAudit": 16,
+      "commentLocAddedSinceAudit": 80,
+      "commentLocRemovedSinceAudit": 14,
+      "codeLocAddedSinceAudit": 51,
+      "codeLocRemovedSinceAudit": 29,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
       "daysSinceAudit": 204
@@ -6559,8 +6542,8 @@
       "name": "rain.metadata",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 1,
-      "testFiles": 11,
+      "externalFunctions": 0,
+      "testFiles": 8,
       "sourcesUnparsed": 0,
       "untested": []
     },
