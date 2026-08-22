@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T15:38:36Z",
+  "generatedAt": "2026-08-22T16:43:58Z",
   "auditGraph": {
     "nodes": [
       {
@@ -85,7 +85,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.metadata",
@@ -154,7 +154,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.metadata",
@@ -287,7 +287,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.metadata",
@@ -413,8 +413,6 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
-          "rain.deploy",
-          "rain.sol.codegen",
           "rain.solmem",
           "rain.string"
         ],
@@ -423,16 +421,6 @@
             "repo": "rain.datacontract",
             "pinned": "0.1.0",
             "latest": "0.1.3"
-          },
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.3",
-            "latest": "0.1.7"
-          },
-          {
-            "repo": "rain.sol.codegen",
-            "pinned": "0.1.0",
-            "latest": "0.1.36"
           },
           {
             "repo": "rain.solmem",
@@ -464,6 +452,11 @@
             "repo": "rain.datacontract",
             "pinned": "0.1.0",
             "latest": "0.1.3"
+          },
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.1.7",
+            "latest": "0.2.0"
           }
         ]
       },
@@ -599,7 +592,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.metadata",
@@ -722,12 +715,10 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
-          "rain.deploy",
           "rain.extrospection",
           "rain.factory",
           "rain.math.fixedpoint",
           "rain.math.float",
-          "rain.sol.codegen",
           "rain.solmem",
           "rain.string"
         ],
@@ -750,7 +741,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           }
         ]
       },
@@ -898,7 +889,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.metadata",
@@ -939,7 +930,6 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
-          "rain.deploy",
           "rain.math.float",
           "rain.sol.codegen",
           "rain.solmem",
@@ -951,7 +941,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "raindex.interface",
@@ -972,7 +962,6 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
-          "rain.deploy",
           "rain.math.float",
           "rain.sol.codegen",
           "rain.solmem",
@@ -983,7 +972,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rainlang.interface",
@@ -1043,7 +1032,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.metadata",
@@ -1154,7 +1143,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1262,7 +1251,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.1.7"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.vats",
@@ -1366,7 +1355,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.dia",
@@ -1408,7 +1397,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.erc4626.words",
@@ -1499,7 +1488,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.flare",
@@ -1566,20 +1555,6 @@
       },
       {
         "from": "rain.math.float",
-        "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.3",
-        "latest": "0.1.7"
-      },
-      {
-        "from": "rain.math.float",
-        "to": "rain.sol.codegen",
-        "stale": true,
-        "pinned": "0.1.0",
-        "latest": "0.1.36"
-      },
-      {
-        "from": "rain.math.float",
         "to": "rain.solmem",
         "stale": true,
         "pinned": "0.1.3",
@@ -1609,9 +1584,9 @@
       {
         "from": "rain.math.float.deploy",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1681,7 +1656,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.pyth",
@@ -1758,7 +1733,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.vats",
@@ -1849,7 +1824,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "raindex",
@@ -1898,7 +1873,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "raindex.governance",
@@ -1912,7 +1887,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "raindex.interface",
@@ -1968,7 +1943,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "rainlang",
@@ -2066,7 +2041,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "st0x.deploy",
@@ -2108,7 +2083,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.7"
+        "latest": "0.2.0"
       },
       {
         "from": "st0x.oracle",
@@ -3544,7 +3519,7 @@
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 21,
   "summary": {
-    "per-chain-etherscan-key": 13,
+    "per-chain-etherscan-key": 12,
     "old-nix-installer": 10,
     "stale-foundry-lock": 9,
     "old-actions-checkout": 8,
@@ -3589,14 +3564,6 @@
       "signals": [
         "dead-magic-nix-cache",
         "old-nix-installer"
-      ]
-    },
-    {
-      "name": "rain.math.float",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key",
-        "stale-foundry-lock"
       ]
     },
     {
@@ -3815,6 +3782,13 @@
     },
     {
       "name": "rain.math.fixedpoint",
+      "org": "rainlanguage",
+      "signals": [
+        "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "rain.math.float",
       "org": "rainlanguage",
       "signals": [
         "stale-foundry-lock"
@@ -5491,6 +5465,42 @@
       "daysSinceAudit": 195
     },
     {
+      "name": "rain.math.float",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
+          "path": "audit/protofire/rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
+          "lastCommitIso": "2026-07-15T13:13:20Z",
+          "auditDateIso": "2025-12-01T16:49:39Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "1a3a88ad580be0d8ddd50e6084c18b612f56107f",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2025-12-01T16:49:39Z",
+      "latestTag": "sol-v0.2.0",
+      "latestTagIso": "2026-08-22T16:07:28Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 1330,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 625,
+      "sourceLocRemovedSinceAudit": 705,
+      "filesChangedSinceAudit": 11,
+      "commitsSinceAudit": 292,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 365,
+      "commentLocRemovedSinceAudit": 221,
+      "codeLocAddedSinceAudit": 201,
+      "codeLocRemovedSinceAudit": 377,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
+      "daysSinceAudit": 264
+    },
+    {
       "name": "rain.solmem",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -5609,42 +5619,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
       "daysSinceAudit": 102
-    },
-    {
-      "name": "rain.math.float",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
-          "path": "audit/protofire/rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
-          "lastCommitIso": "2026-07-15T13:13:20Z",
-          "auditDateIso": "2025-12-01T16:49:39Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "1a3a88ad580be0d8ddd50e6084c18b612f56107f",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "next-v0.2.0",
-      "latestTagIso": "2026-07-15T13:17:46Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 1164,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 877,
-      "sourceLocRemovedSinceAudit": 287,
-      "filesChangedSinceAudit": 13,
-      "commitsSinceAudit": 286,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 459,
-      "commentLocRemovedSinceAudit": 61,
-      "codeLocAddedSinceAudit": 337,
-      "codeLocRemovedSinceAudit": 178,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
-      "daysSinceAudit": 264
     },
     {
       "name": "rain.factory",
@@ -6624,8 +6598,8 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 35,
-      "testFiles": 92,
+      "externalFunctions": 0,
+      "testFiles": 52,
       "sourcesUnparsed": 0,
       "untested": []
     },
