@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T16:43:58Z",
+  "generatedAt": "2026-08-22T17:29:29Z",
   "auditGraph": {
     "nodes": [
       {
@@ -353,13 +353,7 @@
         "blockedBy": [
           "rain.solmem"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
-            "latest": "0.1.26"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.lib.typecast",
@@ -416,18 +410,7 @@
           "rain.solmem",
           "rain.string"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.datacontract",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
-            "latest": "0.1.26"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.math.float.deploy",
@@ -977,7 +960,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.3",
-            "latest": "0.2.4"
+            "latest": "0.2.5"
           }
         ]
       },
@@ -1017,7 +1000,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.2"
           },
           {
             "repo": "rain.lib.typecast",
@@ -1080,11 +1063,6 @@
             "repo": "rain.sol.codegen",
             "pinned": "0.1.0",
             "latest": "0.1.36"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.3",
-            "latest": "0.1.26"
           }
         ]
       },
@@ -1528,8 +1506,8 @@
       {
         "from": "rain.lib.memkv",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
+        "stale": false,
+        "pinned": "0.1.26",
         "latest": "0.1.26"
       },
       {
@@ -1549,15 +1527,15 @@
       {
         "from": "rain.math.float",
         "to": "rain.datacontract",
-        "stale": true,
-        "pinned": "0.1.0",
+        "stale": false,
+        "pinned": "0.1.3",
         "latest": "0.1.3"
       },
       {
         "from": "rain.math.float",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
+        "stale": false,
+        "pinned": "0.1.26",
         "latest": "0.1.26"
       },
       {
@@ -1894,7 +1872,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.3",
-        "latest": "0.2.4"
+        "latest": "0.2.5"
       },
       {
         "from": "rainlang",
@@ -1922,7 +1900,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.2"
       },
       {
         "from": "rainlang",
@@ -2011,8 +1989,8 @@
       {
         "from": "rainlang.interface",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.3",
+        "stale": false,
+        "pinned": "0.1.26",
         "latest": "0.1.26"
       },
       {
@@ -5490,7 +5468,7 @@
       "sourceLocAddedSinceAudit": 625,
       "sourceLocRemovedSinceAudit": 705,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 292,
+      "commitsSinceAudit": 295,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 365,
       "commentLocRemovedSinceAudit": 221,
@@ -5884,15 +5862,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.4",
-      "latestTagIso": "2026-08-21T18:44:36Z",
+      "latestTag": "sol-v0.2.5",
+      "latestTagIso": "2026-08-22T17:13:28Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 54,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 36,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 44,
+      "commitsSinceAudit": 46,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 23,
       "commentLocRemovedSinceAudit": 7,
@@ -5992,15 +5970,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-05T12:14:13Z",
-      "latestTag": "sol-v0.1.1",
-      "latestTagIso": "2026-06-15T13:19:13Z",
+      "latestTag": "sol-v0.1.2",
+      "latestTagIso": "2026-08-22T17:14:12Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 11,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 10,
       "sourceLocRemovedSinceAudit": 1,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 20,
+      "commitsSinceAudit": 22,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 3,
       "commentLocRemovedSinceAudit": 0,
