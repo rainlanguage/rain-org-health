@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-22T10:43:59Z",
+  "generatedAt": "2026-08-22T11:38:16Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1242,12 +1242,12 @@
           "skillVersion": "0.34.0",
           "stale": true
         },
-        "openAuditIssues": 5,
+        "openAuditIssues": 1,
         "lastMutation": {
-          "timestamp": "2026-08-11T08:42:04Z",
-          "commit": "05bb66bfd8d0e",
-          "skillVersion": "0.30.0",
-          "scope": "whole repo (src/ + script/)"
+          "timestamp": "2026-08-20T14:30:00Z",
+          "commit": "b35c172838446de0f2422e144c960f725b65079a",
+          "skillVersion": "0.34.0",
+          "scope": "whole repo"
         },
         "blockedBy": [
           "rain.datacontract",
@@ -3563,6 +3563,7 @@
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
+    "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
   "repos": [
@@ -3583,6 +3584,15 @@
         "dead-magic-nix-cache",
         "old-nix-installer",
         "stale-foundry-lock"
+      ]
+    },
+    {
+      "name": "st0x.oracle",
+      "org": "ST0x-Technology",
+      "signals": [
+        "removed-rainix-task",
+        "private-key-dev",
+        "soldeer-unpublished"
       ]
     },
     {
@@ -3687,14 +3697,6 @@
       "signals": [
         "old-nix-installer",
         "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "st0x.oracle",
-      "org": "ST0x-Technology",
-      "signals": [
-        "removed-rainix-task",
-        "private-key-dev"
       ]
     },
     {
@@ -4769,12 +4771,12 @@
     {
       "name": "st0x.oracle",
       "org": "ST0x-Technology",
-      "openAuditIssues": 5,
+      "openAuditIssues": 1,
       "lastMutation": {
-        "timestamp": "2026-08-11T08:42:04Z",
-        "commit": "05bb66bfd8d0e",
-        "skillVersion": "0.30.0",
-        "scope": "whole repo (src/ + script/)"
+        "timestamp": "2026-08-20T14:30:00Z",
+        "commit": "b35c172838446de0f2422e144c960f725b65079a",
+        "skillVersion": "0.34.0",
+        "scope": "whole repo"
       },
       "lastAudit": {
         "auditedAt": "2026-08-11T08:42:04Z",
@@ -5066,7 +5068,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 659,
+      "fullSourceLoc": 1012,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5414,7 +5416,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 2232,
+      "fullSourceLoc": 2264,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -5490,7 +5492,7 @@
       "sourceLocAddedSinceAudit": 4993,
       "sourceLocRemovedSinceAudit": 56,
       "filesChangedSinceAudit": 29,
-      "commitsSinceAudit": 317,
+      "commitsSinceAudit": 321,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 3174,
       "commentLocRemovedSinceAudit": 10,
@@ -6644,7 +6646,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 35,
-      "testFiles": 41,
+      "testFiles": 43,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -6671,7 +6673,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 1,
-      "testFiles": 7,
+      "testFiles": 10,
       "sourcesUnparsed": 0,
       "untested": []
     },
