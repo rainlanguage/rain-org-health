@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-23T10:44:54Z",
+  "generatedAt": "2026-08-23T11:38:35Z",
   "auditGraph": {
     "nodes": [
       {
@@ -855,6 +855,7 @@
           "rain.lib.memkv",
           "rain.math.float",
           "rain.metadata",
+          "rain.metadata.deploy",
           "rain.sol.codegen",
           "rain.solmem",
           "rain.string",
@@ -873,11 +874,6 @@
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.2.0"
-          },
-          {
-            "repo": "rain.metadata",
-            "pinned": "0.1.0",
-            "latest": "0.1.7"
           },
           {
             "repo": "rain.solmem",
@@ -1783,9 +1779,16 @@
       {
         "from": "raindex",
         "to": "rain.metadata",
-        "stale": true,
-        "pinned": "0.1.0",
+        "stale": false,
+        "pinned": "0.1.7",
         "latest": "0.1.7"
+      },
+      {
+        "from": "raindex",
+        "to": "rain.metadata.deploy",
+        "stale": false,
+        "pinned": "0.1.1",
+        "latest": "0.1.1"
       },
       {
         "from": "raindex",
@@ -6002,8 +6005,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 45,
-      "commitsSinceAudit": 165,
+      "filesChangedSinceAudit": 51,
+      "commitsSinceAudit": 168,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
