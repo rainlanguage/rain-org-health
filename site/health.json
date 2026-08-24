@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T05:56:29Z",
+  "generatedAt": "2026-08-24T07:31:41Z",
   "auditGraph": {
     "nodes": [
       {
@@ -406,7 +406,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 2,
+        "openAuditIssues": 3,
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
@@ -4276,7 +4276,7 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 2,
+      "openAuditIssues": 3,
       "lastMutation": null
     },
     {
