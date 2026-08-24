@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-24T07:31:41Z",
+  "generatedAt": "2026-08-24T09:07:48Z",
   "auditGraph": {
     "nodes": [
       {
@@ -227,7 +227,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 12,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
@@ -627,7 +627,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 16,
         "lastMutation": null,
         "blockedBy": [
           "rain.solmem"
@@ -4201,7 +4201,7 @@
       "name": "rain.factory",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 12,
       "lastMutation": null
     },
     {
@@ -4351,7 +4351,7 @@
       "name": "rain.string",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 16,
       "lastMutation": null
     },
     {
