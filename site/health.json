@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T19:01:26Z",
+  "generatedAt": "2026-08-25T19:48:29Z",
   "auditGraph": {
     "nodes": [
       {
@@ -5487,10 +5487,10 @@
       "filesChangedSinceAudit": 87,
       "commitsSinceAudit": 494,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 2522,
-      "commentLocRemovedSinceAudit": 241,
-      "codeLocAddedSinceAudit": 7499,
-      "codeLocRemovedSinceAudit": 401,
+      "commentLocAddedSinceAudit": 4821,
+      "commentLocRemovedSinceAudit": 257,
+      "codeLocAddedSinceAudit": 4668,
+      "codeLocRemovedSinceAudit": 386,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
       "daysSinceAudit": 97
