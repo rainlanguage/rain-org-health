@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T08:01:44Z",
+  "generatedAt": "2026-08-25T09:03:07Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4506,7 +4506,7 @@
       "name": "rainix",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 3,
+      "openAuditIssues": 4,
       "lastMutation": null
     },
     {
@@ -5408,8 +5408,8 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:39:06Z",
-      "latestTag": "sol-v0.1.29",
-      "latestTagIso": "2026-07-24T13:46:43Z",
+      "latestTag": "sol-v0.1.30",
+      "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 6386,
       "fullSourceLoc": null,
@@ -6068,15 +6068,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-08T19:12:56Z",
-      "latestTag": "sol-v0.1.8",
-      "latestTagIso": "2026-07-03T11:54:31Z",
+      "latestTag": "sol-v0.1.9",
+      "latestTagIso": "2026-08-25T08:59:02Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 146,
-      "commitsSinceAudit": 225,
+      "filesChangedSinceAudit": 151,
+      "commitsSinceAudit": 227,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
