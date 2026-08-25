@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T10:52:30Z",
+  "generatedAt": "2026-08-25T11:47:30Z",
   "auditGraph": {
     "nodes": [
       {
@@ -26,26 +26,6 @@
         "openAuditIssues": 1,
         "lastMutation": null,
         "blockedBy": [],
-        "staleDeps": []
-      },
-      {
-        "repo": "rain.datacontract",
-        "org": "rainlanguage",
-        "package": "rain-datacontract",
-        "packageKnown": true,
-        "audit": "stale",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 0,
-        "lastMutation": {
-          "timestamp": "2026-08-19T12:25:49Z",
-          "commit": "67c4893d7d629a525f7d97c5b0751e5eb1181c2e",
-          "skillVersion": "0.33.0",
-          "scope": "whole repo"
-        },
-        "blockedBy": [
-          "rain.solmem"
-        ],
         "staleDeps": []
       },
       {
@@ -1268,6 +1248,31 @@
         "lastMutation": {
           "timestamp": "2026-08-24T08:55:39Z",
           "commit": "35496d89eb7442735f101e3ac4584259b2920a21",
+          "skillVersion": "0.33.0",
+          "scope": "whole repo"
+        },
+        "blockedBy": [
+          "rain.solmem"
+        ],
+        "staleDeps": []
+      },
+      {
+        "repo": "rain.datacontract",
+        "org": "rainlanguage",
+        "package": "rain-datacontract",
+        "packageKnown": true,
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-08-25T11:45:00Z",
+          "auditedCommit": "c8f3188848c3ff0935fa5714b29022bd4c1f63aa",
+          "skillVersion": "0.35.0",
+          "stale": false
+        },
+        "openAuditIssues": 19,
+        "lastMutation": {
+          "timestamp": "2026-08-19T12:25:49Z",
+          "commit": "67c4893d7d629a525f7d97c5b0751e5eb1181c2e",
           "skillVersion": "0.33.0",
           "scope": "whole repo"
         },
@@ -3491,8 +3496,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 118,
   "reposWithFindings": 46,
-  "reposWholeRepoAudited": 6,
-  "reposNeverAudited": 112,
+  "reposWholeRepoAudited": 7,
+  "reposNeverAudited": 111,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 21,
   "summary": {
@@ -4124,18 +4129,6 @@
       "lastMutation": null
     },
     {
-      "name": "rain.datacontract",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": {
-        "timestamp": "2026-08-19T12:25:49Z",
-        "commit": "67c4893d7d629a525f7d97c5b0751e5eb1181c2e",
-        "skillVersion": "0.33.0",
-        "scope": "whole repo"
-      }
-    },
-    {
       "name": "rain.defillama",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -4759,6 +4752,23 @@
         "auditedCommit": "3e76babafe89e6dd0efa17caedb298f60b9e3789",
         "skillVersion": "0.35.0",
         "stale": true
+      }
+    },
+    {
+      "name": "rain.datacontract",
+      "org": "rainlanguage",
+      "openAuditIssues": 19,
+      "lastMutation": {
+        "timestamp": "2026-08-19T12:25:49Z",
+        "commit": "67c4893d7d629a525f7d97c5b0751e5eb1181c2e",
+        "skillVersion": "0.33.0",
+        "scope": "whole repo"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-08-25T11:45:00Z",
+        "auditedCommit": "c8f3188848c3ff0935fa5714b29022bd4c1f63aa",
+        "skillVersion": "0.35.0",
+        "stale": false
       }
     }
   ],
@@ -5393,16 +5403,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6386,
+      "sourceLocChangedSinceAudit": 6011,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 6027,
+      "sourceLocAddedSinceAudit": 5652,
       "sourceLocRemovedSinceAudit": 359,
-      "filesChangedSinceAudit": 88,
-      "commitsSinceAudit": 493,
+      "filesChangedSinceAudit": 87,
+      "commitsSinceAudit": 494,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4975,
+      "commentLocAddedSinceAudit": 4821,
       "commentLocRemovedSinceAudit": 257,
-      "codeLocAddedSinceAudit": 4833,
+      "codeLocAddedSinceAudit": 4668,
       "codeLocRemovedSinceAudit": 386,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -5872,7 +5882,7 @@
       "sourceLocAddedSinceAudit": 46,
       "sourceLocRemovedSinceAudit": 32,
       "filesChangedSinceAudit": 2,
-      "commitsSinceAudit": 72,
+      "commitsSinceAudit": 73,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 42,
       "commentLocRemovedSinceAudit": 22,
@@ -6777,7 +6787,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 147,
+      "testFiles": 143,
       "sourcesUnparsed": 0,
       "untested": []
     },
