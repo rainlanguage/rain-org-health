@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T09:03:07Z",
+  "generatedAt": "2026-08-25T09:54:07Z",
   "auditGraph": {
     "nodes": [
       {
@@ -106,7 +106,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.8"
+            "latest": "0.1.9"
           }
         ]
       },
@@ -171,7 +171,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.8"
+            "latest": "0.1.9"
           }
         ]
       },
@@ -305,7 +305,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.8"
+            "latest": "0.1.9"
           }
         ]
       },
@@ -518,7 +518,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.8"
+            "latest": "0.1.9"
           }
         ]
       },
@@ -600,7 +600,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.8"
+            "latest": "0.1.9"
           }
         ]
       },
@@ -894,7 +894,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.5",
-            "latest": "0.1.8"
+            "latest": "0.1.9"
           }
         ]
       },
@@ -1364,7 +1364,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "rain.erc4626.words",
@@ -1399,7 +1399,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "rain.extrospection",
@@ -1490,7 +1490,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "rain.intorastring",
@@ -1602,7 +1602,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1658,7 +1658,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "rain.string",
@@ -1854,7 +1854,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "raindex.governance",
@@ -6076,7 +6076,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 151,
-      "commitsSinceAudit": 227,
+      "commitsSinceAudit": 229,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
