@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-25T04:57:31Z",
+  "generatedAt": "2026-08-25T05:50:22Z",
   "auditGraph": {
     "nodes": [
       {
@@ -399,7 +399,7 @@
           {
             "repo": "rain.string",
             "pinned": "0.2.0",
-            "latest": "0.2.14"
+            "latest": "0.3.1"
           }
         ]
       },
@@ -422,7 +422,7 @@
           {
             "repo": "rain.string",
             "pinned": "0.2.0",
-            "latest": "0.2.14"
+            "latest": "0.3.1"
           }
         ]
       },
@@ -631,26 +631,6 @@
         "staleDeps": []
       },
       {
-        "repo": "rain.string",
-        "org": "rainlanguage",
-        "package": "rain-string",
-        "packageKnown": true,
-        "audit": "stale",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 30,
-        "lastMutation": {
-          "timestamp": "2026-08-24T08:55:39Z",
-          "commit": "35496d89eb7442735f101e3ac4584259b2920a21",
-          "skillVersion": "0.33.0",
-          "scope": "whole repo"
-        },
-        "blockedBy": [
-          "rain.solmem"
-        ],
-        "staleDeps": []
-      },
-      {
         "repo": "rain.tier.interface",
         "org": "rainlanguage",
         "package": null,
@@ -744,7 +724,7 @@
           {
             "repo": "rain.string",
             "pinned": "0.2.0",
-            "latest": "0.2.14"
+            "latest": "0.3.1"
           }
         ]
       },
@@ -1028,7 +1008,7 @@
           {
             "repo": "rain.string",
             "pinned": "0.2.0",
-            "latest": "0.2.14"
+            "latest": "0.3.1"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -1288,6 +1268,31 @@
         },
         "blockedBy": [],
         "staleDeps": []
+      },
+      {
+        "repo": "rain.string",
+        "org": "rainlanguage",
+        "package": "rain-string",
+        "packageKnown": true,
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-08-24T19:27:19Z",
+          "auditedCommit": "3e76babafe89e6dd0efa17caedb298f60b9e3789",
+          "skillVersion": "0.35.0",
+          "stale": true
+        },
+        "openAuditIssues": 30,
+        "lastMutation": {
+          "timestamp": "2026-08-24T08:55:39Z",
+          "commit": "35496d89eb7442735f101e3ac4584259b2920a21",
+          "skillVersion": "0.33.0",
+          "scope": "whole repo"
+        },
+        "blockedBy": [
+          "rain.solmem"
+        ],
+        "staleDeps": []
       }
     ],
     "edges": [
@@ -1520,7 +1525,7 @@
         "to": "rain.string",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.14"
+        "latest": "0.3.1"
       },
       {
         "from": "rain.math.float",
@@ -1541,7 +1546,7 @@
         "to": "rain.string",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.14"
+        "latest": "0.3.1"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1716,7 +1721,7 @@
         "to": "rain.string",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.14"
+        "latest": "0.3.1"
       },
       {
         "from": "rain.vats",
@@ -1954,7 +1959,7 @@
         "to": "rain.string",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.14"
+        "latest": "0.3.1"
       },
       {
         "from": "rainlang",
@@ -3504,8 +3509,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 118,
   "reposWithFindings": 46,
-  "reposWholeRepoAudited": 5,
-  "reposNeverAudited": 113,
+  "reposWholeRepoAudited": 6,
+  "reposNeverAudited": 112,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 21,
   "summary": {
@@ -4367,18 +4372,6 @@
       "lastMutation": null
     },
     {
-      "name": "rain.string",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 30,
-      "lastMutation": {
-        "timestamp": "2026-08-24T08:55:39Z",
-        "commit": "35496d89eb7442735f101e3ac4584259b2920a21",
-        "skillVersion": "0.33.0",
-        "scope": "whole repo"
-      }
-    },
-    {
       "name": "rain.subgraph.cli",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -4765,6 +4758,23 @@
       "lastAudit": {
         "auditedAt": "2026-08-16T18:02:33Z",
         "auditedCommit": "7aa85a427d82ddeafab8499ccf313c7306c4b513",
+        "skillVersion": "0.35.0",
+        "stale": true
+      }
+    },
+    {
+      "name": "rain.string",
+      "org": "rainlanguage",
+      "openAuditIssues": 30,
+      "lastMutation": {
+        "timestamp": "2026-08-24T08:55:39Z",
+        "commit": "35496d89eb7442735f101e3ac4584259b2920a21",
+        "skillVersion": "0.33.0",
+        "scope": "whole repo"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-08-24T19:27:19Z",
+        "auditedCommit": "3e76babafe89e6dd0efa17caedb298f60b9e3789",
         "skillVersion": "0.35.0",
         "stale": true
       }
@@ -5674,15 +5684,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-11-29T18:34:05Z",
-      "latestTag": "sol-v0.2.14",
-      "latestTagIso": "2026-08-24T19:06:42Z",
+      "latestTag": "sol-v0.3.1",
+      "latestTagIso": "2026-08-25T05:42:57Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 735,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 462,
       "sourceLocRemovedSinceAudit": 273,
       "filesChangedSinceAudit": 6,
-      "commitsSinceAudit": 98,
+      "commitsSinceAudit": 102,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 148,
       "commentLocRemovedSinceAudit": 60,
@@ -6022,8 +6032,8 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.246-uc-v0.0.1-alpha.245",
-      "latestTagIso": "2026-08-18T13:42:12Z",
+      "latestTag": "sol-v0.1.15",
+      "latestTagIso": "2026-08-23T13:09:32Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
