@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-08-29T14:32:09Z",
+  "generatedAt": "2026-08-29T18:35:08Z",
   "auditGraph": {
     "nodes": [
       {
@@ -529,7 +529,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 53,
+        "openAuditIssues": 55,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
@@ -4385,7 +4385,7 @@
       "name": "rain.metadata",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 53,
+      "openAuditIssues": 55,
       "lastMutation": null
     },
     {
@@ -5480,16 +5480,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 5859,
+      "sourceLocChangedSinceAudit": 5961,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 5703,
+      "sourceLocAddedSinceAudit": 5805,
       "sourceLocRemovedSinceAudit": 156,
-      "filesChangedSinceAudit": 95,
-      "commitsSinceAudit": 505,
+      "filesChangedSinceAudit": 96,
+      "commitsSinceAudit": 509,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 5086,
+      "commentLocAddedSinceAudit": 5180,
       "commentLocRemovedSinceAudit": 234,
-      "codeLocAddedSinceAudit": 4958,
+      "codeLocAddedSinceAudit": 5006,
       "codeLocRemovedSinceAudit": 292,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -5797,7 +5797,7 @@
       "sourceLocAddedSinceAudit": 139,
       "sourceLocRemovedSinceAudit": 49,
       "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 267,
+      "commitsSinceAudit": 278,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 80,
       "commentLocRemovedSinceAudit": 14,
