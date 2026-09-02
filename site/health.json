@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T04:47:14Z",
+  "generatedAt": "2026-09-02T09:42:14Z",
   "auditGraph": {
     "nodes": [
       {
@@ -75,7 +75,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           },
           {
             "repo": "rain.sol.codegen",
@@ -144,7 +144,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           },
           {
             "repo": "rain.sol.codegen",
@@ -280,7 +280,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           },
           {
             "repo": "rain.sol.codegen",
@@ -507,7 +507,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           },
           {
             "repo": "rain.sol.codegen",
@@ -529,7 +529,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 36,
+        "openAuditIssues": 24,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
@@ -552,7 +552,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.7",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           }
         ]
       },
@@ -598,7 +598,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           },
           {
             "repo": "rain.sol.codegen",
@@ -878,7 +878,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.7",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1014,7 +1014,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.30"
+            "latest": "0.1.34"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1407,7 +1407,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.dia",
@@ -1449,7 +1449,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.erc4626.words",
@@ -1540,7 +1540,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.flare",
@@ -1652,7 +1652,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.merkle",
@@ -1680,7 +1680,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.pyth",
@@ -1708,7 +1708,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.pyth",
@@ -1876,7 +1876,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "raindex",
@@ -2002,7 +2002,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.30"
+        "latest": "0.1.34"
       },
       {
         "from": "rainlang",
@@ -2529,7 +2529,7 @@
       "function": "LibTokenInvariants.productionReceiptVaults()",
       "governedCount": 41,
       "governedDeclared": 41,
-      "registryTokenCount": 39,
+      "registryTokenCount": 38,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
@@ -2562,16 +2562,7 @@
           "atAuthoriserTarget": true
         }
       ],
-      "missingFromMigration": [
-        {
-          "symbol": "USDC",
-          "name": "USD Coin",
-          "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
-          "receiptVault": null,
-          "wrapped": false,
-          "reason": "no receipt vault (collateral)"
-        }
-      ]
+      "missingFromMigration": []
     },
     "tokens": [
       {
@@ -4385,7 +4376,7 @@
       "name": "rain.metadata",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 36,
+      "openAuditIssues": 24,
       "lastMutation": null
     },
     {
@@ -5789,15 +5780,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T12:12:35Z",
-      "latestTag": "sol-v0.1.30",
-      "latestTagIso": "2026-09-01T16:28:45Z",
+      "latestTag": "sol-v0.1.34",
+      "latestTagIso": "2026-09-02T07:23:50Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 188,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 139,
       "sourceLocRemovedSinceAudit": 49,
       "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 411,
+      "commitsSinceAudit": 453,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 80,
       "commentLocRemovedSinceAudit": 14,
