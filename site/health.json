@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-02T09:42:14Z",
+  "generatedAt": "2026-09-02T14:33:35Z",
   "auditGraph": {
     "nodes": [
       {
@@ -719,11 +719,6 @@
             "latest": "0.1.9"
           },
           {
-            "repo": "rain.math.fixedpoint",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
-          {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.2.0"
@@ -763,11 +758,6 @@
           "rainlang.interface"
         ],
         "staleDeps": [
-          {
-            "repo": "rain.math.fixedpoint",
-            "pinned": "0.2.0",
-            "latest": "0.2.1"
-          },
           {
             "repo": "rain.vats",
             "pinned": "0.1.7",
@@ -1769,9 +1759,9 @@
       {
         "from": "rain.vats",
         "to": "rain.math.fixedpoint",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": ""
       },
       {
         "from": "rain.vats",
@@ -1799,14 +1789,14 @@
         "to": "rain.flare",
         "stale": false,
         "pinned": "0.1.2",
-        "latest": "0.1.2"
+        "latest": ""
       },
       {
         "from": "rain.vats.flare",
         "to": "rain.math.fixedpoint",
-        "stale": true,
+        "stale": false,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": ""
       },
       {
         "from": "rain.vats.flare",
