@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T16:29:48Z",
+  "generatedAt": "2026-09-03T19:53:30Z",
   "auditGraph": {
     "nodes": [
       {
@@ -311,7 +311,7 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 2,
+        "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-09-03T09:40:00Z",
           "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -336,7 +336,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.0",
-            "latest": "0.1.8"
+            "latest": "0.1.10"
           },
           {
             "repo": "rain.solmem",
@@ -942,7 +942,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.3",
-            "latest": "0.2.6"
+            "latest": "0.2.7"
           }
         ]
       },
@@ -1015,7 +1015,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.5",
-            "latest": "0.2.6"
+            "latest": "0.2.7"
           }
         ]
       },
@@ -1034,7 +1034,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.0",
-            "latest": "0.1.8"
+            "latest": "0.1.10"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1539,7 +1539,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.8"
+        "latest": "0.1.10"
       },
       {
         "from": "rain.lib.memkv",
@@ -1917,7 +1917,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.3",
-        "latest": "0.2.6"
+        "latest": "0.2.7"
       },
       {
         "from": "rainlang",
@@ -2008,14 +2008,14 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.6"
+        "latest": "0.2.7"
       },
       {
         "from": "rainlang.interface",
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.8"
+        "latest": "0.1.10"
       },
       {
         "from": "rainlang.interface",
@@ -4292,7 +4292,7 @@
       "name": "rain.lib.hash",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 2,
+      "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-09-03T09:40:00Z",
         "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -5875,8 +5875,8 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.6",
-      "latestTagIso": "2026-08-25T09:54:44Z",
+      "latestTag": "sol-v0.2.7",
+      "latestTagIso": "2026-09-03T16:29:09Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 54,
       "fullSourceLoc": null,
@@ -6044,6 +6044,42 @@
       "daysSinceAudit": 179
     },
     {
+      "name": "rain.lib.hash",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "current",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
+          "path": "audit/protofire/rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T10:43:35Z",
+          "auditDateIso": "2026-01-29T13:36:12Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "33e17004ed6f9248d5cbb139c93da7190770c1f4",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-01-29T13:36:12Z",
+      "latestTag": "sol-v0.1.10",
+      "latestTagIso": "2026-09-03T17:12:29Z",
+      "isStale": false,
+      "sourceLocChangedSinceAudit": 66,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 51,
+      "sourceLocRemovedSinceAudit": 15,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 60,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 51,
+      "commentLocRemovedSinceAudit": 15,
+      "codeLocAddedSinceAudit": 0,
+      "codeLocRemovedSinceAudit": 0,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
+      "daysSinceAudit": 217
+    },
+    {
       "name": "rain.lib.typecast",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -6078,42 +6114,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
       "daysSinceAudit": 228
-    },
-    {
-      "name": "rain.lib.hash",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "current",
-      "auditPdfs": [
-        {
-          "filename": "rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
-          "path": "audit/protofire/rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T10:43:35Z",
-          "auditDateIso": "2026-01-29T13:36:12Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "33e17004ed6f9248d5cbb139c93da7190770c1f4",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "sol-v0.1.8",
-      "latestTagIso": "2026-09-03T15:42:25Z",
-      "isStale": false,
-      "sourceLocChangedSinceAudit": 42,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 29,
-      "sourceLocRemovedSinceAudit": 13,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 53,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 29,
-      "commentLocRemovedSinceAudit": 13,
-      "codeLocAddedSinceAudit": 0,
-      "codeLocRemovedSinceAudit": 0,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
-      "daysSinceAudit": 217
     },
     {
       "name": "rain.math.saturating",
@@ -6635,7 +6635,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 5,
+      "testFiles": 6,
       "sourcesUnparsed": 0,
       "untested": []
     },
