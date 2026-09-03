@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T11:20:43Z",
+  "generatedAt": "2026-09-03T16:29:48Z",
   "auditGraph": {
     "nodes": [
       {
@@ -311,7 +311,7 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 8,
+        "openAuditIssues": 2,
         "lastMutation": {
           "timestamp": "2026-09-03T09:40:00Z",
           "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -336,7 +336,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.solmem",
@@ -1034,7 +1034,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1539,7 +1539,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.8"
       },
       {
         "from": "rain.lib.memkv",
@@ -2015,7 +2015,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.8"
       },
       {
         "from": "rainlang.interface",
@@ -3559,7 +3559,7 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 118,
-  "reposWithFindings": 46,
+  "reposWithFindings": 45,
   "reposWholeRepoAudited": 7,
   "reposNeverAudited": 111,
   "reposExternallyAudited": 25,
@@ -3569,8 +3569,8 @@
     "old-nix-installer": 10,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
-    "stale-foundry-lock": 8,
     "dead-magic-nix-cache": 7,
+    "stale-foundry-lock": 7,
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
@@ -3807,13 +3807,6 @@
     },
     {
       "name": "rain.intorastring",
-      "org": "rainlanguage",
-      "signals": [
-        "stale-foundry-lock"
-      ]
-    },
-    {
-      "name": "rain.lib.hash",
       "org": "rainlanguage",
       "signals": [
         "stale-foundry-lock"
@@ -4299,7 +4292,7 @@
       "name": "rain.lib.hash",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 8,
+      "openAuditIssues": 2,
       "lastMutation": {
         "timestamp": "2026-09-03T09:40:00Z",
         "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -5477,16 +5470,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6333,
+      "sourceLocChangedSinceAudit": 6872,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 6177,
+      "sourceLocAddedSinceAudit": 6716,
       "sourceLocRemovedSinceAudit": 156,
-      "filesChangedSinceAudit": 97,
-      "commitsSinceAudit": 515,
+      "filesChangedSinceAudit": 100,
+      "commitsSinceAudit": 540,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 5315,
+      "commentLocAddedSinceAudit": 5537,
       "commentLocRemovedSinceAudit": 234,
-      "codeLocAddedSinceAudit": 5205,
+      "codeLocAddedSinceAudit": 5550,
       "codeLocRemovedSinceAudit": 292,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -5890,7 +5883,7 @@
       "sourceLocAddedSinceAudit": 36,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 49,
+      "commitsSinceAudit": 52,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 23,
       "commentLocRemovedSinceAudit": 7,
@@ -6087,6 +6080,42 @@
       "daysSinceAudit": 228
     },
     {
+      "name": "rain.lib.hash",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "current",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
+          "path": "audit/protofire/rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T10:43:35Z",
+          "auditDateIso": "2026-01-29T13:36:12Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "33e17004ed6f9248d5cbb139c93da7190770c1f4",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-01-29T13:36:12Z",
+      "latestTag": "sol-v0.1.8",
+      "latestTagIso": "2026-09-03T15:42:25Z",
+      "isStale": false,
+      "sourceLocChangedSinceAudit": 42,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 29,
+      "sourceLocRemovedSinceAudit": 13,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 53,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 29,
+      "commentLocRemovedSinceAudit": 13,
+      "codeLocAddedSinceAudit": 0,
+      "codeLocRemovedSinceAudit": 0,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
+      "daysSinceAudit": 217
+    },
+    {
       "name": "rain.math.saturating",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -6193,42 +6222,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
       "daysSinceAudit": 211
-    },
-    {
-      "name": "rain.lib.hash",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "current",
-      "auditPdfs": [
-        {
-          "filename": "rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
-          "path": "audit/protofire/rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T10:43:35Z",
-          "auditDateIso": "2026-01-29T13:36:12Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "33e17004ed6f9248d5cbb139c93da7190770c1f4",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "sol-v0.1.1",
-      "latestTagIso": "2026-09-03T09:32:33Z",
-      "isStale": false,
-      "sourceLocChangedSinceAudit": 0,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 0,
-      "sourceLocRemovedSinceAudit": 0,
-      "filesChangedSinceAudit": 0,
-      "commitsSinceAudit": 20,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 0,
-      "commentLocRemovedSinceAudit": 0,
-      "codeLocAddedSinceAudit": 0,
-      "codeLocRemovedSinceAudit": 0,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
-      "daysSinceAudit": 217
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -6642,7 +6635,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 2,
+      "testFiles": 5,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -6885,7 +6878,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 149,
+      "testFiles": 155,
       "sourcesUnparsed": 1,
       "untested": []
     },
