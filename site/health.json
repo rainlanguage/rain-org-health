@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-03T09:10:23Z",
+  "generatedAt": "2026-09-03T11:20:43Z",
   "auditGraph": {
     "nodes": [
       {
@@ -73,7 +73,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           },
           {
             "repo": "rain.sol.codegen",
@@ -140,7 +140,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           },
           {
             "repo": "rain.sol.codegen",
@@ -270,7 +270,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           },
           {
             "repo": "rain.sol.codegen",
@@ -311,8 +311,13 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
-        "lastMutation": null,
+        "openAuditIssues": 8,
+        "lastMutation": {
+          "timestamp": "2026-09-03T09:40:00Z",
+          "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
+          "skillVersion": "0.35.0",
+          "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
+        },
         "blockedBy": [],
         "staleDeps": []
       },
@@ -328,6 +333,11 @@
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": [
+          {
+            "repo": "rain.lib.hash",
+            "pinned": "0.1.0",
+            "latest": "0.1.1"
+          },
           {
             "repo": "rain.solmem",
             "pinned": "0.1.26",
@@ -484,7 +494,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           },
           {
             "repo": "rain.sol.codegen",
@@ -534,7 +544,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.7",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           }
         ]
       },
@@ -578,7 +588,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           },
           {
             "repo": "rain.sol.codegen",
@@ -850,7 +860,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.7",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           },
           {
             "repo": "rain.sol.codegen",
@@ -980,7 +990,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.0",
-            "latest": "0.1.42"
+            "latest": "0.1.43"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1021,6 +1031,11 @@
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": [
+          {
+            "repo": "rain.lib.hash",
+            "pinned": "0.1.0",
+            "latest": "0.1.1"
+          },
           {
             "repo": "rain.sol.codegen",
             "pinned": "0.1.36",
@@ -1363,7 +1378,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "rain.dia",
@@ -1405,7 +1420,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "rain.erc4626.words",
@@ -1496,7 +1511,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "rain.flare",
@@ -1522,9 +1537,9 @@
       {
         "from": "rain.lib.memkv",
         "to": "rain.lib.hash",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.0"
+        "latest": "0.1.1"
       },
       {
         "from": "rain.lib.memkv",
@@ -1608,7 +1623,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "rain.merkle",
@@ -1636,7 +1651,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "rain.pyth",
@@ -1664,7 +1679,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "rain.pyth",
@@ -1832,7 +1847,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "raindex",
@@ -1958,7 +1973,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.42"
+        "latest": "0.1.43"
       },
       {
         "from": "rainlang",
@@ -1998,9 +2013,9 @@
       {
         "from": "rainlang.interface",
         "to": "rain.lib.hash",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.0"
+        "latest": "0.1.1"
       },
       {
         "from": "rainlang.interface",
@@ -4284,8 +4299,13 @@
       "name": "rain.lib.hash",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
+      "openAuditIssues": 8,
+      "lastMutation": {
+        "timestamp": "2026-09-03T09:40:00Z",
+        "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
+        "skillVersion": "0.35.0",
+        "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
+      }
     },
     {
       "name": "rain.lib.memkv",
@@ -5457,16 +5477,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 5961,
+      "sourceLocChangedSinceAudit": 6333,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 5805,
+      "sourceLocAddedSinceAudit": 6177,
       "sourceLocRemovedSinceAudit": 156,
-      "filesChangedSinceAudit": 96,
-      "commitsSinceAudit": 509,
+      "filesChangedSinceAudit": 97,
+      "commitsSinceAudit": 515,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 5180,
+      "commentLocAddedSinceAudit": 5315,
       "commentLocRemovedSinceAudit": 234,
-      "codeLocAddedSinceAudit": 5006,
+      "codeLocAddedSinceAudit": 5205,
       "codeLocRemovedSinceAudit": 292,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -5694,8 +5714,8 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T12:12:35Z",
-      "latestTag": "sol-v0.1.42",
-      "latestTagIso": "2026-09-03T07:24:04Z",
+      "latestTag": "sol-v0.1.43",
+      "latestTagIso": "2026-09-03T09:07:56Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 188,
       "fullSourceLoc": null,
@@ -6192,15 +6212,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "v0.1.0",
-      "latestTagIso": "2026-05-12T16:20:54Z",
+      "latestTag": "sol-v0.1.1",
+      "latestTagIso": "2026-09-03T09:32:33Z",
       "isStale": false,
       "sourceLocChangedSinceAudit": 0,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 0,
       "filesChangedSinceAudit": 0,
-      "commitsSinceAudit": 15,
+      "commitsSinceAudit": 20,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
@@ -6865,7 +6885,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 146,
+      "testFiles": 149,
       "sourcesUnparsed": 1,
       "untested": []
     },
