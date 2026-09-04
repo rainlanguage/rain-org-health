@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T11:23:27Z",
+  "generatedAt": "2026-09-04T16:25:42Z",
   "auditGraph": {
     "nodes": [
       {
@@ -6004,15 +6004,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.247-uc-v0.0.1-alpha.247",
-      "latestTagIso": "2026-08-28T17:00:02Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.248-uc-v0.0.1-alpha.248",
+      "latestTagIso": "2026-09-04T13:53:10Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 51,
-      "commitsSinceAudit": 189,
+      "commitsSinceAudit": 193,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
