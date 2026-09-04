@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-04T16:25:42Z",
+  "generatedAt": "2026-09-04T19:39:26Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2510,7 +2510,7 @@
       "function": "LibTokenInvariants.productionReceiptVaults()",
       "governedCount": 41,
       "governedDeclared": 41,
-      "registryTokenCount": 40,
+      "registryTokenCount": 49,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
@@ -2539,6 +2539,78 @@
           "name": "Wrapped Cerebras Systems Inc. ST0x",
           "address": "0xB457cfBF31995d3aAAa704dA9999cC0b011820ca",
           "receiptVault": "0xbeb0c2011bd5520a0998b69132e9245e39ac5d1d",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtNKE",
+          "name": "Wrapped NIKE, Inc. ST0x",
+          "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
+          "receiptVault": "0x88C3F4E2E0a977Fed97ed246c70BFD7A01070246",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMCD",
+          "name": "Wrapped McDonald's Corporation ST0x",
+          "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
+          "receiptVault": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtGRND",
+          "name": "Wrapped Grindr Inc. ST0x",
+          "address": "0x1197E6FA778c4D13E47875bD1761c68C22c928e0",
+          "receiptVault": "0xA4178410216F5f00C718BE88C2fF8AC24de192bc",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtAIR.PA",
+          "name": "Wrapped Airbus SE ST0x",
+          "address": "0x1C600EF167c675C878BF3222f3935C4fA2A43C31",
+          "receiptVault": "0xDdB07ADd0e23BB7eC97f53C0959d9c6Cc09624f4",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtBMW.DE",
+          "name": "Wrapped Bayerische Motoren Werke Aktiengesellschaft ST0x",
+          "address": "0xD0269618455cF7dA71665856f16C2D03A1b26290",
+          "receiptVault": "0x9610C265EB8F38B22Fec78498C74924D9fe55891",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMC.PA",
+          "name": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
+          "address": "0xd92cc92557BFC33028195983ED31465F99b4A01c",
+          "receiptVault": "0xF5245a17E5eb64D53dEa213d40aBa01821D465Cd",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSIE.DE",
+          "name": "Wrapped Siemens Aktiengesellschaft ST0x",
+          "address": "0xed0B0fdD92F7eece606A0FB0457352616d6e6B34",
+          "receiptVault": "0xa662066a60964a528aD05209139a79BDa3a7577f",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMBG.DE",
+          "name": "Wrapped Mercedes-Benz Group AG ST0x",
+          "address": "0xfae641bfE7009B5326396048b951E3aa31902a2B",
+          "receiptVault": "0x07d7ca9384812b86e7E429473dF354fb59DA73A0",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtRHM.DE",
+          "name": "Wrapped Rheinmetall AG ST0x",
+          "address": "0xD3c42aB4D5A60A50401b3A67D10B03Ce7D96DA19",
+          "receiptVault": "0x725E0Df28D1EB09338f63776B76bCfc00f3b6f44",
           "wrapped": true,
           "reason": "receipt vault not in migration set"
         }
