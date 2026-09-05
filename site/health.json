@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T01:01:04Z",
+  "generatedAt": "2026-09-05T05:48:42Z",
   "auditGraph": {
     "nodes": [
       {
@@ -378,7 +378,7 @@
           {
             "repo": "rain.math.saturating",
             "pinned": "0.1.2",
-            "latest": "0.1.3"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.string",
@@ -1329,7 +1329,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 25,
+        "openAuditIssues": 23,
         "lastMutation": {
           "timestamp": "2026-07-25T18:58:58Z",
           "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -1563,7 +1563,7 @@
         "to": "rain.math.saturating",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.3"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.math.fixedpoint",
@@ -2450,19 +2450,19 @@
       "safeOwner": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 2,
+      "healthy": 3,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
-          "implementation": null,
-          "implVersion": "unknown",
+          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+          "implVersion": "0.1.1",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": true,
+          "status": "healthy"
         },
         {
           "name": "Receipt-vault beacon",
@@ -4911,7 +4911,7 @@
     {
       "name": "rain.math.saturating",
       "org": "rainlanguage",
-      "openAuditIssues": 25,
+      "openAuditIssues": 23,
       "lastMutation": {
         "timestamp": "2026-07-25T18:58:58Z",
         "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -6220,18 +6220,18 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T00:53:19Z",
-      "latestTag": "sol-v0.1.3",
-      "latestTagIso": "2026-09-04T06:16:39Z",
+      "latestTag": "sol-v0.1.4",
+      "latestTagIso": "2026-09-05T05:39:03Z",
       "isStale": false,
-      "sourceLocChangedSinceAudit": 24,
+      "sourceLocChangedSinceAudit": 26,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 23,
-      "sourceLocRemovedSinceAudit": 1,
+      "sourceLocAddedSinceAudit": 24,
+      "sourceLocRemovedSinceAudit": 2,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 38,
+      "commitsSinceAudit": 42,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 23,
-      "commentLocRemovedSinceAudit": 1,
+      "commentLocAddedSinceAudit": 24,
+      "commentLocRemovedSinceAudit": 2,
       "codeLocAddedSinceAudit": 0,
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
