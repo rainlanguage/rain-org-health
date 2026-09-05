@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-05T05:48:42Z",
+  "generatedAt": "2026-09-05T10:40:33Z",
   "auditGraph": {
     "nodes": [
       {
@@ -378,7 +378,7 @@
           {
             "repo": "rain.math.saturating",
             "pinned": "0.1.2",
-            "latest": "0.1.4"
+            "latest": "0.1.7"
           },
           {
             "repo": "rain.string",
@@ -1329,7 +1329,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 23,
+        "openAuditIssues": 19,
         "lastMutation": {
           "timestamp": "2026-07-25T18:58:58Z",
           "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -1563,7 +1563,7 @@
         "to": "rain.math.saturating",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.4"
+        "latest": "0.1.7"
       },
       {
         "from": "rain.math.fixedpoint",
@@ -4911,7 +4911,7 @@
     {
       "name": "rain.math.saturating",
       "org": "rainlanguage",
-      "openAuditIssues": 23,
+      "openAuditIssues": 19,
       "lastMutation": {
         "timestamp": "2026-07-25T18:58:58Z",
         "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -6220,15 +6220,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T00:53:19Z",
-      "latestTag": "sol-v0.1.4",
-      "latestTagIso": "2026-09-05T05:39:03Z",
+      "latestTag": "sol-v0.1.7",
+      "latestTagIso": "2026-09-05T05:58:36Z",
       "isStale": false,
       "sourceLocChangedSinceAudit": 26,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 24,
       "sourceLocRemovedSinceAudit": 2,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 42,
+      "commitsSinceAudit": 48,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 24,
       "commentLocRemovedSinceAudit": 2,
