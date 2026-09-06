@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T19:15:27Z",
+  "generatedAt": "2026-09-06T21:26:14Z",
   "auditGraph": {
     "nodes": [
       {
@@ -304,7 +304,7 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 36,
         "lastMutation": {
           "timestamp": "2026-09-03T09:40:00Z",
           "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -961,6 +961,50 @@
             "repo": "rain.string",
             "pinned": "0.2.0",
             "latest": "0.3.9"
+          },
+          {
+            "repo": "rain.tofu.erc20-decimals",
+            "pinned": "0.1.1",
+            "latest": "0.1.4"
+          }
+        ]
+      },
+      {
+        "repo": "rainlang.deploy",
+        "org": "rainlanguage",
+        "package": "rainlang-deploy",
+        "packageKnown": true,
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [
+          "rain.datacontract",
+          "rain.deploy",
+          "rain.extrospection",
+          "rain.lib.memkv",
+          "rain.math.float",
+          "rain.metadata",
+          "rain.tofu.erc20-decimals",
+          "rainlang",
+          "rainlang.interface"
+        ],
+        "staleDeps": [
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.1.1",
+            "latest": "0.2.0"
+          },
+          {
+            "repo": "rain.metadata",
+            "pinned": "0.1.0",
+            "latest": "0.1.43"
+          },
+          {
+            "repo": "rain.sol.codegen",
+            "pinned": "0.1.36",
+            "latest": "0.1.37"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -1961,6 +2005,62 @@
       },
       {
         "from": "rainlang",
+        "to": "rainlang.interface",
+        "stale": false,
+        "pinned": "0.2.8",
+        "latest": "0.2.8"
+      },
+      {
+        "from": "rainlang.deploy",
+        "to": "rain.deploy",
+        "stale": false,
+        "pinned": "0.1.7",
+        "latest": "0.1.7"
+      },
+      {
+        "from": "rainlang.deploy",
+        "to": "rain.extrospection",
+        "stale": false,
+        "pinned": "0.1.14",
+        "latest": "0.1.14"
+      },
+      {
+        "from": "rainlang.deploy",
+        "to": "rain.math.float",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.2.0"
+      },
+      {
+        "from": "rainlang.deploy",
+        "to": "rain.metadata",
+        "stale": true,
+        "pinned": "0.1.0",
+        "latest": "0.1.43"
+      },
+      {
+        "from": "rainlang.deploy",
+        "to": "rain.sol.codegen",
+        "stale": true,
+        "pinned": "0.1.36",
+        "latest": "0.1.37"
+      },
+      {
+        "from": "rainlang.deploy",
+        "to": "rain.tofu.erc20-decimals",
+        "stale": true,
+        "pinned": "0.1.1",
+        "latest": "0.1.4"
+      },
+      {
+        "from": "rainlang.deploy",
+        "to": "rainlang",
+        "stale": false,
+        "pinned": "0.2.0",
+        "latest": "0.1.9"
+      },
+      {
+        "from": "rainlang.deploy",
         "to": "rainlang.interface",
         "stale": false,
         "pinned": "0.2.8",
@@ -3586,14 +3686,14 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 118,
-  "reposWithFindings": 43,
+  "totalRepos": 119,
+  "reposWithFindings": 44,
   "reposWholeRepoAudited": 8,
-  "reposNeverAudited": 110,
+  "reposNeverAudited": 111,
   "reposExternallyAudited": 25,
-  "reposNeverExternallyAudited": 21,
+  "reposNeverExternallyAudited": 22,
   "summary": {
-    "per-chain-etherscan-key": 12,
+    "per-chain-etherscan-key": 13,
     "old-nix-installer": 10,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
@@ -3905,6 +4005,13 @@
     },
     {
       "name": "rainlang",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key"
+      ]
+    },
+    {
+      "name": "rainlang.deploy",
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
@@ -4311,7 +4418,7 @@
       "name": "rain.lib.hash",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 36,
       "lastMutation": {
         "timestamp": "2026-09-03T09:40:00Z",
         "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -4567,6 +4674,13 @@
     },
     {
       "name": "rainlang-codemirror",
+      "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "rainlang.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -5402,6 +5516,35 @@
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": 3776,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rainlang.deploy",
+      "org": "rainlanguage",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 1269,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -6876,6 +7019,15 @@
       "state": "analyzed",
       "externalFunctions": 28,
       "testFiles": 273,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rainlang.deploy",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 5,
+      "testFiles": 17,
       "sourcesUnparsed": 0,
       "untested": []
     },
