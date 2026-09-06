@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T01:02:34Z",
+  "generatedAt": "2026-09-06T06:00:59Z",
   "auditGraph": {
     "nodes": [
       {
@@ -292,7 +292,7 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 2,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": [
@@ -375,11 +375,6 @@
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": [
-          {
-            "repo": "rain.math.saturating",
-            "pinned": "0.1.2",
-            "latest": "0.1.7"
-          },
           {
             "repo": "rain.string",
             "pinned": "0.2.0",
@@ -1329,7 +1324,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 19,
+        "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-07-25T18:58:58Z",
           "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -1561,9 +1556,9 @@
       {
         "from": "rain.math.fixedpoint",
         "to": "rain.math.saturating",
-        "stale": true,
-        "pinned": "0.1.2",
-        "latest": "0.1.7"
+        "stale": false,
+        "pinned": "0.1.10",
+        "latest": "0.1.10"
       },
       {
         "from": "rain.math.fixedpoint",
@@ -3641,7 +3636,7 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 118,
-  "reposWithFindings": 45,
+  "reposWithFindings": 44,
   "reposWholeRepoAudited": 8,
   "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
@@ -3652,7 +3647,7 @@
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
-    "stale-foundry-lock": 7,
+    "stale-foundry-lock": 6,
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
@@ -3920,13 +3915,6 @@
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "rain.math.saturating",
-      "org": "rainlanguage",
-      "signals": [
-        "stale-foundry-lock"
       ]
     },
     {
@@ -4367,7 +4355,7 @@
       "name": "rain.intorastring",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 2,
       "lastMutation": null
     },
     {
@@ -4911,7 +4899,7 @@
     {
       "name": "rain.math.saturating",
       "org": "rainlanguage",
-      "openAuditIssues": 19,
+      "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-07-25T18:58:58Z",
         "commit": "ae8dd4d6a4b797e36bb525cd2b61dacc474fd43f",
@@ -6006,7 +5994,7 @@
       "sourceLocAddedSinceAudit": 11,
       "sourceLocRemovedSinceAudit": 9,
       "filesChangedSinceAudit": 5,
-      "commitsSinceAudit": 26,
+      "commitsSinceAudit": 28,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
@@ -6220,15 +6208,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T00:53:19Z",
-      "latestTag": "sol-v0.1.7",
-      "latestTagIso": "2026-09-05T05:58:36Z",
+      "latestTag": "sol-v0.1.10",
+      "latestTagIso": "2026-09-06T02:53:22Z",
       "isStale": false,
       "sourceLocChangedSinceAudit": 26,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 24,
       "sourceLocRemovedSinceAudit": 2,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 48,
+      "commitsSinceAudit": 90,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 24,
       "commentLocRemovedSinceAudit": 2,
