@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-06T06:00:59Z",
+  "generatedAt": "2026-09-06T11:02:33Z",
   "auditGraph": {
     "nodes": [
       {
@@ -58,7 +58,7 @@
           {
             "repo": "rain.intorastring",
             "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.typecast",
@@ -170,13 +170,7 @@
           "scope": "whole-repo"
         },
         "blockedBy": [],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.26",
-            "latest": "0.1.28"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.extrospection.deploy",
@@ -226,7 +220,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.13"
+            "latest": "0.1.14"
           }
         ]
       },
@@ -255,7 +249,7 @@
           {
             "repo": "rain.intorastring",
             "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.typecast",
@@ -292,16 +286,15 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 2,
-        "lastMutation": null,
+        "openAuditIssues": 0,
+        "lastMutation": {
+          "timestamp": "2026-09-06T03:20:35Z",
+          "commit": "53f9abe65d590a0601a58f94c8c10cc5019d70e1",
+          "skillVersion": "0.35.0",
+          "scope": "whole repo"
+        },
         "blockedBy": [],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.26",
-            "latest": "0.1.28"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.lib.hash",
@@ -337,11 +330,6 @@
             "repo": "rain.lib.hash",
             "pinned": "0.1.0",
             "latest": "0.1.10"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.26",
-            "latest": "0.1.28"
           }
         ]
       },
@@ -398,13 +386,8 @@
         "staleDeps": [
           {
             "repo": "rain.datacontract",
-            "pinned": "0.1.3",
+            "pinned": "0.1.9",
             "latest": "0.2.0"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.26",
-            "latest": "0.1.28"
           },
           {
             "repo": "rain.string",
@@ -431,7 +414,7 @@
         "staleDeps": [
           {
             "repo": "rain.datacontract",
-            "pinned": "0.1.3",
+            "pinned": "0.1.9",
             "latest": "0.2.0"
           },
           {
@@ -555,7 +538,7 @@
           {
             "repo": "rain.intorastring",
             "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.typecast",
@@ -680,7 +663,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.13"
+            "latest": "0.1.14"
           },
           {
             "repo": "rain.factory",
@@ -862,7 +845,7 @@
           {
             "repo": "raindex.interface",
             "pinned": "0.1.3",
-            "latest": "0.1.4"
+            "latest": "0.1.5"
           },
           {
             "repo": "rainlang",
@@ -896,7 +879,7 @@
           {
             "repo": "raindex.interface",
             "pinned": "0.1.2",
-            "latest": "0.1.4"
+            "latest": "0.1.5"
           }
         ]
       },
@@ -920,11 +903,6 @@
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.2.0"
-          },
-          {
-            "repo": "rainlang.interface",
-            "pinned": "0.2.3",
-            "latest": "0.2.7"
           }
         ]
       },
@@ -950,14 +928,19 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.13",
+            "latest": "0.1.14"
+          },
+          {
             "repo": "rain.intorastring",
             "pinned": "0.1.0",
-            "latest": "0.1.1"
+            "latest": "0.1.4"
           },
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.0",
-            "latest": "0.1.2"
+            "latest": "0.1.3"
           },
           {
             "repo": "rain.lib.typecast",
@@ -997,7 +980,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.5",
-            "latest": "0.2.7"
+            "latest": "0.2.8"
           }
         ]
       },
@@ -1022,11 +1005,6 @@
             "repo": "rain.sol.codegen",
             "pinned": "0.1.36",
             "latest": "0.1.37"
-          },
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.26",
-            "latest": "0.1.28"
           }
         ]
       },
@@ -1072,7 +1050,7 @@
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
-            "latest": "0.1.13"
+            "latest": "0.1.14"
           },
           {
             "repo": "rain.factory",
@@ -1274,13 +1252,7 @@
           "scope": "whole repo"
         },
         "blockedBy": [],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.26",
-            "latest": "0.1.28"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.datacontract",
@@ -1303,13 +1275,7 @@
           "scope": "whole repo"
         },
         "blockedBy": [],
-        "staleDeps": [
-          {
-            "repo": "rain.solmem",
-            "pinned": "0.1.26",
-            "latest": "0.1.28"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.math.saturating",
@@ -1339,8 +1305,8 @@
       {
         "from": "rain.datacontract",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.26",
+        "stale": false,
+        "pinned": "0.1.28",
         "latest": "0.1.28"
       },
       {
@@ -1362,7 +1328,7 @@
         "to": "rain.intorastring",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.dia",
@@ -1451,8 +1417,8 @@
       {
         "from": "rain.extrospection",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.26",
+        "stale": false,
+        "pinned": "0.1.28",
         "latest": "0.1.28"
       },
       {
@@ -1466,8 +1432,8 @@
         "from": "rain.extrospection.deploy",
         "to": "rain.extrospection",
         "stale": false,
-        "pinned": "0.1.13",
-        "latest": "0.1.13"
+        "pinned": "0.1.14",
+        "latest": "0.1.14"
       },
       {
         "from": "rain.factory.deploy",
@@ -1481,7 +1447,7 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.13"
+        "latest": "0.1.14"
       },
       {
         "from": "rain.factory.deploy",
@@ -1495,7 +1461,7 @@
         "to": "rain.intorastring",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.flare",
@@ -1535,8 +1501,8 @@
       {
         "from": "rain.intorastring",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.26",
+        "stale": false,
+        "pinned": "0.1.28",
         "latest": "0.1.28"
       },
       {
@@ -1549,8 +1515,8 @@
       {
         "from": "rain.lib.memkv",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.26",
+        "stale": false,
+        "pinned": "0.1.28",
         "latest": "0.1.28"
       },
       {
@@ -1571,14 +1537,14 @@
         "from": "rain.math.float",
         "to": "rain.datacontract",
         "stale": true,
-        "pinned": "0.1.3",
+        "pinned": "0.1.9",
         "latest": "0.2.0"
       },
       {
         "from": "rain.math.float",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.26",
+        "stale": false,
+        "pinned": "0.1.28",
         "latest": "0.1.28"
       },
       {
@@ -1592,7 +1558,7 @@
         "from": "rain.math.float.deploy",
         "to": "rain.datacontract",
         "stale": true,
-        "pinned": "0.1.3",
+        "pinned": "0.1.9",
         "latest": "0.2.0"
       },
       {
@@ -1663,7 +1629,7 @@
         "to": "rain.intorastring",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.4"
       },
       {
         "from": "rain.pyth",
@@ -1703,8 +1669,8 @@
       {
         "from": "rain.string",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.26",
+        "stale": false,
+        "pinned": "0.1.28",
         "latest": "0.1.28"
       },
       {
@@ -1718,8 +1684,8 @@
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.extrospection",
         "stale": false,
-        "pinned": "0.1.13",
-        "latest": "0.1.13"
+        "pinned": "0.1.14",
+        "latest": "0.1.14"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1733,7 +1699,7 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.13"
+        "latest": "0.1.14"
       },
       {
         "from": "rain.vats",
@@ -1887,7 +1853,7 @@
         "to": "raindex.interface",
         "stale": true,
         "pinned": "0.1.3",
-        "latest": "0.1.4"
+        "latest": "0.1.5"
       },
       {
         "from": "raindex",
@@ -1908,7 +1874,7 @@
         "to": "raindex.interface",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.4"
+        "latest": "0.1.5"
       },
       {
         "from": "raindex.interface",
@@ -1920,9 +1886,9 @@
       {
         "from": "raindex.interface",
         "to": "rainlang.interface",
-        "stale": true,
-        "pinned": "0.2.3",
-        "latest": "0.2.7"
+        "stale": false,
+        "pinned": "0.2.8",
+        "latest": "0.2.8"
       },
       {
         "from": "rainlang",
@@ -1934,23 +1900,23 @@
       {
         "from": "rainlang",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.13",
-        "latest": "0.1.13"
+        "latest": "0.1.14"
       },
       {
         "from": "rainlang",
         "to": "rain.intorastring",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.1"
+        "latest": "0.1.4"
       },
       {
         "from": "rainlang",
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.0",
-        "latest": "0.1.2"
+        "latest": "0.1.3"
       },
       {
         "from": "rainlang",
@@ -2013,7 +1979,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.7"
+        "latest": "0.2.8"
       },
       {
         "from": "rainlang.interface",
@@ -2046,8 +2012,8 @@
       {
         "from": "rainlang.interface",
         "to": "rain.solmem",
-        "stale": true,
-        "pinned": "0.1.26",
+        "stale": false,
+        "pinned": "0.1.28",
         "latest": "0.1.28"
       },
       {
@@ -2062,7 +2028,7 @@
         "to": "rain.extrospection",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.13"
+        "latest": "0.1.14"
       },
       {
         "from": "st0x.deploy",
@@ -3636,7 +3602,7 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 118,
-  "reposWithFindings": 44,
+  "reposWithFindings": 43,
   "reposWholeRepoAudited": 8,
   "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
@@ -3647,7 +3613,7 @@
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
-    "stale-foundry-lock": 6,
+    "stale-foundry-lock": 5,
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
@@ -3880,13 +3846,6 @@
       "org": "rainlanguage",
       "signals": [
         "per-chain-etherscan-key"
-      ]
-    },
-    {
-      "name": "rain.intorastring",
-      "org": "rainlanguage",
-      "signals": [
-        "stale-foundry-lock"
       ]
     },
     {
@@ -4355,8 +4314,13 @@
       "name": "rain.intorastring",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 2,
-      "lastMutation": null
+      "openAuditIssues": 0,
+      "lastMutation": {
+        "timestamp": "2026-09-06T03:20:35Z",
+        "commit": "53f9abe65d590a0601a58f94c8c10cc5019d70e1",
+        "skillVersion": "0.35.0",
+        "scope": "whole repo"
+      }
     },
     {
       "name": "rain.lib.hash",
@@ -5622,7 +5586,7 @@
       "sourceLocAddedSinceAudit": 625,
       "sourceLocRemovedSinceAudit": 705,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 298,
+      "commitsSinceAudit": 300,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 365,
       "commentLocRemovedSinceAudit": 221,
@@ -5662,15 +5626,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-12T15:16:31Z",
-      "latestTag": "sol-v0.1.13",
-      "latestTagIso": "2026-08-20T09:07:22Z",
+      "latestTag": "sol-v0.1.14",
+      "latestTagIso": "2026-09-06T08:57:48Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 1167,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 878,
       "sourceLocRemovedSinceAudit": 289,
       "filesChangedSinceAudit": 10,
-      "commitsSinceAudit": 179,
+      "commitsSinceAudit": 181,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 762,
       "commentLocRemovedSinceAudit": 153,
@@ -5922,7 +5886,7 @@
       "sourceLocAddedSinceAudit": 39,
       "sourceLocRemovedSinceAudit": 22,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 63,
+      "commitsSinceAudit": 65,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 27,
       "commentLocRemovedSinceAudit": 11,
@@ -5950,15 +5914,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.7",
-      "latestTagIso": "2026-09-03T16:29:09Z",
+      "latestTag": "sol-v0.2.8",
+      "latestTagIso": "2026-09-06T08:53:00Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 54,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 36,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 52,
+      "commitsSinceAudit": 54,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 23,
       "commentLocRemovedSinceAudit": 7,
@@ -6022,15 +5986,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-05T12:14:13Z",
-      "latestTag": "sol-v0.1.2",
-      "latestTagIso": "2026-08-22T17:14:12Z",
+      "latestTag": "sol-v0.1.3",
+      "latestTagIso": "2026-09-06T08:58:16Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 11,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 10,
       "sourceLocRemovedSinceAudit": 1,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 22,
+      "commitsSinceAudit": 24,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 3,
       "commentLocRemovedSinceAudit": 0,
@@ -6227,6 +6191,42 @@
       "daysSinceAudit": 279
     },
     {
+      "name": "rain.intorastring",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "current",
+      "auditPdfs": [
+        {
+          "filename": "rain.intorastring.8e5f0db1b84fc746b736368bd12f08fc5392bcfe.feb-2026.pdf",
+          "path": "audit/protofire/rain.intorastring.8e5f0db1b84fc746b736368bd12f08fc5392bcfe.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T10:39:01Z",
+          "auditDateIso": "2026-02-04T18:01:59Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "8e5f0db1b84fc746b736368bd12f08fc5392bcfe",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-02-04T18:01:59Z",
+      "latestTag": "sol-v0.1.4",
+      "latestTagIso": "2026-09-06T08:58:01Z",
+      "isStale": false,
+      "sourceLocChangedSinceAudit": 25,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 11,
+      "sourceLocRemovedSinceAudit": 14,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 30,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 11,
+      "commentLocRemovedSinceAudit": 14,
+      "codeLocAddedSinceAudit": 0,
+      "codeLocRemovedSinceAudit": 0,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
+      "daysSinceAudit": 214
+    },
+    {
       "name": "rain.math.binary",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -6261,42 +6261,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
       "daysSinceAudit": 230
-    },
-    {
-      "name": "rain.intorastring",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "current",
-      "auditPdfs": [
-        {
-          "filename": "rain.intorastring.8e5f0db1b84fc746b736368bd12f08fc5392bcfe.feb-2026.pdf",
-          "path": "audit/protofire/rain.intorastring.8e5f0db1b84fc746b736368bd12f08fc5392bcfe.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T10:39:01Z",
-          "auditDateIso": "2026-02-04T18:01:59Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "8e5f0db1b84fc746b736368bd12f08fc5392bcfe",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-02-04T18:01:59Z",
-      "latestTag": "sol-v0.1.1",
-      "latestTagIso": "2026-08-25T09:54:24Z",
-      "isStale": false,
-      "sourceLocChangedSinceAudit": 0,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 0,
-      "sourceLocRemovedSinceAudit": 0,
-      "filesChangedSinceAudit": 0,
-      "commitsSinceAudit": 14,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 0,
-      "commentLocRemovedSinceAudit": 0,
-      "codeLocAddedSinceAudit": 0,
-      "codeLocRemovedSinceAudit": 0,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
-      "daysSinceAudit": 214
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -6450,7 +6414,7 @@
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 0,
       "filesChangedSinceAudit": 0,
-      "commitsSinceAudit": 2,
+      "commitsSinceAudit": 4,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
