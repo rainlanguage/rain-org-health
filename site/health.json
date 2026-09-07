@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T10:23:44Z",
+  "generatedAt": "2026-09-07T16:31:58Z",
   "auditGraph": {
     "nodes": [
       {
@@ -88,7 +88,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.9"
+            "latest": "0.2.1"
           }
         ]
       },
@@ -150,7 +150,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.9"
+            "latest": "0.2.1"
           }
         ]
       },
@@ -274,7 +274,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.9"
+            "latest": "0.2.1"
           }
         ]
       },
@@ -469,7 +469,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.9"
+            "latest": "0.2.1"
           }
         ]
       },
@@ -563,7 +563,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.2",
-            "latest": "0.1.9"
+            "latest": "0.2.1"
           }
         ]
       },
@@ -850,7 +850,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.1.5",
-            "latest": "0.1.9"
+            "latest": "0.2.1"
           }
         ]
       },
@@ -1010,6 +1010,11 @@
             "repo": "rain.tofu.erc20-decimals",
             "pinned": "0.1.1",
             "latest": "0.1.4"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.0",
+            "latest": "0.2.1"
           }
         ]
       },
@@ -1399,7 +1404,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.9"
+        "latest": "0.2.1"
       },
       {
         "from": "rain.erc4626.words",
@@ -1434,7 +1439,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.9"
+        "latest": "0.2.1"
       },
       {
         "from": "rain.extrospection",
@@ -1525,7 +1530,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.9"
+        "latest": "0.2.1"
       },
       {
         "from": "rain.intorastring",
@@ -1637,7 +1642,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.9"
+        "latest": "0.2.1"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1693,7 +1698,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.2",
-        "latest": "0.1.9"
+        "latest": "0.2.1"
       },
       {
         "from": "rain.string",
@@ -1889,7 +1894,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.9"
+        "latest": "0.2.1"
       },
       {
         "from": "raindex.governance",
@@ -2055,9 +2060,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.1.9"
+        "latest": "0.2.1"
       },
       {
         "from": "rainlang.deploy",
@@ -2448,31 +2453,31 @@
       "safeOwner": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
       "targetVersion": "0.1.1",
       "total": 3,
-      "healthy": 3,
+      "healthy": 1,
       "beacons": [
         {
           "name": "Receipt beacon",
           "address": "0x86e93c39B095be0B0054C8488E26466Ee027D79a",
           "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
           "ownerLabel": "safe",
-          "implementation": "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-          "implVersion": "0.1.1",
+          "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
+          "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Receipt-vault beacon",
           "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
           "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
           "ownerLabel": "safe",
-          "implementation": "0x2bcced626566ef1e65f922dd03748c5c7aa2d748",
-          "implVersion": "0.1.1",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
+          "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": true,
-          "status": "healthy"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -2556,7 +2561,7 @@
       "function": "LibTokenInvariants.productionReceiptVaults()",
       "governedCount": 41,
       "governedDeclared": 41,
-      "registryTokenCount": 49,
+      "registryTokenCount": 54,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
@@ -2657,6 +2662,46 @@
           "name": "Wrapped Rheinmetall AG ST0x",
           "address": "0xD3c42aB4D5A60A50401b3A67D10B03Ce7D96DA19",
           "receiptVault": "0x725E0Df28D1EB09338f63776B76bCfc00f3b6f44",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtDNUT",
+          "name": "Wrapped Krispy Kreme, Inc. ST0x",
+          "address": "0x1db49Ff8BEe88ec73F82F395B0BEAd372BdcAdb7",
+          "receiptVault": "0x6C2b6Ed57d4d9e93F3E4975FAc70eE4B180F4Eb9",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtFGI",
+          "name": "Wrapped FGI Industries Ltd. ST0x",
+          "address": "0x6aed8b1aCfb04F4e0e6db580F12fF41438a394e5",
+          "receiptVault": "0x785BD77B8e92866f87E01416D1022d729975D529",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtPLBY",
+          "name": "Wrapped Playboy, Inc. ST0x",
+          "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
+          "receiptVault": "0xe9bc7eF69f123cA2bcA1021D1BE30224271a9217",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtTR",
+          "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
+          "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
+          "receiptVault": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtWEN",
+          "name": "Wrapped The Wendy's Company ST0x",
+          "address": "0x31Fa821F8B1BDea7Db357ec9622d1A2f6aFE903d",
+          "receiptVault": "0xedA4df511dEA07b6529db2196998B30E03791d87",
           "wrapped": true,
           "reason": "receipt vault not in migration set"
         }
@@ -3687,13 +3732,13 @@
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 119,
-  "reposWithFindings": 44,
+  "reposWithFindings": 43,
   "reposWholeRepoAudited": 8,
   "reposNeverAudited": 111,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 22,
   "summary": {
-    "per-chain-etherscan-key": 13,
+    "per-chain-etherscan-key": 12,
     "old-nix-installer": 10,
     "old-actions-checkout": 8,
     "removed-rainix-task": 8,
@@ -4001,13 +4046,6 @@
       "org": "rainlanguage",
       "signals": [
         "old-actions-checkout"
-      ]
-    },
-    {
-      "name": "rainlang",
-      "org": "rainlanguage",
-      "signals": [
-        "per-chain-etherscan-key"
       ]
     },
     {
@@ -6156,15 +6194,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.248-uc-v0.0.1-alpha.248",
-      "latestTagIso": "2026-09-04T13:53:10Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.249-uc-v0.0.1-alpha.249",
+      "latestTagIso": "2026-09-07T15:23:44Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 51,
-      "commitsSinceAudit": 193,
+      "commitsSinceAudit": 195,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -6192,15 +6230,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-08T19:12:56Z",
-      "latestTag": "sol-v0.1.9",
-      "latestTagIso": "2026-08-25T08:59:02Z",
+      "latestTag": "sol-v0.2.1",
+      "latestTagIso": "2026-09-07T13:24:54Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 156,
-      "commitsSinceAudit": 237,
+      "filesChangedSinceAudit": 132,
+      "commitsSinceAudit": 256,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -7017,8 +7055,8 @@
       "name": "rainlang",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 12,
-      "testFiles": 279,
+      "externalFunctions": 7,
+      "testFiles": 266,
       "sourcesUnparsed": 0,
       "untested": []
     },
