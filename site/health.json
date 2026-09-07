@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-07T04:48:25Z",
+  "generatedAt": "2026-09-07T10:23:44Z",
   "auditGraph": {
     "nodes": [
       {
@@ -6199,8 +6199,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 151,
-      "commitsSinceAudit": 233,
+      "filesChangedSinceAudit": 156,
+      "commitsSinceAudit": 237,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -7017,8 +7017,8 @@
       "name": "rainlang",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 28,
-      "testFiles": 273,
+      "externalFunctions": 12,
+      "testFiles": 279,
       "sourcesUnparsed": 0,
       "untested": []
     },
