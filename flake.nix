@@ -25,19 +25,33 @@
         # build src must be rooted there (not the crate dir) or cargo can't resolve
         # the lockfile. A fileset keeps the derivation from rebuilding on unrelated
         # repo changes (docs, dashboard, workflows).
-        roh-scan = pkgs.rustPlatform.buildRustPackage {
-          pname = "roh-scan";
-          version = "0.1.0";
-          src = pkgs.lib.fileset.toSource {
-            root = ./.;
-            fileset = pkgs.lib.fileset.unions [
-              ./Cargo.toml
-              ./Cargo.lock
-              ./plugins/rain-org-health-check/roh-scan
-            ];
+        roh-scan =
+          let
+            src = pkgs.lib.fileset.toSource {
+              root = ./.;
+              fileset = pkgs.lib.fileset.unions [
+                ./Cargo.toml
+                ./Cargo.lock
+                ./plugins/rain-org-health-check/roh-scan
+              ];
+            };
+          in
+          pkgs.rustPlatform.buildRustPackage {
+            pname = "roh-scan";
+            version = "0.1.0";
+            inherit src;
+            # Vendored through fetchCargoVendor rather than cargoLock: cargoLock
+            # fetches each crate from crates.io/api, which answers 403 to the
+            # User-Agent nix sends, so any store miss fails the build (the scan
+            # died on alloy-json-abi 0.8.26). fetchCargoVendor pulls from the
+            # static.crates.io CDN.
+            cargoDeps = pkgs.rustPlatform.fetchCargoVendor {
+              inherit src;
+              pname = "roh-scan";
+              version = "0.1.0";
+              hash = "sha256-elzifNENTn+GQIg4bfOygqNtRd6RJGmd8YRuTj8R1As=";
+            };
           };
-          cargoLock.lockFile = ./Cargo.lock;
-        };
         # Reproducible headless render of the dashboard, so an eyeball on the
         # deployed page (or a CI visual check) is one pinned command rather than
         # an ad-hoc chromium incantation: `nix run .#screenshot -- [site] [out] [page]`.
