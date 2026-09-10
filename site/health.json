@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-10T01:08:14Z",
+  "generatedAt": "2026-09-10T06:02:22Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2537,14 +2537,14 @@
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": null,
-          "ownerLabel": "unknown",
+          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+          "ownerLabel": "safe",
           "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
           "atTarget": false,
-          "status": "unknown"
+          "status": "behind"
         },
         {
           "name": "Receipt-vault beacon",
