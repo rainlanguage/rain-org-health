@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-12T19:26:33Z",
+  "generatedAt": "2026-09-12T22:22:00Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1229,10 +1229,10 @@
         },
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-08-18T13:31:09Z",
-          "commit": "ed91bfa5161fa94c5180d57a54e2a4341ba8e876",
-          "skillVersion": "0.33.0",
-          "scope": "whole repo"
+          "timestamp": "2026-09-12T21:44:24Z",
+          "commit": "ec3f95a8fa20ec929a6f88e42bc8ac3513ef674d",
+          "skillVersion": "0.35.0",
+          "scope": "migration registry: src/concrete/MigrationRegistry.sol, src/lib/LibMigrationRegistry.sol, src/interface/IMigrationRegistryV2.sol (PR #160)"
         },
         "blockedBy": [],
         "staleDeps": [
@@ -5253,10 +5253,10 @@
       "org": "rainlanguage",
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-08-18T13:31:09Z",
-        "commit": "ed91bfa5161fa94c5180d57a54e2a4341ba8e876",
-        "skillVersion": "0.33.0",
-        "scope": "whole repo"
+        "timestamp": "2026-09-12T21:44:24Z",
+        "commit": "ec3f95a8fa20ec929a6f88e42bc8ac3513ef674d",
+        "skillVersion": "0.35.0",
+        "scope": "migration registry: src/concrete/MigrationRegistry.sol, src/lib/LibMigrationRegistry.sol, src/interface/IMigrationRegistryV2.sol (PR #160)"
       },
       "lastAudit": {
         "auditedAt": "2026-08-15T11:41:01Z",
@@ -6030,16 +6030,16 @@
       "latestTag": "sol-v0.1.8",
       "latestTagIso": "2026-09-10T14:28:02Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 5287,
+      "sourceLocChangedSinceAudit": 6050,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 5231,
+      "sourceLocAddedSinceAudit": 5994,
       "sourceLocRemovedSinceAudit": 56,
-      "filesChangedSinceAudit": 33,
-      "commitsSinceAudit": 338,
+      "filesChangedSinceAudit": 34,
+      "commitsSinceAudit": 362,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 3282,
+      "commentLocAddedSinceAudit": 3950,
       "commentLocRemovedSinceAudit": 10,
-      "codeLocAddedSinceAudit": 1611,
+      "codeLocAddedSinceAudit": 1682,
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -7068,8 +7068,8 @@
       "name": "rain.deploy",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 7,
-      "testFiles": 47,
+      "externalFunctions": 8,
+      "testFiles": 48,
       "sourcesUnparsed": 0,
       "untested": []
     },
