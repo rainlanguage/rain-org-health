@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-14T19:26:14Z",
+  "generatedAt": "2026-09-14T23:11:56Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1061,7 +1061,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 0,
+        "openAuditIssues": 19,
         "lastMutation": {
           "timestamp": "2026-09-12T22:53:52Z",
           "commit": "9c9174ac26884b85dabf72ae5329162d0647e194",
@@ -5100,7 +5100,7 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 0,
+      "openAuditIssues": 19,
       "lastMutation": {
         "timestamp": "2026-09-12T22:53:52Z",
         "commit": "9c9174ac26884b85dabf72ae5329162d0647e194",
