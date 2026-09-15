@@ -31,16 +31,28 @@ jobs:
           if [ -n "$(git status --porcelain site/health.json)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add site/health.json
-            git commit -m "chore(scan): refresh site/health.json"
-            # A concurrent merge to master rejects a plain push (non-fast-forward).
-            # Only the scan touches health.json, so rebasing onto the latest master
-            # and retrying is conflict-free and makes the race unable to fail the scan.
+            # health.json is wholly generated and this run holds the newest scan,
+            # so a race is resolved by REPLAYING this file onto whatever landed,
+            # never by merging. Two scans rewrite the same lines of one JSON blob,
+            # so a rebase conflicts on contents it makes no sense to combine — and
+            # a rebase left mid-conflict makes every later `git pull` in the loop
+            # fail on unmerged files, which is how a retry loop meant to absorb the
+            # race became the thing that failed the scan.
+            cp site/health.json "${RUNNER_TEMP}/health.json"
             for attempt in 1 2 3 4 5; do
-              if git pull --rebase origin "${GITHUB_REF_NAME}" && git push; then
+              git add site/health.json
+              git commit -m "chore(scan): refresh site/health.json"
+              if git push; then
                 exit 0
               fi
-              echo "push race (attempt ${attempt}/5) — rebased onto master, retrying…"
+              echo "push race (attempt ${attempt}/5) — replaying onto ${GITHUB_REF_NAME}, retrying…"
+              git fetch origin "${GITHUB_REF_NAME}"
+              git checkout -B "${GITHUB_REF_NAME}" "origin/${GITHUB_REF_NAME}"
+              cp "${RUNNER_TEMP}/health.json" site/health.json
+              if [ -z "$(git status --porcelain site/health.json)" ]; then
+                echo "a concurrent scan pushed identical data — nothing left to push"
+                exit 0
+              fi
               sleep 3
             done
             echo "::error::could not push refreshed health.json after 5 attempts"
