@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T18:16:07Z",
+  "generatedAt": "2026-09-15T21:28:40Z",
   "auditGraph": {
     "nodes": [
       {
@@ -280,7 +280,7 @@
         "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 36,
+        "openAuditIssues": 29,
         "lastMutation": {
           "timestamp": "2026-09-03T09:40:00Z",
           "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -301,7 +301,13 @@
         "openAuditIssues": 0,
         "lastMutation": null,
         "blockedBy": [],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.lib.hash",
+            "pinned": "0.1.10",
+            "latest": "0.1.12"
+          }
+        ]
       },
       {
         "repo": "rain.lib.typecast",
@@ -955,7 +961,13 @@
         "openAuditIssues": 0,
         "lastMutation": null,
         "blockedBy": [],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.lib.hash",
+            "pinned": "0.1.10",
+            "latest": "0.1.12"
+          }
+        ]
       },
       {
         "repo": "st0x-timelock-deploy",
@@ -1133,7 +1145,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 12,
+        "openAuditIssues": 8,
         "lastMutation": {
           "timestamp": "2026-09-15T02:40:00Z",
           "commit": "e9a922a845056c95a9fd38bdf8fbe674db1ece6e",
@@ -1473,9 +1485,9 @@
       {
         "from": "rain.lib.memkv",
         "to": "rain.lib.hash",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.12"
       },
       {
         "from": "rain.lib.memkv",
@@ -2047,9 +2059,9 @@
       {
         "from": "rainlang.interface",
         "to": "rain.lib.hash",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.12"
       },
       {
         "from": "rainlang.interface",
@@ -4705,7 +4717,7 @@
       "name": "rain.lib.hash",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 36,
+      "openAuditIssues": 29,
       "lastMutation": {
         "timestamp": "2026-09-03T09:40:00Z",
         "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -5181,7 +5193,7 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 12,
+      "openAuditIssues": 8,
       "lastMutation": {
         "timestamp": "2026-09-15T02:40:00Z",
         "commit": "e9a922a845056c95a9fd38bdf8fbe674db1ece6e",
@@ -5960,16 +5972,16 @@
       "latestTag": "sol-v0.1.10",
       "latestTagIso": "2026-09-14T11:21:00Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6354,
+      "sourceLocChangedSinceAudit": 6438,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 6298,
+      "sourceLocAddedSinceAudit": 6382,
       "sourceLocRemovedSinceAudit": 56,
       "filesChangedSinceAudit": 35,
-      "commitsSinceAudit": 473,
+      "commitsSinceAudit": 484,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4109,
+      "commentLocAddedSinceAudit": 4178,
       "commentLocRemovedSinceAudit": 10,
-      "codeLocAddedSinceAudit": 1807,
+      "codeLocAddedSinceAudit": 1820,
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -6515,15 +6527,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "sol-v0.1.10",
-      "latestTagIso": "2026-09-03T17:12:29Z",
+      "latestTag": "sol-v0.1.12",
+      "latestTagIso": "2026-09-15T20:11:49Z",
       "isStale": false,
       "sourceLocChangedSinceAudit": 66,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 51,
       "sourceLocRemovedSinceAudit": 15,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 60,
+      "commitsSinceAudit": 76,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 51,
       "commentLocRemovedSinceAudit": 15,
@@ -6999,7 +7011,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 8,
-      "testFiles": 58,
+      "testFiles": 60,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -7089,7 +7101,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 6,
+      "testFiles": 9,
       "sourcesUnparsed": 0,
       "untested": []
     },
