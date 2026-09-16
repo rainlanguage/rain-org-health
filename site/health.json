@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-15T21:28:40Z",
+  "generatedAt": "2026-09-16T00:26:32Z",
   "auditGraph": {
     "nodes": [
       {
@@ -273,24 +273,6 @@
         "staleDeps": []
       },
       {
-        "repo": "rain.lib.hash",
-        "org": "rainlanguage",
-        "package": "rain-lib-hash",
-        "packageKnown": true,
-        "audit": "current",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 29,
-        "lastMutation": {
-          "timestamp": "2026-09-03T09:40:00Z",
-          "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
-          "skillVersion": "0.35.0",
-          "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
-        },
-        "blockedBy": [],
-        "staleDeps": []
-      },
-      {
         "repo": "rain.lib.memkv",
         "org": "rainlanguage",
         "package": "rain-lib-memkv",
@@ -305,7 +287,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.10",
-            "latest": "0.1.12"
+            "latest": "0.1.20"
           }
         ]
       },
@@ -965,7 +947,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.10",
-            "latest": "0.1.12"
+            "latest": "0.1.20"
           }
         ]
       },
@@ -1248,6 +1230,29 @@
         },
         "blockedBy": [],
         "staleDeps": []
+      },
+      {
+        "repo": "rain.lib.hash",
+        "org": "rainlanguage",
+        "package": "rain-lib-hash",
+        "packageKnown": true,
+        "audit": "current",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-09-06T19:47:31Z",
+          "auditedCommit": "1e6e59f3d1fc4fd30c86a5836aa156eed382e729",
+          "skillVersion": "0.35.0",
+          "stale": true
+        },
+        "openAuditIssues": 14,
+        "lastMutation": {
+          "timestamp": "2026-09-03T09:40:00Z",
+          "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
+          "skillVersion": "0.35.0",
+          "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
+        },
+        "blockedBy": [],
+        "staleDeps": []
       }
     ],
     "edges": [
@@ -1487,7 +1492,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.12"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.lib.memkv",
@@ -2061,7 +2066,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.12"
+        "latest": "0.1.20"
       },
       {
         "from": "rainlang.interface",
@@ -3987,8 +3992,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 120,
   "reposWithFindings": 43,
-  "reposWholeRepoAudited": 8,
-  "reposNeverAudited": 112,
+  "reposWholeRepoAudited": 9,
+  "reposNeverAudited": 111,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 22,
   "summary": {
@@ -4714,18 +4719,6 @@
       }
     },
     {
-      "name": "rain.lib.hash",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 29,
-      "lastMutation": {
-        "timestamp": "2026-09-03T09:40:00Z",
-        "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
-        "skillVersion": "0.35.0",
-        "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
-      }
-    },
-    {
       "name": "rain.lib.memkv",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -5271,6 +5264,23 @@
       "lastAudit": {
         "auditedAt": "2026-09-04T06:16:20Z",
         "auditedCommit": "50971aa7c12aea556c809a772c4bd557868c4376",
+        "skillVersion": "0.35.0",
+        "stale": true
+      }
+    },
+    {
+      "name": "rain.lib.hash",
+      "org": "rainlanguage",
+      "openAuditIssues": 14,
+      "lastMutation": {
+        "timestamp": "2026-09-03T09:40:00Z",
+        "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
+        "skillVersion": "0.35.0",
+        "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-09-06T19:47:31Z",
+        "auditedCommit": "1e6e59f3d1fc4fd30c86a5836aa156eed382e729",
         "skillVersion": "0.35.0",
         "stale": true
       }
@@ -5949,7 +5959,7 @@
       "codeLocRemovedSinceAudit": 297,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
-      "daysSinceAudit": 118
+      "daysSinceAudit": 119
     },
     {
       "name": "rain.deploy",
@@ -5985,7 +5995,7 @@
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
-      "daysSinceAudit": 219
+      "daysSinceAudit": 220
     },
     {
       "name": "rain.math.float",
@@ -6021,7 +6031,7 @@
       "codeLocRemovedSinceAudit": 377,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
-      "daysSinceAudit": 288
+      "daysSinceAudit": 289
     },
     {
       "name": "rain.extrospection",
@@ -6069,7 +6079,7 @@
       "codeLocRemovedSinceAudit": 115,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 126
+      "daysSinceAudit": 127
     },
     {
       "name": "rain.factory",
@@ -6117,7 +6127,7 @@
       "codeLocRemovedSinceAudit": 178,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
-      "daysSinceAudit": 65
+      "daysSinceAudit": 66
     },
     {
       "name": "rain.tofu.erc20-decimals",
@@ -6153,7 +6163,7 @@
       "codeLocRemovedSinceAudit": 53,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/03406b6ad8d33a802c6eb58ae4dac3f0ea9aed38...main",
-      "daysSinceAudit": 217
+      "daysSinceAudit": 218
     },
     {
       "name": "rain.metadata",
@@ -6189,7 +6199,7 @@
       "codeLocRemovedSinceAudit": 29,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
-      "daysSinceAudit": 229
+      "daysSinceAudit": 230
     },
     {
       "name": "rain.vats",
@@ -6237,7 +6247,7 @@
       "codeLocRemovedSinceAudit": 60,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 118
+      "daysSinceAudit": 119
     },
     {
       "name": "rain.merkle",
@@ -6273,7 +6283,7 @@
       "codeLocRemovedSinceAudit": 67,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
-      "daysSinceAudit": 240
+      "daysSinceAudit": 241
     },
     {
       "name": "rain.datacontract",
@@ -6321,7 +6331,7 @@
       "codeLocRemovedSinceAudit": 11,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/c8f3188848c3ff0935fa5714b29022bd4c1f63aa...main",
-      "daysSinceAudit": 27
+      "daysSinceAudit": 28
     },
     {
       "name": "rainlang.interface",
@@ -6357,7 +6367,7 @@
       "codeLocRemovedSinceAudit": 11,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang.interface/compare/f83d8e0e2ea529acb9b76f622ff73464c65a3ba8...main",
-      "daysSinceAudit": 198
+      "daysSinceAudit": 199
     },
     {
       "name": "rain.lib.memkv",
@@ -6393,7 +6403,7 @@
       "codeLocRemovedSinceAudit": 1,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/8000285775e554ae157393dc4e2068ef2ffa7e3a...main",
-      "daysSinceAudit": 222
+      "daysSinceAudit": 223
     },
     {
       "name": "rain.math.fixedpoint",
@@ -6429,7 +6439,7 @@
       "codeLocRemovedSinceAudit": 9,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/1752e9fbd635901ac7eb177699681ed97290e12e...main",
-      "daysSinceAudit": 288
+      "daysSinceAudit": 289
     },
     {
       "name": "raindex",
@@ -6471,7 +6481,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/raindex/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 92
+      "daysSinceAudit": 93
     },
     {
       "name": "rainlang",
@@ -6507,7 +6517,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1...main",
-      "daysSinceAudit": 191
+      "daysSinceAudit": 192
     },
     {
       "name": "rain.lib.hash",
@@ -6527,23 +6537,23 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "sol-v0.1.12",
-      "latestTagIso": "2026-09-15T20:11:49Z",
+      "latestTag": "sol-v0.1.20",
+      "latestTagIso": "2026-09-16T00:06:26Z",
       "isStale": false,
-      "sourceLocChangedSinceAudit": 66,
+      "sourceLocChangedSinceAudit": 100,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 51,
-      "sourceLocRemovedSinceAudit": 15,
+      "sourceLocAddedSinceAudit": 73,
+      "sourceLocRemovedSinceAudit": 27,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 76,
+      "commitsSinceAudit": 135,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 51,
-      "commentLocRemovedSinceAudit": 15,
+      "commentLocAddedSinceAudit": 73,
+      "commentLocRemovedSinceAudit": 27,
       "codeLocAddedSinceAudit": 0,
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
-      "daysSinceAudit": 229
+      "daysSinceAudit": 230
     },
     {
       "name": "rain.lib.typecast",
@@ -6579,7 +6589,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
-      "daysSinceAudit": 240
+      "daysSinceAudit": 241
     },
     {
       "name": "rain.math.saturating",
@@ -6615,7 +6625,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
-      "daysSinceAudit": 288
+      "daysSinceAudit": 289
     },
     {
       "name": "rain.intorastring",
@@ -6651,7 +6661,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
-      "daysSinceAudit": 223
+      "daysSinceAudit": 224
     },
     {
       "name": "rain.math.binary",
@@ -6687,7 +6697,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
-      "daysSinceAudit": 239
+      "daysSinceAudit": 240
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -6723,7 +6733,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.binmaskflag/compare/41d8dfb2edf9695d1344e8d56ddae7c1789690c4...main",
-      "daysSinceAudit": 229
+      "daysSinceAudit": 230
     },
     {
       "name": "rain.sol.codegen",
@@ -6765,7 +6775,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/31e2885ae60df9fb869e3fe65107a1da3ce1f96a...main",
-      "daysSinceAudit": 28
+      "daysSinceAudit": 29
     },
     {
       "name": "rain.solmem",
@@ -6807,7 +6817,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.solmem/compare/e75080f460876f4070c4e127c8668d778df93e94...main",
-      "daysSinceAudit": 28
+      "daysSinceAudit": 29
     },
     {
       "name": "rain.string",
@@ -6849,7 +6859,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.string/compare/79b2f4fd3fbd0e21b8e757d94abd361178cefa62...main",
-      "daysSinceAudit": 21
+      "daysSinceAudit": 22
     },
     {
       "name": "rain.verify.interface",
@@ -6885,7 +6895,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
-      "daysSinceAudit": 225
+      "daysSinceAudit": 226
     }
   ],
   "untestedExternals": [
@@ -7101,7 +7111,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 9,
+      "testFiles": 10,
       "sourcesUnparsed": 0,
       "untested": []
     },
