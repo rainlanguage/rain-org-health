@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T06:06:51Z",
+  "generatedAt": "2026-09-16T11:44:56Z",
   "auditGraph": {
     "nodes": [
       {
@@ -294,7 +294,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.10",
-            "latest": "0.1.24"
+            "latest": "0.1.26"
           }
         ]
       },
@@ -884,6 +884,11 @@
             "latest": "0.1.4"
           },
           {
+            "repo": "rain.lib.memkv",
+            "pinned": "0.1.5",
+            "latest": "0.1.6"
+          },
+          {
             "repo": "rain.metadata",
             "pinned": "0.1.7",
             "latest": "0.1.43"
@@ -968,7 +973,7 @@
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.10",
-            "latest": "0.1.24"
+            "latest": "0.1.26"
           }
         ]
       },
@@ -1161,7 +1166,13 @@
           "rain.lib.hash",
           "rain.lib.memkv"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.lib.memkv",
+            "pinned": "0.1.5",
+            "latest": "0.1.6"
+          }
+        ]
       },
       {
         "repo": "rain.sol.codegen",
@@ -1268,7 +1279,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 8,
+        "openAuditIssues": 4,
         "lastMutation": {
           "timestamp": "2026-09-03T09:40:00Z",
           "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -1290,9 +1301,9 @@
       {
         "from": "rain.deploy",
         "to": "rain.lib.memkv",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.5"
+        "latest": "0.1.6"
       },
       {
         "from": "rain.deploy",
@@ -1516,7 +1527,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.24"
+        "latest": "0.1.26"
       },
       {
         "from": "rain.lib.memkv",
@@ -1955,9 +1966,9 @@
       {
         "from": "rainlang",
         "to": "rain.lib.memkv",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.5"
+        "latest": "0.1.6"
       },
       {
         "from": "rainlang",
@@ -2090,7 +2101,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.24"
+        "latest": "0.1.26"
       },
       {
         "from": "rainlang.interface",
@@ -5295,7 +5306,7 @@
     {
       "name": "rain.lib.hash",
       "org": "rainlanguage",
-      "openAuditIssues": 8,
+      "openAuditIssues": 4,
       "lastMutation": {
         "timestamp": "2026-09-03T09:40:00Z",
         "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -6207,15 +6218,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "sol-v0.1.24",
-      "latestTagIso": "2026-09-16T01:03:05Z",
+      "latestTag": "sol-v0.1.26",
+      "latestTagIso": "2026-09-16T11:28:50Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 261,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 154,
       "sourceLocRemovedSinceAudit": 107,
       "filesChangedSinceAudit": 2,
-      "commitsSinceAudit": 187,
+      "commitsSinceAudit": 194,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 123,
       "commentLocRemovedSinceAudit": 76,
@@ -6447,15 +6458,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-05T12:14:13Z",
-      "latestTag": "sol-v0.1.5",
-      "latestTagIso": "2026-09-15T13:48:34Z",
+      "latestTag": "sol-v0.1.6",
+      "latestTagIso": "2026-09-16T11:32:07Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 30,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 29,
       "sourceLocRemovedSinceAudit": 1,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 28,
+      "commitsSinceAudit": 32,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 17,
       "commentLocRemovedSinceAudit": 0,
