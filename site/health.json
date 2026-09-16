@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T00:26:32Z",
+  "generatedAt": "2026-09-16T06:06:51Z",
   "auditGraph": {
     "nodes": [
       {
@@ -42,6 +42,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -100,6 +101,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -157,6 +159,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv"
         ],
         "staleDeps": [
@@ -194,6 +197,7 @@
           "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.lib.hash",
           "rain.lib.memkv"
         ],
         "staleDeps": [
@@ -223,6 +227,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -280,14 +285,16 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 10,
         "lastMutation": null,
-        "blockedBy": [],
+        "blockedBy": [
+          "rain.lib.hash"
+        ],
         "staleDeps": [
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.10",
-            "latest": "0.1.20"
+            "latest": "0.1.24"
           }
         ]
       },
@@ -367,6 +374,7 @@
         "blockedBy": [
           "rain.datacontract",
           "rain.deploy",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float"
         ],
@@ -392,6 +400,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -448,6 +457,7 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.metadata"
         ],
@@ -478,6 +488,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -574,6 +585,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.tofu.erc20-decimals"
         ],
@@ -651,6 +663,7 @@
           "rain.extrospection",
           "rain.factory",
           "rain.flare",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.fixedpoint",
           "rain.math.float",
@@ -687,6 +700,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.factory",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rainlang.interface"
         ],
@@ -753,6 +767,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -798,6 +813,7 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
+          "rain.lib.hash",
           "rain.math.float",
           "raindex.interface",
           "rainlang.interface"
@@ -827,6 +843,7 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.datacontract",
+          "rain.lib.hash",
           "rain.math.float",
           "rainlang.interface"
         ],
@@ -852,6 +869,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -901,6 +919,7 @@
           "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.float",
           "rain.math.float.deploy",
@@ -942,12 +961,14 @@
         "lastAudit": null,
         "openAuditIssues": 0,
         "lastMutation": null,
-        "blockedBy": [],
+        "blockedBy": [
+          "rain.lib.hash"
+        ],
         "staleDeps": [
           {
             "repo": "rain.lib.hash",
             "pinned": "0.1.10",
-            "latest": "0.1.20"
+            "latest": "0.1.24"
           }
         ]
       },
@@ -979,6 +1000,7 @@
           "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.fixedpoint",
           "rain.math.float",
@@ -1084,6 +1106,7 @@
           "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.lib.hash",
           "rain.lib.memkv",
           "rain.math.fixedpoint",
           "rain.math.float",
@@ -1127,7 +1150,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 8,
+        "openAuditIssues": 3,
         "lastMutation": {
           "timestamp": "2026-09-15T02:40:00Z",
           "commit": "e9a922a845056c95a9fd38bdf8fbe674db1ece6e",
@@ -1135,6 +1158,7 @@
           "scope": "whole repo"
         },
         "blockedBy": [
+          "rain.lib.hash",
           "rain.lib.memkv"
         ],
         "staleDeps": []
@@ -1236,7 +1260,7 @@
         "org": "rainlanguage",
         "package": "rain-lib-hash",
         "packageKnown": true,
-        "audit": "current",
+        "audit": "stale",
         "depsKnown": true,
         "lastAudit": {
           "auditedAt": "2026-09-06T19:47:31Z",
@@ -1244,7 +1268,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 14,
+        "openAuditIssues": 8,
         "lastMutation": {
           "timestamp": "2026-09-03T09:40:00Z",
           "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -1492,7 +1516,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.20"
+        "latest": "0.1.24"
       },
       {
         "from": "rain.lib.memkv",
@@ -2066,7 +2090,7 @@
         "to": "rain.lib.hash",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.20"
+        "latest": "0.1.24"
       },
       {
         "from": "rainlang.interface",
@@ -4722,7 +4746,7 @@
       "name": "rain.lib.memkv",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 10,
       "lastMutation": null
     },
     {
@@ -5186,7 +5210,7 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 8,
+      "openAuditIssues": 3,
       "lastMutation": {
         "timestamp": "2026-09-15T02:40:00Z",
         "commit": "e9a922a845056c95a9fd38bdf8fbe674db1ece6e",
@@ -5271,7 +5295,7 @@
     {
       "name": "rain.lib.hash",
       "org": "rainlanguage",
-      "openAuditIssues": 14,
+      "openAuditIssues": 8,
       "lastMutation": {
         "timestamp": "2026-09-03T09:40:00Z",
         "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
@@ -5982,16 +6006,16 @@
       "latestTag": "sol-v0.1.10",
       "latestTagIso": "2026-09-14T11:21:00Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6438,
+      "sourceLocChangedSinceAudit": 6785,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 6382,
+      "sourceLocAddedSinceAudit": 6729,
       "sourceLocRemovedSinceAudit": 56,
       "filesChangedSinceAudit": 35,
-      "commitsSinceAudit": 484,
+      "commitsSinceAudit": 532,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4178,
+      "commentLocAddedSinceAudit": 4396,
       "commentLocRemovedSinceAudit": 10,
-      "codeLocAddedSinceAudit": 1820,
+      "codeLocAddedSinceAudit": 1929,
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -6164,6 +6188,42 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/03406b6ad8d33a802c6eb58ae4dac3f0ea9aed38...main",
       "daysSinceAudit": 218
+    },
+    {
+      "name": "rain.lib.hash",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
+          "path": "audit/protofire/rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T10:43:35Z",
+          "auditDateIso": "2026-01-29T13:36:12Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "33e17004ed6f9248d5cbb139c93da7190770c1f4",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-01-29T13:36:12Z",
+      "latestTag": "sol-v0.1.24",
+      "latestTagIso": "2026-09-16T01:03:05Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 261,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 154,
+      "sourceLocRemovedSinceAudit": 107,
+      "filesChangedSinceAudit": 2,
+      "commitsSinceAudit": 187,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 123,
+      "commentLocRemovedSinceAudit": 76,
+      "codeLocAddedSinceAudit": 26,
+      "codeLocRemovedSinceAudit": 26,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
+      "daysSinceAudit": 230
     },
     {
       "name": "rain.metadata",
@@ -6518,42 +6578,6 @@
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1...main",
       "daysSinceAudit": 192
-    },
-    {
-      "name": "rain.lib.hash",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "current",
-      "auditPdfs": [
-        {
-          "filename": "rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
-          "path": "audit/protofire/rain.lib.hash.33e17004ed6f9248d5cbb139c93da7190770c1f4.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T10:43:35Z",
-          "auditDateIso": "2026-01-29T13:36:12Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "33e17004ed6f9248d5cbb139c93da7190770c1f4",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "sol-v0.1.20",
-      "latestTagIso": "2026-09-16T00:06:26Z",
-      "isStale": false,
-      "sourceLocChangedSinceAudit": 100,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 73,
-      "sourceLocRemovedSinceAudit": 27,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 135,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 73,
-      "commentLocRemovedSinceAudit": 27,
-      "codeLocAddedSinceAudit": 0,
-      "codeLocRemovedSinceAudit": 0,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/33e17004ed6f9248d5cbb139c93da7190770c1f4...main",
-      "daysSinceAudit": 230
     },
     {
       "name": "rain.lib.typecast",
@@ -7021,7 +7045,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 8,
-      "testFiles": 60,
+      "testFiles": 63,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -7111,7 +7135,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 10,
+      "testFiles": 12,
       "sourcesUnparsed": 0,
       "untested": []
     },
