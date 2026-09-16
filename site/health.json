@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-16T11:44:56Z",
+  "generatedAt": "2026-09-16T15:21:44Z",
   "auditGraph": {
     "nodes": [
       {
@@ -70,7 +70,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -124,7 +124,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -255,7 +255,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -290,13 +290,7 @@
         "blockedBy": [
           "rain.lib.hash"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.10",
-            "latest": "0.1.26"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.lib.typecast",
@@ -423,7 +417,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -516,7 +510,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -718,7 +712,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.8",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -797,7 +791,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -851,7 +845,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -886,7 +880,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.9"
           },
           {
             "repo": "rain.metadata",
@@ -906,7 +900,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -952,7 +946,7 @@
           {
             "repo": "rainlang.interface",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -969,13 +963,7 @@
         "blockedBy": [
           "rain.lib.hash"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.lib.hash",
-            "pinned": "0.1.10",
-            "latest": "0.1.26"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "st0x-timelock-deploy",
@@ -1079,7 +1067,7 @@
         "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-07-20T15:41:05Z",
-          "commit": "b3bd859",
+          "commit": "b3bd859cf84f2dfd89a96721fd43ac02d8d1d88a",
           "skillVersion": "0.27.0",
           "scope": "whole repo"
         },
@@ -1099,7 +1087,7 @@
           "skillVersion": "0.34.0",
           "stale": true
         },
-        "openAuditIssues": 0,
+        "openAuditIssues": 1,
         "lastMutation": {
           "timestamp": "2026-08-20T14:30:00Z",
           "commit": "b35c172838446de0f2422e144c960f725b65079a",
@@ -1170,7 +1158,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.9"
           }
         ]
       },
@@ -1279,12 +1267,12 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 4,
+        "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-09-03T09:40:00Z",
-          "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
-          "skillVersion": "0.35.0",
-          "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
+          "timestamp": "2026-09-16T11:37:04Z",
+          "commit": "f2a9f5f613a82752761c4a17d70597ece17adb97",
+          "skillVersion": "0.34.0",
+          "scope": "src/lib/LibHashNoAlloc.sol, against the five documented claims of #76"
         },
         "blockedBy": [],
         "staleDeps": []
@@ -1303,7 +1291,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.9"
       },
       {
         "from": "rain.deploy",
@@ -1373,7 +1361,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rain.erc4626.words",
@@ -1415,7 +1403,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rain.extrospection",
@@ -1513,7 +1501,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rain.intorastring",
@@ -1525,9 +1513,9 @@
       {
         "from": "rain.lib.memkv",
         "to": "rain.lib.hash",
-        "stale": true,
-        "pinned": "0.1.10",
-        "latest": "0.1.26"
+        "stale": false,
+        "pinned": "0.1.27",
+        "latest": "0.1.27"
       },
       {
         "from": "rain.lib.memkv",
@@ -1632,7 +1620,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1695,7 +1683,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rain.string",
@@ -1828,7 +1816,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.8",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "raindex",
@@ -1912,7 +1900,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "raindex.governance",
@@ -1940,7 +1928,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rainlang",
@@ -1968,7 +1956,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.9"
       },
       {
         "from": "rainlang",
@@ -2038,7 +2026,7 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rainlang.deploy",
@@ -2094,14 +2082,14 @@
         "to": "rainlang.interface",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rainlang.interface",
         "to": "rain.lib.hash",
-        "stale": true,
-        "pinned": "0.1.10",
-        "latest": "0.1.26"
+        "stale": false,
+        "pinned": "0.1.27",
+        "latest": "0.1.27"
       },
       {
         "from": "rainlang.interface",
@@ -2573,14 +2561,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 54,
-    "ok": 50,
+    "ok": 41,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 54,
-    "atAuthoriserTarget": 54,
+    "atAuthoriserTarget": 45,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "LibTokenInvariants.productionReceiptVaults()",
@@ -2824,26 +2812,26 @@
         "symbol": "wtBABA",
         "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
         "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Alibaba Group Holding Limited ADR ST0x",
-        "liveSymbol": "wtBABA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
         "legacy": null,
         "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3032,26 +3020,26 @@
         "symbol": "wtDRAM",
         "name": "Wrapped Roundhill Memory ETF ST0x",
         "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Roundhill Memory ETF ST0x",
-        "liveSymbol": "wtDRAM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x96de077262609298cd891e4ab21bd34837de33ab",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
         "legacy": null,
         "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3240,26 +3228,26 @@
         "symbol": "wtLLY",
         "name": "Wrapped Eli Lilly and Company ST0x",
         "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Eli Lilly and Company ST0x",
-        "liveSymbol": "wtLLY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
         "legacy": null,
         "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3344,26 +3332,26 @@
         "symbol": "wtMCD",
         "name": "Wrapped McDonald's Corporation ST0x",
         "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped McDonald's Corporation ST0x",
-        "liveSymbol": "wtMCD",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
         "legacy": null,
         "receipt": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3422,26 +3410,26 @@
         "symbol": "wtMU",
         "name": "Wrapped Micron Technology, Inc. ST0x",
         "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Micron Technology, Inc. ST0x",
-        "liveSymbol": "wtMU",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
         "legacy": null,
         "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3526,26 +3514,26 @@
         "symbol": "wtPLBY",
         "name": "Wrapped Playboy, Inc. ST0x",
         "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Playboy, Inc. ST0x",
-        "liveSymbol": "wtPLBY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xe9bc7ef69f123ca2bca1021d1be30224271a9217",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0xe9bc7eF69f123cA2bcA1021D1BE30224271a9217",
         "legacy": null,
         "receipt": "0x5978B2FA7B3DDA36847eb7D2003EC7AE112258AA",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3604,7 +3592,7 @@
         "symbol": "wtQQQM",
         "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
         "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
@@ -3619,11 +3607,11 @@
         "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3682,26 +3670,26 @@
         "symbol": "wtSIE.DE",
         "name": "Wrapped Siemens Aktiengesellschaft ST0x",
         "address": "0xed0B0fdD92F7eece606A0FB0457352616d6e6B34",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Siemens Aktiengesellschaft ST0x",
-        "liveSymbol": "wtSIE.DE",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xa662066a60964a528ad05209139a79bda3a7577f",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0xa662066a60964a528aD05209139a79BDa3a7577f",
         "legacy": null,
         "receipt": "0xe89995E4Bf9691486445917e3C69ed3d935183f1",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -3942,26 +3930,26 @@
         "symbol": "wtTTWO",
         "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
         "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
-        "liveSymbol": "wtTTWO",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
         "legacy": null,
         "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -5190,7 +5178,7 @@
       "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-07-20T15:41:05Z",
-        "commit": "b3bd859",
+        "commit": "b3bd859cf84f2dfd89a96721fd43ac02d8d1d88a",
         "skillVersion": "0.27.0",
         "scope": "whole repo"
       },
@@ -5204,7 +5192,7 @@
     {
       "name": "st0x.oracle",
       "org": "ST0x-Technology",
-      "openAuditIssues": 0,
+      "openAuditIssues": 1,
       "lastMutation": {
         "timestamp": "2026-08-20T14:30:00Z",
         "commit": "b35c172838446de0f2422e144c960f725b65079a",
@@ -5306,12 +5294,12 @@
     {
       "name": "rain.lib.hash",
       "org": "rainlanguage",
-      "openAuditIssues": 4,
+      "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-09-03T09:40:00Z",
-        "commit": "5055221444d547aba034b88fbd2525973b17d9a9",
-        "skillVersion": "0.35.0",
-        "scope": "whole repo (src/LibHashNoAlloc.sol: hashBytes, hashWords x2, combineHashes, HASH_NIL; README pattern section as intent oracle)"
+        "timestamp": "2026-09-16T11:37:04Z",
+        "commit": "f2a9f5f613a82752761c4a17d70597ece17adb97",
+        "skillVersion": "0.34.0",
+        "scope": "src/lib/LibHashNoAlloc.sol, against the five documented claims of #76"
       },
       "lastAudit": {
         "auditedAt": "2026-09-06T19:47:31Z",
@@ -6218,17 +6206,17 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T13:36:12Z",
-      "latestTag": "sol-v0.1.26",
-      "latestTagIso": "2026-09-16T11:28:50Z",
+      "latestTag": "sol-v0.1.27",
+      "latestTagIso": "2026-09-16T11:49:24Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 261,
+      "sourceLocChangedSinceAudit": 264,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 154,
+      "sourceLocAddedSinceAudit": 157,
       "sourceLocRemovedSinceAudit": 107,
       "filesChangedSinceAudit": 2,
-      "commitsSinceAudit": 194,
+      "commitsSinceAudit": 201,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 123,
+      "commentLocAddedSinceAudit": 126,
       "commentLocRemovedSinceAudit": 76,
       "codeLocAddedSinceAudit": 26,
       "codeLocRemovedSinceAudit": 26,
@@ -6422,18 +6410,18 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.10",
-      "latestTagIso": "2026-09-15T17:16:05Z",
+      "latestTag": "sol-v0.2.11",
+      "latestTagIso": "2026-09-16T13:40:19Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 54,
+      "sourceLocChangedSinceAudit": 60,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 36,
+      "sourceLocAddedSinceAudit": 42,
       "sourceLocRemovedSinceAudit": 18,
       "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 58,
+      "commitsSinceAudit": 66,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 23,
-      "commentLocRemovedSinceAudit": 7,
+      "commentLocAddedSinceAudit": 30,
+      "commentLocRemovedSinceAudit": 8,
       "codeLocAddedSinceAudit": 12,
       "codeLocRemovedSinceAudit": 11,
       "driftFullyClassified": true,
@@ -6458,15 +6446,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-05T12:14:13Z",
-      "latestTag": "sol-v0.1.6",
-      "latestTagIso": "2026-09-16T11:32:07Z",
+      "latestTag": "sol-v0.1.9",
+      "latestTagIso": "2026-09-16T13:12:39Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 30,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 29,
       "sourceLocRemovedSinceAudit": 1,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 32,
+      "commitsSinceAudit": 46,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 17,
       "commentLocRemovedSinceAudit": 0,
@@ -6536,15 +6524,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.251-uc-v0.0.1-alpha.251",
-      "latestTagIso": "2026-09-15T07:28:01Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.252-uc-v0.0.1-alpha.252",
+      "latestTagIso": "2026-09-16T12:47:42Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 54,
-      "commitsSinceAudit": 212,
+      "commitsSinceAudit": 214,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -6844,7 +6832,7 @@
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 0,
       "filesChangedSinceAudit": 0,
-      "commitsSinceAudit": 6,
+      "commitsSinceAudit": 9,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
@@ -7155,7 +7143,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 7,
+      "testFiles": 9,
       "sourcesUnparsed": 0,
       "untested": []
     },
