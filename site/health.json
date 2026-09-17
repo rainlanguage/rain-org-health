@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-17T13:32:41Z",
+  "generatedAt": "2026-09-17T18:18:47Z",
   "auditGraph": {
     "nodes": [
       {
@@ -210,6 +210,11 @@
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
             "latest": "0.1.14"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.1.9",
+            "latest": "0.1.11"
           }
         ]
       },
@@ -285,7 +290,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 2,
+        "openAuditIssues": 3,
         "lastMutation": {
           "timestamp": "2026-09-16T10:52:59Z",
           "commit": "645ddb9f767a30d7ef30c5fb05048577f3e80cd0",
@@ -625,6 +630,11 @@
             "latest": "0.1.14"
           },
           {
+            "repo": "rain.factory",
+            "pinned": "0.1.5",
+            "latest": "0.1.11"
+          },
+          {
             "repo": "rain.math.fixedpoint",
             "pinned": "0.2.0",
             "latest": "0.2.1"
@@ -703,6 +713,11 @@
             "repo": "rain.deploy",
             "pinned": "0.1.7",
             "latest": "0.1.10"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.11"
           },
           {
             "repo": "rainlang.interface",
@@ -875,7 +890,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.28"
+            "latest": "0.1.38"
           },
           {
             "repo": "rain.metadata",
@@ -1002,6 +1017,11 @@
             "latest": "0.1.14"
           },
           {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.11"
+          },
+          {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.2.1"
@@ -1099,6 +1119,11 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.factory",
+            "pinned": "0.1.1",
+            "latest": "0.1.11"
+          },
+          {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.2.1"
@@ -1143,7 +1168,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.28"
+            "latest": "0.1.38"
           }
         ]
       },
@@ -1276,7 +1301,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.28"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.deploy",
@@ -1435,9 +1460,9 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.9",
-        "latest": ""
+        "latest": "0.1.11"
       },
       {
         "from": "rain.flare",
@@ -1708,9 +1733,9 @@
       {
         "from": "rain.vats",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.5",
-        "latest": ""
+        "latest": "0.1.11"
       },
       {
         "from": "rain.vats",
@@ -1771,9 +1796,9 @@
       {
         "from": "rain.verify",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.11"
       },
       {
         "from": "rain.verify",
@@ -1941,7 +1966,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.28"
+        "latest": "0.1.38"
       },
       {
         "from": "rainlang",
@@ -2121,9 +2146,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.11"
       },
       {
         "from": "st0x.deploy",
@@ -2163,9 +2188,9 @@
       {
         "from": "st0x.oracle",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": ""
+        "latest": "0.1.11"
       },
       {
         "from": "st0x.oracle",
@@ -2506,12 +2531,12 @@
           "address": "0xace121ae30d754536863a546f41b147be11202db",
           "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
           "ownerLabel": "safe",
-          "implementation": null,
+          "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Receipt-vault beacon",
@@ -4723,7 +4748,7 @@
       "name": "rain.lib.memkv",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 2,
+      "openAuditIssues": 3,
       "lastMutation": {
         "timestamp": "2026-09-16T10:52:59Z",
         "commit": "645ddb9f767a30d7ef30c5fb05048577f3e80cd0",
@@ -6345,15 +6370,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-05T12:14:13Z",
-      "latestTag": "sol-v0.1.28",
-      "latestTagIso": "2026-09-17T11:17:45Z",
+      "latestTag": "sol-v0.1.38",
+      "latestTagIso": "2026-09-17T18:09:41Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 109,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 100,
       "sourceLocRemovedSinceAudit": 9,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 133,
+      "commitsSinceAudit": 157,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 79,
       "commentLocRemovedSinceAudit": 7,
@@ -7126,7 +7151,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 17,
+      "testFiles": 24,
       "sourcesUnparsed": 0,
       "untested": []
     },
