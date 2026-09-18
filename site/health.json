@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T19:41:09Z",
+  "generatedAt": "2026-09-18T22:38:16Z",
   "auditGraph": {
     "nodes": [
       {
@@ -865,7 +865,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.51"
+            "latest": "0.2.0"
           },
           {
             "repo": "rain.metadata",
@@ -1140,7 +1140,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.51"
+            "latest": "0.2.0"
           }
         ]
       },
@@ -1296,7 +1296,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.51"
+        "latest": "0.2.0"
       },
       {
         "from": "rain.deploy",
@@ -1954,7 +1954,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.51"
+        "latest": "0.2.0"
       },
       {
         "from": "rainlang",
@@ -6154,6 +6154,42 @@
       "daysSinceAudit": 68
     },
     {
+      "name": "rain.lib.memkv",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
+          "path": "audit/protofire/rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T17:58:40Z",
+          "auditDateIso": "2026-02-05T12:14:13Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "8000285775e554ae157393dc4e2068ef2ffa7e3a",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-02-05T12:14:13Z",
+      "latestTag": "sol-v0.2.0",
+      "latestTagIso": "2026-09-18T21:02:59Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 371,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 186,
+      "sourceLocRemovedSinceAudit": 185,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 375,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 119,
+      "commentLocRemovedSinceAudit": 46,
+      "codeLocAddedSinceAudit": 42,
+      "codeLocRemovedSinceAudit": 123,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/8000285775e554ae157393dc4e2068ef2ffa7e3a...main",
+      "daysSinceAudit": 225
+    },
+    {
       "name": "rain.tofu.erc20-decimals",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -6260,42 +6296,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
       "daysSinceAudit": 232
-    },
-    {
-      "name": "rain.lib.memkv",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
-          "path": "audit/protofire/rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T17:58:40Z",
-          "auditDateIso": "2026-02-05T12:14:13Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "8000285775e554ae157393dc4e2068ef2ffa7e3a",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-02-05T12:14:13Z",
-      "latestTag": "sol-v0.1.51",
-      "latestTagIso": "2026-09-18T17:20:38Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 182,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 145,
-      "sourceLocRemovedSinceAudit": 37,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 350,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 105,
-      "commentLocRemovedSinceAudit": 26,
-      "codeLocAddedSinceAudit": 31,
-      "codeLocRemovedSinceAudit": 11,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/8000285775e554ae157393dc4e2068ef2ffa7e3a...main",
-      "daysSinceAudit": 225
     },
     {
       "name": "rain.vats",
@@ -7144,7 +7144,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 37,
+      "testFiles": 35,
       "sourcesUnparsed": 0,
       "untested": []
     },
