@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-18T05:59:23Z",
+  "generatedAt": "2026-09-18T11:27:07Z",
   "auditGraph": {
     "nodes": [
       {
@@ -280,26 +280,6 @@
           "scope": "whole repo"
         },
         "blockedBy": [],
-        "staleDeps": []
-      },
-      {
-        "repo": "rain.lib.memkv",
-        "org": "rainlanguage",
-        "package": "rain-lib-memkv",
-        "packageKnown": true,
-        "audit": "stale",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 1,
-        "lastMutation": {
-          "timestamp": "2026-09-16T10:52:59Z",
-          "commit": "645ddb9f767a30d7ef30c5fb05048577f3e80cd0",
-          "skillVersion": "0.35.0",
-          "scope": "whole repo"
-        },
-        "blockedBy": [
-          "rain.lib.hash"
-        ],
         "staleDeps": []
       },
       {
@@ -890,7 +870,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.44"
+            "latest": "0.1.48"
           },
           {
             "repo": "rain.metadata",
@@ -1168,7 +1148,7 @@
           {
             "repo": "rain.lib.memkv",
             "pinned": "0.1.5",
-            "latest": "0.1.44"
+            "latest": "0.1.48"
           }
         ]
       },
@@ -1286,6 +1266,31 @@
         },
         "blockedBy": [],
         "staleDeps": []
+      },
+      {
+        "repo": "rain.lib.memkv",
+        "org": "rainlanguage",
+        "package": "rain-lib-memkv",
+        "packageKnown": true,
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-09-18T08:37:18Z",
+          "auditedCommit": "877a07ec023ee295f91118f007f7dc61ad4d1126",
+          "skillVersion": "0.35.0",
+          "stale": true
+        },
+        "openAuditIssues": 47,
+        "lastMutation": {
+          "timestamp": "2026-09-16T10:52:59Z",
+          "commit": "645ddb9f767a30d7ef30c5fb05048577f3e80cd0",
+          "skillVersion": "0.35.0",
+          "scope": "whole repo"
+        },
+        "blockedBy": [
+          "rain.lib.hash"
+        ],
+        "staleDeps": []
       }
     ],
     "edges": [
@@ -1301,7 +1306,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.44"
+        "latest": "0.1.48"
       },
       {
         "from": "rain.deploy",
@@ -1966,7 +1971,7 @@
         "to": "rain.lib.memkv",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.44"
+        "latest": "0.1.48"
       },
       {
         "from": "rainlang",
@@ -4025,8 +4030,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 120,
   "reposWithFindings": 42,
-  "reposWholeRepoAudited": 9,
-  "reposNeverAudited": 111,
+  "reposWholeRepoAudited": 10,
+  "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 22,
   "summary": {
@@ -4745,18 +4750,6 @@
       }
     },
     {
-      "name": "rain.lib.memkv",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 1,
-      "lastMutation": {
-        "timestamp": "2026-09-16T10:52:59Z",
-        "commit": "645ddb9f767a30d7ef30c5fb05048577f3e80cd0",
-        "skillVersion": "0.35.0",
-        "scope": "whole repo"
-      }
-    },
-    {
       "name": "rain.lib.typecast",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -5312,6 +5305,23 @@
       "lastAudit": {
         "auditedAt": "2026-09-06T19:47:31Z",
         "auditedCommit": "1e6e59f3d1fc4fd30c86a5836aa156eed382e729",
+        "skillVersion": "0.35.0",
+        "stale": true
+      }
+    },
+    {
+      "name": "rain.lib.memkv",
+      "org": "rainlanguage",
+      "openAuditIssues": 47,
+      "lastMutation": {
+        "timestamp": "2026-09-16T10:52:59Z",
+        "commit": "645ddb9f767a30d7ef30c5fb05048577f3e80cd0",
+        "skillVersion": "0.35.0",
+        "scope": "whole repo"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-09-18T08:37:18Z",
+        "auditedCommit": "877a07ec023ee295f91118f007f7dc61ad4d1126",
         "skillVersion": "0.35.0",
         "stale": true
       }
@@ -6269,6 +6279,42 @@
       "daysSinceAudit": 232
     },
     {
+      "name": "rain.lib.memkv",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
+          "path": "audit/protofire/rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T17:58:40Z",
+          "auditDateIso": "2026-02-05T12:14:13Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "8000285775e554ae157393dc4e2068ef2ffa7e3a",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-02-05T12:14:13Z",
+      "latestTag": "sol-v0.1.48",
+      "latestTagIso": "2026-09-18T11:05:12Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 178,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 145,
+      "sourceLocRemovedSinceAudit": 33,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 201,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 105,
+      "commentLocRemovedSinceAudit": 22,
+      "codeLocAddedSinceAudit": 31,
+      "codeLocRemovedSinceAudit": 11,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/8000285775e554ae157393dc4e2068ef2ffa7e3a...main",
+      "daysSinceAudit": 225
+    },
+    {
       "name": "rain.vats",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -6351,42 +6397,6 @@
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
       "daysSinceAudit": 243
-    },
-    {
-      "name": "rain.lib.memkv",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
-          "path": "audit/protofire/rain.lib.memkv.8000285775e554ae157393dc4e2068ef2ffa7e3a.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T17:58:40Z",
-          "auditDateIso": "2026-02-05T12:14:13Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "8000285775e554ae157393dc4e2068ef2ffa7e3a",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-02-05T12:14:13Z",
-      "latestTag": "sol-v0.1.44",
-      "latestTagIso": "2026-09-17T22:45:49Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 112,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 101,
-      "sourceLocRemovedSinceAudit": 11,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 190,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 79,
-      "commentLocRemovedSinceAudit": 8,
-      "codeLocAddedSinceAudit": 18,
-      "codeLocRemovedSinceAudit": 3,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/8000285775e554ae157393dc4e2068ef2ffa7e3a...main",
-      "daysSinceAudit": 225
     },
     {
       "name": "rain.datacontract",
@@ -6532,15 +6542,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.252-uc-v0.0.1-alpha.252",
-      "latestTagIso": "2026-09-16T12:47:42Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.252-uc-v0.0.1-alpha.253",
+      "latestTagIso": "2026-09-18T11:14:08Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 54,
-      "commitsSinceAudit": 215,
+      "commitsSinceAudit": 218,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
