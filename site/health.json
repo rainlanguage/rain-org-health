@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T11:05:42Z",
+  "generatedAt": "2026-09-19T14:29:14Z",
   "auditGraph": {
     "nodes": [
       {
@@ -52,6 +52,11 @@
           "rainlang.interface"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.10",
+            "latest": "0.1.11"
+          },
           {
             "repo": "rain.intorastring",
             "pinned": "0.1.0",
@@ -165,7 +170,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.7",
-            "latest": "0.1.10"
+            "latest": "0.1.11"
           }
         ]
       },
@@ -202,7 +207,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.8",
-            "latest": "0.1.10"
+            "latest": "0.1.11"
           },
           {
             "repo": "rain.extrospection",
@@ -364,6 +369,11 @@
             "repo": "rain.datacontract",
             "pinned": "0.1.9",
             "latest": "0.2.0"
+          },
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.10",
+            "latest": "0.1.11"
           }
         ]
       },
@@ -445,7 +455,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.8",
-            "latest": "0.1.10"
+            "latest": "0.1.11"
           },
           {
             "repo": "rain.metadata",
@@ -572,7 +582,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.8",
-            "latest": "0.1.10"
+            "latest": "0.1.11"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -687,7 +697,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.7",
-            "latest": "0.1.10"
+            "latest": "0.1.11"
           },
           {
             "repo": "rain.factory",
@@ -758,6 +768,11 @@
           "rainlang.interface"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.10",
+            "latest": "0.1.11"
+          },
           {
             "repo": "rain.metadata",
             "pinned": "0.1.7",
@@ -858,6 +873,11 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.10",
+            "latest": "0.1.11"
+          },
+          {
             "repo": "rain.intorastring",
             "pinned": "0.1.0",
             "latest": "0.1.4"
@@ -908,6 +928,11 @@
           "rainlang.interface"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.10",
+            "latest": "0.1.11"
+          },
           {
             "repo": "rain.metadata",
             "pinned": "0.1.7",
@@ -980,6 +1005,11 @@
           "rain.vats"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.10",
+            "latest": "0.1.11"
+          },
           {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
@@ -1297,9 +1327,9 @@
       {
         "from": "rain.dia",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.dia",
@@ -1418,7 +1448,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.extrospection.deploy",
@@ -1432,7 +1462,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.factory.deploy",
@@ -1556,9 +1586,9 @@
       {
         "from": "rain.math.float.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1614,7 +1644,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1684,7 +1714,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1768,7 +1798,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.verify",
@@ -1808,9 +1838,9 @@
       {
         "from": "raindex",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "raindex",
@@ -1920,9 +1950,9 @@
       {
         "from": "rainlang",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rainlang",
@@ -2018,9 +2048,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rainlang.deploy",
@@ -2109,9 +2139,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "st0x.deploy",
@@ -5992,19 +6022,19 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-08T12:06:53Z",
-      "latestTag": "sol-v0.1.10",
-      "latestTagIso": "2026-09-14T11:21:00Z",
+      "latestTag": "sol-v0.1.11",
+      "latestTagIso": "2026-09-19T13:17:51Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6785,
+      "sourceLocChangedSinceAudit": 6871,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 6729,
+      "sourceLocAddedSinceAudit": 6815,
       "sourceLocRemovedSinceAudit": 56,
-      "filesChangedSinceAudit": 35,
-      "commitsSinceAudit": 536,
+      "filesChangedSinceAudit": 37,
+      "commitsSinceAudit": 538,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4396,
+      "commentLocAddedSinceAudit": 4418,
       "commentLocRemovedSinceAudit": 10,
-      "codeLocAddedSinceAudit": 1929,
+      "codeLocAddedSinceAudit": 1979,
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
