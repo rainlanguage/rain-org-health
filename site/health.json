@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T18:05:06Z",
+  "generatedAt": "2026-09-19T20:45:51Z",
   "auditGraph": {
     "nodes": [
       {
@@ -217,7 +217,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.9",
-            "latest": "0.1.17"
+            "latest": "0.1.20"
           }
         ]
       },
@@ -617,7 +617,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.5",
-            "latest": "0.1.17"
+            "latest": "0.1.20"
           },
           {
             "repo": "rain.math.fixedpoint",
@@ -702,7 +702,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.17"
+            "latest": "0.1.20"
           },
           {
             "repo": "rainlang.interface",
@@ -1018,7 +1018,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.17"
+            "latest": "0.1.20"
           },
           {
             "repo": "rain.math.float",
@@ -1119,7 +1119,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.17"
+            "latest": "0.1.20"
           },
           {
             "repo": "rain.math.float",
@@ -1476,7 +1476,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.9",
-        "latest": "0.1.17"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.flare",
@@ -1742,7 +1742,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.17"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.vats",
@@ -1805,7 +1805,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.17"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.verify",
@@ -2155,7 +2155,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.17"
+        "latest": "0.1.20"
       },
       {
         "from": "st0x.deploy",
@@ -2197,7 +2197,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.17"
+        "latest": "0.1.20"
       },
       {
         "from": "st0x.oracle",
@@ -6154,19 +6154,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.1.17",
-      "latestTagIso": "2026-09-19T16:51:44Z",
+      "latestTag": "sol-v0.1.20",
+      "latestTagIso": "2026-09-19T19:34:36Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 835,
+      "sourceLocChangedSinceAudit": 848,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 497,
+      "sourceLocAddedSinceAudit": 510,
       "sourceLocRemovedSinceAudit": 338,
       "filesChangedSinceAudit": 12,
-      "commitsSinceAudit": 95,
+      "commitsSinceAudit": 119,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 352,
+      "commentLocAddedSinceAudit": 349,
       "commentLocRemovedSinceAudit": 112,
-      "codeLocAddedSinceAudit": 123,
+      "codeLocAddedSinceAudit": 138,
       "codeLocRemovedSinceAudit": 180,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
@@ -7118,7 +7118,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 12,
+      "testFiles": 14,
       "sourcesUnparsed": 0,
       "untested": []
     },
