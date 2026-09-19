@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-19T14:29:14Z",
+  "generatedAt": "2026-09-19T18:05:06Z",
   "auditGraph": {
     "nodes": [
       {
@@ -182,7 +182,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 12,
+        "openAuditIssues": 3,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
@@ -217,7 +217,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.9",
-            "latest": "0.1.11"
+            "latest": "0.1.17"
           }
         ]
       },
@@ -617,7 +617,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.5",
-            "latest": "0.1.11"
+            "latest": "0.1.17"
           },
           {
             "repo": "rain.math.fixedpoint",
@@ -702,7 +702,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.17"
           },
           {
             "repo": "rainlang.interface",
@@ -1018,7 +1018,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.17"
           },
           {
             "repo": "rain.math.float",
@@ -1119,7 +1119,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.11"
+            "latest": "0.1.17"
           },
           {
             "repo": "rain.math.float",
@@ -1476,7 +1476,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.9",
-        "latest": "0.1.11"
+        "latest": "0.1.17"
       },
       {
         "from": "rain.flare",
@@ -1742,7 +1742,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.11"
+        "latest": "0.1.17"
       },
       {
         "from": "rain.vats",
@@ -1805,7 +1805,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.17"
       },
       {
         "from": "rain.verify",
@@ -2155,7 +2155,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.17"
       },
       {
         "from": "st0x.deploy",
@@ -2197,7 +2197,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.11"
+        "latest": "0.1.17"
       },
       {
         "from": "st0x.oracle",
@@ -4715,7 +4715,7 @@
       "name": "rain.factory",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 12,
+      "openAuditIssues": 3,
       "lastMutation": null
     },
     {
@@ -6154,21 +6154,21 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.1.11",
-      "latestTagIso": "2026-09-16T22:59:27Z",
+      "latestTag": "sol-v0.1.17",
+      "latestTagIso": "2026-09-19T16:51:44Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 801,
+      "sourceLocChangedSinceAudit": 835,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 469,
-      "sourceLocRemovedSinceAudit": 332,
-      "filesChangedSinceAudit": 10,
-      "commitsSinceAudit": 52,
+      "sourceLocAddedSinceAudit": 497,
+      "sourceLocRemovedSinceAudit": 338,
+      "filesChangedSinceAudit": 12,
+      "commitsSinceAudit": 95,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 350,
-      "commentLocRemovedSinceAudit": 108,
-      "codeLocAddedSinceAudit": 98,
-      "codeLocRemovedSinceAudit": 178,
-      "driftFullyClassified": true,
+      "commentLocAddedSinceAudit": 352,
+      "commentLocRemovedSinceAudit": 112,
+      "codeLocAddedSinceAudit": 123,
+      "codeLocRemovedSinceAudit": 180,
+      "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
       "daysSinceAudit": 69
     },
@@ -7118,7 +7118,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 11,
+      "testFiles": 12,
       "sourcesUnparsed": 0,
       "untested": []
     },
