@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T06:22:43Z",
+  "generatedAt": "2026-09-20T12:26:55Z",
   "auditGraph": {
     "nodes": [
       {
@@ -182,7 +182,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 2,
+        "openAuditIssues": 85,
         "lastMutation": {
           "timestamp": "2026-09-20T04:00:00Z",
           "commit": "5a633508643e345fc72c11133f782214f60db9b5",
@@ -200,7 +200,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 5,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -4720,7 +4720,7 @@
       "name": "rain.factory",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 2,
+      "openAuditIssues": 85,
       "lastMutation": {
         "timestamp": "2026-09-20T04:00:00Z",
         "commit": "5a633508643e345fc72c11133f782214f60db9b5",
@@ -4732,7 +4732,7 @@
       "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 5,
       "lastMutation": null
     },
     {
