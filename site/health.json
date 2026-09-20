@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-20T12:26:55Z",
+  "generatedAt": "2026-09-20T16:51:54Z",
   "auditGraph": {
     "nodes": [
       {
@@ -141,7 +141,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 15,
         "lastMutation": {
           "timestamp": "2026-08-18T14:11:41Z",
           "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
@@ -200,7 +200,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 5,
+        "openAuditIssues": 3,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -4701,7 +4701,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 15,
       "lastMutation": {
         "timestamp": "2026-08-18T14:11:41Z",
         "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
@@ -4732,7 +4732,7 @@
       "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 5,
+      "openAuditIssues": 3,
       "lastMutation": null
     },
     {
@@ -6035,16 +6035,16 @@
       "latestTag": "sol-v0.1.11",
       "latestTagIso": "2026-09-19T13:17:51Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 6871,
+      "sourceLocChangedSinceAudit": 6878,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 6815,
+      "sourceLocAddedSinceAudit": 6822,
       "sourceLocRemovedSinceAudit": 56,
       "filesChangedSinceAudit": 37,
-      "commitsSinceAudit": 538,
+      "commitsSinceAudit": 545,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4418,
+      "commentLocAddedSinceAudit": 4414,
       "commentLocRemovedSinceAudit": 10,
-      "codeLocAddedSinceAudit": 1979,
+      "codeLocAddedSinceAudit": 1985,
       "codeLocRemovedSinceAudit": 31,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -7074,7 +7074,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 8,
-      "testFiles": 63,
+      "testFiles": 65,
       "sourcesUnparsed": 0,
       "untested": []
     },
