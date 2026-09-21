@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T06:26:10Z",
+  "generatedAt": "2026-09-21T14:15:45Z",
   "auditGraph": {
     "nodes": [
       {
@@ -175,24 +175,6 @@
         ]
       },
       {
-        "repo": "rain.factory",
-        "org": "rainlanguage",
-        "package": "rain-factory",
-        "packageKnown": true,
-        "audit": "stale",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 85,
-        "lastMutation": {
-          "timestamp": "2026-09-20T04:00:00Z",
-          "commit": "5a633508643e345fc72c11133f782214f60db9b5",
-          "skillVersion": "0.34.0",
-          "scope": "LibICloneableFactoryV4, ICloneableFactoryV4, ICloneableV2 and the test fixtures they rely on, in three groups: g1-derivations (both salt derivations, the domain tags, cloneCreationCode, predictCloneAddress), g2-clone-tail (checkImplementationCode, cloneAndInitialize, ICLONEABLE_V2_SUCCESS), g3-entry-points (the four clone and predict entry points, ICloneableV2 fixture conformance). src/interface/deprecated/ is excluded: it is frozen for pinned consumers."
-        },
-        "blockedBy": [],
-        "staleDeps": []
-      },
-      {
         "repo": "rain.factory.deploy",
         "org": "rainlanguage",
         "package": "rain-factory-deploy",
@@ -200,8 +182,13 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 3,
-        "lastMutation": null,
+        "openAuditIssues": 2,
+        "lastMutation": {
+          "timestamp": "2026-09-20T10:34:00Z",
+          "commit": "5c165a880ac105d6c038cee096500f76849a2190",
+          "skillVersion": "0.35.0",
+          "scope": "whole repo"
+        },
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
@@ -222,7 +209,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.9",
-            "latest": "0.1.23"
+            "latest": "0.1.30"
           }
         ]
       },
@@ -622,7 +609,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.5",
-            "latest": "0.1.23"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.math.fixedpoint",
@@ -707,7 +694,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.23"
+            "latest": "0.1.30"
           },
           {
             "repo": "rainlang.interface",
@@ -1023,7 +1010,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.23"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.math.float",
@@ -1124,7 +1111,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.1.23"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.math.float",
@@ -1305,6 +1292,29 @@
         },
         "blockedBy": [],
         "staleDeps": []
+      },
+      {
+        "repo": "rain.factory",
+        "org": "rainlanguage",
+        "package": "rain-factory",
+        "packageKnown": true,
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-09-20T04:41:45Z",
+          "auditedCommit": "ffd304137b4c3e2fd655d46ec117fff82e4d1ba0",
+          "skillVersion": "0.35.0",
+          "stale": true
+        },
+        "openAuditIssues": 78,
+        "lastMutation": {
+          "timestamp": "2026-09-20T04:00:00Z",
+          "commit": "5a633508643e345fc72c11133f782214f60db9b5",
+          "skillVersion": "0.34.0",
+          "scope": "LibICloneableFactoryV4, ICloneableFactoryV4, ICloneableV2 and the test fixtures they rely on, in three groups: g1-derivations (both salt derivations, the domain tags, cloneCreationCode, predictCloneAddress), g2-clone-tail (checkImplementationCode, cloneAndInitialize, ICLONEABLE_V2_SUCCESS), g3-entry-points (the four clone and predict entry points, ICloneableV2 fixture conformance). src/interface/deprecated/ is excluded: it is frozen for pinned consumers."
+        },
+        "blockedBy": [],
+        "staleDeps": []
       }
     ],
     "edges": [
@@ -1481,7 +1491,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.9",
-        "latest": "0.1.23"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.flare",
@@ -1747,7 +1757,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.23"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.vats",
@@ -1810,7 +1820,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.23"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.verify",
@@ -2160,7 +2170,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.23"
+        "latest": "0.1.30"
       },
       {
         "from": "st0x.deploy",
@@ -2202,7 +2212,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.23"
+        "latest": "0.1.30"
       },
       {
         "from": "st0x.oracle",
@@ -4037,8 +4047,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 120,
   "reposWithFindings": 42,
-  "reposWholeRepoAudited": 10,
-  "reposNeverAudited": 110,
+  "reposWholeRepoAudited": 11,
+  "reposNeverAudited": 109,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 22,
   "summary": {
@@ -4717,23 +4727,16 @@
       "lastMutation": null
     },
     {
-      "name": "rain.factory",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 85,
-      "lastMutation": {
-        "timestamp": "2026-09-20T04:00:00Z",
-        "commit": "5a633508643e345fc72c11133f782214f60db9b5",
-        "skillVersion": "0.34.0",
-        "scope": "LibICloneableFactoryV4, ICloneableFactoryV4, ICloneableV2 and the test fixtures they rely on, in three groups: g1-derivations (both salt derivations, the domain tags, cloneCreationCode, predictCloneAddress), g2-clone-tail (checkImplementationCode, cloneAndInitialize, ICLONEABLE_V2_SUCCESS), g3-entry-points (the four clone and predict entry points, ICloneableV2 fixture conformance). src/interface/deprecated/ is excluded: it is frozen for pinned consumers."
-      }
-    },
-    {
       "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 3,
-      "lastMutation": null
+      "openAuditIssues": 2,
+      "lastMutation": {
+        "timestamp": "2026-09-20T10:34:00Z",
+        "commit": "5c165a880ac105d6c038cee096500f76849a2190",
+        "skillVersion": "0.35.0",
+        "scope": "whole repo"
+      }
     },
     {
       "name": "rain.flare",
@@ -5334,6 +5337,23 @@
       "lastAudit": {
         "auditedAt": "2026-09-18T08:37:18Z",
         "auditedCommit": "877a07ec023ee295f91118f007f7dc61ad4d1126",
+        "skillVersion": "0.35.0",
+        "stale": true
+      }
+    },
+    {
+      "name": "rain.factory",
+      "org": "rainlanguage",
+      "openAuditIssues": 78,
+      "lastMutation": {
+        "timestamp": "2026-09-20T04:00:00Z",
+        "commit": "5a633508643e345fc72c11133f782214f60db9b5",
+        "skillVersion": "0.34.0",
+        "scope": "LibICloneableFactoryV4, ICloneableFactoryV4, ICloneableV2 and the test fixtures they rely on, in three groups: g1-derivations (both salt derivations, the domain tags, cloneCreationCode, predictCloneAddress), g2-clone-tail (checkImplementationCode, cloneAndInitialize, ICLONEABLE_V2_SUCCESS), g3-entry-points (the four clone and predict entry points, ICloneableV2 fixture conformance). src/interface/deprecated/ is excluded: it is frozen for pinned consumers."
+      },
+      "lastAudit": {
+        "auditedAt": "2026-09-20T04:41:45Z",
+        "auditedCommit": "ffd304137b4c3e2fd655d46ec117fff82e4d1ba0",
         "skillVersion": "0.35.0",
         "stale": true
       }
@@ -6164,17 +6184,17 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.1.23",
-      "latestTagIso": "2026-09-20T04:01:00Z",
+      "latestTag": "sol-v0.1.30",
+      "latestTagIso": "2026-09-21T12:07:52Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 856,
+      "sourceLocChangedSinceAudit": 821,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 518,
+      "sourceLocAddedSinceAudit": 483,
       "sourceLocRemovedSinceAudit": 338,
       "filesChangedSinceAudit": 12,
-      "commitsSinceAudit": 129,
+      "commitsSinceAudit": 154,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 357,
+      "commentLocAddedSinceAudit": 322,
       "commentLocRemovedSinceAudit": 112,
       "codeLocAddedSinceAudit": 138,
       "codeLocRemovedSinceAudit": 180,
@@ -7137,7 +7157,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 4,
-      "testFiles": 9,
+      "testFiles": 10,
       "sourcesUnparsed": 0,
       "untested": []
     },
