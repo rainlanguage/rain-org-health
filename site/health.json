@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-21T14:15:45Z",
+  "generatedAt": "2026-09-21T19:34:09Z",
   "auditGraph": {
     "nodes": [
       {
@@ -274,6 +274,19 @@
           "skillVersion": "0.35.0",
           "scope": "whole repo"
         },
+        "blockedBy": [],
+        "staleDeps": []
+      },
+      {
+        "repo": "rain.lib.leakybucket",
+        "org": "rainlanguage",
+        "package": "rain-lib-leakybucket",
+        "packageKnown": true,
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 2,
+        "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
       },
@@ -1548,6 +1561,13 @@
         "stale": false,
         "pinned": "0.1.28",
         "latest": "0.1.28"
+      },
+      {
+        "from": "rain.lib.leakybucket",
+        "to": "rain.math.saturating",
+        "stale": false,
+        "pinned": "0.1.10",
+        "latest": "0.1.10"
       },
       {
         "from": "rain.lib.memkv",
@@ -4045,12 +4065,12 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 120,
+  "totalRepos": 121,
   "reposWithFindings": 42,
   "reposWholeRepoAudited": 11,
-  "reposNeverAudited": 109,
+  "reposNeverAudited": 110,
   "reposExternallyAudited": 25,
-  "reposNeverExternallyAudited": 22,
+  "reposNeverExternallyAudited": 23,
   "summary": {
     "per-chain-etherscan-key": 12,
     "old-nix-installer": 10,
@@ -4763,6 +4783,13 @@
         "skillVersion": "0.35.0",
         "scope": "whole repo"
       }
+    },
+    {
+      "name": "rain.lib.leakybucket",
+      "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 2,
+      "lastMutation": null
     },
     {
       "name": "rain.lib.typecast",
@@ -5579,6 +5606,35 @@
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": 2928,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
+      "name": "rain.lib.leakybucket",
+      "org": "rainlanguage",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 471,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -7185,6 +7241,15 @@
       "state": "analyzed",
       "externalFunctions": 0,
       "testFiles": 12,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
+      "name": "rain.lib.leakybucket",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 9,
       "sourcesUnparsed": 0,
       "untested": []
     },
