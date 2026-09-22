@@ -11,7 +11,7 @@
     --border: #e7e2da; --accent: #2563eb;
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
-    --crit: #dc2626;
+    --crit: #dc2626; --crit-bg: #fdecec; --on-crit: #ffffff;
   }
   @media (prefers-color-scheme: dark) {
     :root {
@@ -20,7 +20,7 @@
       --border: #332f24; --accent: #60a5fa;
       --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
       --clean: #4ade80; --clean-bg: #12241a;
-      --crit: #f87171;
+      --crit: #f87171; --crit-bg: #321616; --on-crit: #1c0b0b;
     }
   }
   :root[data-theme="dark"] {
@@ -29,7 +29,7 @@
     --border: #332f24; --accent: #60a5fa;
     --debt: #fbbf24; --debt-bg: #2a220f; --debt-border: #4a3c17;
     --clean: #4ade80; --clean-bg: #12241a;
-    --crit: #f87171;
+    --crit: #f87171; --crit-bg: #321616; --on-crit: #1c0b0b;
   }
   :root[data-theme="light"] {
     --bg: #fdfcfb; --surface: #f6f4f1; --surface-2: #eeebe6;
@@ -37,7 +37,7 @@
     --border: #e7e2da; --accent: #2563eb;
     --debt: #b45309; --debt-bg: #fef3e2; --debt-border: #f5d9ae;
     --clean: #15803d; --clean-bg: #e7f5ec;
-    --crit: #dc2626;
+    --crit: #dc2626; --crit-bg: #fdecec; --on-crit: #ffffff;
   }
   * { box-sizing: border-box; }
   body {
@@ -137,6 +137,59 @@
   .grt-role { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
               color: var(--ink-3); width: 200px; flex-shrink: 0; overflow-wrap: anywhere;
               line-height: 1.35; }
+  /* ---- Check rows: expected against actual, one verdict each ----
+     The three verdicts never share a look. A fail is a solid red chip on a
+     red-tinted row with a solid red rule down its left edge, so it cannot be
+     scrolled past. An unknown is a dashed grey outline on a dashed rule: a
+     check that was not read, never mistaken for one that passed or failed.
+     A pass is a green outline and nothing else. */
+  .st-chip { display: inline-flex; align-items: center; font-size: 11px; text-transform: uppercase;
+             letter-spacing: 0.04em; font-weight: 700; border-radius: 6px; padding: 3px 7px;
+             white-space: nowrap; border: 1px solid var(--border); }
+  .st-pass { color: var(--clean); border-color: var(--clean); }
+  .st-fail { color: var(--on-crit); background: var(--crit); border-color: var(--crit); }
+  .st-unknown { color: var(--ink-3); border: 1px dashed var(--ink-3); }
+  .own-row.chk-row { border-left: 4px solid transparent; }
+  .own-row.chk-fail { background: var(--crit-bg); border-left: 4px solid var(--crit); }
+  .own-row.chk-unknown { border-left: 4px dashed var(--ink-3); }
+  .chk-cmp { display: flex; flex-direction: column; gap: 3px; min-width: 0; }
+  .chk-line { display: flex; align-items: baseline; gap: 3px 8px; min-width: 0; }
+  .chk-vals { display: flex; flex-wrap: wrap; align-items: baseline; gap: 3px 8px; flex: 1 1 0;
+              min-width: 0; }
+  .own-rc .own-note { overflow-wrap: anywhere; }
+  .chk-key { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
+             color: var(--ink-3); width: 70px; flex-shrink: 0; }
+  .chk-name { font-size: 12.5px; font-weight: 650; color: var(--ink); }
+  .chk-how { font-size: 11.5px; color: var(--ink-3); font-style: italic; }
+  .chk-val { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
+             color: var(--ink-2); word-break: break-all; }
+  .chk-list { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .chk-none, .chk-unread { color: var(--ink-3); font-style: italic; font-size: 12px; }
+  .chk-bad, .chk-bad .own-addr, .chk-bad .chk-val { color: var(--crit); font-weight: 650; }
+  .chk-sub { display: flex; flex-direction: column; gap: 3px; padding: 6px 0 6px 8px;
+             border-left: 3px solid transparent; }
+  .chk-sub + .chk-sub { border-top: 1px solid var(--border); }
+  .chk-sub .chk-val { font-size: 11.5px; }
+  .chk-sub .chk-key { width: 62px; }
+  .chk-sub-fail { background: var(--crit-bg); border-left: 3px solid var(--crit); }
+  .chk-sub-unknown { border-left: 3px dashed var(--ink-3); }
+  .own-verify-fail { background: var(--crit-bg); border: 2px solid var(--crit); }
+  .own-verify-fail .own-verify-msg::before { content: "✗ "; color: var(--crit); font-weight: 700; }
+  .own-verify-unknown { background: var(--surface); border-style: dashed; border-color: var(--ink-3); }
+  .own-verify-unknown .own-verify-msg::before { content: "? "; color: var(--ink-3); font-weight: 700; }
+  .st-subject { margin: 8px 0; }
+  .st-sum { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 12px; cursor: pointer;
+            list-style: none; padding: 8px 12px; border: 1px solid var(--border); border-radius: 9px;
+            background: var(--surface); }
+  .st-sum::-webkit-details-marker { display: none; }
+  .st-sum::before { content: "▸"; color: var(--ink-3); width: 10px; }
+  .st-subject[open] > .st-sum::before { content: "▾"; }
+  .st-subject[open] > .st-sum { border-radius: 9px 9px 0 0; border-bottom-width: 0; }
+  .st-subject[open] > .own-table { border-radius: 0 0 11px 11px; }
+  .st-subject-fail > .st-sum { background: var(--crit-bg); border-color: var(--crit); border-left: 4px solid var(--crit); }
+  .st-subject-unknown > .st-sum { border-style: dashed; border-color: var(--ink-3); }
+  .st-sum-title { font-size: 14px; font-weight: 650; color: var(--ink); }
+  .st-tally { margin-left: auto; color: var(--ink-3); font-size: 12.5px; }
   @media (max-width: 620px) {
     .own-row { grid-template-columns: 1fr; gap: 5px; }
     .own-prov { justify-content: flex-start; }
@@ -187,11 +240,30 @@ function renderDeployments(document, $, data) {
     a.target = "_blank";
     return a;
   };
+  // Each chain's block explorer, as st0x.deploy itself links them (Robinhood
+  // Chain is on Blockscout: Etherscan does not index it). A network this page
+  // does not know gets NO link rather than another chain's explorer: an address
+  // opened on the wrong chain shows a different contract, or none, and that
+  // reads as a finding.
+  const EXPLORERS = new Map([
+    ["base", "https://basescan.org/address/"],
+    ["ethereum", "https://etherscan.io/address/"],
+    ["hyperevm", "https://hyperevmscan.io/address/"],
+    ["robinhood", "https://robinhoodchain.blockscout.com/address/"],
+    ["bsc", "https://bscscan.com/address/"],
+  ]);
   // A privileged address is the same on every chain except where the constant is
-  // network-specific; Base is the home network, so it is the default explorer.
-  const explorer = (address, network) =>
-    (network === "ethereum" ? "https://etherscan.io/address/" : "https://basescan.org/address/") +
-    address;
+  // network-specific; Base is the home network, so an address with no network is
+  // a Base address.
+  const explorer = (address, network) => {
+    const base = EXPLORERS.get(network || "base");
+    return base ? base + address : null;
+  };
+  // An address, linked to its chain's explorer where the chain is known.
+  const addrLink = (address, network, cls = "own-addr") => {
+    const url = explorer(address, network);
+    return url ? link(cls, address, url) : el("span", cls, address);
+  };
   // Declared-vs-on-chain verdict banner for a group that carries a verification.
   const verifyBanner = (v) => {
     let cls, msg;
@@ -277,6 +349,330 @@ function renderDeployments(document, $, data) {
     }
     box.append(table);
   };
+  // ---- Check rows (deploymentState, deploymentBeacons) ----
+  // Every live check the scan runs is one row: the check, what the deploy
+  // repo's pins EXPECT, what the chain ACTUALLY returned, and the verdict.
+  //
+  // The verdict is closed over the three the scan emits. Anything else — absent,
+  // misspelt, a token added later — is shown as unread, never as a pass.
+  const verdict = (s) => (s === "pass" || s === "fail" ? s : "unknown");
+  const stChip = (s) => {
+    const v = verdict(s);
+    return el(
+      "span",
+      `st-chip st-${v}`,
+      v === "pass" ? "pass ✓" : v === "fail" ? "fail ✗" : "unknown ?",
+    );
+  };
+  // A tallied block's verdict, re-derived from its counts rather than taken on
+  // trust: any failure is a fail, and "pass" needs at least one check read and
+  // none left unread. A block with no checks is unverified, not clean.
+  const rollupOf = (t) => {
+    const failed = t.failed ?? 0;
+    const unknown = t.unknown ?? 0;
+    const total = t.total ?? (t.passed ?? 0) + failed + unknown;
+    if (failed > 0 || t.state === "fail") return "fail";
+    return t.state === "pass" && unknown === 0 && total > 0 ? "pass" : "unknown";
+  };
+  // The tallies in words, worded so an unread check never reads as a passed one.
+  const tallyMsg = (t, where) => {
+    const passed = t.passed ?? 0;
+    const failed = t.failed ?? 0;
+    const unknown = t.unknown ?? 0;
+    const n = t.total ?? passed + failed + unknown;
+    const v = rollupOf(t);
+    if (v === "fail") {
+      return `${failed} of ${n} checks FAIL ${where}` +
+        (unknown ? `; ${unknown} more could not be read.` : ".");
+    }
+    if (v === "pass") return `All ${n} checks pass ${where}.`;
+    if (n === 0) return `No checks were produced ${where} — unverified, not passed.`;
+    return `${unknown} of ${n} checks could not be read ${where} — unverified, not passed; ${passed} pass.`;
+  };
+  const tallyShort = (t) => {
+    const n = t.total ?? 0;
+    return `${t.passed ?? 0}/${n} pass` +
+      (t.failed ? ` · ${t.failed} fail` : "") +
+      (t.unknown ? ` · ${t.unknown} unread` : "");
+  };
+  const stateBanner = (v, msg) => {
+    const b = el("div", `own-verify own-verify-${v === "pass" ? "ok" : v}`);
+    b.append(el("span", "own-verify-msg", msg));
+    return b;
+  };
+  const CHECK_TITLES = new Map([
+    ["threshold", "Threshold"],
+    ["owners", "Owners"],
+    ["proxyCodehash", "Proxy codehash"],
+    ["singleton", "Singleton (slot 0)"],
+    ["singletonCodehash", "Singleton codehash"],
+    ["modules", "Modules"],
+    ["guard", "Guard"],
+    ["fallbackHandler", "Fallback handler"],
+    ["codehash", "Codehash"],
+    ["erc1167Clone", "ERC-1167 clone"],
+    ["initialized", "Initialized"],
+    ["beacon", "Beacon (ERC-1967 slot)"],
+    ["vaultLogicIsExpected", "vaultLogicIsExpected()"],
+    ["owner", "owner()"],
+    ["implementation", "implementation()"],
+  ]);
+  const checkTitle = (c) => CHECK_TITLES.get(c.check) ?? String(c.check ?? "check");
+  // How the expected value is compared, where plain equality would mislead.
+  const HOW = new Map([
+    ["anyOf", "any of"],
+    ["set", "exactly"],
+    ["nonzero", "non-zero"],
+  ]);
+  const ADDRESS = /^0x[0-9a-fA-F]{40}$/;
+  const valueNode = (v, network) => {
+    if (typeof v === "string") {
+      return ADDRESS.test(v) ? addrLink(v, network, "own-addr chk-val") : el("span", "chk-val", v);
+    }
+    if (Array.isArray(v)) {
+      if (v.length === 0) return el("span", "chk-none", "none");
+      const list = el("div", "chk-list");
+      for (const x of v) list.append(valueNode(x, network));
+      return list;
+    }
+    if (v !== null && typeof v === "object") return el("span", "chk-val", JSON.stringify(v));
+    return el("span", "chk-val", String(v));
+  };
+  // A keyed line. The values sit in their own box beside the key, so a 66-char
+  // hash breaks inside that box instead of dropping below the key.
+  const cmpLine = (key, ...nodes) => {
+    const l = el("div", "chk-line");
+    const vals = el("div", "chk-vals");
+    vals.append(...nodes);
+    l.append(el("span", "chk-key", key), vals);
+    return l;
+  };
+  // [expected line, actual line, then any set difference the check names].
+  // `extra` adds nodes after the expected and the actual value.
+  const compareLines = (c, network, extra = {}) => {
+    const bad = verdict(c.status) === "fail";
+    const exp = [];
+    const how = HOW.get(c.match);
+    if (how) exp.push(el("span", "chk-how", how));
+    if (c.expected === null || c.expected === undefined) {
+      // A non-zero check has no value to expect; anything else with none
+      // means the scan could not work out what to compare against.
+      if (c.match !== "nonzero") exp.push(el("span", "chk-unread", "not determined"));
+    } else {
+      exp.push(valueNode(c.expected, network));
+    }
+    const act = c.actual === null || c.actual === undefined
+      ? el("span", "chk-unread", "not read")
+      : valueNode(c.actual, network);
+    // A failed set check that names its difference marks the difference, not
+    // every member it still shares with the pin.
+    const diffNamed = ["missing", "unexpected"].some((k) => Array.isArray(c[k]) && c[k].length);
+    if (bad && !diffNamed) act.className += " chk-bad";
+    const lines = [
+      cmpLine("expected", ...exp, ...(extra.expected || [])),
+      cmpLine("actual", act, ...(extra.actual || [])),
+    ];
+    for (const [k, label] of [["missing", "missing"], ["unexpected", "extra"], ["unread", "unread"]]) {
+      if (Array.isArray(c[k]) && c[k].length) {
+        const d = valueNode(c[k], network);
+        if (k !== "unread") d.className += " chk-bad";
+        lines.push(cmpLine(label, d));
+      }
+    }
+    return lines;
+  };
+  const noteOf = (...parts) => {
+    const n = el("div", "own-note");
+    n.append(...parts);
+    return n;
+  };
+  // The check's name, and what it was run against.
+  const checkLabel = (c, network) => {
+    let title = checkTitle(c);
+    const notes = [];
+    if (c.check === "role") {
+      title = `hasRole(${c.role ?? "?"})`;
+    } else if (c.check === "noRoles") {
+      title = `${c.account ?? "?"} holds none`;
+    } else if (c.contract) {
+      title = String(c.contract);
+      if (c.release) notes.push(noteOf(`release ${String(c.release).replace(/_/g, ".")}`));
+    }
+    if (c.on) notes.push(noteOf(`on the ${c.on}`));
+    if (c.check === "role" && c.account) notes.push(noteOf(`account ${c.account}`));
+    if (c.address) notes.push(noteOf(addrLink(c.address, network)));
+    if (c.check === "noRoles" && Array.isArray(c.roles)) {
+      notes.push(noteOf(`of the ${c.roles.length} roles ${c.roles.join(", ")}`));
+    }
+    if (c.implementation) notes.push(noteOf("clone of ", addrLink(c.implementation, network)));
+    if (c.slot) notes.push(noteOf("slot ", el("span", "chk-val", c.slot)));
+    return [title, notes];
+  };
+  const checkRow = (c, network) => {
+    const v = verdict(c.status);
+    const row = el("div", `own-row chk-row chk-${v}`);
+    const rc = el("div", "own-rc");
+    const [title, notes] = checkLabel(c, network);
+    rc.append(el("div", "own-role", title), ...notes);
+    const cmp = el("div", "chk-cmp");
+    cmp.append(...compareLines(c, network));
+    row.append(rc, cmp, stChip(v));
+    return row;
+  };
+  // One subject (a Safe, a clone, an instance, the frozen set) on one chain. A
+  // subject whose every check passed starts folded, so 200-odd passing rows do
+  // not bury the one that failed; a failed or unread one starts open.
+  const renderSubject = (s, title, network) => {
+    if (!s || typeof s !== "object") {
+      return stateBanner("unknown", `${title} — not in the scan output; unverified, not passed.`);
+    }
+    const checks = Array.isArray(s.checks) ? s.checks : [];
+    const t = { ...s, total: s.total ?? checks.length };
+    const v = rollupOf(t);
+    const d = el("details", `st-subject st-subject-${v}`);
+    d.open = v !== "pass";
+    const sm = el("summary", "st-sum");
+    sm.append(el("span", "st-sum-title", title));
+    if (s.address) sm.append(addrLink(s.address, network));
+    sm.append(el("span", "st-tally", tallyShort(t)), stChip(v));
+    d.append(sm);
+    const table = el("div", "own-table");
+    for (const c of checks) table.append(checkRow(c, network));
+    if (!checks.length) {
+      const r = el("div", "own-row chk-row chk-unknown");
+      r.append(el("div", "own-note", "No checks were produced for this subject — unverified, not passed."));
+      table.append(r);
+    }
+    d.append(table);
+    return d;
+  };
+  const SUBJECTS = [
+    ["tokenOwnerSafe", "Token-owner Safe"],
+    ["authoriser", "V4 authoriser clone"],
+    ["orchestrator", "Orchestrator instance"],
+    ["frozen", "Frozen releases"],
+  ];
+  // The deploy script's live state on every chain, check by check.
+  const renderState = (st) => {
+    if (!st || !Array.isArray(st.chains) || st.chains.length === 0) return;
+    box.append(el("h2", null, "Deploy-script state — per chain"));
+    const sub = el("div", "own-sub");
+    sub.append(
+      "The token-owner Safe, V4 authoriser clone, orchestrator instance and frozen releases on each chain, read live and compared with the pins in ",
+    );
+    sub.append(link("", `${st.org}/${st.repo}`, `https://github.com/${st.org}/${st.repo}`));
+    sub.append(
+      ". Every row shows what the pins expect against what the chain returned. A subject whose checks all pass starts folded; one with a failed or unread check starts open.",
+    );
+    box.append(sub);
+    const n = st.chains.length;
+    box.append(stateBanner(rollupOf(st), tallyMsg(st, `across ${n} chain${n === 1 ? "" : "s"}`)));
+    for (const ch of st.chains) {
+      const network = ch.network ?? "unknown chain";
+      box.append(el("h3", "tok-h3", network));
+      const b = stateBanner(rollupOf(ch), tallyMsg(ch, `on ${network}`));
+      b.append(el("span", "own-verify-src", ch.rpcHost ? `via ${ch.rpcHost}` : "no RPC endpoint configured"));
+      box.append(b);
+      const covered = Array.isArray(ch.frozenCoveredByDeploymentHealth)
+        ? ch.frozenCoveredByDeploymentHealth
+        : [];
+      if (covered.length) {
+        box.append(
+          el(
+            "div",
+            "own-sub",
+            `The frozen ${covered.map((r) => String(r).replace(/_/g, ".")).join(", ")} release on ${network} is checked in the suite health section above, so it is not repeated under Frozen releases here.`,
+          ),
+        );
+      }
+      for (const [key, title] of SUBJECTS) box.append(renderSubject(ch[key], title, ch.network));
+    }
+  };
+  // Who a beacon's live owner() is, as the scan resolved it.
+  const ownerChip = (label) => {
+    const m = {
+      safe: ["Safe", "yes"],
+      legacy: ["legacy EOA", "no"],
+      foreign: ["foreign", "no"],
+    }[label] || ["owner unknown", "dim"];
+    return el("span", `own-chip own-chip-${m[1]}`, m[0]);
+  };
+  // Which release a beacon's live implementation() is.
+  const implChip = (bc) => {
+    const iv = bc.implVersion;
+    if (iv === undefined || iv === null || iv === "unknown") {
+      return el("span", "own-chip own-chip-dim", "release unknown");
+    }
+    if (iv === "unrecognised") return el("span", "own-chip own-chip-no", "unrecognised impl");
+    return el("span", `own-chip own-chip-${bc.atTarget === true ? "yes" : "no"}`, `release ${iv}`);
+  };
+  // A chain's beacons in the per-check shape: every beacon lists its codehash,
+  // owner and implementation checks, each expected against actual.
+  const renderBeaconChecks = (b) => {
+    box.append(el("h2", null, `Beacons — ${b.network}`));
+    box.append(
+      el(
+        "div",
+        "own-sub",
+        `Each production beacon in ${b.beaconSet ?? "this chain's beacon set"}, read live on ${b.network}: its codehash against the pinned beacon codehash, owner() strictly the chain's Safe, and implementation() against its target (${b.targetVersion}).`,
+      ),
+    );
+    const t = { ...b, total: b.checkTotal };
+    const banner = stateBanner(
+      rollupOf(t),
+      `${tallyMsg(t, `on ${b.network}`)} ${b.healthy ?? 0} of ${b.total ?? b.beacons.length} beacons healthy.`,
+    );
+    if (b.safeOwner) {
+      const src = el("span", "own-verify-src");
+      src.append("Safe ", addrLink(b.safeOwner, b.network));
+      banner.append(src);
+    }
+    if (b.rpcHost) banner.append(el("span", "own-verify-src", `via ${b.rpcHost}`));
+    box.append(banner);
+    const table = el("div", "own-table");
+    for (const bc of b.beacons) {
+      const checks = Array.isArray(bc.checks) ? bc.checks : [];
+      const v = rollupOf({ ...bc, total: bc.total ?? checks.length });
+      const row = el("div", `own-row chk-row chk-${v}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", bc.name ?? "Beacon"));
+      rc.append(
+        noteOf(
+          bc.address
+            ? addrLink(bc.address, b.network)
+            : el("span", "own-addr own-missing", "— address not read"),
+        ),
+      );
+      if (bc.source) rc.append(noteOf(`#${bc.index ?? "?"} · ${bc.source}`));
+      const detail = el("div", "bcn-detail");
+      for (const c of checks) {
+        const cv = verdict(c.status);
+        const blk = el("div", `chk-sub chk-sub-${cv}`);
+        const head = el("div", "chk-line");
+        head.append(el("span", "chk-name", checkTitle(c)), stChip(cv));
+        blk.append(head);
+        const extra = { expected: [], actual: [] };
+        if (c.check === "owner") extra.actual.push(ownerChip(bc.ownerLabel));
+        if (c.check === "implementation") {
+          if (bc.targetVersion) {
+            extra.expected.push(el("span", "own-chip own-chip-target", bc.targetVersion));
+          }
+          if (c.target) extra.expected.push(el("span", "chk-how", String(c.target)));
+          extra.actual.push(implChip(bc));
+        }
+        blk.append(...compareLines(c, b.network, extra));
+        detail.append(blk);
+      }
+      if (!checks.length) {
+        detail.append(el("span", "chk-unread", "No checks were produced for this beacon — unverified, not passed."));
+      }
+      // The named status (healthy / drift / behind / mismatch / unknown) says
+      // WHICH check failed first; its colour is the row's verdict.
+      row.append(rc, detail, el("span", `st-chip st-${v}`, bc.status ?? "unknown"));
+      table.append(row);
+    }
+    box.append(table);
+  };
   // Production beacons: each should be Safe-owned and point at its pinned impl.
   const renderBeaconSet = (b) => {
     if (!b) return;
@@ -292,6 +688,12 @@ function renderDeployments(document, $, data) {
           `Beacon data unavailable — ${b.reason ?? "the scan produced no beacons for this chain"}${b.rpcHost ? ` (via ${b.rpcHost})` : ""}.`,
         ),
       );
+      return;
+    }
+    // A scan that emits per-beacon checks gets the check view; a health.json
+    // written before it (no checks on any beacon) keeps the view below.
+    if (b.beacons.some((bc) => Array.isArray(bc && bc.checks))) {
+      renderBeaconChecks(b);
       return;
     }
     box.append(el("h2", null, `Beacons — ${b.network}`));
@@ -313,7 +715,7 @@ function renderDeployments(document, $, data) {
     );
     if (b.safeOwner) banner.append(el("span", "own-verify-src", `Safe = ${b.safeOwner}`));
     box.append(banner);
-    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const explorerLink = (addr) => addrLink(addr, b.network);
     const detailLine = (key, chipText, chipCls, addr) => {
       const line = el("div", "bcn-line");
       line.append(el("span", "bcn-key", key));
@@ -740,7 +1142,7 @@ function renderDeployments(document, $, data) {
       if (c.authoriser) {
         const src = el("span", "own-verify-src");
         src.append("authoriser ");
-        src.append(link("own-addr", c.authoriser, explorer(c.authoriser, c.network)));
+        src.append(addrLink(c.authoriser, c.network));
         b.append(src);
       }
       if (c.rpcHost) b.append(el("span", "own-verify-src", `via ${c.rpcHost}`));
@@ -803,7 +1205,7 @@ function renderDeployments(document, $, data) {
             for (const n of a.networks) line.append(el("span", "own-net", n));
           }
           line.append(
-            link("own-addr", a.address, explorer(a.address, a.networks[0])),
+            addrLink(a.address, a.networks[0]),
           );
           rc.append(line);
         }
@@ -867,6 +1269,7 @@ function renderDeployments(document, $, data) {
     // that says who can move value.
     renderGrants(data.deploymentGrants);
     renderHealth(data.deploymentHealth);
+    renderState(data.deploymentState);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
     return;
@@ -894,7 +1297,7 @@ function renderDeployments(document, $, data) {
       if (e.note) rc.append(el("div", "own-note", e.note));
       const ac = el("div", "own-ac");
       if (e.address) {
-        ac.append(link("own-addr", e.address, explorer(e.address, e.network)));
+        ac.append(addrLink(e.address, e.network));
       } else {
         ac.append(el("span", "own-addr own-missing", "— not found"));
       }
@@ -932,6 +1335,7 @@ function renderDeployments(document, $, data) {
   }
   renderGrants(data.deploymentGrants);
   renderHealth(data.deploymentHealth);
+  renderState(data.deploymentState);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
 }
