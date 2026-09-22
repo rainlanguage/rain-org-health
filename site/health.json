@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T15:08:08Z",
+  "generatedAt": "2026-09-22T18:58:37Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1331,10 +1331,10 @@
         },
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-09-22T14:47:08Z",
-          "commit": "d2dbc9dbcd9a0e074db44f6608e5bc3971848d1c",
+          "timestamp": "2026-09-22T16:51:53Z",
+          "commit": "1463c2528a8bf315a60cf09bc5739afaae3924bf",
           "skillVersion": "0.35.0",
-          "scope": "re-probe after a comment-only edit to src/lib/LibLeakyBucket.sol (#108). No executable code changed; the mutants and their targets are identical to the entry above."
+          "scope": "re-probe after the private max (b81c9d3) and the zero fill rejection (3d52080). 60 mutants against src/lib/LibLeakyBucket.sol: M46-M48 retargeted to max, M60 added (zero amount guard removed). Probe ran on 3d52080; this commit differs from it by one comment line in test/, no bytecode change."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -5393,10 +5393,10 @@
       "org": "rainlanguage",
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-09-22T14:47:08Z",
-        "commit": "d2dbc9dbcd9a0e074db44f6608e5bc3971848d1c",
+        "timestamp": "2026-09-22T16:51:53Z",
+        "commit": "1463c2528a8bf315a60cf09bc5739afaae3924bf",
         "skillVersion": "0.35.0",
-        "scope": "re-probe after a comment-only edit to src/lib/LibLeakyBucket.sol (#108). No executable code changed; the mutants and their targets are identical to the entry above."
+        "scope": "re-probe after the private max (b81c9d3) and the zero fill rejection (3d52080). 60 mutants against src/lib/LibLeakyBucket.sol: M46-M48 retargeted to max, M60 added (zero amount guard removed). Probe ran on 3d52080; this commit differs from it by one comment line in test/, no bytecode change."
       },
       "lastAudit": {
         "auditedAt": "2026-09-22T05:00:00Z",
@@ -5654,7 +5654,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 585,
+      "fullSourceLoc": 153,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -6136,7 +6136,7 @@
       "sourceLocAddedSinceAudit": 3825,
       "sourceLocRemovedSinceAudit": 313,
       "filesChangedSinceAudit": 88,
-      "commitsSinceAudit": 610,
+      "commitsSinceAudit": 621,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 4339,
       "commentLocRemovedSinceAudit": 257,
