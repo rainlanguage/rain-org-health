@@ -210,7 +210,7 @@ fn decode_bool(result_hex: &str) -> Option<bool> {
     not(test),
     expect(
         dead_code,
-        reason = "consumed by the #182 deployment checks, which land after these reads"
+        reason = "the #182 token-pairing and role-log checks land after these reads"
     )
 )]
 mod deploy_reads {
@@ -445,13 +445,6 @@ mod deploy_reads {
     }
 }
 
-#[cfg_attr(
-    not(test),
-    expect(
-        unused_imports,
-        reason = "re-exports the #182 reads for their callers, which land after them"
-    )
-)]
 pub use deploy_reads::*;
 
 #[cfg(test)]

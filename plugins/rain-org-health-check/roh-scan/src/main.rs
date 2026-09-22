@@ -16,6 +16,7 @@ mod cli;
 mod commentloc;
 mod consumers;
 mod deployhealth;
+mod deploystate;
 mod graph;
 mod mutation;
 mod owners;
@@ -257,6 +258,12 @@ const BSC_RPCS: &[&str] = &[
     "https://bsc.drpc.org",
 ];
 
+/// The release and chain the `deploymentHealth` view checks (#84). The
+/// `deploymentState` view leaves that release's frozen code hashes on that chain
+/// to it, so both read these rather than each writing its own copy.
+const HEALTH_VERSION: &str = "0.1.1";
+const HEALTH_NETWORK: &str = "base";
+
 /// The chains the scan reads production state from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Chain {
@@ -409,6 +416,61 @@ fn supports_interface(session: Session, address: &str, interface_id: [u8; 4]) ->
     match curl_json(session, &eth_call_payload(address, &data)) {
         Some(body) => rpc::classify_bool(&body),
         None => rpc::CallClass::Unknown,
+    }
+}
+
+/// `eth_getStorageAt` for one slot of `address` (within `session`) → the
+/// 32-byte word, or `None` on RPC failure or a malformed address or slot.
+fn eth_get_storage_at(session: Session, address: &str, slot: &str) -> Option<[u8; 32]> {
+    let payload = rpc::storage_at_payload(address, slot)?;
+    curl_json(session, &payload)
+        .and_then(|b| rpc::result_hex(&b))
+        .and_then(|h| rpc::decode_storage_word(&h))
+}
+
+/// A `bool`-returning `eth_call` within `session`: `Some` only when the chain
+/// answered with a bool. A revert says nothing either way, so it is `None`
+/// alongside an RPC failure rather than a `false`.
+fn eth_call_bool(session: Session, to: &str, data: &str) -> Option<bool> {
+    match curl_json(session, &eth_call_payload(to, data)).map(|b| rpc::classify_bool(&b)) {
+        Some(rpc::CallClass::True) => Some(true),
+        Some(rpc::CallClass::False) => Some(false),
+        _ => None,
+    }
+}
+
+/// The #182 live-state reads over one chain's session, so every check on a
+/// chain is answered by the same endpoint.
+struct LiveReads(Session);
+
+impl deploystate::ChainReads for LiveReads {
+    fn code(&self, address: &str) -> Option<String> {
+        eth_get_code(self.0, address)
+    }
+    fn storage(&self, address: &str, slot: &str) -> Option<[u8; 32]> {
+        eth_get_storage_at(self.0, address, slot)
+    }
+    fn has_role(&self, contract: &str, role: [u8; 32], account: &str) -> Option<bool> {
+        eth_call_bool(self.0, contract, &rpc::has_role_calldata(role, account)?)
+    }
+    fn owners(&self, safe: &str) -> Option<Vec<String>> {
+        eth_call(self.0, safe, &rpc::get_owners_calldata()).and_then(|h| rpc::decode_owners(&h))
+    }
+    fn threshold(&self, safe: &str) -> Option<u64> {
+        eth_call(self.0, safe, &rpc::get_threshold_calldata()).and_then(|h| rpc::decode_uint(&h))
+    }
+    fn modules(&self, safe: &str, start: &str, page_size: u64) -> Option<Vec<String>> {
+        let data = rpc::get_modules_paginated_calldata(start, page_size)?;
+        eth_call(self.0, safe, &data)
+            .and_then(|h| rpc::decode_modules_page(&h))
+            .map(|(modules, _next)| modules)
+    }
+    fn vault_logic_is_expected(&self, orchestrator: &str) -> Option<bool> {
+        eth_call_bool(
+            self.0,
+            orchestrator,
+            &rpc::vault_logic_is_expected_calldata(),
+        )
     }
 }
 
@@ -2630,7 +2692,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // BYTECODE_HASH keccak. Best-effort — a failed eth_getCode marks that one
         // contract `unknown` rather than failing the scan.
         let deployment_health = {
-            let (org, repo, version) = ("S01-Issuer", "st0x.deploy", "0.1.1");
+            let (org, repo, version) = ("S01-Issuer", "st0x.deploy", HEALTH_VERSION);
             let dir = format!("src/generated/{}", version.replace('.', "_"));
             match gh_contents_entries(&gh, org, repo, &dir) {
                 ContentsListing::Found(entries) => {
@@ -2666,7 +2728,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         org,
                         repo,
                         version,
-                        "base",
+                        HEALTH_NETWORK,
                         "mainnet.base.org",
                         contracts,
                     )
@@ -2674,6 +2736,66 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 }
                 _ => serde_json::Value::Null,
             }
+        };
+
+        // The live state the deleted st0x.deploy scripts established (#182), on
+        // every chain: the token-owner Safe, the V4 authoriser clone, the
+        // orchestrator instance, and the frozen releases `deploymentHealth` does
+        // not already cover. Every expected value comes out of the deploy repo.
+        let deployment_state = {
+            let orchestrator_src =
+                gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
+            let frozen = deploystate::frozen_imports(&v4)
+                .into_iter()
+                .map(|(release, contract, path)| {
+                    let src = gh_file(deploy_org, deploy_repo, &path);
+                    deploystate::frozen_pin(&release, &contract, &path, &src)
+                })
+                .collect();
+            let expect =
+                deploystate::parse_expectations(&deploy_sources, &orchestrator_src, frozen);
+            let mut chains = owners::parse_chain_pins(&v4, &safe);
+            for c in chains.iter_mut() {
+                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
+            }
+            let health_release = HEALTH_VERSION.replace('.', "_");
+            // Each chain is its own endpoint set, so the chains are read in
+            // parallel. Within a chain every read shares one session.
+            let docs: Vec<serde_json::Value> = std::thread::scope(|s| {
+                let handles: Vec<_> = chains
+                    .iter()
+                    .map(|pin| {
+                        let (expect, health_release) = (&expect, health_release.as_str());
+                        s.spawn(move || {
+                            let covered: &[&str] = if pin.network == HEALTH_NETWORK {
+                                &[health_release]
+                            } else {
+                                &[]
+                            };
+                            match Chain::from_network(&pin.network) {
+                                Some(ch) => deploystate::chain_doc(
+                                    expect,
+                                    pin,
+                                    covered,
+                                    &LiveReads(rpc_session(ch)),
+                                ),
+                                None => deploystate::chain_doc(
+                                    expect,
+                                    pin,
+                                    covered,
+                                    &deploystate::NoReads,
+                                ),
+                            }
+                        })
+                    })
+                    .collect();
+                handles
+                    .into_iter()
+                    .map(|h| h.join().expect("a deployment-state chain read panicked"))
+                    .collect()
+            });
+            deploystate::build_state(deploy_org, deploy_repo, docs)
+                .unwrap_or(serde_json::Value::Null)
         };
 
         // The 3 production beacons on Base (#84): each should be owned by the
@@ -3107,6 +3229,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentOwners": deployment_owners,
             "deploymentGrants": deployment_grants,
             "deploymentHealth": deployment_health,
+            "deploymentState": deployment_state,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
             // Every org scanned. `org` stays as a joined display string so any

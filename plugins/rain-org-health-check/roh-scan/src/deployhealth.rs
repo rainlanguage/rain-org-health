@@ -24,10 +24,13 @@ pub fn parse_hex_constant(src: &str, name: &str) -> Option<String> {
         .map(|m| m.as_str().to_lowercase())
 }
 
-/// Parse a `bytes32 constant NAME = bytes32(0x…64…);` → lowercase `0x…`.
+/// Parse a `bytes32 constant NAME = bytes32(0x…64…);` → lowercase `0x…`. The
+/// bare `NAME = 0x…64…;` form is read too: the generated pointer files wrap the
+/// literal, while `LibSafeInvariants` and the generated deploy lib write it bare.
+/// The trailing non-hex char stops a longer literal matching on its first 64.
 pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
     let re = Regex::new(&format!(
-        r"\b{}\b\s*=\s*bytes32\(\s*(0x[0-9a-fA-F]{{64}})\s*\)",
+        r"\b{}\b\s*=\s*(?:bytes32\(\s*)?(0x[0-9a-fA-F]{{64}})(?:[^0-9a-fA-F]|$)",
         regex::escape(name),
     ))
     .ok()?;
@@ -619,6 +622,26 @@ mod tests {
             "0x2a67c52129df123456789012345678901234567890123456789012345678aaaa"
         );
         assert_eq!(parse_hex_constant(src, "NOPE"), None);
+    }
+
+    /// `LibSafeInvariants` and the generated deploy lib write a `bytes32` bare,
+    /// on the line after the `=`. A 65-digit literal is not a `bytes32`, and a
+    /// name that only prefixes another constant does not match it.
+    #[test]
+    fn parses_a_bare_bytes32_constant() {
+        let src = r"
+            bytes32 internal constant SAFE_V1_4_1_L2_PROXY_CODEHASH =
+                0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000;
+            bytes32 constant TOO_LONG = 0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b0001;
+            bytes32 constant ALIASED = OtherLib.SAFE_V1_4_1_L2_PROXY_CODEHASH;
+        ";
+        assert_eq!(
+            parse_bytes32_constant(src, "SAFE_V1_4_1_L2_PROXY_CODEHASH").as_deref(),
+            Some("0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000")
+        );
+        assert_eq!(parse_bytes32_constant(src, "TOO_LONG"), None);
+        assert_eq!(parse_bytes32_constant(src, "ALIASED"), None);
+        assert_eq!(parse_bytes32_constant(src, "SAFE_V1_4_1_L2_PROXY"), None);
     }
 
     #[test]

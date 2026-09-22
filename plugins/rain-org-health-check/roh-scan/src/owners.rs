@@ -710,7 +710,7 @@ pub fn build_grants(
 /// libraries, following at most one re-export hop (`X = OtherLib.Y;`). A grantee
 /// declared in one lib and aliased into the grant map's lib still resolves, so
 /// where the constant lives is not a thing this page depends on.
-fn resolve_ident(src: &OwnerSources, ident: &str) -> Option<String> {
+pub fn resolve_ident(src: &OwnerSources, ident: &str) -> Option<String> {
     let sources = [src.auth_lib, src.safe_lib, src.v4_lib, src.overrides];
     if let Some(a) = sources
         .iter()
