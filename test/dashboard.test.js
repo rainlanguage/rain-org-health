@@ -8340,6 +8340,474 @@ Deno.test("deployments: an empty token set reports why, it does not vanish", () 
   );
 });
 
+// ---- deployments.html: pinned tokens (deploymentPinnedTokens) ----
+
+// The 14 checks deploytokens.rs token_doc emits for one token, in its order.
+const TK_CHECKS = [
+  ["code", { contract: "receipt", match: "nonzero" }],
+  ["code", { contract: "receiptVault", match: "nonzero" }],
+  ["code", { contract: "wrappedTokenVault", match: "nonzero" }],
+  ["beacon", { contract: "receipt" }],
+  ["beacon", { contract: "receiptVault" }],
+  ["beacon", { contract: "wrappedTokenVault" }],
+  ["receipt", {}],
+  ["manager", {}],
+  ["asset", {}],
+  ["authoriser", {}],
+  ["owner", {}],
+  ["config", {}],
+  ["name", {}],
+  ["symbol", {}],
+];
+const tkKey = (check, f) => (f.contract ? `${check} ${f.contract}` : check);
+const tkAddr = (tag, i) => "0x" + (tag + String(i)).padStart(40, "0");
+const tkState = (failed, unknown, passed) =>
+  failed ? "fail" : passed && !unknown ? "pass" : "unknown";
+// One token: every row passes unless `over` (keyed "check" or "check
+// contract") replaces its fields.
+function tkToken(i, over = {}) {
+  const checks = TK_CHECKS.map(([check, f]) =>
+    stRow(check, "pass", "E", "E", { ...f, ...(over[tkKey(check, f)] || {}) })
+  );
+  const n = (s) => checks.filter((c) => c.status === s).length;
+  return {
+    address: tkAddr("b", i),
+    index: i,
+    underlying: `U${i}`,
+    receipt: tkAddr("a", i),
+    receiptVault: tkAddr("b", i),
+    wrappedTokenVault: tkAddr("c", i),
+    name: `Token ${i} ST0x`,
+    symbol: `tU${i}`,
+    passed: n("pass"),
+    failed: n("fail"),
+    unknown: n("unknown"),
+    total: checks.length,
+    state: tkState(n("fail"), n("unknown"), n("pass")),
+    checks,
+  };
+}
+// Every row of every token set to `status`.
+const tkAll = (fields) =>
+  Object.fromEntries(TK_CHECKS.map(([c, f]) => [tkKey(c, f), fields]));
+function tkChain(network, tokens, over = {}) {
+  const table = over.table ??
+    stRow("table", "pass", { entries: tokens.length }, {
+      entries: tokens.length,
+      distinctIndices: tokens.length,
+    }, { function: `productionTokens${network}` });
+  const n = (k, s) =>
+    tokens.reduce((a, t) => a + t[k], 0) + (table.status === s ? 1 : 0);
+  const [passed, failed, unknown] = [
+    n("passed", "pass"),
+    n("failed", "fail"),
+    n("unknown", "unknown"),
+  ];
+  return {
+    network,
+    rpcHost: `${network}-rpc.example`,
+    function: table.function,
+    safe: ST_SAFE,
+    authoriser: ST_CLONE,
+    beacons: [],
+    declared: tokens.length,
+    tokenCount: tokens.length,
+    tokensPassed: tokens.filter((t) => t.state === "pass").length,
+    passed,
+    failed,
+    unknown,
+    total: passed + failed + unknown,
+    state: tkState(failed, unknown, passed),
+    table,
+    tokens,
+    ...over,
+  };
+}
+function tkData(chains, over = {}) {
+  const sum = (k) => chains.reduce((a, c) => a + c[k], 0);
+  const [passed, failed, unknown] = [
+    sum("passed"),
+    sum("failed"),
+    sum("unknown"),
+  ];
+  return {
+    deploymentPinnedTokens: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      source: "src/lib/LibTokenInvariants.sol productionTokens<Chain>()",
+      configSource: "src/lib/LibProdTokenConfig.sol productionTokenConfigs()",
+      configCount: 56,
+      configDeclared: 56,
+      passed,
+      failed,
+      unknown,
+      total: passed + failed + unknown,
+      state: tkState(failed, unknown, passed),
+      chains,
+      ...over,
+    },
+  };
+}
+// A token's own <details> (it carries a Contracts row; chain groups do not).
+const tokenDetails = (box) =>
+  tags(box, "details").filter((d) =>
+    d.className.includes("st-subject") && collect(d, "tk-parts").length === 1
+  );
+const tokenNamed = (box, symbol) =>
+  tokenDetails(box).find((d) =>
+    collect(d, "st-sum-title")[0]?.textContent === symbol
+  );
+
+Deno.test("deployments: 280 passing pinned tokens fold into one group per chain, 14 rows each", () => {
+  const chains = ST_NETS.map((n) =>
+    tkChain(n, Array.from({ length: 56 }, (_, i) => tkToken(i)))
+  );
+  const box = deploymentsBox(tkData(chains));
+  const t = textOf(box);
+  assert(t.includes("Pinned tokens"), "the section heading");
+  assert(t.includes("280 of 280 tokens pass every check"), "the overall count");
+  const lists = collect(box, "tk-list");
+  assert(lists.length === 5, `one passing group per chain: ${lists.length}`);
+  const groups = tags(box, "details").filter((d) =>
+    d.children.some((c) => c.className === "tk-list")
+  );
+  assert(
+    groups.length === 5 && groups.every((g) => !g.open),
+    "every chain's passing group starts folded",
+  );
+  assert(
+    t.split("All 56 tokens pass every check").length === 6,
+    "each group says every token passes",
+  );
+  const tokens = tokenDetails(box);
+  assert(tokens.length === 280, `280 tokens rendered: ${tokens.length}`);
+  for (const d of tokens) {
+    assert(!d.open, "a passing token starts folded");
+    const rows = collect(d, "chk-row");
+    assert(rows.length === 14, `14 check rows per token: ${rows.length}`);
+  }
+  assert(
+    t.includes("56 entries · 56 distinct indices"),
+    "the table row says what was read",
+  );
+  const hrefs = tags(box, "a").map((a) => String(a.href));
+  for (
+    const [net, url] of [
+      ["hyperevm", "https://hyperevmscan.io/address/"],
+      ["robinhood", "https://robinhoodchain.blockscout.com/address/"],
+      ["bsc", "https://bscscan.com/address/"],
+    ]
+  ) {
+    assert(
+      hrefs.some((h) => h.startsWith(url)),
+      `${net} token contracts link to ${url}`,
+    );
+  }
+});
+
+Deno.test("deployments: a failing pinned token opens, red, ahead of the passing group", () => {
+  const tokens = Array.from({ length: 4 }, (_, i) => tkToken(i));
+  tokens[2] = tkToken(2, {
+    authoriser: { status: "fail", expected: ST_CLONE, actual: ST_STRANGER },
+  });
+  const box = deploymentsBox(tkData([tkChain("base", tokens)]));
+  const d = tokenNamed(box, "tU2");
+  assert(d && d.open, "the failing token starts open");
+  assert(d.className.includes("st-subject-fail"), d.className);
+  const fails = collect(d, "chk-fail");
+  assert(fails.length === 1, `one failing row: ${fails.length}`);
+  assert(
+    collect(fails[0], "chk-bad").some((x) => textOf(x).includes(ST_STRANGER) || x.textContent === ST_STRANGER),
+    "the failing value is marked",
+  );
+  const more = collect(d, "tk-more");
+  assert(more.length === 1 && !more[0].open, "the passing rows are folded away");
+  assert(
+    collect(more[0], "chk-row").length === 13,
+    "13 passing rows sit under the fold",
+  );
+  const kids = box.children;
+  const group = kids.findIndex((c) =>
+    c && typeof c === "object" && collect(c, "tk-list").length
+  );
+  assert(
+    kids.indexOf(d) >= 0 && kids.indexOf(d) < group,
+    "the failing token is listed before the passing group",
+  );
+  assert(
+    textOf(box).includes("3 more tokens pass every check"),
+    "the group counts only the passing tokens",
+  );
+  const kinds = collect(box, "tk-kinds").map((k) => k.textContent).join(" ");
+  assert(
+    kinds.includes("authorizer() (1 fail)"),
+    "the banner names the failing check kind: " + kinds,
+  );
+});
+
+Deno.test("deployments: a partly unread pinned token opens; one with nothing read stays folded and says so", () => {
+  const tokens = [
+    tkToken(0),
+    tkToken(1, { name: { status: "unknown", actual: null } }),
+    tkToken(2, tkAll({ status: "unknown", actual: null })),
+  ];
+  const box = deploymentsBox(tkData([tkChain("ethereum", tokens)]));
+  const partly = tokenNamed(box, "tU1");
+  const none = tokenNamed(box, "tU2");
+  assert(partly.open, "a token with an unread check starts open");
+  assert(partly.className.includes("st-subject-unknown"), partly.className);
+  assert(!none.open, "a token with no check read stays folded");
+  assert(textOf(none).includes("0/14 pass · 14 unread"), textOf(none));
+  assert(collect(box, "chk-fail").length === 0, "an unread check never reads as a fail");
+  assert(collect(box, "own-verify-ok").length === 0, "nor does the chain read as passing");
+  const kinds = collect(box, "tk-kinds").map((k) => k.textContent).join(" ");
+  assert(kinds.includes("name() (2 unread)"), kinds);
+});
+
+Deno.test("deployments: a token table read short fails, and a config parsed short is flagged INCOMPLETE", () => {
+  const table = stRow("table", "fail", { entries: 2 }, {
+    entries: 1,
+    distinctIndices: 1,
+  }, { function: "productionTokensBsc" });
+  const box = deploymentsBox(
+    tkData([tkChain("bsc", [tkToken(0)], { table })], {
+      configDeclared: 56,
+      configCount: 55,
+    }),
+  );
+  assert(textOf(box).includes("INCOMPLETE"), "the short config is named");
+  assert(collect(box, "own-verify-drift").length === 1, "as a drift banner");
+  const row = collect(box, "chk-fail").find((r) =>
+    textOf(r).includes("Token table")
+  );
+  assert(row, "the table row fails");
+  assert(
+    textOf(row).includes("2 entries") &&
+      textOf(row).includes("1 entries · 1 distinct indices"),
+    textOf(row),
+  );
+});
+
+// ---- deployments.html: role membership (deploymentRoleMembership) ----
+
+const RM_KEY = "0xE8c6eDE25f0E7fAfE8fBc34770FaBa27d56c0E76";
+const RM_3D0C = "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE";
+const RM_1C66 = "0x1c66D6708914C40239D54919320b4C48cAE3D1A9";
+const rmWant = (role, account, address) => ({
+  role,
+  roleId: "0x" + role.toLowerCase(),
+  account,
+  address,
+});
+const rmHeld = (w, block) => ({
+  ...w,
+  block,
+  grantedBy: RM_KEY,
+  grantedByAccount: "DEPLOY_KEY",
+});
+const RM_CLONE_SET = [
+  rmWant("DEPOSIT", "safe", ST_SAFE),
+  rmWant("WITHDRAW", "GRANTEE_SERVICE_3D0C", RM_3D0C),
+];
+const RM_ORCH_SET = [
+  rmWant("DEFAULT_ADMIN", "safe", ST_SAFE),
+  rmWant("MINT", "GRANTEE_SERVICE_3D0C", RM_3D0C),
+];
+// A membership row as deployroles.rs emits it: extra and missing computed from
+// the sets, the status from them (a window is always partial).
+function rmRow(on, address, expected, actual, over = {}) {
+  const has = (xs, m) =>
+    xs.some((x) =>
+      x.roleId === m.roleId && x.address.toLowerCase() === m.address.toLowerCase()
+    );
+  const extra = actual.filter((m) => !has(expected, m));
+  const missing = expected.filter((w) => !has(actual, w));
+  const coverage = over.coverage ?? "full";
+  return {
+    check: "membership",
+    on,
+    address,
+    coverage,
+    fromBlock: 0,
+    toBlock: 1000,
+    match: "set",
+    expected,
+    actual,
+    extra,
+    missing,
+    granted: actual.length,
+    revoked: 0,
+    reason: null,
+    status: coverage === "window"
+      ? "partial"
+      : extra.length || missing.length
+      ? "fail"
+      : "pass",
+    ...over,
+  };
+}
+const rmPassClone = () =>
+  rmRow("authoriser", ST_CLONE, RM_CLONE_SET, RM_CLONE_SET.map((w, i) => rmHeld(w, 10 + i)));
+const rmPassOrch = () =>
+  rmRow("orchestrator", ST_ORCH, RM_ORCH_SET, RM_ORCH_SET.map((w, i) => rmHeld(w, 20 + i)));
+const rmRank = { pass: 0, partial: 1, unknown: 2, fail: 3 };
+function rmChain(network, authoriser, orchestrator, over = {}) {
+  const vs = [authoriser, orchestrator].map((r) => r?.status ?? "unknown");
+  const n = (s) => vs.filter((v) => v === s).length;
+  return {
+    network,
+    rpcHost: `${network}-rpc.example`,
+    logSource: `${network}-logs.example`,
+    safe: ST_SAFE,
+    passed: n("pass"),
+    failed: n("fail"),
+    unknown: n("unknown"),
+    partial: n("partial"),
+    total: 2,
+    state: vs.reduce((a, b) => (rmRank[b] > rmRank[a] ? b : a), "pass"),
+    authoriser,
+    orchestrator,
+    ...over,
+  };
+}
+function rmData(chains) {
+  const sum = (k) => chains.reduce((a, c) => a + c[k], 0);
+  return {
+    deploymentRoleMembership: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      source: "src/lib/LibAuthoriserInvariants.sol",
+      function: "expectedGrants(address)",
+      windows: [],
+      passed: sum("passed"),
+      failed: sum("failed"),
+      unknown: sum("unknown"),
+      partial: sum("partial"),
+      total: sum("total"),
+      state: chains.map((c) => c.state).reduce(
+        (a, b) => (rmRank[b] > rmRank[a] ? b : a),
+        "pass",
+      ),
+      chains,
+    },
+  };
+}
+const rmSubjects = (box) =>
+  tags(box, "details").filter((d) =>
+    collect(d, "st-sum-title").some((s) =>
+      s.textContent === "V4 authoriser clone" ||
+      s.textContent === "Orchestrator instance"
+    ) && collect(d, "rm-mem").length > 0
+  );
+
+Deno.test("deployments: an exact whole-history membership folds, each member with its block and granter", () => {
+  const box = deploymentsBox(
+    rmData(ST_NETS.map((n) => rmChain(n, rmPassClone(), rmPassOrch()))),
+  );
+  const t = textOf(box);
+  assert(t.includes("Role membership"), "the section heading");
+  const subjects = rmSubjects(box);
+  assert(subjects.length === 10, `a clone and an orchestrator per chain: ${subjects.length}`);
+  for (const d of subjects) {
+    assert(!d.open, "an exact membership starts folded");
+    assert(d.className.includes("st-subject-pass"), d.className);
+  }
+  const first = subjects[0];
+  const ft = textOf(first);
+  assert(ft.includes("granted at block 10"), "the grant block: " + ft);
+  assert(ft.includes("DEPLOY_KEY") && ft.includes(RM_KEY), "the granter, by name and address");
+  assert(ft.includes("whole history"), "the coverage");
+  assert(collect(first, "own-chip-yes").length === 2, "each member is an expected one");
+  assert(collect(box, "rm-fail").length === 0, "no member is marked");
+});
+
+Deno.test("deployments: an extra or missing member fails, and only those rows are marked", () => {
+  const actual = [
+    ...RM_CLONE_SET.slice(0, 1).map((w) => rmHeld(w, 10)),
+    rmHeld(rmWant("DEPOSIT", "GRANTEE_SERVICE_1C66", RM_1C66), 30),
+  ];
+  const clone = rmRow("authoriser", ST_CLONE, RM_CLONE_SET, actual);
+  const box = deploymentsBox(rmData([rmChain("base", clone, rmPassOrch())]));
+  const [c, o] = rmSubjects(box);
+  assert(c.open && c.className.includes("st-subject-fail"), c.className);
+  assert(!o.open, "the exact orchestrator stays folded");
+  const marked = collect(c, "rm-fail");
+  assert(marked.length === 2, `the extra and the missing member: ${marked.length}`);
+  const mt = marked.map(textOf).join(" | ");
+  assert(mt.includes("extra ✗") && mt.includes(RM_1C66), mt);
+  assert(mt.includes("missing ✗") && mt.includes("GRANTEE_SERVICE_3D0C"), mt);
+  assert(collect(box, "own-verify-fail").length >= 1, "the banner fails");
+});
+
+Deno.test("deployments: a block-window membership is partial, never a pass, even when it claims one", () => {
+  const winClone = rmRow("authoriser", ST_CLONE, RM_CLONE_SET, [rmHeld(RM_CLONE_SET[0], 10)], {
+    coverage: "window",
+  });
+  const claimsPass = rmRow("orchestrator", ST_ORCH, RM_ORCH_SET, RM_ORCH_SET.map((w, i) => rmHeld(w, 20 + i)), {
+    coverage: "window",
+    status: "pass",
+  });
+  const box = deploymentsBox(rmData([rmChain("hyperevm", winClone, claimsPass)]));
+  for (const d of rmSubjects(box)) {
+    assert(d.className.includes("st-subject-partial"), d.className);
+    assert(textOf(d).includes("partial ◐"), "the partial chip");
+    assert(collect(d, "own-chip-yes").length === 0, "no green expected ✓ in a window");
+    assert(textOf(d).includes("block window only"), "the coverage is named");
+  }
+  assert(collect(box, "own-verify-ok").length === 0, "the chain never reads as passing");
+  const marked = collect(box, "rm-partial");
+  const mt = marked.map(textOf).join(" | ");
+  assert(marked.length === 1 && mt.includes("not in window"), mt);
+  assert(collect(box, "rm-fail").length === 0, "a window's diff is not a fail");
+});
+
+Deno.test("deployments: an unread membership shows its reason and the set it could not check", () => {
+  const unread = rmRow("authoriser", ST_CLONE, RM_CLONE_SET, [], {
+    actual: null,
+    extra: null,
+    missing: null,
+    granted: null,
+    revoked: null,
+    status: "unknown",
+    reason: "a log read failed or may be incomplete",
+  });
+  const box = deploymentsBox(rmData([rmChain("base", unread, undefined)]));
+  const [d] = rmSubjects(box);
+  assert(d.open && d.className.includes("st-subject-unknown"), d.className);
+  const t = textOf(d);
+  assert(t.includes("a log read failed or may be incomplete"), "the reason: " + t);
+  const notRead = collect(d, "own-chip-dim").filter((x) => x.textContent === "not read");
+  assert(notRead.length === RM_CLONE_SET.length, `each expected pair is unread: ${notRead.length}`);
+  assert(
+    textOf(box).includes("Orchestrator instance — not in the scan output"),
+    "a missing row is named, not dropped",
+  );
+});
+
+Deno.test("deployments: health.json without the pinned-token or membership keys still renders", () => {
+  for (const v of [undefined, null, { chains: [] }]) {
+    const box = deploymentsBox({
+      ...stateData(ST_NETS.map(passingChain)),
+      deploymentPinnedTokens: v,
+      deploymentRoleMembership: v,
+    });
+    const t = textOf(box);
+    assert(!t.includes("Pinned tokens"), `no token section for ${JSON.stringify(v)}`);
+    assert(!t.includes("Role membership"), `no membership section for ${JSON.stringify(v)}`);
+    assert(t.includes("Deploy-script state"), "the rest of the page renders");
+  }
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    ...tkData([tkChain("base", [tkToken(0)])]),
+    ...rmData([rmChain("base", rmPassClone(), rmPassOrch())]),
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Pinned tokens") && t.includes("Role membership"),
+    "both sections render when the owner data is missing",
+  );
+});
+
 // --- hostile input ----------------------------------------------------------
 // Nothing the dashboard renders is authored here. health.json carries repo
 // names, git tags and PDF filenames read out of other orgs' repositories;
@@ -8558,6 +9026,73 @@ Deno.test("hostile input: deploy-state and beacon check strings render as text",
     assertInert(box, payload, field);
   }
   // An unknown network gets no explorer, so no payload reaches an href.
+  assert(
+    !tags(box, "a").some((a) => String(a.href).includes("alert")),
+    "no payload became a link target",
+  );
+});
+
+Deno.test("hostile input: pinned-token and membership strings render as text", () => {
+  const P = {
+    symbol: XSS_IMG,
+    name: XSS_SCRIPT,
+    underlying: XSS_SVG,
+    contract: XSS_ATTR,
+    check: "<b>check</b>",
+    expected: "<iframe src=x>",
+    actual: '<a href="javascript:alert(1)">actual</a>',
+    function: "<style>body{}</style>",
+    network: '<img src=y onerror="alert(2)">',
+    rpcHost: "<object data=x>",
+    role: "<embed src=x>",
+    account: "<script>alert(3)</script>",
+    address: '<svg onload="alert(4)">',
+    grantedBy: '" onclick="alert(5)',
+    grantedByAccount: "<details open ontoggle=alert(6)>",
+    reason: "<img src=z onerror=alert(7)>",
+    logSource: "<script>alert(8)</script>",
+    rmFunction: "<iframe src=y>",
+  };
+  const token = tkToken(0, {
+    authoriser: {
+      check: P.check,
+      status: "fail",
+      expected: P.expected,
+      actual: P.actual,
+    },
+    "code receipt": { contract: P.contract, status: "fail" },
+  });
+  token.symbol = P.symbol;
+  token.name = P.name;
+  token.underlying = P.underlying;
+  const table = stRow("table", "pass", { entries: 1 }, {
+    entries: 1,
+    distinctIndices: 1,
+  }, { function: P.function });
+  const tk = tkData([tkChain(P.network, [token], { table, rpcHost: P.rpcHost })]);
+  const member = {
+    role: P.role,
+    roleId: "0x01",
+    account: P.account,
+    address: P.address,
+    block: 1,
+    grantedBy: P.grantedBy,
+    grantedByAccount: P.grantedByAccount,
+  };
+  const clone = rmRow("authoriser", ST_CLONE, [], [member]);
+  const unread = rmRow("orchestrator", ST_ORCH, RM_ORCH_SET, [], {
+    actual: null,
+    extra: null,
+    missing: null,
+    status: "unknown",
+    reason: P.reason,
+  });
+  const rm = rmData([rmChain(P.network, clone, unread, { logSource: P.logSource })]);
+  rm.deploymentRoleMembership.function = P.rmFunction;
+  const box = deploymentsBox({ ...tk, ...rm });
+  for (const [field, payload] of Object.entries(P)) {
+    assertInert(box, payload, field);
+  }
   assert(
     !tags(box, "a").some((a) => String(a.href).includes("alert")),
     "no payload became a link target",

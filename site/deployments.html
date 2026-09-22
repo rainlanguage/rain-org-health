@@ -190,9 +190,57 @@
   .st-subject-unknown > .st-sum { border-style: dashed; border-color: var(--ink-3); }
   .st-sum-title { font-size: 14px; font-weight: 650; color: var(--ink); }
   .st-tally { margin-left: auto; color: var(--ink-3); font-size: 12.5px; }
+  /* ---- Partial: a role history read over a block window only ----
+     A fourth verdict, and it borrows none of the other three looks. It is not a
+     pass: the events outside the window were never read, so the set it shows is
+     who held what when the window closed, not today. It is not unread either:
+     the window was read. Amber, the site's colour for "known, not finished", on
+     a solid amber rule. Never green, and never the dashed grey of an unread check. */
+  .st-partial { color: var(--debt); background: var(--debt-bg); border-color: var(--debt); }
+  .own-row.chk-partial { background: var(--debt-bg); border-left: 4px solid var(--debt); }
+  .st-subject-partial > .st-sum { background: var(--debt-bg); border-color: var(--debt-border); border-left: 4px solid var(--debt); }
+  .own-verify-partial { background: var(--debt-bg); border-color: var(--debt); }
+  .own-verify-partial .own-verify-msg::before { content: "◐ "; color: var(--debt); font-weight: 700; }
+  .chk-warn, .chk-warn.own-addr { color: var(--debt); font-weight: 650; }
+  /* ---- Role membership: one line per (role, member) ---- */
+  .rm-mem { display: grid; grid-template-columns: 120px minmax(0, 1fr) minmax(0, 1fr) 110px; gap: 3px 10px;
+            align-items: start; padding: 7px 14px 7px 10px; border-bottom: 1px solid var(--border);
+            border-left: 4px solid transparent; font-size: 12.5px; }
+  .own-table > .rm-mem:last-child { border-bottom: 0; }
+  .rm-head { display: block; background: var(--surface); font-size: 10.5px; text-transform: uppercase;
+             letter-spacing: 0.04em; font-weight: 650; color: var(--ink-3); }
+  .rm-mem.rm-fail { background: var(--crit-bg); border-left-color: var(--crit); }
+  .rm-mem.rm-partial { background: var(--debt-bg); border-left-color: var(--debt); }
+  .rm-role { font-size: 11px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
+             color: var(--ink-2); overflow-wrap: anywhere; line-height: 1.35; }
+  .rm-who { display: flex; flex-direction: column; gap: 1px; min-width: 0; }
+  .rm-acct { font-weight: 650; color: var(--ink); overflow-wrap: anywhere; }
+  .rm-by { color: var(--ink-3); overflow-wrap: anywhere; }
+  .rm-mem .own-addr { font-size: 11.5px; }
+  .rm-mem .own-addr.chk-bad, .rm-mem .own-addr.chk-warn { font-weight: 400; }
+  .rm-mem > .st-chip, .rm-mem > .own-chip { justify-self: end; }
+  /* ---- Pinned tokens: 56 a chain, 14 checks each ----
+     A token whose checks all pass sits folded in its chain's folded group, so
+     280 of them cost five lines. One that does not pass is listed on its own
+     above the group, in its verdict's look. */
+  .tk-meta { color: var(--ink-3); font-size: 12.5px; overflow-wrap: anywhere; }
+  .tk-parts .chk-key { width: 150px; }
+  .tk-kinds { flex-basis: 100%; color: var(--ink); font-size: 12.5px; overflow-wrap: anywhere; }
+  .tk-list { display: flex; flex-direction: column; padding: 4px 10px 6px; border: 1px solid var(--border);
+             border-radius: 0 0 11px 11px; }
+  .tk-list > .st-subject { margin: 4px 0; }
+  .tk-more > .tk-more-sum { cursor: pointer; list-style: none; padding: 8px 14px; color: var(--ink-3);
+                            font-size: 12.5px; }
+  .tk-more > .tk-more-sum::-webkit-details-marker { display: none; }
+  .tk-more > .tk-more-sum::before { content: "▸ "; }
+  .tk-more[open] > .tk-more-sum::before { content: "▾ "; }
+  .tk-more[open] > .tk-more-sum { border-bottom: 1px solid var(--border); }
+  .tk-more > .own-row:last-child { border-bottom: 0; }
   @media (max-width: 620px) {
     .own-row { grid-template-columns: 1fr; gap: 5px; }
     .own-prov { justify-content: flex-start; }
+    .rm-mem { grid-template-columns: 1fr; gap: 3px; }
+    .rm-mem > .st-chip, .rm-mem > .own-chip { justify-self: start; }
   }
 </style>
 </head>
@@ -416,6 +464,15 @@ function renderDeployments(document, $, data) {
     ["vaultLogicIsExpected", "vaultLogicIsExpected()"],
     ["owner", "owner()"],
     ["implementation", "implementation()"],
+    ["code", "Code"],
+    ["receipt", "receipt()"],
+    ["manager", "manager()"],
+    ["asset", "asset()"],
+    ["authoriser", "authorizer()"],
+    ["config", "Token config row"],
+    ["name", "name()"],
+    ["symbol", "symbol()"],
+    ["table", "Token table"],
   ]);
   const checkTitle = (c) => CHECK_TITLES.get(c.check) ?? String(c.check ?? "check");
   // How the expected value is compared, where plain equality would mislead.
@@ -508,11 +565,11 @@ function renderDeployments(document, $, data) {
     if (c.slot) notes.push(noteOf("slot ", el("span", "chk-val", c.slot)));
     return [title, notes];
   };
-  const checkRow = (c, network) => {
+  const checkRow = (c, network, labelOf = checkLabel) => {
     const v = verdict(c.status);
     const row = el("div", `own-row chk-row chk-${v}`);
     const rc = el("div", "own-rc");
-    const [title, notes] = checkLabel(c, network);
+    const [title, notes] = labelOf(c, network);
     rc.append(el("div", "own-role", title), ...notes);
     const cmp = el("div", "chk-cmp");
     cmp.append(...compareLines(c, network));
@@ -586,6 +643,266 @@ function renderDeployments(document, $, data) {
         );
       }
       for (const [key, title] of SUBJECTS) box.append(renderSubject(ch[key], title, ch.network));
+    }
+  };
+  // ---- Role membership (deploymentRoleMembership) ----
+  // Who holds each role on the V4 authoriser clone and the orchestrator
+  // instance, rebuilt from their RoleGranted / RoleRevoked history and compared
+  // exactly with the pinned set. It adds a fourth verdict, "partial": a history
+  // read over a block window only. The worst verdict wins: fail, then unknown,
+  // then partial, then pass.
+  const RANK = { pass: 0, partial: 1, unknown: 2, fail: 3 };
+  const worstOf = (vs) => vs.reduce((a, b) => (RANK[b] > RANK[a] ? b : a), "pass");
+  // A membership row's verdict, taken from what the row carries and not from
+  // its status alone. A window is partial whatever it claims. A pass needs the
+  // history read, the coverage stated as full, and both differences computed
+  // and empty.
+  const rmVerdict = (r) => {
+    if (!r || typeof r !== "object") return "unknown";
+    if (r.status === "fail") return "fail";
+    if ((r.status !== "pass" && r.status !== "partial") || !Array.isArray(r.actual)) return "unknown";
+    if (r.coverage === "window") return "partial";
+    if (r.coverage !== "full") return "unknown";
+    if (r.status === "partial") return "partial";
+    const diffs = [r.extra, r.missing];
+    if (diffs.some((x) => !Array.isArray(x))) return "unknown";
+    return diffs.some((x) => x.length) ? "fail" : "pass";
+  };
+  const rmChip = (v) => (v === "partial" ? el("span", "st-chip st-partial", "partial ◐") : stChip(v));
+  const rmCount = (vs) => {
+    const n = (s) => vs.filter((v) => v === s).length;
+    return { passed: n("pass"), failed: n("fail"), unknown: n("unknown"), partial: n("partial"), total: vs.length };
+  };
+  const countVerdict = (c) =>
+    c.failed ? "fail" : c.unknown || c.total === 0 ? "unknown" : c.partial ? "partial" : "pass";
+  // The producer's own verdict, from its counts and state. It can only make the
+  // page's verdict worse, never better: a missing or unrecognised state is unread.
+  const rmRollup = (t) => {
+    const [p, f, u, w] = [t.passed ?? 0, t.failed ?? 0, t.unknown ?? 0, t.partial ?? 0];
+    const total = t.total ?? p + f + u + w;
+    if (f > 0 || t.state === "fail") return "fail";
+    if (u > 0 || total === 0 || (t.state !== "pass" && t.state !== "partial")) return "unknown";
+    return w > 0 || t.state === "partial" ? "partial" : "pass";
+  };
+  // The counts in words. A window-only result never reads as a pass or as a
+  // whole history.
+  const rmMsg = (c, v, where) => {
+    const n = c.total;
+    const also = (parts) => {
+      const xs = parts.filter(Boolean);
+      return xs.length ? `; ${xs.join("; ")}.` : ".";
+    };
+    const unread = c.unknown ? `${c.unknown} could not be read` : null;
+    const windowed = c.partial ? `${c.partial} checked over a block window only, not the whole history` : null;
+    const exact = c.passed ? `${c.passed} match exactly over the whole history` : null;
+    if (v === "fail") {
+      return c.failed
+        ? `${c.failed} of ${n} role memberships FAIL ${where}` + also([unread, windowed, exact])
+        : `The scan reports a failed role membership ${where} that no row shows — treat it as failed.`;
+    }
+    if (v === "pass") return `All ${n} role memberships match the pinned set exactly over the whole history ${where}.`;
+    if (n === 0) return `No role memberships were produced ${where} — unverified, not passed.`;
+    if (v === "partial" && c.partial) {
+      return `${c.partial} of ${n} role memberships were checked over a block window only ${where} — partial, not verified over the whole history` +
+        also([exact]);
+    }
+    if (v === "unknown" && c.unknown) {
+      return `${c.unknown} of ${n} role memberships could not be read ${where} — unverified, not passed` +
+        also([windowed, exact]);
+    }
+    return `The scan could not confirm the role memberships ${where} — unverified, not passed` +
+      also([windowed, exact]);
+  };
+  const num = (n) => (typeof n === "number" ? n.toLocaleString("en-US") : "?");
+  // An address from the scan, linked on its chain's explorer only when it IS an
+  // address.
+  const addrOrText = (a, network, cls = "own-addr") =>
+    typeof a === "string" && ADDRESS.test(a) ? addrLink(a, network, cls) : el("span", cls, String(a));
+  const sameMember = (a, b) =>
+    String(a.roleId ?? a.role).toLowerCase() === String(b.roleId ?? b.role).toLowerCase() &&
+    String(a.address).toLowerCase() === String(b.address).toLowerCase();
+  // One (role, member) line: the role, the member, when and by whom it was
+  // granted (or why it was not), and how it stands against the pinned set.
+  const memberRow = (m, network, mark, grant, chip) => {
+    const row = el("div", `rm-mem${mark ? ` rm-${mark}` : ""}`);
+    const who = el("div", "rm-who");
+    who.append(el("span", "rm-acct", m.account == null ? "unlabelled address" : String(m.account)));
+    if (m.address != null) {
+      const cls = mark === "fail" ? "own-addr chk-bad" : mark === "partial" ? "own-addr chk-warn" : "own-addr";
+      who.append(addrOrText(m.address, network, cls));
+    }
+    const g = el("div", "rm-who");
+    g.append(...grant);
+    row.append(el("span", "rm-role", String(m.role ?? m.roleId ?? "?")), who, g, chip);
+    return row;
+  };
+  // When and by whom: the granter's name where the pins give it one, and its
+  // address on its own line either way.
+  const grantedBy = (m, network) => {
+    const by = el("span", "rm-by");
+    by.append("by ");
+    by.append(
+      m.grantedByAccount == null
+        ? el("span", "rm-by", "an address the pins do not name")
+        : el("span", "rm-acct", String(m.grantedByAccount)),
+    );
+    return [
+      el("span", null, `granted at block ${num(m.block)}`),
+      by,
+      m.grantedBy == null ? el("span", "chk-unread", "granter not read") : addrOrText(m.grantedBy, network),
+    ];
+  };
+  // One contract's membership on one chain. A pass folds; anything else opens.
+  const renderMembership = (r, title, network, logSource) => {
+    if (!r || typeof r !== "object") {
+      return stateBanner("unknown", `${title} — not in the scan output; unverified, not passed.`);
+    }
+    const v = rmVerdict(r);
+    const windowed = r.coverage === "window";
+    const held = Array.isArray(r.actual) ? r.actual : null;
+    const compared = Array.isArray(r.extra) && Array.isArray(r.missing);
+    const extra = Array.isArray(r.extra) ? r.extra : [];
+    const missing = Array.isArray(r.missing) ? r.missing : [];
+    const range = typeof r.fromBlock === "number" && typeof r.toBlock === "number"
+      ? `blocks ${num(r.fromBlock)} – ${num(r.toBlock)}`
+      : null;
+    const d = el("details", `st-subject st-subject-${v}`);
+    d.open = v !== "pass";
+    const sm = el("summary", "st-sum");
+    sm.append(el("span", "st-sum-title", title));
+    if (r.address != null) sm.append(addrOrText(r.address, network));
+    if (windowed) sm.append(el("span", "own-chip own-chip-roll", "block window only"));
+    const tally = held
+      ? [`${held.length} held`, extra.length ? `${extra.length} extra` : null, missing.length ? `${missing.length} missing` : null]
+        .filter(Boolean).join(" · ") + (windowed ? " at the window's end" : "")
+      : "members not read";
+    sm.append(el("span", "st-tally", tally), rmChip(v));
+    d.append(sm);
+    const table = el("div", "own-table");
+    // What was read, over which blocks, from where, and why not when it was not.
+    const info = el("div", `own-row chk-row chk-${v}`);
+    const rc = el("div", "own-rc");
+    rc.append(el("div", "own-role", "Role membership"), noteOf("rebuilt from RoleGranted and RoleRevoked"));
+    const cmp = el("div", "chk-cmp");
+    if (windowed) {
+      cmp.append(
+        cmpLine(
+          "coverage",
+          el("span", "chk-warn", "block window only"),
+          range ? el("span", "chk-val", range) : el("span", "chk-unread", "blocks not stated"),
+          el(
+            "span",
+            "chk-how",
+            "events outside the window were not read: this is who held each role when the window closed, not the whole history",
+          ),
+        ),
+      );
+    } else if (r.coverage === "full") {
+      cmp.append(
+        cmpLine(
+          "coverage",
+          el("span", "chk-val", "whole history"),
+          range ? el("span", "chk-val", range) : el("span", "chk-unread", "latest block not read"),
+        ),
+      );
+    } else {
+      cmp.append(cmpLine("coverage", el("span", "chk-unread", "not stated")));
+    }
+    cmp.append(
+      cmpLine(
+        "events",
+        typeof r.granted === "number"
+          ? el("span", "chk-val", `${num(r.granted)} granted · ${num(r.revoked)} revoked`)
+          : el("span", "chk-unread", "not read"),
+      ),
+    );
+    cmp.append(
+      cmpLine(
+        "expected",
+        el("span", "chk-how", "exactly"),
+        Array.isArray(r.expected)
+          ? el("span", "chk-val", `${r.expected.length} (role, member) pairs`)
+          : el("span", "chk-unread", "not determined"),
+      ),
+    );
+    if (logSource) cmp.append(cmpLine("logs via", el("span", "chk-val", String(logSource))));
+    if (r.reason != null) cmp.append(cmpLine("reason", el("span", "chk-val", String(r.reason))));
+    info.append(rc, cmp, rmChip(v));
+    table.append(info);
+    const head = (text) => el("div", "rm-mem rm-head", text);
+    if (held) {
+      table.append(head(`Held ${windowed ? "when the window closed" : "now"} — ${held.length}`));
+      const extras = extra.filter((x) => !held.some((m) => sameMember(x, m)));
+      for (const m of [...held, ...extras]) {
+        const isExtra = extra.some((x) => sameMember(x, m));
+        const mark = isExtra ? (v === "partial" ? "partial" : "fail") : null;
+        const chip = !compared
+          ? el("span", "own-chip own-chip-dim", "unchecked")
+          : isExtra
+          ? el("span", `st-chip st-${mark}`, mark === "fail" ? "extra ✗" : "not expected")
+          : el("span", `own-chip own-chip-${v === "partial" ? "dim" : "yes"}`, v === "partial" ? "expected" : "expected ✓");
+        table.append(memberRow(m, network, mark, grantedBy(m, network), chip));
+      }
+      if (missing.length) {
+        table.append(head(`Expected, not held — ${missing.length}`));
+        for (const m of missing) {
+          const mark = v === "partial" ? "partial" : "fail";
+          const why = mark === "partial"
+            ? "not held when the window closed"
+            : `not held${typeof r.toBlock === "number" ? ` at block ${num(r.toBlock)}` : ""}: never granted, or revoked`;
+          const chip = el("span", `st-chip st-${mark}`, mark === "fail" ? "missing ✗" : "not in window");
+          table.append(memberRow(m, network, mark, [el("span", null, why)], chip));
+        }
+      }
+    } else if (Array.isArray(r.expected) && r.expected.length) {
+      table.append(head(`Expected — ${r.expected.length}, not checked`));
+      for (const m of r.expected) {
+        table.append(
+          memberRow(m, network, null, [el("span", "chk-unread", "history not read")], el("span", "own-chip own-chip-dim", "not read")),
+        );
+      }
+    } else {
+      const row = el("div", "own-row chk-row chk-unknown");
+      row.append(el("div", "own-note", "Neither the members nor the expected set were read — unverified, not passed."));
+      table.append(row);
+    }
+    d.append(table);
+    return d;
+  };
+  const renderRoles = (rm) => {
+    if (!rm || !Array.isArray(rm.chains) || rm.chains.length === 0) return;
+    box.append(el("h2", null, "Role membership — per chain"));
+    const sub = el("div", "own-sub");
+    sub.append(
+      "Every current member of each role on the V4 authoriser clone and the orchestrator instance, rebuilt from their RoleGranted and RoleRevoked history and compared exactly with the set pinned in ",
+    );
+    sub.append(
+      rm.source
+        ? link("", String(rm.function ?? rm.source), `https://github.com/${rm.org}/${rm.repo}/blob/main/${rm.source}`)
+        : `${rm.org}/${rm.repo}`,
+    );
+    sub.append(
+      ". Each member shows the block it was granted at and who granted it. A whole-history read passes only on an exact match: an extra or a missing member fails. Where a chain's logs can only be read over the deployment's block window, the result is partial. It shows who held each role when that window closed, and nothing after it.",
+    );
+    box.append(sub);
+    const chains = rm.chains.map((ch) => {
+      const c = ch && typeof ch === "object" ? ch : {};
+      const n = rmCount([rmVerdict(c.authoriser), rmVerdict(c.orchestrator)]);
+      return [c, n, worstOf([countVerdict(n), rmRollup(c)])];
+    });
+    const all = rmCount([]);
+    for (const [, n] of chains) for (const k of Object.keys(all)) all[k] += n[k];
+    const nc = chains.length;
+    const v = worstOf([countVerdict(all), rmRollup(rm), ...chains.map(([, , cv]) => cv)]);
+    box.append(stateBanner(v, rmMsg(all, v, `across ${nc} chain${nc === 1 ? "" : "s"}`)));
+    for (const [ch, n, cv] of chains) {
+      const network = ch.network ?? "unknown chain";
+      box.append(el("h3", "tok-h3", String(network)));
+      const b = stateBanner(cv, rmMsg(n, cv, `on ${network}`));
+      b.append(el("span", "own-verify-src", ch.logSource ? `logs via ${ch.logSource}` : "no log source configured"));
+      box.append(b);
+      box.append(renderMembership(ch.authoriser, "V4 authoriser clone", ch.network, ch.logSource));
+      box.append(renderMembership(ch.orchestrator, "Orchestrator instance", ch.network, ch.logSource));
     }
   };
   // Who a beacon's live owner() is, as the scan resolved it.
@@ -768,6 +1085,212 @@ function renderDeployments(document, $, data) {
   // than one merged table whose rows would silently mix chains.
   const renderBeacons = (b) => {
     for (const set of Array.isArray(b) ? b : b ? [b] : []) renderBeaconSet(set);
+  };
+  // ---- Pinned tokens (deploymentPinnedTokens) ----
+  // Every token in st0x.deploy's per-chain token tables, 14 live checks each.
+  // Each token is one subject in the deploy-state look. What changes is how
+  // they are grouped, because there are 280 of them:
+  //  - a token that passes every check sits folded in its chain's folded group;
+  //  - one that does not is listed on its own above that group, fails first;
+  //  - a failing token, or one with only some checks unread, opens showing
+  //    those rows, with its passing checks folded inside it;
+  //  - a token with NO check read stays folded, in the dashed look with
+  //    "14 unread" on its summary. Opening it would show only 14 "not read"
+  //    rows, and a chain-wide RPC outage would open 56 of those.
+  const TOKEN_PARTS = new Map([
+    ["receipt", "receipt"],
+    ["receiptVault", "receipt vault"],
+    ["wrappedTokenVault", "wrapped token vault"],
+  ]);
+  // Which of the token's contracts each call is read on (deploytokens.rs token_doc).
+  const TOKEN_READ_ON = new Map([
+    ["receipt", "receipt vault"],
+    ["manager", "receipt"],
+    ["asset", "wrapped token vault"],
+    ["authoriser", "receipt vault"],
+    ["owner", "receipt vault"],
+    ["name", "receipt vault"],
+    ["symbol", "receipt vault"],
+  ]);
+  const tokenCheckTitle = (c) => {
+    const part = c.contract == null ? null : TOKEN_PARTS.get(c.contract) ?? String(c.contract);
+    return part ? `${checkTitle(c)} — ${part}` : checkTitle(c);
+  };
+  const tokenLabel = (c) => {
+    const notes = [];
+    const on = TOKEN_READ_ON.get(c.check);
+    if (on) notes.push(noteOf(`read on the ${on}`));
+    if (c.check === "name" || c.check === "symbol") notes.push(noteOf("against the token config row"));
+    if (c.check === "config") notes.push(noteOf("the underlying's row in the token config"));
+    return [tokenCheckTitle(c), notes];
+  };
+  const tableLabel = (c) => [
+    checkTitle(c),
+    [noteOf(`${c.function ?? "?"}()`), noteOf("every declared entry read, each index once")],
+  ];
+  // The table row compares counts, carried as objects; say them in words.
+  const entries = (x) => {
+    if (x === null || x === undefined || typeof x !== "object") return x;
+    if (x.entries === null || x.entries === undefined) return null;
+    return `${x.entries} entries` +
+      (x.distinctIndices === null || x.distinctIndices === undefined ? "" : ` · ${x.distinctIndices} distinct indices`);
+  };
+  const tokenVerdict = (tk) => {
+    const checks = Array.isArray(tk.checks) ? tk.checks : [];
+    return rollupOf({ ...tk, total: tk.total ?? checks.length });
+  };
+  const renderToken = (tk, network) => {
+    const checks = Array.isArray(tk.checks) ? tk.checks : [];
+    const t = { ...tk, total: tk.total ?? checks.length };
+    const v = rollupOf(t);
+    const noneRead = checks.length > 0 && checks.every((c) => verdict(c.status) === "unknown");
+    const d = el("details", `st-subject st-subject-${v}`);
+    d.open = v !== "pass" && !noneRead;
+    const sm = el("summary", "st-sum");
+    sm.append(el("span", "st-sum-title", String(tk.symbol ?? tk.underlying ?? "token")));
+    const meta = [`#${tk.index ?? "?"}`];
+    if (tk.name != null) meta.push(String(tk.name));
+    else if (tk.underlying != null) meta.push(`underlying ${tk.underlying} — no config row`);
+    sm.append(el("span", "tk-meta", meta.join(" · ")), el("span", "st-tally", tallyShort(t)), stChip(v));
+    d.append(sm);
+    const table = el("div", "own-table");
+    // The token's three contracts, which the checks below name by role.
+    const parts = el("div", "own-row tk-parts");
+    const rc = el("div", "own-rc");
+    rc.append(el("div", "own-role", "Contracts"), noteOf(`underlying ${tk.underlying ?? "?"}`));
+    const cmp = el("div", "chk-cmp");
+    for (const [k, label] of TOKEN_PARTS) {
+      cmp.append(cmpLine(label, tk[k] == null ? el("span", "chk-unread", "not pinned") : addrOrText(tk[k], network)));
+    }
+    parts.append(rc, cmp, el("span"));
+    table.append(parts);
+    const good = checks.filter((c) => verdict(c.status) === "pass");
+    const rest = checks.filter((c) => verdict(c.status) !== "pass");
+    if (good.length && rest.length) {
+      for (const c of rest) table.append(checkRow(c, network, tokenLabel));
+      const more = el("details", "tk-more");
+      more.append(
+        el("summary", "tk-more-sum", `${good.length} more check${good.length === 1 ? "" : "s"} pass`),
+      );
+      for (const c of good) more.append(checkRow(c, network, tokenLabel));
+      table.append(more);
+    } else {
+      for (const c of checks) table.append(checkRow(c, network, tokenLabel));
+    }
+    if (!checks.length) {
+      const r = el("div", "own-row chk-row chk-unknown");
+      r.append(el("div", "own-note", "No checks were produced for this token — unverified, not passed."));
+      table.append(r);
+    }
+    d.append(table);
+    return d;
+  };
+  const renderTokenChain = (ch) => {
+    const network = ch.network ?? "unknown chain";
+    const tokens = (Array.isArray(ch.tokens) ? ch.tokens : []).filter((tk) => tk && typeof tk === "object");
+    const judged = tokens.map((tk) => [tk, tokenVerdict(tk)]);
+    const passing = judged.filter(([, v]) => v === "pass").map(([tk]) => tk);
+    const ORDER = { fail: 0, unknown: 1 };
+    const notPassing = judged.filter(([, v]) => v !== "pass").sort((a, b) => ORDER[a[1]] - ORDER[b[1]]);
+    box.append(el("h3", "tok-h3", String(network)));
+    const b = stateBanner(
+      rollupOf(ch),
+      `${tallyMsg(ch, `on ${network}`)} ${passing.length} of ${tokens.length} tokens pass every check.`,
+    );
+    b.append(el("span", "own-verify-src", ch.rpcHost ? `via ${ch.rpcHost}` : "no RPC endpoint configured"));
+    // Which checks do not pass, by kind, so a pattern across tokens (every
+    // token's authorizer(), say) reads as one line and not 56 rows.
+    const kinds = new Map();
+    const tally = (title, s) => {
+      const cv = verdict(s);
+      if (cv === "pass") return;
+      const e = kinds.get(title) || { fail: 0, unknown: 0 };
+      e[cv] += 1;
+      kinds.set(title, e);
+    };
+    if (ch.table) tally(checkTitle(ch.table), ch.table.status);
+    for (const tk of tokens) for (const c of Array.isArray(tk.checks) ? tk.checks : []) tally(tokenCheckTitle(c), c.status);
+    if (kinds.size) {
+      b.append(
+        el(
+          "span",
+          "tk-kinds",
+          "Not passing: " +
+            [...kinds]
+              .map(([k, e]) => `${k} (${[e.fail ? `${e.fail} fail` : null, e.unknown ? `${e.unknown} unread` : null].filter(Boolean).join(", ")})`)
+              .join(" · "),
+        ),
+      );
+    }
+    box.append(b);
+    if (ch.table && typeof ch.table === "object") {
+      const tt = el("div", "own-table");
+      tt.append(
+        checkRow({ ...ch.table, expected: entries(ch.table.expected), actual: entries(ch.table.actual) }, ch.network, tableLabel),
+      );
+      box.append(tt);
+    } else {
+      box.append(stateBanner("unknown", "Token table — not in the scan output; unverified, not passed."));
+    }
+    for (const [tk] of notPassing) box.append(renderToken(tk, ch.network));
+    if (passing.length) {
+      const g = el("details", "st-subject st-subject-pass");
+      g.open = false;
+      const sm = el("summary", "st-sum");
+      const sum = (k) => passing.reduce((a, tk) => a + (tk[k] ?? 0), 0);
+      sm.append(
+        el(
+          "span",
+          "st-sum-title",
+          passing.length === tokens.length
+            ? `All ${tokens.length} tokens pass every check`
+            : `${passing.length} more tokens pass every check`,
+        ),
+        el("span", "st-tally", tallyShort({ passed: sum("passed"), total: sum("total") })),
+        stChip("pass"),
+      );
+      g.append(sm);
+      const list = el("div", "tk-list");
+      for (const tk of passing) list.append(renderToken(tk, ch.network));
+      g.append(list);
+      box.append(g);
+    }
+    if (!tokens.length) {
+      box.append(stateBanner("unknown", `No tokens were read on ${network} — unverified, not passed.`));
+    }
+  };
+  const renderPinnedTokens = (pt) => {
+    if (!pt || !Array.isArray(pt.chains) || pt.chains.length === 0) return;
+    box.append(el("h2", null, "Pinned tokens — per chain"));
+    const sub = el("div", "own-sub");
+    sub.append("Every token in the per-chain token tables of ");
+    sub.append(link("", `${pt.org}/${pt.repo}`, `https://github.com/${pt.org}/${pt.repo}`));
+    sub.append(
+      ` (${pt.source ?? "the token tables"}), read live on each chain. Each token has 14 checks. Its three contracts have code, and each proxy's ERC-1967 beacon slot holds its pinned beacon. The contracts point at each other through receipt(), manager() and asset(). The receipt vault's authorizer() and owner() are the chain's V4 authoriser clone and Safe. Its name() and symbol() match its row in ${pt.configSource ?? "the token config"}. A token whose checks all pass is folded into its chain's group; one with a failed or unread check is listed on its own.`,
+    );
+    box.append(sub);
+    // A config list that parsed short reads like a shorter list, and every
+    // token missing from it would then read as unread rather than as a gap.
+    if (typeof pt.configDeclared === "number" && pt.configDeclared > (pt.configCount ?? 0)) {
+      box.append(
+        el(
+          "div",
+          "own-verify own-verify-drift",
+          `${pt.configDeclared} token config rows declared, ${pt.configCount ?? 0} parsed — the config read here is INCOMPLETE, so a token without a row reads as unread, not failed.`,
+        ),
+      );
+    }
+    const chains = pt.chains.filter((ch) => ch && typeof ch === "object");
+    const all = chains.flatMap((ch) => (Array.isArray(ch.tokens) ? ch.tokens : []).filter((tk) => tk && typeof tk === "object"));
+    const ok = all.filter((tk) => tokenVerdict(tk) === "pass").length;
+    const n = chains.length;
+    box.append(
+      stateBanner(
+        rollupOf(pt),
+        `${tallyMsg(pt, `across ${n} chain${n === 1 ? "" : "s"}`)} ${ok} of ${all.length} tokens pass every check.`,
+      ),
+    );
+    for (const ch of chains) renderTokenChain(ch);
   };
   // Registry tokens: each wrapper's on-chain identity must match the registry and
   // its asset() must point at the declared unwrapped underlying, with the linked
@@ -1270,7 +1793,9 @@ function renderDeployments(document, $, data) {
     renderGrants(data.deploymentGrants);
     renderHealth(data.deploymentHealth);
     renderState(data.deploymentState);
+    renderRoles(data.deploymentRoleMembership);
     renderBeacons(data.deploymentBeacons);
+    renderPinnedTokens(data.deploymentPinnedTokens);
     renderTokens(data.deploymentTokens);
     return;
   }
@@ -1336,7 +1861,9 @@ function renderDeployments(document, $, data) {
   renderGrants(data.deploymentGrants);
   renderHealth(data.deploymentHealth);
   renderState(data.deploymentState);
+  renderRoles(data.deploymentRoleMembership);
   renderBeacons(data.deploymentBeacons);
+  renderPinnedTokens(data.deploymentPinnedTokens);
   renderTokens(data.deploymentTokens);
 }
 let data = null;
