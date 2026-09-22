@@ -566,16 +566,50 @@ const LOG_RETRY_WAITS: [u64; 4] = [1, 2, 4, 8];
 
 /// `f` until it answers, retrying after each of [`LOG_RETRY_WAITS`].
 fn with_retries<T>(f: impl Fn() -> Option<T>) -> Option<T> {
+    with_waits(&LOG_RETRY_WAITS, f)
+}
+
+/// `f` until it answers, retrying after each of `waits` (seconds).
+fn with_waits<T>(waits: &[u64], f: impl Fn() -> Option<T>) -> Option<T> {
     if let Some(v) = f() {
         return Some(v);
     }
-    for wait in LOG_RETRY_WAITS {
-        std::thread::sleep(std::time::Duration::from_secs(wait));
+    for wait in waits {
+        std::thread::sleep(std::time::Duration::from_secs(*wait));
         if let Some(v) = f() {
             return Some(v);
         }
     }
     None
+}
+
+/// Blockscout's keyless API throttles by IP. A burst, or a pace of one request
+/// a second, draws `429`s, and once tripped it refuses every request for most
+/// of an hour (measured 2026-09-22). So every Blockscout request, from every
+/// chain's thread, waits its turn on one clock and goes out at most one per
+/// [`BLOCKSCOUT_PACE`], and a run asks it only a handful of times.
+const BLOCKSCOUT_PACE: std::time::Duration = std::time::Duration::from_secs(3);
+/// The waits, in seconds, before each retry of a Blockscout request: longer
+/// than the RPC retries, since a `429` means slow down.
+const BLOCKSCOUT_RETRY_WAITS: [u64; 3] = [5, 15, 30];
+/// When the last Blockscout request finished.
+static BLOCKSCOUT_TURN: Mutex<Option<std::time::Instant>> = Mutex::new(None);
+
+/// GET a Blockscout `url` in its turn on the shared clock. The clock is held
+/// through the request, so no two Blockscout requests are ever in flight.
+fn blockscout_get(url: &str) -> Option<Vec<u8>> {
+    let mut last = BLOCKSCOUT_TURN
+        .lock()
+        .unwrap_or_else(|poisoned| poisoned.into_inner());
+    if let Some(at) = *last {
+        let since = at.elapsed();
+        if since < BLOCKSCOUT_PACE {
+            std::thread::sleep(BLOCKSCOUT_PACE - since);
+        }
+    }
+    let body = curl_get(url);
+    *last = Some(std::time::Instant::now());
+    body
 }
 
 /// POST `payload` to each endpoint in turn → the first reply `decode` reads.
@@ -595,35 +629,36 @@ fn url_host(url: &str) -> &str {
     rest.split('/').next().unwrap_or(rest)
 }
 
-/// The #182 role-event reads over one chain's log source.
-struct LiveLogs(LogSource);
+/// The #182 role-event reads over one chain's log source. The head is read
+/// once and shared by both contracts' reads, so a Blockscout chain costs one
+/// indexing check and one head read per run, not one per contract.
+struct LiveLogs {
+    source: LogSource,
+    head: std::sync::OnceLock<Option<u64>>,
+}
 
-impl deployroles::LogReads for LiveLogs {
-    fn source(&self) -> Option<String> {
-        Some(match self.0 {
-            LogSource::Blockscout(host) => host.to_string(),
-            LogSource::Rpc { endpoints, .. } => endpoints
-                .iter()
-                .map(|e| url_host(e))
-                .collect::<Vec<_>>()
-                .join(", "),
-        })
+impl LiveLogs {
+    fn new(source: LogSource) -> Self {
+        LiveLogs {
+            source,
+            head: std::sync::OnceLock::new(),
+        }
     }
 
-    fn head(&self) -> Option<u64> {
-        match self.0 {
+    fn read_head(&self) -> Option<u64> {
+        match self.source {
             LogSource::Blockscout(host) => {
                 // A gap in Blockscout's block index is a gap in the history it
                 // serves, and nothing in a `getLogs` reply would show it.
-                let indexed = with_retries(|| {
-                    curl_get(&format!("https://{host}/api/v2/main-page/indexing-status"))
+                let indexed = with_waits(&BLOCKSCOUT_RETRY_WAITS, || {
+                    blockscout_get(&format!("https://{host}/api/v2/main-page/indexing-status"))
                         .and_then(|b| rpc::blockscout_blocks_indexed(&b))
                 })?;
                 if !indexed {
                     return None;
                 }
-                with_retries(|| {
-                    curl_get(&format!(
+                with_waits(&BLOCKSCOUT_RETRY_WAITS, || {
+                    blockscout_get(&format!(
                         "https://{host}/api?module=block&action=eth_block_number"
                     ))
                     .and_then(|b| rpc::result_hex(&b))
@@ -637,12 +672,31 @@ impl deployroles::LogReads for LiveLogs {
             }),
         }
     }
+}
+
+impl deployroles::LogReads for LiveLogs {
+    fn source(&self) -> Option<String> {
+        Some(match self.source {
+            LogSource::Blockscout(host) => host.to_string(),
+            LogSource::Rpc { endpoints, .. } => endpoints
+                .iter()
+                .map(|e| url_host(e))
+                .collect::<Vec<_>>()
+                .join(", "),
+        })
+    }
+
+    fn head(&self) -> Option<u64> {
+        *self.head.get_or_init(|| self.read_head())
+    }
 
     fn logs(&self, address: &str, topic0: [u8; 32], from: u64, to: u64) -> Option<Vec<rpc::Log>> {
-        match self.0 {
+        match self.source {
             LogSource::Blockscout(host) => {
                 let url = rpc::blockscout_logs_url(host, address, topic0, from, to)?;
-                with_retries(|| curl_get(&url).and_then(|b| rpc::decode_blockscout_logs(&b)))
+                with_waits(&BLOCKSCOUT_RETRY_WAITS, || {
+                    blockscout_get(&url).and_then(|b| rpc::decode_blockscout_logs(&b))
+                })
             }
             LogSource::Rpc { endpoints, span } => {
                 let spans = deployroles::spans(from, to, span.unwrap_or(u64::MAX))?;
@@ -3008,7 +3062,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     .map(|pin| {
                         let re = &roles_expect;
                         s.spawn(move || match Chain::from_network(&pin.network) {
-                            Some(ch) => deployroles::chain_doc(re, pin, &LiveLogs(ch.log_source())),
+                            Some(ch) => {
+                                deployroles::chain_doc(re, pin, &LiveLogs::new(ch.log_source()))
+                            }
                             None => deployroles::chain_doc(re, pin, &deployroles::NoLogs),
                         })
                     })
