@@ -187,6 +187,29 @@ fn gh_file(org: &str, repo: &str, path: &str) -> String {
     ]) else {
         return String::new();
     };
+    decode_contents(&raw)
+}
+
+/// A deploy-repo source file through the retrying fetch seam: a transient
+/// failure (a secondary rate limit, the network) is retried before it becomes
+/// `""`, so a hiccup does not read as a source that declares nothing. The views
+/// built from st0x.deploy's source read it through here: every check they make
+/// is only as good as the source they parsed. "" for a 404 or a fetch that
+/// still failed after the retries.
+fn gh_source<F: GhApi>(gh: &F, org: &str, repo: &str, path: &str) -> String {
+    match gh.api_jq(&[
+        "api",
+        &format!("repos/{org}/{repo}/contents/{path}"),
+        "--jq",
+        ".content",
+    ]) {
+        FetchOutcome::Found(raw) => decode_contents(&raw),
+        FetchOutcome::NotFound | FetchOutcome::Failed => String::new(),
+    }
+}
+
+/// The file a `contents` API `.content` field holds: base64 with newlines.
+fn decode_contents(raw: &str) -> String {
     let b64: String = raw.split_whitespace().collect(); // gh returns base64 with newlines
     use std::io::Write;
     // minimal base64 decode (std has none) — shell out to base64 for correctness parity with scan.sh
@@ -2815,14 +2838,26 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // The deploy libraries both the owners view and the role-grant view read
         // from, fetched once. `deployment_grants` below consumes the same four.
         let (deploy_org, deploy_repo) = ("S01-Issuer", "st0x.deploy");
-        let safe = gh_file(deploy_org, deploy_repo, "src/lib/LibSafeInvariants.sol");
-        let auth = gh_file(
+        let safe = gh_source(
+            &gh,
+            deploy_org,
+            deploy_repo,
+            "src/lib/LibSafeInvariants.sol",
+        );
+        let auth = gh_source(
+            &gh,
             deploy_org,
             deploy_repo,
             "src/lib/LibAuthoriserInvariants.sol",
         );
-        let v4 = gh_file(deploy_org, deploy_repo, "src/generated/LibProdDeployV4.sol");
-        let overrides = gh_file(
+        let v4 = gh_source(
+            &gh,
+            deploy_org,
+            deploy_repo,
+            "src/generated/LibProdDeployV4.sol",
+        );
+        let overrides = gh_source(
+            &gh,
             deploy_org,
             deploy_repo,
             "src/lib/LibProdDeployV2BaseOverrides.sol",
@@ -2861,7 +2896,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // active/pending pair silently contradicts the token rows further
             // down this same page, which read `authorizer()` per token.
             let live_authoriser = {
-                let tok_lib = gh_file(org, repo, "src/lib/LibTokenInvariants.sol");
+                let tok_lib = gh_source(&gh, org, repo, "src/lib/LibTokenInvariants.sol");
                 deployhealth::parse_receipt_vault_list(&tok_lib)
                     .addresses
                     .first()
@@ -2942,7 +2977,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         .iter()
                         .filter(|(t, _, name)| t == "file" && name.ends_with(".pointers.sol"))
                         .map(|(_, path, name)| {
-                            let src = gh_file(org, repo, path);
+                            let src = gh_source(&gh, org, repo, path);
                             let cname = name.strip_suffix(".pointers.sol").unwrap_or(name);
                             let addr = owners::parse_address_constant(&src, "DEPLOYED_ADDRESS");
                             let runtime = deployhealth::parse_hex_constant(&src, "RUNTIME_CODE");
@@ -2990,7 +3025,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let frozen: Vec<deploystate::FrozenPin> = deploystate::frozen_imports(&v4)
             .into_iter()
             .map(|(release, contract, path)| {
-                let src = gh_file(deploy_org, deploy_repo, &path);
+                let src = gh_source(&gh, deploy_org, deploy_repo, &path);
                 deploystate::frozen_pin(&release, &contract, &path, &src)
             })
             .collect();
@@ -3005,8 +3040,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         };
         // What the live-state and role-membership views compare against, read
         // out of the deploy repo once.
-        let orchestrator_src =
-            gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
+        let orchestrator_src = gh_source(
+            &gh,
+            deploy_org,
+            deploy_repo,
+            "src/concrete/ST0xOrchestrator.sol",
+        );
         let expect =
             deploystate::parse_expectations(&deploy_sources, &orchestrator_src, frozen.clone());
         let deployment_state = {
@@ -3084,7 +3123,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // order and their code hashes come from `LibBeaconInvariants` and the
         // beacon-set library it dispatches each chain to; see `deploybeacons`.
         let beacons_expect = deploybeacons::parse_expect(
-            &|path: &str| gh_file(deploy_org, deploy_repo, path),
+            &|path: &str| gh_source(&gh, deploy_org, deploy_repo, path),
             &v4,
             &frozen,
             owners::parse_address_constant(&v4, "BEACON_INITIAL_OWNER"),
@@ -3126,8 +3165,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // there, the chain's clone and Safe, and `LibProdTokenConfig`'s names.
         // See `deploytokens`.
         let deployment_pinned_tokens = {
-            let tok_lib = gh_file(deploy_org, deploy_repo, deploytokens::TOKEN_INVARIANTS);
-            let configs = deploytokens::parse_configs(&gh_file(
+            let tok_lib = gh_source(&gh, deploy_org, deploy_repo, deploytokens::TOKEN_INVARIANTS);
+            let configs = deploytokens::parse_configs(&gh_source(
+                &gh,
                 deploy_org,
                 deploy_repo,
                 deploytokens::TOKEN_CONFIG,
