@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T05:02:56Z",
+  "generatedAt": "2026-09-22T10:03:29Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1329,7 +1329,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 48,
+        "openAuditIssues": 18,
         "lastMutation": {
           "timestamp": "2026-09-21T19:15:00Z",
           "commit": "639837740df1d21962139d564d34546e6c5e658f",
@@ -5391,7 +5391,7 @@
     {
       "name": "rain.lib.leakybucket",
       "org": "rainlanguage",
-      "openAuditIssues": 48,
+      "openAuditIssues": 18,
       "lastMutation": {
         "timestamp": "2026-09-21T19:15:00Z",
         "commit": "639837740df1d21962139d564d34546e6c5e658f",
@@ -5654,7 +5654,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 572,
+      "fullSourceLoc": 799,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
