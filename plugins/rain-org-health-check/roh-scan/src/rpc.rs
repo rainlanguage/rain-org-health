@@ -197,6 +197,263 @@ fn decode_bool(result_hex: &str) -> Option<bool> {
         .map(|r| r._0)
 }
 
+// ---- deployment-state reads (rain-org-health#182) ----
+
+/// The reads the #182 deployment-state checks are built from: a Safe's module
+/// list, a receipt's vault and a vault's receipt, the orchestrator's vault-logic
+/// guard, raw storage slots (the Safe singleton, guard and fallback, the ERC-1967
+/// beacon slot, the OpenZeppelin initializer slot), and the role-event history an
+/// authoriser's membership is rebuilt from. Pure encode/decode like the rest of
+/// this module. The checks that call them land separately; the `expect` goes
+/// stale, and fails the lint gate, once every item in here is wired.
+#[cfg_attr(
+    not(test),
+    expect(
+        dead_code,
+        reason = "consumed by the #182 deployment checks, which land after these reads"
+    )
+)]
+mod deploy_reads {
+    use super::{result_bytes, to_hex};
+    use alloy_primitives::{hex, Address, U256};
+    use alloy_sol_types::{sol, SolCall, SolEvent};
+
+    sol! {
+        function getModulesPaginated(address start, uint256 pageSize) external view returns (address[] array, address next);
+        function receipt() external view returns (address);
+        function manager() external view returns (address);
+        function vaultLogicIsExpected() external view returns (bool);
+
+        event RoleGranted(bytes32 indexed role, address indexed account, address indexed sender);
+        event RoleRevoked(bytes32 indexed role, address indexed account, address indexed sender);
+    }
+
+    fn lower(a: &Address) -> String {
+        a.to_string().to_lowercase()
+    }
+
+    /// `getModulesPaginated(<start>, <page_size>)` calldata: one page of a Safe's
+    /// module linked list, from `start` (the `0x1` sentinel for its head). `None`
+    /// when `start` is not a 20-byte address, rather than asking from
+    /// `address(0)`, which is not a node of the list.
+    pub fn get_modules_paginated_calldata(start: &str, page_size: u64) -> Option<String> {
+        let start: Address = start.parse().ok()?;
+        Some(to_hex(
+            getModulesPaginatedCall {
+                start,
+                pageSize: U256::from(page_size),
+            }
+            .abi_encode(),
+        ))
+    }
+
+    /// Decode a `getModulesPaginated` return → `(modules, next)`, lowercase
+    /// `0x…`. A Safe with no modules answers an empty page.
+    pub fn decode_modules_page(result_hex: &str) -> Option<(Vec<String>, String)> {
+        let bytes = result_bytes(result_hex)?;
+        getModulesPaginatedCall::abi_decode_returns(&bytes, false)
+            .ok()
+            .map(|r| (r.array.iter().map(lower).collect(), lower(&r.next)))
+    }
+
+    /// `receipt()` calldata: the receipt a receipt vault is paired with. The
+    /// address comes back through `decode_address`.
+    pub fn receipt_calldata() -> String {
+        to_hex(receiptCall {}.abi_encode())
+    }
+
+    /// `manager()` calldata: the vault a receipt answers to, the other half of
+    /// the pairing. The address comes back through `decode_address`.
+    pub fn manager_calldata() -> String {
+        to_hex(managerCall {}.abi_encode())
+    }
+
+    /// `vaultLogicIsExpected()` calldata: the orchestrator's own check that the
+    /// vault beacons point at the implementations it was built for. The bool
+    /// comes back through `classify_bool`, so a revert stays apart from `false`.
+    pub fn vault_logic_is_expected_calldata() -> String {
+        to_hex(vaultLogicIsExpectedCall {}.abi_encode())
+    }
+
+    /// A 32-byte word from hex of at most 64 digits, `0x` optional, left-padded:
+    /// nodes differ on whether a storage read comes back zero-trimmed (`0x0`).
+    fn word_from_hex(s: &str) -> Option<[u8; 32]> {
+        let digits = s.strip_prefix("0x").unwrap_or(s);
+        if digits.is_empty() || digits.len() > 64 {
+            return None;
+        }
+        let mut out = [0u8; 32];
+        hex::decode_to_slice(format!("{digits:0>64}"), &mut out).ok()?;
+        Some(out)
+    }
+
+    /// `eth_getStorageAt` JSON-RPC payload for `slot` of `address` at the latest
+    /// block, with the slot written out as a full word. `None` when the address
+    /// or the slot is malformed.
+    pub fn storage_at_payload(address: &str, slot: &str) -> Option<String> {
+        let address: Address = address.parse().ok()?;
+        let slot = word_from_hex(slot)?;
+        Some(format!(
+            r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getStorageAt","params":["{}","0x{}","latest"]}}"#,
+            lower(&address),
+            hex::encode(slot)
+        ))
+    }
+
+    /// Decode an `eth_getStorageAt` result into its 32-byte word.
+    pub fn decode_storage_word(result_hex: &str) -> Option<[u8; 32]> {
+        word_from_hex(result_hex)
+    }
+
+    /// The address a 32-byte word holds (a storage slot, or an indexed event
+    /// topic), lowercase `0x…`: its low 20 bytes, and only when its high 12 are
+    /// zero. A word holding anything else is not an address, and truncating it
+    /// into one would report a pointer that is not there.
+    pub fn word_address(word: &[u8; 32]) -> Option<String> {
+        if word[..12].iter().any(|b| *b != 0) {
+            return None;
+        }
+        Some(lower(&Address::from_slice(&word[12..])))
+    }
+
+    /// `eth_getLogs` JSON-RPC payload: the logs `address` emitted with first
+    /// topic `topic0`, over the inclusive block range. One address and one topic
+    /// per request, because that is the most HyperEVM's public RPC accepts; the
+    /// span limit differs per endpoint, so splitting the range is the caller's.
+    /// `None` for a malformed address or an inverted range.
+    pub fn logs_payload(
+        address: &str,
+        topic0: [u8; 32],
+        from_block: u64,
+        to_block: u64,
+    ) -> Option<String> {
+        let address: Address = address.parse().ok()?;
+        if from_block > to_block {
+            return None;
+        }
+        Some(format!(
+            r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getLogs","params":[{{"address":"{}","topics":["0x{}"],"fromBlock":"{from_block:#x}","toBlock":"{to_block:#x}"}}]}}"#,
+            lower(&address),
+            hex::encode(topic0)
+        ))
+    }
+
+    /// One entry of an `eth_getLogs` result.
+    #[derive(Debug, PartialEq, Eq, Clone)]
+    pub struct Log {
+        pub address: String,
+        pub topics: Vec<[u8; 32]>,
+        pub data: Vec<u8>,
+        pub block_number: u64,
+        pub log_index: u64,
+        /// Retracted by a reorg: the node is taking it back, so it is not history.
+        pub removed: bool,
+    }
+
+    fn quantity(s: &str) -> Option<u64> {
+        u64::from_str_radix(s.strip_prefix("0x")?, 16).ok()
+    }
+
+    fn decode_log(entry: &serde_json::Value) -> Option<Log> {
+        let field = |k: &str| entry.get(k).and_then(|x| x.as_str());
+        let address: Address = field("address")?.parse().ok()?;
+        // A topic is a full word on the wire; a short one is a malformed reply,
+        // not a zero-trimmed value.
+        let topics = entry
+            .get("topics")?
+            .as_array()?
+            .iter()
+            .map(|t| {
+                t.as_str()
+                    .filter(|s| s.strip_prefix("0x").is_some_and(|d| d.len() == 64))
+                    .and_then(word_from_hex)
+            })
+            .collect::<Option<Vec<_>>>()?;
+        Some(Log {
+            address: lower(&address),
+            topics,
+            data: result_bytes(field("data")?)?,
+            block_number: quantity(field("blockNumber")?)?,
+            log_index: quantity(field("logIndex")?)?,
+            removed: entry
+                .get("removed")
+                .and_then(|r| r.as_bool())
+                .unwrap_or(false),
+        })
+    }
+
+    /// The logs in an `eth_getLogs` reply, in the order the node returned them.
+    /// `None` on an `error` body (a span or rate limit), a missing `result`, or
+    /// any entry that does not parse. Never a partial list: a membership rebuilt
+    /// from one would read as complete, with the grant the dropped entry carried
+    /// silently gone from it.
+    pub fn decode_logs(body: &[u8]) -> Option<Vec<Log>> {
+        let v: serde_json::Value = serde_json::from_slice(body).ok()?;
+        if v.get("error").is_some() {
+            return None;
+        }
+        v.get("result")?
+            .as_array()?
+            .iter()
+            .map(decode_log)
+            .collect()
+    }
+
+    /// `topic0` of OpenZeppelin `AccessControl`'s `RoleGranted(bytes32,address,address)`.
+    pub const ROLE_GRANTED_TOPIC: [u8; 32] = RoleGranted::SIGNATURE_HASH.0;
+    /// `topic0` of OpenZeppelin `AccessControl`'s `RoleRevoked(bytes32,address,address)`.
+    pub const ROLE_REVOKED_TOPIC: [u8; 32] = RoleRevoked::SIGNATURE_HASH.0;
+
+    /// Which way a role event moved membership.
+    #[derive(Debug, PartialEq, Eq, Clone, Copy)]
+    pub enum RoleChange {
+        Granted,
+        Revoked,
+    }
+
+    /// A `RoleGranted` / `RoleRevoked` event, decoded from its log.
+    #[derive(Debug, PartialEq, Eq, Clone)]
+    pub struct RoleEvent {
+        pub change: RoleChange,
+        pub role: [u8; 32],
+        pub account: String,
+        pub sender: String,
+    }
+
+    /// Decode a `RoleGranted` / `RoleRevoked` log. All three parameters are
+    /// indexed, so the event is exactly four topics and no data. `None` for any
+    /// other event, or for one not of that shape (including an address topic
+    /// with its high bytes set, which is not an address).
+    pub fn decode_role_event(log: &Log) -> Option<RoleEvent> {
+        let [t0, role, account, sender] = log.topics.as_slice() else {
+            return None;
+        };
+        let change = match *t0 {
+            ROLE_GRANTED_TOPIC => RoleChange::Granted,
+            ROLE_REVOKED_TOPIC => RoleChange::Revoked,
+            _ => return None,
+        };
+        if !log.data.is_empty() {
+            return None;
+        }
+        Some(RoleEvent {
+            change,
+            role: *role,
+            account: word_address(account)?,
+            sender: word_address(sender)?,
+        })
+    }
+}
+
+#[cfg_attr(
+    not(test),
+    expect(
+        unused_imports,
+        reason = "re-exports the #182 reads for their callers, which land after them"
+    )
+)]
+pub use deploy_reads::*;
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -347,5 +604,251 @@ mod tests {
             0000000000000000000000000000000000000000000000000000000000000006\
             77744e5644410000000000000000000000000000000000000000000000000000";
         assert_eq!(decode_string(s).as_deref(), Some("wtNVDA"));
+    }
+
+    /// The #182 reads' calldata, pinned against `cast sig` / `cast calldata`
+    /// output rather than alloy re-deriving its own: a wrong selector reverts,
+    /// and a check would report a healthy contract as unreadable.
+    #[test]
+    fn deployment_read_selectors_match_their_signatures() {
+        assert_eq!(
+            get_modules_paginated_calldata("0x0000000000000000000000000000000000000001", 10)
+                .unwrap(),
+            "0xcc2f8452\
+             0000000000000000000000000000000000000000000000000000000000000001\
+             000000000000000000000000000000000000000000000000000000000000000a"
+        );
+        assert_eq!(
+            get_modules_paginated_calldata("0x1", 10),
+            None,
+            "a cursor that is not a full address is not the sentinel"
+        );
+        assert_eq!(receipt_calldata(), "0xe1e6b898");
+        assert_eq!(manager_calldata(), "0x481c6a75");
+        assert_eq!(vault_logic_is_expected_calldata(), "0x752c9cf5");
+    }
+
+    #[test]
+    fn decodes_a_modules_page() {
+        // `cast abi-encode "f(address[],address)" "[0x1c66…]" 0x…01`
+        let one = "0x\
+            0000000000000000000000000000000000000000000000000000000000000040\
+            0000000000000000000000000000000000000000000000000000000000000001\
+            0000000000000000000000000000000000000000000000000000000000000001\
+            0000000000000000000000001c66d6708914c40239d54919320b4c48cae3d1a9";
+        assert_eq!(
+            decode_modules_page(one),
+            Some((
+                vec!["0x1c66d6708914c40239d54919320b4c48cae3d1a9".to_string()],
+                "0x0000000000000000000000000000000000000001".to_string()
+            ))
+        );
+        // `cast abi-encode "f(address[],address)" "[]" 0x…01`: no modules.
+        let empty = "0x\
+            0000000000000000000000000000000000000000000000000000000000000040\
+            0000000000000000000000000000000000000000000000000000000000000001\
+            0000000000000000000000000000000000000000000000000000000000000000";
+        assert_eq!(
+            decode_modules_page(empty),
+            Some((
+                Vec::new(),
+                "0x0000000000000000000000000000000000000001".to_string()
+            ))
+        );
+        assert_eq!(decode_modules_page("0x"), None);
+    }
+
+    #[test]
+    fn storage_reads_ask_for_the_full_slot_and_decode_the_word() {
+        let safe = "0xe70d821f3462a074e63b42d0AaC6523faAe1d611";
+        let parse = |p: Option<String>| -> serde_json::Value {
+            serde_json::from_str(&p.expect("a payload")).unwrap()
+        };
+        let p = parse(storage_at_payload(safe, "0x0"));
+        assert_eq!(p["method"], "eth_getStorageAt");
+        assert_eq!(
+            p["params"],
+            serde_json::json!([
+                "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+                "0x0000000000000000000000000000000000000000000000000000000000000000",
+                "latest"
+            ])
+        );
+        let guard_slot = "0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8";
+        assert_eq!(
+            parse(storage_at_payload(safe, guard_slot))["params"][1],
+            guard_slot
+        );
+        assert_eq!(storage_at_payload("0xdeadbeef", "0x0"), None);
+        assert_eq!(
+            storage_at_payload(safe, &format!("0x1{}", "0".repeat(64))),
+            None,
+            "65 digits is not a slot"
+        );
+        assert_eq!(storage_at_payload(safe, "0xzz"), None);
+
+        let singleton = decode_storage_word(
+            "0x00000000000000000000000029fcb43b46531bca003ddc8fcb67ffe91900c762",
+        )
+        .unwrap();
+        assert_eq!(
+            word_address(&singleton).as_deref(),
+            Some("0x29fcb43b46531bca003ddc8fcb67ffe91900c762")
+        );
+        let zero = decode_storage_word("0x0").unwrap();
+        assert_eq!(zero, [0u8; 32], "a zero-trimmed reply is the zero word");
+        assert_eq!(
+            word_address(&zero).as_deref(),
+            Some("0x0000000000000000000000000000000000000000")
+        );
+        let dirty = decode_storage_word(
+            "0x01000000000000000000000029fcb43b46531bca003ddc8fcb67ffe91900c762",
+        )
+        .unwrap();
+        assert_eq!(
+            word_address(&dirty),
+            None,
+            "a word with its high bytes set is not an address"
+        );
+        assert_eq!(decode_storage_word("0x"), None);
+    }
+
+    #[test]
+    fn logs_payload_asks_one_address_and_one_topic_over_the_range() {
+        let clone = "0x66566cc91dEAf818859bD4b09B7903ac48998157";
+        // The HyperEVM clone ceremony window, 41,325,390..=41,327,389.
+        let p: serde_json::Value = serde_json::from_str(
+            &logs_payload(clone, ROLE_GRANTED_TOPIC, 41_325_390, 41_327_389).unwrap(),
+        )
+        .unwrap();
+        assert_eq!(p["method"], "eth_getLogs");
+        assert_eq!(
+            p["params"],
+            serde_json::json!([{
+                "address": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+                "topics": ["0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"],
+                "fromBlock": "0x276934e",
+                "toBlock": "0x2769b1d"
+            }])
+        );
+        assert!(
+            logs_payload(clone, ROLE_GRANTED_TOPIC, 5, 5).is_some(),
+            "a one-block span"
+        );
+        assert_eq!(logs_payload(clone, ROLE_GRANTED_TOPIC, 6, 5), None);
+        assert_eq!(logs_payload("0x1", ROLE_GRANTED_TOPIC, 0, 5), None);
+    }
+
+    /// The first entry of a real Robinhood `eth_getLogs` reply for the V4
+    /// authoriser clone's `RoleGranted` events (2026-09-22), verbatim: the deploy
+    /// key's `CERTIFY_ADMIN` from the clone's initialisation.
+    const ROBINHOOD_ROLE_GRANTED_ENTRY: &str = r#"{"address":"0x66566cc91deaf818859bd4b09b7903ac48998157","topics":["0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d","0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b","0x000000000000000000000000e8c6ede25f0e7fafe8fbc34770faba27d56c0e76","0x000000000000000000000000444acc29d63fa643e8adcc35fd9aa6de111dcb39"],"data":"0x","blockNumber":"0x38f6cdd","transactionHash":"0x5a5bfe7ebe13edfe5c8048f18bb51cfc066a57b1c9030232c861a377bcf4643f","transactionIndex":"0x9","blockHash":"0xd5d8971ad23c27165a861df68d22e0c2a672b58917598a92fca01d5cb56a4162","blockTimestamp":"0x0","logIndex":"0x3a","removed":false}"#;
+
+    fn logs_reply(entries: &[&str]) -> String {
+        format!(
+            r#"{{"jsonrpc":"2.0","id":1,"result":[{}]}}"#,
+            entries.join(",")
+        )
+    }
+
+    /// The topic hashes are pinned against `cast keccak` of the two signatures.
+    /// A wrong one asks for events that never fire and comes back an empty
+    /// history, which a membership rebuild would read as "nobody holds a role".
+    #[test]
+    fn role_event_topics_are_the_access_control_signature_hashes() {
+        assert_eq!(
+            hex::encode(ROLE_GRANTED_TOPIC),
+            "2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d"
+        );
+        assert_eq!(
+            hex::encode(ROLE_REVOKED_TOPIC),
+            "f6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b"
+        );
+    }
+
+    #[test]
+    fn decodes_a_real_role_granted_log() {
+        let logs = decode_logs(logs_reply(&[ROBINHOOD_ROLE_GRANTED_ENTRY]).as_bytes()).unwrap();
+        assert_eq!(logs.len(), 1);
+        let log = &logs[0];
+        assert_eq!(log.address, "0x66566cc91deaf818859bd4b09b7903ac48998157");
+        assert_eq!(log.block_number, 59_731_165);
+        assert_eq!(log.log_index, 58);
+        assert!(!log.removed);
+        assert!(log.data.is_empty());
+        assert_eq!(
+            decode_role_event(log),
+            Some(RoleEvent {
+                change: RoleChange::Granted,
+                role: role_id("CERTIFY_ADMIN"),
+                account: "0xe8c6ede25f0e7fafe8fbc34770faba27d56c0e76".into(),
+                sender: "0x444acc29d63fa643e8adcc35fd9aa6de111dcb39".into(),
+            })
+        );
+    }
+
+    #[test]
+    fn role_event_decoding_takes_only_the_two_events_in_their_one_shape() {
+        let granted = decode_logs(logs_reply(&[ROBINHOOD_ROLE_GRANTED_ENTRY]).as_bytes())
+            .unwrap()
+            .remove(0);
+        let mut revoked = granted.clone();
+        revoked.topics[0] = ROLE_REVOKED_TOPIC;
+        assert_eq!(
+            decode_role_event(&revoked).map(|e| e.change),
+            Some(RoleChange::Revoked)
+        );
+        let mut other = granted.clone();
+        other.topics[0] = [0x11; 32];
+        assert_eq!(decode_role_event(&other), None, "some other event");
+        let mut short = granted.clone();
+        short.topics.pop();
+        assert_eq!(decode_role_event(&short), None, "three topics");
+        let mut long = granted.clone();
+        long.topics.push([0; 32]);
+        assert_eq!(decode_role_event(&long), None, "five topics");
+        let mut with_data = granted.clone();
+        with_data.data = vec![0];
+        assert_eq!(decode_role_event(&with_data), None, "data it cannot carry");
+        let mut dirty = granted.clone();
+        dirty.topics[2][0] = 1;
+        assert_eq!(
+            decode_role_event(&dirty),
+            None,
+            "an account topic with its high bytes set is not an address"
+        );
+    }
+
+    /// A log list is whole or absent. A refused span, a malformed entry or a
+    /// pending one must not come back as a shorter history.
+    #[test]
+    fn decode_logs_is_all_or_nothing() {
+        assert_eq!(
+            decode_logs(br#"{"jsonrpc":"2.0","id":1,"result":[]}"#),
+            Some(Vec::new()),
+            "no events is a real answer"
+        );
+        assert_eq!(
+            decode_logs(
+                br#"{"jsonrpc":"2.0","id":1,"error":{"code":-32602,"message":"block range too large"}}"#
+            ),
+            None,
+            "a refused span is not an empty history"
+        );
+        let short_topic = ROBINHOOD_ROLE_GRANTED_ENTRY.replace(
+            "\"0x000000000000000000000000e8c6ede25f0e7fafe8fbc34770faba27d56c0e76\"",
+            "\"0xe8c6ede25f0e7fafe8fbc34770faba27d56c0e76\"",
+        );
+        assert_ne!(short_topic, ROBINHOOD_ROLE_GRANTED_ENTRY);
+        assert_eq!(
+            decode_logs(logs_reply(&[ROBINHOOD_ROLE_GRANTED_ENTRY, &short_topic]).as_bytes()),
+            None,
+            "one bad entry voids the list rather than dropping out of it"
+        );
+        let pending = ROBINHOOD_ROLE_GRANTED_ENTRY
+            .replace(r#""blockNumber":"0x38f6cdd""#, r#""blockNumber":null"#);
+        assert_ne!(pending, ROBINHOOD_ROLE_GRANTED_ENTRY);
+        assert_eq!(decode_logs(logs_reply(&[&pending]).as_bytes()), None);
+        assert_eq!(decode_logs(b"not json"), None);
     }
 }

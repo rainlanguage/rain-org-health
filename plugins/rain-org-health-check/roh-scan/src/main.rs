@@ -232,11 +232,42 @@ const ETHEREUM_RPCS: &[&str] = &[
     "https://rpc.mevblocker.io",
 ];
 
+/// Keyless public HyperEVM endpoints (chainId 0x3e7, 999). Both serve the V4
+/// authoriser clone's code at `latest`, but only drpc honours the block
+/// parameter: the Hyperliquid RPC answered a historical `eth_getCode` with
+/// today's code (2026-09-21). Their log spans differ too (Hyperliquid 500
+/// blocks with one address and one topic, drpc 100 blocks), so a log read sizes
+/// its spans to the endpoint it is on.
+const HYPEREVM_RPCS: &[&str] = &[
+    "https://rpc.hyperliquid.xyz/evm",
+    "https://hyperliquid.drpc.org",
+];
+
+/// The keyless public Robinhood Chain endpoint (chainId 0x1237, 4663). It
+/// serves `eth_getLogs` over the full chain history in one request.
+const ROBINHOOD_RPCS: &[&str] = &["https://rpc.mainnet.chain.robinhood.com"];
+
+/// Keyless public BNB Smart Chain endpoints (chainId 0x38, 56). `bsc-dataseed`
+/// answers single calls at `latest` but refuses `eth_getLogs`; blastapi serves
+/// historical state; drpc serves logs in 100-block spans and rate-limits hard
+/// (HTTP 429), which `curl_json` falls through past like any failed endpoint.
+const BSC_RPCS: &[&str] = &[
+    "https://bsc-dataseed.binance.org",
+    "https://bsc-mainnet.public.blastapi.io",
+    "https://bsc.drpc.org",
+];
+
 /// The chains the scan reads production state from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Chain {
     Base,
     Ethereum,
+    /// HyperEVM, chain id 999.
+    HyperEvm,
+    /// Robinhood Chain, chain id 4663.
+    Robinhood,
+    /// BNB Smart Chain, chain id 56.
+    Bsc,
 }
 
 impl Chain {
@@ -244,6 +275,9 @@ impl Chain {
         match self {
             Chain::Base => BASE_RPCS,
             Chain::Ethereum => ETHEREUM_RPCS,
+            Chain::HyperEvm => HYPEREVM_RPCS,
+            Chain::Robinhood => ROBINHOOD_RPCS,
+            Chain::Bsc => BSC_RPCS,
         }
     }
 
@@ -253,17 +287,25 @@ impl Chain {
         match self {
             Chain::Base => "mainnet.base.org",
             Chain::Ethereum => "ethereum-rpc.publicnode.com",
+            Chain::HyperEvm => "rpc.hyperliquid.xyz",
+            Chain::Robinhood => "rpc.mainnet.chain.robinhood.com",
+            Chain::Bsc => "bsc-dataseed.binance.org",
         }
     }
 
     /// The chain a network NAME read out of the deploy repo's pins refers to.
     /// `None` for a chain the deploy repo pins but this scanner has no endpoint
     /// set for — a new chain therefore reports as unread rather than as absent,
-    /// and adding it here is the only thing needed to start reading it.
+    /// and adding it here is the only thing needed to start reading it. The
+    /// names are the deploy repo's own (`LibStoxDeployNetworks`), which are also
+    /// the lowercased `_<CHAIN>` suffixes of its per-chain pins.
     fn from_network(network: &str) -> Option<Chain> {
         match network {
             "base" => Some(Chain::Base),
             "ethereum" => Some(Chain::Ethereum),
+            "hyperevm" => Some(Chain::HyperEvm),
+            "robinhood" => Some(Chain::Robinhood),
+            "bsc" => Some(Chain::Bsc),
             _ => None,
         }
     }
@@ -4141,5 +4183,42 @@ mod tests {
             DepsResolution::Known(Vec::new()),
             "declaring nothing is a real answer even with an unreadable tree"
         );
+    }
+
+    /// Every network the deploy repo pins resolves to an endpoint set of its
+    /// own, and the host a verdict reports is one of the endpoints asked. A name
+    /// that fell through to `None` would leave that chain's grants unread, and a
+    /// host (or endpoint) from another chain's set would credit that chain with
+    /// the answer.
+    #[test]
+    fn every_deploy_network_has_its_own_endpoint_set() {
+        let chains = [
+            ("base", Chain::Base),
+            ("ethereum", Chain::Ethereum),
+            ("hyperevm", Chain::HyperEvm),
+            ("robinhood", Chain::Robinhood),
+            ("bsc", Chain::Bsc),
+        ];
+        for (network, chain) in chains {
+            assert_eq!(Chain::from_network(network), Some(chain), "{network}");
+            assert!(!chain.rpcs().is_empty(), "{network} has endpoints");
+            assert!(
+                chain.rpcs().iter().any(|rpc| {
+                    rpc.strip_prefix("https://")
+                        .and_then(|r| r.split('/').next())
+                        == Some(chain.rpc_host())
+                }),
+                "{network}: its reported host is one of its own endpoints"
+            );
+        }
+        let all: Vec<&str> = chains
+            .iter()
+            .flat_map(|(_, c)| c.rpcs().iter().copied())
+            .collect();
+        let mut unique = all.clone();
+        unique.sort_unstable();
+        unique.dedup();
+        assert_eq!(unique.len(), all.len(), "no endpoint serves two chains");
+        assert_eq!(Chain::from_network("arbitrum"), None);
     }
 }
