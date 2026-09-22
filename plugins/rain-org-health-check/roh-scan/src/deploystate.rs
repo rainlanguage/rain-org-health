@@ -57,7 +57,7 @@ const SAFE_SINGLETON_SLOT: &str = "0x0";
 
 /// The roles the operator key must hold on the orchestrator (#182). The deploy
 /// repo has no map of orchestrator grants: the script that made them is deleted.
-const OPERATOR_ROLES: [&str; 2] = ["MINT", "BURN"];
+pub(crate) const OPERATOR_ROLES: [&str; 2] = ["MINT", "BURN"];
 
 /// OpenZeppelin `AccessControl`'s `DEFAULT_ADMIN_ROLE`, which is `bytes32(0)`
 /// rather than the hash of a name.

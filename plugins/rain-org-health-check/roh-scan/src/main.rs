@@ -17,6 +17,7 @@ mod commentloc;
 mod consumers;
 mod deploybeacons;
 mod deployhealth;
+mod deployroles;
 mod deploystate;
 mod deploytokens;
 mod graph;
@@ -358,30 +359,46 @@ fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
     let mut refused: Option<Vec<u8>> = None;
     for i in 0..rpcs.len() {
         let rpc = rpcs[(session.cursor + i) % rpcs.len()];
-        if let Ok(o) = Command::new("curl")
-            .args([
-                "-fsS",
-                "-m",
-                "25",
-                "-X",
-                "POST",
-                rpc,
-                "-H",
-                "content-type: application/json",
-                "-d",
-                payload,
-            ])
-            .output()
-        {
-            if o.status.success() {
-                if !rpc::is_endpoint_refusal(&o.stdout) {
-                    return Some(o.stdout);
-                }
-                refused = Some(o.stdout);
+        if let Some(body) = curl_post(rpc, payload) {
+            if !rpc::is_endpoint_refusal(&body) {
+                return Some(body);
             }
+            refused = Some(body);
         }
     }
     refused
+}
+
+/// POST a JSON `payload` to `url` → the reply body, or `None` when curl failed
+/// (no connection, a timeout, an HTTP error status).
+fn curl_post(url: &str, payload: &str) -> Option<Vec<u8>> {
+    Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "-X",
+            "POST",
+            url,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            payload,
+        ])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| o.stdout)
+}
+
+/// GET `url` → the reply body, or `None` when curl failed.
+fn curl_get(url: &str) -> Option<Vec<u8>> {
+    Command::new("curl")
+        .args(["-fsS", "-m", "25", url])
+        .output()
+        .ok()
+        .filter(|o| o.status.success())
+        .map(|o| o.stdout)
 }
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
@@ -487,6 +504,161 @@ impl deploystate::ChainReads for LiveReads {
     }
     fn call_string(&self, contract: &str, calldata: &str) -> Option<String> {
         eth_call(self.0, contract, calldata).and_then(|h| rpc::decode_string(&h))
+    }
+}
+
+/// Keyless BNB Smart Chain endpoints that serve `eth_getLogs` (2026-09-22).
+/// blockrazor answers spans of up to 25 blocks; drpc up to 100, but it
+/// rate-limits hard; blastapi answers when its shared quota allows.
+/// `bsc-dataseed` refuses log queries outright ("limit exceeded"), so it is not
+/// one of them.
+const BSC_LOG_RPCS: &[&str] = &[
+    "https://bsc.blockrazor.xyz",
+    "https://bsc.drpc.org",
+    "https://bsc-mainnet.public.blastapi.io",
+];
+
+/// Where a chain's role-event history is read from (#182).
+#[derive(Clone, Copy)]
+enum LogSource {
+    /// Blockscout's keyless Etherscan-style API on this host: the whole history
+    /// in one request, up to the last block it has indexed.
+    Blockscout(&'static str),
+    /// `eth_getLogs` over these endpoints, at most `span` blocks a request
+    /// (`None`: the whole range in one).
+    Rpc {
+        endpoints: &'static [&'static str],
+        span: Option<u64>,
+    },
+}
+
+impl Chain {
+    /// Base and Ethereum history comes from Blockscout, in one request each.
+    /// Robinhood's RPC serves its whole range in one request. HyperEVM and BSC
+    /// have no keyless whole-history source, so only their ceremony windows
+    /// are read, in spans every listed endpoint accepts.
+    fn log_source(self) -> LogSource {
+        match self {
+            Chain::Base => LogSource::Blockscout("base.blockscout.com"),
+            Chain::Ethereum => LogSource::Blockscout("eth.blockscout.com"),
+            Chain::Robinhood => LogSource::Rpc {
+                endpoints: ROBINHOOD_RPCS,
+                span: None,
+            },
+            Chain::HyperEvm => LogSource::Rpc {
+                endpoints: HYPEREVM_RPCS,
+                span: Some(100),
+            },
+            Chain::Bsc => LogSource::Rpc {
+                endpoints: BSC_LOG_RPCS,
+                span: Some(25),
+            },
+        }
+    }
+}
+
+/// The pause between the requests of one chunked log read, so a rate-limited
+/// public endpoint is not burst past its limit.
+const LOG_PACE: std::time::Duration = std::time::Duration::from_millis(250);
+/// The waits, in seconds, before each retry of a log-source request that got
+/// no usable answer from any endpoint.
+const LOG_RETRY_WAITS: [u64; 4] = [1, 2, 4, 8];
+
+/// `f` until it answers, retrying after each of [`LOG_RETRY_WAITS`].
+fn with_retries<T>(f: impl Fn() -> Option<T>) -> Option<T> {
+    if let Some(v) = f() {
+        return Some(v);
+    }
+    for wait in LOG_RETRY_WAITS {
+        std::thread::sleep(std::time::Duration::from_secs(wait));
+        if let Some(v) = f() {
+            return Some(v);
+        }
+    }
+    None
+}
+
+/// POST `payload` to each endpoint in turn → the first reply `decode` reads.
+/// A refusal, an error body or a malformed reply moves on to the next one.
+fn first_answer<T>(
+    endpoints: &[&str],
+    payload: &str,
+    decode: impl Fn(&[u8]) -> Option<T>,
+) -> Option<T> {
+    endpoints
+        .iter()
+        .find_map(|url| curl_post(url, payload).and_then(|b| decode(&b)))
+}
+
+fn url_host(url: &str) -> &str {
+    let rest = url.strip_prefix("https://").unwrap_or(url);
+    rest.split('/').next().unwrap_or(rest)
+}
+
+/// The #182 role-event reads over one chain's log source.
+struct LiveLogs(LogSource);
+
+impl deployroles::LogReads for LiveLogs {
+    fn source(&self) -> Option<String> {
+        Some(match self.0 {
+            LogSource::Blockscout(host) => host.to_string(),
+            LogSource::Rpc { endpoints, .. } => endpoints
+                .iter()
+                .map(|e| url_host(e))
+                .collect::<Vec<_>>()
+                .join(", "),
+        })
+    }
+
+    fn head(&self) -> Option<u64> {
+        match self.0 {
+            LogSource::Blockscout(host) => {
+                // A gap in Blockscout's block index is a gap in the history it
+                // serves, and nothing in a `getLogs` reply would show it.
+                let indexed = with_retries(|| {
+                    curl_get(&format!("https://{host}/api/v2/main-page/indexing-status"))
+                        .and_then(|b| rpc::blockscout_blocks_indexed(&b))
+                })?;
+                if !indexed {
+                    return None;
+                }
+                with_retries(|| {
+                    curl_get(&format!(
+                        "https://{host}/api?module=block&action=eth_block_number"
+                    ))
+                    .and_then(|b| rpc::result_hex(&b))
+                    .and_then(|h| rpc::decode_quantity(&h))
+                })
+            }
+            LogSource::Rpc { endpoints, .. } => with_retries(|| {
+                first_answer(endpoints, rpc::BLOCK_NUMBER_PAYLOAD, |b| {
+                    rpc::result_hex(b).and_then(|h| rpc::decode_quantity(&h))
+                })
+            }),
+        }
+    }
+
+    fn logs(&self, address: &str, topic0: [u8; 32], from: u64, to: u64) -> Option<Vec<rpc::Log>> {
+        match self.0 {
+            LogSource::Blockscout(host) => {
+                let url = rpc::blockscout_logs_url(host, address, topic0, from, to)?;
+                with_retries(|| curl_get(&url).and_then(|b| rpc::decode_blockscout_logs(&b)))
+            }
+            LogSource::Rpc { endpoints, span } => {
+                let spans = deployroles::spans(from, to, span.unwrap_or(u64::MAX))?;
+                let mut out = Vec::new();
+                for (i, (a, b)) in spans.into_iter().enumerate() {
+                    if i > 0 {
+                        std::thread::sleep(LOG_PACE);
+                    }
+                    let payload = rpc::logs_payload(address, topic0, a, b)?;
+                    out.extend(with_retries(|| {
+                        first_answer(endpoints, &payload, rpc::decode_logs)
+                    })?);
+                }
+                Some(out)
+            }
+        }
     }
 }
 
@@ -2777,11 +2949,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             }
             chains
         };
+        // What the live-state and role-membership views compare against, read
+        // out of the deploy repo once.
+        let orchestrator_src =
+            gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
+        let expect =
+            deploystate::parse_expectations(&deploy_sources, &orchestrator_src, frozen.clone());
         let deployment_state = {
-            let orchestrator_src =
-                gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
-            let expect =
-                deploystate::parse_expectations(&deploy_sources, &orchestrator_src, frozen.clone());
             let health_release = HEALTH_VERSION.replace('.', "_");
             // Each chain is its own endpoint set, so the chains are read in
             // parallel. Within a chain every read shares one session.
@@ -2819,6 +2993,32 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     .collect()
             });
             deploystate::build_state(deploy_org, deploy_repo, docs)
+                .unwrap_or(serde_json::Value::Null)
+        };
+
+        // Who holds which role on every chain's V4 authoriser clone and
+        // orchestrator instance (#182), rebuilt from their role-event history
+        // and compared to the expected set exactly, so a stray grant fails as a
+        // missing one does. See `deployroles`.
+        let deployment_role_membership = {
+            let roles_expect = deployroles::parse_expect(&deploy_sources, &expect);
+            let docs: Vec<serde_json::Value> = std::thread::scope(|s| {
+                let handles: Vec<_> = deploy_chains
+                    .iter()
+                    .map(|pin| {
+                        let re = &roles_expect;
+                        s.spawn(move || match Chain::from_network(&pin.network) {
+                            Some(ch) => deployroles::chain_doc(re, pin, &LiveLogs(ch.log_source())),
+                            None => deployroles::chain_doc(re, pin, &deployroles::NoLogs),
+                        })
+                    })
+                    .collect();
+                handles
+                    .into_iter()
+                    .map(|h| h.join().expect("a role-membership chain read panicked"))
+                    .collect()
+            });
+            deployroles::build_roles(deploy_org, deploy_repo, docs)
                 .unwrap_or(serde_json::Value::Null)
         };
 
@@ -3132,6 +3332,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentGrants": deployment_grants,
             "deploymentHealth": deployment_health,
             "deploymentState": deployment_state,
+            "deploymentRoleMembership": deployment_role_membership,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
             "deploymentPinnedTokens": deployment_pinned_tokens,

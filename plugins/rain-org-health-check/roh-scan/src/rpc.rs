@@ -209,16 +209,8 @@ fn decode_bool(result_hex: &str) -> Option<bool> {
 /// list, a receipt's vault and a vault's receipt, the orchestrator's vault-logic
 /// guard, raw storage slots (the Safe singleton, guard and fallback, the ERC-1967
 /// beacon slot, the OpenZeppelin initializer slot), and the role-event history an
-/// authoriser's membership is rebuilt from. Pure encode/decode like the rest of
-/// this module. The checks that call them land separately; the `expect` goes
-/// stale, and fails the lint gate, once every item in here is wired.
-#[cfg_attr(
-    not(test),
-    expect(
-        dead_code,
-        reason = "the #182 token-pairing and role-log checks land after these reads"
-    )
-)]
+/// authoriser's membership is rebuilt from, over JSON-RPC or Blockscout. Pure
+/// encode/decode like the rest of this module.
 mod deploy_reads {
     use super::{result_bytes, to_hex};
     use alloy_primitives::{hex, Address, U256};
@@ -448,6 +440,73 @@ mod deploy_reads {
             account: word_address(account)?,
             sender: word_address(sender)?,
         })
+    }
+
+    /// `eth_blockNumber` JSON-RPC payload: the head a full-history log read runs
+    /// up to. The answer comes back through `result_hex` and `decode_quantity`.
+    pub const BLOCK_NUMBER_PAYLOAD: &str =
+        r#"{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}"#;
+
+    /// A JSON-RPC quantity (`0x…` hex, no padding) as a number.
+    pub fn decode_quantity(s: &str) -> Option<u64> {
+        quantity(s)
+    }
+
+    /// The most entries Blockscout's `getLogs` returns in one reply. A reply that
+    /// long may have stopped there, so it is not read as a whole history.
+    pub const BLOCKSCOUT_LOGS_CAP: usize = 1000;
+
+    /// Blockscout's keyless Etherscan-style `getLogs` URL on `host`: the logs
+    /// `address` emitted with first topic `topic0`, over the inclusive block
+    /// range. `None` for a malformed address or an inverted range.
+    pub fn blockscout_logs_url(
+        host: &str,
+        address: &str,
+        topic0: [u8; 32],
+        from_block: u64,
+        to_block: u64,
+    ) -> Option<String> {
+        let address: Address = address.parse().ok()?;
+        if from_block > to_block {
+            return None;
+        }
+        Some(format!(
+            "https://{host}/api?module=logs&action=getLogs&address={}&topic0=0x{}&fromBlock={from_block}&toBlock={to_block}",
+            lower(&address),
+            hex::encode(topic0)
+        ))
+    }
+
+    /// The logs in a Blockscout `getLogs` reply. Its entries carry the fields of
+    /// an `eth_getLogs` entry, so they decode the same way and the same
+    /// all-or-nothing rule holds. An empty history is `status` `"0"` with the
+    /// message `No logs found`; every other `"0"` is an error. `None` for an
+    /// error, a malformed entry, or a reply of [`BLOCKSCOUT_LOGS_CAP`] entries
+    /// or more, which may have been cut off.
+    pub fn decode_blockscout_logs(body: &[u8]) -> Option<Vec<Log>> {
+        let v: serde_json::Value = serde_json::from_slice(body).ok()?;
+        let entries = v.get("result")?.as_array()?;
+        match (
+            v.get("status").and_then(|s| s.as_str()),
+            v.get("message").and_then(|m| m.as_str()),
+        ) {
+            (Some("1"), _) => {}
+            (Some("0"), Some("No logs found")) if entries.is_empty() => return Some(Vec::new()),
+            _ => return None,
+        }
+        if entries.len() >= BLOCKSCOUT_LOGS_CAP {
+            return None;
+        }
+        entries.iter().map(decode_log).collect()
+    }
+
+    /// Whether a Blockscout instance reports every block indexed, from its
+    /// `/api/v2/main-page/indexing-status` reply. A gap in its block index is
+    /// a gap in the history it serves, with nothing in a `getLogs` reply to
+    /// show it. `None` when the reply does not say.
+    pub fn blockscout_blocks_indexed(body: &[u8]) -> Option<bool> {
+        let v: serde_json::Value = serde_json::from_slice(body).ok()?;
+        v.get("finished_indexing_blocks")?.as_bool()
     }
 }
 
@@ -873,5 +932,125 @@ mod tests {
         assert_ne!(pending, ROBINHOOD_ROLE_GRANTED_ENTRY);
         assert_eq!(decode_logs(logs_reply(&[&pending]).as_bytes()), None);
         assert_eq!(decode_logs(b"not json"), None);
+    }
+
+    /// The first entry of a real Base Blockscout `getLogs` reply for the V4
+    /// authoriser clone's `RoleGranted` events (2026-09-22), verbatim. It has no
+    /// `removed` field and carries Blockscout's own extras.
+    const BASE_BLOCKSCOUT_ROLE_GRANTED_ENTRY: &str = r#"{"address":"0x315b16faa6ee413fabca877d3851b3818369f0cd","blockNumber":"0x2e67f46","data":"0x","gasPrice":"0x4eed9b","gasUsed":"0x93b78","logIndex":"0xfe","timeStamp":"0x6a575b6f","topics":["0x2f8788117e7eff1d82e926ec794901d17c78024a50270940304540a733656f0d","0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b","0x000000000000000000000000e8c6ede25f0e7fafe8fbc34770faba27d56c0e76","0x000000000000000000000000444acc29d63fa643e8adcc35fd9aa6de111dcb39"],"transactionHash":"0x26519d1c9090e6236cbd6e9c7f5d6eee7cf633da3a6653742914b3c17fe7d236","transactionIndex":"0x51"}"#;
+
+    fn blockscout_reply(status: &str, message: &str, entries: &[&str]) -> String {
+        format!(
+            r#"{{"message":"{message}","result":[{}],"status":"{status}"}}"#,
+            entries.join(",")
+        )
+    }
+
+    #[test]
+    fn decodes_a_real_blockscout_role_granted_log() {
+        let body = blockscout_reply("1", "OK", &[BASE_BLOCKSCOUT_ROLE_GRANTED_ENTRY]);
+        let logs = decode_blockscout_logs(body.as_bytes()).unwrap();
+        assert_eq!(logs.len(), 1);
+        assert_eq!(
+            logs[0].address,
+            "0x315b16faa6ee413fabca877d3851b3818369f0cd"
+        );
+        assert_eq!(logs[0].block_number, 48_660_294);
+        assert_eq!(logs[0].log_index, 254);
+        assert!(!logs[0].removed);
+        let event = decode_role_event(&logs[0]).unwrap();
+        assert_eq!(event.role, role_id("CERTIFY_ADMIN"));
+        assert_eq!(event.account, "0xe8c6ede25f0e7fafe8fbc34770faba27d56c0e76");
+    }
+
+    /// Blockscout says "no events" with `status` "0", the status it also sends
+    /// for an error. Only the empty reply with that message is an empty history.
+    #[test]
+    fn blockscout_logs_are_all_or_nothing() {
+        assert_eq!(
+            decode_blockscout_logs(blockscout_reply("0", "No logs found", &[]).as_bytes()),
+            Some(Vec::new())
+        );
+        assert_eq!(
+            decode_blockscout_logs(
+                br#"{"message":"Error! Invalid block number","result":null,"status":"0"}"#
+            ),
+            None,
+            "an error is not an empty history"
+        );
+        assert_eq!(
+            decode_blockscout_logs(blockscout_reply("0", "Rate limit", &[]).as_bytes()),
+            None
+        );
+        let pending =
+            BASE_BLOCKSCOUT_ROLE_GRANTED_ENTRY.replace(r#""logIndex":"0xfe""#, r#""logIndex":"""#);
+        assert_ne!(pending, BASE_BLOCKSCOUT_ROLE_GRANTED_ENTRY);
+        assert_eq!(
+            decode_blockscout_logs(
+                blockscout_reply("1", "OK", &[BASE_BLOCKSCOUT_ROLE_GRANTED_ENTRY, &pending])
+                    .as_bytes()
+            ),
+            None,
+            "one bad entry voids the list"
+        );
+        let under = vec![BASE_BLOCKSCOUT_ROLE_GRANTED_ENTRY; BLOCKSCOUT_LOGS_CAP - 1];
+        assert_eq!(
+            decode_blockscout_logs(blockscout_reply("1", "OK", &under).as_bytes()).map(|l| l.len()),
+            Some(BLOCKSCOUT_LOGS_CAP - 1)
+        );
+        let at_cap = vec![BASE_BLOCKSCOUT_ROLE_GRANTED_ENTRY; BLOCKSCOUT_LOGS_CAP];
+        assert_eq!(
+            decode_blockscout_logs(blockscout_reply("1", "OK", &at_cap).as_bytes()),
+            None,
+            "a full page may have been cut off"
+        );
+    }
+
+    #[test]
+    fn blockscout_logs_url_asks_one_address_and_one_topic_over_the_range() {
+        assert_eq!(
+            blockscout_logs_url(
+                "base.blockscout.com",
+                "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+                ROLE_REVOKED_TOPIC,
+                0,
+                51_634_561
+            )
+            .unwrap(),
+            "https://base.blockscout.com/api?module=logs&action=getLogs&address=0x315b16faa6ee413fabca877d3851b3818369f0cd&topic0=0xf6391f5c32d9c69d2a47ea670b442974b53935d1edc7fd64eb21e047a839171b&fromBlock=0&toBlock=51634561"
+        );
+        assert_eq!(
+            blockscout_logs_url("h", "0x1", ROLE_REVOKED_TOPIC, 0, 1),
+            None
+        );
+        assert_eq!(
+            blockscout_logs_url(
+                "h",
+                "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+                ROLE_REVOKED_TOPIC,
+                2,
+                1
+            ),
+            None
+        );
+    }
+
+    #[test]
+    fn reads_the_head_and_the_block_index_status() {
+        let p: serde_json::Value = serde_json::from_str(BLOCK_NUMBER_PAYLOAD).unwrap();
+        assert_eq!(p["method"], "eth_blockNumber");
+        assert_eq!(decode_quantity("0x313e181"), Some(51_634_561));
+        assert_eq!(decode_quantity("313e181"), None);
+        assert_eq!(decode_quantity("0xzz"), None);
+        // Base Blockscout's reply, 2026-09-22.
+        assert_eq!(
+            blockscout_blocks_indexed(br#"{"finished_indexing":false,"finished_indexing_blocks":true,"indexed_blocks_ratio":"1.00","indexed_internal_transactions_ratio":"0.57"}"#),
+            Some(true)
+        );
+        assert_eq!(
+            blockscout_blocks_indexed(br#"{"finished_indexing_blocks":false}"#),
+            Some(false)
+        );
+        assert_eq!(blockscout_blocks_indexed(b"{}"), None);
     }
 }
