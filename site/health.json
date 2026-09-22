@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T18:58:37Z",
+  "generatedAt": "2026-09-22T22:14:41Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1331,10 +1331,10 @@
         },
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-09-22T16:51:53Z",
-          "commit": "1463c2528a8bf315a60cf09bc5739afaae3924bf",
+          "timestamp": "2026-09-22T19:45:39Z",
+          "commit": "8d5b5bae286423121d738db7a38479e603b90108",
           "skillVersion": "0.35.0",
-          "scope": "re-probe after the private max (b81c9d3) and the zero fill rejection (3d52080). 60 mutants against src/lib/LibLeakyBucket.sol: M46-M48 retargeted to max, M60 added (zero amount guard removed). Probe ran on 3d52080; this commit differs from it by one comment line in test/, no bytecode change."
+          "scope": "re-probe after pack and unpack were exported (8d5b5ba). Same 60 mutants against src/lib/LibLeakyBucket.sol."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -5393,10 +5393,10 @@
       "org": "rainlanguage",
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-09-22T16:51:53Z",
-        "commit": "1463c2528a8bf315a60cf09bc5739afaae3924bf",
+        "timestamp": "2026-09-22T19:45:39Z",
+        "commit": "8d5b5bae286423121d738db7a38479e603b90108",
         "skillVersion": "0.35.0",
-        "scope": "re-probe after the private max (b81c9d3) and the zero fill rejection (3d52080). 60 mutants against src/lib/LibLeakyBucket.sol: M46-M48 retargeted to max, M60 added (zero amount guard removed). Probe ran on 3d52080; this commit differs from it by one comment line in test/, no bytecode change."
+        "scope": "re-probe after pack and unpack were exported (8d5b5ba). Same 60 mutants against src/lib/LibLeakyBucket.sol."
       },
       "lastAudit": {
         "auditedAt": "2026-09-22T05:00:00Z",
@@ -5654,7 +5654,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 153,
+      "fullSourceLoc": 156,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
