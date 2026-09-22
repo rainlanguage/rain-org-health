@@ -47,7 +47,7 @@ pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
 /// The brace-depth-matched body of a named function, so assignments after a
 /// nested block (`unchecked { … }`, a loop, a conditional) stay in scope.
 /// `None` when the function is absent or its braces are unbalanced.
-fn function_body<'a>(src: &'a str, name: &str) -> Option<&'a str> {
+pub(crate) fn function_body<'a>(src: &'a str, name: &str) -> Option<&'a str> {
     let re = Regex::new(&format!(
         r"(?s)function\s+{}\s*\([^)]*\)[^{{]*\{{",
         regex::escape(name)
@@ -245,116 +245,6 @@ pub fn build_health(
         "healthy": healthy,
         "contracts": contracts,
     }))
-}
-
-/// Health of one production beacon, resolving BOTH what its `owner()` and
-/// `implementation()` actually ARE — not just whether they match a constant:
-/// - owner is labelled `safe` (the current, correct token-owner Safe), `legacy`
-///   (the pre-migration deploy EOA), `foreign` (anything else), or `unknown`.
-/// - impl is resolved to a version: the `target_version` when it equals the
-///   target impl, `V1` when it's the pre-Zoltu impl, else `unknown`.
-/// - status: `healthy` only when Safe-owned AND at the target version; `behind`
-///   when Safe-owned but the impl isn't the target (e.g. still V1); `drift` when
-///   the owner isn't the Safe; `unknown` when a live read failed.
-#[allow(clippy::too_many_arguments)]
-pub fn beacon_health(
-    name: &str,
-    address: Option<String>,
-    safe_owner: &str,
-    legacy_owner: &str,
-    target_impl: Option<&str>,
-    v1_impl: Option<&str>,
-    target_version: &str,
-    live_owner: Option<String>,
-    live_impl: Option<String>,
-) -> serde_json::Value {
-    let owner_label = match live_owner.as_deref() {
-        None => "unknown",
-        Some(o) if o.eq_ignore_ascii_case(safe_owner) => "safe",
-        Some(o) if o.eq_ignore_ascii_case(legacy_owner) => "legacy",
-        Some(_) => "foreign",
-    };
-    let impl_version = match live_impl.as_deref() {
-        None => "unknown",
-        Some(l) if target_impl.is_some_and(|t| l.eq_ignore_ascii_case(t)) => target_version,
-        Some(l) if v1_impl.is_some_and(|v| l.eq_ignore_ascii_case(v)) => "V1",
-        Some(_) => "unknown",
-    };
-    // `atTarget` is only determinable when BOTH the live impl and the target are
-    // known — otherwise `null`, so a missing target can't masquerade as "behind".
-    let at_target = match (live_impl.as_deref(), target_impl) {
-        (Some(l), Some(t)) => Some(l.eq_ignore_ascii_case(t)),
-        _ => None,
-    };
-    // Without a readable target we can't assert "behind"; stay `unknown`.
-    let status = if live_owner.is_none() || live_impl.is_none() || target_impl.is_none() {
-        "unknown"
-    } else if owner_label != "safe" {
-        "drift"
-    } else if at_target != Some(true) {
-        "behind"
-    } else {
-        "healthy"
-    };
-    json!({
-        "name": name,
-        "address": address,
-        "owner": live_owner,
-        "ownerLabel": owner_label,
-        // What it points at NOW, and what it SHOULD point at (the target-version
-        // impl) — so a proposed upgradeTo(...) can be checked against both.
-        "implementation": live_impl,
-        "implVersion": impl_version,
-        "targetImpl": target_impl,
-        "targetVersion": target_version,
-        "atTarget": at_target,
-        "status": status,
-    })
-}
-
-/// Assemble the `deploymentBeacons` document (sorted by name; `None` if empty).
-pub fn build_beacons(
-    org: &str,
-    repo: &str,
-    network: &str,
-    rpc_host: &str,
-    safe_owner: &str,
-    target_version: &str,
-    mut beacons: Vec<serde_json::Value>,
-) -> Option<serde_json::Value> {
-    if beacons.is_empty() {
-        return None;
-    }
-    beacons.sort_by(|a, b| a["name"].as_str().cmp(&b["name"].as_str()));
-    let total = beacons.len();
-    let healthy = beacons.iter().filter(|b| b["status"] == "healthy").count();
-    Some(json!({
-        "org": org,
-        "repo": repo,
-        "network": network,
-        "rpcHost": rpc_host,
-        "safeOwner": safe_owner,
-        "targetVersion": target_version,
-        "total": total,
-        "healthy": healthy,
-        "beacons": beacons,
-    }))
-}
-
-/// A chain whose beacon set could not be read at all.
-///
-/// Emitted INSTEAD of dropping the chain. A dropped chain renders as no
-/// section, which is indistinguishable from "this chain has no production
-/// beacons" — the same silent vanish that hid the token registry. The block
-/// carries the chain's identity so the dashboard can say which chain is
-/// missing and why.
-pub fn beacons_unavailable(network: &str, rpc_host: &str, reason: &str) -> serde_json::Value {
-    json!({
-        "network": network,
-        "rpcHost": rpc_host,
-        "unavailable": true,
-        "reason": reason,
-    })
 }
 
 /// Live on-chain reads for one token; each field is `None` if that read failed.
@@ -758,111 +648,6 @@ mod tests {
         assert_eq!(erc165_status(True, Unknown), "unknown");
     }
 
-    const SAFE: &str = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
-    const LEGACY: &str = "0x8e4bdeec7ceb9570d440676345da1dce10329f5b";
-    const TARGET: &str = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286"; // 0.1.1 impl
-    const V1: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd"; // pre-Zoltu impl
-
-    fn bh(owner: Option<&str>, imp: Option<&str>) -> serde_json::Value {
-        beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            owner.map(str::to_string),
-            imp.map(str::to_string),
-        )
-    }
-
-    #[test]
-    fn beacon_healthy_only_when_safe_owned_and_at_target() {
-        // live reads are checksummed; the compare is case-insensitive.
-        let b = bh(
-            Some("0xE70d821f3462a074e63b42d0AaC6523faAe1d611"),
-            Some(TARGET),
-        );
-        assert_eq!(b["status"], "healthy");
-        assert_eq!(b["ownerLabel"], "safe");
-        assert_eq!(b["implVersion"], "0.1.1");
-        assert_eq!(b["atTarget"], true);
-    }
-
-    #[test]
-    fn beacon_behind_when_safe_owned_but_still_on_v1() {
-        let b = bh(Some(SAFE), Some(V1));
-        assert_eq!(b["status"], "behind");
-        assert_eq!(b["ownerLabel"], "safe");
-        assert_eq!(b["implVersion"], "V1");
-        assert_eq!(b["atTarget"], false);
-        // both the current (V1) and the should-be (target) impl are surfaced.
-        assert_eq!(b["implementation"], V1);
-        assert_eq!(b["targetImpl"], TARGET);
-    }
-
-    #[test]
-    fn beacon_labels_legacy_and_foreign_owners_and_drifts() {
-        let legacy = bh(Some(LEGACY), Some(TARGET));
-        assert_eq!(legacy["ownerLabel"], "legacy");
-        assert_eq!(legacy["status"], "drift");
-        let foreign = bh(
-            Some("0xdead000000000000000000000000000000000001"),
-            Some(TARGET),
-        );
-        assert_eq!(foreign["ownerLabel"], "foreign");
-        assert_eq!(foreign["status"], "drift");
-    }
-
-    #[test]
-    fn beacon_unknown_when_a_live_read_fails() {
-        let b = bh(None, None);
-        assert_eq!(b["status"], "unknown");
-        assert_eq!(b["ownerLabel"], "unknown");
-        assert_eq!(b["implVersion"], "unknown");
-    }
-
-    #[test]
-    fn beacon_unknown_when_target_impl_unavailable() {
-        // Owner + impl read fine, but the target pointer couldn't be read — we
-        // can't assert "behind" without it, so stay unknown / atTarget null.
-        let b = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            None,
-            Some(V1),
-            "0.1.1",
-            Some(SAFE.into()),
-            Some(V1.into()),
-        );
-        assert_eq!(b["status"], "unknown");
-        assert!(b["atTarget"].is_null());
-    }
-
-    #[test]
-    fn build_beacons_counts_sorts_and_carries_target() {
-        let ok = bh(Some(SAFE), Some(TARGET)); // healthy
-        let behind = beacon_health(
-            "Alpha",
-            Some("0x1".into()),
-            SAFE,
-            LEGACY,
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(SAFE.into()),
-            Some(V1.into()),
-        );
-        let v = build_beacons("o", "r", "base", "host", SAFE, "0.1.1", vec![ok, behind]).unwrap();
-        assert_eq!(v["total"], 2);
-        assert_eq!(v["healthy"], 1);
-        assert_eq!(v["targetVersion"], "0.1.1");
-        assert_eq!(v["beacons"][0]["name"], "Alpha");
-    }
-
     fn tl(
         name: Option<&str>,
         sym: Option<&str>,
@@ -1083,26 +868,6 @@ mod tests {
             },
         );
         assert_eq!(plain["inMigrationSet"], serde_json::Value::Null);
-    }
-
-    /// An unreadable chain is REPORTED, not dropped. A dropped chain renders
-    /// as no section, which reads as "this chain has no production beacons" —
-    /// the same silent vanish that hid the token registry.
-    #[test]
-    fn beacons_unavailable_names_the_chain_and_the_reason() {
-        let v = beacons_unavailable(
-            "ethereum",
-            "ethereum-rpc.publicnode.com",
-            "constants unreadable",
-        );
-        assert_eq!(v["network"], "ethereum");
-        assert_eq!(v["unavailable"], true);
-        assert_eq!(v["reason"], "constants unreadable");
-        assert_eq!(v["rpcHost"], "ethereum-rpc.publicnode.com");
-        assert!(
-            v["beacons"].is_null(),
-            "an unavailable chain must not claim a beacon list"
-        );
     }
 
     #[test]

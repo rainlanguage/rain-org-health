@@ -91,6 +91,9 @@ pub trait ChainReads {
     fn modules(&self, safe: &str, start: &str, page_size: u64) -> Option<Vec<String>>;
     /// The orchestrator's `vaultLogicIsExpected()`.
     fn vault_logic_is_expected(&self, orchestrator: &str) -> Option<bool>;
+    /// An `address`-returning `eth_call` of `calldata` on `contract`, lowercase.
+    /// A revert, or a return that is not one address, is `None`.
+    fn call_address(&self, contract: &str, calldata: &str) -> Option<String>;
 }
 
 /// A chain the scanner has no endpoint for: every question goes unanswered, so
@@ -117,6 +120,9 @@ impl ChainReads for NoReads {
         None
     }
     fn vault_logic_is_expected(&self, _: &str) -> Option<bool> {
+        None
+    }
+    fn call_address(&self, _: &str, _: &str) -> Option<String> {
         None
     }
 }
@@ -396,14 +402,14 @@ pub fn erc1167_codehash(implementation: &str) -> Option<String> {
 // ---------------------------------------------------------------------------
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum Verdict {
+pub(crate) enum Verdict {
     Pass,
     Fail,
     Unknown,
 }
 
 impl Verdict {
-    fn token(self) -> &'static str {
+    pub(crate) fn token(self) -> &'static str {
         match self {
             Verdict::Pass => "pass",
             Verdict::Fail => "fail",
@@ -411,7 +417,7 @@ impl Verdict {
         }
     }
 
-    fn of(ok: Option<bool>) -> Verdict {
+    pub(crate) fn of(ok: Option<bool>) -> Verdict {
         match ok {
             Some(true) => Verdict::Pass,
             Some(false) => Verdict::Fail,
@@ -421,7 +427,13 @@ impl Verdict {
 }
 
 /// One check row: `fields` names the check, the rest is its comparison.
-fn row(mut fields: Value, how: &str, expected: Value, actual: Value, v: Verdict) -> Value {
+pub(crate) fn row(
+    mut fields: Value,
+    how: &str,
+    expected: Value,
+    actual: Value,
+    v: Verdict,
+) -> Value {
     if let Some(o) = fields.as_object_mut() {
         o.insert("match".into(), how.into());
         o.insert("expected".into(), expected);
@@ -431,7 +443,7 @@ fn row(mut fields: Value, how: &str, expected: Value, actual: Value, v: Verdict)
     fields
 }
 
-fn same(a: &str, b: &str) -> bool {
+pub(crate) fn same(a: &str, b: &str) -> bool {
     a.eq_ignore_ascii_case(b)
 }
 
@@ -443,7 +455,7 @@ fn word_shown(w: &[u8; 32]) -> String {
 
 /// Compare the code hash of `code` against the accepted hashes. `actual` is
 /// the hash, `"no code"` for an address with none, or null when unread.
-fn codehash_row(fields: Value, accepted: &[String], code: Option<&str>) -> Value {
+pub(crate) fn codehash_row(fields: Value, accepted: &[String], code: Option<&str>) -> Value {
     let (how, expected) = match accepted {
         [one] => ("equal", json!(one)),
         _ => ("anyOf", json!(accepted)),
@@ -556,7 +568,7 @@ fn no_roles_row(
 }
 
 /// Roll a subject's rows into a verdict with its tallies.
-fn subject(address: Option<&str>, checks: Vec<Value>) -> Value {
+pub(crate) fn subject(address: Option<&str>, checks: Vec<Value>) -> Value {
     let count = |s: &str| checks.iter().filter(|c| c["status"] == s).count();
     let (passed, failed, unknown) = (count("pass"), count("fail"), count("unknown"));
     json!({
@@ -571,7 +583,7 @@ fn subject(address: Option<&str>, checks: Vec<Value>) -> Value {
 }
 
 /// `fail` on any failure, `pass` only when every check passed, else `unknown`.
-fn rollup(passed: usize, failed: usize, unknown: usize) -> &'static str {
+pub(crate) fn rollup(passed: usize, failed: usize, unknown: usize) -> &'static str {
     if failed > 0 {
         "fail"
     } else if passed > 0 && unknown == 0 {
@@ -1256,6 +1268,9 @@ library LibProdDeployV4 {{
         }
         fn vault_logic_is_expected(&self, orchestrator: &str) -> Option<bool> {
             self.vault_logic.get(&orchestrator.to_lowercase()).copied()
+        }
+        fn call_address(&self, _: &str, _: &str) -> Option<String> {
+            None
         }
     }
 
