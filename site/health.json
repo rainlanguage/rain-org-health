@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-09-22T10:03:29Z",
+  "generatedAt": "2026-09-22T15:08:08Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1329,12 +1329,12 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 18,
+        "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-09-21T19:15:00Z",
-          "commit": "639837740df1d21962139d564d34546e6c5e658f",
+          "timestamp": "2026-09-22T14:47:08Z",
+          "commit": "d2dbc9dbcd9a0e074db44f6608e5bc3971848d1c",
           "skillVersion": "0.35.0",
-          "scope": "re-probe of the whole repo after fixing the two findings from the 2026-09-21T18:05 scan: the checkpoint monotonicity fix in LibLeakyBucketCheckpoint.fill (#1) and the checkCapacity rejection of a capacity above LEAKY_BUCKET_LEVEL_MAX at every packed entry point (#2)"
+          "scope": "re-probe after a comment-only edit to src/lib/LibLeakyBucket.sol (#108). No executable code changed; the mutants and their targets are identical to the entry above."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -5391,12 +5391,12 @@
     {
       "name": "rain.lib.leakybucket",
       "org": "rainlanguage",
-      "openAuditIssues": 18,
+      "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-09-21T19:15:00Z",
-        "commit": "639837740df1d21962139d564d34546e6c5e658f",
+        "timestamp": "2026-09-22T14:47:08Z",
+        "commit": "d2dbc9dbcd9a0e074db44f6608e5bc3971848d1c",
         "skillVersion": "0.35.0",
-        "scope": "re-probe of the whole repo after fixing the two findings from the 2026-09-21T18:05 scan: the checkpoint monotonicity fix in LibLeakyBucketCheckpoint.fill (#1) and the checkCapacity rejection of a capacity above LEAKY_BUCKET_LEVEL_MAX at every packed entry point (#2)"
+        "scope": "re-probe after a comment-only edit to src/lib/LibLeakyBucket.sol (#108). No executable code changed; the mutants and their targets are identical to the entry above."
       },
       "lastAudit": {
         "auditedAt": "2026-09-22T05:00:00Z",
@@ -5654,7 +5654,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 799,
+      "fullSourceLoc": 585,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -6131,14 +6131,14 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4130,
+      "sourceLocChangedSinceAudit": 4138,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3817,
+      "sourceLocAddedSinceAudit": 3825,
       "sourceLocRemovedSinceAudit": 313,
-      "filesChangedSinceAudit": 86,
-      "commitsSinceAudit": 604,
+      "filesChangedSinceAudit": 88,
+      "commitsSinceAudit": 610,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4298,
+      "commentLocAddedSinceAudit": 4339,
       "commentLocRemovedSinceAudit": 257,
       "codeLocAddedSinceAudit": 5063,
       "codeLocRemovedSinceAudit": 390,
@@ -6650,15 +6650,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.252-uc-v0.0.1-alpha.254",
-      "latestTagIso": "2026-09-18T15:37:37Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.252-uc-v0.0.1-alpha.255",
+      "latestTagIso": "2026-09-22T14:55:27Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 54,
-      "commitsSinceAudit": 227,
+      "commitsSinceAudit": 231,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -7269,7 +7269,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 9,
+      "testFiles": 12,
       "sourcesUnparsed": 0,
       "untested": []
     },
