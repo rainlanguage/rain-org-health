@@ -402,7 +402,7 @@ pub fn parse_expect(
 // ---------------------------------------------------------------------------
 
 /// An `address` read that must equal `expected`.
-fn address_row(fields: Value, expected: Option<&str>, actual: Option<&str>) -> Value {
+pub(crate) fn address_row(fields: Value, expected: Option<&str>, actual: Option<&str>) -> Value {
     let v = match (expected, actual) {
         (Some(e), Some(a)) => Verdict::of(Some(same(e, a))),
         _ => Verdict::Unknown,
@@ -911,6 +911,9 @@ library LibProdBeacons0_1_1 {
             self.calls
                 .get(&(contract.to_lowercase(), calldata.to_string()))
                 .cloned()
+        }
+        fn call_string(&self, _: &str, _: &str) -> Option<String> {
+            None
         }
     }
 

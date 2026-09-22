@@ -94,6 +94,9 @@ pub trait ChainReads {
     /// An `address`-returning `eth_call` of `calldata` on `contract`, lowercase.
     /// A revert, or a return that is not one address, is `None`.
     fn call_address(&self, contract: &str, calldata: &str) -> Option<String>;
+    /// A `string`-returning `eth_call` of `calldata` on `contract`. A revert, or
+    /// a return that is not one ABI string, is `None`.
+    fn call_string(&self, contract: &str, calldata: &str) -> Option<String>;
 }
 
 /// A chain the scanner has no endpoint for: every question goes unanswered, so
@@ -123,6 +126,9 @@ impl ChainReads for NoReads {
         None
     }
     fn call_address(&self, _: &str, _: &str) -> Option<String> {
+        None
+    }
+    fn call_string(&self, _: &str, _: &str) -> Option<String> {
         None
     }
 }
@@ -487,7 +493,11 @@ pub(crate) fn codehash_row(fields: Value, accepted: &[String], code: Option<&str
 }
 
 /// A storage word that must hold `expected` as an address.
-fn slot_address_row(fields: Value, expected: Option<&str>, word: Option<[u8; 32]>) -> Value {
+pub(crate) fn slot_address_row(
+    fields: Value,
+    expected: Option<&str>,
+    word: Option<[u8; 32]>,
+) -> Value {
     let actual = word.as_ref().map(word_shown);
     let v = match (expected, &actual) {
         (Some(e), Some(a)) => Verdict::of(Some(same(e, a))),
@@ -1270,6 +1280,9 @@ library LibProdDeployV4 {{
             self.vault_logic.get(&orchestrator.to_lowercase()).copied()
         }
         fn call_address(&self, _: &str, _: &str) -> Option<String> {
+            None
+        }
+        fn call_string(&self, _: &str, _: &str) -> Option<String> {
             None
         }
     }

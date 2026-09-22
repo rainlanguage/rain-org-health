@@ -18,6 +18,7 @@ mod consumers;
 mod deploybeacons;
 mod deployhealth;
 mod deploystate;
+mod deploytokens;
 mod graph;
 mod mutation;
 mod owners;
@@ -475,6 +476,9 @@ impl deploystate::ChainReads for LiveReads {
     }
     fn call_address(&self, contract: &str, calldata: &str) -> Option<String> {
         eth_call(self.0, contract, calldata).and_then(|h| rpc::decode_address(&h))
+    }
+    fn call_string(&self, contract: &str, calldata: &str) -> Option<String> {
+        eth_call(self.0, contract, calldata).and_then(|h| rpc::decode_string(&h))
     }
 }
 
@@ -2756,20 +2760,25 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 deploystate::frozen_pin(&release, &contract, &path, &src)
             })
             .collect();
+        // The production chains the #182 views read, each with the endpoint set
+        // it is read through.
+        let deploy_chains: Vec<owners::ChainPin> = {
+            let mut chains = owners::parse_chain_pins(&v4, &safe);
+            for c in chains.iter_mut() {
+                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
+            }
+            chains
+        };
         let deployment_state = {
             let orchestrator_src =
                 gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
             let expect =
                 deploystate::parse_expectations(&deploy_sources, &orchestrator_src, frozen.clone());
-            let mut chains = owners::parse_chain_pins(&v4, &safe);
-            for c in chains.iter_mut() {
-                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
-            }
             let health_release = HEALTH_VERSION.replace('.', "_");
             // Each chain is its own endpoint set, so the chains are read in
             // parallel. Within a chain every read shares one session.
             let docs: Vec<serde_json::Value> = std::thread::scope(|s| {
-                let handles: Vec<_> = chains
+                let handles: Vec<_> = deploy_chains
                     .iter()
                     .map(|pin| {
                         let (expect, health_release) = (&expect, health_release.as_str());
@@ -2816,14 +2825,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             &frozen,
             owners::parse_address_constant(&v4, "BEACON_INITIAL_OWNER"),
         );
-        let (beacon_sets, _chain_beacons): (Vec<serde_json::Value>, Vec<Vec<Option<String>>>) = {
-            let mut chains = owners::parse_chain_pins(&v4, &safe);
-            for c in chains.iter_mut() {
-                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
-            }
+        let (beacon_sets, chain_beacons): (Vec<serde_json::Value>, Vec<Vec<Option<String>>>) = {
             let exp = &beacons_expect;
             std::thread::scope(|s| {
-                let handles: Vec<_> = chains
+                let handles: Vec<_> = deploy_chains
                     .iter()
                     .map(|pin| {
                         s.spawn(move || match Chain::from_network(&pin.network) {
@@ -2849,6 +2854,54 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     .map(|h| h.join().expect("a beacon chain read panicked"))
                     .unzip()
             })
+        };
+
+        // Every pinned token on every chain (#182): each chain's
+        // `LibTokenInvariants.productionTokens<Chain>()` table checked token by
+        // token against that chain, through the beacons the beacon view found
+        // there, the chain's clone and Safe, and `LibProdTokenConfig`'s names.
+        // See `deploytokens`.
+        let deployment_pinned_tokens = {
+            let tok_lib = gh_file(deploy_org, deploy_repo, deploytokens::TOKEN_INVARIANTS);
+            let configs = deploytokens::parse_configs(&gh_file(
+                deploy_org,
+                deploy_repo,
+                deploytokens::TOKEN_CONFIG,
+            ));
+            let docs: Vec<serde_json::Value> = std::thread::scope(|s| {
+                let handles: Vec<_> = deploy_chains
+                    .iter()
+                    .zip(chain_beacons.iter())
+                    .map(|(pin, beacons)| {
+                        let (tok_lib, configs) = (&tok_lib, &configs);
+                        s.spawn(move || {
+                            let table = deploytokens::parse_table(tok_lib, &pin.network);
+                            match Chain::from_network(&pin.network) {
+                                Some(ch) => deploytokens::chain_doc(
+                                    &table,
+                                    configs,
+                                    pin,
+                                    beacons,
+                                    &LiveReads(rpc_session(ch)),
+                                ),
+                                None => deploytokens::chain_doc(
+                                    &table,
+                                    configs,
+                                    pin,
+                                    beacons,
+                                    &deploystate::NoReads,
+                                ),
+                            }
+                        })
+                    })
+                    .collect();
+                handles
+                    .into_iter()
+                    .map(|h| h.join().expect("a pinned-token chain read panicked"))
+                    .collect()
+            });
+            deploytokens::build_tokens(deploy_org, deploy_repo, &configs, docs)
+                .unwrap_or(serde_json::Value::Null)
         };
 
         // Registry token wiring on Base (#90): for each token in the
@@ -3073,6 +3126,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentState": deployment_state,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
+            "deploymentPinnedTokens": deployment_pinned_tokens,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,
