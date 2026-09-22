@@ -345,12 +345,17 @@ fn rpc_session(chain: Chain) -> Session {
     }
 }
 
-/// POST a JSON-RPC `payload` to Base, trying `BASE_RPCS` from `session` and
-/// falling through on failure. Returns the first successful body. A revert is
-/// HTTP 200 with an `error` body, so it returns from the first endpoint reached.
-/// `None` only if every endpoint fails.
+/// POST a JSON-RPC `payload` to the session's chain, trying its endpoints from
+/// `session` and falling through on failure. Returns the first body that is the
+/// chain's answer. A revert is HTTP 200 with an `error` body and the same from
+/// every endpoint, so it returns from the first endpoint reached. A rate or
+/// usage limit is also HTTP 200 with an `error` body, but only that endpoint's
+/// refusal, so the next endpoint is tried; if every endpoint that answered
+/// refused, the last refusal is returned for the caller to read as a failure.
+/// `None` only if no endpoint answered at all.
 fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
     let rpcs = session.chain.rpcs();
+    let mut refused: Option<Vec<u8>> = None;
     for i in 0..rpcs.len() {
         let rpc = rpcs[(session.cursor + i) % rpcs.len()];
         if let Ok(o) = Command::new("curl")
@@ -369,11 +374,14 @@ fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
             .output()
         {
             if o.status.success() {
-                return Some(o.stdout);
+                if !rpc::is_endpoint_refusal(&o.stdout) {
+                    return Some(o.stdout);
+                }
+                refused = Some(o.stdout);
             }
         }
     }
-    None
+    refused
 }
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).

@@ -173,6 +173,23 @@ pub fn classify_bool(body: &[u8]) -> CallClass {
     }
 }
 
+/// Whether a JSON-RPC reply is the endpoint declining to answer rather than
+/// the chain answering: an `error` that is not an execution revert (a rate or
+/// usage limit, most often, sent as HTTP 200), or a body that is not JSON-RPC.
+/// Another endpoint may answer it. A revert is the chain's answer, the same
+/// from every endpoint, so it is not one.
+pub fn is_endpoint_refusal(body: &[u8]) -> bool {
+    let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) else {
+        return true;
+    };
+    let Some(err) = v.get("error") else {
+        return v.get("result").is_none();
+    };
+    let code = err.get("code").and_then(|c| c.as_i64());
+    let message = err.get("message").and_then(|m| m.as_str()).unwrap_or("");
+    !(code == Some(3) || message.to_ascii_lowercase().contains("revert"))
+}
+
 /// The `result` hex from a JSON-RPC reply (`None` on an error / malformed body).
 pub fn result_hex(body: &[u8]) -> Option<String> {
     let v: serde_json::Value = serde_json::from_slice(body).ok()?;
@@ -490,6 +507,41 @@ mod tests {
             decode_address(addr),
             Some("0xe70d821f3462a074e63b42d0aac6523faae1d611".to_string())
         );
+    }
+
+    /// The bodies public endpoints sent on 2026-09-22: rate and usage limits
+    /// arrive as HTTP 200 with an `error`, and must fall through to the next
+    /// endpoint; a revert, in either the code-3 or the message form, is the
+    /// chain's answer and must not.
+    #[test]
+    fn a_limit_is_a_refusal_and_a_revert_is_an_answer() {
+        let refusals: [&[u8]; 5] = [
+            br#"{"id":1,"jsonrpc":"2.0","error":{"message":"You reached Public endpoint rate limit, please upgrade to paid plan","code":15}}"#,
+            br#"{"jsonrpc":"2.0","error":{"code":-32001,"message":"You've reached the usage limit for your current plan."},"id":1}"#,
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"Your request has been rate-limited due to unusually high traffic on the Alchemy public API."}}"#,
+            b"<html>502 Bad Gateway</html>",
+            br#"{"jsonrpc":"2.0","id":1}"#,
+        ];
+        for body in refusals {
+            assert!(
+                is_endpoint_refusal(body),
+                "{}",
+                String::from_utf8_lossy(body)
+            );
+        }
+        let answers: [&[u8]; 4] = [
+            br#"{"id":1,"jsonrpc":"2.0","error":{"code":3,"message":"execution reverted","data":"0x"}}"#,
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"execution reverted"}}"#,
+            br#"{"jsonrpc":"2.0","result":"0x","id":1}"#,
+            br#"{"jsonrpc":"2.0","result":null,"id":1}"#,
+        ];
+        for body in answers {
+            assert!(
+                !is_endpoint_refusal(body),
+                "{}",
+                String::from_utf8_lossy(body)
+            );
+        }
     }
 
     #[test]
