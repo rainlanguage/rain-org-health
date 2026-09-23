@@ -7507,6 +7507,722 @@ Deno.test("deployments: a chain the scan could not read says so, it does not van
   );
 });
 
+// ---- deployments.html: deploy-script live state (deploymentState) ----
+
+// A check row the way roh-scan's deploystate.rs emits it.
+const stRow = (check, status, expected, actual, over = {}) => ({
+  check,
+  match: "equal",
+  expected,
+  actual,
+  status,
+  ...over,
+});
+// A subject with its tallies counted from its rows, as `subject()` does.
+function stSubject(address, checks) {
+  const n = (s) => checks.filter((c) => c.status === s).length;
+  const [passed, failed, unknown] = [n("pass"), n("fail"), n("unknown")];
+  return {
+    address,
+    passed,
+    failed,
+    unknown,
+    total: checks.length,
+    state: failed ? "fail" : passed && !unknown ? "pass" : "unknown",
+    checks,
+  };
+}
+// One chain: a subject per key, tallies summed like `chain_doc()`.
+function stChain(network, subjects, over = {}) {
+  const keys = ["tokenOwnerSafe", "authoriser", "orchestrator", "frozen"];
+  const sum = (k) => keys.reduce((a, s) => a + (subjects[s]?.[k] ?? 0), 0);
+  const [passed, failed, unknown] = [
+    sum("passed"),
+    sum("failed"),
+    sum("unknown"),
+  ];
+  return {
+    network,
+    rpcHost: `${network}-rpc.example`,
+    passed,
+    failed,
+    unknown,
+    total: passed + failed + unknown,
+    state: failed ? "fail" : passed && !unknown ? "pass" : "unknown",
+    frozenCoveredByDeploymentHealth: [],
+    ...subjects,
+    ...over,
+  };
+}
+function stateData(chains) {
+  const sum = (k) => chains.reduce((a, c) => a + c[k], 0);
+  const [passed, failed, unknown] = [
+    sum("passed"),
+    sum("failed"),
+    sum("unknown"),
+  ];
+  return {
+    deploymentState: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      deployKey: "0xE8c6eDE25f0E7fAfE8fBc34770FaBa27d56c0E76",
+      passed,
+      failed,
+      unknown,
+      total: passed + failed + unknown,
+      state: failed ? "fail" : passed && !unknown ? "pass" : "unknown",
+      chains,
+    },
+  };
+}
+const ST_NETS = ["base", "ethereum", "hyperevm", "robinhood", "bsc"];
+const ST_SAFE = "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329";
+const ST_CLONE = "0x66566cc91dEAf818859bD4b09B7903ac48998157";
+const ST_ORCH = "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2";
+const ST_OWNER_A = "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2";
+const ST_OWNER_B = "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d";
+const ST_STRANGER = "0xdead00000000000000000000000000000000beef";
+const ST_HASH =
+  "0x2089950d3cc1112dd66a58adcfadeadc490b50053ac67be8bc676b4a2dcd1717";
+// A chain whose every subject passes, one row of each comparison shape.
+function passingChain(network) {
+  return stChain(network, {
+    tokenOwnerSafe: stSubject(ST_SAFE, [
+      stRow("threshold", "pass", 3, 3),
+      stRow("owners", "pass", [ST_OWNER_A, ST_OWNER_B], [
+        ST_OWNER_A,
+        ST_OWNER_B,
+      ], {
+        match: "set",
+        missing: [],
+        unexpected: [],
+      }),
+    ]),
+    authoriser: stSubject(ST_CLONE, [
+      stRow("codehash", "pass", ST_HASH, ST_HASH),
+      stRow("initialized", "pass", null, "0x" + "0".repeat(63) + "1", {
+        match: "nonzero",
+        slot:
+          "0xf0c57e16840df040f15088dc2f81fe391c3923bec73e23a9662efc9c229c6a00",
+      }),
+    ]),
+    orchestrator: stSubject(ST_ORCH, [
+      stRow("role", "pass", true, true, {
+        on: "orchestrator",
+        role: "MINT",
+        account: "GRANTEE_SERVICE_3D0C",
+        address: "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+      }),
+    ]),
+    frozen: stSubject(null, [
+      stRow("codehash", "pass", ST_HASH, ST_HASH, {
+        release: "0_1_30",
+        contract: "StoxReceipt",
+        address: "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E",
+      }),
+    ]),
+  });
+}
+// The rows of the deploy-state section only (the beacon section has its own).
+const stateRows = (box) =>
+  collect(box, "st-subject").flatMap((d) => collect(d, "chk-row"));
+// The keyed lines of a check row, as [key, text of its values].
+const rowLines = (row) =>
+  collect(row, "chk-line").map((l) => [
+    collect(l, "chk-key")[0]?.textContent,
+    textOf(collect(l, "chk-vals")[0] || l),
+  ]);
+
+Deno.test("deployments: deploy-script state renders every chain's four subjects, each row expected against actual", () => {
+  const box = deploymentsBox(stateData(ST_NETS.map(passingChain)));
+  const t = textOf(box);
+  assert(
+    t.includes("Deploy-script state"),
+    "the section heading: " + t.slice(0, 300),
+  );
+  const heads = collect(box, "tok-h3").map((h) => h.textContent);
+  for (const n of ST_NETS) {
+    assert(heads.includes(n), `chain ${n} has a heading: ${heads}`);
+  }
+  const titles = collect(box, "st-sum-title").map((s) => s.textContent);
+  for (
+    const s of [
+      "Token-owner Safe",
+      "V4 authoriser clone",
+      "Orchestrator instance",
+      "Frozen releases",
+    ]
+  ) {
+    assert(
+      titles.filter((x) => x === s).length === ST_NETS.length,
+      `${s} once per chain: ${titles}`,
+    );
+  }
+  const rows = stateRows(box);
+  assert(
+    rows.length === 6 * ST_NETS.length,
+    "every check row renders: " + rows.length,
+  );
+  for (const r of rows) {
+    const keys = rowLines(r).map(([k]) => k);
+    assert(
+      keys[0] === "expected" && keys[1] === "actual",
+      "every row shows expected then actual: " + keys,
+    );
+  }
+  // The values themselves, not just the labels.
+  const threshold = rows.find((r) => textOf(r).startsWith("Threshold"));
+  assert(
+    JSON.stringify(rowLines(threshold)) ===
+      JSON.stringify([["expected", "3"], ["actual", "3"]]),
+    "threshold 3 against 3: " + JSON.stringify(rowLines(threshold)),
+  );
+  const owners = rows.find((r) => textOf(r).startsWith("Owners"));
+  const [exp, act] = rowLines(owners);
+  assert(
+    exp[1].startsWith("exactly") && exp[1].includes(ST_OWNER_A) &&
+      act[1].includes(ST_OWNER_B),
+    "a set check names its comparison and lists both sides: " +
+      JSON.stringify(rowLines(owners)),
+  );
+  const init = rows.find((r) => textOf(r).startsWith("Initialized"));
+  assert(
+    rowLines(init)[0][1] === "non-zero" &&
+      textOf(init).includes("slot 0xf0c57e"),
+    "a non-zero check says so and names its slot: " + textOf(init),
+  );
+  const role = rows.find((r) => textOf(r).startsWith("hasRole(MINT)"));
+  assert(
+    textOf(role).includes("on the orchestrator") &&
+      textOf(role).includes("GRANTEE_SERVICE_3D0C"),
+    "a role row names the contract and the account: " + textOf(role),
+  );
+  const frozen = rows.find((r) => textOf(r).startsWith("StoxReceipt"));
+  assert(
+    textOf(frozen).includes("release 0.1.30"),
+    "a frozen row names its release: " + textOf(frozen),
+  );
+  // All passing: every row, subject and banner is a pass, and each subject folds.
+  assert(
+    collect(box, "chk-pass").length === rows.length,
+    "every row is a pass row",
+  );
+  assert(
+    collect(box, "st-subject").every((d) => d.open === false),
+    "an all-pass subject starts folded",
+  );
+  const banners = collect(box, "own-verify-ok").map(textOf);
+  assert(
+    banners[0] === `All ${6 * ST_NETS.length} checks pass across 5 chains.`,
+    "overall: " + banners[0],
+  );
+  assert(
+    banners.length === 1 + ST_NETS.length,
+    "one banner per chain plus the overall one",
+  );
+});
+
+Deno.test("deployments: a failed state check is unmissable, and fail, unknown and pass never share a look", () => {
+  const chain = stChain("ethereum", {
+    tokenOwnerSafe: stSubject(ST_SAFE, [
+      stRow("threshold", "fail", 3, 2),
+      stRow("guard", "unknown", "0x" + "0".repeat(40), null, {
+        slot:
+          "0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8",
+      }),
+      stRow("owners", "fail", [ST_OWNER_A, ST_OWNER_B], [
+        ST_OWNER_A,
+        ST_STRANGER,
+      ], {
+        match: "set",
+        missing: [ST_OWNER_B],
+        unexpected: [ST_STRANGER],
+      }),
+      stRow("modules", "pass", [], [], { match: "set" }),
+    ]),
+    authoriser: stSubject(ST_CLONE, [
+      stRow("codehash", "unknown", ST_HASH, null),
+    ]),
+    orchestrator: stSubject(ST_ORCH, [
+      stRow("vaultLogicIsExpected", "pass", true, true),
+    ]),
+    frozen: stSubject(null, []),
+  });
+  const box = deploymentsBox(stateData([chain]));
+  const rows = stateRows(box);
+  const byTitle = (s) => rows.find((r) => textOf(r).startsWith(s));
+  const chipOf = (r) => r.children[r.children.length - 1];
+  const fail = byTitle("Threshold");
+  const unknown = byTitle("Guard");
+  const pass = byTitle("Modules");
+  assert(
+    fail.className.split(" ").includes("chk-fail"),
+    "fail row class: " + fail.className,
+  );
+  assert(
+    unknown.className.split(" ").includes("chk-unknown"),
+    "unknown row class: " + unknown.className,
+  );
+  assert(
+    pass.className.split(" ").includes("chk-pass"),
+    "pass row class: " + pass.className,
+  );
+  assert(
+    chipOf(fail).className === "st-chip st-fail" &&
+      chipOf(fail).textContent === "fail ✗",
+    "the fail chip: " + chipOf(fail).className,
+  );
+  assert(
+    chipOf(unknown).className === "st-chip st-unknown" &&
+      chipOf(unknown).textContent === "unknown ?",
+    "the unknown chip: " + chipOf(unknown).className,
+  );
+  assert(
+    chipOf(pass).className === "st-chip st-pass" &&
+      chipOf(pass).textContent === "pass ✓",
+    "the pass chip: " + chipOf(pass).className,
+  );
+  // The three looks are distinct classes, each backed by its own rule.
+  const css = Deno.readTextFileSync(
+    new URL("../site/deployments.html", import.meta.url),
+  );
+  for (
+    const cls of ["st-pass", "st-fail", "st-unknown", "chk-fail", "chk-unknown"]
+  ) {
+    assert(
+      css.includes(`.${cls} {`) || css.includes(`.own-row.${cls} {`),
+      `a rule styles .${cls}`,
+    );
+  }
+  // The failing value is marked; the unread one says it was not read.
+  assert(
+    rowLines(fail)[1][1] === "2" && collect(fail, "chk-bad").length === 1,
+    "the failing actual is marked: " + JSON.stringify(rowLines(fail)),
+  );
+  assert(
+    rowLines(unknown)[1][1] === "not read",
+    "an unread actual says so: " + textOf(unknown),
+  );
+  assert(
+    collect(unknown, "chk-bad").length === 0,
+    "an unread value is not styled as a failure",
+  );
+  const owners = byTitle("Owners");
+  assert(
+    JSON.stringify(rowLines(owners).slice(2)) ===
+      JSON.stringify([["missing", ST_OWNER_B], ["extra", ST_STRANGER]]),
+    "a set fail names what is missing and what is extra: " +
+      JSON.stringify(rowLines(owners)),
+  );
+  // It marks that difference, not the member the two sides still share.
+  assert(
+    collect(owners, "chk-bad").map(textOf).join() ===
+      `${ST_OWNER_B},${ST_STRANGER}`,
+    "only the difference is marked: " + collect(owners, "chk-bad").map(textOf),
+  );
+  assert(
+    rowLines(pass)[0][1] === "exactlynone",
+    "an empty set reads as none: " + rowLines(pass)[0][1],
+  );
+  // Subjects: a failing one opens, an unread one opens, a passing one folds.
+  const subj = Object.fromEntries(
+    collect(box, "st-subject").map((
+      d,
+    ) => [collect(d, "st-sum-title")[0].textContent, d]),
+  );
+  assert(
+    subj["Token-owner Safe"].open === true,
+    "a failing subject starts open",
+  );
+  assert(
+    subj["Token-owner Safe"].className.includes("st-subject-fail"),
+    subj["Token-owner Safe"].className,
+  );
+  assert(
+    subj["V4 authoriser clone"].open === true,
+    "an unread subject starts open",
+  );
+  assert(
+    subj["V4 authoriser clone"].className.includes("st-subject-unknown"),
+    subj["V4 authoriser clone"].className,
+  );
+  assert(
+    subj["Orchestrator instance"].open === false,
+    "a passing subject folds",
+  );
+  // A subject with no rows is unverified, never a clean pass.
+  assert(
+    subj["Frozen releases"].className.includes("st-subject-unknown"),
+    "no rows is not a pass",
+  );
+  // Banners: the overall and the chain banner both fail, in words and in class.
+  const failBanners = collect(box, "own-verify-fail").map(textOf);
+  assert(
+    failBanners.length === 2,
+    "overall and chain banners fail: " + failBanners,
+  );
+  assert(
+    failBanners[1] ===
+      "2 of 6 checks FAIL on ethereum; 2 more could not be read.via ethereum-rpc.example",
+    "the chain banner counts the failures first: " + failBanners[1],
+  );
+  assert(collect(box, "own-verify-ok").length === 0, "nothing claims a pass");
+});
+
+Deno.test("deployments: an unread chain says unverified, and a claimed pass with unread rows is not a pass", () => {
+  const unread = stChain("bsc", {
+    tokenOwnerSafe: stSubject(ST_SAFE, [
+      stRow("threshold", "unknown", 3, null),
+    ]),
+    authoriser: stSubject(ST_CLONE, [
+      stRow("codehash", "pass", ST_HASH, ST_HASH),
+    ]),
+    orchestrator: stSubject(ST_ORCH, [
+      stRow("beacon", "pass", ST_SAFE, ST_SAFE),
+    ]),
+    frozen: stSubject(null, [stRow("codehash", "pass", ST_HASH, ST_HASH)]),
+  }, { rpcHost: null });
+  // The producer's rollup never does this; the page must not trust it if it does.
+  unread.tokenOwnerSafe.state = "pass";
+  const box = deploymentsBox(stateData([unread]));
+  const banners = collect(box, "own-verify-unknown").map(textOf);
+  assert(
+    banners.length === 2,
+    "overall and chain banners are unverified: " + banners,
+  );
+  assert(
+    banners[1] ===
+      "1 of 4 checks could not be read on bsc — unverified, not passed; 3 pass.no RPC endpoint configured",
+    "the chain banner: " + banners[1],
+  );
+  const safe = collect(box, "st-subject").find((d) =>
+    textOf(d).startsWith("Token-owner Safe")
+  );
+  assert(
+    safe.className.includes("st-subject-unknown"),
+    "an unread row outranks a claimed pass: " + safe.className,
+  );
+  assert(safe.open === true, "and it starts open");
+  assert(
+    collect(box, "own-verify-fail").length === 0,
+    "an unread chain is not a failure",
+  );
+});
+
+Deno.test("deployments: every chain's addresses link to that chain's own explorer", () => {
+  const EXPLORER = {
+    base: "https://basescan.org/address/",
+    ethereum: "https://etherscan.io/address/",
+    hyperevm: "https://hyperevmscan.io/address/",
+    robinhood: "https://robinhoodchain.blockscout.com/address/",
+    bsc: "https://bscscan.com/address/",
+  };
+  const safeOf = (n) => "0x" + (ST_NETS.indexOf(n) + 1).toString().repeat(40);
+  const chains = ST_NETS.map((n) =>
+    stChain(n, {
+      tokenOwnerSafe: stSubject(safeOf(n), [stRow("threshold", "pass", 3, 3)]),
+      authoriser: stSubject(ST_CLONE, [
+        stRow("codehash", "pass", ST_HASH, ST_HASH),
+      ]),
+      orchestrator: stSubject(ST_ORCH, [
+        stRow("beacon", "pass", ST_SAFE, ST_SAFE),
+      ]),
+      frozen: stSubject(null, [stRow("codehash", "pass", ST_HASH, ST_HASH)]),
+    })
+  );
+  chains.push(
+    stChain("zksync", {
+      tokenOwnerSafe: stSubject("0x" + "9".repeat(40), [
+        stRow("threshold", "pass", 3, 3),
+      ]),
+    }),
+  );
+  const box = deploymentsBox(stateData(chains));
+  const links = tags(box, "a");
+  for (const n of ST_NETS) {
+    const a = links.find((x) => x.textContent === safeOf(n));
+    assert(
+      a && a.href === EXPLORER[n] + safeOf(n),
+      `${n} Safe → its explorer, got ${a && a.href}`,
+    );
+  }
+  // A chain the page has no explorer for gets the address as text, not a
+  // link to some other chain's explorer.
+  assert(
+    !links.some((x) => x.textContent === "0x" + "9".repeat(40)),
+    "an unknown chain's address is not linked",
+  );
+  assert(textOf(box).includes("0x" + "9".repeat(40)), "but it is still shown");
+  // Values inside a row link on the row's chain too.
+  const inRow = tags(box, "a").filter((x) => x.textContent === ST_SAFE).map((
+    x,
+  ) => x.href);
+  for (const n of ST_NETS) {
+    assert(
+      inRow.includes(EXPLORER[n] + ST_SAFE),
+      `a value on ${n} links to ${n}'s explorer: ${inRow}`,
+    );
+  }
+});
+
+// ---- deployments.html: beacons in the per-check shape (#182) ----
+
+const BCN_HASH =
+  "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630";
+const BCN_IMPL = "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E";
+// One beacon as deploybeacons.rs emits it: the three check rows plus the
+// resolved owner and implementation.
+function checkedBeacon(name, over = {}, checkOver = {}) {
+  const safe = over.safe ?? ST_SAFE;
+  const checks = [
+    stRow("codehash", "pass", BCN_HASH, BCN_HASH, checkOver.codehash),
+    stRow("owner", "pass", safe, safe.toLowerCase(), checkOver.owner),
+    stRow("implementation", "pass", BCN_IMPL, BCN_IMPL.toLowerCase(), {
+      target: "STOX_RECEIPT_0_1_30",
+      ...checkOver.implementation,
+    }),
+  ];
+  return {
+    ...stSubject("0xace121ae30d754536863a546f41b147be11202db", checks),
+    name,
+    index: 0,
+    source:
+      "LibProdDeployV4.STOX_OFFCHAIN_ASSET_RECEIPT_VAULT_BEACON_SET_DEPLOYER_0_1_1.iReceiptBeacon()",
+    owner: safe.toLowerCase(),
+    ownerLabel: "safe",
+    implementation: BCN_IMPL.toLowerCase(),
+    implVersion: "0.1.30",
+    targetImpl: BCN_IMPL,
+    targetVersion: "0.1.30",
+    atTarget: true,
+    codehash: BCN_HASH,
+    expectedCodehash: BCN_HASH,
+    status: "healthy",
+    ...over,
+  };
+}
+function checkedBeaconSet(network, beacons) {
+  const sum = (k) => beacons.reduce((a, b) => a + b[k], 0);
+  const [passed, failed, unknown] = [
+    sum("passed"),
+    sum("failed"),
+    sum("unknown"),
+  ];
+  return {
+    org: "S01-Issuer",
+    repo: "st0x.deploy",
+    network,
+    rpcHost: `${network}-rpc.example`,
+    safeOwner: ST_SAFE,
+    beaconSet: "LibProdBeacons0_1_1",
+    targetVersion: "0.1.30 / 0.1.1",
+    total: beacons.length,
+    healthy: beacons.filter((b) => b.status === "healthy").length,
+    passed,
+    failed,
+    unknown,
+    checkTotal: passed + failed + unknown,
+    state: failed ? "fail" : passed && !unknown ? "pass" : "unknown",
+    beacons,
+  };
+}
+
+Deno.test("deployments: per-check beacons render all five chains, every check expected against actual", () => {
+  const OTHER = "0x2bcced626566ef1e65f922dd03748c5c7aa2d748";
+  const sets = ST_NETS.map((n) =>
+    checkedBeaconSet(n, [checkedBeacon(`${n} receipt beacon`)])
+  );
+  // ethereum: the codehash differs → mismatch.
+  sets[1] = checkedBeaconSet("ethereum", [
+    checkedBeacon("Mismatched beacon", { status: "mismatch" }, {
+      codehash: { actual: "0x" + "1".repeat(64), status: "fail" },
+    }),
+  ]);
+  // bsc: pointing at an implementation no pin names → behind, unrecognised.
+  sets[4] = checkedBeaconSet("bsc", [
+    checkedBeacon(
+      "Behind beacon",
+      {
+        status: "behind",
+        implVersion: "unrecognised",
+        atTarget: false,
+        implementation: OTHER,
+      },
+      { implementation: { actual: OTHER, status: "fail" } },
+    ),
+  ]);
+  // robinhood: owner() did not answer → unknown.
+  sets[3] = checkedBeaconSet("robinhood", [
+    checkedBeacon(
+      "Unread beacon",
+      { status: "unknown", ownerLabel: "unknown", owner: null },
+      { owner: { actual: null, status: "unknown" } },
+    ),
+  ]);
+  const box = deploymentsBox({ deploymentBeacons: sets });
+  const t = textOf(box);
+  for (const n of ST_NETS) {
+    assert(t.includes(`Beacons — ${n}`), `beacons on ${n}: ` + t.slice(0, 200));
+  }
+  // Every beacon lists its three checks, each with expected and actual lines.
+  const subs = collect(box, "chk-sub");
+  assert(
+    subs.length === 3 * ST_NETS.length,
+    "three check blocks per beacon: " + subs.length,
+  );
+  for (const s of subs) {
+    const keys = rowLines(s).map(([k]) => k).filter(Boolean);
+    assert(
+      keys[0] === "expected" && keys[1] === "actual",
+      "expected then actual: " + keys,
+    );
+  }
+  const rowOf = (name) =>
+    collect(box, "chk-row").find((r) => textOf(r).startsWith(name));
+  const statusChip = (r) => r.children[r.children.length - 1];
+  // healthy: a pass row, the owner resolved to the Safe, the impl at 0.1.30.
+  const ok = rowOf("base receipt beacon");
+  assert(ok.className.includes("chk-pass"), ok.className);
+  assert(
+    statusChip(ok).textContent === "healthy" &&
+      statusChip(ok).className === "st-chip st-pass",
+    "healthy chip: " + statusChip(ok).className,
+  );
+  const okChips = collect(ok, "own-chip").map((c) => c.textContent);
+  assert(
+    okChips.includes("Safe") && okChips.includes("release 0.1.30"),
+    "owner and release: " + okChips,
+  );
+  assert(
+    textOf(ok).includes("STOX_RECEIPT_0_1_30"),
+    "the target constant is named",
+  );
+  // mismatch: a fail, with the failing codehash block marked.
+  const mm = rowOf("Mismatched beacon");
+  assert(mm.className.includes("chk-fail"), mm.className);
+  assert(
+    statusChip(mm).textContent === "mismatch" &&
+      statusChip(mm).className === "st-chip st-fail",
+    "mismatch chip: " + statusChip(mm).className,
+  );
+  const mmCode = collect(mm, "chk-sub")[0];
+  assert(
+    mmCode.className.includes("chk-sub-fail"),
+    "the codehash block fails: " + mmCode.className,
+  );
+  assert(
+    rowLines(mmCode)[2][1] === "0x" + "1".repeat(64) &&
+      collect(mmCode, "chk-bad").length === 1,
+    "the live codehash is shown against the pin: " +
+      JSON.stringify(rowLines(mmCode)),
+  );
+  // behind + unrecognised impl.
+  const bh = rowOf("Behind beacon");
+  assert(statusChip(bh).className === "st-chip st-fail", "behind is a fail");
+  assert(
+    collect(bh, "own-chip").some((c) =>
+      c.textContent === "unrecognised impl" &&
+      c.className.includes("own-chip-no")
+    ),
+    "an unrecognised impl is named",
+  );
+  const bhImpl = collect(bh, "chk-sub")[2];
+  assert(
+    rowLines(bhImpl)[1][1].startsWith(BCN_IMPL) &&
+      rowLines(bhImpl)[2][1].startsWith(OTHER),
+    "the impl shows target against live: " + JSON.stringify(rowLines(bhImpl)),
+  );
+  // unknown: its own look, not a fail's.
+  const un = rowOf("Unread beacon");
+  assert(un.className.includes("chk-unknown"), un.className);
+  assert(
+    statusChip(un).className === "st-chip st-unknown",
+    "unknown chip: " + statusChip(un).className,
+  );
+  const unOwner = collect(un, "chk-sub")[1];
+  assert(unOwner.className.includes("chk-sub-unknown"), unOwner.className);
+  assert(
+    rowLines(unOwner)[2][1].startsWith("not read"),
+    "unread owner: " + JSON.stringify(rowLines(unOwner)),
+  );
+  // Per-chain banners follow the checks.
+  assert(
+    collect(box, "own-verify-fail").length === 2,
+    "ethereum and bsc banners fail",
+  );
+  assert(
+    collect(box, "own-verify-unknown").length === 1,
+    "robinhood's banner is unverified",
+  );
+  assert(collect(box, "own-verify-ok").length === 2, "base and hyperevm pass");
+  const beaconLink = tags(box, "a").find((a) =>
+    a.textContent === "0xace121ae30d754536863a546f41b147be11202db" &&
+    a.href.includes("bscscan")
+  );
+  assert(beaconLink, "a bsc beacon links to bscscan");
+});
+
+Deno.test("deployments: a health.json from before the live-state keys still renders", () => {
+  const old = {
+    ...OWNERS,
+    deploymentBeacons: [{
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "ethereum",
+      rpcHost: "ethereum-rpc.publicnode.com",
+      safeOwner: ST_SAFE,
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [{
+        name: "Old-shape beacon",
+        address: "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
+        owner: ST_SAFE,
+        ownerLabel: "safe",
+        implementation: BCN_IMPL,
+        implVersion: "0.1.1",
+        targetImpl: BCN_IMPL,
+        targetVersion: "0.1.1",
+        atTarget: true,
+        status: "healthy",
+      }],
+    }],
+  };
+  for (const data of [old, { ...old, deploymentState: null }]) {
+    const box = deploymentsBox(data);
+    const t = textOf(box);
+    assert(
+      !t.includes("Deploy-script state"),
+      "no state section without the key",
+    );
+    assert(
+      t.includes("Old-shape beacon"),
+      "the old beacon view still renders: " + t.slice(-400),
+    );
+    assert(collect(box, "chk-row").length === 0, "no check rows are invented");
+    // The old view links an Ethereum beacon on Etherscan, not Basescan.
+    const a = tags(box, "a").find((x) =>
+      x.textContent === "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8"
+    );
+    assert(
+      a && a.href.startsWith("https://etherscan.io/address/"),
+      "old view, ethereum explorer: " + (a && a.href),
+    );
+  }
+});
+
+Deno.test("deployments: a covered frozen release names where it is checked", () => {
+  const ch = passingChain("base");
+  ch.frozenCoveredByDeploymentHealth = ["0_1_1"];
+  const t = textOf(deploymentsBox(stateData([ch])));
+  assert(
+    t.includes(
+      "The frozen 0.1.1 release on base is checked in the suite health section above",
+    ),
+    t,
+  );
+});
+
 Deno.test("deployments: an empty token set still shows the reconcile breakdown", () => {
   const box = deploymentsBox({
     deploymentTokens: {
@@ -7621,6 +8337,474 @@ Deno.test("deployments: an empty token set reports why, it does not vanish", () 
   assert(
     t.includes("unavailable, not empty"),
     "must distinguish broken from genuinely empty: " + t,
+  );
+});
+
+// ---- deployments.html: pinned tokens (deploymentPinnedTokens) ----
+
+// The 14 checks deploytokens.rs token_doc emits for one token, in its order.
+const TK_CHECKS = [
+  ["code", { contract: "receipt", match: "nonzero" }],
+  ["code", { contract: "receiptVault", match: "nonzero" }],
+  ["code", { contract: "wrappedTokenVault", match: "nonzero" }],
+  ["beacon", { contract: "receipt" }],
+  ["beacon", { contract: "receiptVault" }],
+  ["beacon", { contract: "wrappedTokenVault" }],
+  ["receipt", {}],
+  ["manager", {}],
+  ["asset", {}],
+  ["authoriser", {}],
+  ["owner", {}],
+  ["config", {}],
+  ["name", {}],
+  ["symbol", {}],
+];
+const tkKey = (check, f) => (f.contract ? `${check} ${f.contract}` : check);
+const tkAddr = (tag, i) => "0x" + (tag + String(i)).padStart(40, "0");
+const tkState = (failed, unknown, passed) =>
+  failed ? "fail" : passed && !unknown ? "pass" : "unknown";
+// One token: every row passes unless `over` (keyed "check" or "check
+// contract") replaces its fields.
+function tkToken(i, over = {}) {
+  const checks = TK_CHECKS.map(([check, f]) =>
+    stRow(check, "pass", "E", "E", { ...f, ...(over[tkKey(check, f)] || {}) })
+  );
+  const n = (s) => checks.filter((c) => c.status === s).length;
+  return {
+    address: tkAddr("b", i),
+    index: i,
+    underlying: `U${i}`,
+    receipt: tkAddr("a", i),
+    receiptVault: tkAddr("b", i),
+    wrappedTokenVault: tkAddr("c", i),
+    name: `Token ${i} ST0x`,
+    symbol: `tU${i}`,
+    passed: n("pass"),
+    failed: n("fail"),
+    unknown: n("unknown"),
+    total: checks.length,
+    state: tkState(n("fail"), n("unknown"), n("pass")),
+    checks,
+  };
+}
+// Every row of every token set to `status`.
+const tkAll = (fields) =>
+  Object.fromEntries(TK_CHECKS.map(([c, f]) => [tkKey(c, f), fields]));
+function tkChain(network, tokens, over = {}) {
+  const table = over.table ??
+    stRow("table", "pass", { entries: tokens.length }, {
+      entries: tokens.length,
+      distinctIndices: tokens.length,
+    }, { function: `productionTokens${network}` });
+  const n = (k, s) =>
+    tokens.reduce((a, t) => a + t[k], 0) + (table.status === s ? 1 : 0);
+  const [passed, failed, unknown] = [
+    n("passed", "pass"),
+    n("failed", "fail"),
+    n("unknown", "unknown"),
+  ];
+  return {
+    network,
+    rpcHost: `${network}-rpc.example`,
+    function: table.function,
+    safe: ST_SAFE,
+    authoriser: ST_CLONE,
+    beacons: [],
+    declared: tokens.length,
+    tokenCount: tokens.length,
+    tokensPassed: tokens.filter((t) => t.state === "pass").length,
+    passed,
+    failed,
+    unknown,
+    total: passed + failed + unknown,
+    state: tkState(failed, unknown, passed),
+    table,
+    tokens,
+    ...over,
+  };
+}
+function tkData(chains, over = {}) {
+  const sum = (k) => chains.reduce((a, c) => a + c[k], 0);
+  const [passed, failed, unknown] = [
+    sum("passed"),
+    sum("failed"),
+    sum("unknown"),
+  ];
+  return {
+    deploymentPinnedTokens: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      source: "src/lib/LibTokenInvariants.sol productionTokens<Chain>()",
+      configSource: "src/lib/LibProdTokenConfig.sol productionTokenConfigs()",
+      configCount: 56,
+      configDeclared: 56,
+      passed,
+      failed,
+      unknown,
+      total: passed + failed + unknown,
+      state: tkState(failed, unknown, passed),
+      chains,
+      ...over,
+    },
+  };
+}
+// A token's own <details> (it carries a Contracts row; chain groups do not).
+const tokenDetails = (box) =>
+  tags(box, "details").filter((d) =>
+    d.className.includes("st-subject") && collect(d, "tk-parts").length === 1
+  );
+const tokenNamed = (box, symbol) =>
+  tokenDetails(box).find((d) =>
+    collect(d, "st-sum-title")[0]?.textContent === symbol
+  );
+
+Deno.test("deployments: 280 passing pinned tokens fold into one group per chain, 14 rows each", () => {
+  const chains = ST_NETS.map((n) =>
+    tkChain(n, Array.from({ length: 56 }, (_, i) => tkToken(i)))
+  );
+  const box = deploymentsBox(tkData(chains));
+  const t = textOf(box);
+  assert(t.includes("Pinned tokens"), "the section heading");
+  assert(t.includes("280 of 280 tokens pass every check"), "the overall count");
+  const lists = collect(box, "tk-list");
+  assert(lists.length === 5, `one passing group per chain: ${lists.length}`);
+  const groups = tags(box, "details").filter((d) =>
+    d.children.some((c) => c.className === "tk-list")
+  );
+  assert(
+    groups.length === 5 && groups.every((g) => !g.open),
+    "every chain's passing group starts folded",
+  );
+  assert(
+    t.split("All 56 tokens pass every check").length === 6,
+    "each group says every token passes",
+  );
+  const tokens = tokenDetails(box);
+  assert(tokens.length === 280, `280 tokens rendered: ${tokens.length}`);
+  for (const d of tokens) {
+    assert(!d.open, "a passing token starts folded");
+    const rows = collect(d, "chk-row");
+    assert(rows.length === 14, `14 check rows per token: ${rows.length}`);
+  }
+  assert(
+    t.includes("56 entries · 56 distinct indices"),
+    "the table row says what was read",
+  );
+  const hrefs = tags(box, "a").map((a) => String(a.href));
+  for (
+    const [net, url] of [
+      ["hyperevm", "https://hyperevmscan.io/address/"],
+      ["robinhood", "https://robinhoodchain.blockscout.com/address/"],
+      ["bsc", "https://bscscan.com/address/"],
+    ]
+  ) {
+    assert(
+      hrefs.some((h) => h.startsWith(url)),
+      `${net} token contracts link to ${url}`,
+    );
+  }
+});
+
+Deno.test("deployments: a failing pinned token opens, red, ahead of the passing group", () => {
+  const tokens = Array.from({ length: 4 }, (_, i) => tkToken(i));
+  tokens[2] = tkToken(2, {
+    authoriser: { status: "fail", expected: ST_CLONE, actual: ST_STRANGER },
+  });
+  const box = deploymentsBox(tkData([tkChain("base", tokens)]));
+  const d = tokenNamed(box, "tU2");
+  assert(d && d.open, "the failing token starts open");
+  assert(d.className.includes("st-subject-fail"), d.className);
+  const fails = collect(d, "chk-fail");
+  assert(fails.length === 1, `one failing row: ${fails.length}`);
+  assert(
+    collect(fails[0], "chk-bad").some((x) => textOf(x).includes(ST_STRANGER) || x.textContent === ST_STRANGER),
+    "the failing value is marked",
+  );
+  const more = collect(d, "tk-more");
+  assert(more.length === 1 && !more[0].open, "the passing rows are folded away");
+  assert(
+    collect(more[0], "chk-row").length === 13,
+    "13 passing rows sit under the fold",
+  );
+  const kids = box.children;
+  const group = kids.findIndex((c) =>
+    c && typeof c === "object" && collect(c, "tk-list").length
+  );
+  assert(
+    kids.indexOf(d) >= 0 && kids.indexOf(d) < group,
+    "the failing token is listed before the passing group",
+  );
+  assert(
+    textOf(box).includes("3 more tokens pass every check"),
+    "the group counts only the passing tokens",
+  );
+  const kinds = collect(box, "tk-kinds").map((k) => k.textContent).join(" ");
+  assert(
+    kinds.includes("authorizer() (1 fail)"),
+    "the banner names the failing check kind: " + kinds,
+  );
+});
+
+Deno.test("deployments: a partly unread pinned token opens; one with nothing read stays folded and says so", () => {
+  const tokens = [
+    tkToken(0),
+    tkToken(1, { name: { status: "unknown", actual: null } }),
+    tkToken(2, tkAll({ status: "unknown", actual: null })),
+  ];
+  const box = deploymentsBox(tkData([tkChain("ethereum", tokens)]));
+  const partly = tokenNamed(box, "tU1");
+  const none = tokenNamed(box, "tU2");
+  assert(partly.open, "a token with an unread check starts open");
+  assert(partly.className.includes("st-subject-unknown"), partly.className);
+  assert(!none.open, "a token with no check read stays folded");
+  assert(textOf(none).includes("0/14 pass · 14 unread"), textOf(none));
+  assert(collect(box, "chk-fail").length === 0, "an unread check never reads as a fail");
+  assert(collect(box, "own-verify-ok").length === 0, "nor does the chain read as passing");
+  const kinds = collect(box, "tk-kinds").map((k) => k.textContent).join(" ");
+  assert(kinds.includes("name() (2 unread)"), kinds);
+});
+
+Deno.test("deployments: a token table read short fails, and a config parsed short is flagged INCOMPLETE", () => {
+  const table = stRow("table", "fail", { entries: 2 }, {
+    entries: 1,
+    distinctIndices: 1,
+  }, { function: "productionTokensBsc" });
+  const box = deploymentsBox(
+    tkData([tkChain("bsc", [tkToken(0)], { table })], {
+      configDeclared: 56,
+      configCount: 55,
+    }),
+  );
+  assert(textOf(box).includes("INCOMPLETE"), "the short config is named");
+  assert(collect(box, "own-verify-drift").length === 1, "as a drift banner");
+  const row = collect(box, "chk-fail").find((r) =>
+    textOf(r).includes("Token table")
+  );
+  assert(row, "the table row fails");
+  assert(
+    textOf(row).includes("2 entries") &&
+      textOf(row).includes("1 entries · 1 distinct indices"),
+    textOf(row),
+  );
+});
+
+// ---- deployments.html: role membership (deploymentRoleMembership) ----
+
+const RM_KEY = "0xE8c6eDE25f0E7fAfE8fBc34770FaBa27d56c0E76";
+const RM_3D0C = "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE";
+const RM_1C66 = "0x1c66D6708914C40239D54919320b4C48cAE3D1A9";
+const rmWant = (role, account, address) => ({
+  role,
+  roleId: "0x" + role.toLowerCase(),
+  account,
+  address,
+});
+const rmHeld = (w, block) => ({
+  ...w,
+  block,
+  grantedBy: RM_KEY,
+  grantedByAccount: "DEPLOY_KEY",
+});
+const RM_CLONE_SET = [
+  rmWant("DEPOSIT", "safe", ST_SAFE),
+  rmWant("WITHDRAW", "GRANTEE_SERVICE_3D0C", RM_3D0C),
+];
+const RM_ORCH_SET = [
+  rmWant("DEFAULT_ADMIN", "safe", ST_SAFE),
+  rmWant("MINT", "GRANTEE_SERVICE_3D0C", RM_3D0C),
+];
+// A membership row as deployroles.rs emits it: extra and missing computed from
+// the sets, the status from them (a window is always partial).
+function rmRow(on, address, expected, actual, over = {}) {
+  const has = (xs, m) =>
+    xs.some((x) =>
+      x.roleId === m.roleId && x.address.toLowerCase() === m.address.toLowerCase()
+    );
+  const extra = actual.filter((m) => !has(expected, m));
+  const missing = expected.filter((w) => !has(actual, w));
+  const coverage = over.coverage ?? "full";
+  return {
+    check: "membership",
+    on,
+    address,
+    coverage,
+    fromBlock: 0,
+    toBlock: 1000,
+    match: "set",
+    expected,
+    actual,
+    extra,
+    missing,
+    granted: actual.length,
+    revoked: 0,
+    reason: null,
+    status: coverage === "window"
+      ? "partial"
+      : extra.length || missing.length
+      ? "fail"
+      : "pass",
+    ...over,
+  };
+}
+const rmPassClone = () =>
+  rmRow("authoriser", ST_CLONE, RM_CLONE_SET, RM_CLONE_SET.map((w, i) => rmHeld(w, 10 + i)));
+const rmPassOrch = () =>
+  rmRow("orchestrator", ST_ORCH, RM_ORCH_SET, RM_ORCH_SET.map((w, i) => rmHeld(w, 20 + i)));
+const rmRank = { pass: 0, partial: 1, unknown: 2, fail: 3 };
+function rmChain(network, authoriser, orchestrator, over = {}) {
+  const vs = [authoriser, orchestrator].map((r) => r?.status ?? "unknown");
+  const n = (s) => vs.filter((v) => v === s).length;
+  return {
+    network,
+    rpcHost: `${network}-rpc.example`,
+    logSource: `${network}-logs.example`,
+    safe: ST_SAFE,
+    passed: n("pass"),
+    failed: n("fail"),
+    unknown: n("unknown"),
+    partial: n("partial"),
+    total: 2,
+    state: vs.reduce((a, b) => (rmRank[b] > rmRank[a] ? b : a), "pass"),
+    authoriser,
+    orchestrator,
+    ...over,
+  };
+}
+function rmData(chains) {
+  const sum = (k) => chains.reduce((a, c) => a + c[k], 0);
+  return {
+    deploymentRoleMembership: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      source: "src/lib/LibAuthoriserInvariants.sol",
+      function: "expectedGrants(address)",
+      windows: [],
+      passed: sum("passed"),
+      failed: sum("failed"),
+      unknown: sum("unknown"),
+      partial: sum("partial"),
+      total: sum("total"),
+      state: chains.map((c) => c.state).reduce(
+        (a, b) => (rmRank[b] > rmRank[a] ? b : a),
+        "pass",
+      ),
+      chains,
+    },
+  };
+}
+const rmSubjects = (box) =>
+  tags(box, "details").filter((d) =>
+    collect(d, "st-sum-title").some((s) =>
+      s.textContent === "V4 authoriser clone" ||
+      s.textContent === "Orchestrator instance"
+    ) && collect(d, "rm-mem").length > 0
+  );
+
+Deno.test("deployments: an exact whole-history membership folds, each member with its block and granter", () => {
+  const box = deploymentsBox(
+    rmData(ST_NETS.map((n) => rmChain(n, rmPassClone(), rmPassOrch()))),
+  );
+  const t = textOf(box);
+  assert(t.includes("Role membership"), "the section heading");
+  const subjects = rmSubjects(box);
+  assert(subjects.length === 10, `a clone and an orchestrator per chain: ${subjects.length}`);
+  for (const d of subjects) {
+    assert(!d.open, "an exact membership starts folded");
+    assert(d.className.includes("st-subject-pass"), d.className);
+  }
+  const first = subjects[0];
+  const ft = textOf(first);
+  assert(ft.includes("granted at block 10"), "the grant block: " + ft);
+  assert(ft.includes("DEPLOY_KEY") && ft.includes(RM_KEY), "the granter, by name and address");
+  assert(ft.includes("whole history"), "the coverage");
+  assert(collect(first, "own-chip-yes").length === 2, "each member is an expected one");
+  assert(collect(box, "rm-fail").length === 0, "no member is marked");
+});
+
+Deno.test("deployments: an extra or missing member fails, and only those rows are marked", () => {
+  const actual = [
+    ...RM_CLONE_SET.slice(0, 1).map((w) => rmHeld(w, 10)),
+    rmHeld(rmWant("DEPOSIT", "GRANTEE_SERVICE_1C66", RM_1C66), 30),
+  ];
+  const clone = rmRow("authoriser", ST_CLONE, RM_CLONE_SET, actual);
+  const box = deploymentsBox(rmData([rmChain("base", clone, rmPassOrch())]));
+  const [c, o] = rmSubjects(box);
+  assert(c.open && c.className.includes("st-subject-fail"), c.className);
+  assert(!o.open, "the exact orchestrator stays folded");
+  const marked = collect(c, "rm-fail");
+  assert(marked.length === 2, `the extra and the missing member: ${marked.length}`);
+  const mt = marked.map(textOf).join(" | ");
+  assert(mt.includes("extra ✗") && mt.includes(RM_1C66), mt);
+  assert(mt.includes("missing ✗") && mt.includes("GRANTEE_SERVICE_3D0C"), mt);
+  assert(collect(box, "own-verify-fail").length >= 1, "the banner fails");
+});
+
+Deno.test("deployments: a block-window membership is partial, never a pass, even when it claims one", () => {
+  const winClone = rmRow("authoriser", ST_CLONE, RM_CLONE_SET, [rmHeld(RM_CLONE_SET[0], 10)], {
+    coverage: "window",
+  });
+  const claimsPass = rmRow("orchestrator", ST_ORCH, RM_ORCH_SET, RM_ORCH_SET.map((w, i) => rmHeld(w, 20 + i)), {
+    coverage: "window",
+    status: "pass",
+  });
+  const box = deploymentsBox(rmData([rmChain("hyperevm", winClone, claimsPass)]));
+  for (const d of rmSubjects(box)) {
+    assert(d.className.includes("st-subject-partial"), d.className);
+    assert(textOf(d).includes("partial ◐"), "the partial chip");
+    assert(collect(d, "own-chip-yes").length === 0, "no green expected ✓ in a window");
+    assert(textOf(d).includes("block window only"), "the coverage is named");
+  }
+  assert(collect(box, "own-verify-ok").length === 0, "the chain never reads as passing");
+  const marked = collect(box, "rm-partial");
+  const mt = marked.map(textOf).join(" | ");
+  assert(marked.length === 1 && mt.includes("not in window"), mt);
+  assert(collect(box, "rm-fail").length === 0, "a window's diff is not a fail");
+});
+
+Deno.test("deployments: an unread membership shows its reason and the set it could not check", () => {
+  const unread = rmRow("authoriser", ST_CLONE, RM_CLONE_SET, [], {
+    actual: null,
+    extra: null,
+    missing: null,
+    granted: null,
+    revoked: null,
+    status: "unknown",
+    reason: "a log read failed or may be incomplete",
+  });
+  const box = deploymentsBox(rmData([rmChain("base", unread, undefined)]));
+  const [d] = rmSubjects(box);
+  assert(d.open && d.className.includes("st-subject-unknown"), d.className);
+  const t = textOf(d);
+  assert(t.includes("a log read failed or may be incomplete"), "the reason: " + t);
+  const notRead = collect(d, "own-chip-dim").filter((x) => x.textContent === "not read");
+  assert(notRead.length === RM_CLONE_SET.length, `each expected pair is unread: ${notRead.length}`);
+  assert(
+    textOf(box).includes("Orchestrator instance — not in the scan output"),
+    "a missing row is named, not dropped",
+  );
+});
+
+Deno.test("deployments: health.json without the pinned-token or membership keys still renders", () => {
+  for (const v of [undefined, null, { chains: [] }]) {
+    const box = deploymentsBox({
+      ...stateData(ST_NETS.map(passingChain)),
+      deploymentPinnedTokens: v,
+      deploymentRoleMembership: v,
+    });
+    const t = textOf(box);
+    assert(!t.includes("Pinned tokens"), `no token section for ${JSON.stringify(v)}`);
+    assert(!t.includes("Role membership"), `no membership section for ${JSON.stringify(v)}`);
+    assert(t.includes("Deploy-script state"), "the rest of the page renders");
+  }
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    ...tkData([tkChain("base", [tkToken(0)])]),
+    ...rmData([rmChain("base", rmPassClone(), rmPassOrch())]),
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Pinned tokens") && t.includes("Role membership"),
+    "both sections render when the owner data is missing",
   );
 });
 
@@ -7775,6 +8959,143 @@ Deno.test("hostile input: a grantee constant, its network and its address render
   assert(
     a && a.href === "https://basescan.org/address/" + XSS_SCRIPT,
     "the hostile address stays inside the href path, got " + (a && a.href),
+  );
+});
+
+// The live-state and beacon rows carry strings read out of st0x.deploy's
+// Solidity (constant names, contract names, release directories, the getter a
+// beacon was found through) and off-chain (whatever a contract returns). Each
+// field gets its OWN payload, so one that stopped rendering as text cannot pass
+// on another field's copy.
+Deno.test("hostile input: deploy-state and beacon check strings render as text", () => {
+  const P = {
+    check: XSS_IMG,
+    account: XSS_SCRIPT,
+    contract: XSS_SVG,
+    release: XSS_ATTR,
+    expected: "<b>expected</b>",
+    actual: '<a href="javascript:alert(1)">actual</a>',
+    missing: "<iframe src=x>",
+    slot: "<style>body{}</style>",
+    network: '<img src=y onerror="alert(2)">',
+    rpcHost: "<object data=x>",
+    name: "<embed src=x>",
+    source: "<script>alert(3)</script>",
+    implVersion: '<svg onload="alert(4)">',
+    status: '" onclick="alert(5)',
+    target: "<details open ontoggle=alert(6)>",
+  };
+  const chain = stChain(P.network, {
+    tokenOwnerSafe: stSubject(ST_SAFE, [
+      stRow(P.check, "fail", P.expected, P.actual, { slot: P.slot }),
+      stRow("owners", "fail", [ST_OWNER_A], [], {
+        match: "set",
+        missing: [P.missing],
+        unexpected: [],
+      }),
+    ]),
+    authoriser: stSubject(ST_CLONE, [
+      stRow("noRoles", "pass", [], [], {
+        match: "set",
+        on: "authoriser",
+        account: P.account,
+        roles: ["DEPOSIT"],
+      }),
+    ]),
+    orchestrator: stSubject(ST_ORCH, [
+      stRow("beacon", "pass", ST_SAFE, ST_SAFE),
+    ]),
+    frozen: stSubject(null, [
+      stRow("codehash", "pass", ST_HASH, ST_HASH, {
+        contract: P.contract,
+        release: P.release,
+      }),
+    ]),
+  }, { rpcHost: P.rpcHost });
+  const beacon = checkedBeacon(P.name, {
+    source: P.source,
+    implVersion: P.implVersion,
+    status: P.status,
+    atTarget: false,
+  }, { implementation: { target: P.target, status: "fail" } });
+  const box = deploymentsBox({
+    ...stateData([chain]),
+    deploymentBeacons: [checkedBeaconSet(P.network, [beacon])],
+  });
+  for (const [field, payload] of Object.entries(P)) {
+    assertInert(box, payload, field);
+  }
+  // An unknown network gets no explorer, so no payload reaches an href.
+  assert(
+    !tags(box, "a").some((a) => String(a.href).includes("alert")),
+    "no payload became a link target",
+  );
+});
+
+Deno.test("hostile input: pinned-token and membership strings render as text", () => {
+  const P = {
+    symbol: XSS_IMG,
+    name: XSS_SCRIPT,
+    underlying: XSS_SVG,
+    contract: XSS_ATTR,
+    check: "<b>check</b>",
+    expected: "<iframe src=x>",
+    actual: '<a href="javascript:alert(1)">actual</a>',
+    function: "<style>body{}</style>",
+    network: '<img src=y onerror="alert(2)">',
+    rpcHost: "<object data=x>",
+    role: "<embed src=x>",
+    account: "<script>alert(3)</script>",
+    address: '<svg onload="alert(4)">',
+    grantedBy: '" onclick="alert(5)',
+    grantedByAccount: "<details open ontoggle=alert(6)>",
+    reason: "<img src=z onerror=alert(7)>",
+    logSource: "<script>alert(8)</script>",
+    rmFunction: "<iframe src=y>",
+  };
+  const token = tkToken(0, {
+    authoriser: {
+      check: P.check,
+      status: "fail",
+      expected: P.expected,
+      actual: P.actual,
+    },
+    "code receipt": { contract: P.contract, status: "fail" },
+  });
+  token.symbol = P.symbol;
+  token.name = P.name;
+  token.underlying = P.underlying;
+  const table = stRow("table", "pass", { entries: 1 }, {
+    entries: 1,
+    distinctIndices: 1,
+  }, { function: P.function });
+  const tk = tkData([tkChain(P.network, [token], { table, rpcHost: P.rpcHost })]);
+  const member = {
+    role: P.role,
+    roleId: "0x01",
+    account: P.account,
+    address: P.address,
+    block: 1,
+    grantedBy: P.grantedBy,
+    grantedByAccount: P.grantedByAccount,
+  };
+  const clone = rmRow("authoriser", ST_CLONE, [], [member]);
+  const unread = rmRow("orchestrator", ST_ORCH, RM_ORCH_SET, [], {
+    actual: null,
+    extra: null,
+    missing: null,
+    status: "unknown",
+    reason: P.reason,
+  });
+  const rm = rmData([rmChain(P.network, clone, unread, { logSource: P.logSource })]);
+  rm.deploymentRoleMembership.function = P.rmFunction;
+  const box = deploymentsBox({ ...tk, ...rm });
+  for (const [field, payload] of Object.entries(P)) {
+    assertInert(box, payload, field);
+  }
+  assert(
+    !tags(box, "a").some((a) => String(a.href).includes("alert")),
+    "no payload became a link target",
   );
 });
 

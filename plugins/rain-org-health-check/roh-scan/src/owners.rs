@@ -345,16 +345,28 @@ pub fn is_admin_role(role: &str) -> bool {
     role.ends_with("_ADMIN")
 }
 
-/// The body of the first `function <name>(<sig>)` whose signature matches
-/// `sig_contains`, by brace matching from the signature's `{`.
-fn function_body<'a>(src: &'a str, name: &str, sig_contains: &str) -> Option<(&'a str, &'a str)> {
+/// Every `function <name>(…)` overload in `src`, as `(params, body)` in source
+/// order, by brace matching from each signature's `{`. A longer name that merely
+/// starts with `name` is not an overload of it.
+fn function_overloads<'a>(src: &'a str, name: &str) -> Vec<(&'a str, &'a str)> {
+    let needle = format!("function {name}");
+    let mut out = Vec::new();
     let mut from = 0usize;
-    loop {
-        let at = src[from..].find(&format!("function {name}"))? + from;
-        let open_paren = src[at..].find('(')? + at;
-        let close_paren = src[open_paren..].find(')')? + open_paren;
-        let params = &src[open_paren + 1..close_paren];
-        let open = src[close_paren..].find('{')? + close_paren;
+    while let Some(rel) = src[from..].find(&needle) {
+        let after = from + rel + needle.len();
+        if !src[after..].trim_start().starts_with('(') {
+            from = after;
+            continue;
+        }
+        let Some(open_paren) = src[after..].find('(').map(|i| i + after) else {
+            break;
+        };
+        let Some(close_paren) = src[open_paren..].find(')').map(|i| i + open_paren) else {
+            break;
+        };
+        let Some(open) = src[close_paren..].find('{').map(|i| i + close_paren) else {
+            break;
+        };
         // Brace-match the body. Role names carry no braces, so counting is
         // enough here — this parses one known library, not arbitrary Solidity.
         let mut depth = 0usize;
@@ -372,40 +384,98 @@ fn function_body<'a>(src: &'a str, name: &str, sig_contains: &str) -> Option<(&'
                 _ => {}
             }
         }
-        let end = end?;
-        if params.contains(sig_contains) {
-            return Some((params, &src[open + 1..end]));
-        }
+        let Some(end) = end else {
+            break;
+        };
+        out.push((&src[open_paren + 1..close_paren], &src[open + 1..end]));
         from = end;
     }
+    out
+}
+
+/// The parameter NAMES of a Solidity parameter list, in order: the last word of
+/// each comma-separated declaration (`address memory x` → `x`).
+fn param_names(params: &str) -> Vec<&str> {
+    params
+        .split(',')
+        .map(str::trim)
+        .filter(|p| !p.is_empty())
+        .filter_map(|p| p.split_whitespace().last())
+        .collect()
 }
 
 /// Parse the Safe-parametric `expectedGrants(address …)` map.
 ///
-/// The no-arg overload just delegates to this one with Base's Safe, so the
-/// parametric body is where every `(role, grantee)` pair actually is — and its
-/// Safe parameter is what makes the same map describe every chain.
+/// The entry point is the overload taking exactly one `address`: the chain's
+/// token-owner Safe, which is what makes the same map describe every chain.
+/// Where that overload writes the `(role, grantee)` pairs itself, they are read
+/// from it. Where it DELEGATES — `expectedGrants(tokenOwnerSafe, tokenOwnerSafe)`
+/// into the `(tokenOwnerSafe, adminHolder)` overload the timelock migration
+/// added — the pairs are read from the overload that writes them, with each of
+/// its parameters replaced by the argument the delegating call passes. Today
+/// both arguments are the Safe, so the admin roles land on the Safe; if the
+/// migration passes a timelock constant instead, they land on that constant.
+/// Either way it is the source's own call that says who holds them.
+///
+/// The no-arg overload delegates with Base's Safe constant and is not the entry.
 pub fn parse_expected_grants(src: &str) -> Option<GrantMap> {
-    let (params, body) = function_body(src, "expectedGrants", "address")?;
-    let safe_param = Regex::new(r"address\s+(?:memory\s+|calldata\s+)?([A-Za-z_][A-Za-z0-9_]*)")
-        .ok()?
-        .captures(params)
-        .and_then(|c| c.get(1))
-        .map(|m| m.as_str().to_string())?;
+    let is_address =
+        Regex::new(r"^address\s+(?:memory\s+|calldata\s+)?[A-Za-z_][A-Za-z0-9_]*$").ok()?;
+    let pair = Regex::new(
+        r#"RoleGrant\(\s*keccak256\(\s*"([A-Za-z0-9_]+)"\s*\)\s*,\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\)"#,
+    )
+    .ok()?;
+    let overloads = function_overloads(src, "expectedGrants");
+    let (entry_params, entry_body) = overloads.iter().find(|(params, _)| {
+        let decls: Vec<&str> = params
+            .split(',')
+            .map(str::trim)
+            .filter(|p| !p.is_empty())
+            .collect();
+        decls.len() == 1 && is_address.is_match(decls[0])
+    })?;
+    let safe_param = param_names(entry_params).first()?.to_string();
+
+    // The body the pairs are written in, and what each of its parameter names
+    // stands for at the entry point.
+    let (body, substitute): (&str, Vec<(String, String)>) = if pair.is_match(entry_body) {
+        (entry_body, Vec::new())
+    } else {
+        let args: Vec<String> = Regex::new(r"\bexpectedGrants\s*\(([^()]*)\)")
+            .ok()?
+            .captures(entry_body)?[1]
+            .split(',')
+            .map(|a| a.trim().to_string())
+            .filter(|a| !a.is_empty())
+            .collect();
+        let (target_params, target_body) = overloads
+            .iter()
+            .find(|(p, b)| param_names(p).len() == args.len() && pair.is_match(b))?;
+        let substitute = param_names(target_params)
+            .into_iter()
+            .map(str::to_string)
+            .zip(args)
+            .collect();
+        (target_body, substitute)
+    };
+
     let declared = Regex::new(r"new\s+RoleGrant\[\]\s*\(\s*(\d+)\s*\)")
         .ok()
         .and_then(|re| re.captures(body))
         .and_then(|c| c.get(1))
         .and_then(|m| m.as_str().parse().ok());
-    let pair = Regex::new(
-        r#"RoleGrant\(\s*keccak256\(\s*"([A-Za-z0-9_]+)"\s*\)\s*,\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\)"#,
-    )
-    .ok()?;
     let grants: Vec<GrantPin> = pair
         .captures_iter(body)
-        .map(|c| GrantPin {
-            role: c[1].to_string(),
-            grantee: c[2].to_string(),
+        .map(|c| {
+            let written = &c[2];
+            let grantee = substitute
+                .iter()
+                .find(|(param, _)| param == written)
+                .map_or(written, |(_, arg)| arg.as_str());
+            GrantPin {
+                role: c[1].to_string(),
+                grantee: grantee.to_string(),
+            }
         })
         .collect();
     if grants.is_empty() {
@@ -640,7 +710,7 @@ pub fn build_grants(
 /// libraries, following at most one re-export hop (`X = OtherLib.Y;`). A grantee
 /// declared in one lib and aliased into the grant map's lib still resolves, so
 /// where the constant lives is not a thing this page depends on.
-fn resolve_ident(src: &OwnerSources, ident: &str) -> Option<String> {
+pub fn resolve_ident(src: &OwnerSources, ident: &str) -> Option<String> {
     let sources = [src.auth_lib, src.safe_lib, src.v4_lib, src.overrides];
     if let Some(a) = sources
         .iter()
@@ -1668,5 +1738,218 @@ mod tests {
         .unwrap();
         assert_eq!(v2["pinnedCount"], 6);
         assert_eq!(v2["declaredCount"], 7, "the shortfall is reportable");
+    }
+
+    /// The shape `LibAuthoriserInvariants` has on st0x.deploy main (3c6db51),
+    /// trimmed of comments: the one-address overload no longer writes the pairs.
+    /// It DELEGATES to the `(tokenOwnerSafe, adminHolder)` overload the
+    /// governance-timelock migration added, passing the Safe for both.
+    const DELEGATING_GRANT_LIB: &str = r#"
+        library LibAuthoriserInvariants {
+            address internal constant GRANTEE_TOKEN_OWNER_SAFE = LibSafeInvariants.STOX_TOKEN_OWNER_SAFE;
+            address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
+            address internal constant GRANTEE_SERVICE_3D0C = 0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE;
+            address internal constant GRANTEE_ORCHESTRATOR = LibProdDeployV4.ST0X_ORCHESTRATOR_INSTANCE;
+
+            function expectedGrants() internal pure returns (RoleGrant[] memory grants) {
+                grants = expectedGrants(GRANTEE_TOKEN_OWNER_SAFE);
+            }
+
+            function expectedGrants(address tokenOwnerSafe) internal pure returns (RoleGrant[] memory grants) {
+                grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);
+            }
+
+            function expectedGrants(address tokenOwnerSafe, address adminHolder)
+                internal
+                pure
+                returns (RoleGrant[] memory grants)
+            {
+                grants = new RoleGrant[](15);
+                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), adminHolder);
+                grants[1] = RoleGrant(keccak256("WITHDRAW_ADMIN"), adminHolder);
+                grants[2] = RoleGrant(keccak256("CERTIFY_ADMIN"), adminHolder);
+                grants[3] = RoleGrant(keccak256("CONFISCATE_SHARES_ADMIN"), adminHolder);
+                grants[4] = RoleGrant(keccak256("CONFISCATE_RECEIPT_ADMIN"), adminHolder);
+                grants[5] = RoleGrant(keccak256("SCHEDULE_CORPORATE_ACTION_ADMIN"), adminHolder);
+                grants[6] = RoleGrant(keccak256("CANCEL_CORPORATE_ACTION_ADMIN"), adminHolder);
+                grants[7] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
+                grants[8] = RoleGrant(keccak256("WITHDRAW"), tokenOwnerSafe);
+                grants[9] = RoleGrant(keccak256("CERTIFY"), tokenOwnerSafe);
+                grants[10] = RoleGrant(keccak256("DEPOSIT"), GRANTEE_SERVICE_3D0C);
+                grants[11] = RoleGrant(keccak256("WITHDRAW"), GRANTEE_SERVICE_3D0C);
+                grants[12] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_3D0C);
+                grants[13] = RoleGrant(keccak256("DEPOSIT"), GRANTEE_ORCHESTRATOR);
+                grants[14] = RoleGrant(keccak256("WITHDRAW"), GRANTEE_ORCHESTRATOR);
+            }
+        }
+    "#;
+
+    /// Where `GRANTEE_ORCHESTRATOR`'s alias lands in the generated deploy lib.
+    const DELEGATING_V4_LIB: &str = r#"
+        address constant STOX_PROD_AUTHORISER_V4_CLONE = address(0x315b16faa6eE413faBCa877d3851B3818369f0cD);
+        address constant ST0X_ORCHESTRATOR_INSTANCE = address(0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2);
+    "#;
+
+    fn delegating_sources(auth: &str) -> OwnerSources<'_> {
+        OwnerSources {
+            safe_lib: SAFE_LIB,
+            auth_lib: auth,
+            v4_lib: DELEGATING_V4_LIB,
+            overrides: OVERRIDES,
+        }
+    }
+
+    /// The bug that left `deploymentGrants` null: the parser took the first
+    /// overload with an `address` parameter, which is now the one that only
+    /// delegates, so it found no pairs and the whole view vanished. The pairs
+    /// are in the overload it delegates to, and the delegating call is what says
+    /// the admin slot is the Safe.
+    #[test]
+    fn a_delegating_one_address_overload_reads_the_pairs_it_delegates_to() {
+        let m = parse_expected_grants(DELEGATING_GRANT_LIB).expect("the delegated map parses");
+        assert_eq!(m.safe_param, "tokenOwnerSafe");
+        assert_eq!(m.declared, Some(15));
+        assert_eq!(m.grants.len(), 15);
+        assert_eq!(
+            m.grants[0],
+            GrantPin {
+                role: "DEPOSIT_ADMIN".into(),
+                grantee: "tokenOwnerSafe".into()
+            },
+            "adminHolder is the Safe, because the delegating call passes the Safe"
+        );
+        assert_eq!(
+            m.grants[13],
+            GrantPin {
+                role: "DEPOSIT".into(),
+                grantee: "GRANTEE_ORCHESTRATOR".into()
+            }
+        );
+        assert!(
+            m.grants.iter().all(|g| g.grantee != "adminHolder"),
+            "no pair is left naming the callee's own parameter"
+        );
+        assert!(
+            m.grants
+                .iter()
+                .all(|g| g.grantee != "GRANTEE_TOKEN_OWNER_SAFE"),
+            "the no-arg overload's Base constant does not leak into the per-chain map"
+        );
+    }
+
+    #[test]
+    fn the_delegated_map_populates_the_grants_document() {
+        let v = build_grants(
+            "o",
+            "r",
+            &delegating_sources(DELEGATING_GRANT_LIB),
+            &two_chains(),
+            &all_granted,
+        )
+        .expect("the view is built, not null");
+        assert_eq!(v["pinnedCount"], 15);
+        assert_eq!(v["declaredCount"], 15);
+        let idents: Vec<&str> = v["grantees"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|g| g["ident"].as_str().unwrap())
+            .collect();
+        assert_eq!(
+            idents,
+            [
+                "tokenOwnerSafe",
+                "GRANTEE_SERVICE_3D0C",
+                "GRANTEE_ORCHESTRATOR"
+            ],
+            "the retired 1C66 has no pairs, so it is not listed as a grantee"
+        );
+        let safe = grantee(&v, "tokenOwnerSafe").unwrap();
+        assert_eq!(safe["kind"], "safe");
+        let safe_roles = safe["roles"].as_array().unwrap();
+        assert_eq!(
+            safe_roles.len(),
+            10,
+            "seven admin roles and three action roles"
+        );
+        assert_eq!(
+            safe_roles.iter().filter(|r| r["admin"] == true).count(),
+            7,
+            "the Safe keeps its admin and action roles in one row"
+        );
+        assert_eq!(
+            grantee(&v, "GRANTEE_ORCHESTRATOR").unwrap()["address"],
+            "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2"
+        );
+        let eth_admin = safe_roles
+            .iter()
+            .find(|r| r["role"] == "CANCEL_CORPORATE_ACTION_ADMIN")
+            .unwrap()["chains"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|c| c["network"] == "ethereum")
+            .unwrap()["address"]
+            .clone();
+        assert_eq!(
+            eth_admin, "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "an admin row is asked of that chain's own Safe"
+        );
+        assert_eq!(v["chains"][0]["total"], 15);
+    }
+
+    /// Once the migration passes a timelock as the admin holder, the admin rows
+    /// follow the call to it, and the Safe keeps only its action roles. Reading
+    /// the delegating call, rather than assuming both slots are the Safe, is
+    /// what keeps that from reporting the Safe as admin after it stops being one.
+    #[test]
+    fn a_timelock_admin_holder_takes_the_admin_rows_off_the_safe() {
+        let migrated = DELEGATING_GRANT_LIB
+            .replace(
+                "grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);",
+                "grants = expectedGrants(tokenOwnerSafe, GRANTEE_GOVERNANCE_TIMELOCK);",
+            )
+            .replace(
+                "address internal constant GRANTEE_ORCHESTRATOR",
+                "address internal constant GRANTEE_GOVERNANCE_TIMELOCK = 0x00000000219ab540356cBB839Cbe05303d7705Fa;\n\
+                 address internal constant GRANTEE_ORCHESTRATOR",
+            );
+        let v = build_grants(
+            "o",
+            "r",
+            &delegating_sources(&migrated),
+            &two_chains(),
+            &all_granted,
+        )
+        .unwrap();
+        let timelock = grantee(&v, "GRANTEE_GOVERNANCE_TIMELOCK").expect("the timelock is listed");
+        assert_eq!(timelock["kind"], "constant");
+        assert_eq!(
+            timelock["address"],
+            "0x00000000219ab540356cBB839Cbe05303d7705Fa"
+        );
+        assert!(timelock["roles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|r| r["admin"] == true));
+        let safe_roles: Vec<&str> = grantee(&v, "tokenOwnerSafe").unwrap()["roles"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["role"].as_str().unwrap())
+            .collect();
+        assert_eq!(safe_roles, ["DEPOSIT", "WITHDRAW", "CERTIFY"]);
+    }
+
+    /// A delegation to an overload that does not exist, or that writes no
+    /// pairs, is an unreadable map, not an empty one.
+    #[test]
+    fn a_delegation_with_no_matching_overload_yields_no_map() {
+        let dangling = DELEGATING_GRANT_LIB.replace(
+            "grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);",
+            "grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe, tokenOwnerSafe);",
+        );
+        assert_eq!(parse_expected_grants(&dangling), None);
     }
 }
