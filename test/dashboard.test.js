@@ -5296,6 +5296,59 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
   );
 });
 
+Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", () => {
+  const TARGET = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const TIMELOCK = "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B";
+  const data = {
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "ethereum",
+      rpcHost: "ethereum-rpc.publicnode.com",
+      safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [
+        {
+          name: "Receipt beacon",
+          address: "0xace121ae30d754536863a546f41b147be11202db",
+          owner: TIMELOCK,
+          ownerLabel: "timelock",
+          implementation: TARGET,
+          implVersion: "0.1.1",
+          targetImpl: TARGET,
+          targetVersion: "0.1.1",
+          atTarget: true,
+          status: "healthy",
+        },
+      ],
+    },
+  };
+  const box = deploymentsBox(data);
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  // The owner is NAMED as the timelock, not rendered as an unknown dash — the
+  // reader has to be able to see which governing holder it is.
+  assert(chips.includes("timelock"), "owner labelled timelock: " + chips.join(","));
+  assert(!chips.includes("—"), "a timelock owner is not an unknown dash");
+  assert(!chips.includes("foreign"), "a timelock owner is not foreign");
+  // Before the timelock arm this beacon rendered drift, i.e. the completed
+  // migration shown as a fault.
+  assert(!chips.includes("drift"), "a timelock-owned beacon is not drift");
+  assert(chips.includes("healthy"), "status healthy: " + chips.join(","));
+  assert(
+    collect(box, "own-verify-drift").length === 0,
+    "no drift banner when every beacon is governed and at target",
+  );
+  const addrs = collect(box, "own-addr").map((a) => a.textContent);
+  assert(
+    addrs.some((a) => a.toLowerCase() === TIMELOCK.toLowerCase()),
+    "the timelock address is shown so the reader can check which one it is",
+  );
+});
+
 Deno.test("deployments: tokens check registry identity + asset wiring, flag mismatch/wiring", () => {
   const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
   const WRONG = "0xbeef000000000000000000000000000000000002";

@@ -363,14 +363,19 @@ function renderDeployments(document, $, data) {
       }
       const detail = el("div", "bcn-detail");
       // owner: who it actually is
+      // `timelock` reads as a governing holder, not a fault: handing the beacons
+      // to the governance timelock is what the migration does, so the owner line
+      // says so and the status beside it stays healthy.
       const own =
         bc.ownerLabel === "safe"
           ? ["Safe", "yes"]
-          : bc.ownerLabel === "legacy"
-            ? ["legacy EOA", "no"]
-            : bc.ownerLabel === "foreign"
-              ? ["foreign", "no"]
-              : ["—", "dim"];
+          : bc.ownerLabel === "timelock"
+            ? ["timelock", "yes"]
+            : bc.ownerLabel === "legacy"
+              ? ["legacy EOA", "no"]
+              : bc.ownerLabel === "foreign"
+                ? ["foreign", "no"]
+                : ["—", "dim"];
       detail.append(detailLine("owner", own[0], own[1], bc.owner));
       // impl: what it points at NOW, and — when it isn't already there — what it
       // SHOULD point at, so a proposed upgradeTo(...) can be checked against both.

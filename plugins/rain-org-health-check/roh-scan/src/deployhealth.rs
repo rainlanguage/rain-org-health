@@ -317,19 +317,29 @@ pub fn build_health(
 
 /// Health of one production beacon, resolving BOTH what its `owner()` and
 /// `implementation()` actually ARE — not just whether they match a constant:
-/// - owner is labelled `safe` (the current, correct token-owner Safe), `legacy`
-///   (the pre-migration deploy EOA), `foreign` (anything else), or `unknown`.
+/// - owner is labelled `safe` (the token-owner Safe), `timelock` (the chain's
+///   governance timelock, where the migration hands the beacons), `legacy` (the
+///   pre-migration deploy EOA), `foreign` (anything else), or `unknown`.
 /// - impl is resolved to a version: the `target_version` when it equals the
 ///   target impl, `V1` when it's the pre-Zoltu impl, else `unknown`.
-/// - status: `healthy` only when Safe-owned AND at the target version; `behind`
-///   when Safe-owned but the impl isn't the target (e.g. still V1); `drift` when
-///   the owner isn't the Safe; `unknown` when a live read failed.
+/// - status: `healthy` when held by a GOVERNING owner (Safe or timelock) AND at
+///   the target version; `behind` when governed but the impl isn't the target
+///   (e.g. still V1); `drift` when the owner governs nothing — the deploy EOA or
+///   an unrecognised address; `unknown` when a live read failed.
+///
+/// The timelock is a governing owner, not drift. Handing a beacon to the
+/// governance timelock is the intended end state — it is what the
+/// `20260729-migrate-governance-to-timelock` bundle does — so labelling it
+/// `foreign` would report the completed migration as a fault, which is the
+/// opposite of what this check exists to say. `legacy` stays drift: the deploy
+/// EOA is a hot key that was never meant to retain a production beacon.
 #[allow(clippy::too_many_arguments)]
 pub fn beacon_health(
     name: &str,
     address: Option<String>,
     safe_owner: &str,
     legacy_owner: &str,
+    timelock_owner: Option<&str>,
     target_impl: Option<&str>,
     v1_impl: Option<&str>,
     target_version: &str,
@@ -339,9 +349,15 @@ pub fn beacon_health(
     let owner_label = match live_owner.as_deref() {
         None => "unknown",
         Some(o) if o.eq_ignore_ascii_case(safe_owner) => "safe",
+        Some(o) if timelock_owner.is_some_and(|t| o.eq_ignore_ascii_case(t)) => "timelock",
         Some(o) if o.eq_ignore_ascii_case(legacy_owner) => "legacy",
         Some(_) => "foreign",
     };
+    // Both governing owners are acceptable holders: a chain the bundle has not
+    // reached yet is Safe-held, one it has reached is timelock-held, and neither
+    // is a fault. Collapsing them would make the migration itself look like
+    // drift on the chains where it has succeeded.
+    let governed = owner_label == "safe" || owner_label == "timelock";
     let impl_version = match live_impl.as_deref() {
         None => "unknown",
         Some(l) if target_impl.is_some_and(|t| l.eq_ignore_ascii_case(t)) => target_version,
@@ -357,7 +373,7 @@ pub fn beacon_health(
     // Without a readable target we can't assert "behind"; stay `unknown`.
     let status = if live_owner.is_none() || live_impl.is_none() || target_impl.is_none() {
         "unknown"
-    } else if owner_label != "safe" {
+    } else if !governed {
         "drift"
     } else if at_target != Some(true) {
         "behind"
@@ -808,6 +824,7 @@ mod tests {
 
     const SAFE: &str = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
     const LEGACY: &str = "0x8e4bdeec7ceb9570d440676345da1dce10329f5b";
+    const TIMELOCK: &str = "0x48ba1371a78e6cc54157c63721756ab444510db3";
     const TARGET: &str = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286"; // 0.1.1 impl
     const V1: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd"; // pre-Zoltu impl
 
@@ -817,6 +834,7 @@ mod tests {
             Some("0x86e9".into()),
             SAFE,
             LEGACY,
+            Some(TIMELOCK),
             Some(TARGET),
             Some(V1),
             "0.1.1",
@@ -863,6 +881,92 @@ mod tests {
         assert_eq!(foreign["status"], "drift");
     }
 
+    /// The governance migration's end state is not a fault. Before the timelock
+    /// arm existed this read `foreign` -> `drift`, so the three Ethereum beacons
+    /// went red the moment the migration succeeded.
+    #[test]
+    fn a_timelock_owned_beacon_is_governed_not_drift() {
+        let b = bh(
+            Some("0x48Ba1371A78E6cC54157c63721756ab444510DB3"),
+            Some(TARGET),
+        );
+        assert_eq!(b["ownerLabel"], "timelock");
+        assert_eq!(b["status"], "healthy");
+        assert_eq!(b["owner"], "0x48Ba1371A78E6cC54157c63721756ab444510DB3");
+    }
+
+    /// Governed-but-stale must stay distinguishable from ungoverned: a timelock
+    /// beacon serving the old impl is `behind`, the same as a Safe one, not
+    /// `drift` and not `healthy`.
+    #[test]
+    fn a_timelock_owned_beacon_on_the_old_impl_is_behind() {
+        let b = bh(Some(TIMELOCK), Some(V1));
+        assert_eq!(b["ownerLabel"], "timelock");
+        assert_eq!(b["status"], "behind");
+        assert_eq!(b["atTarget"], false);
+    }
+
+    /// With no timelock pinned for the chain there is nothing to recognise, so
+    /// the same address is unrecognised rather than silently governed — a chain
+    /// whose pin has not landed yet must not get a free pass.
+    #[test]
+    fn without_a_timelock_pin_that_owner_is_foreign() {
+        let b = beacon_health(
+            "Receipt beacon",
+            Some("0x86e9".into()),
+            SAFE,
+            LEGACY,
+            None,
+            Some(TARGET),
+            Some(V1),
+            "0.1.1",
+            Some(TIMELOCK.into()),
+            Some(TARGET.into()),
+        );
+        assert_eq!(b["ownerLabel"], "foreign");
+        assert_eq!(b["status"], "drift");
+    }
+
+    /// The Safe pin wins when both pins hold the same address, so a chain that
+    /// has not separated them cannot report its Safe as the timelock.
+    #[test]
+    fn the_safe_label_wins_when_both_pins_are_the_same_address() {
+        let b = beacon_health(
+            "Receipt beacon",
+            Some("0x86e9".into()),
+            SAFE,
+            LEGACY,
+            Some(SAFE),
+            Some(TARGET),
+            Some(V1),
+            "0.1.1",
+            Some(SAFE.into()),
+            Some(TARGET.into()),
+        );
+        assert_eq!(b["ownerLabel"], "safe");
+        assert_eq!(b["status"], "healthy");
+    }
+
+    /// The headline count has to move with the label, or the section reads
+    /// "0 of 3 healthy" on a chain where every beacon is correctly governed.
+    #[test]
+    fn build_beacons_counts_a_timelock_owned_beacon_as_healthy() {
+        let tl_owned = bh(Some(TIMELOCK), Some(TARGET));
+        let safe_owned = bh(Some(SAFE), Some(TARGET));
+        let v = build_beacons(
+            "o",
+            "r",
+            "ethereum",
+            "host",
+            SAFE,
+            "0.1.1",
+            vec![tl_owned, safe_owned],
+        )
+        .unwrap();
+        assert_eq!(v["total"], 2);
+        assert_eq!(v["healthy"], 2);
+    }
+
     #[test]
     fn beacon_unknown_when_a_live_read_fails() {
         let b = bh(None, None);
@@ -880,6 +984,7 @@ mod tests {
             Some("0x86e9".into()),
             SAFE,
             LEGACY,
+            Some(TIMELOCK),
             None,
             Some(V1),
             "0.1.1",
@@ -898,6 +1003,7 @@ mod tests {
             Some("0x1".into()),
             SAFE,
             LEGACY,
+            Some(TIMELOCK),
             Some(TARGET),
             Some(V1),
             "0.1.1",

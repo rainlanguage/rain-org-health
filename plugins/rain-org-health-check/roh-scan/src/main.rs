@@ -224,11 +224,43 @@ const ETHEREUM_RPCS: &[&str] = &[
     "https://rpc.mevblocker.io",
 ];
 
+/// Keyless public HyperEVM endpoints (chainId 0x3e7 = 999). Each verified live:
+/// `eth_chainId` answers 999 and `owner()` on a production receipt vault
+/// answers the chain's token-owner Safe. `rpc.hyperlend.finance` was dropped —
+/// it answered 429 on a single probe.
+const HYPEREVM_RPCS: &[&str] = &[
+    "https://rpc.hyperliquid.xyz/evm",
+    "https://rpc.hypurrscan.io",
+    "https://hyperliquid.drpc.org",
+];
+
+/// Keyless public Robinhood Chain endpoints (chainId 0x1237 = 4663). The
+/// official endpoint is rate-limited by its own documentation, which is why a
+/// second is listed to fall through to. `robinhood.rpc.hypersync.xyz` was
+/// dropped — it requires a key (HTTP 401).
+const ROBINHOOD_RPCS: &[&str] = &[
+    "https://rpc.mainnet.chain.robinhood.com",
+    "https://rpc.nodeflare.app/robinhood/public",
+];
+
+/// Keyless public BNB Smart Chain endpoints (chainId 0x38 = 56). All five
+/// verified live on `eth_chainId` and on a production `owner()` read.
+const BSC_RPCS: &[&str] = &[
+    "https://bsc-dataseed.bnbchain.org",
+    "https://bsc-rpc.publicnode.com",
+    "https://1rpc.io/bnb",
+    "https://bsc.drpc.org",
+    "https://bsc-dataseed1.binance.org",
+];
+
 /// The chains the scan reads production state from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Chain {
     Base,
     Ethereum,
+    HyperEvm,
+    Robinhood,
+    Bsc,
 }
 
 impl Chain {
@@ -236,6 +268,9 @@ impl Chain {
         match self {
             Chain::Base => BASE_RPCS,
             Chain::Ethereum => ETHEREUM_RPCS,
+            Chain::HyperEvm => HYPEREVM_RPCS,
+            Chain::Robinhood => ROBINHOOD_RPCS,
+            Chain::Bsc => BSC_RPCS,
         }
     }
 
@@ -245,6 +280,9 @@ impl Chain {
         match self {
             Chain::Base => "mainnet.base.org",
             Chain::Ethereum => "ethereum-rpc.publicnode.com",
+            Chain::HyperEvm => "rpc.hyperliquid.xyz",
+            Chain::Robinhood => "rpc.mainnet.chain.robinhood.com",
+            Chain::Bsc => "bsc-dataseed.bnbchain.org",
         }
     }
 
@@ -256,6 +294,12 @@ impl Chain {
         match network {
             "base" => Some(Chain::Base),
             "ethereum" => Some(Chain::Ethereum),
+            // The names are the lowercased constant suffixes the deploy repo
+            // uses (`STOX_TOKEN_OWNER_SAFE_HYPEREVM` -> `hyperevm`), so these
+            // must match `parse_chain_pins`' derivation, not a prettier label.
+            "hyperevm" => Some(Chain::HyperEvm),
+            "robinhood" => Some(Chain::Robinhood),
+            "bsc" => Some(Chain::Bsc),
             _ => None,
         }
     }
@@ -344,6 +388,13 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
 /// the endpoints that would have answered — the rejection is not a failover, it
 /// is the whole chunk lost. Measured against all nine configured endpoints; it
 /// is `BASE_RPCS[0]`, so roughly one scan in five began there.
+///
+/// Re-measured when HyperEVM, Robinhood Chain and BSC were added: each
+/// first-choice endpoint accepts 10 and 20 and refuses 50 —
+/// `rpc.hyperliquid.xyz` with `-32010 batch request was too large`,
+/// `bsc-dataseed.bnbchain.org` with `-32005`, and the Robinhood endpoint with
+/// HTTP 429 by 100. So 10 remains the floor across every chain, and the
+/// constant stays global rather than becoming per-chain.
 const ETH_CALL_BATCH_CHUNK: usize = 10;
 
 /// Many `eth_call`s to one chain in JSON-RPC batches, answered in request
@@ -2750,6 +2801,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // The pre-migration deploy EOA — a beacon still owned by this hasn't
             // been handed to the Safe.
             let legacy_owner = owners::parse_address_constant(&v1, "BEACON_INITIAL_OWNER");
+            // Where the governance migration hands this chain's beacons. Reusing
+            // the lib already fetched above rather than a second transfer of the
+            // same file. Base's pin carries no chain suffix.
+            let timelock_owner =
+                owners::parse_address_constant(&timelock, "STOX_GOVERNANCE_TIMELOCK");
             // (label, beacon addr const, V1-impl const, 0.1.1-target pointer file).
             // The 0.1.1 target impl is that contract's DEPLOYED_ADDRESS in the
             // generated 0_1_1 dir; the V1 impl is the pre-Zoltu one in LibProdDeployV1.
@@ -2800,6 +2856,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 addr,
                                 &safe,
                                 &legacy,
+                                timelock_owner.as_deref(),
                                 target_impl.as_deref(),
                                 v1_impl.as_deref(),
                                 "0.1.1",
@@ -2835,6 +2892,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 owners::parse_address_constant(&safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
             let v1 = gh_file(org, repo, "src/lib/LibProdDeployV1.sol");
             let legacy_owner = owners::parse_address_constant(&v1, "BEACON_INITIAL_OWNER");
+            // Ethereum's governance timelock is a different address from Base's,
+            // so the suffixed pin — reading Base's here would label a correctly
+            // migrated Ethereum beacon `foreign`.
+            let timelock_owner =
+                owners::parse_address_constant(&timelock, "STOX_GOVERNANCE_TIMELOCK_ETHEREUM");
             // Only the wrapped-token-vault beacon has a generated address pin.
             // The receipt and receipt-vault beacons are created inside the
             // 0.1.1 beacon-set deployer's constructor and exist nowhere as a
@@ -2904,6 +2966,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 addr,
                                 &safe,
                                 &legacy,
+                                timelock_owner.as_deref(),
                                 target_impl.as_deref(),
                                 None,
                                 "0.1.1",
@@ -3291,6 +3354,67 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    // ---- chain endpoint coverage ----
+
+    /// Every network the deploy repo pins must resolve to a chain, or the page
+    /// reports a live deployment as unread. HyperEVM, Robinhood and BSC read
+    /// `unknown` for every probe until these arms existed — 177 vault rows and
+    /// three whole grant maps.
+    #[test]
+    fn every_pinned_network_resolves_to_a_chain() {
+        for n in ["base", "ethereum", "hyperevm", "robinhood", "bsc"] {
+            assert!(
+                Chain::from_network(n).is_some(),
+                "no endpoint set for pinned network {n}"
+            );
+        }
+    }
+
+    /// The names are the deploy repo's lowercased constant suffixes. A prettier
+    /// label here silently stops matching `parse_chain_pins`, which is the
+    /// failure this asserts against rather than describes.
+    #[test]
+    fn an_unpinned_or_misspelled_network_resolves_to_nothing() {
+        for n in [
+            "hyper-evm",
+            "HyperEVM",
+            "bnb",
+            "robinhood-chain",
+            "polygon",
+            "",
+        ] {
+            assert!(
+                Chain::from_network(n).is_none(),
+                "{n} should not resolve to a chain"
+            );
+        }
+    }
+
+    /// Each chain must carry its OWN endpoints and host. Sharing a set would
+    /// read one chain's addresses against another's node, which answers "not
+    /// deployed" for live contracts — a silent downgrade, not an error.
+    #[test]
+    fn each_chain_has_its_own_non_empty_endpoint_set() {
+        let chains = [
+            Chain::Base,
+            Chain::Ethereum,
+            Chain::HyperEvm,
+            Chain::Robinhood,
+            Chain::Bsc,
+        ];
+        let mut hosts = std::collections::HashSet::new();
+        let mut firsts = std::collections::HashSet::new();
+        for c in chains {
+            assert!(!c.rpcs().is_empty(), "{c:?} has no endpoints");
+            assert!(
+                c.rpcs().iter().all(|u| u.starts_with("https://")),
+                "{c:?} has a non-https endpoint"
+            );
+            assert!(hosts.insert(c.rpc_host()), "{c:?} reuses another host");
+            assert!(firsts.insert(c.rpcs()[0]), "{c:?} reuses another endpoint");
+        }
+    }
 
     // ---- named-repo validation ----
 
