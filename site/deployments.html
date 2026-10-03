@@ -101,6 +101,15 @@
   .own-status-pending { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
   .own-status-migrated { color: var(--ink-3); border-color: var(--border); }
   .own-status-bricked { color: var(--crit); border-color: var(--crit); }
+  /* Governed-vault ownership. `timelock` is where the migration is taking these,
+     so it is the clean state; `safe` is the pre-migration holder and reads as
+     work still to do rather than a fault, which is the amber the rest of the
+     site uses for rollout. `other` is the answer nobody predicted — neither
+     pin — so it gets the red. */
+  .own-status-timelock { color: var(--clean); border-color: var(--clean); }
+  .own-status-safe { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
+  .own-status-other { color: var(--crit); border-color: var(--crit); }
+  .own-row.own-other { background: var(--debt-bg); }
   .own-verify { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
                 border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px;
                 margin: 0 0 10px; font-size: 12.5px; line-height: 1.5; }
@@ -677,6 +686,49 @@ function renderDeployments(document, $, data) {
   // Every row is derived from the scan's read of the deploy repo's grant map.
   // Nothing about a grantee is written down on this page, so a signer added to
   // that map arrives here on the next scan.
+  // Governed-vault ownership, which the governance migration moves one
+  // `transferOwnership` per vault. Counts first, because the question asked of
+  // this section is "how far has the handover got on this chain", and a reader
+  // should not have to count rows to answer it.
+  const renderVaultOwners = (v) => {
+    if (!v || !Array.isArray(v.chains) || v.chains.length === 0) return;
+    box.append(el("h2", null, "Governed vault ownership — Safe or timelock"));
+    const sub = el("div", "own-sub");
+    sub.append(
+      `owner() read per vault on each chain and labelled against THAT chain's pins. ` +
+        `"other" means the call answered with neither pin, which is different from "unknown" — ` +
+        `that is a vault we could not ask, never one we know has not moved.`,
+    );
+    box.append(sub);
+    for (const c of v.chains) {
+      const n = c.counts || {};
+      box.append(
+        el(
+          "h3",
+          null,
+          `${c.network} — ${n.timelock ?? 0} timelock, ${n.safe ?? 0} safe, ` +
+            `${n.other ?? 0} other, ${n.unknown ?? 0} unknown of ${v.total ?? 0}`,
+        ),
+      );
+      // Only the vaults this chain answered for. A vault with no code here is
+      // another chain's vault, and listing it would make every chain look like
+      // it holds every vault.
+      const answered = (c.vaults || []).filter((x) => x.label !== "unknown");
+      if (answered.length === 0) continue;
+      const tbl = el("div", "own-table");
+      for (const row of answered) {
+        const r = el("div", `own-row own-${row.label}`);
+        r.append(el("div", "own-role", row.vault));
+        const ac = el("div", "own-ac");
+        ac.append(el("span", "own-addr", row.owner || "—"));
+        r.append(ac);
+        r.append(el("span", `own-status own-status-${row.label}`, row.label));
+        tbl.append(r);
+      }
+      box.append(tbl);
+    }
+  };
+
   const renderGrants = (g) => {
     if (!g || !Array.isArray(g.grantees) || g.grantees.length === 0) return;
     box.append(el("h2", null, "Authoriser role grants — who can move value"));
@@ -866,6 +918,7 @@ function renderDeployments(document, $, data) {
     // still be readable when they are not — and it is the half of this page
     // that says who can move value.
     renderGrants(data.deploymentGrants);
+    renderVaultOwners(data.deploymentVaultOwners);
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
@@ -931,6 +984,7 @@ function renderDeployments(document, $, data) {
     box.append(grp);
   }
   renderGrants(data.deploymentGrants);
+  renderVaultOwners(data.deploymentVaultOwners);
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);

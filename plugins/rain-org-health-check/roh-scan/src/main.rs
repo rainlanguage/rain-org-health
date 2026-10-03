@@ -2578,6 +2578,35 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .unwrap_or(serde_json::Value::Null)
         };
 
+        // Ownership of the governed vaults, which the governance migration
+        // moves one `transferOwnership` at a time. Nothing else here reads a
+        // vault's `owner()` — only production beacons are owner-checked — so a
+        // migration that moved sixty-odd vaults would otherwise leave this page
+        // showing the pre-migration owner with nothing marking it stale.
+        let deployment_vault_owners = {
+            let mut chains = owners::parse_chain_pins(&v4, &safe, &timelock);
+            for c in chains.iter_mut() {
+                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
+            }
+            let tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
+            let vaults = deployhealth::parse_receipt_vault_list(&tok_lib).addresses;
+            // One session per chain, as the grant map does, so every `owner()`
+            // for a chain is answered by the same node.
+            let sessions: Vec<(String, Session)> = chains
+                .iter()
+                .filter_map(|c| {
+                    Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
+                })
+                .collect();
+            let read_owner = |network: &str, vault: &str| {
+                let (_, session) = sessions.iter().find(|(n, _)| n == network)?;
+                eth_call(*session, vault, &rpc::owner_calldata())
+                    .and_then(|hex| rpc::decode_address(&hex))
+            };
+            owners::build_vault_owners(&vaults, &chains, &read_owner)
+                .unwrap_or(serde_json::Value::Null)
+        };
+
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each
         // generated pointer file, confirm the contract is deployed at its pinned
         // address and the live code matches BOTH the RUNTIME_CODE bytes and the
@@ -2590,10 +2619,18 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 ContentsListing::Found(entries) => {
                     let contracts: Vec<_> = entries
                         .iter()
-                        .filter(|(t, _, name)| t == "file" && name.ends_with(".pointers.sol"))
+                        // Both spellings. A release frozen before the generator
+                        // dropped the `.pointers` infix carries it; one frozen
+                        // after does not. Matching only the old spelling makes
+                        // a renamed record read as a tag with no contracts in
+                        // it, which is the same green as a healthy one.
+                        .filter(|(t, _, name)| t == "file" && name.ends_with(".sol"))
                         .map(|(_, path, name)| {
                             let src = gh_file(org, repo, path);
-                            let cname = name.strip_suffix(".pointers.sol").unwrap_or(name);
+                            let cname = name
+                                .strip_suffix(".pointers.sol")
+                                .or_else(|| name.strip_suffix(".sol"))
+                                .unwrap_or(name);
                             let addr = owners::parse_address_constant(&src, "DEPLOYED_ADDRESS");
                             let runtime = deployhealth::parse_hex_constant(&src, "RUNTIME_CODE");
                             let hash = deployhealth::parse_bytes32_constant(&src, "BYTECODE_HASH");
@@ -3060,6 +3097,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
             "deploymentGrants": deployment_grants,
+            "deploymentVaultOwners": deployment_vault_owners,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,

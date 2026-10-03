@@ -538,6 +538,104 @@ pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str, timelock_lib: &str) -> Vec
     out
 }
 
+/// Who owns a governed vault, as the chain answered.
+///
+/// The labels are relative to that chain's own pins, so `Timelock` on Ethereum
+/// and `Timelock` on Base are different addresses and both read as moved.
+#[derive(Debug, PartialEq, Eq, Clone, Copy)]
+pub enum VaultOwner {
+    /// The chain's token-owner Safe — the pre-migration holder.
+    Safe,
+    /// The chain's governance timelock — the post-migration holder.
+    Timelock,
+    /// Neither pin. Not a fault by itself, but it is the one answer nobody
+    /// predicted, so it is never folded into `Unknown`.
+    Other,
+    /// No answer: no code at the address on this chain, or the call failed.
+    /// Never a stand-in for "not moved".
+    Unknown,
+}
+
+impl VaultOwner {
+    fn token(self) -> &'static str {
+        match self {
+            VaultOwner::Safe => "safe",
+            VaultOwner::Timelock => "timelock",
+            VaultOwner::Other => "other",
+            VaultOwner::Unknown => "unknown",
+        }
+    }
+}
+
+/// Ownership of every governed vault, per chain, labelled against that chain's
+/// Safe and timelock.
+///
+/// The governance migration moves these by `transferOwnership`, one call per
+/// vault, and nothing else on this page reads a vault's `owner()` — only
+/// production beacons are owner-checked. So a migration that moved sixty-odd
+/// vaults left no trace here: the page would show the pre-migration owner
+/// indefinitely with nothing marking it stale.
+///
+/// `read_owner` is injected for the reason `build_grants` injects its probe:
+/// the labelling is what can be got wrong, and it is worth testing without a
+/// network.
+/// @param vaults The governed vault addresses, lowercased.
+/// @param chains The chains to ask, carrying their own Safe and timelock pins.
+/// @param read_owner Asks one chain for one vault's `owner()`.
+/// @return The per-chain rows and tallies, or `None` with no vaults to report.
+pub fn build_vault_owners(
+    vaults: &[String],
+    chains: &[ChainPin],
+    read_owner: &dyn Fn(&str, &str) -> Option<String>,
+) -> Option<serde_json::Value> {
+    if vaults.is_empty() || chains.is_empty() {
+        return None;
+    }
+    let eq = |a: &Option<String>, b: &str| {
+        a.as_deref()
+            .map(|x| x.eq_ignore_ascii_case(b))
+            .unwrap_or(false)
+    };
+    let mut rows: Vec<serde_json::Value> = Vec::new();
+    for chain in chains {
+        let mut vault_rows: Vec<serde_json::Value> = Vec::new();
+        let (mut safe, mut timelock, mut other, mut unknown) = (0usize, 0usize, 0usize, 0usize);
+        for vault in vaults {
+            let owner = read_owner(&chain.network, vault);
+            let label = match &owner {
+                None => VaultOwner::Unknown,
+                Some(o) if eq(&chain.safe, o) => VaultOwner::Safe,
+                Some(o) if eq(&chain.admin_holder, o) => VaultOwner::Timelock,
+                Some(_) => VaultOwner::Other,
+            };
+            match label {
+                VaultOwner::Safe => safe += 1,
+                VaultOwner::Timelock => timelock += 1,
+                VaultOwner::Other => other += 1,
+                VaultOwner::Unknown => unknown += 1,
+            }
+            vault_rows.push(json!({
+                "vault": vault,
+                "owner": owner,
+                "label": label.token(),
+            }));
+        }
+        rows.push(json!({
+            "network": chain.network,
+            "safe": chain.safe,
+            "timelock": chain.admin_holder,
+            "vaults": vault_rows,
+            "counts": json!({
+                "safe": safe,
+                "timelock": timelock,
+                "other": other,
+                "unknown": unknown,
+            }),
+        }));
+    }
+    Some(json!({ "total": vaults.len(), "chains": rows }))
+}
+
 /// What the chain said about one pinned `(role, grantee)` pair.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum GrantOnChain {
@@ -1414,6 +1512,63 @@ mod tests {
                 grantee: "adminHolder".into()
             }
         );
+    }
+
+    /// A vault's owner MUST be labelled against THAT chain's pins.
+    ///
+    /// Base's timelock is not Ethereum's, so a single expected owner would
+    /// label one chain's moved vaults as `other` — the one answer that reads as
+    /// "nobody predicted this".
+    #[test]
+    fn a_vault_owner_is_labelled_against_its_own_chains_pins() {
+        let vaults = vec!["0xaaa".to_string(), "0xbbb".to_string()];
+        // base: still on the Safe. ethereum: moved to the timelock.
+        let read = |network: &str, vault: &str| match (network, vault) {
+            ("base", _) => Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string()),
+            ("ethereum", "0xaaa") => Some("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B".to_string()),
+            ("ethereum", _) => None,
+            _ => None,
+        };
+        let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
+        assert_eq!(out["total"], serde_json::json!(2));
+        let chains = out["chains"].as_array().expect("chains");
+        assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(2));
+        assert_eq!(chains[0]["counts"]["timelock"], serde_json::json!(0));
+        // The Safe's own address on ethereum would be `safe`; the timelock's is
+        // `timelock`; a vault with no code answers nothing and is `unknown`.
+        assert_eq!(chains[1]["counts"]["timelock"], serde_json::json!(1));
+        assert_eq!(chains[1]["counts"]["unknown"], serde_json::json!(1));
+        assert_eq!(
+            chains[1]["vaults"][0]["label"],
+            serde_json::json!("timelock")
+        );
+        assert_eq!(
+            chains[1]["vaults"][1]["label"],
+            serde_json::json!("unknown")
+        );
+    }
+
+    /// An owner that is neither pin MUST read `other`, never `unknown`.
+    ///
+    /// They mean opposite things: `unknown` is "we could not ask", `other` is
+    /// "we asked and the answer was nobody we pinned".
+    #[test]
+    fn an_unpinned_owner_is_other_not_unknown() {
+        let vaults = vec!["0xaaa".to_string()];
+        let read =
+            |_: &str, _: &str| Some("0x00000000000000000000000000000000deadbeef".to_string());
+        let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
+        let chains = out["chains"].as_array().expect("chains");
+        assert_eq!(chains[0]["counts"]["other"], serde_json::json!(1));
+        assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(0));
+    }
+
+    /// No vaults MUST be `None` rather than an empty section, so the page does
+    /// not render a table that asserts nothing.
+    #[test]
+    fn no_vaults_is_none() {
+        let read = |_: &str, _: &str| None;
+        assert!(build_vault_owners(&[], &two_chains(), &read).is_none());
     }
 
     /// A map taking only the Safe MUST still parse, with no admin parameter.
