@@ -22,3 +22,5 @@ serde_json = { version = "1", features = ["preserve_order"] }
 # no async provider — the curl transport + RPC fallback stay hand-rolled).
 alloy-sol-types = "0.8"
 alloy-primitives = "0.8"
+# Decodes the `contents` API body in-process.
+base64 = "0.22"
