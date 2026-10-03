@@ -365,6 +365,20 @@ fn overload_bodies<'a>(src: &'a str, name: &str, sig_contains: &str) -> Vec<(&'a
     let needle = format!("function {name}");
     while let Some(rel) = src[from..].find(&needle) {
         let at = rel + from;
+        // The name has to END here. `find` is a prefix match, so looking for
+        // `expectedGrants` also finds `expectedGrantsForSomethingElse` — a
+        // different function whose params and body look just as parseable. The
+        // caller picks the body with the most pairs, so a prefix-named
+        // function with more of them would be reported as this one's map.
+        let after = at + needle.len();
+        let is_name_end = src[after..]
+            .chars()
+            .next()
+            .is_none_or(|c| !(c.is_alphanumeric() || c == '_'));
+        if !is_name_end {
+            from = after;
+            continue;
+        }
         let Some(open_paren) = src[at..].find('(').map(|i| i + at) else {
             break;
         };
@@ -1661,6 +1675,45 @@ mod tests {
         assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(1));
         assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(1));
         assert_eq!(chains[0]["vaults"][1]["owner"], serde_json::Value::Null);
+    }
+
+    /// A function whose name merely STARTS WITH the one asked for MUST NOT be
+    /// mistaken for it.
+    ///
+    /// `find("function expectedGrants")` is a prefix match, so
+    /// `expectedGrantsForSomethingElse` matches too. Taking the first match hid
+    /// that — a prefix-named function declared later could never win — but
+    /// selecting the overload with the most pairs lets it, and the page would
+    /// then report another function's map as the authoriser's.
+    #[test]
+    fn a_prefix_named_function_is_not_the_one_asked_for() {
+        let src = r#"
+        library L {
+            function expectedGrants(address tokenOwnerSafe, address adminHolder)
+                internal pure returns (RoleGrant[] memory grants)
+            {
+                grants = new RoleGrant[](2);
+                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), adminHolder);
+                grants[1] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
+            }
+
+            function expectedGrantsForSomeOtherThing(address a, address b)
+                internal pure returns (RoleGrant[] memory grants)
+            {
+                grants = new RoleGrant[](3);
+                grants[0] = RoleGrant(keccak256("WRONG_ONE"), a);
+                grants[1] = RoleGrant(keccak256("WRONG_TWO"), b);
+                grants[2] = RoleGrant(keccak256("WRONG_THREE"), a);
+            }
+        }
+        "#;
+        let m = parse_expected_grants(src).expect("parses");
+        assert!(
+            !m.grants.iter().any(|g| g.role.starts_with("WRONG")),
+            "picked the prefix-named function: {:?}",
+            m.grants.iter().map(|g| g.role.clone()).collect::<Vec<_>>()
+        );
+        assert_eq!(m.grants.len(), 2, "the two real pairs");
     }
 
     /// A map taking only the Safe MUST still parse, with no admin parameter.
