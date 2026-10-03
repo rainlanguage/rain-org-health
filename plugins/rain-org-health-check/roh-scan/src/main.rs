@@ -2468,6 +2468,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "src/lib/LibAuthoriserInvariants.sol",
         );
         let v4 = gh_file(deploy_org, deploy_repo, "src/generated/LibProdDeployV4.sol");
+        // The per-chain governance timelock, which the admin-holder slot of
+        // `expectedGrants` resolves to. Read from the repo for the same reason
+        // every other pin is: the chain list grows.
+        let timelock = gh_file(deploy_org, deploy_repo, "src/lib/LibTimelockInvariants.sol");
         let overrides = gh_file(
             deploy_org,
             deploy_repo,
@@ -2537,7 +2541,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // by itself. That is the entire point: the hazard being reported on is a
         // hot key nobody remembered to write down.
         let deployment_grants = {
-            let mut chains = owners::parse_chain_pins(&v4, &safe);
+            let mut chains = owners::parse_chain_pins(&v4, &safe, &timelock);
             for c in chains.iter_mut() {
                 c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
             }

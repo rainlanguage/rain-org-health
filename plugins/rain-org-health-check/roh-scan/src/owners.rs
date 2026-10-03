@@ -326,6 +326,14 @@ pub struct GrantMap {
     /// token-owner Safe, not a constant — which is how one map describes every
     /// chain.
     pub safe_param: String,
+    /// The admin-holder parameter's name, when the map takes one. A grantee slot
+    /// filled by it is THAT chain's admin holder — the Safe before the
+    /// governance-timelock migration and the timelock after it — so the one map
+    /// expresses both states and the chain says which is live.
+    ///
+    /// `None` for a map that takes only the Safe, which is every map written
+    /// before the migration was in prospect.
+    pub admin_param: Option<String>,
     /// Source order, which is the order the map is read in and the order the
     /// page lists grantees in.
     pub grants: Vec<GrantPin>,
@@ -345,18 +353,28 @@ pub fn is_admin_role(role: &str) -> bool {
     role.ends_with("_ADMIN")
 }
 
-/// The body of the first `function <name>(<sig>)` whose signature matches
-/// `sig_contains`, by brace matching from the signature's `{`.
-fn function_body<'a>(src: &'a str, name: &str, sig_contains: &str) -> Option<(&'a str, &'a str)> {
+///
+/// Returning all of them rather than the first match, because a first match is
+/// only the right one when a single overload can match. Solidity lets a library
+/// delegate between overloads of one name, and a delegating body is a match
+/// with nothing in it, so a caller that has to pick needs the whole set.
+/// @return The matching overloads.
+fn overload_bodies<'a>(src: &'a str, name: &str, sig_contains: &str) -> Vec<(&'a str, &'a str)> {
+    let mut out = Vec::new();
     let mut from = 0usize;
-    loop {
-        let at = src[from..].find(&format!("function {name}"))? + from;
-        let open_paren = src[at..].find('(')? + at;
-        let close_paren = src[open_paren..].find(')')? + open_paren;
+    let needle = format!("function {name}");
+    while let Some(rel) = src[from..].find(&needle) {
+        let at = rel + from;
+        let Some(open_paren) = src[at..].find('(').map(|i| i + at) else {
+            break;
+        };
+        let Some(close_paren) = src[open_paren..].find(')').map(|i| i + open_paren) else {
+            break;
+        };
         let params = &src[open_paren + 1..close_paren];
-        let open = src[close_paren..].find('{')? + close_paren;
-        // Brace-match the body. Role names carry no braces, so counting is
-        // enough here — this parses one known library, not arbitrary Solidity.
+        let Some(open) = src[close_paren..].find('{').map(|i| i + close_paren) else {
+            break;
+        };
         let mut depth = 0usize;
         let mut end = None;
         for (i, c) in src[open..].char_indices() {
@@ -372,12 +390,13 @@ fn function_body<'a>(src: &'a str, name: &str, sig_contains: &str) -> Option<(&'
                 _ => {}
             }
         }
-        let end = end?;
+        let Some(end) = end else { break };
         if params.contains(sig_contains) {
-            return Some((params, &src[open + 1..end]));
+            out.push((params, &src[open + 1..end]));
         }
         from = end;
     }
+    out
 }
 
 /// Parse the Safe-parametric `expectedGrants(address …)` map.
@@ -386,36 +405,63 @@ fn function_body<'a>(src: &'a str, name: &str, sig_contains: &str) -> Option<(&'
 /// parametric body is where every `(role, grantee)` pair actually is — and its
 /// Safe parameter is what makes the same map describe every chain.
 pub fn parse_expected_grants(src: &str) -> Option<GrantMap> {
-    let (params, body) = function_body(src, "expectedGrants", "address")?;
-    let safe_param = Regex::new(r"address\s+(?:memory\s+|calldata\s+)?([A-Za-z_][A-Za-z0-9_]*)")
-        .ok()?
-        .captures(params)
-        .and_then(|c| c.get(1))
-        .map(|m| m.as_str().to_string())?;
+    // The overload carrying the pairs, not merely the first one taking an
+    // address. The one-address overload delegates to the two-address one —
+    // `grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);` — so stopping
+    // at the first match reads a body with no `RoleGrant` in it, and an empty
+    // map is indistinguishable from an unparseable one: `deploymentGrants`
+    // serialises as `null` and the page shows no grant at all. Whichever
+    // overload holds the most pairs is the map; a delegating one holds none.
+    let (params, body) = overload_bodies(src, "expectedGrants", "address")
+        .into_iter()
+        .max_by_key(|(_, body)| role_grant_pairs(body).len())
+        .filter(|(_, body)| !role_grant_pairs(body).is_empty())?;
+    let address_params: Vec<String> =
+        Regex::new(r"address\s+(?:memory\s+|calldata\s+)?([A-Za-z_][A-Za-z0-9_]*)")
+            .ok()?
+            .captures_iter(params)
+            .filter_map(|c| c.get(1).map(|m| m.as_str().to_string()))
+            .collect();
+    let safe_param = address_params.first().cloned()?;
+    // Positional, because that is what the signature gives: the Safe fills the
+    // operational slots and the second address is the admin holder. Naming it
+    // here instead would be a second place for the convention to live.
+    let admin_param = address_params.get(1).cloned();
     let declared = Regex::new(r"new\s+RoleGrant\[\]\s*\(\s*(\d+)\s*\)")
         .ok()
         .and_then(|re| re.captures(body))
         .and_then(|c| c.get(1))
         .and_then(|m| m.as_str().parse().ok());
-    let pair = Regex::new(
-        r#"RoleGrant\(\s*keccak256\(\s*"([A-Za-z0-9_]+)"\s*\)\s*,\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\)"#,
-    )
-    .ok()?;
-    let grants: Vec<GrantPin> = pair
-        .captures_iter(body)
-        .map(|c| GrantPin {
-            role: c[1].to_string(),
-            grantee: c[2].to_string(),
-        })
-        .collect();
+    let grants = role_grant_pairs(body);
     if grants.is_empty() {
         return None;
     }
     Some(GrantMap {
         safe_param,
+        admin_param,
         grants,
         declared,
     })
+}
+
+/// Every `RoleGrant(keccak256("ROLE"), grantee)` in `body`, in source order.
+///
+/// Split out of `parse_expected_grants` so the overload search can ask how many
+/// pairs a body holds before committing to it. A body with none is a delegating
+/// overload rather than a map.
+/// @return The pairs.
+fn role_grant_pairs(body: &str) -> Vec<GrantPin> {
+    let Ok(pair) = Regex::new(
+        r#"RoleGrant\(\s*keccak256\(\s*"([A-Za-z0-9_]+)"\s*\)\s*,\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\)"#,
+    ) else {
+        return Vec::new();
+    };
+    pair.captures_iter(body)
+        .map(|c| GrantPin {
+            role: c[1].to_string(),
+            grantee: c[2].to_string(),
+        })
+        .collect()
 }
 
 /// A chain the deploy repo pins production state for: its authoriser (the
@@ -430,6 +476,15 @@ pub struct ChainPin {
     pub network: String,
     pub authoriser: Option<String>,
     pub safe: Option<String>,
+    /// The chain's governance timelock — what the admin-holder slot resolves to
+    /// once the migration has moved the `_ADMIN` roles onto it. Pinned per chain
+    /// for the same reason the Safe is: the address differs by chain.
+    ///
+    /// Present whether or not the migration has executed there. Nothing here
+    /// claims it holds anything; `hasRole` is what answers that, so the page
+    /// reads `missing` on a chain the bundle has not reached and `granted` on
+    /// one it has.
+    pub admin_holder: Option<String>,
     pub rpc_host: Option<String>,
 }
 
@@ -442,7 +497,7 @@ pub struct ChainPin {
 ///
 /// An unhydrated (all-zero) authoriser pin yields `None` — there is nothing to
 /// ask a chain about — while the chain itself still appears.
-pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str) -> Vec<ChainPin> {
+pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str, timelock_lib: &str) -> Vec<ChainPin> {
     // The `[^0-9a-fA-F]` tail is what keeps a bytes32 `…_CODEHASH` out: 64 hex
     // chars cannot end after 40.
     let Ok(re) = Regex::new(
@@ -465,10 +520,18 @@ pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str) -> Vec<ChainPin> {
             None => "STOX_TOKEN_OWNER_SAFE".to_string(),
             Some(s) => format!("STOX_TOKEN_OWNER_SAFE{s}"),
         };
+        // Same suffix convention as the Safe and the authoriser clone, so a
+        // chain added to one is a chain added to all three without an edit here.
+        let timelock_const = match &suffix {
+            None => "STOX_GOVERNANCE_TIMELOCK".to_string(),
+            Some(s) => format!("STOX_GOVERNANCE_TIMELOCK{s}"),
+        };
         out.push(ChainPin {
             network,
             authoriser,
             safe: parse_address_constant(safe_lib, &safe_const),
+            admin_holder: parse_address_constant(timelock_lib, &timelock_const)
+                .filter(|a| !is_unhydrated(Some(a))),
             rpc_host: None,
         });
     }
@@ -548,9 +611,16 @@ pub fn build_grants(
     let mut grantees: Vec<serde_json::Value> = Vec::new();
     for ident in &idents {
         let is_safe = *ident == map.safe_param;
-        // A constant grantee is one address on every chain; the Safe slot is the
-        // chain's own Safe. Both are read from the source, neither is typed here.
-        let fixed = if is_safe {
+        // The admin-holder slot is per chain like the Safe, not one address
+        // everywhere. It is a PARAMETER of the map, so `resolve_ident` cannot
+        // find it — there is no constant of that name to read — and without
+        // this its rows would carry no address and every `_ADMIN` role would
+        // report `unknown` on every chain.
+        let is_admin_holder = map.admin_param.as_deref() == Some(*ident);
+        // A constant grantee is one address on every chain; the Safe and
+        // admin-holder slots are that chain's own. All are read from the source,
+        // none is typed here.
+        let fixed = if is_safe || is_admin_holder {
             None
         } else {
             resolve_ident(src, ident)
@@ -570,6 +640,8 @@ pub fn build_grants(
             for (i, chain) in chains.iter().enumerate() {
                 let address = if is_safe {
                     chain.safe.clone()
+                } else if is_admin_holder {
+                    chain.admin_holder.clone()
                 } else {
                     fixed.clone()
                 };
@@ -1200,12 +1272,14 @@ mod tests {
                 network: "base".into(),
                 authoriser: Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".into()),
                 safe: Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into()),
+                admin_holder: Some("0x48ba1371A78E6cC54157c63721756ab444510DB3".into()),
                 rpc_host: Some("mainnet.base.org".into()),
             },
             ChainPin {
                 network: "ethereum".into(),
                 authoriser: Some("0x66566cc91dEAf818859bD4b09B7903ac48998157".into()),
                 safe: Some("0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329".into()),
+                admin_holder: Some("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B".into()),
                 rpc_host: Some("ethereum-rpc.publicnode.com".into()),
             },
         ]
@@ -1285,6 +1359,110 @@ mod tests {
             .grants
             .iter()
             .all(|g| g.role != "GRANTEE_TOKEN_OWNER_SAFE"));
+    }
+
+    /// The deploy repo's shape once the governance-timelock migration is in
+    /// prospect: the pairs move to a two-address overload and the one-address
+    /// one DELEGATES to it, collapsing the parameters.
+    const GRANT_LIB_ADMIN_HOLDER: &str = r#"
+        library LibAuthoriserInvariants {
+            address internal constant GRANTEE_TOKEN_OWNER_SAFE = LibSafeInvariants.STOX_TOKEN_OWNER_SAFE;
+            address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
+
+            function expectedGrants() internal pure returns (RoleGrant[] memory grants) {
+                grants = expectedGrants(GRANTEE_TOKEN_OWNER_SAFE);
+            }
+
+            function expectedGrants(address tokenOwnerSafe) internal pure returns (RoleGrant[] memory grants) {
+                grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);
+            }
+
+            function expectedGrants(address tokenOwnerSafe, address adminHolder)
+                internal
+                pure
+                returns (RoleGrant[] memory grants)
+            {
+                grants = new RoleGrant[](4);
+                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), adminHolder);
+                grants[1] = RoleGrant(keccak256("WITHDRAW_ADMIN"), adminHolder);
+                grants[2] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
+                grants[3] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_1C66);
+            }
+        }
+    "#;
+
+    /// The map MUST come from the overload that holds the pairs, not the first
+    /// one taking an address.
+    ///
+    /// The one-address overload delegates, so its body has no `RoleGrant` in
+    /// it. Taking the first match yields an empty map, `parse_expected_grants`
+    /// returns `None`, and `deploymentGrants` serialises as `null` — which is
+    /// how the live page came to show no grant at all while the deploy repo
+    /// declared fifteen.
+    #[test]
+    fn parses_the_overload_that_holds_the_pairs_not_the_first() {
+        let m = parse_expected_grants(GRANT_LIB_ADMIN_HOLDER)
+            .expect("the overload carrying the pairs parses");
+        assert_eq!(m.safe_param, "tokenOwnerSafe");
+        assert_eq!(m.admin_param.as_deref(), Some("adminHolder"));
+        assert_eq!(m.declared, Some(4));
+        assert_eq!(m.grants.len(), 4, "the delegating overload holds none");
+        assert_eq!(
+            m.grants[0],
+            GrantPin {
+                role: "DEPOSIT_ADMIN".into(),
+                grantee: "adminHolder".into()
+            }
+        );
+    }
+
+    /// A map taking only the Safe MUST still parse, with no admin parameter.
+    #[test]
+    fn a_safe_only_map_has_no_admin_param() {
+        let m = parse_expected_grants(GRANT_LIB).expect("the one-address map parses");
+        assert_eq!(m.admin_param, None);
+    }
+
+    /// An `_ADMIN` row MUST carry the chain's own admin holder.
+    ///
+    /// `adminHolder` is a PARAMETER, so there is no constant of that name for
+    /// `resolve_ident` to find. Unbound, every `_ADMIN` row reports `unknown`
+    /// on every chain with no address to chase, which is indistinguishable from
+    /// an unreachable node.
+    #[test]
+    fn an_admin_row_carries_the_chains_admin_holder() {
+        let out = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
+            &two_chains(),
+            &all_granted,
+        )
+        .expect("builds");
+        let row = out["grantees"]
+            .as_array()
+            .expect("grantees")
+            .iter()
+            .find(|g| g["ident"] == "adminHolder")
+            .expect("the admin holder is a grantee row")["roles"]
+            .as_array()
+            .expect("roles")
+            .iter()
+            .find(|r| r["role"] == "DEPOSIT_ADMIN")
+            .expect("DEPOSIT_ADMIN")
+            .clone();
+        assert_eq!(row["admin"], serde_json::json!(true));
+        let chains = row["chains"].as_array().expect("chains");
+        assert_eq!(
+            chains[0]["address"],
+            serde_json::json!("0x48ba1371A78E6cC54157c63721756ab444510DB3"),
+            "base's timelock, not ethereum's"
+        );
+        assert_eq!(
+            chains[1]["address"],
+            serde_json::json!("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B"),
+            "ethereum's timelock — the address the migration bundle grants to"
+        );
     }
 
     /// The check the issue names: a service EOA added to `expectedGrants()`
@@ -1534,7 +1712,7 @@ mod tests {
 
     #[test]
     fn chains_are_read_from_the_clone_pins_not_a_fixed_pair() {
-        let pins = parse_chain_pins(V4_CHAINS, SAFE_LIB);
+        let pins = parse_chain_pins(V4_CHAINS, SAFE_LIB, "");
         let nets: Vec<&str> = pins.iter().map(|p| p.network.as_str()).collect();
         assert_eq!(
             nets,
@@ -1558,7 +1736,7 @@ mod tests {
         let grown = format!(
             "{V4_CHAINS}\n address constant STOX_PROD_AUTHORISER_V4_CLONE_HYPEREVM = address(0x00000000219ab540356cBB839Cbe05303d7705Fa);\n"
         );
-        let grown_pins = parse_chain_pins(&grown, SAFE_LIB);
+        let grown_pins = parse_chain_pins(&grown, SAFE_LIB, "");
         assert_eq!(grown_pins.len(), 3);
         assert_eq!(grown_pins[2].network, "hyperevm");
         assert!(
@@ -1575,7 +1753,7 @@ mod tests {
             "address(0x66566cc91dEAf818859bD4b09B7903ac48998157)",
             "address(0x0000000000000000000000000000000000000000)",
         );
-        let pins = parse_chain_pins(&zeroed, SAFE_LIB);
+        let pins = parse_chain_pins(&zeroed, SAFE_LIB, "");
         assert_eq!(pins.len(), 2, "the chain is still listed");
         assert_eq!(pins[1].network, "ethereum");
         assert!(pins[1].authoriser.is_none(), "nothing to ask");
