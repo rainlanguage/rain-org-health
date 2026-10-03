@@ -941,6 +941,8 @@ function renderDeployments(document, $, data) {
             "own-note",
             gr.kind === "safe"
               ? "the chain's token-owner Safe — cold multisig, holds these directly"
+              : gr.kind === "admin-holder"
+              ? "the chain's governance timelock — every proposal waits out its delay before it can execute"
               : "service key pinned in the grant map — hot single signer",
           ),
         );

@@ -8566,3 +8566,40 @@ Deno.test("deployments: a fully answered chain shows no unread clause", () => {
     "no unread clause when nothing is unread",
   );
 });
+
+Deno.test("deployments: the admin holder is a timelock, never a hot single signer", () => {
+  // The timelock is the slowest, coldest principal in the system. Falling into
+  // the service-key branch described it as a hot single signer on the rows
+  // saying who can grant and revoke — the inversion of what the migration is
+  // for, made credible by the per-chain addresses beside it.
+  const d = grantsData();
+  d.deploymentGrants.grantees = [
+    {
+      ident: "adminHolder",
+      kind: "admin-holder",
+      address: null,
+      roles: [
+        {
+          role: "DEPOSIT_ADMIN",
+          admin: true,
+          chains: [
+            {
+              network: "base",
+              address: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              status: "missing",
+            },
+          ],
+        },
+      ],
+    },
+  ];
+  const text = textOf(deploymentsBox(d));
+  assert(
+    !text.includes("hot single signer"),
+    "the timelock is not called a hot single signer, got: " + text,
+  );
+  assert(
+    text.includes("governance timelock"),
+    "it is named as the timelock, got: " + text,
+  );
+});

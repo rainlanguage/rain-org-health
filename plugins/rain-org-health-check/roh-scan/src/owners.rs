@@ -819,7 +819,19 @@ pub fn build_grants(
             // The constant's own name, verbatim — it greps straight back to the
             // line in the deploy repo that put this key on the page.
             "ident": ident,
-            "kind": if is_safe { "safe" } else { "constant" },
+            // Three kinds, not two. The admin holder is the governance
+            // timelock — the slowest, coldest principal in the system — and
+            // falling into the `constant` branch had the page describe it as a
+            // hot single signer, on the rows that say who can grant and
+            // revoke. That is the inversion of what the migration is for, and
+            // it reads as credible because the per-chain addresses are right.
+            "kind": if is_safe {
+                "safe"
+            } else if is_admin_holder {
+                "admin-holder"
+            } else {
+                "constant"
+            },
             // null for the Safe: its address is per chain, and each row carries
             // the one it was checked against.
             "address": fixed,
