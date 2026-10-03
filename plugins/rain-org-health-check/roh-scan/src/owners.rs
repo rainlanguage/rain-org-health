@@ -558,6 +558,13 @@ pub enum VaultOwner {
     /// Neither pin. Not a fault by itself, but it is the one answer nobody
     /// predicted, so it is never folded into `Unknown`.
     Other,
+    /// This chain pins no timelock, so there is nothing to recognise a moved
+    /// vault by. Held apart from `Other` because they are different claims: a
+    /// chain that has an authoriser clone but no `STOX_GOVERNANCE_TIMELOCK`
+    /// constant yet is mid-rollout, and calling that the same red as an owner
+    /// nobody pinned would report the rollout as a fault — the distinction the
+    /// grant rows already make, for the same reason.
+    Unpinned,
     /// No answer: no code at the address on this chain, or the call failed.
     /// Never a stand-in for "not moved".
     Unknown,
@@ -569,6 +576,7 @@ impl VaultOwner {
             VaultOwner::Safe => "safe",
             VaultOwner::Timelock => "timelock",
             VaultOwner::Other => "other",
+            VaultOwner::Unpinned => "unpinned",
             VaultOwner::Unknown => "unknown",
         }
     }
@@ -613,7 +621,8 @@ pub fn build_vault_owners(
     let mut rows: Vec<serde_json::Value> = Vec::new();
     for chain in chains {
         let mut vault_rows: Vec<serde_json::Value> = Vec::new();
-        let (mut safe, mut timelock, mut other, mut unknown) = (0usize, 0usize, 0usize, 0usize);
+        let (mut safe, mut timelock, mut other, mut unknown, mut unpinned) =
+            (0usize, 0usize, 0usize, 0usize, 0usize);
         // A short answer is not a partial truth: a probe that returned fewer
         // slots than it was asked about has not said which vaults it covered,
         // so the tail reads unread rather than borrowing another slot's owner.
@@ -624,12 +633,16 @@ pub fn build_vault_owners(
                 None => VaultOwner::Unknown,
                 Some(o) if eq(&chain.safe, o) => VaultOwner::Safe,
                 Some(o) if eq(&chain.admin_holder, o) => VaultOwner::Timelock,
+                // Nothing pinned to recognise a move by, so this is not an
+                // unexpected owner — it is an unanswerable question.
+                Some(_) if chain.admin_holder.is_none() => VaultOwner::Unpinned,
                 Some(_) => VaultOwner::Other,
             };
             match label {
                 VaultOwner::Safe => safe += 1,
                 VaultOwner::Timelock => timelock += 1,
                 VaultOwner::Other => other += 1,
+                VaultOwner::Unpinned => unpinned += 1,
                 VaultOwner::Unknown => unknown += 1,
             }
             vault_rows.push(json!({
@@ -648,6 +661,7 @@ pub fn build_vault_owners(
                 "timelock": timelock,
                 "other": other,
                 "unknown": unknown,
+                "unpinned": unpinned,
             }),
         }));
     }
@@ -1587,6 +1601,37 @@ mod tests {
         let chains = out["chains"].as_array().expect("chains");
         assert_eq!(chains[0]["counts"]["other"], serde_json::json!(1));
         assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(0));
+    }
+
+    /// A chain with no timelock pinned MUST read `unpinned`, not `other`.
+    ///
+    /// Chains arrive one at a time, and one can carry an authoriser clone —
+    /// which is what puts it in this list — before it carries a
+    /// `STOX_GOVERNANCE_TIMELOCK` constant. There is then nothing to recognise
+    /// a moved vault by, so every vault not on the Safe would read `other`:
+    /// red, for a rollout that has not reached the chain yet. The grant rows
+    /// make the same distinction for the same reason.
+    #[test]
+    fn a_chain_with_no_timelock_pin_is_unpinned_not_other() {
+        let vaults = vec!["0xaaa".to_string()];
+        let mut chains = two_chains();
+        chains[0].admin_holder = None;
+        // An owner that is neither the Safe nor anything pinned.
+        let read = |_: &str, vs: &[String]| {
+            vs.iter()
+                .map(|_| Some("0x00000000000000000000000000000000deadbeef".to_string()))
+                .collect()
+        };
+        let out = build_vault_owners(&vaults, &chains, &read).expect("builds");
+        let chains_out = out["chains"].as_array().expect("chains");
+        assert_eq!(chains_out[0]["counts"]["unpinned"], serde_json::json!(1));
+        assert_eq!(
+            chains_out[0]["counts"]["other"],
+            serde_json::json!(0),
+            "a missing pin is not an unexpected owner"
+        );
+        // The chain that DOES pin a timelock still calls it out.
+        assert_eq!(chains_out[1]["counts"]["other"], serde_json::json!(1));
     }
 
     /// No vaults MUST be `None` rather than an empty section, so the page does
