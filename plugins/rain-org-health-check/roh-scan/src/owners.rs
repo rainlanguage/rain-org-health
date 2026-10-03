@@ -625,11 +625,11 @@ impl VaultOwner {
 /// the order given, one slot per vault.
 /// @return The per-chain rows and tallies, or `None` with no vaults to report.
 pub fn build_vault_owners(
-    vaults: &[String],
+    vaults_for: &dyn Fn(&str) -> Vec<String>,
     chains: &[ChainPin],
     read_owners: ReadOwners,
 ) -> Option<serde_json::Value> {
-    if vaults.is_empty() || chains.is_empty() {
+    if chains.is_empty() {
         return None;
     }
     let eq = |a: &Option<String>, b: &str| {
@@ -645,7 +645,12 @@ pub fn build_vault_owners(
         // A short answer is not a partial truth: a probe that returned fewer
         // slots than it was asked about has not said which vaults it covered,
         // so the tail reads unread rather than borrowing another slot's owner.
-        let owners = read_owners(&chain.network, vaults);
+        // This chain's OWN vaults. A vault is deployed on one chain, so a
+        // shared list means four chains in five are asked about addresses with
+        // no code on them — every answer `Unknown`, nothing reported, and the
+        // one chain the migration actually touched never asked about at all.
+        let vaults = vaults_for(&chain.network);
+        let owners = read_owners(&chain.network, &vaults);
         for (i, vault) in vaults.iter().enumerate() {
             let owner = owners.get(i).cloned().flatten();
             let label = match &owner {
@@ -684,7 +689,7 @@ pub fn build_vault_owners(
             }),
         }));
     }
-    Some(json!({ "total": vaults.len(), "chains": rows }))
+    Some(json!({ "chains": rows }))
 }
 
 /// What the chain said about one pinned `(role, grantee)` pair.
@@ -1606,8 +1611,10 @@ mod tests {
                 })
                 .collect()
         };
-        let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
-        assert_eq!(out["total"], serde_json::json!(2));
+        let same = |_: &str| vaults.clone();
+        let out = build_vault_owners(&same, &two_chains(), &read).expect("builds");
+        // No page-wide `total`: the vault list is per chain now, so one
+        // number across all of them would be the sum of five different sets.
         let chains = out["chains"].as_array().expect("chains");
         assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(2));
         assert_eq!(chains[0]["counts"]["timelock"], serde_json::json!(0));
@@ -1637,7 +1644,8 @@ mod tests {
                 .map(|_| Some("0x00000000000000000000000000000000deadbeef".to_string()))
                 .collect()
         };
-        let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
+        let same = |_: &str| vaults.clone();
+        let out = build_vault_owners(&same, &two_chains(), &read).expect("builds");
         let chains = out["chains"].as_array().expect("chains");
         assert_eq!(chains[0]["counts"]["other"], serde_json::json!(1));
         assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(0));
@@ -1662,7 +1670,8 @@ mod tests {
                 .map(|_| Some("0x00000000000000000000000000000000deadbeef".to_string()))
                 .collect()
         };
-        let out = build_vault_owners(&vaults, &chains, &read).expect("builds");
+        let same = |_: &str| vaults.clone();
+        let out = build_vault_owners(&same, &chains, &read).expect("builds");
         let chains_out = out["chains"].as_array().expect("chains");
         assert_eq!(chains_out[0]["counts"]["unpinned"], serde_json::json!(1));
         assert_eq!(
@@ -1679,7 +1688,10 @@ mod tests {
     #[test]
     fn no_vaults_is_none() {
         let read = |_: &str, vs: &[String]| vec![None; vs.len()];
-        assert!(build_vault_owners(&[], &two_chains(), &read).is_none());
+        let none = |_: &str| Vec::new();
+        // No chains is the only "nothing to report"; an empty list for ONE chain
+        // is that chain holding none, which the other chains still answer for.
+        assert!(build_vault_owners(&none, &[], &read).is_none());
     }
 
     /// A probe that answers SHORT MUST leave the tail unread.
@@ -1696,7 +1708,8 @@ mod tests {
                 "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string(),
             )]
         };
-        let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
+        let same = |_: &str| vaults.clone();
+        let out = build_vault_owners(&same, &two_chains(), &read).expect("builds");
         let chains = out["chains"].as_array().expect("chains");
         assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(1));
         assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(1));

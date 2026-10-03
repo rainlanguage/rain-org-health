@@ -2608,7 +2608,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         for c in chains.iter_mut() {
             c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
         }
-        let governed_vaults = deployhealth::parse_receipt_vault_list(&governed_tok_lib).addresses;
+        // Per chain, not one shared list: each network has its own
+        // `productionTokens<Chain>` table with entirely different addresses.
+        let vaults_for = |network: &str| {
+            deployhealth::parse_receipt_vaults_for(&governed_tok_lib, network).addresses
+        };
 
         let deployment_grants = {
             // One session per chain, so every `hasRole` for a chain hits the same
@@ -2671,7 +2675,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     .map(|hex| hex.as_deref().and_then(rpc::decode_address))
                     .collect()
             };
-            owners::build_vault_owners(&governed_vaults, &chains, &read_owners)
+            owners::build_vault_owners(&vaults_for, &chains, &read_owners)
                 .unwrap_or(serde_json::Value::Null)
         };
 
