@@ -15,6 +15,9 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
+        with:
+          # The default branch ruleset rejects a GITHUB_TOKEN push; deploy keys bypass it.
+          ssh-key: ${{ secrets.SCAN_DEPLOY_KEY }}
       - uses: rainlanguage/rainix/.github/actions/nix-cachix-setup@main
         with:
           checkout: 'false'
@@ -32,7 +35,9 @@ jobs:
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
             git add site/health.json
-            git commit -m "chore(scan): refresh site/health.json"
+            # A deploy-key push fires `push` workflows, which a GITHUB_TOKEN push
+            # never did; [skip ci] keeps the hourly refresh from running them.
+            git commit -m "chore(scan): refresh site/health.json [skip ci]"
             # A concurrent merge to master rejects a plain push (non-fast-forward).
             # Only the scan touches health.json, so rebasing onto the latest master
             # and retrying is conflict-free and makes the race unable to fail the scan.
