@@ -709,20 +709,26 @@ function renderDeployments(document, $, data) {
     box.append(sub);
     for (const c of v.chains) {
       const n = c.counts || {};
-      // Only the vaults this chain answered for. A vault with no code here is
-      // another chain's vault, and listing it would make every chain look like
-      // it holds every vault.
+      // Rows for the vaults this chain answered for. The governed list spans
+      // every chain, so most of it is another chain's and listing all of it
+      // would make each chain look like it holds all 157.
       const answered = (c.vaults || []).filter((x) => x.label !== "unknown");
-      // Counted against what this chain actually holds, NOT against the
-      // governed total. Every vault lives on one chain, so most of that total
-      // is another chain's and "59 of 157" would read as a chain missing a
-      // hundred vaults it was never meant to have.
+      // An unanswered vault is NOT known to be another chain's. `owner()`
+      // returns nothing both for a vault with no code here and for a read that
+      // failed — a rejected batch chunk, a node that timed out — and those are
+      // opposite facts. So the count is surfaced rather than dropped: without
+      // it, a chain whose reads all failed renders as a chain holding no
+      // governed vaults, which is an RPC outage reported as an empty chain.
+      const unread = n.unknown ?? 0;
+      const tally = `${n.timelock ?? 0} timelock, ${n.safe ?? 0} safe, ` +
+        `${n.other ?? 0} other, ${n.unpinned ?? 0} unpinned of ${answered.length} here`;
       box.append(
         el(
           "h3",
           null,
-          `${c.network} — ${n.timelock ?? 0} timelock, ${n.safe ?? 0} safe, ` +
-            `${n.other ?? 0} other, ${n.unpinned ?? 0} unpinned of ${answered.length} here`,
+          unread > 0
+            ? `${c.network} — ${tally} · ${unread} unread (another chain's, or a failed read)`
+            : `${c.network} — ${tally}`,
         ),
       );
       if (answered.length === 0) continue;

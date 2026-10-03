@@ -8359,3 +8359,58 @@ Deno.test("deployments: an unpinned vault is listed with its own pill, not hidde
     "the section explains unpinned, got: " + text,
   );
 });
+
+Deno.test("deployments: a chain whose reads all failed says unread, not empty", () => {
+  // Every vault unanswered. Without the unread count this renders as a chain
+  // holding no governed vaults — an RPC outage reported as an empty chain.
+  const box = deploymentsBox({
+    deploymentVaultOwners: {
+      total: 2,
+      chains: [
+        {
+          network: "hyperevm",
+          safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+          timelock: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          counts: { safe: 0, timelock: 0, other: 0, unknown: 2, unpinned: 0 },
+          vaults: [
+            { vault: "0xaaa", owner: null, label: "unknown" },
+            { vault: "0xbbb", owner: null, label: "unknown" },
+          ],
+        },
+      ],
+    },
+  });
+  const text = textOf(box);
+  assert(text.includes("2 unread"), "the unread count is shown, got: " + text);
+  assert(
+    text.includes("failed read"),
+    "and says it may be a failed read, not just another chain's, got: " + text,
+  );
+});
+
+Deno.test("deployments: a fully answered chain shows no unread clause", () => {
+  const box = deploymentsBox({
+    deploymentVaultOwners: {
+      total: 1,
+      chains: [
+        {
+          network: "base",
+          safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+          timelock: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+          counts: { safe: 1, timelock: 0, other: 0, unknown: 0, unpinned: 0 },
+          vaults: [
+            {
+              vault: "0xaaa",
+              owner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+              label: "safe",
+            },
+          ],
+        },
+      ],
+    },
+  });
+  assert(
+    !textOf(box).includes("unread"),
+    "no unread clause when nothing is unread",
+  );
+});
