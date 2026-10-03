@@ -543,7 +543,12 @@ pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str, timelock_lib: &str) -> Vec
         out.push(ChainPin {
             network,
             authoriser,
-            safe: parse_address_constant(safe_lib, &safe_const),
+            // Unhydrated-filtered like the timelock beside it. A Safe declared
+            // `address(0)` — the placeholder state `is_unhydrated` exists to
+            // model — would otherwise match any vault whose `owner()` answers
+            // the zero address, labelling a renounced or bricked vault as "on
+            // the Safe, not moved yet". That is the dangerous direction.
+            safe: parse_address_constant(safe_lib, &safe_const).filter(|a| !is_unhydrated(Some(a))),
             admin_holder: parse_address_constant(timelock_lib, &timelock_const)
                 .filter(|a| !is_unhydrated(Some(a))),
             rpc_host: None,
@@ -844,7 +849,16 @@ pub fn build_grants(
         "org": org,
         "repo": repo,
         "source": "src/lib/LibAuthoriserInvariants.sol",
-        "function": "expectedGrants(address)",
+        // The overload actually read, not a fixed string. The page uses this as
+        // the link text into the deploy repo, and the map now comes from
+        // whichever overload holds the pairs — on a dashboard whose premise is
+        // "this is read, not written down", naming the wrong one is the one
+        // claim it cannot afford to get wrong.
+        "function": if map.admin_param.is_some() {
+            "expectedGrants(address,address)"
+        } else {
+            "expectedGrants(address)"
+        },
         "pinnedCount": map.grants.len(),
         "declaredCount": map.declared,
         "chains": chain_docs,

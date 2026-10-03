@@ -338,9 +338,13 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
 /// section built on one batch per chain would show nothing on exactly the
 /// endpoints it runs against. Chunked, an unlucky chunk costs its own slots.
 ///
-/// 25 is well inside the limits these providers document while still turning a
-/// 157-address sweep into single figures of requests rather than 157.
-const ETH_CALL_BATCH_CHUNK: usize = 25;
+/// 10, because `mainnet.base.org` caps a batch at exactly 10 and refuses an
+/// 11th with HTTP **200** carrying a single error object. `curl -fsS` treats
+/// 200 as success, so `curl_json` returns that body and never falls through to
+/// the endpoints that would have answered — the rejection is not a failover, it
+/// is the whole chunk lost. Measured against all nine configured endpoints; it
+/// is `BASE_RPCS[0]`, so roughly one scan in five began there.
+const ETH_CALL_BATCH_CHUNK: usize = 10;
 
 /// Many `eth_call`s to one chain in JSON-RPC batches, answered in request
 /// order.
