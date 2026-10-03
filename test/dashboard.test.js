@@ -8307,18 +8307,170 @@ Deno.test("deployments: a moved vault gets the timelock pill", () => {
   );
 });
 
-Deno.test("deployments: no vault-owner data renders no section", () => {
-  const box = deploymentsBox({ deploymentVaultOwners: null });
+Deno.test("deployments: no vault-owner data says unavailable, never silence", () => {
+  // `null`, a missing key and an empty chain list all mean the scan read
+  // nothing — `build_vault_owners` returns nothing when the vault list OR the
+  // chain pins failed to parse. Silence would read as "the page does not cover
+  // this", which is the blindness this section exists to end and exactly how
+  // the grant map went unnoticed.
+  for (const d of [
+    { deploymentVaultOwners: null },
+    {},
+    { deploymentVaultOwners: { total: 0, chains: [] } },
+  ]) {
+    const t = textOf(deploymentsBox(d));
+    assert(
+      t.includes("Vault ownership unavailable"),
+      "says unavailable, got: " + t,
+    );
+  }
+});
+
+// Fixtures carrying a `safe` and an `other` row, on two chains. Without these
+// a mutation painting every pill green — a vault still on the Safe shown as
+// migrated, which is the regression this section exists to catch — passes the
+// whole suite.
+const VAULTS_TWO_CHAINS = {
+  deploymentVaultOwners: {
+    total: 4,
+    chains: [
+      {
+        network: "base",
+        safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+        timelock: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+        counts: { safe: 1, timelock: 1, other: 0, unknown: 2, unpinned: 0 },
+        vaults: [
+          {
+            vault: "0xaaa",
+            owner: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+            label: "timelock",
+          },
+          {
+            vault: "0xbbb",
+            owner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+            label: "safe",
+          },
+          { vault: "0xccc", owner: null, label: "unknown" },
+          { vault: "0xddd", owner: null, label: "unknown" },
+        ],
+      },
+      {
+        network: "ethereum",
+        safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        timelock: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        counts: { safe: 0, timelock: 0, other: 1, unknown: 3, unpinned: 0 },
+        vaults: [
+          {
+            vault: "0xeee",
+            owner: "0x00000000000000000000000000000000deadbeef",
+            label: "other",
+          },
+          { vault: "0xfff", owner: null, label: "unknown" },
+          { vault: "0xggg", owner: null, label: "unknown" },
+          { vault: "0xhhh", owner: null, label: "unknown" },
+        ],
+      },
+    ],
+  },
+};
+
+Deno.test("deployments: each row gets the pill its own label names", () => {
+  const box = deploymentsBox(VAULTS_TWO_CHAINS);
+  // One of each, not three of whichever colour a bug picked.
+  assert(collect(box, "own-status-timelock").length === 1, "one timelock pill");
+  assert(collect(box, "own-status-safe").length === 1, "one safe pill");
+  assert(collect(box, "own-status-other").length === 1, "one other pill");
+  // And the pill TEXT tracks the class, so a constant label is caught too.
+  const pills = collect(box, "own-status").map((p) => p.textContent).sort();
   assert(
-    !textOf(box).includes("Governed vault ownership"),
-    "a null section is absent, not an empty heading",
+    pills.join(",") === "other,safe,timelock",
+    "pill text matches the labels, got: " + pills.join(","),
   );
-  const empty = deploymentsBox({
-    deploymentVaultOwners: { total: 0, chains: [] },
-  });
+});
+
+Deno.test("deployments: every chain is rendered, named, with its own counts", () => {
+  const text = textOf(deploymentsBox(VAULTS_TWO_CHAINS));
+  // Both chains, not just the first.
+  assert(text.includes("base —"), "base is named, got: " + text);
+  assert(text.includes("ethereum —"), "ethereum is named, got: " + text);
+  // Counted per chain, from that chain's own rows.
   assert(
-    !textOf(empty).includes("Governed vault ownership"),
-    "no chains is absent too",
+    text.includes("1 timelock, 1 safe, 0 other, 0 unpinned of 2 here"),
+    "base's tally, got: " + text,
+  );
+  assert(
+    text.includes("0 timelock, 0 safe, 1 other, 0 unpinned of 1 here"),
+    "ethereum's tally, got: " + text,
+  );
+  assert(text.includes("2 unread") && text.includes("3 unread"), "both unread counts");
+});
+
+Deno.test("deployments: a red other row carries the pins to compare it against", () => {
+  const text = textOf(deploymentsBox(VAULTS_TWO_CHAINS));
+  // Without the chain's own pins, an `other` owner cannot be told from this
+  // chain holding ANOTHER chain's timelock — an ordinary migration slip.
+  assert(
+    text.includes("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B"),
+    "ethereum's timelock pin is shown, got: " + text,
+  );
+  assert(
+    text.includes("0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329"),
+    "ethereum's safe pin is shown",
+  );
+});
+
+Deno.test("deployments: one malformed chain does not abandon the page", () => {
+  // `renderDeployments` is called outside the fetch's try/catch, so a throw in
+  // here does not degrade this section — it stops the page, and the sections
+  // after it never render. They are the ones most likely to be read as "no
+  // problems found".
+  for (const chains of [
+    [null],
+    [{ network: "base", vaults: "oops" }],
+    [{ network: "base", vaults: [null] }],
+    [{ network: "base", vaults: [{ label: "safe" }] }],
+  ]) {
+    const box = deploymentsBox({
+      deploymentVaultOwners: { total: 1, chains },
+    });
+    assert(
+      textOf(box).includes("Governed vault ownership"),
+      "the section still renders for " + JSON.stringify(chains),
+    );
+  }
+});
+
+Deno.test("deployments: a label this page cannot colour is held out and counted", () => {
+  const box = deploymentsBox({
+    deploymentVaultOwners: {
+      total: 1,
+      chains: [
+        {
+          network: "base",
+          safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+          timelock: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+          counts: {},
+          vaults: [
+            {
+              vault: "0xaaa",
+              owner: "0x00000000000000000000000000000000deadbeef",
+              label: "renounced",
+            },
+          ],
+        },
+      ],
+    },
+  });
+  const text = textOf(box);
+  // An unrecognised label has no CSS, so rendering it as a row would make the
+  // loudest state the quietest one on the page.
+  assert(
+    collect(box, "own-status-renounced").length === 0,
+    "an unknown label is not rendered as a pill",
+  );
+  assert(
+    text.includes("1 with a label this page does not know"),
+    "it is counted and named instead, got: " + text,
   );
 });
 

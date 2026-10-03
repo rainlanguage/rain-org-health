@@ -57,6 +57,10 @@
   h2 { font-size: 13px; text-transform: uppercase; letter-spacing: 0.05em; color: var(--ink-3);
        margin: 32px 0 12px; font-weight: 600; }
   .empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
+  /* Its own class, not `.empty`: the owners section's tests count the page's
+     empty states, and a second one indistinguishable from theirs would make
+     their assertion about that section pass or fail on this one. */
+  .vault-empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
   .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
@@ -202,9 +206,21 @@ function renderDeployments(document, $, data) {
   };
   // A privileged address is the same on every chain except where the constant is
   // network-specific; Base is the home network, so it is the default explorer.
+  //
+  // Every chain the deploy repo pins is named, not just Base and Ethereum. An
+  // unnamed chain falling back to Base sends the reader to an address that on
+  // Base is a different contract, or nothing — a link that looks like
+  // verification and is not. The hosts are the ones st0x.deploy's own pins
+  // document for each chain.
+  const EXPLORERS = {
+    base: "https://basescan.org/address/",
+    ethereum: "https://etherscan.io/address/",
+    hyperevm: "https://hyperevmscan.io/address/",
+    robinhood: "https://robinhoodchain.blockscout.com/address/",
+    bsc: "https://bscscan.com/address/",
+  };
   const explorer = (address, network) =>
-    (network === "ethereum" ? "https://etherscan.io/address/" : "https://basescan.org/address/") +
-    address;
+    (EXPLORERS[network] || EXPLORERS.base) + address;
   // Declared-vs-on-chain verdict banner for a group that carries a verification.
   const verifyBanner = (v) => {
     let cls, msg;
@@ -694,9 +710,39 @@ function renderDeployments(document, $, data) {
   // `transferOwnership` per vault. Counts first, because the question asked of
   // this section is "how far has the handover got on this chain", and a reader
   // should not have to count rows to answer it.
+  // The labels this section knows how to show. An ALLOWLIST, not a denylist:
+  // the filter below used to admit everything except "unknown", so a label
+  // added to the Rust later — a burned ownership, an unreachable marker —
+  // would be counted as an answer, interpolated into a class with no CSS, and
+  // render as the least alarming row on the page. An unrecognised label is
+  // held out and said out loud instead.
+  const VAULT_LABELS = ["safe", "timelock", "other", "unpinned"];
+
   const renderVaultOwners = (v) => {
-    if (!v || !Array.isArray(v.chains) || v.chains.length === 0) return;
+    // `renderDeployments` is called outside the fetch's try/catch, so a throw
+    // in here does not degrade this section — it abandons the page, and the
+    // sections after it (suite health, beacons, tokens) never render at all.
+    // A reader then sees a page that simply stops, with no error, and the
+    // three sections most likely to be read as "no problems found" are the
+    // three that vanished. So every field this reads is treated as untrusted.
     box.append(el("h2", null, "Governed vault ownership — Safe or timelock"));
+    // No data is NOT "nothing is governed". `build_vault_owners` returns
+    // nothing when the vault list OR the chain pins failed to parse, and the
+    // key is absent entirely on a scan from before this section existed. All
+    // of those arrive here as null or an empty list, and rendering them as
+    // silence is the pre-PR blindness this section exists to end — the same
+    // mistake as the grant map, where an unparseable answer and a true empty
+    // were both `null`. So it says so.
+    if (!v || !Array.isArray(v.chains) || v.chains.length === 0) {
+      box.append(
+        el(
+          "div",
+          "vault-empty",
+          "Vault ownership unavailable — the scan read no governed vaults or no chain pins.",
+        ),
+      );
+      return;
+    }
     const sub = el("div", "own-sub");
     sub.append(
       `owner() read per vault on each chain and labelled against THAT chain's pins. ` +
@@ -708,36 +754,71 @@ function renderDeployments(document, $, data) {
     );
     box.append(sub);
     for (const c of v.chains) {
-      const n = c.counts || {};
+      if (!c || typeof c !== "object") continue;
+      const rowsIn = Array.isArray(c.vaults) ? c.vaults : [];
       // Rows for the vaults this chain answered for. The governed list spans
       // every chain, so most of it is another chain's and listing all of it
       // would make each chain look like it holds all 157.
-      const answered = (c.vaults || []).filter((x) => x.label !== "unknown");
+      const answered = rowsIn.filter(
+        (x) => x && typeof x === "object" && VAULT_LABELS.includes(x.label),
+      );
+      // Anything the labels above do not cover. Counted and named rather than
+      // dropped into the rows: a label this page cannot colour is not an
+      // answer it can report.
+      const unlabelled = rowsIn.filter(
+        (x) =>
+          !x ||
+          typeof x !== "object" ||
+          (x.label !== "unknown" && !VAULT_LABELS.includes(x.label)),
+      ).length;
       // An unanswered vault is NOT known to be another chain's. `owner()`
       // returns nothing both for a vault with no code here and for a read that
       // failed — a rejected batch chunk, a node that timed out — and those are
       // opposite facts. So the count is surfaced rather than dropped: without
       // it, a chain whose reads all failed renders as a chain holding no
       // governed vaults, which is an RPC outage reported as an empty chain.
-      const unread = n.unknown ?? 0;
-      const tally = `${n.timelock ?? 0} timelock, ${n.safe ?? 0} safe, ` +
-        `${n.other ?? 0} other, ${n.unpinned ?? 0} unpinned of ${answered.length} here`;
-      box.append(
-        el(
-          "h3",
-          null,
-          unread > 0
-            ? `${c.network} — ${tally} · ${unread} unread (another chain's, or a failed read)`
-            : `${c.network} — ${tally}`,
-        ),
-      );
+      const unread = rowsIn.filter((x) => x && x.label === "unknown").length;
+      // Counted off the ROWS, not off `counts`. The two are equal by
+      // construction in `build_vault_owners`, so a disagreement is always a
+      // defect in the data — and the heading is the reading mode this section
+      // is designed for, so it must not state a tally the rows below it
+      // contradict. An absent `counts` is then impossible to mistake for a
+      // measured zero, because it is never read.
+      const n = (label) => answered.filter((x) => x.label === label).length;
+      const net = typeof c.network === "string" && c.network ? c.network : "unnamed chain";
+      let head = `${net} — ${n("timelock")} timelock, ${n("safe")} safe, ` +
+        `${n("other")} other, ${n("unpinned")} unpinned of ${answered.length} here`;
+      if (unread > 0) {
+        head += ` · ${unread} unread (another chain's, or a failed read)`;
+      }
+      if (unlabelled > 0) {
+        head += ` · ${unlabelled} with a label this page does not know`;
+      }
+      box.append(el("h3", null, head));
+      // The chain's own pins, so a red `other` row can be compared against
+      // them. Without these the reader cannot tell a third party from this
+      // chain holding ANOTHER chain's timelock — an ordinary migration slip.
+      if (c.safe || c.timelock) {
+        const pins = el("div", "own-groupnote");
+        pins.append(`safe ${c.safe || "—"} · timelock ${c.timelock || "—"}`);
+        box.append(pins);
+      }
       if (answered.length === 0) continue;
       const tbl = el("div", "own-table");
       for (const row of answered) {
         const r = el("div", `own-row own-${row.label}`);
-        r.append(el("div", "own-role", row.vault));
+        const id = typeof row.vault === "string" && row.vault ? row.vault : "(unnamed vault)";
+        r.append(el("div", "own-role", id));
         const ac = el("div", "own-ac");
-        ac.append(el("span", "own-addr", row.owner || "—"));
+        // Linked like every other address on this page. The `other` row is the
+        // one demanding verification and was the only unclickable address
+        // here; an absent owner takes the page's own missing styling so it is
+        // not typographically identical to a present one.
+        if (row.owner) {
+          ac.append(link("own-addr", row.owner, explorer(row.owner, net)));
+        } else {
+          ac.append(el("span", "own-addr own-missing", "—"));
+        }
         r.append(ac);
         r.append(el("span", `own-status own-status-${row.label}`, row.label));
         tbl.append(r);
