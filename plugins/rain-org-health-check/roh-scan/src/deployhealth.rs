@@ -91,6 +91,77 @@ pub struct GovernedVaults {
     pub declared: usize,
 }
 
+/// The `productionTokens<Chain>()` function each network's table lives in.
+///
+/// Keyed by the network names `parse_chain_pins` yields, so a chain is asked
+/// about ITS OWN vaults. Reading one table and asking every chain about it is
+/// not a smaller version of this — it is asking four chains about addresses
+/// that have no code on them, which answers nothing and reports nothing.
+pub fn vault_table_for(network: &str) -> Option<&'static str> {
+    match network {
+        "base" => Some("productionTokensBase"),
+        "ethereum" => Some("productionTokensEthereum"),
+        "hyperevm" => Some("productionTokensHyperEvm"),
+        "robinhood" => Some("productionTokensRobinhood"),
+        "bsc" => Some("productionTokensBsc"),
+        _ => None,
+    }
+}
+
+/// The receipt vaults one network's table lists.
+///
+/// Two spellings, because the tables use both: Base names constants that are
+/// declared elsewhere in the file, and the other four write `address(0x…)`
+/// inline. A parser that handles only the first returns an EMPTY list for four
+/// of five chains — not an error, just nothing, which reads as a chain with no
+/// governed vaults.
+/// @param src The token-invariants library source.
+/// @param network The network whose table to read.
+/// @return That network's receipt vaults, lowercased, and how many its table
+/// declared.
+pub fn parse_receipt_vaults_for(src: &str, network: &str) -> GovernedVaults {
+    let empty = GovernedVaults {
+        addresses: Vec::new(),
+        declared: 0,
+    };
+    let (Some(table), Ok(const_re), Ok(instance_re)) = (
+        vault_table_for(network),
+        Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
+        // The receipt VAULT is struct field three, so capture group two — the
+        // leading string literal is not captured. Each field is either a bare
+        // identifier or an `address(0x…)` wrapper.
+        Regex::new(
+            r#"tokens\[\d+\]\s*=\s*TokenInstance\(\s*"[^"]*"\s*,\s*(?:address\()?([A-Za-z0-9_]+)\)?\s*,\s*(?:address\()?([A-Za-z0-9_]+)\)?\s*,\s*(?:address\()?([A-Za-z0-9_]+)\)?\s*\)"#,
+        ),
+    ) else {
+        return empty;
+    };
+    let consts: std::collections::HashMap<String, String> = const_re
+        .captures_iter(src)
+        .map(|c| (c[1].to_string(), c[2].to_lowercase()))
+        .collect();
+    let Some(body) = function_body(src, table) else {
+        return empty;
+    };
+    let entries: Vec<_> = instance_re.captures_iter(body).collect();
+    GovernedVaults {
+        addresses: entries
+            .iter()
+            .filter_map(|c| {
+                let field = &c[2];
+                // An inline literal is already the address; a bare identifier
+                // has to resolve to a declared constant.
+                if field.starts_with("0x") || field.starts_with("0X") {
+                    Some(field.to_lowercase())
+                } else {
+                    consts.get(field).cloned()
+                }
+            })
+            .collect(),
+        declared: entries.len(),
+    }
+}
+
 pub fn parse_receipt_vault_list(src: &str) -> GovernedVaults {
     let (Ok(const_re), Ok(assign_re), Ok(instance_re)) = (
         Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
@@ -1349,5 +1420,69 @@ mod tests {
         assert_eq!(v["authoriserLabel"], "current");
         assert_eq!(v["atAuthoriserTarget"], false);
         assert_eq!(v["authoriserTarget"], tgt);
+    }
+}
+
+#[cfg(test)]
+mod per_chain_tests {
+    use super::*;
+
+    /// Both spellings of a table entry MUST parse.
+    ///
+    /// Base names constants declared elsewhere in the file; the other four
+    /// write `address(0x…)` inline. A parser handling only the first returns an
+    /// EMPTY list for four chains in five — not an error, just nothing, which
+    /// the page then reads as a chain with no governed vaults.
+    #[test]
+    fn both_table_spellings_parse() {
+        let src = r#"
+        library L {
+            address constant MSTR_RECEIPT = address(0x1111111111111111111111111111111111111111);
+            address constant MSTR_RECEIPT_VAULT = address(0x2222222222222222222222222222222222222222);
+            address constant MSTR_WRAPPED = address(0x3333333333333333333333333333333333333333);
+
+            function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
+                tokens[0] = TokenInstance("MSTR", MSTR_RECEIPT, MSTR_RECEIPT_VAULT, MSTR_WRAPPED);
+            }
+
+            function productionTokensEthereum() internal pure returns (TokenInstance[] memory tokens) {
+                tokens[0] = TokenInstance(
+                    "MSTR",
+                    address(0xA583addaA69142E8588D9ffE3767Dbb0F23fd516),
+                    address(0x8500189061e2206Bc33Bf04DC10fFB1Fe7dED637),
+                    address(0x4404E24629a33b85FC1E2D7beA673Cd283054594)
+                );
+            }
+        }
+        "#;
+        let base = parse_receipt_vaults_for(src, "base");
+        assert_eq!(base.declared, 1);
+        assert_eq!(
+            base.addresses,
+            vec!["0x2222222222222222222222222222222222222222".to_string()],
+            "the named-constant form resolves to the RECEIPT VAULT, field three"
+        );
+
+        let eth = parse_receipt_vaults_for(src, "ethereum");
+        assert_eq!(eth.declared, 1, "the inline-literal form parses at all");
+        assert_eq!(
+            eth.addresses,
+            vec!["0x8500189061e2206bc33bf04dc10ffb1fe7ded637".to_string()],
+            "and yields field three, not the receipt or the wrapped vault"
+        );
+
+        // Different chains, different addresses. A shared list would ask
+        // Ethereum about Base's vaults, where they have no code.
+        assert_ne!(base.addresses, eth.addresses);
+    }
+
+    /// A network with no table MUST be empty rather than fall back to Base's.
+    #[test]
+    fn an_unknown_network_has_no_table() {
+        assert_eq!(vault_table_for("base"), Some("productionTokensBase"));
+        assert_eq!(vault_table_for("optimism"), None);
+        assert!(parse_receipt_vaults_for("library L {}", "optimism")
+            .addresses
+            .is_empty());
     }
 }

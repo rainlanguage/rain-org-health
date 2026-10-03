@@ -190,6 +190,42 @@ pub fn result_hex(body: &[u8]) -> Option<String> {
     v.get("result")?.as_str().map(str::to_string)
 }
 
+/// The `result` hex of each response in a JSON-RPC BATCH, ordered by the `id`
+/// the request used — `0..len` — rather than by position in the array.
+///
+/// A node may answer a batch in any order, and some reorder freely, so reading
+/// positionally attributes one address's answer to another vault. That failure
+/// is silent and it is the whole batch: every row would carry a plausible
+/// address belonging to a different contract.
+///
+/// `None` in a slot is that call failing or the node omitting it, never a
+/// stand-in for an empty result. A body that is not a JSON array at all — an
+/// error object, or a node that does not support batching — yields all `None`
+/// rather than a wrong answer.
+/// @param body The response body.
+/// @param len How many calls the batch carried.
+/// @return One slot per call, in request order.
+pub fn batch_result_hex(body: &[u8], len: usize) -> Vec<Option<String>> {
+    let mut out = vec![None; len];
+    let Ok(serde_json::Value::Array(items)) = serde_json::from_slice::<serde_json::Value>(body)
+    else {
+        return out;
+    };
+    for item in items {
+        let Some(id) = item.get("id").and_then(|i| i.as_u64()) else {
+            continue;
+        };
+        let Some(slot) = out.get_mut(id as usize) else {
+            continue;
+        };
+        *slot = item
+            .get("result")
+            .and_then(|r| r.as_str())
+            .map(str::to_string);
+    }
+    out
+}
+
 fn decode_bool(result_hex: &str) -> Option<bool> {
     let bytes = result_bytes(result_hex)?;
     supportsInterfaceCall::abi_decode_returns(&bytes, false)
@@ -347,5 +383,89 @@ mod tests {
             0000000000000000000000000000000000000000000000000000000000000006\
             77744e5644410000000000000000000000000000000000000000000000000000";
         assert_eq!(decode_string(s).as_deref(), Some("wtNVDA"));
+    }
+
+    /// An empty or short `eth_call` result MUST NOT decode to the zero address.
+    ///
+    /// A vault with no code on the chain being asked answers `0x`. Decoding
+    /// that to `address(0)` would make it an owner like any other — neither the
+    /// Safe nor the timelock, so `other`, which this page paints red. Every
+    /// chain would then show every other chain's vaults as an unexplained
+    /// owner. `None` is what makes it `unknown` instead.
+    #[test]
+    fn an_empty_result_is_not_the_zero_address() {
+        assert_eq!(
+            decode_address("0x"),
+            None,
+            "empty result decoded to something"
+        );
+        assert_eq!(
+            decode_address("0x00"),
+            None,
+            "short result decoded to something"
+        );
+    }
+
+    /// A batch MUST be read by `id`, not by position.
+    ///
+    /// Nodes are free to answer a batch in any order. Reading positionally
+    /// attributes one contract's answer to another, which is silent and wrong
+    /// for every row — a plausible address belonging to something else.
+    #[test]
+    fn batch_results_are_keyed_by_id_not_position() {
+        let body = br#"[
+            {"jsonrpc":"2.0","id":2,"result":"0xcc"},
+            {"jsonrpc":"2.0","id":0,"result":"0xaa"},
+            {"jsonrpc":"2.0","id":1,"result":"0xbb"}
+        ]"#;
+        assert_eq!(
+            batch_result_hex(body, 3),
+            vec![
+                Some("0xaa".to_string()),
+                Some("0xbb".to_string()),
+                Some("0xcc".to_string())
+            ]
+        );
+    }
+
+    /// A per-call error MUST be `None` in its own slot, leaving the rest.
+    #[test]
+    fn a_failed_call_is_none_without_losing_the_others() {
+        let body = br#"[
+            {"jsonrpc":"2.0","id":0,"error":{"code":-32000,"message":"execution reverted"}},
+            {"jsonrpc":"2.0","id":1,"result":"0xbb"}
+        ]"#;
+        assert_eq!(
+            batch_result_hex(body, 2),
+            vec![None, Some("0xbb".to_string())]
+        );
+    }
+
+    /// An id past the batch's length MUST be dropped, not panic.
+    ///
+    /// Ids restart per chunk, so a node echoing an id from a previous chunk —
+    /// or simply a wrong one — would index past the end. `get_mut` is what
+    /// keeps that a dropped answer rather than a crashed scan.
+    #[test]
+    fn an_out_of_range_id_is_dropped() {
+        let body = br#"[
+            {"jsonrpc":"2.0","id":7,"result":"0xzz"},
+            {"jsonrpc":"2.0","id":1,"result":"0xbb"}
+        ]"#;
+        assert_eq!(
+            batch_result_hex(body, 2),
+            vec![None, Some("0xbb".to_string())]
+        );
+    }
+
+    /// A body that is not an array MUST be all `None`.
+    ///
+    /// That is a node refusing the batch or erroring on the whole request. It
+    /// has told us nothing about any call, and inventing results would be worse
+    /// than reporting an unread chain.
+    #[test]
+    fn a_non_array_body_reads_as_nothing_known() {
+        let body = br#"{"jsonrpc":"2.0","id":0,"error":{"message":"batch not supported"}}"#;
+        assert_eq!(batch_result_hex(body, 2), vec![None, None]);
     }
 }

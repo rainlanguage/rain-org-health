@@ -330,6 +330,62 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
     curl_json(session, &eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
 }
 
+/// How many calls go in one JSON-RPC batch.
+///
+/// Every endpoint here is a free public node, and those cap batch size — some
+/// reject an oversized batch with a single error object rather than an array.
+/// That failure is total and silent: the whole batch reads as unanswered, so a
+/// section built on one batch per chain would show nothing on exactly the
+/// endpoints it runs against. Chunked, an unlucky chunk costs its own slots.
+///
+/// 10, because `mainnet.base.org` caps a batch at exactly 10 and refuses an
+/// 11th with HTTP **200** carrying a single error object. `curl -fsS` treats
+/// 200 as success, so `curl_json` returns that body and never falls through to
+/// the endpoints that would have answered — the rejection is not a failover, it
+/// is the whole chunk lost. Measured against all nine configured endpoints; it
+/// is `BASE_RPCS[0]`, so roughly one scan in five began there.
+const ETH_CALL_BATCH_CHUNK: usize = 10;
+
+/// Many `eth_call`s to one chain in JSON-RPC batches, answered in request
+/// order.
+///
+/// Every RPC here costs a `curl` subprocess, sequentially, with a 25s timeout
+/// and a retry across each of the chain's endpoints. So a per-address loop over
+/// a set this size is hundreds of processes and a rate limit waiting to happen,
+/// which would degrade every other section of the page rather than just this
+/// one.
+///
+/// Ids are the request index, and `batch_result_hex` maps them back by id, so a
+/// node that reorders its answers cannot attribute one address's result to
+/// another.
+/// @param session The chain session; all calls share it, so one node answers
+/// the whole batch and two cannot disagree within it.
+/// @param calls The `(to, data)` pairs.
+/// @return One slot per call, in the order given.
+fn eth_call_batch(session: Session, calls: &[(String, String)]) -> Vec<Option<String>> {
+    let mut out: Vec<Option<String>> = Vec::with_capacity(calls.len());
+    for chunk in calls.chunks(ETH_CALL_BATCH_CHUNK) {
+        let body = chunk
+            .iter()
+            .enumerate()
+            .map(|(i, (to, data))| {
+                format!(
+                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        // Ids restart per chunk, and `batch_result_hex` is told this chunk's
+        // length, so a chunk is read entirely within itself. A rejected chunk
+        // costs its own slots and no others.
+        match curl_json(session, &format!("[{body}]")) {
+            Some(b) => out.extend(rpc::batch_result_hex(&b, chunk.len())),
+            None => out.extend(vec![None; chunk.len()]),
+        }
+    }
+    out
+}
+
 /// `eth_getCode` for an address (within `session`) → the runtime bytecode hex
 /// (`0x…`, or `0x` when there is no code), or `None` on failure.
 fn eth_get_code(session: Session, address: &str) -> Option<String> {
@@ -2468,6 +2524,14 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "src/lib/LibAuthoriserInvariants.sol",
         );
         let v4 = gh_file(deploy_org, deploy_repo, "src/generated/LibProdDeployV4.sol");
+        // Fetched once for every section that reads it. `gh_file` is a `gh`
+        // subprocess with no cache and this file is ~126KB, so a fetch per
+        // section is a quarter of a megabyte of identical transfer.
+        let governed_tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
+        // The per-chain governance timelock, which the admin-holder slot of
+        // `expectedGrants` resolves to. Read from the repo for the same reason
+        // every other pin is: the chain list grows.
+        let timelock = gh_file(deploy_org, deploy_repo, "src/lib/LibTimelockInvariants.sol");
         let overrides = gh_file(
             deploy_org,
             deploy_repo,
@@ -2507,8 +2571,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // active/pending pair silently contradicts the token rows further
             // down this same page, which read `authorizer()` per token.
             let live_authoriser = {
-                let tok_lib = gh_file(org, repo, "src/lib/LibTokenInvariants.sol");
-                deployhealth::parse_receipt_vault_list(&tok_lib)
+                deployhealth::parse_receipt_vault_list(&governed_tok_lib)
                     .addresses
                     .first()
                     .and_then(|vault| {
@@ -2536,11 +2599,22 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // grantee is typed here, so a key added to that map appears on the page
         // by itself. That is the entire point: the hazard being reported on is a
         // hot key nobody remembered to write down.
+        // Derived once and shared by the two sections below. `gh_file` is a `gh`
+        // subprocess with no cache, and `LibTokenInvariants.sol` is ~126KB, so
+        // fetching it per section is real transfer for an identical answer. The
+        // chains are shared for the same reason, and because two sections
+        // reading the same pins cannot then disagree about which chains exist.
+        let mut chains = owners::parse_chain_pins(&v4, &safe, &timelock);
+        for c in chains.iter_mut() {
+            c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
+        }
+        // Per chain, not one shared list: each network has its own
+        // `productionTokens<Chain>` table with entirely different addresses.
+        let vaults_for = |network: &str| {
+            deployhealth::parse_receipt_vaults_for(&governed_tok_lib, network).addresses
+        };
+
         let deployment_grants = {
-            let mut chains = owners::parse_chain_pins(&v4, &safe);
-            for c in chains.iter_mut() {
-                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
-            }
             // One session per chain, so every `hasRole` for a chain hits the same
             // endpoint and the map cannot be answered by two nodes disagreeing.
             let sessions: Vec<(String, Session)> = chains
@@ -2574,6 +2648,37 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .unwrap_or(serde_json::Value::Null)
         };
 
+        // Ownership of the governed vaults, which the governance migration
+        // moves one `transferOwnership` at a time. Nothing else here reads a
+        // vault's `owner()` — only production beacons are owner-checked — so a
+        // migration that moved sixty-odd vaults would otherwise leave this page
+        // showing the pre-migration owner with nothing marking it stale.
+        let deployment_vault_owners = {
+            // One session per chain, as the grant map does, so every `owner()`
+            // for a chain is answered by the same node.
+            let sessions: Vec<(String, Session)> = chains
+                .iter()
+                .filter_map(|c| {
+                    Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
+                })
+                .collect();
+            let read_owners = |network: &str, vs: &[String]| {
+                let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
+                    return vec![None; vs.len()];
+                };
+                let calls: Vec<(String, String)> = vs
+                    .iter()
+                    .map(|v| (v.clone(), rpc::owner_calldata()))
+                    .collect();
+                eth_call_batch(*session, &calls)
+                    .into_iter()
+                    .map(|hex| hex.as_deref().and_then(rpc::decode_address))
+                    .collect()
+            };
+            owners::build_vault_owners(&vaults_for, &chains, &read_owners)
+                .unwrap_or(serde_json::Value::Null)
+        };
+
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each
         // generated pointer file, confirm the contract is deployed at its pinned
         // address and the live code matches BOTH the RUNTIME_CODE bytes and the
@@ -2586,10 +2691,18 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 ContentsListing::Found(entries) => {
                     let contracts: Vec<_> = entries
                         .iter()
-                        .filter(|(t, _, name)| t == "file" && name.ends_with(".pointers.sol"))
+                        // Both spellings. A release frozen before the generator
+                        // dropped the `.pointers` infix carries it; one frozen
+                        // after does not. Matching only the old spelling makes
+                        // a renamed record read as a tag with no contracts in
+                        // it, which is the same green as a healthy one.
+                        .filter(|(t, _, name)| t == "file" && name.ends_with(".sol"))
                         .map(|(_, path, name)| {
                             let src = gh_file(org, repo, path);
-                            let cname = name.strip_suffix(".pointers.sol").unwrap_or(name);
+                            let cname = name
+                                .strip_suffix(".pointers.sol")
+                                .or_else(|| name.strip_suffix(".sol"))
+                                .unwrap_or(name);
                             let addr = owners::parse_address_constant(&src, "DEPLOYED_ADDRESS");
                             let runtime = deployhealth::parse_hex_constant(&src, "RUNTIME_CODE");
                             let hash = deployhealth::parse_bytes32_constant(&src, "BYTECODE_HASH");
@@ -2870,8 +2983,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // setAuthorizer bundle operates on. Read up front so each token can be
             // cross-checked BOTH ways: registry→migration (is this token governed?)
             // and migration→registry (is this governed vault in the registry?).
-            let tok_lib = gh_file(dorg, drepo, "src/lib/LibTokenInvariants.sol");
-            let governed_parse = deployhealth::parse_receipt_vault_list(&tok_lib);
+            let governed_parse = deployhealth::parse_receipt_vault_list(&governed_tok_lib);
             let governed = governed_parse.addresses;
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
@@ -3056,6 +3168,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
             "deploymentGrants": deployment_grants,
+            "deploymentVaultOwners": deployment_vault_owners,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
