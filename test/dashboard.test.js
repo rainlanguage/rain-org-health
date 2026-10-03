@@ -8241,3 +8241,83 @@ Deno.test("every page renders the same five nav tabs in the same order, its own 
     );
   }
 });
+
+// ---- deployments.html: governed vault ownership ----
+
+const VAULT_OWNERS = {
+  deploymentVaultOwners: {
+    total: 3,
+    chains: [
+      {
+        network: "ethereum",
+        safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        timelock: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        counts: { safe: 0, timelock: 1, other: 0, unknown: 2 },
+        vaults: [
+          {
+            vault: "0xaaa",
+            owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+            label: "timelock",
+          },
+          { vault: "0xbbb", owner: null, label: "unknown" },
+          { vault: "0xccc", owner: null, label: "unknown" },
+        ],
+      },
+    ],
+  },
+};
+
+Deno.test("deployments: the vault-owner heading counts what the chain holds, not the governed total", () => {
+  const box = deploymentsBox(VAULT_OWNERS);
+  const text = textOf(box);
+  // One vault answered on this chain, two are other chains'. Counting against
+  // `total` would read as a chain missing vaults it never had.
+  assert(
+    text.includes("of 1 here"),
+    "counted against what the chain answered for, got: " + text,
+  );
+  assert(
+    !text.includes("of 3"),
+    "must not count against the governed total, got: " + text,
+  );
+});
+
+Deno.test("deployments: an unanswered vault is not listed as this chain's", () => {
+  const box = deploymentsBox(VAULT_OWNERS);
+  const rows = collect(box, "own-role").filter((r) =>
+    String(r.textContent || "").startsWith("0x")
+  );
+  const listed = rows.map((r) => r.textContent);
+  assert(
+    listed.includes("0xaaa"),
+    "the answered vault is listed, got: " + listed.join(",")
+  );
+  assert(
+    !listed.includes("0xbbb") && !listed.includes("0xccc"),
+    "a vault with no code here belongs to another chain, got: " +
+      listed.join(","),
+  );
+});
+
+Deno.test("deployments: a moved vault gets the timelock pill", () => {
+  const box = deploymentsBox(VAULT_OWNERS);
+  assert(
+    collect(box, "own-status-timelock").length === 1,
+    "one timelock pill",
+  );
+});
+
+Deno.test("deployments: no vault-owner data renders no section", () => {
+  const box = deploymentsBox({ deploymentVaultOwners: null });
+  assert(
+    !textOf(box).includes("Governed vault ownership"),
+    "a null section is absent, not an empty heading",
+  );
+  const empty = deploymentsBox({
+    deploymentVaultOwners: { total: 0, chains: [] },
+  });
+  assert(
+    !textOf(empty).includes("Governed vault ownership"),
+    "no chains is absent too",
+  );
+});
