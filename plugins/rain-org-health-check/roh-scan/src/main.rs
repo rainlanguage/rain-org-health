@@ -2611,7 +2611,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     owners::OnChainSafe {
                         network: "base".into(),
                         safe: safe_addr,
-                        rpc_host: "mainnet.base.org".into(),
+                        rpc_host: Chain::Base.rpc_host().into(),
                         owners: owners_live,
                         threshold: threshold_live,
                     }
@@ -2781,7 +2781,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         repo,
                         version,
                         "base",
-                        "mainnet.base.org",
+                        Chain::Base.rpc_host(),
                         contracts,
                     )
                     .unwrap_or(serde_json::Value::Null)
@@ -2869,8 +2869,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         org,
                         repo,
                         "base",
-                        "mainnet.base.org",
+                        Chain::Base.rpc_host(),
                         &safe,
+                        timelock_owner.as_deref(),
                         "0.1.1",
                         beacons,
                     )
@@ -2885,22 +2886,28 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // set from Base's V1-generation beacons, held by a different Safe.
         // Reading one chain's addresses against the other's endpoints would
         // report live contracts as missing, so the session carries the chain.
-        let deployment_beacons_ethereum = {
+        // The 0.1.1 beacon generation. Ethereum, HyperEVM, Robinhood Chain and
+        // BSC all bootstrapped on it, so `LibProdBeacons0_1_1` resolves to the
+        // SAME beacon addresses on each: separate deployments at identical
+        // CREATE2 addresses, each with its own owner. Covering only two of them
+        // left the other three with no beacon heading at all, which reads as
+        // "this chain has no production beacons" rather than "nobody looked" —
+        // and those three carry live, partly off-target beacons.
+        //
+        // The pointer files are read ONCE here and the per-chain work is just
+        // the live reads plus that chain's own Safe and timelock pins. `gh_file`
+        // does not cache, so reading them inside the loop would be four `gh api`
+        // subprocesses per file.
+        let deployment_beacons_0_1_1: Vec<(serde_json::Value, &str, Chain)> = {
             let (org, repo) = ("S01-Issuer", "st0x.deploy");
             let safe_lib = gh_file(org, repo, "src/lib/LibSafeInvariants.sol");
-            let safe_owner =
-                owners::parse_address_constant(&safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
             let v1 = gh_file(org, repo, "src/lib/LibProdDeployV1.sol");
             let legacy_owner = owners::parse_address_constant(&v1, "BEACON_INITIAL_OWNER");
-            // Ethereum's governance timelock is a different address from Base's,
-            // so the suffixed pin — reading Base's here would label a correctly
-            // migrated Ethereum beacon `foreign`.
-            let timelock_owner =
-                owners::parse_address_constant(&timelock, "STOX_GOVERNANCE_TIMELOCK_ETHEREUM");
             // Only the wrapped-token-vault beacon has a generated address pin.
-            // The receipt and receipt-vault beacons are created inside the
-            // 0.1.1 beacon-set deployer's constructor and exist nowhere as a
-            // constant, so the in-use pair is resolved live from its getters.
+            // The receipt and receipt-vault beacons are created inside the 0.1.1
+            // beacon-set deployer's constructor and exist nowhere as a constant,
+            // so the in-use pair is resolved live from its getters — per chain,
+            // because each chain runs its own deployer at that same address.
             let deployer = owners::parse_address_constant(
                 &gh_file(
                     org,
@@ -2909,85 +2916,114 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 ),
                 "DEPLOYED_ADDRESS",
             );
-            let ds = rpc_session(Chain::Ethereum);
-            let resolve = |calldata: String| {
-                deployer
-                    .as_deref()
-                    .and_then(|d| eth_call(ds, d, &calldata))
-                    .and_then(|hex| rpc::decode_address(&hex))
+            let wrapped_beacon = owners::parse_address_constant(
+                &gh_file(
+                    org,
+                    repo,
+                    "src/generated/0_1_1/StoxWrappedTokenVaultBeacon.pointers.sol",
+                ),
+                "DEPLOYED_ADDRESS",
+            );
+            let target = |path: &str| {
+                owners::parse_address_constant(&gh_file(org, repo, path), "DEPLOYED_ADDRESS")
             };
-            let spec = [
-                (
-                    "Receipt beacon",
-                    resolve(rpc::receipt_beacon_calldata()),
-                    "src/generated/0_1_1/StoxReceipt.pointers.sol",
-                ),
-                (
-                    "Receipt-vault beacon",
-                    resolve(rpc::receipt_vault_beacon_calldata()),
-                    "src/generated/0_1_1/StoxReceiptVault.pointers.sol",
-                ),
-                (
-                    "Wrapped-token-vault beacon",
-                    owners::parse_address_constant(
-                        &gh_file(
+            let receipt_target = target("src/generated/0_1_1/StoxReceipt.pointers.sol");
+            let vault_target = target("src/generated/0_1_1/StoxReceiptVault.pointers.sol");
+            let wrapped_target = target("src/generated/0_1_1/StoxWrappedTokenVault.pointers.sol");
+
+            // (network, chain, pin suffix). The suffix is the deploy repo's own
+            // naming convention, so a chain added to the pins is added here by
+            // name rather than by a second mapping that can disagree.
+            [
+                ("ethereum", Chain::Ethereum, "_ETHEREUM"),
+                ("hyperevm", Chain::HyperEvm, "_HYPEREVM"),
+                ("robinhood", Chain::Robinhood, "_ROBINHOOD"),
+                ("bsc", Chain::Bsc, "_BSC"),
+            ]
+            .into_iter()
+            .map(|(network, chain, suffix)| {
+                // Each chain's OWN pins. Reading another chain's would label a
+                // correctly migrated beacon `foreign`.
+                let safe_owner = owners::parse_address_constant(
+                    &safe_lib,
+                    &format!("STOX_TOKEN_OWNER_SAFE{suffix}"),
+                );
+                let timelock_owner = owners::parse_address_constant(
+                    &timelock,
+                    &format!("STOX_GOVERNANCE_TIMELOCK{suffix}"),
+                );
+                let ds = rpc_session(chain);
+                let resolve = |calldata: String| {
+                    deployer
+                        .as_deref()
+                        .and_then(|d| eth_call(ds, d, &calldata))
+                        .and_then(|hex| rpc::decode_address(&hex))
+                };
+                let spec = [
+                    (
+                        "Receipt beacon",
+                        resolve(rpc::receipt_beacon_calldata()),
+                        receipt_target.as_deref(),
+                    ),
+                    (
+                        "Receipt-vault beacon",
+                        resolve(rpc::receipt_vault_beacon_calldata()),
+                        vault_target.as_deref(),
+                    ),
+                    (
+                        "Wrapped-token-vault beacon",
+                        wrapped_beacon.clone(),
+                        wrapped_target.as_deref(),
+                    ),
+                ];
+                let value = match (safe_owner, legacy_owner.as_deref()) {
+                    (Some(safe), Some(legacy)) => {
+                        let beacons: Vec<_> = spec
+                            .into_iter()
+                            .map(|(label, addr, target_impl)| {
+                                let s = rpc_session(chain);
+                                let live_owner = addr
+                                    .as_deref()
+                                    .and_then(|a| eth_call(s, a, &rpc::owner_calldata()))
+                                    .and_then(|hex| rpc::decode_address(&hex));
+                                let live_impl = addr
+                                    .as_deref()
+                                    .and_then(|a| eth_call(s, a, &rpc::implementation_calldata()))
+                                    .and_then(|hex| rpc::decode_address(&hex));
+                                // No previous generation to fall back to: none of
+                                // these chains has a V1 deploy, so an impl that
+                                // is not the 0.1.1 target is unrecognised.
+                                deployhealth::beacon_health(
+                                    label,
+                                    addr,
+                                    &safe,
+                                    legacy,
+                                    timelock_owner.as_deref(),
+                                    target_impl,
+                                    None,
+                                    "0.1.1",
+                                    live_owner,
+                                    live_impl,
+                                )
+                            })
+                            .collect();
+                        deployhealth::build_beacons(
                             org,
                             repo,
-                            "src/generated/0_1_1/StoxWrappedTokenVaultBeacon.pointers.sol",
-                        ),
-                        "DEPLOYED_ADDRESS",
-                    ),
-                    "src/generated/0_1_1/StoxWrappedTokenVault.pointers.sol",
-                ),
-            ];
-            match (safe_owner, legacy_owner) {
-                (Some(safe), Some(legacy)) => {
-                    let beacons: Vec<_> = spec
-                        .into_iter()
-                        .map(|(label, addr, target_file)| {
-                            let target_impl = owners::parse_address_constant(
-                                &gh_file(org, repo, target_file),
-                                "DEPLOYED_ADDRESS",
-                            );
-                            let s = rpc_session(Chain::Ethereum);
-                            let live_owner = addr
-                                .as_deref()
-                                .and_then(|a| eth_call(s, a, &rpc::owner_calldata()))
-                                .and_then(|hex| rpc::decode_address(&hex));
-                            let live_impl = addr
-                                .as_deref()
-                                .and_then(|a| eth_call(s, a, &rpc::implementation_calldata()))
-                                .and_then(|hex| rpc::decode_address(&hex));
-                            // No previous generation to fall back to: Ethereum
-                            // has no V1 deploy, so an impl that is not the
-                            // 0.1.1 target is simply unrecognised.
-                            deployhealth::beacon_health(
-                                label,
-                                addr,
-                                &safe,
-                                &legacy,
-                                timelock_owner.as_deref(),
-                                target_impl.as_deref(),
-                                None,
-                                "0.1.1",
-                                live_owner,
-                                live_impl,
-                            )
-                        })
-                        .collect();
-                    deployhealth::build_beacons(
-                        org,
-                        repo,
-                        "ethereum",
-                        Chain::Ethereum.rpc_host(),
-                        &safe,
-                        "0.1.1",
-                        beacons,
-                    )
-                    .unwrap_or(serde_json::Value::Null)
-                }
-                _ => serde_json::Value::Null,
-            }
+                            network,
+                            chain.rpc_host(),
+                            &safe,
+                            timelock_owner.as_deref(),
+                            "0.1.1",
+                            beacons,
+                        )
+                        .unwrap_or(serde_json::Value::Null)
+                    }
+                    _ => serde_json::Value::Null,
+                };
+                (value, network, chain)
+            })
+            .collect()
         };
 
         // One block per chain. Base and Ethereum run on different beacon
@@ -2996,23 +3032,21 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // reported as unavailable rather than dropped: a dropped chain renders
         // as no section at all, which reads as "this chain has no production
         // beacons" instead of "this broke".
-        let beacon_sets: Vec<serde_json::Value> = [
-            (deployment_beacons, "base", Chain::Base),
-            (deployment_beacons_ethereum, "ethereum", Chain::Ethereum),
-        ]
-        .into_iter()
-        .map(|(set, network, chain)| {
-            if set.is_null() {
-                deployhealth::beacons_unavailable(
-                    network,
-                    chain.rpc_host(),
-                    "the scan could not read the st0x.deploy beacon constants",
-                )
-            } else {
-                set
-            }
-        })
-        .collect();
+        let beacon_sets: Vec<serde_json::Value> =
+            std::iter::once((deployment_beacons, "base", Chain::Base))
+                .chain(deployment_beacons_0_1_1)
+                .map(|(set, network, chain)| {
+                    if set.is_null() {
+                        deployhealth::beacons_unavailable(
+                            network,
+                            chain.rpc_host(),
+                            "the scan could not read the st0x.deploy beacon constants",
+                        )
+                    } else {
+                        set
+                    }
+                })
+                .collect();
 
         // Registry token wiring on Base (#90): for each token in the
         // st0x.registry Base list, confirm the deployed wrapper's
@@ -3218,7 +3252,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 org,
                 repo,
                 "base",
-                "mainnet.base.org",
+                Chain::Base.rpc_host(),
                 auth_summary,
                 reconcile,
                 tokens,
@@ -3413,6 +3447,18 @@ mod tests {
             );
             assert!(hosts.insert(c.rpc_host()), "{c:?} reuses another host");
             assert!(firsts.insert(c.rpcs()[0]), "{c:?} reuses another endpoint");
+            // Ties the variant to its OWN set. Uniqueness alone does not:
+            // swapping two chains' endpoint arrays keeps every set non-empty,
+            // https and distinct, so the scan would read one chain's addresses
+            // against another chain's node — which answers "not deployed" for
+            // live contracts, a silent downgrade rather than an error. The host
+            // is the reported provenance, so it must name the endpoint actually
+            // tried first.
+            assert_eq!(
+                c.rpcs()[0],
+                format!("https://{}", c.rpc_host()),
+                "{c:?}'s reported host is not its first endpoint"
+            );
         }
     }
 

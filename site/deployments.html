@@ -220,7 +220,16 @@ function renderDeployments(document, $, data) {
     bsc: "https://bscscan.com/address/",
   };
   const explorer = (address, network) =>
-    (EXPLORERS[network] || EXPLORERS.base) + address;
+    EXPLORERS[network] ? EXPLORERS[network] + address : null;
+  // An address on a chain this page has no explorer for renders as plain text,
+  // never as a Base link. Falling back to Basescan sends the reader to an
+  // address that on Base is a different contract, or nothing — a link that
+  // looks like verification and is not. Unlinked is honest; wrongly linked is
+  // worse than nothing.
+  const addrNode = (cls, address, network) => {
+    const href = explorer(address, network);
+    return href ? link(cls, address, href) : el("span", cls, address);
+  };
   // Declared-vs-on-chain verdict banner for a group that carries a verification.
   const verifyBanner = (v) => {
     let cls, msg;
@@ -287,7 +296,7 @@ function renderDeployments(document, $, data) {
       const rc = el("div", "own-rc");
       rc.append(el("div", "own-role", c.name));
       const ac = el("div", "own-ac");
-      if (c.address) ac.append(link("own-addr", c.address, explorer(c.address, health.network)));
+      if (c.address) ac.append(addrNode("own-addr", c.address, health.network));
       else ac.append(el("span", "own-addr own-missing", "— no pin"));
       const tail = el("div", "own-prov");
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
@@ -342,9 +351,16 @@ function renderDeployments(document, $, data) {
         `${b.healthy} of ${b.total} beacons governed & at ${b.targetVersion} on ${b.network}.`,
       ),
     );
+    // Both pins, because `timelock` is what separates healthy from drift here.
+    // Showing only the Safe leaves a reader with a `timelock` chip and no
+    // address to check it against — they cannot tell this chain's timelock from
+    // another chain's, which is an ordinary migration slip.
     if (b.safeOwner) banner.append(el("span", "own-verify-src", `Safe = ${b.safeOwner}`));
+    if (b.timelockOwner) {
+      banner.append(el("span", "own-verify-src", `timelock = ${b.timelockOwner}`));
+    }
     box.append(banner);
-    const explorerLink = (addr) => link("own-addr", addr, explorer(addr, b.network));
+    const explorerLink = (addr) => addrNode("own-addr", addr, b.network);
     const detailLine = (key, chipText, chipCls, addr) => {
       const line = el("div", "bcn-line");
       line.append(el("span", "bcn-key", key));
@@ -445,7 +461,7 @@ function renderDeployments(document, $, data) {
       tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
       box.append(tb);
     }
-    const explorerLink = (addr) => link("own-addr", addr, explorer(addr, t.network));
+    const explorerLink = (addr) => addrNode("own-addr", addr, t.network);
     // The setAuthorizer migration target, stated once: what a pending Safe bundle
     // rewires every receipt vault's authorizer() to, and how many are already there.
     const auth = t.authoriser;
@@ -822,7 +838,7 @@ function renderDeployments(document, $, data) {
         // here; an absent owner takes the page's own missing styling so it is
         // not typographically identical to a present one.
         if (row.owner) {
-          ac.append(link("own-addr", row.owner, explorer(row.owner, net)));
+          ac.append(addrNode("own-addr", row.owner, net));
         } else {
           ac.append(el("span", "own-addr own-missing", "—"));
         }
@@ -897,7 +913,7 @@ function renderDeployments(document, $, data) {
       if (c.authoriser) {
         const src = el("span", "own-verify-src");
         src.append("authoriser ");
-        src.append(link("own-addr", c.authoriser, explorer(c.authoriser, c.network)));
+        src.append(addrNode("own-addr", c.authoriser, c.network));
         b.append(src);
       }
       if (c.rpcHost) b.append(el("span", "own-verify-src", `via ${c.rpcHost}`));
@@ -972,7 +988,7 @@ function renderDeployments(document, $, data) {
             for (const n of a.networks) line.append(el("span", "own-net", n));
           }
           line.append(
-            link("own-addr", a.address, explorer(a.address, a.networks[0])),
+            addrNode("own-addr", a.address, a.networks[0]),
           );
           rc.append(line);
         }
@@ -1064,7 +1080,7 @@ function renderDeployments(document, $, data) {
       if (e.note) rc.append(el("div", "own-note", e.note));
       const ac = el("div", "own-ac");
       if (e.address) {
-        ac.append(link("own-addr", e.address, explorer(e.address, e.network)));
+        ac.append(addrNode("own-addr", e.address, e.network));
       } else {
         ac.append(el("span", "own-addr own-missing", "— not found"));
       }

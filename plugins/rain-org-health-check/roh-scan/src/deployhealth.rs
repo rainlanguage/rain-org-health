@@ -315,6 +315,28 @@ pub fn build_health(
     }))
 }
 
+/// Whether a pin is an address rather than the all-zero placeholder a chain
+/// carries before its deploy has landed.
+///
+/// Matching against a placeholder would label a contract whose `owner()` or
+/// `implementation()` answers the zero address — renounced, bricked, or pointing
+/// at nothing — as held by the Safe or the timelock, or as at its target, and so
+/// `healthy`. That is the dangerous direction.
+///
+/// The prefix is stripped case-insensitively and an empty pin counts as
+/// unhydrated, so this does not depend on `parse_address_constant`'s regex
+/// continuing to emit a lowercase `0x` and exactly 40 hex digits. It does today,
+/// which is why `address(0)` arrives as `None` rather than as zeroes — but a
+/// guard that holds only because of a regex in another module is one edit from
+/// not holding.
+pub fn hydrated_pin(pin: &str) -> bool {
+    let p = pin
+        .strip_prefix("0x")
+        .or_else(|| pin.strip_prefix("0X"))
+        .unwrap_or(pin);
+    !p.is_empty() && !p.chars().all(|c| c == '0')
+}
+
 /// Health of one production beacon, resolving BOTH what its `owner()` and
 /// `implementation()` actually ARE — not just whether they match a constant:
 /// - owner is labelled `safe` (the token-owner Safe), `timelock` (the chain's
@@ -352,26 +374,20 @@ pub fn beacon_health(
     // the Safe or the timelock, and therefore `healthy`. That is the dangerous
     // direction, so an unhydrated pin matches nothing. Enforced here rather
     // than at the two call sites, which would be two places to forget.
-    // Prefix stripped case-insensitively and an empty pin counted unhydrated, so
-    // the guard does not depend on `parse_address_constant`'s regex continuing to
-    // emit a lowercase `0x` and exactly 40 hex digits. It does today, which is
-    // why `address(0)` reaches here as `None` rather than as zeroes — but a
-    // guard that only holds because of a regex two modules away is one edit from
-    // not holding.
-    let hydrated = |pin: &str| {
-        let p = pin
-            .strip_prefix("0x")
-            .or_else(|| pin.strip_prefix("0X"))
-            .unwrap_or(pin);
-        !p.is_empty() && !p.chars().all(|c| c == '0')
-    };
+    let hydrated = |pin: &str| hydrated_pin(pin);
+    // `legacy` is matched BEFORE `timelock`. If a chain's timelock pin ever
+    // resolved to the deploy EOA, timelock-first would label a beacon still held
+    // by that hot key `timelock` -> governed -> healthy, hiding the one case this
+    // section exists to catch. Legacy-first instead reports a genuinely migrated
+    // beacon as drift: a false alarm rather than a false all-clear, which is the
+    // direction to fail in.
     let owner_label = match live_owner.as_deref() {
         None => "unknown",
         Some(o) if hydrated(safe_owner) && o.eq_ignore_ascii_case(safe_owner) => "safe",
+        Some(o) if hydrated(legacy_owner) && o.eq_ignore_ascii_case(legacy_owner) => "legacy",
         Some(o) if timelock_owner.is_some_and(|t| hydrated(t) && o.eq_ignore_ascii_case(t)) => {
             "timelock"
         }
-        Some(o) if hydrated(legacy_owner) && o.eq_ignore_ascii_case(legacy_owner) => "legacy",
         Some(_) => "foreign",
     };
     // Both governing owners are acceptable holders: a chain the bundle has not
@@ -379,20 +395,28 @@ pub fn beacon_health(
     // is a fault. Collapsing them would make the migration itself look like
     // drift on the chains where it has succeeded.
     let governed = owner_label == "safe" || owner_label == "timelock";
+    // The impl pins get the same `hydrated` guard as the owner pins. A generated
+    // pointer file whose `DEPLOYED_ADDRESS` is still the all-zero placeholder —
+    // a form the constant regex DOES match — together with a beacon whose
+    // `implementation()` answers the zero address would otherwise read
+    // `atTarget: true` and, on a governed owner, `healthy`: a beacon pointing at
+    // nothing, reported as correct.
+    let target_pin = target_impl.filter(|t| hydrated(t));
+    let v1_pin = v1_impl.filter(|v| hydrated(v));
     let impl_version = match live_impl.as_deref() {
         None => "unknown",
-        Some(l) if target_impl.is_some_and(|t| l.eq_ignore_ascii_case(t)) => target_version,
-        Some(l) if v1_impl.is_some_and(|v| l.eq_ignore_ascii_case(v)) => "V1",
+        Some(l) if target_pin.is_some_and(|t| l.eq_ignore_ascii_case(t)) => target_version,
+        Some(l) if v1_pin.is_some_and(|v| l.eq_ignore_ascii_case(v)) => "V1",
         Some(_) => "unknown",
     };
     // `atTarget` is only determinable when BOTH the live impl and the target are
     // known — otherwise `null`, so a missing target can't masquerade as "behind".
-    let at_target = match (live_impl.as_deref(), target_impl) {
+    let at_target = match (live_impl.as_deref(), target_pin) {
         (Some(l), Some(t)) => Some(l.eq_ignore_ascii_case(t)),
         _ => None,
     };
     // Without a readable target we can't assert "behind"; stay `unknown`.
-    let status = if live_owner.is_none() || live_impl.is_none() || target_impl.is_none() {
+    let status = if live_owner.is_none() || live_impl.is_none() || target_pin.is_none() {
         "unknown"
     } else if !governed {
         "drift"
@@ -410,7 +434,7 @@ pub fn beacon_health(
         // impl) — so a proposed upgradeTo(...) can be checked against both.
         "implementation": live_impl,
         "implVersion": impl_version,
-        "targetImpl": target_impl,
+        "targetImpl": target_pin,
         "targetVersion": target_version,
         "atTarget": at_target,
         "status": status,
@@ -418,12 +442,17 @@ pub fn beacon_health(
 }
 
 /// Assemble the `deploymentBeacons` document (sorted by name; `None` if empty).
+// Eight, as with `beacon_health` above: this is a flat JSON assembler and the
+// two pins are differently typed (`&str` vs `Option<&str>`), so the transposition
+// the lint guards against cannot compile here.
+#[allow(clippy::too_many_arguments)]
 pub fn build_beacons(
     org: &str,
     repo: &str,
     network: &str,
     rpc_host: &str,
     safe_owner: &str,
+    timelock_owner: Option<&str>,
     target_version: &str,
     mut beacons: Vec<serde_json::Value>,
 ) -> Option<serde_json::Value> {
@@ -438,7 +467,14 @@ pub fn build_beacons(
         "repo": repo,
         "network": network,
         "rpcHost": rpc_host,
-        "safeOwner": safe_owner,
+        // Both pins, and only when hydrated. `timelock` now decides
+        // healthy-vs-drift, so a reader shown a `timelock` chip with no address
+        // to compare it against cannot tell this chain's timelock from another
+        // chain's — the cross-chain slip the vault-owners section names. An
+        // unhydrated pin is emitted as null rather than printed as `0x0000…`,
+        // which would read as a real expected holder.
+        "safeOwner": Some(safe_owner).filter(|s| hydrated_pin(s)),
+        "timelockOwner": timelock_owner.filter(|t| hydrated_pin(t)),
         "targetVersion": target_version,
         "total": total,
         "healthy": healthy,
@@ -1049,12 +1085,36 @@ mod tests {
             "ethereum",
             "host",
             SAFE,
+            Some(TIMELOCK),
             "0.1.1",
             vec![tl_owned, safe_owned],
         )
         .unwrap();
         assert_eq!(v["total"], 2);
         assert_eq!(v["healthy"], 2);
+        // Both pins reach the page: a `timelock` chip the reader cannot compare
+        // against an address is indistinguishable from this chain holding
+        // ANOTHER chain's timelock.
+        assert_eq!(v["safeOwner"], SAFE);
+        assert_eq!(v["timelockOwner"], TIMELOCK);
+    }
+
+    /// An unhydrated pin must reach the page as null, not be printed as
+    /// `0x0000…`, which would read as a real expected holder.
+    #[test]
+    fn build_beacons_emits_no_unhydrated_pin() {
+        const ZERO: &str = "0x0000000000000000000000000000000000000000";
+        let b = bh(Some(SAFE), Some(TARGET));
+        let v =
+            build_beacons("o", "r", "base", "host", ZERO, Some(ZERO), "0.1.1", vec![b]).unwrap();
+        assert!(
+            v["safeOwner"].is_null(),
+            "zero Safe pin emitted as a holder"
+        );
+        assert!(
+            v["timelockOwner"].is_null(),
+            "zero timelock pin emitted as a holder"
+        );
     }
 
     #[test]
@@ -1100,7 +1160,17 @@ mod tests {
             Some(SAFE.into()),
             Some(V1.into()),
         );
-        let v = build_beacons("o", "r", "base", "host", SAFE, "0.1.1", vec![ok, behind]).unwrap();
+        let v = build_beacons(
+            "o",
+            "r",
+            "base",
+            "host",
+            SAFE,
+            Some(TIMELOCK),
+            "0.1.1",
+            vec![ok, behind],
+        )
+        .unwrap();
         assert_eq!(v["total"], 2);
         assert_eq!(v["healthy"], 1);
         assert_eq!(v["targetVersion"], "0.1.1");
