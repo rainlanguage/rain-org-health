@@ -700,8 +700,11 @@ function renderDeployments(document, $, data) {
     const sub = el("div", "own-sub");
     sub.append(
       `owner() read per vault on each chain and labelled against THAT chain's pins. ` +
-        `"other" means the call answered with neither pin, which is different from "unknown" — ` +
-        `that is a vault we could not ask, never one we know has not moved.`,
+        `Three of the four labels are easy to confuse, so: "other" means the call ` +
+        `answered with an owner that is neither pin; "unpinned" means the chain has no ` +
+        `timelock constant yet, so there is nothing to recognise a move by and the ` +
+        `rollout simply has not reached it; "unknown" means the vault could not be ` +
+        `asked at all, never that we know it has not moved.`,
     );
     box.append(sub);
     for (const c of v.chains) {

@@ -8321,3 +8321,41 @@ Deno.test("deployments: no vault-owner data renders no section", () => {
     "no chains is absent too",
   );
 });
+
+Deno.test("deployments: an unpinned vault is listed with its own pill, not hidden", () => {
+  const box = deploymentsBox({
+    deploymentVaultOwners: {
+      total: 1,
+      chains: [
+        {
+          network: "bsc",
+          safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+          timelock: null,
+          counts: { safe: 0, timelock: 0, other: 0, unknown: 0, unpinned: 1 },
+          vaults: [
+            {
+              vault: "0xddd",
+              owner: "0x00000000000000000000000000000000deadbeef",
+              label: "unpinned",
+            },
+          ],
+        },
+      ],
+    },
+  });
+  // `unpinned` is an ANSWER, so the row is shown; only `unknown` is withheld.
+  assert(
+    collect(box, "own-status-unpinned").length === 1,
+    "the unpinned pill is rendered",
+  );
+  const text = textOf(box);
+  assert(
+    text.includes("1 unpinned of 1 here"),
+    "counted in the heading, got: " + text,
+  );
+  // The label a reader meets must be one the page explains.
+  assert(
+    text.includes('"unpinned" means the chain has no'),
+    "the section explains unpinned, got: " + text,
+  );
+});
