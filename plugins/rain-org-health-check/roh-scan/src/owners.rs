@@ -808,10 +808,39 @@ pub fn build_grants(
                     GrantOnChain::NotGranted => tally[i].1 += 1,
                     GrantOnChain::Unknown => tally[i].2 += 1,
                 }
+                // For an admin row the map does not yet hold, ask whether the
+                // SAFE holds it. The declared map names the timelock, so a
+                // pre-migration chain reports every `_ADMIN` as missing — and
+                // the page's answer to "who can grant and revoke" becomes
+                // nobody, anywhere, while the Safe holds all seven. That is
+                // the one fact that makes the amber legible.
+                //
+                // Only when the row is missing and the holder asked about was
+                // not already the Safe: a granted row needs no explanation, and
+                // asking the Safe about itself would be the same question
+                // twice.
+                let safe_holds = match (
+                    is_admin_role(role),
+                    &status,
+                    is_safe,
+                    &chain.authoriser,
+                    &chain.rpc_host,
+                    &chain.safe,
+                ) {
+                    (true, GrantOnChain::NotGranted, false, Some(auth), Some(_), Some(safe)) => {
+                        match check(&chain.network, auth, role, safe) {
+                            GrantOnChain::Granted => Some(true),
+                            GrantOnChain::NotGranted => Some(false),
+                            GrantOnChain::Unknown => None,
+                        }
+                    }
+                    _ => None,
+                };
                 per_chain.push(json!({
                     "network": chain.network,
                     "address": address,
                     "status": status.token(),
+                    "safeHolds": safe_holds,
                 }));
             }
             role_rows.push(json!({

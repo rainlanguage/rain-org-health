@@ -8603,3 +8603,43 @@ Deno.test("deployments: the admin holder is a timelock, never a hot single signe
     "it is named as the timelock, got: " + text,
   );
 });
+
+Deno.test("deployments: an admin role the Safe still holds says so", () => {
+  // The declared map names the timelock, so pre-migration every `_ADMIN` row
+  // is missing. Without naming the Safe, the page's answer to "who can grant
+  // and revoke" is nobody, anywhere — while the Safe holds all seven.
+  const d = grantsData();
+  d.deploymentGrants.grantees = [
+    {
+      ident: "adminHolder",
+      kind: "admin-holder",
+      address: null,
+      roles: [
+        {
+          role: "DEPOSIT_ADMIN",
+          admin: true,
+          chains: [
+            {
+              network: "base",
+              address: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              status: "missing",
+              safeHolds: true,
+            },
+            {
+              network: "ethereum",
+              address: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              status: "missing",
+              safeHolds: false,
+            },
+          ],
+        },
+      ],
+    },
+  ];
+  const text = textOf(deploymentsBox(d));
+  assert(text.includes("base ○ safe"), "the Safe holding it is named, got: " + text);
+  assert(
+    text.includes("ethereum ○ unheld"),
+    "and nobody holding it is distinct from that, got: " + text,
+  );
+});

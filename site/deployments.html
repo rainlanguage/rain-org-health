@@ -902,7 +902,17 @@ function renderDeployments(document, $, data) {
         granted: ["yes", "✓"],
         missing: ["roll", "○"],
       }[st] || ["dim", "?"];
-      return el("span", `own-chip own-chip-${m[0]}`, `${c.network} ${m[1]}`);
+      // An admin role the declared holder does not have yet, that the SAFE
+      // does, is a migration still to run — not an unheld privilege. Without
+      // saying so the page answers "who can grant and revoke" with nobody,
+      // anywhere, while the Safe holds all seven. `safeHolds === false` is the
+      // other way round and worth as much: nobody we pinned holds it.
+      const held = c.safeHolds === true
+        ? " safe"
+        : c.safeHolds === false
+        ? " unheld"
+        : "";
+      return el("span", `own-chip own-chip-${m[0]}`, `${c.network} ${m[1]}${held}`);
     };
     // The addresses a grantee was actually checked at, keyed BY ADDRESS: a
     // service key is one address covering every chain, while the Safe slot is a
