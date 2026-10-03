@@ -538,6 +538,13 @@ pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str, timelock_lib: &str) -> Vec
     out
 }
 
+/// Asks one chain for every vault's `owner()`, answering one slot per vault in
+/// the order given.
+///
+/// A whole chain at once rather than a vault at a time, because the caller
+/// answers it with ONE JSON-RPC batch; see `build_vault_owners`.
+pub type ReadOwners<'a> = &'a dyn Fn(&str, &[String]) -> Vec<Option<String>>;
+
 /// Who owns a governed vault, as the chain answered.
 ///
 /// The labels are relative to that chain's own pins, so `Timelock` on Ethereum
@@ -576,17 +583,24 @@ impl VaultOwner {
 /// vaults left no trace here: the page would show the pre-migration owner
 /// indefinitely with nothing marking it stale.
 ///
-/// `read_owner` is injected for the reason `build_grants` injects its probe:
-/// the labelling is what can be got wrong, and it is worth testing without a
-/// network.
+/// `read_owners` takes a whole chain's vaults at once, not one at a time, and
+/// is injected for the reason `build_grants` injects its probe: the labelling
+/// is what can be got wrong, and it is worth testing without a network.
+///
+/// Per chain rather than per vault because the caller answers it with ONE
+/// JSON-RPC batch. A vault is deployed on one chain, so asking every chain
+/// about every vault is mostly asking for an answer that cannot exist — those
+/// land as `Unknown` and are reported as unread, which is honest, but it is a
+/// large number of calls to learn nothing and each one costs a subprocess.
 /// @param vaults The governed vault addresses, lowercased.
 /// @param chains The chains to ask, carrying their own Safe and timelock pins.
-/// @param read_owner Asks one chain for one vault's `owner()`.
+/// @param read_owners Asks one chain for every vault's `owner()`, answering in
+/// the order given, one slot per vault.
 /// @return The per-chain rows and tallies, or `None` with no vaults to report.
 pub fn build_vault_owners(
     vaults: &[String],
     chains: &[ChainPin],
-    read_owner: &dyn Fn(&str, &str) -> Option<String>,
+    read_owners: ReadOwners,
 ) -> Option<serde_json::Value> {
     if vaults.is_empty() || chains.is_empty() {
         return None;
@@ -600,8 +614,12 @@ pub fn build_vault_owners(
     for chain in chains {
         let mut vault_rows: Vec<serde_json::Value> = Vec::new();
         let (mut safe, mut timelock, mut other, mut unknown) = (0usize, 0usize, 0usize, 0usize);
-        for vault in vaults {
-            let owner = read_owner(&chain.network, vault);
+        // A short answer is not a partial truth: a probe that returned fewer
+        // slots than it was asked about has not said which vaults it covered,
+        // so the tail reads unread rather than borrowing another slot's owner.
+        let owners = read_owners(&chain.network, vaults);
+        for (i, vault) in vaults.iter().enumerate() {
+            let owner = owners.get(i).cloned().flatten();
             let label = match &owner {
                 None => VaultOwner::Unknown,
                 Some(o) if eq(&chain.safe, o) => VaultOwner::Safe,
@@ -1523,11 +1541,16 @@ mod tests {
     fn a_vault_owner_is_labelled_against_its_own_chains_pins() {
         let vaults = vec!["0xaaa".to_string(), "0xbbb".to_string()];
         // base: still on the Safe. ethereum: moved to the timelock.
-        let read = |network: &str, vault: &str| match (network, vault) {
-            ("base", _) => Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string()),
-            ("ethereum", "0xaaa") => Some("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B".to_string()),
-            ("ethereum", _) => None,
-            _ => None,
+        let read = |network: &str, vs: &[String]| {
+            vs.iter()
+                .map(|v| match (network, v.as_str()) {
+                    ("base", _) => Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string()),
+                    ("ethereum", "0xaaa") => {
+                        Some("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B".to_string())
+                    }
+                    _ => None,
+                })
+                .collect()
         };
         let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
         assert_eq!(out["total"], serde_json::json!(2));
@@ -1555,8 +1578,11 @@ mod tests {
     #[test]
     fn an_unpinned_owner_is_other_not_unknown() {
         let vaults = vec!["0xaaa".to_string()];
-        let read =
-            |_: &str, _: &str| Some("0x00000000000000000000000000000000deadbeef".to_string());
+        let read = |_: &str, vs: &[String]| {
+            vs.iter()
+                .map(|_| Some("0x00000000000000000000000000000000deadbeef".to_string()))
+                .collect()
+        };
         let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
         let chains = out["chains"].as_array().expect("chains");
         assert_eq!(chains[0]["counts"]["other"], serde_json::json!(1));
@@ -1567,8 +1593,29 @@ mod tests {
     /// not render a table that asserts nothing.
     #[test]
     fn no_vaults_is_none() {
-        let read = |_: &str, _: &str| None;
+        let read = |_: &str, vs: &[String]| vec![None; vs.len()];
         assert!(build_vault_owners(&[], &two_chains(), &read).is_none());
+    }
+
+    /// A probe that answers SHORT MUST leave the tail unread.
+    ///
+    /// A batch can come back with fewer results than it was asked for, and it
+    /// does not say which calls it covered. Reading past the end by index, or
+    /// zipping, would hand one vault the owner of another — a plausible
+    /// address belonging to something else, which is worse than a gap.
+    #[test]
+    fn a_short_answer_leaves_the_tail_unread() {
+        let vaults = vec!["0xaaa".to_string(), "0xbbb".to_string()];
+        let read = |_: &str, _: &[String]| {
+            vec![Some(
+                "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string(),
+            )]
+        };
+        let out = build_vault_owners(&vaults, &two_chains(), &read).expect("builds");
+        let chains = out["chains"].as_array().expect("chains");
+        assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(1));
+        assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(1));
+        assert_eq!(chains[0]["vaults"][1]["owner"], serde_json::Value::Null);
     }
 
     /// A map taking only the Safe MUST still parse, with no admin parameter.

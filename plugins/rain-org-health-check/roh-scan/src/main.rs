@@ -330,6 +330,42 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
     curl_json(session, &eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
 }
 
+/// Many `eth_call`s to one chain in ONE JSON-RPC batch, answered in request
+/// order.
+///
+/// Every RPC here costs a `curl` subprocess, sequentially, with a 25s timeout
+/// and a retry across each of the chain's endpoints. So a per-address loop over
+/// a set this size is hundreds of processes and a rate limit waiting to happen,
+/// which would degrade every other section of the page rather than just this
+/// one.
+///
+/// Ids are the request index, and `batch_result_hex` maps them back by id, so a
+/// node that reorders its answers cannot attribute one address's result to
+/// another.
+/// @param session The chain session; all calls share it, so one node answers
+/// the whole batch and two cannot disagree within it.
+/// @param calls The `(to, data)` pairs.
+/// @return One slot per call, in the order given.
+fn eth_call_batch(session: Session, calls: &[(String, String)]) -> Vec<Option<String>> {
+    if calls.is_empty() {
+        return Vec::new();
+    }
+    let body = calls
+        .iter()
+        .enumerate()
+        .map(|(i, (to, data))| {
+            format!(
+                r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+            )
+        })
+        .collect::<Vec<_>>()
+        .join(",");
+    match curl_json(session, &format!("[{body}]")) {
+        Some(b) => rpc::batch_result_hex(&b, calls.len()),
+        None => vec![None; calls.len()],
+    }
+}
+
 /// `eth_getCode` for an address (within `session`) → the runtime bytecode hex
 /// (`0x…`, or `0x` when there is no code), or `None` on failure.
 fn eth_get_code(session: Session, address: &str) -> Option<String> {
@@ -2598,12 +2634,20 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
                 })
                 .collect();
-            let read_owner = |network: &str, vault: &str| {
-                let (_, session) = sessions.iter().find(|(n, _)| n == network)?;
-                eth_call(*session, vault, &rpc::owner_calldata())
-                    .and_then(|hex| rpc::decode_address(&hex))
+            let read_owners = |network: &str, vs: &[String]| {
+                let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
+                    return vec![None; vs.len()];
+                };
+                let calls: Vec<(String, String)> = vs
+                    .iter()
+                    .map(|v| (v.clone(), rpc::owner_calldata()))
+                    .collect();
+                eth_call_batch(*session, &calls)
+                    .into_iter()
+                    .map(|hex| hex.as_deref().and_then(rpc::decode_address))
+                    .collect()
             };
-            owners::build_vault_owners(&vaults, &chains, &read_owner)
+            owners::build_vault_owners(&vaults, &chains, &read_owners)
                 .unwrap_or(serde_json::Value::Null)
         };
 
