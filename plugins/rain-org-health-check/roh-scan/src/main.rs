@@ -330,7 +330,19 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
     curl_json(session, &eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
 }
 
-/// Many `eth_call`s to one chain in ONE JSON-RPC batch, answered in request
+/// How many calls go in one JSON-RPC batch.
+///
+/// Every endpoint here is a free public node, and those cap batch size — some
+/// reject an oversized batch with a single error object rather than an array.
+/// That failure is total and silent: the whole batch reads as unanswered, so a
+/// section built on one batch per chain would show nothing on exactly the
+/// endpoints it runs against. Chunked, an unlucky chunk costs its own slots.
+///
+/// 25 is well inside the limits these providers document while still turning a
+/// 157-address sweep into single figures of requests rather than 157.
+const ETH_CALL_BATCH_CHUNK: usize = 25;
+
+/// Many `eth_call`s to one chain in JSON-RPC batches, answered in request
 /// order.
 ///
 /// Every RPC here costs a `curl` subprocess, sequentially, with a 25s timeout
@@ -347,23 +359,27 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
 /// @param calls The `(to, data)` pairs.
 /// @return One slot per call, in the order given.
 fn eth_call_batch(session: Session, calls: &[(String, String)]) -> Vec<Option<String>> {
-    if calls.is_empty() {
-        return Vec::new();
+    let mut out: Vec<Option<String>> = Vec::with_capacity(calls.len());
+    for chunk in calls.chunks(ETH_CALL_BATCH_CHUNK) {
+        let body = chunk
+            .iter()
+            .enumerate()
+            .map(|(i, (to, data))| {
+                format!(
+                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+                )
+            })
+            .collect::<Vec<_>>()
+            .join(",");
+        // Ids restart per chunk, and `batch_result_hex` is told this chunk's
+        // length, so a chunk is read entirely within itself. A rejected chunk
+        // costs its own slots and no others.
+        match curl_json(session, &format!("[{body}]")) {
+            Some(b) => out.extend(rpc::batch_result_hex(&b, chunk.len())),
+            None => out.extend(vec![None; chunk.len()]),
+        }
     }
-    let body = calls
-        .iter()
-        .enumerate()
-        .map(|(i, (to, data))| {
-            format!(
-                r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
-            )
-        })
-        .collect::<Vec<_>>()
-        .join(",");
-    match curl_json(session, &format!("[{body}]")) {
-        Some(b) => rpc::batch_result_hex(&b, calls.len()),
-        None => vec![None; calls.len()],
-    }
+    out
 }
 
 /// `eth_getCode` for an address (within `session`) → the runtime bytecode hex

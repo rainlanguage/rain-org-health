@@ -420,6 +420,23 @@ mod tests {
         );
     }
 
+    /// An id past the batch's length MUST be dropped, not panic.
+    ///
+    /// Ids restart per chunk, so a node echoing an id from a previous chunk —
+    /// or simply a wrong one — would index past the end. `get_mut` is what
+    /// keeps that a dropped answer rather than a crashed scan.
+    #[test]
+    fn an_out_of_range_id_is_dropped() {
+        let body = br#"[
+            {"jsonrpc":"2.0","id":7,"result":"0xzz"},
+            {"jsonrpc":"2.0","id":1,"result":"0xbb"}
+        ]"#;
+        assert_eq!(
+            batch_result_hex(body, 2),
+            vec![None, Some("0xbb".to_string())]
+        );
+    }
+
     /// A body that is not an array MUST be all `None`.
     ///
     /// That is a node refusing the batch or erroring on the whole request. It

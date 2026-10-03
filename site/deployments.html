@@ -702,18 +702,22 @@ function renderDeployments(document, $, data) {
     box.append(sub);
     for (const c of v.chains) {
       const n = c.counts || {};
+      // Only the vaults this chain answered for. A vault with no code here is
+      // another chain's vault, and listing it would make every chain look like
+      // it holds every vault.
+      const answered = (c.vaults || []).filter((x) => x.label !== "unknown");
+      // Counted against what this chain actually holds, NOT against the
+      // governed total. Every vault lives on one chain, so most of that total
+      // is another chain's and "59 of 157" would read as a chain missing a
+      // hundred vaults it was never meant to have.
       box.append(
         el(
           "h3",
           null,
           `${c.network} — ${n.timelock ?? 0} timelock, ${n.safe ?? 0} safe, ` +
-            `${n.other ?? 0} other, ${n.unknown ?? 0} unknown of ${v.total ?? 0}`,
+            `${n.other ?? 0} other of ${answered.length} here`,
         ),
       );
-      // Only the vaults this chain answered for. A vault with no code here is
-      // another chain's vault, and listing it would make every chain look like
-      // it holds every vault.
-      const answered = (c.vaults || []).filter((x) => x.label !== "unknown");
       if (answered.length === 0) continue;
       const tbl = el("div", "own-table");
       for (const row of answered) {
