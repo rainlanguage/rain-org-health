@@ -287,7 +287,7 @@ function renderDeployments(document, $, data) {
       const rc = el("div", "own-rc");
       rc.append(el("div", "own-role", c.name));
       const ac = el("div", "own-ac");
-      if (c.address) ac.append(link("own-addr", c.address, `https://basescan.org/address/${c.address}`));
+      if (c.address) ac.append(link("own-addr", c.address, explorer(c.address, health.network)));
       else ac.append(el("span", "own-addr own-missing", "— no pin"));
       const tail = el("div", "own-prov");
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
@@ -306,7 +306,9 @@ function renderDeployments(document, $, data) {
     }
     box.append(table);
   };
-  // Production beacons: each should be Safe-owned and point at its pinned impl.
+  // Production beacons: each should be held by a GOVERNING owner — the
+  // token-owner Safe, or the governance timelock once the migration has handed
+  // that chain over — and point at its pinned impl.
   const renderBeaconSet = (b) => {
     if (!b) return;
     // A chain the scan could not read says so under its own heading. Returning
@@ -328,7 +330,7 @@ function renderDeployments(document, $, data) {
       el(
         "div",
         "own-sub",
-        `Each production beacon should be Safe-owned and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
+        `Each production beacon should be held by the token-owner Safe or that chain's governance timelock, and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
       ),
     );
     const allHealthy = b.healthy === b.total;
@@ -337,12 +339,12 @@ function renderDeployments(document, $, data) {
       el(
         "span",
         "own-verify-msg",
-        `${b.healthy} of ${b.total} beacons Safe-owned & at ${b.targetVersion} on ${b.network}.`,
+        `${b.healthy} of ${b.total} beacons governed & at ${b.targetVersion} on ${b.network}.`,
       ),
     );
     if (b.safeOwner) banner.append(el("span", "own-verify-src", `Safe = ${b.safeOwner}`));
     box.append(banner);
-    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const explorerLink = (addr) => link("own-addr", addr, explorer(addr, b.network));
     const detailLine = (key, chipText, chipCls, addr) => {
       const line = el("div", "bcn-line");
       line.append(el("span", "bcn-key", key));
@@ -443,7 +445,7 @@ function renderDeployments(document, $, data) {
       tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
       box.append(tb);
     }
-    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const explorerLink = (addr) => link("own-addr", addr, explorer(addr, t.network));
     // The setAuthorizer migration target, stated once: what a pending Safe bundle
     // rewires every receipt vault's authorizer() to, and how many are already there.
     const auth = t.authoriser;

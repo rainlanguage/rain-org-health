@@ -280,7 +280,7 @@ impl Chain {
         match self {
             Chain::Base => "mainnet.base.org",
             Chain::Ethereum => "ethereum-rpc.publicnode.com",
-            Chain::HyperEvm => "rpc.hyperliquid.xyz",
+            Chain::HyperEvm => "rpc.hyperliquid.xyz/evm",
             Chain::Robinhood => "rpc.mainnet.chain.robinhood.com",
             Chain::Bsc => "bsc-dataseed.bnbchain.org",
         }

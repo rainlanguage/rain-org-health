@@ -5349,6 +5349,49 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
   );
 });
 
+Deno.test("deployments: per-chain sections link their OWN chain's explorer", () => {
+  const ADDR = "0xace121ae30d754536863a546f41b147be11202db";
+  const TARGET = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "ethereum",
+      rpcHost: "ethereum-rpc.publicnode.com",
+      safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [{
+        name: "Receipt beacon",
+        address: ADDR,
+        owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        ownerLabel: "timelock",
+        implementation: TARGET,
+        implVersion: "0.1.1",
+        targetImpl: TARGET,
+        targetVersion: "0.1.1",
+        atTarget: true,
+        status: "healthy",
+      }],
+    },
+  });
+  const hrefs = collect(box, "own-addr").map((a) => a.href).filter(Boolean);
+  assert(hrefs.length > 0, "the beacon address is linked at all");
+  // An Ethereum address on Basescan shows nothing, or a different contract at
+  // the same address — a link that looks right and goes to the wrong chain.
+  assert(
+    hrefs.every((h) => !h.includes("basescan.org")),
+    "no Ethereum link points at Basescan: " + hrefs.join(","),
+  );
+  assert(
+    hrefs.some((h) => h.startsWith("https://etherscan.io/address/")),
+    "the Ethereum beacon links etherscan.io: " + hrefs.join(","),
+  );
+});
+
 Deno.test("deployments: tokens check registry identity + asset wiring, flag mismatch/wiring", () => {
   const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
   const WRONG = "0xbeef000000000000000000000000000000000002";

@@ -346,11 +346,32 @@ pub fn beacon_health(
     live_owner: Option<String>,
     live_impl: Option<String>,
 ) -> serde_json::Value {
+    // An all-zero pin is the placeholder a chain carries before its deploy has
+    // landed, not an address. Matching against it would label a beacon whose
+    // `owner()` answers the zero address — renounced, or bricked — as held by
+    // the Safe or the timelock, and therefore `healthy`. That is the dangerous
+    // direction, so an unhydrated pin matches nothing. Enforced here rather
+    // than at the two call sites, which would be two places to forget.
+    // Prefix stripped case-insensitively and an empty pin counted unhydrated, so
+    // the guard does not depend on `parse_address_constant`'s regex continuing to
+    // emit a lowercase `0x` and exactly 40 hex digits. It does today, which is
+    // why `address(0)` reaches here as `None` rather than as zeroes — but a
+    // guard that only holds because of a regex two modules away is one edit from
+    // not holding.
+    let hydrated = |pin: &str| {
+        let p = pin
+            .strip_prefix("0x")
+            .or_else(|| pin.strip_prefix("0X"))
+            .unwrap_or(pin);
+        !p.is_empty() && !p.chars().all(|c| c == '0')
+    };
     let owner_label = match live_owner.as_deref() {
         None => "unknown",
-        Some(o) if o.eq_ignore_ascii_case(safe_owner) => "safe",
-        Some(o) if timelock_owner.is_some_and(|t| o.eq_ignore_ascii_case(t)) => "timelock",
-        Some(o) if o.eq_ignore_ascii_case(legacy_owner) => "legacy",
+        Some(o) if hydrated(safe_owner) && o.eq_ignore_ascii_case(safe_owner) => "safe",
+        Some(o) if timelock_owner.is_some_and(|t| hydrated(t) && o.eq_ignore_ascii_case(t)) => {
+            "timelock"
+        }
+        Some(o) if hydrated(legacy_owner) && o.eq_ignore_ascii_case(legacy_owner) => "legacy",
         Some(_) => "foreign",
     };
     // Both governing owners are acceptable holders: a chain the bundle has not
@@ -925,6 +946,75 @@ mod tests {
         );
         assert_eq!(b["ownerLabel"], "foreign");
         assert_eq!(b["status"], "drift");
+    }
+
+    /// An all-zero pin is a placeholder, not an address. A beacon that answers
+    /// the zero address has been renounced or bricked; matching it against an
+    /// unhydrated pin would call that `healthy`, which is the one direction
+    /// this section must never fail in.
+    #[test]
+    fn an_unhydrated_pin_never_adopts_a_zero_owner() {
+        const ZERO: &str = "0x0000000000000000000000000000000000000000";
+        // timelock pin not yet hydrated, beacon owner reads zero
+        let tl = beacon_health(
+            "Receipt beacon",
+            Some("0x86e9".into()),
+            SAFE,
+            LEGACY,
+            Some(ZERO),
+            Some(TARGET),
+            Some(V1),
+            "0.1.1",
+            Some(ZERO.into()),
+            Some(TARGET.into()),
+        );
+        assert_eq!(
+            tl["ownerLabel"], "foreign",
+            "a zero owner is not the timelock"
+        );
+        assert_eq!(tl["status"], "drift");
+        // Spelling of the placeholder must not matter: an uppercase prefix or a
+        // prefixless pin is the same non-address, and a guard that only catches
+        // one spelling is a guard that can be slipped.
+        for spelling in [
+            "0X0000000000000000000000000000000000000000",
+            "0000000000000000000000000000000000000000",
+            "",
+        ] {
+            let b = beacon_health(
+                "Receipt beacon",
+                Some("0x86e9".into()),
+                SAFE,
+                LEGACY,
+                Some(spelling),
+                Some(TARGET),
+                Some(V1),
+                "0.1.1",
+                Some(ZERO.into()),
+                Some(TARGET.into()),
+            );
+            assert_eq!(
+                b["ownerLabel"], "foreign",
+                "a zero owner matched placeholder spelling {spelling:?}"
+            );
+        }
+        // same for the Safe pin, and for the legacy pin
+        for pin in [SAFE, LEGACY] {
+            let b = beacon_health(
+                "Receipt beacon",
+                Some("0x86e9".into()),
+                if pin == SAFE { ZERO } else { SAFE },
+                if pin == LEGACY { ZERO } else { LEGACY },
+                None,
+                Some(TARGET),
+                Some(V1),
+                "0.1.1",
+                Some(ZERO.into()),
+                Some(TARGET.into()),
+            );
+            assert_eq!(b["ownerLabel"], "foreign", "a zero owner matched {pin}");
+            assert_eq!(b["status"], "drift");
+        }
     }
 
     /// The Safe pin wins when both pins hold the same address, so a chain that
