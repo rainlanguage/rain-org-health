@@ -220,7 +220,16 @@ function renderDeployments(document, $, data) {
     bsc: "https://bscscan.com/address/",
   };
   const explorer = (address, network) =>
-    (EXPLORERS[network] || EXPLORERS.base) + address;
+    EXPLORERS[network] ? EXPLORERS[network] + address : null;
+  // An address on a chain this page has no explorer for renders as plain text,
+  // never as a Base link. Falling back to Basescan sends the reader to an
+  // address that on Base is a different contract, or nothing — a link that
+  // looks like verification and is not. Unlinked is honest; wrongly linked is
+  // worse than nothing.
+  const addrNode = (cls, address, network) => {
+    const href = explorer(address, network);
+    return href ? link(cls, address, href) : el("span", cls, address);
+  };
   // Declared-vs-on-chain verdict banner for a group that carries a verification.
   const verifyBanner = (v) => {
     let cls, msg;
@@ -287,7 +296,7 @@ function renderDeployments(document, $, data) {
       const rc = el("div", "own-rc");
       rc.append(el("div", "own-role", c.name));
       const ac = el("div", "own-ac");
-      if (c.address) ac.append(link("own-addr", c.address, `https://basescan.org/address/${c.address}`));
+      if (c.address) ac.append(addrNode("own-addr", c.address, health.network));
       else ac.append(el("span", "own-addr own-missing", "— no pin"));
       const tail = el("div", "own-prov");
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
@@ -306,7 +315,9 @@ function renderDeployments(document, $, data) {
     }
     box.append(table);
   };
-  // Production beacons: each should be Safe-owned and point at its pinned impl.
+  // Production beacons: each should be held by a GOVERNING owner — the
+  // token-owner Safe, or the governance timelock once the migration has handed
+  // that chain over — and point at its pinned impl.
   const renderBeaconSet = (b) => {
     if (!b) return;
     // A chain the scan could not read says so under its own heading. Returning
@@ -328,7 +339,7 @@ function renderDeployments(document, $, data) {
       el(
         "div",
         "own-sub",
-        `Each production beacon should be Safe-owned and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
+        `Each production beacon should be held by the token-owner Safe or that chain's governance timelock, and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
       ),
     );
     const allHealthy = b.healthy === b.total;
@@ -337,12 +348,19 @@ function renderDeployments(document, $, data) {
       el(
         "span",
         "own-verify-msg",
-        `${b.healthy} of ${b.total} beacons Safe-owned & at ${b.targetVersion} on ${b.network}.`,
+        `${b.healthy} of ${b.total} beacons governed & at ${b.targetVersion} on ${b.network}.`,
       ),
     );
+    // Both pins, because `timelock` is what separates healthy from drift here.
+    // Showing only the Safe leaves a reader with a `timelock` chip and no
+    // address to check it against — they cannot tell this chain's timelock from
+    // another chain's, which is an ordinary migration slip.
     if (b.safeOwner) banner.append(el("span", "own-verify-src", `Safe = ${b.safeOwner}`));
+    if (b.timelockOwner) {
+      banner.append(el("span", "own-verify-src", `timelock = ${b.timelockOwner}`));
+    }
     box.append(banner);
-    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const explorerLink = (addr) => addrNode("own-addr", addr, b.network);
     const detailLine = (key, chipText, chipCls, addr) => {
       const line = el("div", "bcn-line");
       line.append(el("span", "bcn-key", key));
@@ -363,14 +381,19 @@ function renderDeployments(document, $, data) {
       }
       const detail = el("div", "bcn-detail");
       // owner: who it actually is
+      // `timelock` reads as a governing holder, not a fault: handing the beacons
+      // to the governance timelock is what the migration does, so the owner line
+      // says so and the status beside it stays healthy.
       const own =
         bc.ownerLabel === "safe"
           ? ["Safe", "yes"]
-          : bc.ownerLabel === "legacy"
-            ? ["legacy EOA", "no"]
-            : bc.ownerLabel === "foreign"
-              ? ["foreign", "no"]
-              : ["—", "dim"];
+          : bc.ownerLabel === "timelock"
+            ? ["timelock", "yes"]
+            : bc.ownerLabel === "legacy"
+              ? ["legacy EOA", "no"]
+              : bc.ownerLabel === "foreign"
+                ? ["foreign", "no"]
+                : ["—", "dim"];
       detail.append(detailLine("owner", own[0], own[1], bc.owner));
       // impl: what it points at NOW, and — when it isn't already there — what it
       // SHOULD point at, so a proposed upgradeTo(...) can be checked against both.
@@ -438,7 +461,7 @@ function renderDeployments(document, $, data) {
       tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
       box.append(tb);
     }
-    const explorerLink = (addr) => link("own-addr", addr, `https://basescan.org/address/${addr}`);
+    const explorerLink = (addr) => addrNode("own-addr", addr, t.network);
     // The setAuthorizer migration target, stated once: what a pending Safe bundle
     // rewires every receipt vault's authorizer() to, and how many are already there.
     const auth = t.authoriser;
@@ -815,7 +838,7 @@ function renderDeployments(document, $, data) {
         // here; an absent owner takes the page's own missing styling so it is
         // not typographically identical to a present one.
         if (row.owner) {
-          ac.append(link("own-addr", row.owner, explorer(row.owner, net)));
+          ac.append(addrNode("own-addr", row.owner, net));
         } else {
           ac.append(el("span", "own-addr own-missing", "—"));
         }
@@ -890,7 +913,7 @@ function renderDeployments(document, $, data) {
       if (c.authoriser) {
         const src = el("span", "own-verify-src");
         src.append("authoriser ");
-        src.append(link("own-addr", c.authoriser, explorer(c.authoriser, c.network)));
+        src.append(addrNode("own-addr", c.authoriser, c.network));
         b.append(src);
       }
       if (c.rpcHost) b.append(el("span", "own-verify-src", `via ${c.rpcHost}`));
@@ -965,7 +988,7 @@ function renderDeployments(document, $, data) {
             for (const n of a.networks) line.append(el("span", "own-net", n));
           }
           line.append(
-            link("own-addr", a.address, explorer(a.address, a.networks[0])),
+            addrNode("own-addr", a.address, a.networks[0]),
           );
           rc.append(line);
         }
@@ -1057,7 +1080,7 @@ function renderDeployments(document, $, data) {
       if (e.note) rc.append(el("div", "own-note", e.note));
       const ac = el("div", "own-ac");
       if (e.address) {
-        ac.append(link("own-addr", e.address, explorer(e.address, e.network)));
+        ac.append(addrNode("own-addr", e.address, e.network));
       } else {
         ac.append(el("span", "own-addr own-missing", "— not found"));
       }

@@ -5296,6 +5296,222 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
   );
 });
 
+Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", () => {
+  const TARGET = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const TIMELOCK = "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B";
+  const data = {
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "ethereum",
+      rpcHost: "ethereum-rpc.publicnode.com",
+      safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [
+        {
+          name: "Receipt beacon",
+          address: "0xace121ae30d754536863a546f41b147be11202db",
+          owner: TIMELOCK,
+          ownerLabel: "timelock",
+          implementation: TARGET,
+          implVersion: "0.1.1",
+          targetImpl: TARGET,
+          targetVersion: "0.1.1",
+          atTarget: true,
+          status: "healthy",
+        },
+      ],
+    },
+  };
+  const box = deploymentsBox(data);
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  // The owner is NAMED as the timelock, not rendered as an unknown dash — the
+  // reader has to be able to see which governing holder it is.
+  assert(chips.includes("timelock"), "owner labelled timelock: " + chips.join(","));
+  assert(!chips.includes("—"), "a timelock owner is not an unknown dash");
+  assert(!chips.includes("foreign"), "a timelock owner is not foreign");
+  // Before the timelock arm this beacon rendered drift, i.e. the completed
+  // migration shown as a fault.
+  assert(!chips.includes("drift"), "a timelock-owned beacon is not drift");
+  assert(chips.includes("healthy"), "status healthy: " + chips.join(","));
+  assert(
+    collect(box, "own-verify-drift").length === 0,
+    "no drift banner when every beacon is governed and at target",
+  );
+  const addrs = collect(box, "own-addr").map((a) => a.textContent);
+  assert(
+    addrs.some((a) => a.toLowerCase() === TIMELOCK.toLowerCase()),
+    "the timelock address is shown so the reader can check which one it is",
+  );
+});
+
+Deno.test("deployments: the health and tokens sections link their own chain too", () => {
+  // Both of these render functions take the chain from their own payload, so a
+  // fixture can exercise them even though production only emits `base` today.
+  // Without this, reverting either call site to a hardcoded Basescan URL left
+  // every test green, because `explorer(addr, "base")` is byte-identical to the
+  // string it replaced.
+  const H = "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286";
+  const health = deploymentsBox({
+    deploymentOwners: null,
+    deploymentBeacons: null,
+    deploymentHealth: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      version: "0.1.1",
+      network: "ethereum",
+      rpcHost: "ethereum-rpc.publicnode.com",
+      total: 1,
+      healthy: 1,
+      contracts: [{
+        name: "StoxReceipt",
+        address: H,
+        status: "healthy",
+        codeMatch: true,
+        hashMatch: true,
+        erc165: "conformant",
+      }],
+    },
+  });
+  const hh = collect(health, "own-addr").map((a) => a.href).filter(Boolean);
+  assert(
+    hh.some((h) => h.startsWith("https://etherscan.io/address/")),
+    "health section links etherscan on ethereum: " + hh.join(","),
+  );
+  assert(
+    hh.every((h) => !h.includes("basescan.org")),
+    "health section sends no ethereum address to Basescan: " + hh.join(","),
+  );
+
+  const T = "0xFb5B41acdbA20a3230F84BE995173CFb98b8D6E7";
+  const tokens = deploymentsBox({
+    deploymentOwners: null,
+    deploymentBeacons: null,
+    deploymentHealth: null,
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "bsc",
+      rpcHost: "bsc-dataseed.bnbchain.org",
+      total: 1,
+      ok: 1,
+      wrappedCount: 1,
+      atAuthoriserTarget: 1,
+      authoriser: { current: "0xc1", target: "0xt1", targetDeployed: true },
+      tokens: [{
+        symbol: "wtNVDA",
+        name: "Wrapped NVIDIA Corporation ST0x",
+        address: T,
+        status: "ok",
+        wrapped: true,
+        nameOk: true,
+        symbolOk: true,
+        decimalsOk: true,
+        assetOk: true,
+      }],
+    },
+  });
+  const th = collect(tokens, "own-addr").map((a) => a.href).filter(Boolean);
+  assert(
+    th.some((h) => h.startsWith("https://bscscan.com/address/")),
+    "tokens section links bscscan on bsc: " + th.join(","),
+  );
+  assert(
+    th.every((h) => !h.includes("basescan.org")),
+    "tokens section sends no bsc address to Basescan: " + th.join(","),
+  );
+});
+
+Deno.test("deployments: an address on an unknown chain is plain text, not a Base link", () => {
+  // The old fallback sent an unrecognised chain's addresses to Basescan, where
+  // the address is a different contract or nothing — a link that looks like
+  // verification and is not.
+  const A = "0xace121ae30d754536863a546f41b147be11202db";
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "someNewChain",
+      rpcHost: "rpc.example.invalid",
+      safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [{
+        name: "Receipt beacon",
+        address: A,
+        owner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+        ownerLabel: "safe",
+        implementation: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+        implVersion: "0.1.1",
+        targetImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+        targetVersion: "0.1.1",
+        atTarget: true,
+        status: "healthy",
+      }],
+    },
+  });
+  const nodes = collect(box, "own-addr");
+  assert(nodes.length > 0, "the address is still shown");
+  assert(
+    nodes.every((n) => !n.href),
+    "an unknown chain's address carries no href at all",
+  );
+  assert(
+    nodes.some((n) => n.textContent === A),
+    "and is still readable as text: " + nodes.map((n) => n.textContent).join(","),
+  );
+});
+
+Deno.test("deployments: per-chain sections link their OWN chain's explorer", () => {
+  const ADDR = "0xace121ae30d754536863a546f41b147be11202db";
+  const TARGET = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "ethereum",
+      rpcHost: "ethereum-rpc.publicnode.com",
+      safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [{
+        name: "Receipt beacon",
+        address: ADDR,
+        owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        ownerLabel: "timelock",
+        implementation: TARGET,
+        implVersion: "0.1.1",
+        targetImpl: TARGET,
+        targetVersion: "0.1.1",
+        atTarget: true,
+        status: "healthy",
+      }],
+    },
+  });
+  const hrefs = collect(box, "own-addr").map((a) => a.href).filter(Boolean);
+  assert(hrefs.length > 0, "the beacon address is linked at all");
+  // An Ethereum address on Basescan shows nothing, or a different contract at
+  // the same address — a link that looks right and goes to the wrong chain.
+  assert(
+    hrefs.every((h) => !h.includes("basescan.org")),
+    "no Ethereum link points at Basescan: " + hrefs.join(","),
+  );
+  assert(
+    hrefs.some((h) => h.startsWith("https://etherscan.io/address/")),
+    "the Ethereum beacon links etherscan.io: " + hrefs.join(","),
+  );
+});
+
 Deno.test("deployments: tokens check registry identity + asset wiring, flag mismatch/wiring", () => {
   const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
   const WRONG = "0xbeef000000000000000000000000000000000002";
