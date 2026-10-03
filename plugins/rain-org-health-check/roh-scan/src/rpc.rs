@@ -385,6 +385,27 @@ mod tests {
         assert_eq!(decode_string(s).as_deref(), Some("wtNVDA"));
     }
 
+    /// An empty or short `eth_call` result MUST NOT decode to the zero address.
+    ///
+    /// A vault with no code on the chain being asked answers `0x`. Decoding
+    /// that to `address(0)` would make it an owner like any other — neither the
+    /// Safe nor the timelock, so `other`, which this page paints red. Every
+    /// chain would then show every other chain's vaults as an unexplained
+    /// owner. `None` is what makes it `unknown` instead.
+    #[test]
+    fn an_empty_result_is_not_the_zero_address() {
+        assert_eq!(
+            decode_address("0x"),
+            None,
+            "empty result decoded to something"
+        );
+        assert_eq!(
+            decode_address("0x00"),
+            None,
+            "short result decoded to something"
+        );
+    }
+
     /// A batch MUST be read by `id`, not by position.
     ///
     /// Nodes are free to answer a batch in any order. Reading positionally
