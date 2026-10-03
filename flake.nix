@@ -49,7 +49,7 @@
               inherit src;
               pname = "roh-scan";
               version = "0.1.0";
-              hash = "sha256-elzifNENTn+GQIg4bfOygqNtRd6RJGmd8YRuTj8R1As=";
+              hash = "sha256-gBOuK/wqDWKZ36QtEVoI+O4axMMg1RYuXQbM8bDcio0=";
             };
           };
         # Reproducible headless render of the dashboard, so an eyeball on the

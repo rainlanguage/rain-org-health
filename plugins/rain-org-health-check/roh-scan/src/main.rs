@@ -183,24 +183,16 @@ fn gh_file(org: &str, repo: &str, path: &str) -> String {
     ]) else {
         return String::new();
     };
+    decode_contents_body(&raw)
+}
+
+/// Decode the base64 `content` field of a `contents` API response ("" if it is not base64).
+fn decode_contents_body(raw: &str) -> String {
+    use base64::Engine;
     let b64: String = raw.split_whitespace().collect(); // gh returns base64 with newlines
-    use std::io::Write;
-    // minimal base64 decode (std has none) — shell out to base64 for correctness parity with scan.sh
-    let mut child = match Command::new("base64")
-        .arg("-d")
-        .stdin(std::process::Stdio::piped())
-        .stdout(std::process::Stdio::piped())
-        .spawn()
-    {
-        Ok(c) => c,
-        Err(_) => return String::new(),
-    };
-    if let Some(mut si) = child.stdin.take() {
-        let _ = si.write_all(b64.as_bytes());
-    }
-    match child.wait_with_output() {
-        Ok(o) if o.status.success() => String::from_utf8_lossy(&o.stdout).into_owned(),
-        _ => String::new(),
+    match base64::engine::general_purpose::STANDARD.decode(b64) {
+        Ok(bytes) => String::from_utf8_lossy(&bytes).into_owned(),
+        Err(_) => String::new(),
     }
 }
 
@@ -3919,6 +3911,26 @@ mod tests {
             "drift anchors to the feb audit's commit"
         );
         assert!(r.pdfs[1].filename.contains("feb-2026"));
+    }
+
+    /// A body larger than the two pipe buffers a `base64 -d` child sits between:
+    /// writing all of stdin before reading any stdout deadlocked the whole scan.
+    #[test]
+    fn decode_contents_body_returns_for_a_body_larger_than_the_pipe_buffers() {
+        use base64::Engine;
+        let source = "pragma solidity ^0.8.25;\n".repeat(8192);
+        let encoded = base64::engine::general_purpose::STANDARD.encode(&source);
+        let wrapped: String = encoded
+            .as_bytes()
+            .chunks(60)
+            .map(|line| format!("{}\n", std::str::from_utf8(line).unwrap()))
+            .collect();
+        assert_eq!(decode_contents_body(&wrapped), source);
+    }
+
+    #[test]
+    fn decode_contents_body_is_empty_for_a_body_that_is_not_base64() {
+        assert_eq!(decode_contents_body("not base64!"), "");
     }
 
     // ---- retry: pure classifier + bounded-retry driver (no sleeping) ----
