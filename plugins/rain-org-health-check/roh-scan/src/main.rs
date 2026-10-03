@@ -2520,6 +2520,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "src/lib/LibAuthoriserInvariants.sol",
         );
         let v4 = gh_file(deploy_org, deploy_repo, "src/generated/LibProdDeployV4.sol");
+        // Fetched once for every section that reads it. `gh_file` is a `gh`
+        // subprocess with no cache and this file is ~126KB, so a fetch per
+        // section is a quarter of a megabyte of identical transfer.
+        let governed_tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
         // The per-chain governance timelock, which the admin-holder slot of
         // `expectedGrants` resolves to. Read from the repo for the same reason
         // every other pin is: the chain list grows.
@@ -2563,8 +2567,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // active/pending pair silently contradicts the token rows further
             // down this same page, which read `authorizer()` per token.
             let live_authoriser = {
-                let tok_lib = gh_file(org, repo, "src/lib/LibTokenInvariants.sol");
-                deployhealth::parse_receipt_vault_list(&tok_lib)
+                deployhealth::parse_receipt_vault_list(&governed_tok_lib)
                     .addresses
                     .first()
                     .and_then(|vault| {
@@ -2592,11 +2595,18 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // grantee is typed here, so a key added to that map appears on the page
         // by itself. That is the entire point: the hazard being reported on is a
         // hot key nobody remembered to write down.
+        // Derived once and shared by the two sections below. `gh_file` is a `gh`
+        // subprocess with no cache, and `LibTokenInvariants.sol` is ~126KB, so
+        // fetching it per section is real transfer for an identical answer. The
+        // chains are shared for the same reason, and because two sections
+        // reading the same pins cannot then disagree about which chains exist.
+        let mut chains = owners::parse_chain_pins(&v4, &safe, &timelock);
+        for c in chains.iter_mut() {
+            c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
+        }
+        let governed_vaults = deployhealth::parse_receipt_vault_list(&governed_tok_lib).addresses;
+
         let deployment_grants = {
-            let mut chains = owners::parse_chain_pins(&v4, &safe, &timelock);
-            for c in chains.iter_mut() {
-                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
-            }
             // One session per chain, so every `hasRole` for a chain hits the same
             // endpoint and the map cannot be answered by two nodes disagreeing.
             let sessions: Vec<(String, Session)> = chains
@@ -2636,12 +2646,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // migration that moved sixty-odd vaults would otherwise leave this page
         // showing the pre-migration owner with nothing marking it stale.
         let deployment_vault_owners = {
-            let mut chains = owners::parse_chain_pins(&v4, &safe, &timelock);
-            for c in chains.iter_mut() {
-                c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
-            }
-            let tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
-            let vaults = deployhealth::parse_receipt_vault_list(&tok_lib).addresses;
             // One session per chain, as the grant map does, so every `owner()`
             // for a chain is answered by the same node.
             let sessions: Vec<(String, Session)> = chains
@@ -2663,7 +2667,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     .map(|hex| hex.as_deref().and_then(rpc::decode_address))
                     .collect()
             };
-            owners::build_vault_owners(&vaults, &chains, &read_owners)
+            owners::build_vault_owners(&governed_vaults, &chains, &read_owners)
                 .unwrap_or(serde_json::Value::Null)
         };
 
@@ -2971,8 +2975,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // setAuthorizer bundle operates on. Read up front so each token can be
             // cross-checked BOTH ways: registry→migration (is this token governed?)
             // and migration→registry (is this governed vault in the registry?).
-            let tok_lib = gh_file(dorg, drepo, "src/lib/LibTokenInvariants.sol");
-            let governed_parse = deployhealth::parse_receipt_vault_list(&tok_lib);
+            let governed_parse = deployhealth::parse_receipt_vault_list(&governed_tok_lib);
             let governed = governed_parse.addresses;
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
