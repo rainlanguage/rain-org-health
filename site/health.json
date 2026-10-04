@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T13:15:50Z",
+  "generatedAt": "2026-10-04T17:41:15Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2500,7 +2500,16 @@
         "missing": 7,
         "unknown": 0,
         "total": 15,
-        "state": "partial"
+        "state": "partial",
+        "safeKept": [
+          "DEPOSIT_ADMIN",
+          "WITHDRAW_ADMIN",
+          "CERTIFY_ADMIN",
+          "CONFISCATE_SHARES_ADMIN",
+          "CONFISCATE_RECEIPT_ADMIN",
+          "SCHEDULE_CORPORATE_ACTION_ADMIN",
+          "CANCEL_CORPORATE_ACTION_ADMIN"
+        ]
       },
       {
         "network": "ethereum",
@@ -2511,7 +2520,8 @@
         "missing": 0,
         "unknown": 0,
         "total": 15,
-        "state": "live"
+        "state": "live",
+        "safeKept": []
       },
       {
         "network": "hyperevm",
@@ -2522,18 +2532,20 @@
         "missing": 0,
         "unknown": 0,
         "total": 15,
-        "state": "live"
+        "state": "live",
+        "safeKept": []
       },
       {
         "network": "robinhood",
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "rpc.mainnet.chain.robinhood.com",
-        "granted": 8,
-        "missing": 7,
+        "granted": 15,
+        "missing": 0,
         "unknown": 0,
         "total": 15,
-        "state": "partial"
+        "state": "live",
+        "safeKept": []
       },
       {
         "network": "bsc",
@@ -2544,7 +2556,8 @@
         "missing": 0,
         "unknown": 0,
         "total": 15,
-        "state": "live"
+        "state": "live",
+        "safeKept": []
       }
     ],
     "grantees": [
@@ -2555,6 +2568,7 @@
         "roles": [
           {
             "role": "DEPOSIT_ADMIN",
+            "roleId": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02",
             "admin": true,
             "chains": [
               {
@@ -2567,30 +2581,31 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "robinhood",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               }
             ]
           },
           {
             "role": "WITHDRAW_ADMIN",
+            "roleId": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3",
             "admin": true,
             "chains": [
               {
@@ -2603,30 +2618,31 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "robinhood",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               }
             ]
           },
           {
             "role": "CERTIFY_ADMIN",
+            "roleId": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b",
             "admin": true,
             "chains": [
               {
@@ -2639,30 +2655,31 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "robinhood",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               }
             ]
           },
           {
             "role": "CONFISCATE_SHARES_ADMIN",
+            "roleId": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c",
             "admin": true,
             "chains": [
               {
@@ -2675,30 +2692,31 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "robinhood",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               }
             ]
           },
           {
             "role": "CONFISCATE_RECEIPT_ADMIN",
+            "roleId": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d",
             "admin": true,
             "chains": [
               {
@@ -2711,30 +2729,31 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "robinhood",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               }
             ]
           },
           {
             "role": "SCHEDULE_CORPORATE_ACTION_ADMIN",
+            "roleId": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2",
             "admin": true,
             "chains": [
               {
@@ -2747,30 +2766,31 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "robinhood",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               }
             ]
           },
           {
             "role": "CANCEL_CORPORATE_ACTION_ADMIN",
+            "roleId": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373",
             "admin": true,
             "chains": [
               {
@@ -2783,25 +2803,25 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "robinhood",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               }
             ]
           }
@@ -2814,6 +2834,7 @@
         "roles": [
           {
             "role": "DEPOSIT",
+            "roleId": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821",
             "admin": false,
             "chains": [
               {
@@ -2850,6 +2871,7 @@
           },
           {
             "role": "WITHDRAW",
+            "roleId": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869",
             "admin": false,
             "chains": [
               {
@@ -2886,6 +2908,7 @@
           },
           {
             "role": "CERTIFY",
+            "roleId": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391",
             "admin": false,
             "chains": [
               {
@@ -2929,6 +2952,7 @@
         "roles": [
           {
             "role": "DEPOSIT",
+            "roleId": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821",
             "admin": false,
             "chains": [
               {
@@ -2965,6 +2989,7 @@
           },
           {
             "role": "WITHDRAW",
+            "roleId": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869",
             "admin": false,
             "chains": [
               {
@@ -3001,6 +3026,7 @@
           },
           {
             "role": "CERTIFY",
+            "roleId": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391",
             "admin": false,
             "chains": [
               {
@@ -3044,6 +3070,7 @@
         "roles": [
           {
             "role": "DEPOSIT",
+            "roleId": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821",
             "admin": false,
             "chains": [
               {
@@ -3080,6 +3107,7 @@
           },
           {
             "role": "WITHDRAW",
+            "roleId": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869",
             "admin": false,
             "chains": [
               {
@@ -4054,303 +4082,303 @@
         "vaults": [
           {
             "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           }
         ],
         "counts": {
-          "safe": 59,
-          "timelock": 0,
+          "safe": 0,
+          "timelock": 59,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -4920,8 +4948,8 @@
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
           "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
@@ -4932,8 +4960,8 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
           "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
@@ -4944,8 +4972,8 @@
         {
           "name": "Wrapped-token-vault beacon",
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
           "implementation": "0x0d99e0174dbf885ced6ae8deb939b0f890450099",
           "implVersion": "0.1.1",
           "targetImpl": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
