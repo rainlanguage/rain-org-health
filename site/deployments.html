@@ -68,6 +68,19 @@
            border-bottom: 2px solid transparent; margin-bottom: -1px; }
   .nav a:hover { color: var(--ink); }
   .nav a.active { color: var(--ink); border-bottom-color: var(--accent); font-weight: 600; }
+  /* Sub-tabs within one page. Deliberately lighter than `.nav` — a second bar
+     styled identically to the site nav reads as a second site. */
+  .subnav { display: flex; flex-wrap: wrap; gap: 6px; margin: 18px 0 4px; }
+  .subnav-btn {
+    background: var(--surface); color: var(--ink-2); border: 1px solid var(--border);
+    border-radius: 8px; padding: 6px 12px; font-size: 13px; font-weight: 600;
+    cursor: pointer; font-family: inherit;
+  }
+  .subnav-btn:hover { color: var(--ink); }
+  .subnav-btn.active { color: var(--ink); border-color: var(--accent); background: var(--surface-2); }
+  /* Hidden, not removed: the panel stays in the DOM so a find-in-page still
+     reaches it and so "is X reported?" does not depend on the open tab. */
+  .tab-hidden { display: none; }
   /* ---- Known owners ---- */
   .own-sub { color: var(--ink-3); font-size: 13px; margin: 0 0 4px; line-height: 1.55; max-width: 78ch; }
   .own-sub a { color: var(--ink-2); }
@@ -264,25 +277,83 @@ function renderDeployments(document, $, data) {
   };
   const box = $("deployments");
   box.textContent = "";
+
+  // Sub-tabs. This page had grown to six stacked sections across five chains,
+  // which is more than one scroll can hold in the head.
+  //
+  // Every panel is BUILT and kept in the DOM; the tabs toggle visibility. The
+  // alternative — rendering only the active tab — would mean a reader's
+  // ctrl-F misses what is on another tab, and would make "is X reported?"
+  // depend on which tab happened to be open.
+  const TABS = [
+    ["safe", "Safe & ownership"],
+    ["contracts", "Contracts & tokens"],
+  ];
+  const subnav = el("div", "subnav");
+  const panels = {};
+  for (const [id] of TABS) {
+    panels[id] = el("div", "tabpanel");
+    panels[id].dataset.tab = id;
+  }
+  const show = (id) => {
+    for (const [t] of TABS) {
+      panels[t].classList.toggle("tab-hidden", t !== id);
+    }
+    for (const b of subnav.children) {
+      b.classList.toggle("active", b.dataset.tab === id);
+    }
+  };
+  // The open tab is in the URL fragment, so a tab is linkable and — the reason
+  // this exists rather than being a nicety — screenshottable. The repo rule for
+  // `site/**` requires seeing a visual change before claiming it, and
+  // `nix run .#screenshot` loads a URL and cannot click: without a fragment,
+  // every tab but the first is unverifiable.
+  //
+  // Guarded because the render runs under a DOM stub in the tests, where there
+  // is no `location`. An unknown fragment falls back to the first tab rather
+  // than showing nothing.
+  const hashTab = () => {
+    if (typeof location === "undefined" || !location.hash) return null;
+    const want = location.hash.replace(/^#/, "");
+    return TABS.some(([t]) => t === want) ? want : null;
+  };
+  for (const [id, label] of TABS) {
+    const b = el("button", "subnav-btn", label);
+    b.dataset.tab = id;
+    b.addEventListener("click", () => {
+      show(id);
+      // Record the open tab without pushing a history entry per click.
+      if (typeof history !== "undefined" && history.replaceState) {
+        history.replaceState(null, "", "#" + id);
+      }
+    });
+    subnav.append(b);
+  }
+  box.append(subnav, panels.safe, panels.contracts);
+
+  // Where the section renderers append. Reassigned between groups rather than
+  // threaded through every renderer as an argument, so a section moves tab by
+  // moving one line instead of changing a signature.
+  let sink = panels.safe;
   // On-chain health of a pinned suite: each contract deployed at its pinned
   // address with the live runtime code AND keccak codehash both matching.
   const renderHealth = (health) => {
     if (!health || !Array.isArray(health.contracts) || health.contracts.length === 0) return;
-    box.append(el("h2", null, `${health.version} suite — ${health.network} health`));
+    sink.append(el("h2", null, `${health.version} suite — ${health.network} health`));
     const hsub = el("div", "own-sub");
     hsub.append(`Each pinned ${health.version} contract from `);
     hsub.append(link("", `${health.org}/${health.repo}`, `https://github.com/${health.org}/${health.repo}`));
     hsub.append(
       `, checked live on ${health.network}: deployed at its pinned address with the runtime code and keccak codehash both matching the pins.`,
     );
-    box.append(hsub);
+    sink.append(hsub);
     const allHealthy = health.healthy === health.total;
     const hb = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
     hb.append(
       el("span", "own-verify-msg", `${health.healthy} of ${health.total} contracts healthy on ${health.network}.`),
     );
     hb.append(el("span", "own-verify-src", `via ${health.rpcHost}`));
-    box.append(hb);
+    sink.append(hb);
     const chipFor = (label, v) =>
       el(
         "span",
@@ -313,7 +384,7 @@ function renderDeployments(document, $, data) {
       row.append(rc, ac, tail);
       table.append(row);
     }
-    box.append(table);
+    sink.append(table);
   };
   // Production beacons: each should be held by a GOVERNING owner — the
   // token-owner Safe, or the governance timelock once the migration has handed
@@ -324,8 +395,8 @@ function renderDeployments(document, $, data) {
     // silently would drop the whole section, and a missing section reads as
     // "this chain has no production beacons" rather than "this broke".
     if (b.unavailable || !Array.isArray(b.beacons) || b.beacons.length === 0) {
-      box.append(el("h2", null, `Beacons — ${b.network ?? "unknown chain"}`));
-      box.append(
+      sink.append(el("h2", null, `Beacons — ${b.network ?? "unknown chain"}`));
+      sink.append(
         el(
           "div",
           "own-sub",
@@ -334,8 +405,8 @@ function renderDeployments(document, $, data) {
       );
       return;
     }
-    box.append(el("h2", null, `Beacons — ${b.network}`));
-    box.append(
+    sink.append(el("h2", null, `Beacons — ${b.network}`));
+    sink.append(
       el(
         "div",
         "own-sub",
@@ -359,7 +430,7 @@ function renderDeployments(document, $, data) {
     if (b.timelockOwner) {
       banner.append(el("span", "own-verify-src", `timelock = ${b.timelockOwner}`));
     }
-    box.append(banner);
+    sink.append(banner);
     const explorerLink = (addr) => addrNode("own-addr", addr, b.network);
     const detailLine = (key, chipText, chipCls, addr) => {
       const line = el("div", "bcn-line");
@@ -411,7 +482,7 @@ function renderDeployments(document, $, data) {
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
       table.append(row);
     }
-    box.append(table);
+    sink.append(table);
   };
   // One section per chain. Base and Ethereum run on different beacon
   // generations owned by different Safes, so they are separate blocks rather
@@ -429,7 +500,7 @@ function renderDeployments(document, $, data) {
     // reads as "this feature does not exist" rather than "this broke".
     const noTokens = t.tokens.length === 0;
     if (noTokens) {
-      box.append(el("h2", null, `Tokens — ${t.network}`));
+      sink.append(el("h2", null, `Tokens — ${t.network}`));
       const rc = t.reconcile || {};
       // Zero governed vaults and a non-empty-but-disjoint governed set are
       // different failures: the first is an unreadable list, the second a real
@@ -437,7 +508,7 @@ function renderDeployments(document, $, data) {
       const cause = (rc.governedCount ?? 0) === 0
         ? "A governed count of 0 means that list could not be read — the section is unavailable, not empty."
         : "The two sets are disjoint — the cross-check below names every vault and token on each side.";
-      box.append(
+      sink.append(
         el(
           "div",
           "own-sub",
@@ -445,21 +516,21 @@ function renderDeployments(document, $, data) {
         ),
       );
     } else {
-      box.append(el("h2", null, `Tokens — ${t.network}`));
+      sink.append(el("h2", null, `Tokens — ${t.network}`));
       const tsub = el("div", "own-sub");
       tsub.append("Each token in the ");
       tsub.append(link("", `${t.org}/${t.repo}`, `https://github.com/${t.org}/${t.repo}`));
       tsub.append(
         ` Base list, checked live on ${t.network}: name/symbol/decimals match the registry verbatim, asset() points at the declared unwrapped underlying, and the unwrapped/legacy/receipt addresses are deployed.`,
       );
-      box.append(tsub);
+      sink.append(tsub);
       const allOk = t.ok === t.total;
       const tb = el("div", `own-verify ${allOk ? "own-verify-ok" : "own-verify-drift"}`);
       tb.append(
         el("span", "own-verify-msg", `${t.ok} of ${t.total} tokens fully wired on ${t.network}.`),
       );
       tb.append(el("span", "own-verify-src", `via ${t.rpcHost}`));
-      box.append(tb);
+      sink.append(tb);
     }
     const explorerLink = (addr) => addrNode("own-addr", addr, t.network);
     // The setAuthorizer migration target, stated once: what a pending Safe bundle
@@ -482,7 +553,7 @@ function renderDeployments(document, $, data) {
         ),
       );
       ab.append(el("span", "own-verify-src", `target ${auth.target}`));
-      box.append(ab);
+      sink.append(ab);
     }
     const okChip = (label, v) => {
       const sym = v === true ? "✓" : v === false ? "✗" : "—";
@@ -526,8 +597,8 @@ function renderDeployments(document, $, data) {
       // counts that look plausible.
       const declared = rec.governedDeclared;
       if (typeof declared === "number" && declared > (rec.governedCount ?? 0)) {
-        box.append(el("h3", "tok-h3", "Migration set parse"));
-        box.append(
+        sink.append(el("h3", "tok-h3", "Migration set parse"));
+        sink.append(
           el(
             "div",
             "own-verify own-verify-drift",
@@ -538,8 +609,8 @@ function renderDeployments(document, $, data) {
       const extra = Array.isArray(rec.extraVaults) ? rec.extraVaults : [];
       const missing = Array.isArray(rec.missingFromMigration) ? rec.missingFromMigration : [];
       if (!extra.length && !missing.length) return;
-      box.append(el("h3", "tok-h3", "Migration set cross-check"));
-      box.append(
+      sink.append(el("h3", "tok-h3", "Migration set cross-check"));
+      sink.append(
         el(
           "div",
           "own-sub",
@@ -554,7 +625,7 @@ function renderDeployments(document, $, data) {
           `${rec.governedCount} governed receipt vaults · ${rec.registryTokenCount} registry tokens — ${extra.length} governed vault(s) not in the registry, ${missing.length} registry token(s) not in the migration. The bundle has one setAuthorizer per governed vault.`,
         ),
       );
-      box.append(rb);
+      sink.append(rb);
       if (extra.length) {
         const etable = el("div", "own-table");
         for (const v of extra) {
@@ -571,7 +642,7 @@ function renderDeployments(document, $, data) {
           row.append(rc, detail, el("span", "own-chip own-chip-no", "unlisted"));
           etable.append(row);
         }
-        box.append(etable);
+        sink.append(etable);
       }
       if (missing.length) {
         const mb = el("div", "own-verify own-verify-drift");
@@ -582,7 +653,7 @@ function renderDeployments(document, $, data) {
             `${missing.length} registry token(s) have no governed receipt vault — not in the setAuthorizer bundle (a plain collateral token like USDC is expected; a wrapped token here is a gap).`,
           ),
         );
-        box.append(mb);
+        sink.append(mb);
         const mtable = el("div", "own-table");
         for (const m of missing) {
           // A wrapped token that isn't governed is a real gap (red); a plain
@@ -601,7 +672,7 @@ function renderDeployments(document, $, data) {
           row.append(rc, el("div", "bcn-detail"), pill);
           mtable.append(row);
         }
-        box.append(mtable);
+        sink.append(mtable);
       }
     };
     // Deferred to here rather than run from the empty-token branch above: the
@@ -713,7 +784,7 @@ function renderDeployments(document, $, data) {
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
       table.append(row);
     }
-    box.append(table);
+    sink.append(table);
     renderReconcile(t.reconcile);
   };
   // Authoriser role grants: who holds each pinned (role, grantee) pair, and on
@@ -748,7 +819,7 @@ function renderDeployments(document, $, data) {
     // A reader then sees a page that simply stops, with no error, and the
     // three sections most likely to be read as "no problems found" are the
     // three that vanished. So every field this reads is treated as untrusted.
-    box.append(el("h2", null, "Governed vault ownership — Safe or timelock"));
+    sink.append(el("h2", null, "Governed vault ownership — Safe or timelock"));
     // No data is NOT "nothing is governed". `build_vault_owners` returns
     // nothing when the vault list OR the chain pins failed to parse, and the
     // key is absent entirely on a scan from before this section existed. All
@@ -757,7 +828,7 @@ function renderDeployments(document, $, data) {
     // mistake as the grant map, where an unparseable answer and a true empty
     // were both `null`. So it says so.
     if (!v || !Array.isArray(v.chains) || v.chains.length === 0) {
-      box.append(
+      sink.append(
         el(
           "div",
           "vault-empty",
@@ -775,7 +846,7 @@ function renderDeployments(document, $, data) {
         `rollout simply has not reached it; "unknown" means the vault could not be ` +
         `asked at all, never that we know it has not moved.`,
     );
-    box.append(sub);
+    sink.append(sub);
     for (const c of v.chains) {
       if (!c || typeof c !== "object") continue;
       const rowsIn = Array.isArray(c.vaults) ? c.vaults : [];
@@ -817,14 +888,14 @@ function renderDeployments(document, $, data) {
       if (unlabelled > 0) {
         head += ` · ${unlabelled} with a label this page does not know`;
       }
-      box.append(el("h3", null, head));
+      sink.append(el("h3", null, head));
       // The chain's own pins, so a red `other` row can be compared against
       // them. Without these the reader cannot tell a third party from this
       // chain holding ANOTHER chain's timelock — an ordinary migration slip.
       if (c.safe || c.timelock) {
         const pins = el("div", "own-groupnote");
         pins.append(`safe ${c.safe || "—"} · timelock ${c.timelock || "—"}`);
-        box.append(pins);
+        sink.append(pins);
       }
       if (answered.length === 0) continue;
       const tbl = el("div", "own-table");
@@ -846,13 +917,13 @@ function renderDeployments(document, $, data) {
         r.append(el("span", `own-status own-status-${row.label}`, row.label));
         tbl.append(r);
       }
-      box.append(tbl);
+      sink.append(tbl);
     }
   };
 
   const renderGrants = (g) => {
     if (!g || !Array.isArray(g.grantees) || g.grantees.length === 0) return;
-    box.append(el("h2", null, "Authoriser role grants — who can move value"));
+    sink.append(el("h2", null, "Authoriser role grants — who can move value"));
     const gsub = el("div", "own-sub");
     gsub.append("Every (role, grantee) pair pinned in ");
     gsub.append(
@@ -868,12 +939,12 @@ function renderDeployments(document, $, data) {
         `with no change to this page. It shows current production only — a revoked grantee is not kept as history, ` +
         `because a key on this screen reads as a key that can still act.`,
     );
-    box.append(gsub);
+    sink.append(gsub);
     const pinned = g.pinnedCount ?? 0;
     // A map that parsed short would otherwise read as a smaller map, and every
     // count under it would be quietly measured against the wrong denominator.
     if (typeof g.declaredCount === "number" && g.declaredCount > pinned) {
-      box.append(
+      sink.append(
         el(
           "div",
           "own-verify own-verify-drift",
@@ -917,7 +988,7 @@ function renderDeployments(document, $, data) {
         b.append(src);
       }
       if (c.rpcHost) b.append(el("span", "own-verify-src", `via ${c.rpcHost}`));
-      box.append(b);
+      sink.append(b);
     }
     const chainChip = (c) => {
       const st = c.status || "unknown";
@@ -959,8 +1030,8 @@ function renderDeployments(document, $, data) {
         .map((gr) => [gr, (gr.roles || []).filter((r) => !!r.admin === isAdmin)])
         .filter(([, roles]) => roles.length > 0);
       if (!rows.length) return;
-      box.append(el("h3", "tok-h3", title));
-      box.append(el("div", "own-sub", note));
+      sink.append(el("h3", "tok-h3", title));
+      sink.append(el("div", "own-sub", note));
       const table = el("div", "own-table");
       for (const [gr, roles] of rows) {
         const row = el("div", "own-row");
@@ -1028,7 +1099,7 @@ function renderDeployments(document, $, data) {
         );
         table.append(row);
       }
-      box.append(table);
+      sink.append(table);
     };
     section(
       "Action roles — who can move value",
@@ -1042,19 +1113,21 @@ function renderDeployments(document, $, data) {
     );
   };
   const owners = data.deploymentOwners;
-  box.append(el("h2", null, "Known owners"));
+  sink.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
-    box.append(
+    sink.append(
       el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
     );
     // The grant map is parsed independently of the owner constants, so it can
     // still be readable when they are not — and it is the half of this page
     // that says who can move value.
-    renderGrants(data.deploymentGrants);
     renderVaultOwners(data.deploymentVaultOwners);
+    sink = panels.contracts;
+    renderGrants(data.deploymentGrants);
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
+    show(hashTab() || TABS[0][0]);
     return;
   }
   const sub = el("div", "own-sub");
@@ -1065,7 +1138,7 @@ function renderDeployments(document, $, data) {
   sub.append(
     ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
   );
-  box.append(sub);
+  sink.append(sub);
   for (const g of owners.groups) {
     const grp = el("div", "own-group");
     grp.append(el("div", "own-grouphead", g.title));
@@ -1114,13 +1187,18 @@ function renderDeployments(document, $, data) {
       table.append(row);
     }
     grp.append(table);
-    box.append(grp);
+    sink.append(grp);
   }
-  renderGrants(data.deploymentGrants);
+  // Safe tab: who holds production, and whether it is still the Safe or has
+  // moved to the governance timelock. Contracts tab: everything the Safe
+  // governs rather than the Safe itself.
   renderVaultOwners(data.deploymentVaultOwners);
+  sink = panels.contracts;
+  renderGrants(data.deploymentGrants);
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
+  show(hashTab() || TABS[0][0]);
 }
 let data = null;
 async function load() {
