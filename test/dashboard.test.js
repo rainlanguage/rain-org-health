@@ -8937,6 +8937,98 @@ Deno.test("deployments: the admin holder is a timelock, never a hot single signe
   );
 });
 
+Deno.test("deployments: a partial chain says WHAT is not live, not just how many", () => {
+  // "7 not provisioned" is a count, not a diagnosis: it reads the same whether
+  // the Safe still holds those roles (the migration has not reached this chain)
+  // or nobody does (a hole no bundle will fill).
+  const d = grantsData();
+  d.deploymentGrants.chains = [{
+    network: "base",
+    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    safe: BASE_SAFE,
+    rpcHost: "mainnet.base.org",
+    granted: 3,
+    missing: 2,
+    unknown: 0,
+    total: 5,
+    state: "partial",
+  }];
+  d.deploymentGrants.grantees = [{
+    ident: "adminHolder",
+    kind: "admin-holder",
+    address: null,
+    roles: [
+      {
+        role: "DEPOSIT_ADMIN",
+        admin: true,
+        chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds: true }],
+      },
+      {
+        role: "WITHDRAW_ADMIN",
+        admin: true,
+        chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds: true }],
+      },
+    ],
+  }];
+  const box = deploymentsBox(d);
+  const text = textOf(box);
+  assert(text.includes("2 not provisioned"), "the count is still there: " + text.slice(0, 300));
+  assert(
+    text.includes("All 2 are <ROLE>_ADMIN roles"),
+    "and says WHAT they are: " + text.slice(0, 400),
+  );
+  assert(
+    text.includes("still held by the Safe"),
+    "and WHO holds them now: " + text.slice(0, 400),
+  );
+  assert(
+    text.includes("governance migration has not run here"),
+    "and what would close it: " + text.slice(0, 400),
+  );
+  // A rollout stays amber — it is a state to watch, not a fault.
+  assert(collect(box, "own-verify-roll").length >= 1, "a rollout chain is amber");
+  assert(
+    collect(box, "own-verify-drift").length === 0,
+    "and is not escalated to red",
+  );
+});
+
+Deno.test("deployments: a role NOBODY holds is red and says so, not amber", () => {
+  // The one case that is a fault rather than a rollout: no bundle is going to
+  // arrive and grant it. Amber here would file a hole in production control
+  // alongside "waiting for the migration".
+  const d = grantsData();
+  d.deploymentGrants.chains = [{
+    network: "base",
+    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    safe: BASE_SAFE,
+    rpcHost: "mainnet.base.org",
+    granted: 4,
+    missing: 1,
+    unknown: 0,
+    total: 5,
+    state: "partial",
+  }];
+  d.deploymentGrants.grantees = [{
+    ident: "adminHolder",
+    kind: "admin-holder",
+    address: null,
+    roles: [{
+      role: "DEPOSIT_ADMIN",
+      admin: true,
+      chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds: false }],
+    }],
+  }];
+  const box = deploymentsBox(d);
+  const text = textOf(box);
+  assert(text.includes("held by NOBODY"), "names the hole: " + text.slice(0, 400));
+  assert(
+    !text.includes("still held by the Safe"),
+    "and does not also claim the Safe has it",
+  );
+  assert(collect(box, "own-verify-drift").length >= 1, "an unheld role is red");
+});
+
 Deno.test("deployments: an admin role the Safe still holds says so", () => {
   // The declared map names the timelock, so pre-migration every `_ADMIN` row
   // is missing. Without naming the Safe, the page's answer to "who can grant

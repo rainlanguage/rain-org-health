@@ -952,12 +952,65 @@ function renderDeployments(document, $, data) {
         ),
       );
     }
+    // WHAT the not-live grants are, per chain. A bare "7 not provisioned" reads
+    // identically whether the Safe still holds those roles — the governance
+    // migration has not reached this chain, a rollout state — or whether NOBODY
+    // holds them, which is a hole in the control of production. The per-role
+    // rows already carry `safeHolds`; this is the same fact summarised where a
+    // reader looks first, instead of only after expanding every role.
+    const notLive = {};
+    for (const gr of g.grantees || []) {
+      for (const r of gr.roles || []) {
+        for (const rc of r.chains || []) {
+          if (rc.status !== "missing") continue;
+          const m = (notLive[rc.network] = notLive[rc.network] ||
+            { total: 0, admin: 0, safe: 0, nobody: 0, unread: 0 });
+          m.total++;
+          if (r.admin) m.admin++;
+          if (rc.safeHolds === true) m.safe++;
+          else if (rc.safeHolds === false) m.nobody++;
+          else m.unread++;
+        }
+      }
+    }
+    // Phrase the remainder as a diagnosis rather than a count. `nobody` is the
+    // only part that is a fault; it is named in capitals because it is the one
+    // case a reader must not skim past.
+    const diagnose = (net) => {
+      const m = notLive[net];
+      if (!m || !m.total) return "";
+      const what = m.admin === m.total
+        ? `All ${m.total} are <ROLE>_ADMIN roles`
+        : m.admin
+        ? `${m.admin} of them <ROLE>_ADMIN roles`
+        : `none of them admin roles`;
+      // Drop the repeated count when one bucket covers the whole remainder —
+      // "7 not provisioned … all 7 are _ADMIN … 7 still held by the Safe" says
+      // seven three times and reads as three facts.
+      const n = (k) => (m[k] === m.total ? "" : `${m[k]} `);
+      const who = [
+        m.safe ? `${n("safe")}still held by the Safe, so the governance migration has not run here` : null,
+        m.nobody ? `${n("nobody")}held by NOBODY` : null,
+        m.unread ? `${n("unread")}with no holder reading` : null,
+      ].filter(Boolean).join("; ");
+      return ` ${what}, ${who}.`;
+    };
+
     // One banner per chain. A chain mid-rollout is amber, never red: its grants
     // are absent because its bundle has not run, which is a state to watch and
     // not a fault to fix. Only an unreadable chain is dimmed, and it says why.
+    // A role NOBODY holds is the exception — that is red, because no bundle is
+    // going to arrive and grant it.
     for (const c of g.chains || []) {
       const st = c.state || "unknown";
-      const cls = st === "live" ? "ok" : st === "unknown" ? "down" : "roll";
+      const held = notLive[c.network];
+      const cls = held && held.nobody
+        ? "drift"
+        : st === "live"
+        ? "ok"
+        : st === "unknown"
+        ? "down"
+        : "roll";
       // A partial chain's remainder is made of two DIFFERENT things, and
       // reporting only the provisioning half prints "0 not provisioned" over a
       // grant that was never read — the exact conflation this section exists to
@@ -969,9 +1022,11 @@ function renderDeployments(document, $, data) {
       const msg = st === "live"
         ? `${c.network} — all ${c.total} pinned grants live.`
         : st === "partial"
-        ? `${c.network} — ${c.granted} of ${c.total} pinned grants live; ${rest}.`
+        ? `${c.network} — ${c.granted} of ${c.total} pinned grants live; ${rest}.${diagnose(c.network)}`
         : st === "unprovisioned"
-        ? `${c.network} — none of the ${c.total} pinned grants are live yet; this chain's provisioning has not run.`
+        ? `${c.network} — none of the ${c.total} pinned grants are live yet; this chain's provisioning has not run.${
+          diagnose(c.network)
+        }`
         : `${c.network} — pinned grants could not be read${
           !c.authoriser
             ? " (no authoriser pinned for this chain yet)"
