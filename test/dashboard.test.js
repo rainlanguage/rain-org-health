@@ -5349,6 +5349,123 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
   );
 });
 
+Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", () => {
+  const box = deploymentsBox(OWNERS);
+  const btns = collect(box, "subnav-btn");
+  assert(btns.length === 2, "two sub-tabs: " + btns.map((b) => b.textContent).join(","));
+  assert(
+    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts",
+    "tabs in order safe,contracts: " + btns.map((b) => b.dataset.tab).join(","),
+  );
+  // Exactly one active, and it is the first — a page that opens with none
+  // active looks broken, and one that opens with both looks like no tabs.
+  const active = btns.filter((b) => b.classList.contains("active"));
+  assert(active.length === 1 && active[0].dataset.tab === "safe", "safe tab active on load");
+
+  const panels = collect(box, "tabpanel");
+  assert(panels.length === 2, "two panels");
+  const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
+  assert(!byTab.safe.classList.contains("tab-hidden"), "safe panel visible on load");
+  assert(byTab.contracts.classList.contains("tab-hidden"), "contracts panel hidden on load");
+});
+
+Deno.test("deployments: clicking a sub-tab moves both the panel and the active mark", () => {
+  const box = deploymentsBox(OWNERS);
+  const btns = collect(box, "subnav-btn");
+  const panels = Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
+  const contractsBtn = btns.find((b) => b.dataset.tab === "contracts");
+
+  contractsBtn.click();
+  assert(panels.contracts && !panels.contracts.classList.contains("tab-hidden"), "contracts shown");
+  assert(panels.safe.classList.contains("tab-hidden"), "safe hidden");
+  assert(contractsBtn.classList.contains("active"), "clicked tab marked active");
+  assert(
+    !btns.find((b) => b.dataset.tab === "safe").classList.contains("active"),
+    "the other tab is no longer active",
+  );
+
+  // And back, so the toggle is not one-way.
+  btns.find((b) => b.dataset.tab === "safe").click();
+  assert(!panels.safe.classList.contains("tab-hidden"), "safe shown again");
+  assert(panels.contracts.classList.contains("tab-hidden"), "contracts hidden again");
+});
+
+Deno.test("deployments: a closed tab's content is still in the document", () => {
+  // The panels are hidden, never dropped. If a closed tab were unrendered,
+  // find-in-page would miss it and every "is X reported?" assertion on this
+  // page would silently depend on which tab happened to be open.
+  const box = deploymentsBox({
+    ...OWNERS,
+    deploymentGrants: null,
+    deploymentVaultOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      org: "o",
+      repo: "r",
+      network: "ethereum",
+      rpcHost: "h",
+      safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+      targetVersion: "0.1.1",
+      total: 1,
+      healthy: 1,
+      beacons: [{
+        name: "Receipt beacon",
+        address: "0xace121ae30d754536863a546f41b147be11202db",
+        owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        ownerLabel: "timelock",
+        implementation: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+        implVersion: "0.1.1",
+        targetImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+        targetVersion: "0.1.1",
+        atTarget: true,
+        status: "healthy",
+      }],
+    },
+  });
+  const panels = Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
+  // Beacons live on the contracts tab, which is closed on load.
+  assert(panels.contracts.classList.contains("tab-hidden"), "contracts tab is the closed one");
+  const beaconChips = collect(panels.contracts, "own-chip").map((c) => c.textContent);
+  assert(beaconChips.includes("timelock"), "closed tab still holds its rows: " + beaconChips.join(","));
+  // And the whole-box queries the rest of this suite relies on still find it.
+  assert(
+    collect(box, "own-chip").map((c) => c.textContent).includes("timelock"),
+    "a whole-box query reaches content on a closed tab",
+  );
+});
+
+Deno.test("deployments: the Safe tab holds the ownership sections, not the contract ones", () => {
+  const box = deploymentsBox({
+    ...OWNERS,
+    deploymentVaultOwners: {
+      org: "o",
+      repo: "r",
+      source: "s",
+      chains: [{
+        network: "ethereum",
+        safe: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+        timelock: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        vaults: [{
+          vault: "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
+          owner: "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          label: "timelock",
+        }],
+      }],
+    },
+  });
+  const panels = Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
+  const safeText = textOf(panels.safe);
+  assert(safeText.includes("Known owners"), "Known owners is on the Safe tab");
+  assert(
+    safeText.includes("Governed vault ownership"),
+    "vault ownership is on the Safe tab: " + safeText.slice(0, 200),
+  );
+  assert(
+    !textOf(panels.contracts).includes("Known owners"),
+    "Known owners is not duplicated onto the contracts tab",
+  );
+});
+
 Deno.test("deployments: the health and tokens sections link their own chain too", () => {
   // Both of these render functions take the chain from their own payload, so a
   // fixture can exercise them even though production only emits `base` today.
