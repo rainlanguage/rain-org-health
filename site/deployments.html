@@ -81,6 +81,15 @@
   /* Hidden, not removed: the panel stays in the DOM so a find-in-page still
      reaches it and so "is X reported?" does not depend on the open tab. */
   .tab-hidden { display: none; }
+  /* A violated expectation, listed under its chain's banner. Indented under the
+     banner rather than styled as another banner: these are the detail of the
+     line above, not five more findings. */
+  .viol { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 10px;
+          margin: 0 0 3px 14px; font-size: 12.5px; line-height: 1.5; }
+  .viol-role { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+               font-weight: 650; color: var(--ink); }
+  .viol-want { color: var(--ink-3); }
+  .viol-got { color: var(--debt); }
   /* ---- Known owners ---- */
   .own-sub { color: var(--ink-3); font-size: 13px; margin: 0 0 4px; line-height: 1.55; max-width: 78ch; }
   .own-sub a { color: var(--ink-2); }
@@ -952,9 +961,45 @@ function renderDeployments(document, $, data) {
         ),
       );
     }
-    // One banner per chain. A chain mid-rollout is amber, never red: its grants
-    // are absent because its bundle has not run, which is a state to watch and
-    // not a fault to fix. Only an unreadable chain is dimmed, and it says why.
+    // The expectations this chain does not meet, listed.
+    //
+    // A count ("7 not provisioned") tells a reader how many without telling
+    // them which, and any sentence explaining WHY is a sentence about whatever
+    // rollout happens to be in flight — it goes stale the moment that rollout
+    // lands and says nothing about the next one. An expectation is durable: the
+    // map declares that an address should hold a role, the chain is read, and
+    // either it does or it does not. That holds for this migration, the next
+    // one, and for drift that no migration caused.
+    //
+    // So: name the role, the address expected to hold it, and what was found
+    // instead. No narrative.
+    const violations = {};
+    for (const gr of g.grantees || []) {
+      for (const r of gr.roles || []) {
+        for (const rc of r.chains || []) {
+          if (rc.status !== "missing") continue;
+          (violations[rc.network] = violations[rc.network] || []).push({
+            role: r.role,
+            // The grantee's NAME, not its address. The address is already
+            // rendered against this grantee in the rows below; repeating it
+            // here would print the same address twice on one page, which is
+            // exactly what the rest of this section avoids.
+            who: gr.ident || "the declared holder",
+            // `safeHolds` is the one alternative holder the scan probes today.
+            // `null` means it was not probed, which is NOT evidence of absence
+            // and must not read as "nobody has it".
+            heldBySafe: rc.safeHolds === true,
+            unprobed: rc.safeHolds !== true && rc.safeHolds !== false,
+          });
+        }
+      }
+    }
+
+    // One banner per chain, with the violated expectations listed under it.
+    // Amber, not red: an expectation the chain does not meet is a thing to see
+    // and act on, and this page does not know whether the cause is a rollout in
+    // flight or drift. Asserting which would be guessing. Only an unreadable
+    // chain is dimmed, and it says why.
     for (const c of g.chains || []) {
       const st = c.state || "unknown";
       const cls = st === "live" ? "ok" : st === "unknown" ? "down" : "roll";
@@ -963,15 +1008,15 @@ function renderDeployments(document, $, data) {
       // grant that was never read — the exact conflation this section exists to
       // prevent, restated as a count. Each part is named only when non-zero.
       const rest = [
-        c.missing ? `${c.missing} not provisioned on this chain yet` : null,
+        c.missing ? `${c.missing} expectation${c.missing === 1 ? "" : "s"} not met` : null,
         c.unknown ? `${c.unknown} could not be read` : null,
       ].filter(Boolean).join(", ");
       const msg = st === "live"
-        ? `${c.network} — all ${c.total} pinned grants live.`
+        ? `${c.network} — all ${c.total} expectations met.`
         : st === "partial"
-        ? `${c.network} — ${c.granted} of ${c.total} pinned grants live; ${rest}.`
+        ? `${c.network} — ${c.granted} of ${c.total} expectations met; ${rest}.`
         : st === "unprovisioned"
-        ? `${c.network} — none of the ${c.total} pinned grants are live yet; this chain's provisioning has not run.`
+        ? `${c.network} — none of the ${c.total} expectations are met; ${rest}.`
         : `${c.network} — pinned grants could not be read${
           !c.authoriser
             ? " (no authoriser pinned for this chain yet)"
@@ -989,6 +1034,37 @@ function renderDeployments(document, $, data) {
       }
       if (c.rpcHost) b.append(el("span", "own-verify-src", `via ${c.rpcHost}`));
       sink.append(b);
+      // The violated expectations, grouped by the address that was expected to
+      // hold them. One row per expected holder, not per role: the same address
+      // repeated down seven rows is noise, and it would render that address
+      // seven times where the rest of this page renders each address once.
+      const byHolder = new Map();
+      for (const v of violations[c.network] || []) {
+        // `unprobed` is NOT "nobody" — no other holder was asked about, so
+        // claiming absence would assert more than was read. Grouping on it
+        // keeps the three findings distinct.
+        const found = v.heldBySafe ? "safe" : v.unprobed ? "unread" : "none";
+        const key = `${v.who}|${found}`;
+        if (!byHolder.has(key)) byHolder.set(key, { who: v.who, found, roles: [] });
+        byHolder.get(key).roles.push(v.role);
+      }
+      for (const grp of byHolder.values()) {
+        const row = el("div", "viol");
+        row.append(el("span", "viol-want", `${grp.who} should hold`));
+        row.append(el("span", "viol-role", grp.roles.join(", ")));
+        row.append(
+          el(
+            "span",
+            "viol-got",
+            grp.found === "safe"
+              ? "— it does not; the chain's Safe does"
+              : grp.found === "unread"
+              ? "— it does not; no other holder was read"
+              : "— it does not, nor does the chain's Safe",
+          ),
+        );
+        sink.append(row);
+      }
     }
     const chainChip = (c) => {
       const st = c.status || "unknown";

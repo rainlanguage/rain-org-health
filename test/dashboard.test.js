@@ -4933,13 +4933,13 @@ Deno.test("deployments: a grant not yet live on a chain reads as a rollout, neve
   );
   const roll = collect(box, "own-verify-roll")[0];
   assert(
-    textOf(roll).includes("2 of 5 pinned grants live") &&
-      textOf(roll).includes("not provisioned on this chain yet"),
+    textOf(roll).includes("2 of 5 expectations met") &&
+      textOf(roll).includes("3 expectations not met"),
     "the banner says what is actually true: " + textOf(roll),
   );
   assert(
     collect(box, "own-verify-ok").map(textOf).some((t) =>
-      t.includes("base — all 5 pinned grants live")
+      t.includes("base — all 5 expectations met")
     ),
     "the finished chain reads as done",
   );
@@ -8935,6 +8935,96 @@ Deno.test("deployments: the admin holder is a timelock, never a hot single signe
     text.includes("governance timelock"),
     "it is named as the timelock, got: " + text,
   );
+});
+
+Deno.test("deployments: a chain lists the expectations it does not meet", () => {
+  // A count says how many without saying which, and a sentence explaining WHY
+  // is a sentence about whatever rollout is in flight — it goes stale when that
+  // rollout lands. The durable statement is the expectation itself: this holder
+  // should hold these roles, and does not.
+  const d = grantsData();
+  d.deploymentGrants.chains = [{
+    network: "base",
+    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    safe: BASE_SAFE,
+    rpcHost: "mainnet.base.org",
+    granted: 3,
+    missing: 2,
+    unknown: 0,
+    total: 5,
+    state: "partial",
+  }];
+  d.deploymentGrants.grantees = [{
+    ident: "adminHolder",
+    kind: "admin-holder",
+    address: null,
+    roles: [
+      {
+        role: "DEPOSIT_ADMIN",
+        admin: true,
+        chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds: true }],
+      },
+      {
+        role: "WITHDRAW_ADMIN",
+        admin: true,
+        chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds: true }],
+      },
+    ],
+  }];
+  const box = deploymentsBox(d);
+  const rows = collect(box, "viol");
+  // ONE row, not one per role: the same holder repeated down two rows is noise,
+  // and it would print that holder twice.
+  assert(rows.length === 1, "one row per holder, got " + rows.length);
+  const t = textOf(rows[0]);
+  assert(t.includes("adminHolder should hold"), "names the holder: " + t);
+  assert(t.includes("DEPOSIT_ADMIN") && t.includes("WITHDRAW_ADMIN"), "lists both roles: " + t);
+  assert(t.includes("it does not"), "states the violation: " + t);
+  // No narrative about any particular rollout.
+  const page = textOf(box);
+  assert(!page.includes("migration has not run"), "no migration-specific narrative");
+  assert(!page.includes("not provisioned"), "no provisioning vocabulary");
+});
+
+Deno.test("deployments: an unprobed holder is not reported as nobody holding it", () => {
+  // `safeHolds: null` means no other holder was asked about. Reporting that as
+  // "nobody has it" asserts more than was read — the direction that turns an
+  // unread field into a finding.
+  const d = grantsData();
+  d.deploymentGrants.chains = [{
+    network: "base",
+    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    safe: BASE_SAFE,
+    rpcHost: "mainnet.base.org",
+    granted: 4,
+    missing: 1,
+    unknown: 0,
+    total: 5,
+    state: "partial",
+  }];
+  const mk = (safeHolds) => ({
+    ident: "adminHolder",
+    kind: "admin-holder",
+    address: null,
+    roles: [{
+      role: "DEPOSIT_ADMIN",
+      admin: true,
+      chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds }],
+    }],
+  });
+
+  d.deploymentGrants.grantees = [mk(null)];
+  const unread = textOf(collect(deploymentsBox(d), "viol")[0]);
+  assert(unread.includes("no other holder was read"), "unprobed says so: " + unread);
+  assert(!unread.includes("nor does"), "and does not claim nobody holds it: " + unread);
+
+  d.deploymentGrants.grantees = [mk(false)];
+  const none = textOf(collect(deploymentsBox(d), "viol")[0]);
+  assert(none.includes("nor does the chain's Safe"), "a probed absence says so: " + none);
+
+  d.deploymentGrants.grantees = [mk(true)];
+  const safe = textOf(collect(deploymentsBox(d), "viol")[0]);
+  assert(safe.includes("the chain's Safe does"), "a Safe-held role says so: " + safe);
 });
 
 Deno.test("deployments: an admin role the Safe still holds says so", () => {
