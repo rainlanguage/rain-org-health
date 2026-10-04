@@ -845,6 +845,11 @@ pub fn build_grants(
             }
             role_rows.push(json!({
                 "role": role,
+                // The id the chain actually stores and that a `grantRole` /
+                // `renounceRole` calldata carries. Published so a reviewer can
+                // match a bundle's 32 bytes to a named role without hashing it
+                // themselves.
+                "roleId": crate::rpc::role_id_hex(role),
                 "admin": is_admin_role(role),
                 "chains": per_chain,
             }));

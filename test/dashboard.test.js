@@ -4795,8 +4795,21 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
 const BASE_SAFE = "0xe70d821f3462a074e63b42d0AaC6523faAe1d611";
 const ETH_SAFE = "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329";
 const SERVICE_EOA = "0x1c66D6708914C40239D54919320b4C48cAE3D1A9";
+// The real keccak256 of each role name, as the scan publishes it — the value a
+// `grantRole` calldata word carries. Kept as literals so the page's rendering is
+// tested against the ids a reviewer actually reads off a transaction, not
+// against a placeholder the test invented.
+const ROLE_IDS = {
+  DEPOSIT: "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821",
+  DEPOSIT_ADMIN:
+    "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02",
+  WITHDRAW:
+    "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869",
+  CERTIFY: "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391",
+};
 const safeRole = (role, admin) => ({
   role,
+  roleId: ROLE_IDS[role],
   admin,
   chains: [
     { network: "base", address: BASE_SAFE, status: "granted" },
@@ -4805,6 +4818,7 @@ const safeRole = (role, admin) => ({
 });
 const serviceRole = (role) => ({
   role,
+  roleId: ROLE_IDS[role],
   admin: false,
   chains: [
     { network: "base", address: SERVICE_EOA, status: "granted" },
@@ -4908,6 +4922,67 @@ Deno.test("deployments: each grantee lists its own roles and per-chain live stat
   assert(chips.includes("ethereum ○"), "not yet granted on ethereum");
   // The per-grantee tally counts the chain cells, not the roles.
   assert(chips.includes("3/6 live"), "service key 3 of 6 cells: " + chips.join(","));
+});
+
+// Reviewing a governance bundle means reading 32-byte role words out of
+// `grantRole` / `renounceRole` calldata. The page names every role it checks, so
+// it is the natural place to carry the id beside the name — otherwise a reviewer
+// hashes each name by hand to find out which role a word refers to.
+Deno.test("deployments: every role is listed with the full id the chain stores", () => {
+  const box = deploymentsBox(grantsData());
+  const ids = collect(box, "grt-roleid").map((n) => n.textContent);
+  for (const [role, id] of Object.entries(ROLE_IDS)) {
+    assert(ids.includes(id), "id for " + role + " shown, got " + ids.join(","));
+  }
+  // In FULL. A prefix cannot be matched against a calldata word, which is the
+  // only thing this column is for, so a truncated or ellipsised id is a bug and
+  // not a styling choice.
+  for (const id of ids) {
+    assert(
+      /^0x[0-9a-f]{64}$/.test(id),
+      "a role id renders as all 32 bytes, got " + id,
+    );
+  }
+  // Beside its own name, in the same row — an id in a different row than its
+  // name is worse than no id at all.
+  const paired = collect(box, "bcn-line")
+    .map((l) => [
+      collect(l, "grt-role")[0],
+      collect(l, "grt-roleid")[0],
+    ])
+    .filter(([n]) => n && ROLE_IDS[n.textContent])
+    .map(([n, h]) => [n.textContent, h && h.textContent]);
+  assert(paired.length >= 4, "found the role rows: " + JSON.stringify(paired));
+  for (const [name, id] of paired) {
+    assert(
+      id === ROLE_IDS[name],
+      name + " is paired with its own id, got " + id,
+    );
+  }
+});
+
+// Scan output predating the id carries no `roleId`. The column is dropped rather
+// than rendering an empty slot or the string "undefined" next to a role name a
+// reviewer is about to trust.
+Deno.test("deployments: a role with no published id renders no id column", () => {
+  const d = grantsData();
+  for (const gr of d.deploymentGrants.grantees) {
+    for (const r of gr.roles) delete r.roleId;
+  }
+  const box = deploymentsBox(d);
+  assert(
+    collect(box, "grt-roleid").length === 0,
+    "no id column without an id",
+  );
+  assert(
+    !textOf(box).includes("undefined"),
+    "and nothing leaks the missing value as text",
+  );
+  // The roles themselves still list, with their chips.
+  const keys = collect(box, "grt-role").map((k) => k.textContent);
+  for (const r of ["DEPOSIT", "WITHDRAW", "CERTIFY"]) {
+    assert(keys.includes(r), "role " + r + " still listed: " + keys.join(","));
+  }
 });
 
 // The distinction the whole section turns on. A chain whose provisioning has
@@ -8100,12 +8175,17 @@ Deno.test("hostile input: a grantee constant, its network and its address render
   d.deploymentGrants.grantees[1].ident = XSS_IMG;
   d.deploymentGrants.grantees[1].address = XSS_SCRIPT;
   d.deploymentGrants.grantees[1].roles[0].role = XSS_SVG;
+  // The id is published by the scan, not validated as hex by this page — so it
+  // is as untrusted as the name beside it.
+  const XSS_ID = '<iframe src="javascript:alert(1)">';
+  d.deploymentGrants.grantees[1].roles[1].roleId = XSS_ID;
   d.deploymentGrants.grantees[1].roles[0].chains[0].address = XSS_SCRIPT;
   d.deploymentGrants.chains[0].network = XSS_ATTR;
   const box = deploymentsBox(d);
   assertInert(box, XSS_IMG, "grantee constant name");
   assertInert(box, XSS_SCRIPT, "grantee address");
   assertInert(box, XSS_SVG, "role name");
+  assertInert(box, XSS_ID, "role id");
   assertInert(box, XSS_ATTR, "chain name");
   // The address goes into an href as a PROPERTY, so an attribute-context
   // payload stays inside the URL rather than escaping the quoting.

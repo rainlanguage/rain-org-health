@@ -176,6 +176,19 @@
   .grt-role { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
               color: var(--ink-3); width: 200px; flex-shrink: 0; overflow-wrap: anywhere;
               line-height: 1.35; }
+  /* The role id, rendered IN FULL beside the name. A truncated hash cannot be
+     matched against a `grantRole` calldata word, which is the only reason this
+     is on the page, so it is not abbreviated. Monospace and dimmed so it reads
+     as a reference value rather than competing with the name.
+     Sized by its content and allowed to shrink (`min-width: 0` so a flex item
+     actually can): a fixed column wide enough for 32 bytes forces a wrap even
+     where the row has room, and one narrow enough not to would clip the only
+     thing the column is for. Cramped, it wraps mid-hash rather than pushing the
+     row sideways. */
+  .grt-roleid { font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+                font-size: 10.5px; color: var(--ink-3); opacity: 0.75;
+                flex: 0 1 auto; min-width: 0; overflow-wrap: anywhere;
+                line-height: 1.35; }
   @media (max-width: 620px) {
     .own-row { grid-template-columns: 1fr; gap: 5px; }
     .own-prov { justify-content: flex-start; }
@@ -1155,6 +1168,12 @@ function renderDeployments(document, $, data) {
         for (const r of roles) {
           const line = el("div", "bcn-line");
           line.append(el("span", "grt-role", r.role));
+          // The id the chain stores, which is what a bundle's calldata carries:
+          // a reviewer reading a `grantRole` word needs the name beside the 32
+          // bytes, and hashing the name by hand to get there is the step this
+          // removes. Absent on older scan output, so the column is conditional
+          // rather than rendering an empty slot.
+          if (r.roleId) line.append(el("span", "grt-roleid", r.roleId));
           for (const c of r.chains || []) {
             total += 1;
             if (c.status === "granted") live += 1;
