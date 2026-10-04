@@ -980,11 +980,13 @@ function renderDeployments(document, $, data) {
           if (rc.status !== "missing") continue;
           (violations[rc.network] = violations[rc.network] || []).push({
             role: r.role,
-            // The grantee's NAME, not its address. The address is already
-            // rendered against this grantee in the rows below; repeating it
-            // here would print the same address twice on one page, which is
-            // exactly what the rest of this section avoids.
             who: gr.ident || "the declared holder",
+            // The address too. The grantee's name alone is a label pointing at
+            // nothing from here: its address is rendered against it in the
+            // Admin-roles table far below, which is no help while reading the
+            // violation. Carried per chain because a holder's address differs
+            // by chain, and shown once per holder rather than once per role.
+            expected: rc.address,
             // `safeHolds` is the one alternative holder the scan probes today.
             // `null` means it was not probed, which is NOT evidence of absence
             // and must not read as "nobody has it".
@@ -1044,13 +1046,19 @@ function renderDeployments(document, $, data) {
         // claiming absence would assert more than was read. Grouping on it
         // keeps the three findings distinct.
         const found = v.heldBySafe ? "safe" : v.unprobed ? "unread" : "none";
-        const key = `${v.who}|${found}`;
-        if (!byHolder.has(key)) byHolder.set(key, { who: v.who, found, roles: [] });
+        const key = `${v.who}|${v.expected}|${found}`;
+        if (!byHolder.has(key)) {
+          byHolder.set(key, { who: v.who, expected: v.expected, found, roles: [] });
+        }
         byHolder.get(key).roles.push(v.role);
       }
       for (const grp of byHolder.values()) {
         const row = el("div", "viol");
-        row.append(el("span", "viol-want", `${grp.who} should hold`));
+        const want = el("span", "viol-want");
+        want.append(`${grp.who} `);
+        if (grp.expected) want.append(addrNode("own-addr", grp.expected, c.network));
+        want.append(" should hold");
+        row.append(want);
         row.append(el("span", "viol-role", grp.roles.join(", ")));
         row.append(
           el(

@@ -4880,7 +4880,11 @@ Deno.test("deployments: each grantee lists its own roles and per-chain live stat
   );
   assert(roles.includes("tokenOwnerSafe"), "so is the Safe slot");
   // Its address is rendered as a link to the explorer, not just as text.
-  const addr = collect(box, "own-addr").find((a) =>
+  // Scoped to the KEY LIST rows. The same address may also appear in a
+  // violated-expectation line above, which is a reference to this key, not a
+  // second key — the thing this assertion exists to catch.
+  const keyRows = collect(box, "own-row");
+  const addr = keyRows.flatMap((r) => collect(r, "own-addr")).find((a) =>
     a.textContent === SERVICE_EOA
   );
   assert(
@@ -5073,7 +5077,8 @@ Deno.test("deployments: the Safe grantee shows the address it was checked at on 
   // chain — which is what keying the address list by chain does — reads as two
   // different keys holding the same roles, i.e. exactly the miscount this
   // section exists to prevent.
-  const svc = collect(box, "own-addr").filter((a) =>
+  // Scoped to the KEY LIST rows, for the same reason as above.
+  const svc = collect(box, "own-row").flatMap((r) => collect(r, "own-addr")).filter((a) =>
     a.textContent === SERVICE_EOA
   );
   assert(
@@ -8977,7 +8982,9 @@ Deno.test("deployments: a chain lists the expectations it does not meet", () => 
   // and it would print that holder twice.
   assert(rows.length === 1, "one row per holder, got " + rows.length);
   const t = textOf(rows[0]);
-  assert(t.includes("adminHolder should hold"), "names the holder: " + t);
+  assert(t.includes("adminHolder"), "names the holder: " + t);
+  assert(t.includes("0x48ba"), "and the address it should be: " + t);
+  assert(t.includes("should hold"), "and what it should hold: " + t);
   assert(t.includes("DEPOSIT_ADMIN") && t.includes("WITHDRAW_ADMIN"), "lists both roles: " + t);
   assert(t.includes("it does not"), "states the violation: " + t);
   // No narrative about any particular rollout.
