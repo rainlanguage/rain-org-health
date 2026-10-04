@@ -9058,25 +9058,12 @@ Deno.test("deployments: a chain lists the expectations it does not meet", () => 
   }];
   const box = deploymentsBox(d);
   const rows = collect(box, "viol");
-  // ONE row per HOLDER, not one per role: the same holder repeated down two
-  // rows is noise, and it would print that holder twice. Two holders are in
-  // play here — the declared holder that lacks the roles, and the Safe that
-  // kept them — so the guarantee is counted per holder, not over the list.
-  const wanted = rows.filter((r) => textOf(r).includes("should hold"));
-  const kept = rows.filter((r) => textOf(r).includes("should NOT hold"));
-  assert(
-    wanted.length === 1,
-    "both roles group into one declared-holder row, got " + wanted.length,
-  );
-  assert(
-    kept.length === 1,
-    "and the Safe's retention is one row too, got " + kept.length,
-  );
-  assert(
-    rows.length === 2,
-    "and nothing else is listed, got " + rows.map(textOf).join(" | "),
-  );
-  const t = textOf(wanted[0]);
+  // ONE row, not one per role: the same holder repeated down two rows is noise,
+  // and it would print that holder twice. The Safe's own retention is a
+  // separate row driven by the chain's `safeKept`, which this chain does not
+  // carry — so nothing else is listed here.
+  assert(rows.length === 1, "one row per holder, got " + rows.length);
+  const t = textOf(rows[0]);
   assert(t.includes("adminHolder"), "names the holder: " + t);
   assert(t.includes("0x48ba"), "and the address it should be: " + t);
   assert(t.includes("should hold"), "and what it should hold: " + t);
@@ -9183,11 +9170,15 @@ Deno.test("deployments: a Safe that kept an admin role is a violated expectation
     rpcHost: "mainnet.base.org",
     // The scan counts the renounce as its own expectation, so a chain whose
     // grant landed and whose renounce did not is partial, not live.
+    // Every declared grant is in place — the renounce is NOT folded into this
+    // tally, so the chain is `live` on its declared grants and still carries a
+    // violated expectation.
     granted: 1,
-    missing: 1,
+    missing: 0,
     unknown: 0,
-    total: 2,
-    state: "partial",
+    total: 1,
+    state: "live",
+    safeKept: ["DEPOSIT_ADMIN"],
   }];
   d.deploymentGrants.grantees = [{
     ident: "adminHolder",
@@ -9208,6 +9199,20 @@ Deno.test("deployments: a Safe that kept an admin role is a violated expectation
   }];
   const box = deploymentsBox(d);
   const text = textOf(box);
+  // A chain whose declared grants are all in place must NOT read as clean
+  // while the Safe keeps a role: that green banner was the whole defect.
+  // Scoped to THIS chain's banner — the page carries other verify banners
+  // (the Safe roster's, for one) that have nothing to do with the grants.
+  const banner = collect(box, "own-verify").find((b) => textOf(b).startsWith("base —"));
+  assert(banner, "found the chain's banner");
+  assert(
+    !banner.className.includes("own-verify-ok"),
+    "it is not the clean green one, got " + banner.className,
+  );
+  assert(
+    textOf(banner).includes("the Safe still holds 1 it should not"),
+    "and it says why, got: " + textOf(banner),
+  );
   assert(
     text.includes("should NOT hold"),
     "the retention is stated as a violated expectation, got: " + text,
@@ -9255,7 +9260,44 @@ Deno.test("deployments: a Safe that gave the role up is not reported", () => {
       ],
     }],
   }];
-  const text = textOf(deploymentsBox(d));
+  const box = deploymentsBox(d);
+  const text = textOf(box);
   assert(!text.includes("should NOT hold"), "no retention row, got: " + text);
   assert(!text.includes("it still does"), "and no retention clause, got: " + text);
+  // The MIGRATED end state. `safeHolds: false` on a granted row means the
+  // declared holder has it and the Safe gave it up — the chip said "✓ unheld"
+  // there, a green tick calling a correctly-held role unheld, because the
+  // suffix read `safeHolds` without reading `status`.
+  const chips = collect(box, "own-chip").map((c) => c.textContent);
+  assert(
+    !chips.some((t) => t.includes("unheld")),
+    "a granted role is never labelled unheld, got " + chips.join(","),
+  );
+  assert(
+    chips.includes("base ✓"),
+    "it reads as plainly granted, got " + chips.join(","),
+  );
+});
+
+// The other half of the same chip rule: on a granted row the Safe holding it
+// too is the one thing still worth saying, or the chip reads clean while a
+// violated expectation sits above it.
+Deno.test("deployments: a granted role the Safe also kept is marked on the chip", () => {
+  const d = grantsData();
+  d.deploymentGrants.grantees = [{
+    ident: "adminHolder",
+    kind: "admin-holder",
+    address: null,
+    roles: [{
+      role: "DEPOSIT_ADMIN",
+      roleId: ROLE_IDS.DEPOSIT_ADMIN,
+      admin: true,
+      chains: [{ network: "base", address: BASE_SAFE, status: "granted", safeHolds: true }],
+    }],
+  }];
+  const chips = collect(deploymentsBox(d), "own-chip").map((c) => c.textContent);
+  assert(
+    chips.includes("base ✓ +safe"),
+    "granted, and the Safe has it too, got " + chips.join(","),
+  );
 });
