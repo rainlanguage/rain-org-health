@@ -761,6 +761,15 @@ pub fn build_grants(
     // Per-chain tallies, accumulated as the rows are built so the banner counts
     // the rows the page actually shows rather than a separately-derived figure.
     let mut tally: Vec<(usize, usize, usize)> = vec![(0, 0, 0); chains.len()];
+    // The admin roles the Safe was found still holding, per chain, deduped by
+    // role. Kept OUT of the tally above on purpose: that tally counts the
+    // (role, grantee) pairs the map declares, which is what the section's own
+    // sub-text promises the denominator is, and folding a second kind of
+    // expectation into it would make `15 of 15` mean something the page never
+    // says. Deduped because the page lists a role once however many grantees
+    // declare it — a count derived separately from the rows it describes is the
+    // thing this section refuses everywhere else.
+    let mut safe_kept: Vec<Vec<String>> = vec![Vec::new(); chains.len()];
 
     let mut grantees: Vec<serde_json::Value> = Vec::new();
     for ident in &idents {
@@ -808,26 +817,34 @@ pub fn build_grants(
                     GrantOnChain::NotGranted => tally[i].1 += 1,
                     GrantOnChain::Unknown => tally[i].2 += 1,
                 }
-                // For an admin row the map does not yet hold, ask whether the
-                // SAFE holds it. The declared map names the timelock, so a
-                // pre-migration chain reports every `_ADMIN` as missing — and
-                // the page's answer to "who can grant and revoke" becomes
-                // nobody, anywhere, while the Safe holds all seven. That is
-                // the one fact that makes the amber legible.
+                // For every admin row whose declared holder is not the Safe, ask
+                // whether the SAFE holds it — whatever the declared holder's own
+                // status came back as.
                 //
-                // Only when the row is missing and the holder asked about was
-                // not already the Safe: a granted row needs no explanation, and
-                // asking the Safe about itself would be the same question
-                // twice.
+                // Asked on a MISSING row it explains the gap: the declared map
+                // names the timelock, so a pre-migration chain reports every
+                // `_ADMIN` as missing and the page's answer to "who can grant
+                // and revoke" becomes nobody, anywhere, while the Safe holds all
+                // seven.
+                //
+                // Asked on a GRANTED row it catches the case the positive check
+                // structurally cannot see. A migration has two halves: the
+                // timelock is granted the role, and the Safe renounces it. If
+                // the grant lands and the renounce does not, every positive
+                // expectation is met and the Safe can still grant and revoke at
+                // will — the timelock is advisory. Restricting the probe to
+                // missing rows made that state render as "all expectations met".
+                //
+                // Still never asked about the Safe itself: that would be the
+                // same question twice.
                 let safe_holds = match (
                     is_admin_role(role),
-                    &status,
                     is_safe,
                     &chain.authoriser,
                     &chain.rpc_host,
                     &chain.safe,
                 ) {
-                    (true, GrantOnChain::NotGranted, false, Some(auth), Some(_), Some(safe)) => {
+                    (true, false, Some(auth), Some(_), Some(safe)) => {
                         match check(&chain.network, auth, role, safe) {
                             GrantOnChain::Granted => Some(true),
                             GrantOnChain::NotGranted => Some(false),
@@ -836,6 +853,14 @@ pub fn build_grants(
                     }
                     _ => None,
                 };
+                // A role the Safe was found still holding, recorded once per
+                // chain. `Some(false)` is the migrated end state and `None` is
+                // either an unreadable call or a chain with no Safe pinned at
+                // all — neither is a finding, and treating "there is no Safe"
+                // as an unmet expectation about a Safe would invent one.
+                if safe_holds == Some(true) && !safe_kept[i].iter().any(|r| r == role) {
+                    safe_kept[i].push((*role).to_string());
+                }
                 per_chain.push(json!({
                     "network": chain.network,
                     "address": address,
@@ -881,7 +906,8 @@ pub fn build_grants(
     let chain_docs: Vec<serde_json::Value> = chains
         .iter()
         .zip(&tally)
-        .map(|(c, (granted, missing, unknown))| {
+        .zip(&safe_kept)
+        .map(|((c, (granted, missing, unknown)), kept)| {
             json!({
                 "network": c.network,
                 "authoriser": c.authoriser,
@@ -891,7 +917,13 @@ pub fn build_grants(
                 "missing": missing,
                 "unknown": unknown,
                 "total": granted + missing + unknown,
+                // `state` stays a verdict on the DECLARED grants. A chain whose
+                // Safe kept a role is reported by `safeKept`, which the page
+                // reads alongside this rather than instead of it — otherwise
+                // "nothing granted" would stop meaning the provisioning has not
+                // run the moment a renounce happened to be satisfied.
                 "state": chain_state(*granted, *missing, *unknown),
+                "safeKept": kept,
             })
         })
         .collect();
@@ -1600,6 +1632,34 @@ mod tests {
         }
     "#;
 
+    /// One admin role declared to TWO grantees, neither of them the Safe. The
+    /// page lists a kept role once, so the scan has to report it once.
+    const GRANT_LIB_TWO_ADMIN_GRANTEES: &str = r#"
+        library LibAuthoriserInvariants {
+            address internal constant GRANTEE_TOKEN_OWNER_SAFE = LibSafeInvariants.STOX_TOKEN_OWNER_SAFE;
+            address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
+
+            function expectedGrants() internal pure returns (RoleGrant[] memory grants) {
+                grants = expectedGrants(GRANTEE_TOKEN_OWNER_SAFE);
+            }
+
+            function expectedGrants(address tokenOwnerSafe) internal pure returns (RoleGrant[] memory grants) {
+                grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);
+            }
+
+            function expectedGrants(address tokenOwnerSafe, address adminHolder)
+                internal
+                pure
+                returns (RoleGrant[] memory grants)
+            {
+                grants = new RoleGrant[](3);
+                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), adminHolder);
+                grants[1] = RoleGrant(keccak256("DEPOSIT_ADMIN"), GRANTEE_SERVICE_1C66);
+                grants[2] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
+            }
+        }
+    "#;
+
     /// The map MUST come from the overload that holds the pairs, not the first
     /// one taking an address.
     ///
@@ -2000,6 +2060,181 @@ mod tests {
         );
         assert!(is_admin_role("CANCEL_CORPORATE_ACTION_ADMIN"));
         assert!(!is_admin_role("CERTIFY"));
+    }
+
+    /// A migration grants the admin role to the timelock AND has the Safe
+    /// renounce it. If the grant lands and the renounce does not, every declared
+    /// holder holds what it should while the Safe can still grant and revoke at
+    /// will — the timelock is advisory. Probing the Safe only on MISSING rows
+    /// could not observe that state, and the chain reported itself fully met.
+    #[test]
+    fn a_safe_that_kept_an_admin_role_is_seen_even_where_the_timelock_has_it() {
+        // The map that sends the admin roles to a holder that is NOT the Safe —
+        // the only shape in which the question can arise at all.
+        let mut one_chain = two_chains();
+        one_chain.truncate(1);
+        // Everyone asked holds everything: the timelock got its grant, the Safe
+        // never gave its own up.
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
+            &one_chain,
+            &all_granted,
+        )
+        .unwrap();
+
+        assert_eq!(
+            status(&v, "adminHolder", "DEPOSIT_ADMIN", "base"),
+            "granted",
+            "the declared holder's own expectation is met"
+        );
+        let held = grantee(&v, "adminHolder")
+            .and_then(|g| g["roles"].as_array())
+            .and_then(|rs| rs.iter().find(|r| r["role"] == "DEPOSIT_ADMIN"))
+            .and_then(|r| r["chains"].as_array())
+            .and_then(|cs| cs.iter().find(|c| c["network"] == "base"))
+            .map(|c| c["safeHolds"].clone())
+            .unwrap();
+        assert_eq!(
+            held,
+            serde_json::json!(true),
+            "the Safe is asked about a GRANTED admin row, not only a missing one"
+        );
+
+        // The kept roles are reported as their own field. The declared-grant
+        // tally is untouched by them: `total` still counts the (role, grantee)
+        // pairs the map declares, which is what the page says it counts.
+        let chain = v["chains"].as_array().unwrap()[0].clone();
+        assert_eq!(
+            chain["safeKept"],
+            serde_json::json!(["DEPOSIT_ADMIN", "WITHDRAW_ADMIN"]),
+            "got {chain}"
+        );
+        assert_eq!(chain["granted"], serde_json::json!(4), "got {chain}");
+        assert_eq!(chain["missing"], serde_json::json!(0), "got {chain}");
+        assert_eq!(chain["total"], serde_json::json!(4), "got {chain}");
+    }
+
+    /// The kept list is DEDUPED by role. It drives the page's row, and the row
+    /// names a role once however many grantees declare it — a count derived
+    /// separately from the rows it describes is what this section refuses.
+    #[test]
+    fn a_role_two_grantees_declare_is_kept_once() {
+        let mut one_chain = two_chains();
+        one_chain.truncate(1);
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_TWO_ADMIN_GRANTEES),
+            &one_chain,
+            &all_granted,
+        )
+        .unwrap();
+        let chain = v["chains"].as_array().unwrap()[0].clone();
+        assert_eq!(
+            chain["safeKept"],
+            serde_json::json!(["DEPOSIT_ADMIN"]),
+            "one entry though two grantees declare it, got {chain}"
+        );
+    }
+
+    /// A chain with no Safe pinned has no Safe to hold anything. Reporting that
+    /// as a kept role, or as an expectation that could not be read, would
+    /// invent a finding about an address the pins say does not exist.
+    #[test]
+    fn a_chain_with_no_safe_pinned_keeps_nothing() {
+        let mut one_chain = two_chains();
+        one_chain.truncate(1);
+        one_chain[0].safe = None;
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
+            &one_chain,
+            &all_granted,
+        )
+        .unwrap();
+        let chain = v["chains"].as_array().unwrap()[0].clone();
+        assert_eq!(
+            chain["safeKept"],
+            serde_json::json!([]),
+            "no Safe, nothing kept, got {chain}"
+        );
+        // The denominator is still the four declared grants. Counting the
+        // renounce would add one per admin role here — about a Safe the pins
+        // say does not exist.
+        assert_eq!(chain["total"], serde_json::json!(4), "got {chain}");
+        assert_eq!(
+            chain["unknown"],
+            serde_json::json!(1),
+            "exactly the Safe's OWN declared grant is unreadable — the two \
+             admin rows resolve to the admin holder and read fine, got {chain}"
+        );
+        assert_eq!(chain["granted"], serde_json::json!(3), "got {chain}");
+    }
+
+    /// A fresh chain where nothing has been granted to anyone is still
+    /// `unprovisioned`. Counting the Safe's non-holding as a met expectation
+    /// would push `granted` above zero and relabel it a rollout in progress.
+    #[test]
+    fn a_chain_with_nothing_granted_is_still_unprovisioned() {
+        let none_granted = |_n: &str, _a: &str, _r: &str, _g: &str| GrantOnChain::NotGranted;
+        let mut one_chain = two_chains();
+        one_chain.truncate(1);
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
+            &one_chain,
+            &none_granted,
+        )
+        .unwrap();
+        let chain = v["chains"].as_array().unwrap()[0].clone();
+        assert_eq!(chain["granted"], serde_json::json!(0), "got {chain}");
+        assert_eq!(
+            chain["state"], "unprovisioned",
+            "nothing granted anywhere is not a partial rollout, got {chain}"
+        );
+        assert_eq!(chain["safeKept"], serde_json::json!([]), "got {chain}");
+    }
+
+    /// The migrated end state reports nothing. Without this the change above
+    /// could be written to list every admin role as kept.
+    #[test]
+    fn a_safe_that_released_the_role_keeps_nothing() {
+        // Every declared grant holds. The Safe is denied only the ADMIN roles —
+        // denying it everything would strip the non-admin grants the map really
+        // does send to the Safe, and the missing count would then be measuring
+        // the fixture rather than the renounce.
+        let safe = two_chains()[0].safe.clone().unwrap();
+        let released_admin = move |_n: &str, _a: &str, r: &str, g: &str| {
+            if g.eq_ignore_ascii_case(&safe) && is_admin_role(r) {
+                GrantOnChain::NotGranted
+            } else {
+                GrantOnChain::Granted
+            }
+        };
+        let mut one_chain = two_chains();
+        one_chain.truncate(1);
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
+            &one_chain,
+            &released_admin,
+        )
+        .unwrap();
+        let chain = v["chains"].as_array().unwrap()[0].clone();
+        assert_eq!(
+            chain["safeKept"],
+            serde_json::json!([]),
+            "nothing is reported when the Safe released it, got {chain}"
+        );
+        assert_eq!(chain["missing"], serde_json::json!(0), "got {chain}");
+        assert_eq!(chain["granted"], serde_json::json!(4), "got {chain}");
+        assert_eq!(chain["total"], serde_json::json!(4), "got {chain}");
+        assert_eq!(chain["state"], "live", "got {chain}");
     }
 
     /// Per-chain status is the point of the section: the same key is granted on

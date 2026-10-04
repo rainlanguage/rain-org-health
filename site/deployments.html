@@ -986,6 +986,15 @@ function renderDeployments(document, $, data) {
     //
     // So: name the role, the address expected to hold it, and what was found
     // instead. No narrative.
+    // The Safe still holding an admin role is a violated expectation of its
+    // own, not a footnote on a different one. A migration grants the role to
+    // the timelock AND has the Safe renounce it; if only the grant lands, every
+    // declared grant is in place and the Safe can still grant and revoke at
+    // will. The list comes from the chain row rather than being re-derived from
+    // the grantees, so the banner's wording and the row below it cannot
+    // disagree about how many there are.
+    const keptBySafe = (c) => (Array.isArray(c.safeKept) ? c.safeKept : []);
+
     const violations = {};
     for (const gr of g.grantees || []) {
       for (const r of gr.roles || []) {
@@ -1017,7 +1026,19 @@ function renderDeployments(document, $, data) {
     // chain is dimmed, and it says why.
     for (const c of g.chains || []) {
       const st = c.state || "unknown";
-      const cls = st === "live" ? "ok" : st === "unknown" ? "down" : "roll";
+      const kept = keptBySafe(c);
+      // Every declared grant can be in place while the Safe still holds what it
+      // was supposed to give up, so a green banner has to answer to `safeKept`
+      // as well as to the tally. `state` is a verdict on the declared grants
+      // alone and stays that way.
+      const cls = st === "unknown"
+        ? "down"
+        : st === "live" && kept.length === 0
+        ? "ok"
+        : "roll";
+      const keptClause = kept.length
+        ? `the Safe still holds ${kept.length} it should not`
+        : null;
       // A partial chain's remainder is made of two DIFFERENT things, and
       // reporting only the provisioning half prints "0 not provisioned" over a
       // grant that was never read — the exact conflation this section exists to
@@ -1025,9 +1046,12 @@ function renderDeployments(document, $, data) {
       const rest = [
         c.missing ? `${c.missing} expectation${c.missing === 1 ? "" : "s"} not met` : null,
         c.unknown ? `${c.unknown} could not be read` : null,
+        keptClause,
       ].filter(Boolean).join(", ");
-      const msg = st === "live"
+      const msg = st === "live" && kept.length === 0
         ? `${c.network} — all ${c.total} expectations met.`
+        : st === "live"
+        ? `${c.network} — all ${c.total} declared grants in place, but ${keptClause}.`
         : st === "partial"
         ? `${c.network} — ${c.granted} of ${c.total} expectations met; ${rest}.`
         : st === "unprovisioned"
@@ -1086,6 +1110,21 @@ function renderDeployments(document, $, data) {
         );
         sink.append(row);
       }
+      // Stated as what the chain should look like rather than as a step that
+      // did not run: "renounce" would name one migration's mechanism, and this
+      // line has to read the same way for drift that no migration caused.
+      const stillSafe = kept;
+      if (stillSafe.length) {
+        const row = el("div", "viol");
+        const want = el("span", "viol-want");
+        want.append("the chain's Safe ");
+        if (c.safe) want.append(addrNode("own-addr", c.safe, c.network));
+        want.append(" should NOT hold");
+        row.append(want);
+        row.append(el("span", "viol-role", stillSafe.join(", ")));
+        row.append(el("span", "viol-got", "— it still does"));
+        sink.append(row);
+      }
     }
     const chainChip = (c) => {
       const st = c.status || "unknown";
@@ -1093,12 +1132,21 @@ function renderDeployments(document, $, data) {
         granted: ["yes", "✓"],
         missing: ["roll", "○"],
       }[st] || ["dim", "?"];
-      // An admin role the declared holder does not have yet, that the SAFE
-      // does, is a migration still to run — not an unheld privilege. Without
-      // saying so the page answers "who can grant and revoke" with nobody,
-      // anywhere, while the Safe holds all seven. `safeHolds === false` is the
-      // other way round and worth as much: nobody we pinned holds it.
-      const held = c.safeHolds === true
+      // The suffix answers "then who HAS it?", which is a question only a
+      // MISSING row raises. An admin role the declared holder does not have
+      // yet, that the SAFE does, is a migration still to run — not an unheld
+      // privilege; and `safeHolds === false` there means nobody we pinned holds
+      // it.
+      //
+      // On a GRANTED row neither reading survives. The declared holder has it,
+      // so `unheld` would be false on its face — a green tick reading
+      // "base ✓ unheld" over a role the timelock correctly holds, which is what
+      // this said while the Safe was probed on granted rows too. The one thing
+      // left worth saying there is that the Safe ALSO has it, so the chip does
+      // not read as clean while a violated expectation sits above it.
+      const held = st === "granted"
+        ? (c.safeHolds === true ? " +safe" : "")
+        : c.safeHolds === true
         ? " safe"
         : c.safeHolds === false
         ? " unheld"
