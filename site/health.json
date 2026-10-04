@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T07:00:19Z",
+  "generatedAt": "2026-10-04T13:15:50Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1376,12 +1376,12 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 1,
+        "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-10-03T14:07:47Z",
-          "commit": "0d5c36748c8374a349693ea55dd84cbe391197e2",
+          "timestamp": "2026-10-04T10:18:47Z",
+          "commit": "e0cdbce3086af31b7977008be4aa8cbfb4974e98",
           "skillVersion": "0.35.0",
-          "scope": "re-probe of src/lib/LibLeakyBucket.sol after main was merged into #123. The merge brought in the headroomAt NatSpec rewording from #122; no executable line in src moved and test is as #123 had it."
+          "scope": "src/lib/LibLeakyBucket.sol across the whole of #124: settle and setPolicy exported, with fill, levelAt and setPolicy written in terms of settle, and write-time policy validation."
         },
         "blockedBy": [
           "rain.datacontract",
@@ -2540,11 +2540,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "bsc-dataseed.bnbchain.org",
-        "granted": 8,
-        "missing": 7,
+        "granted": 15,
+        "missing": 0,
         "unknown": 0,
         "total": 15,
-        "state": "partial"
+        "state": "live"
       }
     ],
     "grantees": [
@@ -2584,8 +2584,8 @@
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": null
               }
             ]
           },
@@ -2620,8 +2620,8 @@
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": null
               }
             ]
           },
@@ -2656,8 +2656,8 @@
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": null
               }
             ]
           },
@@ -2692,8 +2692,8 @@
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": null
               }
             ]
           },
@@ -2728,8 +2728,8 @@
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": null
               }
             ]
           },
@@ -2764,8 +2764,8 @@
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": null
               }
             ]
           },
@@ -2800,8 +2800,8 @@
               {
                 "network": "bsc",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": null
               }
             ]
           }
@@ -4363,303 +4363,303 @@
         "vaults": [
           {
             "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xfae9afe275e57759f8fbae5f252c65adbf1b773f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xd78025aa344e549a1d76ece1591c481cc7bc3548",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xaab11f0141c2aa6b9a3845efdb1a6d16dc40924a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x516d6c697c40e24de9d17811e642a07a6d70cf07",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x012ec0436407b8ade9a00614e01abf1faab69755",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xe319e212860ef85c4082b3b73641bd25721c88b2",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x2c594750dbe8e5b2d8d155b4fcb39fed307a91b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x925eb169ed82889a7afe5292d97998acb26b6233",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xfa63f568c4487711124d9f258d3a9167a89797c3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb9c3a133e2425eec6d8a1dad9a0d78308be79a5e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xd2f6abfb251a3e43df9191486485de0e46a9e6a5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xd170ed7698508f228bb5a67d0f4548eeea6f15cb",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x2aa2258b97f44425769cf1a4e92a3562060a93e8",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x0d2029ed7497a8cc5c65e808393ced0af2259385",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x683dd1c36169b25355c8c110942a820f395ffb7d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x185ccb3c9c09300b3877f71e747f041604f7603f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xcb8b0c80560a66c96a25297cc98b23fa1d7acc6a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xcd49da53d0570e6d34ab786aa4eb4f9e0e6ab045",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x194c6ebe9919c8681aa17c8814ee6c8a0534b28f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xc6e584f4341e418962a0dde3f2969b6be58f1920",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x543e33e9276cf00b74689c8e41fd7fc921128ba0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xe2593db54e7893d311cbf5087cdb7a9027b9a7fd",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xc67038bbff91f2568b902ff171e9f9c06ed98815",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0xbca97cc57916734130c9f05ea8b217682a249b75",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x042dfd33de6766a8858f188dfcf207d311da6488",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe"
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock"
           }
         ],
         "counts": {
-          "safe": 59,
-          "timelock": 0,
+          "safe": 0,
+          "timelock": 59,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -4969,8 +4969,8 @@
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
           "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
@@ -4981,8 +4981,8 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
           "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
@@ -4993,8 +4993,8 @@
         {
           "name": "Wrapped-token-vault beacon",
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-          "ownerLabel": "safe",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
           "implementation": "0x0d99e0174dbf885ced6ae8deb939b0f890450099",
           "implVersion": "0.1.1",
           "targetImpl": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
@@ -7832,12 +7832,12 @@
     {
       "name": "rain.lib.leakybucket",
       "org": "rainlanguage",
-      "openAuditIssues": 1,
+      "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-10-03T14:07:47Z",
-        "commit": "0d5c36748c8374a349693ea55dd84cbe391197e2",
+        "timestamp": "2026-10-04T10:18:47Z",
+        "commit": "e0cdbce3086af31b7977008be4aa8cbfb4974e98",
         "skillVersion": "0.35.0",
-        "scope": "re-probe of src/lib/LibLeakyBucket.sol after main was merged into #123. The merge brought in the headroomAt NatSpec rewording from #122; no executable line in src moved and test is as #123 had it."
+        "scope": "src/lib/LibLeakyBucket.sol across the whole of #124: settle and setPolicy exported, with fill, levelAt and setPolicy written in terms of settle, and write-time policy validation."
       },
       "lastAudit": {
         "auditedAt": "2026-09-22T05:00:00Z",
@@ -8739,6 +8739,42 @@
       "daysSinceAudit": 137
     },
     {
+      "name": "rain.lib.leakybucket",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.lib.leakybucket.06baa59b15b0b4ad51189288e3137eee677db37d.sep-2026.pdf",
+          "path": "audit/protofire/rain.lib.leakybucket.06baa59b15b0b4ad51189288e3137eee677db37d.sep-2026.pdf",
+          "lastCommitIso": "2026-10-03T12:15:45Z",
+          "auditDateIso": "2026-09-22T19:45:39Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "06baa59b15b0b4ad51189288e3137eee677db37d",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-09-22T19:45:39Z",
+      "latestTag": "sol-v0.4.4",
+      "latestTagIso": "2026-10-04T10:28:42Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 279,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 170,
+      "sourceLocRemovedSinceAudit": 109,
+      "filesChangedSinceAudit": 1,
+      "commitsSinceAudit": 65,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 91,
+      "commentLocRemovedSinceAudit": 29,
+      "codeLocAddedSinceAudit": 69,
+      "codeLocRemovedSinceAudit": 70,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.lib.leakybucket/compare/06baa59b15b0b4ad51189288e3137eee677db37d...main",
+      "daysSinceAudit": 12
+    },
+    {
       "name": "rain.tofu.erc20-decimals",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -8773,42 +8809,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/03406b6ad8d33a802c6eb58ae4dac3f0ea9aed38...main",
       "daysSinceAudit": 236
-    },
-    {
-      "name": "rain.lib.leakybucket",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.lib.leakybucket.06baa59b15b0b4ad51189288e3137eee677db37d.sep-2026.pdf",
-          "path": "audit/protofire/rain.lib.leakybucket.06baa59b15b0b4ad51189288e3137eee677db37d.sep-2026.pdf",
-          "lastCommitIso": "2026-10-03T12:15:45Z",
-          "auditDateIso": "2026-09-22T19:45:39Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "06baa59b15b0b4ad51189288e3137eee677db37d",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-09-22T19:45:39Z",
-      "latestTag": "sol-v0.4.3",
-      "latestTagIso": "2026-10-03T14:11:29Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 244,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 138,
-      "sourceLocRemovedSinceAudit": 106,
-      "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 32,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 67,
-      "commentLocRemovedSinceAudit": 26,
-      "codeLocAddedSinceAudit": 63,
-      "codeLocRemovedSinceAudit": 71,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.lib.leakybucket/compare/06baa59b15b0b4ad51189288e3137eee677db37d...main",
-      "daysSinceAudit": 12
     },
     {
       "name": "rain.metadata",
