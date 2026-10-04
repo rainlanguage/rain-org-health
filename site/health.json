@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-04T17:41:15Z",
+  "generatedAt": "2026-10-04T21:32:46Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2496,20 +2496,12 @@
         "authoriser": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
         "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
         "rpcHost": "mainnet.base.org",
-        "granted": 8,
-        "missing": 7,
+        "granted": 15,
+        "missing": 0,
         "unknown": 0,
         "total": 15,
-        "state": "partial",
-        "safeKept": [
-          "DEPOSIT_ADMIN",
-          "WITHDRAW_ADMIN",
-          "CERTIFY_ADMIN",
-          "CONFISCATE_SHARES_ADMIN",
-          "CONFISCATE_RECEIPT_ADMIN",
-          "SCHEDULE_CORPORATE_ACTION_ADMIN",
-          "CANCEL_CORPORATE_ACTION_ADMIN"
-        ]
+        "state": "live",
+        "safeKept": []
       },
       {
         "network": "ethereum",
@@ -2574,8 +2566,8 @@
               {
                 "network": "base",
                 "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "ethereum",
@@ -2611,8 +2603,8 @@
               {
                 "network": "base",
                 "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "ethereum",
@@ -2648,8 +2640,8 @@
               {
                 "network": "base",
                 "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "ethereum",
@@ -2685,8 +2677,8 @@
               {
                 "network": "base",
                 "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "ethereum",
@@ -2722,8 +2714,8 @@
               {
                 "network": "base",
                 "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "ethereum",
@@ -2759,8 +2751,8 @@
               {
                 "network": "base",
                 "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "ethereum",
@@ -2796,8 +2788,8 @@
               {
                 "network": "base",
                 "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-                "status": "missing",
-                "safeHolds": true
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "ethereum",
@@ -3155,303 +3147,303 @@
         "vaults": [
           {
             "vault": "0x013b782f402d61aa1004cca95b9f5bb402c9d5fe",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x4e169cd2ab4f82640a8c65c68fed55863866fdb0",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x626757e6f50675d17fcad312e82f989ae7a23d38",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x58ce5024b89b4f73c27814c0f0abbea331c99be8",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x38eb797892ed71da69bdc27a456a7c83ff813b52",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x7271a3c91bb6070ed09333b84a815949d4f16d14",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x9a507314ea2a6c5686c0d07bfecb764dcf324dff",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x1f17523b147ccc2a2328c0f014f6d49c479ea063",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xfbde45df60249203b12148452fc77c3b5f811eb2",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xc941c1506b7555ba8c506fb6c9b9cc259902d612",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x0acfea6833c4a3f41bf2fbd736aa9eea547d90ee",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x323804af6f3bb463d688b854667c6870a0fc06ad",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xc585aeb8b76c5f5e4215470a7625258e86ed7746",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x9a5d3caec90b0332b18c0b93fef42f3f8c918289",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x96de077262609298cd891e4ab21bd34837de33ab",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x7001e2974f775f0fd73a3d2e5914e591f3ec3fbb",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x4dba41f0feb390f208a85e96168ff5d8ac2b6f5c",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x722cb373f1871a176fb5dc3953046f2eae22f619",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x50b5225409a55b873fd6c2fd5880af5a11ace9b1",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x6088f8ef741ae1f5a61882866f130631b41617e2",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x98c02b58b7e65ef5a4262d9536162949e3b2e141",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xdde9346107609a05439a0b59ab6ed4f7f81a1fbf",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x15de944cd020a18c8e5626fb0f81b36e73956199",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xd36056a4a03707d3743fce4e9c08852820adcfdc",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x6a071e25fa25653cf15d1ee320ea3df771926aa0",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xb6021810971714cd48572af527307acc324ecf61",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xbdc237aa3b67cc3088adaf117913f30bf08157a3",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x5cefd886dd05001c2fc32c313e05360d07f37d8f",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x57573351f3fdd20a57dee4a7f836de1ce9900d4b",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x8518931497d2a8f07bc607d1d3295b398d065a65",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xca1a378f9a250131a2fe51c10f120fef7edca56e",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x51d5c8c8040358686952a30fac116aac32390d6a",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xbeb0c2011bd5520a0998b69132e9245e39ac5d1d",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xddb07add0e23bb7ec97f53c0959d9c6cc09624f4",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x9610c265eb8f38b22fec78498c74924d9fe55891",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xf5245a17e5eb64d53dea213d40aba01821d465cd",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xa662066a60964a528ad05209139a79bda3a7577f",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x07d7ca9384812b86e7e429473df354fb59da73a0",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x725e0df28d1eb09338f63776b76bcfc00f3b6f44",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x88c3f4e2e0a977fed97ed246c70bfd7a01070246",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xa4178410216f5f00c718be88c2ff8ac24de192bc",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x6c2b6ed57d4d9e93f3e4975fac70ee4b180f4eb9",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xe9bc7ef69f123ca2bca1021d1be30224271a9217",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xeda4df511dea07b6529db2196998b30e03791d87",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x785bd77b8e92866f87e01416d1022d729975d529",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x22e99389f5ef6fa110317e2aec0a95d8aa39efd4",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0xda2e8d6e2a7d0a38a6b39a274d6911476062298b",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           },
           {
             "vault": "0x6c5c451672e9d0cef8728cb511c01e5cdd096563",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe"
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock"
           }
         ],
         "counts": {
-          "safe": 59,
-          "timelock": 0,
+          "safe": 0,
+          "timelock": 59,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -4801,8 +4793,8 @@
         {
           "name": "Receipt beacon",
           "address": "0x86e93c39B095be0B0054C8488E26466Ee027D79a",
-          "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-          "ownerLabel": "safe",
+          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+          "ownerLabel": "timelock",
           "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
@@ -4813,8 +4805,8 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
-          "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-          "ownerLabel": "safe",
+          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+          "ownerLabel": "timelock",
           "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
@@ -4825,8 +4817,8 @@
         {
           "name": "Wrapped-token-vault beacon",
           "address": "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
-          "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-          "ownerLabel": "safe",
+          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+          "ownerLabel": "timelock",
           "implementation": "0x0d99e0174dbf885ced6ae8deb939b0f890450099",
           "implVersion": "0.1.1",
           "targetImpl": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
