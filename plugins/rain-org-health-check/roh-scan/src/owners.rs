@@ -808,26 +808,34 @@ pub fn build_grants(
                     GrantOnChain::NotGranted => tally[i].1 += 1,
                     GrantOnChain::Unknown => tally[i].2 += 1,
                 }
-                // For an admin row the map does not yet hold, ask whether the
-                // SAFE holds it. The declared map names the timelock, so a
-                // pre-migration chain reports every `_ADMIN` as missing — and
-                // the page's answer to "who can grant and revoke" becomes
-                // nobody, anywhere, while the Safe holds all seven. That is
-                // the one fact that makes the amber legible.
+                // For every admin row whose declared holder is not the Safe, ask
+                // whether the SAFE holds it — whatever the declared holder's own
+                // status came back as.
                 //
-                // Only when the row is missing and the holder asked about was
-                // not already the Safe: a granted row needs no explanation, and
-                // asking the Safe about itself would be the same question
-                // twice.
+                // Asked on a MISSING row it explains the gap: the declared map
+                // names the timelock, so a pre-migration chain reports every
+                // `_ADMIN` as missing and the page's answer to "who can grant
+                // and revoke" becomes nobody, anywhere, while the Safe holds all
+                // seven.
+                //
+                // Asked on a GRANTED row it catches the case the positive check
+                // structurally cannot see. A migration has two halves: the
+                // timelock is granted the role, and the Safe renounces it. If
+                // the grant lands and the renounce does not, every positive
+                // expectation is met and the Safe can still grant and revoke at
+                // will — the timelock is advisory. Restricting the probe to
+                // missing rows made that state render as "all expectations met".
+                //
+                // Still never asked about the Safe itself: that would be the
+                // same question twice.
                 let safe_holds = match (
                     is_admin_role(role),
-                    &status,
                     is_safe,
                     &chain.authoriser,
                     &chain.rpc_host,
                     &chain.safe,
                 ) {
-                    (true, GrantOnChain::NotGranted, false, Some(auth), Some(_), Some(safe)) => {
+                    (true, false, Some(auth), Some(_), Some(safe)) => {
                         match check(&chain.network, auth, role, safe) {
                             GrantOnChain::Granted => Some(true),
                             GrantOnChain::NotGranted => Some(false),
@@ -836,6 +844,17 @@ pub fn build_grants(
                     }
                     _ => None,
                 };
+                // "The Safe does not hold this admin role" is an expectation in
+                // its own right, so it is counted like one. Without this the
+                // banner's denominator covers only half of what the migration
+                // has to achieve, and a chain that did one half reads as done.
+                if is_admin_role(role) && !is_safe {
+                    match safe_holds {
+                        Some(false) => tally[i].0 += 1,
+                        Some(true) => tally[i].1 += 1,
+                        None => tally[i].2 += 1,
+                    }
+                }
                 per_chain.push(json!({
                     "network": chain.network,
                     "address": address,
@@ -2000,6 +2019,101 @@ mod tests {
         );
         assert!(is_admin_role("CANCEL_CORPORATE_ACTION_ADMIN"));
         assert!(!is_admin_role("CERTIFY"));
+    }
+
+    /// A migration grants the admin role to the timelock AND has the Safe
+    /// renounce it. If the grant lands and the renounce does not, every declared
+    /// holder holds what it should while the Safe can still grant and revoke at
+    /// will — the timelock is advisory. Probing the Safe only on MISSING rows
+    /// could not observe that state, and the chain reported itself fully met.
+    #[test]
+    fn a_safe_that_kept_an_admin_role_is_seen_even_where_the_timelock_has_it() {
+        // The map that sends the admin roles to a holder that is NOT the Safe —
+        // the only shape in which the question can arise at all.
+        let mut one_chain = two_chains();
+        one_chain.truncate(1);
+        // Everyone asked holds everything: the timelock got its grant, the Safe
+        // never gave its own up.
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
+            &one_chain,
+            &all_granted,
+        )
+        .unwrap();
+
+        assert_eq!(
+            status(&v, "adminHolder", "DEPOSIT_ADMIN", "base"),
+            "granted",
+            "the declared holder's own expectation is met"
+        );
+        let held = grantee(&v, "adminHolder")
+            .and_then(|g| g["roles"].as_array())
+            .and_then(|rs| rs.iter().find(|r| r["role"] == "DEPOSIT_ADMIN"))
+            .and_then(|r| r["chains"].as_array())
+            .and_then(|cs| cs.iter().find(|c| c["network"] == "base"))
+            .map(|c| c["safeHolds"].clone())
+            .unwrap();
+        assert_eq!(
+            held,
+            serde_json::json!(true),
+            "the Safe is asked about a GRANTED admin row, not only a missing one"
+        );
+
+        // And the retention is counted, so the chain cannot read as fully met.
+        // Four declared grants plus the two renounces the admin roles imply.
+        let chain = v["chains"].as_array().unwrap()[0].clone();
+        assert_eq!(chain["granted"], serde_json::json!(4), "got {chain}");
+        assert_eq!(
+            chain["missing"],
+            serde_json::json!(2),
+            "the two kept admin roles are expectations not met, got {chain}"
+        );
+        assert_eq!(chain["total"], serde_json::json!(6), "got {chain}");
+        assert_ne!(
+            chain["state"], "live",
+            "a chain whose Safe kept an admin role is not live, got {chain}"
+        );
+    }
+
+    /// The counted expectation is the RENOUNCE, so a Safe that gave the role up
+    /// adds a met expectation rather than a violated one. Without this the fix
+    /// above could be written to count every admin role as missing.
+    #[test]
+    fn a_safe_that_released_the_role_counts_as_an_expectation_met() {
+        // Every declared grant holds. The Safe is denied only the ADMIN roles —
+        // denying it everything would strip the non-admin grants the map really
+        // does send to the Safe, and the missing count would then be measuring
+        // the fixture rather than the renounce.
+        let safe = two_chains()[0].safe.clone().unwrap();
+        let released_admin = move |_n: &str, _a: &str, r: &str, g: &str| {
+            if g.eq_ignore_ascii_case(&safe) && is_admin_role(r) {
+                GrantOnChain::NotGranted
+            } else {
+                GrantOnChain::Granted
+            }
+        };
+        let mut one_chain = two_chains();
+        one_chain.truncate(1);
+        let v = build_grants(
+            "o",
+            "r",
+            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
+            &one_chain,
+            &released_admin,
+        )
+        .unwrap();
+        let chain = v["chains"].as_array().unwrap()[0].clone();
+        assert_eq!(
+            chain["missing"],
+            serde_json::json!(0),
+            "nothing is violated when the Safe released it, got {chain}"
+        );
+        // The renounces are COUNTED as met, not skipped: the same six.
+        assert_eq!(chain["granted"], serde_json::json!(6), "got {chain}");
+        assert_eq!(chain["total"], serde_json::json!(6), "got {chain}");
+        assert_eq!(chain["state"], "live", "got {chain}");
     }
 
     /// Per-chain status is the point of the section: the same key is granted on

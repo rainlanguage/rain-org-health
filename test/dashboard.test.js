@@ -9058,10 +9058,25 @@ Deno.test("deployments: a chain lists the expectations it does not meet", () => 
   }];
   const box = deploymentsBox(d);
   const rows = collect(box, "viol");
-  // ONE row, not one per role: the same holder repeated down two rows is noise,
-  // and it would print that holder twice.
-  assert(rows.length === 1, "one row per holder, got " + rows.length);
-  const t = textOf(rows[0]);
+  // ONE row per HOLDER, not one per role: the same holder repeated down two
+  // rows is noise, and it would print that holder twice. Two holders are in
+  // play here — the declared holder that lacks the roles, and the Safe that
+  // kept them — so the guarantee is counted per holder, not over the list.
+  const wanted = rows.filter((r) => textOf(r).includes("should hold"));
+  const kept = rows.filter((r) => textOf(r).includes("should NOT hold"));
+  assert(
+    wanted.length === 1,
+    "both roles group into one declared-holder row, got " + wanted.length,
+  );
+  assert(
+    kept.length === 1,
+    "and the Safe's retention is one row too, got " + kept.length,
+  );
+  assert(
+    rows.length === 2,
+    "and nothing else is listed, got " + rows.map(textOf).join(" | "),
+  );
+  const t = textOf(wanted[0]);
   assert(t.includes("adminHolder"), "names the holder: " + t);
   assert(t.includes("0x48ba"), "and the address it should be: " + t);
   assert(t.includes("should hold"), "and what it should hold: " + t);
@@ -9152,4 +9167,95 @@ Deno.test("deployments: an admin role the Safe still holds says so", () => {
     text.includes("ethereum ○ unheld"),
     "and nobody holding it is distinct from that, got: " + text,
   );
+});
+
+// The half of a migration the positive check structurally cannot see. Granting
+// the timelock the role and having the Safe renounce it are two steps; if the
+// grant lands and the renounce does not, every declared holder holds what it
+// should and the Safe can still grant and revoke at will. Before this was
+// reported the page called that chain fully met.
+Deno.test("deployments: a Safe that kept an admin role is a violated expectation, even where the timelock has it too", () => {
+  const d = grantsData();
+  d.deploymentGrants.chains = [{
+    network: "base",
+    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    safe: BASE_SAFE,
+    rpcHost: "mainnet.base.org",
+    // The scan counts the renounce as its own expectation, so a chain whose
+    // grant landed and whose renounce did not is partial, not live.
+    granted: 1,
+    missing: 1,
+    unknown: 0,
+    total: 2,
+    state: "partial",
+  }];
+  d.deploymentGrants.grantees = [{
+    ident: "adminHolder",
+    kind: "admin-holder",
+    address: null,
+    roles: [{
+      role: "DEPOSIT_ADMIN",
+      roleId: ROLE_IDS.DEPOSIT_ADMIN,
+      admin: true,
+      // GRANTED to the timelock — and the Safe never gave it up.
+      chains: [{
+        network: "base",
+        address: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+        status: "granted",
+        safeHolds: true,
+      }],
+    }],
+  }];
+  const box = deploymentsBox(d);
+  const text = textOf(box);
+  assert(
+    text.includes("should NOT hold"),
+    "the retention is stated as a violated expectation, got: " + text,
+  );
+  assert(
+    text.includes("it still does"),
+    "and says the Safe still holds it, got: " + text,
+  );
+  // Against the Safe's OWN address, not the timelock's — naming the wrong
+  // address here points the reader at the holder that is behaving correctly.
+  const viol = collect(box, "viol").find((v) => textOf(v).includes("should NOT hold"));
+  assert(viol, "found the retention row");
+  const addrs = collect(viol, "own-addr").map((a) => a.textContent);
+  assert(
+    addrs.includes(BASE_SAFE),
+    "the Safe's address is named, got " + addrs.join(","),
+  );
+  assert(
+    !addrs.includes("0x48ba1371A78E6cC54157c63721756ab444510DB3"),
+    "and not the timelock's, got " + addrs.join(","),
+  );
+  assert(
+    textOf(viol).includes("DEPOSIT_ADMIN"),
+    "the role is named, got: " + textOf(viol),
+  );
+});
+
+// `safeHolds: false` is the migrated state and must stay silent, or every
+// healthy chain grows a violation row that never clears.
+Deno.test("deployments: a Safe that gave the role up is not reported", () => {
+  const d = grantsData();
+  d.deploymentGrants.grantees = [{
+    ident: "adminHolder",
+    kind: "admin-holder",
+    address: null,
+    roles: [{
+      role: "DEPOSIT_ADMIN",
+      roleId: ROLE_IDS.DEPOSIT_ADMIN,
+      admin: true,
+      chains: [
+        { network: "base", address: BASE_SAFE, status: "granted", safeHolds: false },
+        // Unprobed is not evidence of absence, but it is not evidence of
+        // retention either — it must not manufacture a violation.
+        { network: "ethereum", address: ETH_SAFE, status: "granted", safeHolds: null },
+      ],
+    }],
+  }];
+  const text = textOf(deploymentsBox(d));
+  assert(!text.includes("should NOT hold"), "no retention row, got: " + text);
+  assert(!text.includes("it still does"), "and no retention clause, got: " + text);
 });
