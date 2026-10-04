@@ -41,6 +41,18 @@ pub fn keccak256_hex(hex_str: &str) -> Option<String> {
     Some(format!("0x{}", hex::encode(keccak256(bytes))))
 }
 
+/// `role_id` as a lowercase `0x…` string, for publishing.
+///
+/// This is the value a `grantRole` / `renounceRole` calldata carries: a reviewer
+/// reading a bundle sees `0x1ae915b3…`, never `DEPOSIT_ADMIN`, so the page
+/// cannot help them check a transaction unless it publishes the same id.
+///
+/// Built on `role_id` rather than re-hashing, so the published id and the id
+/// used to probe `hasRole` cannot drift apart.
+pub fn role_id_hex(name: &str) -> String {
+    format!("0x{}", hex::encode(role_id(name)))
+}
+
 fn to_hex(calldata: Vec<u8>) -> String {
     format!("0x{}", hex::encode(calldata))
 }
@@ -467,5 +479,50 @@ mod tests {
     fn a_non_array_body_reads_as_nothing_known() {
         let body = br#"{"jsonrpc":"2.0","id":0,"error":{"message":"batch not supported"}}"#;
         assert_eq!(batch_result_hex(body, 2), vec![None, None]);
+    }
+}
+
+#[cfg(test)]
+mod role_id_tests {
+    use super::{role_id, role_id_hex};
+
+    /// Oracle: `cast keccak <NAME>` against the role names declared in
+    /// `st0x.deploy`'s `LibAuthoriserInvariants.sol`, and the same 32 bytes
+    /// that appear in the live governance bundles.
+    #[test]
+    fn role_id_is_keccak_of_the_name() {
+        assert_eq!(
+            role_id_hex("DEPOSIT_ADMIN"),
+            "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+        );
+        assert_eq!(
+            role_id_hex("WITHDRAW_ADMIN"),
+            "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+        );
+        assert_eq!(
+            role_id_hex("CERTIFY"),
+            "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+        );
+    }
+
+    /// Hashing the name's hex DECODING instead of its bytes yields a different,
+    /// equally plausible-looking id. `CERTIFY` is not valid hex, so that path
+    /// cannot even produce a value — which is why the two helpers are separate.
+    #[test]
+    fn role_id_hashes_the_text_not_a_hex_decoding() {
+        assert_ne!(
+            role_id_hex("DEPOSIT_ADMIN"),
+            super::keccak256_hex("DEPOSIT_ADMIN").unwrap_or_default()
+        );
+        assert!(super::keccak256_hex("CERTIFY").is_none());
+    }
+
+    /// An admin role and its action role are different ids. Collapsing them
+    /// would let a reviewer match a bundle granting DEPOSIT_ADMIN against a row
+    /// for DEPOSIT.
+    #[test]
+    fn an_admin_role_and_its_action_role_differ() {
+        assert_ne!(role_id_hex("DEPOSIT"), role_id_hex("DEPOSIT_ADMIN"));
+        assert_ne!(role_id("DEPOSIT"), role_id("DEPOSIT_ADMIN"));
     }
 }
