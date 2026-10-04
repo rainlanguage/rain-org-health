@@ -303,10 +303,30 @@ function renderDeployments(document, $, data) {
       b.classList.toggle("active", b.dataset.tab === id);
     }
   };
+  // The open tab is in the URL fragment, so a tab is linkable and — the reason
+  // this exists rather than being a nicety — screenshottable. The repo rule for
+  // `site/**` requires seeing a visual change before claiming it, and
+  // `nix run .#screenshot` loads a URL and cannot click: without a fragment,
+  // every tab but the first is unverifiable.
+  //
+  // Guarded because the render runs under a DOM stub in the tests, where there
+  // is no `location`. An unknown fragment falls back to the first tab rather
+  // than showing nothing.
+  const hashTab = () => {
+    if (typeof location === "undefined" || !location.hash) return null;
+    const want = location.hash.replace(/^#/, "");
+    return TABS.some(([t]) => t === want) ? want : null;
+  };
   for (const [id, label] of TABS) {
     const b = el("button", "subnav-btn", label);
     b.dataset.tab = id;
-    b.addEventListener("click", () => show(id));
+    b.addEventListener("click", () => {
+      show(id);
+      // Record the open tab without pushing a history entry per click.
+      if (typeof history !== "undefined" && history.replaceState) {
+        history.replaceState(null, "", "#" + id);
+      }
+    });
     subnav.append(b);
   }
   box.append(subnav, panels.safe, panels.contracts);
@@ -1107,7 +1127,7 @@ function renderDeployments(document, $, data) {
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
-    show(TABS[0][0]);
+    show(hashTab() || TABS[0][0]);
     return;
   }
   const sub = el("div", "own-sub");
@@ -1178,7 +1198,7 @@ function renderDeployments(document, $, data) {
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
-  show(TABS[0][0]);
+  show(hashTab() || TABS[0][0]);
 }
 let data = null;
 async function load() {
