@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-05T00:59:57Z",
+  "generatedAt": "2026-10-05T07:08:09Z",
   "auditGraph": {
     "nodes": [
       {
@@ -8057,7 +8057,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 490,
+      "fullSourceLoc": 506,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -9713,7 +9713,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 4,
-      "testFiles": 10,
+      "testFiles": 11,
       "sourcesUnparsed": 0,
       "untested": []
     },
