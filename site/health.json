@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T08:45:22Z",
+  "generatedAt": "2026-10-07T16:40:52Z",
   "auditGraph": {
     "nodes": [
       {
@@ -54,7 +54,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.10",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.intorastring",
@@ -64,7 +64,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.metadata",
@@ -127,7 +127,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.metadata",
@@ -188,7 +188,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.7",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           }
         ]
       },
@@ -217,7 +217,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.8",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.extrospection",
@@ -262,7 +262,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.metadata",
@@ -343,12 +343,12 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 6,
+        "openAuditIssues": 4,
         "lastMutation": {
-          "timestamp": "2026-10-06T20:13:44Z",
-          "commit": "c9d432debfd400ea5f38c84fb883d66952c37dc6",
+          "timestamp": "2026-10-06T21:27:28Z",
+          "commit": "3408fabf099961ebc493eefd2ee6e724290bc7a9",
           "skillVersion": "0.35.0",
-          "scope": "pr:309 gas rework of log10/pow10/pow/sqrt/mul: exp10Fixed, mulDivFixed, mulDivPow10, log10Reduce, scaleUp and its log10 branch, the pow integer-one skip, sqrt roundRoot and above. Probe suite: forge test --mc Pow|Sqrt|Log|Precision|Mul|Exp10Fixed|Maximize|MainEquivalence|Div, excluding testDivByOneAtFloor and testMainEquivalenceDivNearFloor, which fail on main for an int256.min coefficient (#320, out of scope); test counts are that suite. Equivalent: S07, W04 (multiply by exact one), Q02. Q06 and Q12 (roundRoot decade-boundary round-down) survived as unreachable: proved in 32adda2 that pow never rounds to 10^n while the true root is below the midpoint a decade down, and the branch was deleted."
+          "scope": "issue #327 fix: the changed lines of LibParseDecimalFloat.parseDecimalFloatInline (the all-zero-fraction guard now encloses the fraction sign, exponent and rescale). Probe suite: forge test --mc ^(LibParseDecimalFloatTest|LibFormatDecimalFloatToDecimalStringTest)$; test counts are that suite. M01-M17 were probed against the pre-existing suite at commit; M18 (the pre-fix structure restored) was added after and is killed only by the new tests. Equivalent: M04 and M08 (unreachable guards: the fraction digits are unsigned and nonZeroCursor > fracStart inside the branch), M11 (a scale of 68 always fails the int224 check)."
         },
         "blockedBy": [
           "rain.datacontract"
@@ -375,12 +375,12 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.11",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.sol.codegen",
@@ -471,7 +471,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.8",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.metadata",
@@ -511,7 +511,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.metadata",
@@ -607,7 +607,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.8",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -637,7 +637,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.5",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           }
         ]
       },
@@ -700,7 +700,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.7",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.factory",
@@ -778,12 +778,12 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.10",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.math.float.deploy",
@@ -838,7 +838,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "raindex.interface",
@@ -867,7 +867,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rainlang.interface",
@@ -901,7 +901,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.11",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.intorastring",
@@ -911,7 +911,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.metadata",
@@ -966,7 +966,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.10",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.math.float.deploy",
@@ -1053,7 +1053,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.10",
-            "latest": "0.1.12"
+            "latest": "0.1.15"
           },
           {
             "repo": "rain.extrospection",
@@ -1068,7 +1068,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.sol.codegen",
@@ -1174,7 +1174,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           },
           {
             "repo": "rain.vats",
@@ -1201,12 +1201,12 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 1,
+        "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-10-05T09:05:00Z",
-          "commit": "f08ee42c6dbdb0f3daa82deae208e9ceccd37103",
+          "timestamp": "2026-10-06T18:40:00Z",
+          "commit": "dc554b391961dfe4bb268c44e32be1251dc02934",
           "skillVersion": "0.35.0",
-          "scope": "the address registry: src/concrete/AddressRegistry.sol, src/lib/LibAddressRegistry.sol, src/interface/IAddressRegistryV1.sol"
+          "scope": "audit L01 (#264) only: LibRainDeploy's two-stage resolved-address verification"
         },
         "blockedBy": [
           "rain.sol.codegen"
@@ -1402,7 +1402,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.19"
+            "latest": "0.2.22"
           }
         ]
       }
@@ -1434,7 +1434,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rain.dia",
@@ -1455,7 +1455,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rain.dia",
@@ -1504,7 +1504,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rain.erc4626.words",
@@ -1553,7 +1553,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rain.extrospection.deploy",
@@ -1567,7 +1567,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rain.factory.deploy",
@@ -1602,7 +1602,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rain.flare",
@@ -1644,7 +1644,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rain.lib.memkv",
@@ -1700,14 +1700,14 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.11",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rain.math.float.deploy",
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1756,7 +1756,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1784,7 +1784,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rain.pyth",
@@ -1826,7 +1826,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1868,7 +1868,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rain.vats",
@@ -1910,7 +1910,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rain.verify",
@@ -1952,7 +1952,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "raindex",
@@ -1966,7 +1966,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "raindex",
@@ -2036,7 +2036,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "raindex.governance",
@@ -2050,7 +2050,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "raindex.interface",
@@ -2064,7 +2064,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.11",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rainlang",
@@ -2106,7 +2106,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "rainlang",
@@ -2162,7 +2162,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "rainlang.deploy",
@@ -2253,7 +2253,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.12"
+        "latest": "0.1.15"
       },
       {
         "from": "st0x.deploy",
@@ -2274,7 +2274,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "st0x.deploy",
@@ -2316,7 +2316,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.19"
+        "latest": "0.2.22"
       },
       {
         "from": "st0x.oracle",
@@ -7282,12 +7282,12 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 6,
+      "openAuditIssues": 4,
       "lastMutation": {
-        "timestamp": "2026-10-06T20:13:44Z",
-        "commit": "c9d432debfd400ea5f38c84fb883d66952c37dc6",
+        "timestamp": "2026-10-06T21:27:28Z",
+        "commit": "3408fabf099961ebc493eefd2ee6e724290bc7a9",
         "skillVersion": "0.35.0",
-        "scope": "pr:309 gas rework of log10/pow10/pow/sqrt/mul: exp10Fixed, mulDivFixed, mulDivPow10, log10Reduce, scaleUp and its log10 branch, the pow integer-one skip, sqrt roundRoot and above. Probe suite: forge test --mc Pow|Sqrt|Log|Precision|Mul|Exp10Fixed|Maximize|MainEquivalence|Div, excluding testDivByOneAtFloor and testMainEquivalenceDivNearFloor, which fail on main for an int256.min coefficient (#320, out of scope); test counts are that suite. Equivalent: S07, W04 (multiply by exact one), Q02. Q06 and Q12 (roundRoot decade-boundary round-down) survived as unreachable: proved in 32adda2 that pow never rounds to 10^n while the true root is below the midpoint a decade down, and the branch was deleted."
+        "scope": "issue #327 fix: the changed lines of LibParseDecimalFloat.parseDecimalFloatInline (the all-zero-fraction guard now encloses the fraction sign, exponent and rescale). Probe suite: forge test --mc ^(LibParseDecimalFloatTest|LibFormatDecimalFloatToDecimalStringTest)$; test counts are that suite. M01-M17 were probed against the pre-existing suite at commit; M18 (the pre-fix structure restored) was added after and is killed only by the new tests. Equivalent: M04 and M08 (unreachable guards: the fraction digits are unsigned and nonZeroCursor > fracStart inside the branch), M11 (a scale of 68 always fails the int224 check)."
       }
     },
     {
@@ -7725,12 +7725,12 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 1,
+      "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-10-05T09:05:00Z",
-        "commit": "f08ee42c6dbdb0f3daa82deae208e9ceccd37103",
+        "timestamp": "2026-10-06T18:40:00Z",
+        "commit": "dc554b391961dfe4bb268c44e32be1251dc02934",
         "skillVersion": "0.35.0",
-        "scope": "the address registry: src/concrete/AddressRegistry.sol, src/lib/LibAddressRegistry.sol, src/interface/IAddressRegistryV1.sol"
+        "scope": "audit L01 (#264) only: LibRainDeploy's two-stage resolved-address verification"
       },
       "lastAudit": {
         "auditedAt": "2026-08-15T11:41:01Z",
@@ -8533,19 +8533,19 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-02-08T12:06:53Z",
-      "latestTag": "sol-v0.1.12",
-      "latestTagIso": "2026-10-03T15:47:54Z",
+      "latestTag": "sol-v0.1.15",
+      "latestTagIso": "2026-10-07T16:17:36Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 7875,
+      "sourceLocChangedSinceAudit": 8107,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 7815,
+      "sourceLocAddedSinceAudit": 8047,
       "sourceLocRemovedSinceAudit": 60,
-      "filesChangedSinceAudit": 40,
-      "commitsSinceAudit": 609,
+      "filesChangedSinceAudit": 44,
+      "commitsSinceAudit": 619,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4996,
+      "commentLocAddedSinceAudit": 5079,
       "commentLocRemovedSinceAudit": 11,
-      "codeLocAddedSinceAudit": 2337,
+      "codeLocAddedSinceAudit": 2455,
       "codeLocRemovedSinceAudit": 38,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -8605,20 +8605,20 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "sol-v0.2.19",
-      "latestTagIso": "2026-10-06T20:22:11Z",
+      "latestTag": "sol-v0.2.22",
+      "latestTagIso": "2026-10-07T15:56:49Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 3305,
+      "sourceLocChangedSinceAudit": 3395,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 2130,
-      "sourceLocRemovedSinceAudit": 1175,
+      "sourceLocAddedSinceAudit": 2180,
+      "sourceLocRemovedSinceAudit": 1215,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 556,
+      "commitsSinceAudit": 614,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 979,
-      "commentLocRemovedSinceAudit": 331,
-      "codeLocAddedSinceAudit": 1012,
-      "codeLocRemovedSinceAudit": 678,
+      "commentLocAddedSinceAudit": 984,
+      "commentLocRemovedSinceAudit": 332,
+      "codeLocAddedSinceAudit": 1021,
+      "codeLocRemovedSinceAudit": 682,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
       "daysSinceAudit": 310
@@ -9105,7 +9105,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 54,
-      "commitsSinceAudit": 242,
+      "commitsSinceAudit": 243,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -9659,7 +9659,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 8,
-      "testFiles": 77,
+      "testFiles": 78,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -9803,7 +9803,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 88,
+      "testFiles": 89,
       "sourcesUnparsed": 0,
       "untested": []
     },
