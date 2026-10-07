@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-07T16:40:52Z",
+  "generatedAt": "2026-10-07T22:03:00Z",
   "auditGraph": {
     "nodes": [
       {
@@ -64,7 +64,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.metadata",
@@ -127,7 +127,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.metadata",
@@ -215,19 +215,9 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.deploy",
-            "pinned": "0.1.8",
-            "latest": "0.1.15"
-          },
-          {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
             "latest": "0.1.14"
-          },
-          {
-            "repo": "rain.factory",
-            "pinned": "0.1.9",
-            "latest": "0.1.30"
           }
         ]
       },
@@ -262,7 +252,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.metadata",
@@ -343,16 +333,14 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 4,
+        "openAuditIssues": 9,
         "lastMutation": {
-          "timestamp": "2026-10-06T21:27:28Z",
-          "commit": "3408fabf099961ebc493eefd2ee6e724290bc7a9",
+          "timestamp": "2026-10-07T16:49:30Z",
+          "commit": "adb2903293ba920e3ee3490186519a2b22b8c012",
           "skillVersion": "0.35.0",
-          "scope": "issue #327 fix: the changed lines of LibParseDecimalFloat.parseDecimalFloatInline (the all-zero-fraction guard now encloses the fraction sign, exponent and rescale). Probe suite: forge test --mc ^(LibParseDecimalFloatTest|LibFormatDecimalFloatToDecimalStringTest)$; test counts are that suite. M01-M17 were probed against the pre-existing suite at commit; M18 (the pre-fix structure restored) was added after and is killed only by the new tests. Equivalent: M04 and M08 (unreachable guards: the fraction digits are unsigned and nonZeroCursor > fracStart inside the branch), M11 (a scale of 68 always fails the int224 check)."
+          "scope": "issue #298: pure deletion of LibDecimalFloatImplementation.lookupLogTableVal (no caller in src since #309), its LOG_TABLE_SIZE_* import, its two test files and test/lib/LibTestPrecision.sol. The diff adds no src line, so there is no mutation target. The adversarial check: nothing in src, test or crates still references a deleted symbol, and the full forge suite passes."
         },
-        "blockedBy": [
-          "rain.datacontract"
-        ],
+        "blockedBy": [],
         "staleDeps": []
       },
       {
@@ -380,7 +368,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.sol.codegen",
@@ -511,7 +499,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.metadata",
@@ -627,7 +615,6 @@
         "openAuditIssues": 0,
         "lastMutation": null,
         "blockedBy": [
-          "rain.datacontract",
           "rain.extrospection",
           "rain.factory",
           "rain.math.fixedpoint",
@@ -637,7 +624,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.5",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           }
         ]
       },
@@ -783,7 +770,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.math.float.deploy",
@@ -828,7 +815,6 @@
         "openAuditIssues": 2,
         "lastMutation": null,
         "blockedBy": [
-          "rain.datacontract",
           "rain.math.float",
           "rain.sol.codegen",
           "raindex.interface",
@@ -838,7 +824,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "raindex.interface",
@@ -858,7 +844,6 @@
         "openAuditIssues": 0,
         "lastMutation": null,
         "blockedBy": [
-          "rain.datacontract",
           "rain.math.float",
           "rain.sol.codegen",
           "rainlang.interface"
@@ -867,7 +852,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rainlang.interface",
@@ -911,7 +896,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.metadata",
@@ -1039,10 +1024,10 @@
         "openAuditIssues": 3,
         "lastMutation": null,
         "blockedBy": [
-          "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.factory.deploy",
           "rain.math.fixedpoint",
           "rain.math.float",
           "rain.sol.codegen",
@@ -1051,39 +1036,19 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.deploy",
-            "pinned": "0.1.10",
-            "latest": "0.1.15"
-          },
-          {
             "repo": "rain.extrospection",
             "pinned": "0.1.1",
             "latest": "0.1.14"
           },
           {
-            "repo": "rain.factory",
-            "pinned": "0.1.1",
-            "latest": "0.1.30"
-          },
-          {
             "repo": "rain.math.float",
-            "pinned": "0.1.1",
-            "latest": "0.2.22"
-          },
-          {
-            "repo": "rain.sol.codegen",
-            "pinned": "0.1.37",
-            "latest": "0.1.39"
+            "pinned": "0.2.22",
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
             "pinned": "0.1.1",
             "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.1.6",
-            "latest": "0.2.4"
           }
         ]
       },
@@ -1154,10 +1119,10 @@
           "scope": "whole repo"
         },
         "blockedBy": [
-          "rain.datacontract",
           "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.factory.deploy",
           "rain.math.fixedpoint",
           "rain.math.float",
           "rain.sol.codegen",
@@ -1174,7 +1139,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           },
           {
             "repo": "rain.vats",
@@ -1364,7 +1329,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 78,
+        "openAuditIssues": 79,
         "lastMutation": {
           "timestamp": "2026-09-20T04:00:00Z",
           "commit": "5a633508643e345fc72c11133f782214f60db9b5",
@@ -1395,14 +1360,13 @@
           "scope": "src/lib/LibLeakyBucket.sol across the whole of #124: settle and setPolicy exported, with fill, levelAt and setPolicy written in terms of settle, and write-time policy validation."
         },
         "blockedBy": [
-          "rain.datacontract",
           "rain.math.float"
         ],
         "staleDeps": [
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.22"
+            "latest": "0.2.23"
           }
         ]
       }
@@ -1455,7 +1419,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rain.dia",
@@ -1504,7 +1468,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rain.erc4626.words",
@@ -1565,8 +1529,8 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.8",
+        "stale": false,
+        "pinned": "0.1.15",
         "latest": "0.1.15"
       },
       {
@@ -1579,8 +1543,8 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.1.9",
+        "stale": false,
+        "pinned": "0.1.30",
         "latest": "0.1.30"
       },
       {
@@ -1602,7 +1566,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rain.flare",
@@ -1644,7 +1608,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rain.lib.memkv",
@@ -1666,13 +1630,6 @@
         "stale": false,
         "pinned": "0.3.9",
         "latest": "0.3.9"
-      },
-      {
-        "from": "rain.math.float",
-        "to": "rain.datacontract",
-        "stale": false,
-        "pinned": "0.2.0",
-        "latest": "0.2.0"
       },
       {
         "from": "rain.math.float",
@@ -1707,7 +1664,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1784,7 +1741,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rain.pyth",
@@ -1868,7 +1825,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rain.vats",
@@ -1966,7 +1923,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "raindex",
@@ -2036,7 +1993,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "raindex.governance",
@@ -2050,7 +2007,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "raindex.interface",
@@ -2106,7 +2063,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "rainlang",
@@ -2251,8 +2208,8 @@
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.10",
+        "stale": false,
+        "pinned": "0.1.15",
         "latest": "0.1.15"
       },
       {
@@ -2265,22 +2222,29 @@
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.1.1",
+        "stale": false,
+        "pinned": "0.1.30",
         "latest": "0.1.30"
+      },
+      {
+        "from": "st0x.deploy",
+        "to": "rain.factory.deploy",
+        "stale": false,
+        "pinned": "0.1.15",
+        "latest": "0.1.15"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.math.float",
         "stale": true,
-        "pinned": "0.1.1",
-        "latest": "0.2.22"
+        "pinned": "0.2.22",
+        "latest": "0.2.23"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.sol.codegen",
-        "stale": true,
-        "pinned": "0.1.37",
+        "stale": false,
+        "pinned": "0.1.39",
         "latest": "0.1.39"
       },
       {
@@ -2293,8 +2257,8 @@
       {
         "from": "st0x.deploy",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.1.6",
+        "stale": false,
+        "pinned": "0.2.4",
         "latest": "0.2.4"
       },
       {
@@ -2316,7 +2280,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.22"
+        "latest": "0.2.23"
       },
       {
         "from": "st0x.oracle",
@@ -2432,7 +2396,7 @@
       {
         "id": "authoriser",
         "title": "Operational access — authoriser",
-        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. Which clone is live is read from a production vault's authorizer() on Base.",
+        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. The live authorizer() read failed, so no clone is marked active — status unknown, not assumed.",
         "entries": [
           {
             "role": "V3-era authoriser clone",
@@ -2452,7 +2416,7 @@
             "role": "V4 authoriser clone",
             "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
             "network": "base",
-            "status": "active",
+            "status": "unknown",
             "note": "the V4 upgrade rewires every vault onto this"
           },
           {
@@ -3155,306 +3119,10 @@
         "network": "base",
         "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
         "timelock": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-        "vaults": [
-          {
-            "vault": "0x013b782f402d61aa1004cca95b9f5bb402c9d5fe",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4e169cd2ab4f82640a8c65c68fed55863866fdb0",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x626757e6f50675d17fcad312e82f989ae7a23d38",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x58ce5024b89b4f73c27814c0f0abbea331c99be8",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x38eb797892ed71da69bdc27a456a7c83ff813b52",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x7271a3c91bb6070ed09333b84a815949d4f16d14",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x9a507314ea2a6c5686c0d07bfecb764dcf324dff",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x1f17523b147ccc2a2328c0f014f6d49c479ea063",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xfbde45df60249203b12148452fc77c3b5f811eb2",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc941c1506b7555ba8c506fb6c9b9cc259902d612",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x0acfea6833c4a3f41bf2fbd736aa9eea547d90ee",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x323804af6f3bb463d688b854667c6870a0fc06ad",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc585aeb8b76c5f5e4215470a7625258e86ed7746",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x9a5d3caec90b0332b18c0b93fef42f3f8c918289",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x96de077262609298cd891e4ab21bd34837de33ab",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x7001e2974f775f0fd73a3d2e5914e591f3ec3fbb",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4dba41f0feb390f208a85e96168ff5d8ac2b6f5c",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x722cb373f1871a176fb5dc3953046f2eae22f619",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x50b5225409a55b873fd6c2fd5880af5a11ace9b1",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6088f8ef741ae1f5a61882866f130631b41617e2",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x98c02b58b7e65ef5a4262d9536162949e3b2e141",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdde9346107609a05439a0b59ab6ed4f7f81a1fbf",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x15de944cd020a18c8e5626fb0f81b36e73956199",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xd36056a4a03707d3743fce4e9c08852820adcfdc",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6a071e25fa25653cf15d1ee320ea3df771926aa0",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb6021810971714cd48572af527307acc324ecf61",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xbdc237aa3b67cc3088adaf117913f30bf08157a3",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5cefd886dd05001c2fc32c313e05360d07f37d8f",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x57573351f3fdd20a57dee4a7f836de1ce9900d4b",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x8518931497d2a8f07bc607d1d3295b398d065a65",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xca1a378f9a250131a2fe51c10f120fef7edca56e",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x51d5c8c8040358686952a30fac116aac32390d6a",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xbeb0c2011bd5520a0998b69132e9245e39ac5d1d",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xddb07add0e23bb7ec97f53c0959d9c6cc09624f4",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x9610c265eb8f38b22fec78498c74924d9fe55891",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf5245a17e5eb64d53dea213d40aba01821d465cd",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa662066a60964a528ad05209139a79bda3a7577f",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x07d7ca9384812b86e7e429473df354fb59da73a0",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x725e0df28d1eb09338f63776b76bcfc00f3b6f44",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x88c3f4e2e0a977fed97ed246c70bfd7a01070246",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa4178410216f5f00c718be88c2ff8ac24de192bc",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6c2b6ed57d4d9e93f3e4975fac70ee4b180f4eb9",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe9bc7ef69f123ca2bca1021d1be30224271a9217",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xeda4df511dea07b6529db2196998b30e03791d87",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x785bd77b8e92866f87e01416d1022d729975d529",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x22e99389f5ef6fa110317e2aec0a95d8aa39efd4",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xda2e8d6e2a7d0a38a6b39a274d6911476062298b",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6c5c451672e9d0cef8728cb511c01e5cdd096563",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock"
-          }
-        ],
+        "vaults": [],
         "counts": {
           "safe": 0,
-          "timelock": 59,
+          "timelock": 0,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -3464,306 +3132,10 @@
         "network": "ethereum",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "timelock": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-        "vaults": [
-          {
-            "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          }
-        ],
+        "vaults": [],
         "counts": {
           "safe": 0,
-          "timelock": 59,
+          "timelock": 0,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -3773,306 +3145,10 @@
         "network": "hyperevm",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "timelock": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-        "vaults": [
-          {
-            "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          }
-        ],
+        "vaults": [],
         "counts": {
           "safe": 0,
-          "timelock": 59,
+          "timelock": 0,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -4082,306 +3158,10 @@
         "network": "robinhood",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "timelock": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-        "vaults": [
-          {
-            "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          }
-        ],
+        "vaults": [],
         "counts": {
           "safe": 0,
-          "timelock": 59,
+          "timelock": 0,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -4391,306 +3171,10 @@
         "network": "bsc",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "timelock": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-        "vaults": [
-          {
-            "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xfae9afe275e57759f8fbae5f252c65adbf1b773f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xd78025aa344e549a1d76ece1591c481cc7bc3548",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xaab11f0141c2aa6b9a3845efdb1a6d16dc40924a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x516d6c697c40e24de9d17811e642a07a6d70cf07",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x012ec0436407b8ade9a00614e01abf1faab69755",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe319e212860ef85c4082b3b73641bd25721c88b2",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2c594750dbe8e5b2d8d155b4fcb39fed307a91b9",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x925eb169ed82889a7afe5292d97998acb26b6233",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xfa63f568c4487711124d9f258d3a9167a89797c3",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb9c3a133e2425eec6d8a1dad9a0d78308be79a5e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xd2f6abfb251a3e43df9191486485de0e46a9e6a5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xd170ed7698508f228bb5a67d0f4548eeea6f15cb",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2aa2258b97f44425769cf1a4e92a3562060a93e8",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x0d2029ed7497a8cc5c65e808393ced0af2259385",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x683dd1c36169b25355c8c110942a820f395ffb7d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x185ccb3c9c09300b3877f71e747f041604f7603f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xcb8b0c80560a66c96a25297cc98b23fa1d7acc6a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xcd49da53d0570e6d34ab786aa4eb4f9e0e6ab045",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x194c6ebe9919c8681aa17c8814ee6c8a0534b28f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc6e584f4341e418962a0dde3f2969b6be58f1920",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x543e33e9276cf00b74689c8e41fd7fc921128ba0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xe2593db54e7893d311cbf5087cdb7a9027b9a7fd",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xc67038bbff91f2568b902ff171e9f9c06ed98815",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0xbca97cc57916734130c9f05ea8b217682a249b75",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x042dfd33de6766a8858f188dfcf207d311da6488",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          },
-          {
-            "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock"
-          }
-        ],
+        "vaults": [],
         "counts": {
           "safe": 0,
-          "timelock": 59,
+          "timelock": 0,
           "other": 0,
           "unknown": 0,
           "unpinned": 0
@@ -5041,1497 +3525,466 @@
     "repo": "st0x.registry",
     "network": "base",
     "rpcHost": "mainnet.base.org",
-    "total": 55,
-    "ok": 51,
+    "total": 0,
+    "ok": 0,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
-    "wrappedCount": 55,
-    "atAuthoriserTarget": 55,
+    "wrappedCount": 0,
+    "atAuthoriserTarget": 0,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "LibTokenInvariants.productionReceiptVaults()",
-      "governedCount": 59,
-      "governedDeclared": 59,
+      "governedCount": 0,
+      "governedDeclared": 0,
       "registryTokenCount": 55,
-      "extraVaults": [
+      "extraVaults": [],
+      "missingFromMigration": [
         {
-          "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
-          "symbol": "tIBHG",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
-          "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "symbol": "wtNVDA",
+          "name": "Wrapped NVIDIA Corporation ST0x",
+          "address": "0xFb5B41acdbA20a3230F84BE995173CFb98b8D6E7",
+          "receiptVault": "0x7271a3c91bb6070ed09333b84a815949d4f16d14",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
         },
         {
-          "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
-          "name": "Rocket Lab USA Inc ST0x",
-          "symbol": "tRKLB",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
-          "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "symbol": "wtAMZN",
+          "name": "Wrapped Amazon.com Inc ST0x",
+          "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
+          "receiptVault": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
         },
         {
-          "address": "0x22e99389f5ef6fa110317e2aec0a95d8aa39efd4",
-          "name": "Smartbird, Inc. ST0x",
-          "symbol": "tBIRD",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
-          "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "symbol": "wtTSLA",
+          "name": "Wrapped Tesla Inc ST0x",
+          "address": "0x219A8d384a10BF19b9f24cB5cC53F79Dd0e5A03D",
+          "receiptVault": "0x4e169cd2ab4f82640a8c65c68fed55863866fdb0",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
         },
         {
-          "address": "0x6c5c451672e9d0cef8728cb511c01e5cdd096563",
-          "name": "SenesTech, Inc. ST0x",
-          "symbol": "tSNES",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
-          "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "symbol": "wtMSTR",
+          "name": "Wrapped MicroStrategy Incorporated ST0x",
+          "address": "0xFF05E1bD696900dc6A52CA35Ca61Bb1024eDa8e2",
+          "receiptVault": "0x013b782f402d61aa1004cca95b9f5bb402c9d5fe",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtIAU",
+          "name": "Wrapped iShares Gold Trust ST0x",
+          "address": "0x1E46d7eFef64A833AFB1CD49299a7AD5B439f4d8",
+          "receiptVault": "0x9a507314ea2a6c5686c0d07bfecb764dcf324dff",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtCOIN",
+          "name": "Wrapped Coinbase Global Inc ST0x",
+          "address": "0x5cDa0E1CA4ce2af96315f7F8963C85399c172204",
+          "receiptVault": "0x626757e6f50675d17fcad312e82f989ae7a23d38",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSPYM",
+          "name": "Wrapped SPDR Portfolio S&P 500 ETF ST0x",
+          "address": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
+          "receiptVault": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSIVR",
+          "name": "Wrapped abrdn Physical Silver Shares ETF ST0x",
+          "address": "0xEB7F3E4093C9d68253b6104FbbfF561F3eC0442F",
+          "receiptVault": "0x58ce5024b89b4f73c27814c0f0abbea331c99be8",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtCRCL",
+          "name": "Wrapped Circle Internet Group Inc ST0x",
+          "address": "0x8AFba81DEc38DE0A18E2Df5E1967a7493651eebf",
+          "receiptVault": "0x38eb797892ed71da69bdc27a456a7c83ff813b52",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtBMNR",
+          "name": "Wrapped Bitmine Immersion Technologies, Inc ST0x",
+          "address": "0x2512EC661f0bA089c275EA105E31bAD6FcFcf319",
+          "receiptVault": "0xfbde45df60249203b12148452fc77c3b5f811eb2",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtPPLT",
+          "name": "Wrapped abrdn Physical Platinum Shares ETF ST0x",
+          "address": "0x82f5BAEE1076334357a34A19E04f7c282D51cE47",
+          "receiptVault": "0x1f17523b147ccc2a2328c0f014f6d49c479ea063",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtQQQM",
+          "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
+          "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
+          "receiptVault": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtVWO",
+          "name": "Wrapped Vanguard Emerging Markets Stock Index Fund ST0x",
+          "address": "0x23ec6886b49D7ab123E9ee8e474D2fa7AB6Cbc2d",
+          "receiptVault": "0x0acfea6833c4a3f41bf2fbd736aa9eea547d90ee",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtARKK",
+          "name": "Wrapped ARK Innovation ETF ST0x",
+          "address": "0x9FfF48B4535AF3765Ac9E1b164720EDc01DF8EE7",
+          "receiptVault": "0x323804af6f3bb463d688b854667c6870a0fc06ad",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSGOV",
+          "name": "Wrapped iShares 0-3 Month Treasury Bond ETF ST0x",
+          "address": "0x78c31580c97101694C70022c83D570150c11e935",
+          "receiptVault": "0xc941C1506B7555Ba8C506Fb6c9b9CC259902d612",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtCEG",
+          "name": "Wrapped Constellation Energy Corporation ST0x",
+          "address": "0x3aF952888Cd89DAD3e8AF67cf4b7E740B36829C3",
+          "receiptVault": "0x9a5D3cAeC90b0332b18C0B93fEF42F3F8C918289",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtDRAM",
+          "name": "Wrapped Roundhill Memory ETF ST0x",
+          "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
+          "receiptVault": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtTSM",
+          "name": "Wrapped Taiwan Semiconductor Manufacturing Company ST0x",
+          "address": "0x71C66449d2528E23514A9c197BFD55Ae9DB3B714",
+          "receiptVault": "0x7001e2974F775f0Fd73a3D2e5914e591f3EC3fBB",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtASML",
+          "name": "Wrapped ASML Holding N.V. New York Registry Shares ST0x",
+          "address": "0x8200c6d9AB9E02A25D7F2099244C476d99a085ef",
+          "receiptVault": "0x722Cb373f1871A176fb5DC3953046f2EAE22F619",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSKHY",
+          "name": "Wrapped SK hynix Inc. ADR ST0x",
+          "address": "0xFcD17aC4c4BF6a72c93018096F3fC09e66573Ff9",
+          "receiptVault": "0x4DBA41f0feb390F208a85e96168fF5d8aC2b6F5c",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSPCX",
+          "name": "Wrapped Space Exploration Technologies Corp. ST0x",
+          "address": "0x19F89aaEf8a93f38A974beca9776f09aB844887F",
+          "receiptVault": "0xc585AeB8B76c5F5e4215470A7625258e86ED7746",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMU",
+          "name": "Wrapped Micron Technology, Inc. ST0x",
+          "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
+          "receiptVault": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtAMD",
+          "name": "Wrapped Advanced Micro Devices, Inc. ST0x",
+          "address": "0x648042Acd8638E12fEfd51C2b25A9f993f21a612",
+          "receiptVault": "0x50b5225409A55B873fD6C2Fd5880AF5a11acE9b1",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtAVGO",
+          "name": "Wrapped Broadcom Inc. ST0x",
+          "address": "0x70A182f481AEF05836666B6CfDbe84dCBCE8AC19",
+          "receiptVault": "0x6088F8ef741AE1f5A61882866f130631b41617E2",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtAMAT",
+          "name": "Wrapped Applied Materials, Inc. ST0x",
+          "address": "0x522DC65c89C9Af4f410BAe01bbf53aF75854a9f9",
+          "receiptVault": "0x98C02B58b7E65EF5a4262d9536162949e3B2E141",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtLRCX",
+          "name": "Wrapped Lam Research Corporation ST0x",
+          "address": "0x328B9aFFa511fE26673edBb4fEa37eDaF908A3bc",
+          "receiptVault": "0xDdE9346107609A05439A0B59Ab6eD4f7F81a1FBF",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtTTWO",
+          "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
+          "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
+          "receiptVault": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtGOOGL",
+          "name": "Wrapped Alphabet Inc. Class A ST0x",
+          "address": "0x6a2357Df4975C667B171bE53dA6FFe6deBf7030c",
+          "receiptVault": "0x15De944Cd020A18C8E5626fB0F81b36e73956199",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtINTC",
+          "name": "Wrapped Intel Corporation ST0x",
+          "address": "0xf567652fC2d7Db8D5469fD06AEbe8C9c4372d722",
+          "receiptVault": "0xBDC237Aa3B67cC3088adAf117913F30Bf08157a3",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtAAPL",
+          "name": "Wrapped Apple Inc. ST0x",
+          "address": "0x1020EC8Aa3f709a1f3D8705cdBa89b950451bd88",
+          "receiptVault": "0xD36056a4a03707D3743fCE4e9C08852820ADcfdC",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMSFT",
+          "name": "Wrapped Microsoft Corporation ST0x",
+          "address": "0x515A3Ac2a6aB590bDFa970caFFFd7fAdC680886E",
+          "receiptVault": "0x6a071E25fa25653cF15d1ee320eA3df771926Aa0",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtLLY",
+          "name": "Wrapped Eli Lilly and Company ST0x",
+          "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
+          "receiptVault": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtPTY",
+          "name": "Wrapped PIMCO Corporate & Income Opportunity Fund ST0x",
+          "address": "0xb6D779A79E7493ed821a65D52bA419F0F6D5dD0a",
+          "receiptVault": "0xb6021810971714cD48572af527307Acc324ecF61",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtHOOD",
+          "name": "Wrapped Robinhood Markets, Inc. ST0x",
+          "address": "0xd50f561322fe3235DBc9Ec8b3aB7693383d8A425",
+          "receiptVault": "0x5cEfd886dD05001c2Fc32c313E05360D07f37d8f",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtORCL",
+          "name": "Wrapped Oracle Corporation ST0x",
+          "address": "0xCB9571aB96aA47374eF30D8E9ACCC1cD51064726",
+          "receiptVault": "0x57573351f3fdD20a57dEE4a7f836de1cE9900d4B",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSMCI",
+          "name": "Wrapped Super Micro Computer, Inc. ST0x",
+          "address": "0xA759FAbbD866e6DB8bF76613C35825dC2e380bf0",
+          "receiptVault": "0x8518931497d2A8f07Bc607D1D3295b398D065A65",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtBABA",
+          "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
+          "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
+          "receiptVault": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtTQQQ",
+          "name": "Wrapped ProShares UltraPro QQQ ST0x",
+          "address": "0x295e9eCAb319006900a53b3f8D6Fcb0C131F4ada",
+          "receiptVault": "0xcA1A378F9a250131A2fE51c10f120FeF7EDCa56E",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtFTF",
+          "name": "Wrapped Franklin Limited Duration Income Trust ST0x",
+          "address": "0x9bDe199Ac6E7E050334306D9267c93e3D6d38333",
+          "receiptVault": "0x51d5c8c8040358686952a30fac116aac32390d6a",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtCBRS",
+          "name": "Wrapped Cerebras Systems Inc. ST0x",
+          "address": "0xB457cfBF31995d3aAAa704dA9999cC0b011820ca",
+          "receiptVault": "0xbeb0c2011bd5520a0998b69132e9245e39ac5d1d",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtNKE",
+          "name": "Wrapped NIKE, Inc. ST0x",
+          "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
+          "receiptVault": "0x88C3F4E2E0a977Fed97ed246c70BFD7A01070246",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMCD",
+          "name": "Wrapped McDonald's Corporation ST0x",
+          "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
+          "receiptVault": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtGRND",
+          "name": "Wrapped Grindr Inc. ST0x",
+          "address": "0x1197E6FA778c4D13E47875bD1761c68C22c928e0",
+          "receiptVault": "0xA4178410216F5f00C718BE88C2fF8AC24de192bc",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtAIR.PA",
+          "name": "Wrapped Airbus SE ST0x",
+          "address": "0x1C600EF167c675C878BF3222f3935C4fA2A43C31",
+          "receiptVault": "0xDdB07ADd0e23BB7eC97f53C0959d9c6Cc09624f4",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtBMW.DE",
+          "name": "Wrapped Bayerische Motoren Werke Aktiengesellschaft ST0x",
+          "address": "0xD0269618455cF7dA71665856f16C2D03A1b26290",
+          "receiptVault": "0x9610C265EB8F38B22Fec78498C74924D9fe55891",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMC.PA",
+          "name": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
+          "address": "0xd92cc92557BFC33028195983ED31465F99b4A01c",
+          "receiptVault": "0xF5245a17E5eb64D53dEa213d40aBa01821D465Cd",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSIE.DE",
+          "name": "Wrapped Siemens Aktiengesellschaft ST0x",
+          "address": "0xed0B0fdD92F7eece606A0FB0457352616d6e6B34",
+          "receiptVault": "0xa662066a60964a528aD05209139a79BDa3a7577f",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMBG.DE",
+          "name": "Wrapped Mercedes-Benz Group AG ST0x",
+          "address": "0xfae641bfE7009B5326396048b951E3aa31902a2B",
+          "receiptVault": "0x07d7ca9384812b86e7E429473dF354fb59DA73A0",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtRHM.DE",
+          "name": "Wrapped Rheinmetall AG ST0x",
+          "address": "0xD3c42aB4D5A60A50401b3A67D10B03Ce7D96DA19",
+          "receiptVault": "0x725E0Df28D1EB09338f63776B76bCfc00f3b6f44",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtDNUT",
+          "name": "Wrapped Krispy Kreme, Inc. ST0x",
+          "address": "0x1db49Ff8BEe88ec73F82F395B0BEAd372BdcAdb7",
+          "receiptVault": "0x6C2b6Ed57d4d9e93F3E4975FAc70eE4B180F4Eb9",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtFGI",
+          "name": "Wrapped FGI Industries Ltd. ST0x",
+          "address": "0x6aed8b1aCfb04F4e0e6db580F12fF41438a394e5",
+          "receiptVault": "0x785BD77B8e92866f87E01416D1022d729975D529",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtPLBY",
+          "name": "Wrapped Playboy, Inc. ST0x",
+          "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
+          "receiptVault": "0xe9bc7eF69f123cA2bcA1021D1BE30224271a9217",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtTR",
+          "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
+          "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
+          "receiptVault": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtWEN",
+          "name": "Wrapped The Wendy's Company ST0x",
+          "address": "0x31Fa821F8B1BDea7Db357ec9622d1A2f6aFE903d",
+          "receiptVault": "0xedA4df511dEA07b6529db2196998B30E03791d87",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSPY",
+          "name": "Wrapped State Street SPDR S&P 500 ETF Trust ST0x",
+          "address": "0x9Aa9c5a24e976096A6A7aB44986DAE8230fa5b27",
+          "receiptVault": "0xda2e8d6e2a7d0a38a6b39a274d6911476062298b",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
         }
-      ],
-      "missingFromMigration": []
+      ]
     },
-    "tokens": [
-      {
-        "symbol": "wtAAPL",
-        "name": "Wrapped Apple Inc. ST0x",
-        "address": "0x1020EC8Aa3f709a1f3D8705cdBa89b950451bd88",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Apple Inc. ST0x",
-        "liveSymbol": "wtAAPL",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xd36056a4a03707d3743fce4e9c08852820adcfdc",
-        "unwrapped": "0xD36056a4a03707D3743fCE4e9C08852820ADcfdC",
-        "legacy": null,
-        "receipt": "0x3156EB08c9dd870979f1475C5CFe681b8f6A3b53",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtAIR.PA",
-        "name": "Wrapped Airbus SE ST0x",
-        "address": "0x1C600EF167c675C878BF3222f3935C4fA2A43C31",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Airbus SE ST0x",
-        "liveSymbol": "wtAIR.PA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xddb07add0e23bb7ec97f53c0959d9c6cc09624f4",
-        "unwrapped": "0xDdB07ADd0e23BB7eC97f53C0959d9c6Cc09624f4",
-        "legacy": null,
-        "receipt": "0xa618f8eB7c33a23C84d1500c5191746f86F98b2A",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtAMAT",
-        "name": "Wrapped Applied Materials, Inc. ST0x",
-        "address": "0x522DC65c89C9Af4f410BAe01bbf53aF75854a9f9",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Applied Materials, Inc. ST0x",
-        "liveSymbol": "wtAMAT",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x98c02b58b7e65ef5a4262d9536162949e3b2e141",
-        "unwrapped": "0x98C02B58b7E65EF5a4262d9536162949e3B2E141",
-        "legacy": null,
-        "receipt": "0xB50Cf64462C87545e89Eeb6Da020ebf5dC971612",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtAMD",
-        "name": "Wrapped Advanced Micro Devices, Inc. ST0x",
-        "address": "0x648042Acd8638E12fEfd51C2b25A9f993f21a612",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Advanced Micro Devices, Inc. ST0x",
-        "liveSymbol": "wtAMD",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x50b5225409a55b873fd6c2fd5880af5a11ace9b1",
-        "unwrapped": "0x50b5225409A55B873fD6C2Fd5880AF5a11acE9b1",
-        "legacy": null,
-        "receipt": "0x9A06e971B71334f1003bF7E601E3e1E398fa82A6",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtAMZN",
-        "name": "Wrapped Amazon.com Inc ST0x",
-        "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Amazon.com Inc ST0x",
-        "liveSymbol": "wtAMZN",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
-        "unwrapped": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
-        "legacy": "0x8d8c315db61f60dcc3c66cdb48ca87fc643e35ea",
-        "receipt": "0x3c4895df971e5c1fdca81bf74adb8eee94f24721",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtARKK",
-        "name": "Wrapped ARK Innovation ETF ST0x",
-        "address": "0x9FfF48B4535AF3765Ac9E1b164720EDc01DF8EE7",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped ARK Innovation ETF ST0x",
-        "liveSymbol": "wtARKK",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x323804af6f3bb463d688b854667c6870a0fc06ad",
-        "unwrapped": "0x323804af6f3bb463d688b854667c6870a0fc06ad",
-        "legacy": null,
-        "receipt": "0x5c497a52857b71538a7b57e6f57322877ed792b2",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtASML",
-        "name": "Wrapped ASML Holding N.V. New York Registry Shares ST0x",
-        "address": "0x8200c6d9AB9E02A25D7F2099244C476d99a085ef",
-        "status": "mismatch",
-        "wrapped": true,
-        "nameOk": false,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped ASML Holding N.V. ST0x",
-        "liveSymbol": "wtASML",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x722cb373f1871a176fb5dc3953046f2eae22f619",
-        "unwrapped": "0x722Cb373f1871A176fb5DC3953046f2EAE22F619",
-        "legacy": null,
-        "receipt": "0x17021e305d28c4cfa8ec02817ad22b2ef432dc85",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtAVGO",
-        "name": "Wrapped Broadcom Inc. ST0x",
-        "address": "0x70A182f481AEF05836666B6CfDbe84dCBCE8AC19",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Broadcom Inc. ST0x",
-        "liveSymbol": "wtAVGO",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6088f8ef741ae1f5a61882866f130631b41617e2",
-        "unwrapped": "0x6088F8ef741AE1f5A61882866f130631b41617E2",
-        "legacy": null,
-        "receipt": "0x36e3612554857751c78FC70A31a9a40B130168c4",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtBABA",
-        "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
-        "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Alibaba Group Holding Limited ADR ST0x",
-        "liveSymbol": "wtBABA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
-        "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
-        "legacy": null,
-        "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtBMNR",
-        "name": "Wrapped Bitmine Immersion Technologies, Inc ST0x",
-        "address": "0x2512EC661f0bA089c275EA105E31bAD6FcFcf319",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Bitmine Immersion Technologies, Inc ST0x",
-        "liveSymbol": "wtBMNR",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xfbde45df60249203b12148452fc77c3b5f811eb2",
-        "unwrapped": "0xfbde45df60249203b12148452fc77c3b5f811eb2",
-        "legacy": "0xf8fdfd6a686346d34b3143fc23072aa45c9e8386",
-        "receipt": "0x67aeafd8c274f62933fec34e8c0724189aad01fc",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtBMW.DE",
-        "name": "Wrapped Bayerische Motoren Werke Aktiengesellschaft ST0x",
-        "address": "0xD0269618455cF7dA71665856f16C2D03A1b26290",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Bayerische Motoren Werke Aktiengesellschaft ST0x",
-        "liveSymbol": "wtBMW.DE",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x9610c265eb8f38b22fec78498c74924d9fe55891",
-        "unwrapped": "0x9610C265EB8F38B22Fec78498C74924D9fe55891",
-        "legacy": null,
-        "receipt": "0x30864F2921886Dc491326D86015eB66c9601BF2b",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtCBRS",
-        "name": "Wrapped Cerebras Systems Inc. ST0x",
-        "address": "0xB457cfBF31995d3aAAa704dA9999cC0b011820ca",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Cerebras Systems Inc. ST0x",
-        "liveSymbol": "wtCBRS",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xbeb0c2011bd5520a0998b69132e9245e39ac5d1d",
-        "unwrapped": "0xbeb0c2011bd5520a0998b69132e9245e39ac5d1d",
-        "legacy": null,
-        "receipt": "0xae8ad2340aa19749a0b935c7f2245823fc4f14fb",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtCEG",
-        "name": "Wrapped Constellation Energy Corporation ST0x",
-        "address": "0x3aF952888Cd89DAD3e8AF67cf4b7E740B36829C3",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Constellation Energy Corporation ST0x",
-        "liveSymbol": "wtCEG",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x9a5d3caec90b0332b18c0b93fef42f3f8c918289",
-        "unwrapped": "0x9a5D3cAeC90b0332b18C0B93fEF42F3F8C918289",
-        "legacy": null,
-        "receipt": "0xc6bc19df197ccd0db4c02ccd6aaff7b2ce698e08",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtCOIN",
-        "name": "Wrapped Coinbase Global Inc ST0x",
-        "address": "0x5cDa0E1CA4ce2af96315f7F8963C85399c172204",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Coinbase Global Inc ST0x",
-        "liveSymbol": "wtCOIN",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x626757e6f50675d17fcad312e82f989ae7a23d38",
-        "unwrapped": "0x626757e6f50675d17fcad312e82f989ae7a23d38",
-        "legacy": "0xb616f8b391d1adc118fd7e4063526d5530d49b10",
-        "receipt": "0xba1b8836a5510815e96103f067715b7ccc7c2e0e",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtCRCL",
-        "name": "Wrapped Circle Internet Group Inc ST0x",
-        "address": "0x8AFba81DEc38DE0A18E2Df5E1967a7493651eebf",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Circle Internet Group Inc ST0x",
-        "liveSymbol": "wtCRCL",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x38eb797892ed71da69bdc27a456a7c83ff813b52",
-        "unwrapped": "0x38eb797892ed71da69bdc27a456a7c83ff813b52",
-        "legacy": "0x43422a9d11a6640ef0d5f65292ef8adf87cf8522",
-        "receipt": "0xd508b97975fbe04e62bff18959549b046bd8fa78",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtDNUT",
-        "name": "Wrapped Krispy Kreme, Inc. ST0x",
-        "address": "0x1db49Ff8BEe88ec73F82F395B0BEAd372BdcAdb7",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Krispy Kreme, Inc. ST0x",
-        "liveSymbol": "wtDNUT",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6c2b6ed57d4d9e93f3e4975fac70ee4b180f4eb9",
-        "unwrapped": "0x6C2b6Ed57d4d9e93F3E4975FAc70eE4B180F4Eb9",
-        "legacy": null,
-        "receipt": "0xE06eD5d80Db468a10fCfadF27ee9771DD73C7e35",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtDRAM",
-        "name": "Wrapped Roundhill Memory ETF ST0x",
-        "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Roundhill Memory ETF ST0x",
-        "liveSymbol": "wtDRAM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x96de077262609298cd891e4ab21bd34837de33ab",
-        "unwrapped": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
-        "legacy": null,
-        "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtFGI",
-        "name": "Wrapped FGI Industries Ltd. ST0x",
-        "address": "0x6aed8b1aCfb04F4e0e6db580F12fF41438a394e5",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped FGI Industries Ltd. ST0x",
-        "liveSymbol": "wtFGI",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x785bd77b8e92866f87e01416d1022d729975d529",
-        "unwrapped": "0x785BD77B8e92866f87E01416D1022d729975D529",
-        "legacy": null,
-        "receipt": "0x46b25F089fFf268E28286C0d7A837c2f13Ad0952",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtFTF",
-        "name": "Wrapped Franklin Limited Duration Income Trust ST0x",
-        "address": "0x9bDe199Ac6E7E050334306D9267c93e3D6d38333",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Franklin Limited Duration Income Trust ST0x",
-        "liveSymbol": "wtFTF",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x51d5c8c8040358686952a30fac116aac32390d6a",
-        "unwrapped": "0x51d5c8c8040358686952a30fac116aac32390d6a",
-        "legacy": null,
-        "receipt": "0x4ca18bf0dcccbbd80cef238f4c9399efbde3927b",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtGOOGL",
-        "name": "Wrapped Alphabet Inc. Class A ST0x",
-        "address": "0x6a2357Df4975C667B171bE53dA6FFe6deBf7030c",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Alphabet Inc. Class A ST0x",
-        "liveSymbol": "wtGOOGL",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x15de944cd020a18c8e5626fb0f81b36e73956199",
-        "unwrapped": "0x15De944Cd020A18C8E5626fB0F81b36e73956199",
-        "legacy": null,
-        "receipt": "0x85ac79F639C692B2f1290d0994c79eEffF350D00",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtGRND",
-        "name": "Wrapped Grindr Inc. ST0x",
-        "address": "0x1197E6FA778c4D13E47875bD1761c68C22c928e0",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Grindr Inc. ST0x",
-        "liveSymbol": "wtGRND",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xa4178410216f5f00c718be88c2ff8ac24de192bc",
-        "unwrapped": "0xA4178410216F5f00C718BE88C2fF8AC24de192bc",
-        "legacy": null,
-        "receipt": "0xca4495d2fe8e82951DEbda1102A1dCf09DB7Bba6",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtHOOD",
-        "name": "Wrapped Robinhood Markets, Inc. ST0x",
-        "address": "0xd50f561322fe3235DBc9Ec8b3aB7693383d8A425",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Robinhood Markets, Inc. ST0x",
-        "liveSymbol": "wtHOOD",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x5cefd886dd05001c2fc32c313e05360d07f37d8f",
-        "unwrapped": "0x5cEfd886dD05001c2Fc32c313E05360D07f37d8f",
-        "legacy": null,
-        "receipt": "0x942639370E1c095ECCe2BdffebFB295d0B3e384e",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtIAU",
-        "name": "Wrapped iShares Gold Trust ST0x",
-        "address": "0x1E46d7eFef64A833AFB1CD49299a7AD5B439f4d8",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped iShares Gold Trust ST0x",
-        "liveSymbol": "wtIAU",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x9a507314ea2a6c5686c0d07bfecb764dcf324dff",
-        "unwrapped": "0x9a507314ea2a6c5686c0d07bfecb764dcf324dff",
-        "legacy": "0xd0a90b7c9ae5facbe09ca4c576a3795eda53b397",
-        "receipt": "0x9e128159ff53ce113df52d760c032dd65ddb0e64",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtINTC",
-        "name": "Wrapped Intel Corporation ST0x",
-        "address": "0xf567652fC2d7Db8D5469fD06AEbe8C9c4372d722",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Intel Corporation ST0x",
-        "liveSymbol": "wtINTC",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xbdc237aa3b67cc3088adaf117913f30bf08157a3",
-        "unwrapped": "0xBDC237Aa3B67cC3088adAf117913F30Bf08157a3",
-        "legacy": null,
-        "receipt": "0xAFEd850e458d331EF2A13569547258A84e2e42D2",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtLLY",
-        "name": "Wrapped Eli Lilly and Company ST0x",
-        "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Eli Lilly and Company ST0x",
-        "liveSymbol": "wtLLY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
-        "unwrapped": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
-        "legacy": null,
-        "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtLRCX",
-        "name": "Wrapped Lam Research Corporation ST0x",
-        "address": "0x328B9aFFa511fE26673edBb4fEa37eDaF908A3bc",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Lam Research Corporation ST0x",
-        "liveSymbol": "wtLRCX",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xdde9346107609a05439a0b59ab6ed4f7f81a1fbf",
-        "unwrapped": "0xDdE9346107609A05439A0B59Ab6eD4f7F81a1FBF",
-        "legacy": null,
-        "receipt": "0xDa588aceE0E45F29dfF1E48988D5108122491388",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtMBG.DE",
-        "name": "Wrapped Mercedes-Benz Group AG ST0x",
-        "address": "0xfae641bfE7009B5326396048b951E3aa31902a2B",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Mercedes-Benz Group AG ST0x",
-        "liveSymbol": "wtMBG.DE",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x07d7ca9384812b86e7e429473df354fb59da73a0",
-        "unwrapped": "0x07d7ca9384812b86e7E429473dF354fb59DA73A0",
-        "legacy": null,
-        "receipt": "0x984d884fc03D17e7b9cCfE6A32f27e9b6d9B92bd",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtMC.PA",
-        "name": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
-        "address": "0xd92cc92557BFC33028195983ED31465F99b4A01c",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
-        "liveSymbol": "wtMC.PA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xf5245a17e5eb64d53dea213d40aba01821d465cd",
-        "unwrapped": "0xF5245a17E5eb64D53dEa213d40aBa01821D465Cd",
-        "legacy": null,
-        "receipt": "0xBEDD4C7219E35E6C45BE792F31F076737481FF2c",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtMCD",
-        "name": "Wrapped McDonald's Corporation ST0x",
-        "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped McDonald's Corporation ST0x",
-        "liveSymbol": "wtMCD",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
-        "unwrapped": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
-        "legacy": null,
-        "receipt": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtMSFT",
-        "name": "Wrapped Microsoft Corporation ST0x",
-        "address": "0x515A3Ac2a6aB590bDFa970caFFFd7fAdC680886E",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Microsoft Corporation ST0x",
-        "liveSymbol": "wtMSFT",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6a071e25fa25653cf15d1ee320ea3df771926aa0",
-        "unwrapped": "0x6a071E25fa25653cF15d1ee320eA3df771926Aa0",
-        "legacy": null,
-        "receipt": "0x6862e34dE9AFE099ca19934fC768A8eB9a906b90",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtMSTR",
-        "name": "Wrapped MicroStrategy Incorporated ST0x",
-        "address": "0xFF05E1bD696900dc6A52CA35Ca61Bb1024eDa8e2",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped MicroStrategy Incorporated ST0x",
-        "liveSymbol": "wtMSTR",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x013b782f402d61aa1004cca95b9f5bb402c9d5fe",
-        "unwrapped": "0x013b782f402d61aa1004cca95b9f5bb402c9d5fe",
-        "legacy": "0xff647ad8c4b065bd746911bb9ea1a33c38c63604",
-        "receipt": "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtMU",
-        "name": "Wrapped Micron Technology, Inc. ST0x",
-        "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Micron Technology, Inc. ST0x",
-        "liveSymbol": "wtMU",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
-        "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
-        "legacy": null,
-        "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtNKE",
-        "name": "Wrapped NIKE, Inc. ST0x",
-        "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped NIKE, Inc. ST0x",
-        "liveSymbol": "wtNKE",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x88c3f4e2e0a977fed97ed246c70bfd7a01070246",
-        "unwrapped": "0x88C3F4E2E0a977Fed97ed246c70BFD7A01070246",
-        "legacy": null,
-        "receipt": "0x8A0037757d67084f5431c02eE2A352593eFe2957",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtNVDA",
-        "name": "Wrapped NVIDIA Corporation ST0x",
-        "address": "0xFb5B41acdbA20a3230F84BE995173CFb98b8D6E7",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped NVIDIA Corporation ST0x",
-        "liveSymbol": "wtNVDA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x7271a3c91bb6070ed09333b84a815949d4f16d14",
-        "unwrapped": "0x7271a3c91bb6070ed09333b84a815949d4f16d14",
-        "legacy": "0x69fca9f7fad46a7eef3acef5beac9df5b7eca73b",
-        "receipt": "0x8dd4c6f08e446075879310afae8167cc4de2f805",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtORCL",
-        "name": "Wrapped Oracle Corporation ST0x",
-        "address": "0xCB9571aB96aA47374eF30D8E9ACCC1cD51064726",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Oracle Corporation ST0x",
-        "liveSymbol": "wtORCL",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x57573351f3fdd20a57dee4a7f836de1ce9900d4b",
-        "unwrapped": "0x57573351f3fdD20a57dEE4a7f836de1cE9900d4B",
-        "legacy": null,
-        "receipt": "0xBaf83f5D1dbC8CF4D5F5BCb93EfE23d0E333223f",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtPLBY",
-        "name": "Wrapped Playboy, Inc. ST0x",
-        "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Playboy, Inc. ST0x",
-        "liveSymbol": "wtPLBY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xe9bc7ef69f123ca2bca1021d1be30224271a9217",
-        "unwrapped": "0xe9bc7eF69f123cA2bcA1021D1BE30224271a9217",
-        "legacy": null,
-        "receipt": "0x5978B2FA7B3DDA36847eb7D2003EC7AE112258AA",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtPPLT",
-        "name": "Wrapped abrdn Physical Platinum Shares ETF ST0x",
-        "address": "0x82f5BAEE1076334357a34A19E04f7c282D51cE47",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped abrdn Physical Platinum Shares ETF ST0x",
-        "liveSymbol": "wtPPLT",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x1f17523b147ccc2a2328c0f014f6d49c479ea063",
-        "unwrapped": "0x1f17523b147ccc2a2328c0f014f6d49c479ea063",
-        "legacy": "0x6192539a2036c786aba3ca6a2222ff7a0f9c287e",
-        "receipt": "0x61b5a0424cd3adcd3b312619fc58b6fcefa1ecb6",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtPTY",
-        "name": "Wrapped PIMCO Corporate & Income Opportunity Fund ST0x",
-        "address": "0xb6D779A79E7493ed821a65D52bA419F0F6D5dD0a",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped PIMCO Corporate & Income Opportunity Fund ST0x",
-        "liveSymbol": "wtPTY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xb6021810971714cd48572af527307acc324ecf61",
-        "unwrapped": "0xb6021810971714cD48572af527307Acc324ecF61",
-        "legacy": null,
-        "receipt": "0x019Ea210a98f5E74F03376712BDAab3801079b7F",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtQQQM",
-        "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
-        "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Invesco NASDAQ 100 ETF ST0x",
-        "liveSymbol": "wtQQQM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
-        "unwrapped": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
-        "legacy": null,
-        "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtRHM.DE",
-        "name": "Wrapped Rheinmetall AG ST0x",
-        "address": "0xD3c42aB4D5A60A50401b3A67D10B03Ce7D96DA19",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Rheinmetall AG ST0x",
-        "liveSymbol": "wtRHM.DE",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x725e0df28d1eb09338f63776b76bcfc00f3b6f44",
-        "unwrapped": "0x725E0Df28D1EB09338f63776B76bCfc00f3b6f44",
-        "legacy": null,
-        "receipt": "0xfbd76467e4FBbd64dD43057bF137a75ec676C3c2",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSGOV",
-        "name": "Wrapped iShares 0-3 Month Treasury Bond ETF ST0x",
-        "address": "0x78c31580c97101694C70022c83D570150c11e935",
-        "status": "mismatch",
-        "wrapped": true,
-        "nameOk": false,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped  iShares 0-3 Month Treasury Bond ETF ST0x",
-        "liveSymbol": "wtSGOV",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xc941c1506b7555ba8c506fb6c9b9cc259902d612",
-        "unwrapped": "0xc941C1506B7555Ba8C506Fb6c9b9CC259902d612",
-        "legacy": null,
-        "receipt": "0x5c28F1Dd98dC2D61F289545c3be85cafdb4cB111",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSIE.DE",
-        "name": "Wrapped Siemens Aktiengesellschaft ST0x",
-        "address": "0xed0B0fdD92F7eece606A0FB0457352616d6e6B34",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Siemens Aktiengesellschaft ST0x",
-        "liveSymbol": "wtSIE.DE",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xa662066a60964a528ad05209139a79bda3a7577f",
-        "unwrapped": "0xa662066a60964a528aD05209139a79BDa3a7577f",
-        "legacy": null,
-        "receipt": "0xe89995E4Bf9691486445917e3C69ed3d935183f1",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSIVR",
-        "name": "Wrapped abrdn Physical Silver Shares ETF ST0x",
-        "address": "0xEB7F3E4093C9d68253b6104FbbfF561F3eC0442F",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped abrdn Physical Silver Shares ETF ST0x",
-        "liveSymbol": "wtSIVR",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x58ce5024b89b4f73c27814c0f0abbea331c99be8",
-        "unwrapped": "0x58ce5024b89b4f73c27814c0f0abbea331c99be8",
-        "legacy": "0x826a85de1f7b70f4c7450c0f882a6db06000ed80",
-        "receipt": "0x053f52109a3439b4f292056d2dcec0486b544e82",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSKHY",
-        "name": "Wrapped SK hynix Inc. ADR ST0x",
-        "address": "0xFcD17aC4c4BF6a72c93018096F3fC09e66573Ff9",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped SK hynix Inc. ADR ST0x",
-        "liveSymbol": "wtSKHY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x4dba41f0feb390f208a85e96168ff5d8ac2b6f5c",
-        "unwrapped": "0x4DBA41f0feb390F208a85e96168fF5d8aC2b6F5c",
-        "legacy": null,
-        "receipt": "0xe26105d49e57ced5ce83d20ca5f04c3b0dcc876c",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSMCI",
-        "name": "Wrapped Super Micro Computer, Inc. ST0x",
-        "address": "0xA759FAbbD866e6DB8bF76613C35825dC2e380bf0",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Super Micro Computer, Inc. ST0x",
-        "liveSymbol": "wtSMCI",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x8518931497d2a8f07bc607d1d3295b398d065a65",
-        "unwrapped": "0x8518931497d2A8f07Bc607D1D3295b398D065A65",
-        "legacy": null,
-        "receipt": "0xC23aC719988d2ABeffEE8AC75C790E328c44Fe79",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSPCX",
-        "name": "Wrapped Space Exploration Technologies Corp. ST0x",
-        "address": "0x19F89aaEf8a93f38A974beca9776f09aB844887F",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Space Exploration Technologies Corp. ST0x",
-        "liveSymbol": "wtSPCX",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xc585aeb8b76c5f5e4215470a7625258e86ed7746",
-        "unwrapped": "0xc585AeB8B76c5F5e4215470A7625258e86ED7746",
-        "legacy": null,
-        "receipt": "0xba81B21F8a22bD99900E00Ed1373EC77C0772F55",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSPY",
-        "name": "Wrapped State Street SPDR S&P 500 ETF Trust ST0x",
-        "address": "0x9Aa9c5a24e976096A6A7aB44986DAE8230fa5b27",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped State Street SPDR S&P 500 ETF Trust ST0x",
-        "liveSymbol": "wtSPY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xda2e8d6e2a7d0a38a6b39a274d6911476062298b",
-        "unwrapped": "0xda2e8d6e2a7d0a38a6b39a274d6911476062298b",
-        "legacy": null,
-        "receipt": "0x1113a5dcae56f5c7320024780079c9c79767ddb8",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtSPYM",
-        "name": "Wrapped SPDR Portfolio S&P 500 ETF ST0x",
-        "address": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
-        "status": "mismatch",
-        "wrapped": true,
-        "nameOk": false,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped State Street SPDR Portfolio S&P 500 ETF ST0x",
-        "liveSymbol": "wtSPYM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
-        "unwrapped": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
-        "legacy": "0x2289249984f1fa2ce86c4e8867e7eb819ea7df95",
-        "receipt": "0x957056dd6e2e594742e36675e8aa5a567163e5bd",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtTQQQ",
-        "name": "Wrapped ProShares UltraPro QQQ ST0x",
-        "address": "0x295e9eCAb319006900a53b3f8D6Fcb0C131F4ada",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped ProShares UltraPro QQQ ST0x",
-        "liveSymbol": "wtTQQQ",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xca1a378f9a250131a2fe51c10f120fef7edca56e",
-        "unwrapped": "0xcA1A378F9a250131A2fE51c10f120FeF7EDCa56E",
-        "legacy": null,
-        "receipt": "0x81eFD642eBb942D725C4B035e7C3Cad154a37FAF",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtTR",
-        "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
-        "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Tootsie Roll Industries, Inc. ST0x",
-        "liveSymbol": "wtTR",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
-        "unwrapped": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
-        "legacy": null,
-        "receipt": "0xf5e5d2d3b6be819Ff65cB364F4178252C9dbf5B7",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtTSLA",
-        "name": "Wrapped Tesla Inc ST0x",
-        "address": "0x219A8d384a10BF19b9f24cB5cC53F79Dd0e5A03D",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Tesla Inc ST0x",
-        "liveSymbol": "wtTSLA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x4e169cd2ab4f82640a8c65c68fed55863866fdb0",
-        "unwrapped": "0x4e169cd2ab4f82640a8c65c68fed55863866fdb0",
-        "legacy": "0x470b06815a2e286df8c38c9c73280e0760088623",
-        "receipt": "0x660923230faa859622711a5fc80f532dd588b125",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtTSM",
-        "name": "Wrapped Taiwan Semiconductor Manufacturing Company ST0x",
-        "address": "0x71C66449d2528E23514A9c197BFD55Ae9DB3B714",
-        "status": "mismatch",
-        "wrapped": true,
-        "nameOk": false,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Taiwan Semiconductor Manufacturing Company Limited ADR ST0x",
-        "liveSymbol": "wtTSM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x7001e2974f775f0fd73a3d2e5914e591f3ec3fbb",
-        "unwrapped": "0x7001e2974F775f0Fd73a3D2e5914e591f3EC3fBB",
-        "legacy": null,
-        "receipt": "0x6553f9a5352ec3ca808138eab56fe4cc496ea5a9",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtTTWO",
-        "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
-        "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
-        "liveSymbol": "wtTTWO",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
-        "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
-        "legacy": null,
-        "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtVWO",
-        "name": "Wrapped Vanguard Emerging Markets Stock Index Fund ST0x",
-        "address": "0x23ec6886b49D7ab123E9ee8e474D2fa7AB6Cbc2d",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Vanguard Emerging Markets Stock Index Fund ST0x",
-        "liveSymbol": "wtVWO",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x0acfea6833c4a3f41bf2fbd736aa9eea547d90ee",
-        "unwrapped": "0x0acfea6833c4a3f41bf2fbd736aa9eea547d90ee",
-        "legacy": null,
-        "receipt": "0x3ec7c053fd515353df294b43f4c4d81f76ef0924",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      },
-      {
-        "symbol": "wtWEN",
-        "name": "Wrapped The Wendy's Company ST0x",
-        "address": "0x31Fa821F8B1BDea7Db357ec9622d1A2f6aFE903d",
-        "status": "ok",
-        "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped The Wendy's Company ST0x",
-        "liveSymbol": "wtWEN",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xeda4df511dea07b6529db2196998b30e03791d87",
-        "unwrapped": "0xedA4df511dEA07b6529db2196998B30E03791d87",
-        "legacy": null,
-        "receipt": "0x6c26044FAa1Ea4459a03c3760F4aAA1826a1e392",
-        "unwrappedDeployed": true,
-        "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
-        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
-        "inMigrationSet": true
-      }
-    ]
+    "tokens": []
   },
   "orgs": [
     "rainlanguage",
@@ -7282,12 +4735,12 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 4,
+      "openAuditIssues": 9,
       "lastMutation": {
-        "timestamp": "2026-10-06T21:27:28Z",
-        "commit": "3408fabf099961ebc493eefd2ee6e724290bc7a9",
+        "timestamp": "2026-10-07T16:49:30Z",
+        "commit": "adb2903293ba920e3ee3490186519a2b22b8c012",
         "skillVersion": "0.35.0",
-        "scope": "issue #327 fix: the changed lines of LibParseDecimalFloat.parseDecimalFloatInline (the all-zero-fraction guard now encloses the fraction sign, exponent and rescale). Probe suite: forge test --mc ^(LibParseDecimalFloatTest|LibFormatDecimalFloatToDecimalStringTest)$; test counts are that suite. M01-M17 were probed against the pre-existing suite at commit; M18 (the pre-fix structure restored) was added after and is killed only by the new tests. Equivalent: M04 and M08 (unreachable guards: the fraction digits are unsigned and nonZeroCursor > fracStart inside the branch), M11 (a scale of 68 always fails the int224 check)."
+        "scope": "issue #298: pure deletion of LibDecimalFloatImplementation.lookupLogTableVal (no caller in src since #309), its LOG_TABLE_SIZE_* import, its two test files and test/lib/LibTestPrecision.sol. The diff adds no src line, so there is no mutation target. The adversarial check: nothing in src, test or crates still references a deleted symbol, and the full forge suite passes."
       }
     },
     {
@@ -7844,7 +5297,7 @@
     {
       "name": "rain.factory",
       "org": "rainlanguage",
-      "openAuditIssues": 78,
+      "openAuditIssues": 79,
       "lastMutation": {
         "timestamp": "2026-09-20T04:00:00Z",
         "commit": "5a633508643e345fc72c11133f782214f60db9b5",
@@ -8066,7 +5519,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 506,
+      "fullSourceLoc": 718,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -8095,7 +5548,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 2928,
+      "fullSourceLoc": 2934,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -8572,17 +6025,17 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4138,
+      "sourceLocChangedSinceAudit": 4175,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3825,
-      "sourceLocRemovedSinceAudit": 313,
-      "filesChangedSinceAudit": 88,
-      "commitsSinceAudit": 631,
+      "sourceLocAddedSinceAudit": 3850,
+      "sourceLocRemovedSinceAudit": 325,
+      "filesChangedSinceAudit": 94,
+      "commitsSinceAudit": 650,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4417,
+      "commentLocAddedSinceAudit": 4253,
       "commentLocRemovedSinceAudit": 257,
-      "codeLocAddedSinceAudit": 5150,
-      "codeLocRemovedSinceAudit": 390,
+      "codeLocAddedSinceAudit": 5337,
+      "codeLocRemovedSinceAudit": 407,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
       "daysSinceAudit": 140
@@ -8605,20 +6058,20 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "sol-v0.2.22",
-      "latestTagIso": "2026-10-07T15:56:49Z",
+      "latestTag": "sol-v0.2.23",
+      "latestTagIso": "2026-10-07T20:12:08Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 3395,
+      "sourceLocChangedSinceAudit": 3985,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 2180,
-      "sourceLocRemovedSinceAudit": 1215,
+      "sourceLocAddedSinceAudit": 2064,
+      "sourceLocRemovedSinceAudit": 1921,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 614,
+      "commitsSinceAudit": 625,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 984,
-      "commentLocRemovedSinceAudit": 332,
-      "codeLocAddedSinceAudit": 1021,
-      "codeLocRemovedSinceAudit": 682,
+      "commentLocAddedSinceAudit": 910,
+      "commentLocRemovedSinceAudit": 350,
+      "codeLocAddedSinceAudit": 988,
+      "codeLocRemovedSinceAudit": 1333,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
       "daysSinceAudit": 310
@@ -9803,7 +7256,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 89,
+      "testFiles": 83,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -10010,7 +7463,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 146,
+      "testFiles": 145,
       "sourcesUnparsed": 1,
       "untested": []
     },
