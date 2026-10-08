@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-08T09:04:11Z",
+  "generatedAt": "2026-10-08T16:35:02Z",
   "auditGraph": {
     "nodes": [
       {
@@ -64,7 +64,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.metadata",
@@ -127,7 +127,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.metadata",
@@ -252,7 +252,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.metadata",
@@ -333,12 +333,12 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 9,
+        "openAuditIssues": 7,
         "lastMutation": {
-          "timestamp": "2026-10-07T16:49:30Z",
-          "commit": "adb2903293ba920e3ee3490186519a2b22b8c012",
+          "timestamp": "2026-10-07T23:55:24Z",
+          "commit": "0312b68d23e8d229dd18f5d95522b4f67ce135fa",
           "skillVersion": "0.35.0",
-          "scope": "issue #298: pure deletion of LibDecimalFloatImplementation.lookupLogTableVal (no caller in src since #309), its LOG_TABLE_SIZE_* import, its two test files and test/lib/LibTestPrecision.sol. The diff adds no src line, so there is no mutation target. The adversarial check: nothing in src, test or crates still references a deleted symbol, and the full forge suite passes."
+          "scope": "PR #333 general lossy-pack rule: the packLossy shed jumps and int224 bound (S01-S16, suite: forge clean + full forge test + cargo test -p rain-math-float-tests, 764 + 160), the Rust reference pack (R01-R11) and the Python oracle pack (P01-P07) (suite: cargo test -p rain-math-float-tests, 160). The mutants were probed after the tests were written, so no kill is attributed to a pre-existing suite (killedBefore is null). R06 (reference never raises underflow) does not terminate: the representation loop walks a zero coefficient toward int32.min. R10 probes the same behaviour as a lossy zero and is killed. R07 and R11 hang the transcendental references, so they were scored on the cargo suite without the transcendental module (135 tests) and are killed there. Adversarial pass: the bound is the closest Float not above the value whenever the shed coefficient is at most int224.max / 10, for both signs, at the ceiling, and below the floor. No candidates."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -368,7 +368,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.sol.codegen",
@@ -499,7 +499,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.metadata",
@@ -624,7 +624,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.5",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           }
         ]
       },
@@ -770,7 +770,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.math.float.deploy",
@@ -824,7 +824,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "raindex.interface",
@@ -852,7 +852,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rainlang.interface",
@@ -896,7 +896,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.metadata",
@@ -1043,7 +1043,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.22",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -1139,7 +1139,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           },
           {
             "repo": "rain.vats",
@@ -1366,7 +1366,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.23"
+            "latest": "0.2.25"
           }
         ]
       }
@@ -1419,7 +1419,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rain.dia",
@@ -1468,7 +1468,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rain.erc4626.words",
@@ -1566,7 +1566,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rain.flare",
@@ -1608,7 +1608,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rain.lib.memkv",
@@ -1664,7 +1664,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1741,7 +1741,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rain.pyth",
@@ -1825,7 +1825,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rain.vats",
@@ -1923,7 +1923,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "raindex",
@@ -1993,7 +1993,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "raindex.governance",
@@ -2007,7 +2007,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "raindex.interface",
@@ -2063,7 +2063,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "rainlang",
@@ -2238,7 +2238,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.22",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "st0x.deploy",
@@ -2280,7 +2280,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.23"
+        "latest": "0.2.25"
       },
       {
         "from": "st0x.oracle",
@@ -2770,7 +2770,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -3539,7 +3539,7 @@
       "function": "LibTokenInvariants.productionReceiptVaults()",
       "governedCount": 0,
       "governedDeclared": 0,
-      "registryTokenCount": 50,
+      "registryTokenCount": 51,
       "extraVaults": [],
       "missingFromMigration": [
         {
@@ -3939,6 +3939,14 @@
           "name": "Wrapped Walmart Inc. ST0x",
           "address": "0xc7370cb84159df9760F87ef7092B97cB850AD9d4",
           "receiptVault": "0x31f55e6dcf09e706ba10e4cbb455de0fbf932bca",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtMC",
+          "name": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
+          "address": "0x378a04202D25659763A02dA5FE77c0a35e64Ce1D",
+          "receiptVault": "0x6ec2421d74f2af61b7ee7bccae25a3b6a7961aa0",
           "wrapped": true,
           "reason": "receipt vault not in migration set"
         }
@@ -4695,12 +4703,12 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 9,
+      "openAuditIssues": 7,
       "lastMutation": {
-        "timestamp": "2026-10-07T16:49:30Z",
-        "commit": "adb2903293ba920e3ee3490186519a2b22b8c012",
+        "timestamp": "2026-10-07T23:55:24Z",
+        "commit": "0312b68d23e8d229dd18f5d95522b4f67ce135fa",
         "skillVersion": "0.35.0",
-        "scope": "issue #298: pure deletion of LibDecimalFloatImplementation.lookupLogTableVal (no caller in src since #309), its LOG_TABLE_SIZE_* import, its two test files and test/lib/LibTestPrecision.sol. The diff adds no src line, so there is no mutation target. The adversarial check: nothing in src, test or crates still references a deleted symbol, and the full forge suite passes."
+        "scope": "PR #333 general lossy-pack rule: the packLossy shed jumps and int224 bound (S01-S16, suite: forge clean + full forge test + cargo test -p rain-math-float-tests, 764 + 160), the Rust reference pack (R01-R11) and the Python oracle pack (P01-P07) (suite: cargo test -p rain-math-float-tests, 160). The mutants were probed after the tests were written, so no kill is attributed to a pre-existing suite (killedBefore is null). R06 (reference never raises underflow) does not terminate: the representation loop walks a zero coefficient toward int32.min. R10 probes the same behaviour as a lossy zero and is killed. R07 and R11 hang the transcendental references, so they were scored on the cargo suite without the transcendental module (135 tests) and are killed there. Adversarial pass: the bound is the closest Float not above the value whenever the shed coefficient is at most int224.max / 10, for both signs, at the ceiling, and below the floor. No candidates."
       }
     },
     {
@@ -5985,16 +5993,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4513,
+      "sourceLocChangedSinceAudit": 4515,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 4188,
+      "sourceLocAddedSinceAudit": 4190,
       "sourceLocRemovedSinceAudit": 325,
       "filesChangedSinceAudit": 99,
-      "commitsSinceAudit": 679,
+      "commitsSinceAudit": 688,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4490,
+      "commentLocAddedSinceAudit": 4547,
       "commentLocRemovedSinceAudit": 257,
-      "codeLocAddedSinceAudit": 5678,
+      "codeLocAddedSinceAudit": 5745,
       "codeLocRemovedSinceAudit": 407,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
@@ -6018,20 +6026,20 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "sol-v0.2.23",
-      "latestTagIso": "2026-10-07T20:12:08Z",
+      "latestTag": "sol-v0.2.25",
+      "latestTagIso": "2026-10-08T09:41:47Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 3985,
+      "sourceLocChangedSinceAudit": 4076,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 2064,
-      "sourceLocRemovedSinceAudit": 1921,
+      "sourceLocAddedSinceAudit": 2135,
+      "sourceLocRemovedSinceAudit": 1941,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 625,
+      "commitsSinceAudit": 652,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 910,
-      "commentLocRemovedSinceAudit": 350,
-      "codeLocAddedSinceAudit": 988,
-      "codeLocRemovedSinceAudit": 1333,
+      "commentLocAddedSinceAudit": 932,
+      "commentLocRemovedSinceAudit": 363,
+      "codeLocAddedSinceAudit": 1035,
+      "codeLocRemovedSinceAudit": 1338,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
       "daysSinceAudit": 311
@@ -6510,15 +6518,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.253-uc-v0.0.1-alpha.256",
-      "latestTagIso": "2026-09-30T11:50:22Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.254-uc-v0.0.1-alpha.257",
+      "latestTagIso": "2026-10-08T12:01:11Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 54,
-      "commitsSinceAudit": 243,
+      "commitsSinceAudit": 246,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -7216,7 +7224,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 83,
+      "testFiles": 86,
       "sourcesUnparsed": 0,
       "untested": []
     },
