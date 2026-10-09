@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-09T09:11:53Z",
+  "generatedAt": "2026-10-09T16:18:10Z",
   "auditGraph": {
     "nodes": [
       {
@@ -64,7 +64,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.metadata",
@@ -127,7 +127,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.metadata",
@@ -252,7 +252,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.metadata",
@@ -333,12 +333,12 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 5,
+        "openAuditIssues": 30,
         "lastMutation": {
-          "timestamp": "2026-10-07T23:55:24Z",
-          "commit": "0312b68d23e8d229dd18f5d95522b4f67ce135fa",
+          "timestamp": "2026-10-09T14:15:05Z",
+          "commit": "8fcfeb35aa8339d17846ae8c65a99ea2d9bd2419",
           "skillVersion": "0.35.0",
-          "scope": "PR #333 general lossy-pack rule: the packLossy shed jumps and int224 bound (S01-S16, suite: forge clean + full forge test + cargo test -p rain-math-float-tests, 764 + 160), the Rust reference pack (R01-R11) and the Python oracle pack (P01-P07) (suite: cargo test -p rain-math-float-tests, 160). The mutants were probed after the tests were written, so no kill is attributed to a pre-existing suite (killedBefore is null). R06 (reference never raises underflow) does not terminate: the representation loop walks a zero coefficient toward int32.min. R10 probes the same behaviour as a lossy zero and is killed. R07 and R11 hang the transcendental references, so they were scored on the cargo suite without the transcendental module (135 tests) and are killed there. Adversarial pass: the bound is the closest Float not above the value whenever the shed coefficient is at most int224.max / 10, for both signs, at the ceiling, and below the floor. No candidates."
+          "scope": "Issue #367: LibDecimalFloatImplementation.withTargetExponent, equal-exponent return (M01), shrink cutoff, wrap guard and divisor (M02-M05), grow cutoff, wrap guard, overflow check, scale and result (M06-M14), and the zero check added for #367 (Z01-Z04). Probe suite: forge test --mc LibDecimalFloatImplementationWithTargetExponentTest, main test file at the scanned commit, rewritten file at testsAfterCommit. Before: M11 and M12 (the fit check also rejecting int256.max / 10^d or int256.min / 10^d) survived, because the old overflow tests split cases by rerunning the implementation check under vm.assume and never pinned the edge coefficient. Z01 (zero check removed) is the scanned commit itself, which the old suite passes. After, all 18 are killed. Killers: M11/M12/M09/M10/M06 testWithTargetExponentScaleUpBoundaries; Z01/Z04 testWithTargetExponentExamples; Z02/Z03 testWithTargetExponentScaleUpBoundaries; M07/M13/M14 testWithTargetExponentExamples, testWithTargetExponentScaleUpBoundaries; M01/M05/M08 testWithTargetExponentExamples; M02-M04 fuzz suite."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -368,7 +368,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.sol.codegen",
@@ -499,7 +499,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.metadata",
@@ -624,7 +624,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.5",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           }
         ]
       },
@@ -770,7 +770,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.math.float.deploy",
@@ -824,7 +824,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "raindex.interface",
@@ -852,7 +852,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rainlang.interface",
@@ -896,7 +896,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.metadata",
@@ -1021,7 +1021,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 3,
+        "openAuditIssues": 5,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -1043,7 +1043,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.22",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -1139,7 +1139,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           },
           {
             "repo": "rain.vats",
@@ -1366,7 +1366,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.2.27"
+            "latest": "0.2.33"
           }
         ]
       }
@@ -1419,7 +1419,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rain.dia",
@@ -1468,7 +1468,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rain.erc4626.words",
@@ -1566,7 +1566,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rain.flare",
@@ -1608,7 +1608,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rain.lib.memkv",
@@ -1664,7 +1664,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1741,7 +1741,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rain.pyth",
@@ -1825,7 +1825,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rain.vats",
@@ -1923,7 +1923,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "raindex",
@@ -1993,7 +1993,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "raindex.governance",
@@ -2007,7 +2007,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "raindex.interface",
@@ -2063,7 +2063,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "rainlang",
@@ -2238,7 +2238,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.22",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "st0x.deploy",
@@ -2280,7 +2280,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.27"
+        "latest": "0.2.33"
       },
       {
         "from": "st0x.oracle",
@@ -2483,11 +2483,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 15,
+        "granted": 13,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 2,
         "total": 15,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -3005,7 +3005,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -3086,7 +3086,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -3484,14 +3484,14 @@
         {
           "name": "Receipt beacon",
           "address": "0xace121ae30d754536863a546f41b147be11202db",
-          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "ownerLabel": "timelock",
-          "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": false,
-          "status": "behind"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Receipt-vault beacon",
@@ -4703,12 +4703,12 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 5,
+      "openAuditIssues": 30,
       "lastMutation": {
-        "timestamp": "2026-10-07T23:55:24Z",
-        "commit": "0312b68d23e8d229dd18f5d95522b4f67ce135fa",
+        "timestamp": "2026-10-09T14:15:05Z",
+        "commit": "8fcfeb35aa8339d17846ae8c65a99ea2d9bd2419",
         "skillVersion": "0.35.0",
-        "scope": "PR #333 general lossy-pack rule: the packLossy shed jumps and int224 bound (S01-S16, suite: forge clean + full forge test + cargo test -p rain-math-float-tests, 764 + 160), the Rust reference pack (R01-R11) and the Python oracle pack (P01-P07) (suite: cargo test -p rain-math-float-tests, 160). The mutants were probed after the tests were written, so no kill is attributed to a pre-existing suite (killedBefore is null). R06 (reference never raises underflow) does not terminate: the representation loop walks a zero coefficient toward int32.min. R10 probes the same behaviour as a lossy zero and is killed. R07 and R11 hang the transcendental references, so they were scored on the cargo suite without the transcendental module (135 tests) and are killed there. Adversarial pass: the bound is the closest Float not above the value whenever the shed coefficient is at most int224.max / 10, for both signs, at the ceiling, and below the floor. No candidates."
+        "scope": "Issue #367: LibDecimalFloatImplementation.withTargetExponent, equal-exponent return (M01), shrink cutoff, wrap guard and divisor (M02-M05), grow cutoff, wrap guard, overflow check, scale and result (M06-M14), and the zero check added for #367 (Z01-Z04). Probe suite: forge test --mc LibDecimalFloatImplementationWithTargetExponentTest, main test file at the scanned commit, rewritten file at testsAfterCommit. Before: M11 and M12 (the fit check also rejecting int256.max / 10^d or int256.min / 10^d) survived, because the old overflow tests split cases by rerunning the implementation check under vm.assume and never pinned the edge coefficient. Z01 (zero check removed) is the scanned commit itself, which the old suite passes. After, all 18 are killed. Killers: M11/M12/M09/M10/M06 testWithTargetExponentScaleUpBoundaries; Z01/Z04 testWithTargetExponentExamples; Z02/Z03 testWithTargetExponentScaleUpBoundaries; M07/M13/M14 testWithTargetExponentExamples, testWithTargetExponentScaleUpBoundaries; M01/M05/M08 testWithTargetExponentExamples; M02-M04 fuzz suite."
       }
     },
     {
@@ -5019,7 +5019,7 @@
       "name": "st0x.deploy",
       "org": "S01-Issuer",
       "lastAudit": null,
-      "openAuditIssues": 3,
+      "openAuditIssues": 5,
       "lastMutation": null
     },
     {
@@ -6026,20 +6026,20 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "sol-v0.2.27",
-      "latestTagIso": "2026-10-09T08:47:32Z",
+      "latestTag": "sol-v0.2.33",
+      "latestTagIso": "2026-10-09T14:59:32Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4175,
+      "sourceLocChangedSinceAudit": 3608,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 2231,
-      "sourceLocRemovedSinceAudit": 1944,
+      "sourceLocAddedSinceAudit": 2343,
+      "sourceLocRemovedSinceAudit": 1265,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 661,
+      "commitsSinceAudit": 762,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 990,
-      "commentLocRemovedSinceAudit": 364,
-      "codeLocAddedSinceAudit": 1070,
-      "codeLocRemovedSinceAudit": 1338,
+      "commentLocAddedSinceAudit": 1165,
+      "commentLocRemovedSinceAudit": 399,
+      "codeLocAddedSinceAudit": 1194,
+      "codeLocRemovedSinceAudit": 1362,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
       "daysSinceAudit": 312
@@ -7224,7 +7224,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 88,
+      "testFiles": 92,
       "sourcesUnparsed": 0,
       "untested": []
     },
