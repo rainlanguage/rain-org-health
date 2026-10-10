@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-10T00:56:50Z",
+  "generatedAt": "2026-10-10T07:13:30Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2483,9 +2483,9 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 14,
+        "granted": 13,
         "missing": 0,
-        "unknown": 1,
+        "unknown": 2,
         "total": 15,
         "state": "partial",
         "safeKept": []
@@ -2585,7 +2585,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -2658,8 +2658,8 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
-                "safeHolds": null
+                "status": "unknown",
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -2695,7 +2695,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": false
               },
               {
@@ -3049,7 +3049,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
