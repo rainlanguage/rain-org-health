@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-12T00:37:22Z",
+  "generatedAt": "2026-10-12T07:26:30Z",
   "auditGraph": {
     "nodes": [
       {
@@ -333,7 +333,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 15,
+        "openAuditIssues": 27,
         "lastMutation": {
           "timestamp": "2026-10-11T19:05:23Z",
           "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
@@ -2664,7 +2664,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -4708,7 +4708,7 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 15,
+      "openAuditIssues": 27,
       "lastMutation": {
         "timestamp": "2026-10-11T19:05:23Z",
         "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
