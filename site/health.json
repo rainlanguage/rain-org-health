@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-12T07:26:30Z",
+  "generatedAt": "2026-10-12T18:00:31Z",
   "auditGraph": {
     "nodes": [
       {
@@ -333,7 +333,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 27,
+        "openAuditIssues": 32,
         "lastMutation": {
           "timestamp": "2026-10-11T19:05:23Z",
           "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
@@ -3354,14 +3354,14 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "ownerLabel": "timelock",
+          "owner": null,
+          "ownerLabel": "unknown",
           "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
           "atTarget": false,
-          "status": "behind"
+          "status": "unknown"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -4708,7 +4708,7 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 27,
+      "openAuditIssues": 32,
       "lastMutation": {
         "timestamp": "2026-10-11T19:05:23Z",
         "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
@@ -6003,7 +6003,7 @@
       "sourceLocAddedSinceAudit": 1280,
       "sourceLocRemovedSinceAudit": 807,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 1066,
+      "commitsSinceAudit": 1130,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1381,
       "commentLocRemovedSinceAudit": 426,
@@ -7229,7 +7229,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 109,
+      "testFiles": 110,
       "sourcesUnparsed": 0,
       "untested": []
     },
