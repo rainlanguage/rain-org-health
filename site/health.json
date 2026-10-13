@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T00:46:37Z",
+  "generatedAt": "2026-10-13T07:47:38Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2590,7 +2590,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
