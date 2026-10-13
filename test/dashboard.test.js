@@ -11699,6 +11699,10 @@ const TL_NOW = RBAC_TS + 12; // the fake's default clock, in seconds
 const TL_BEACON = "0x" + "be".repeat(20);
 const TL_STRANGER = "0x" + "5e".repeat(20);
 const TL_IMPL = "0x" + "11".repeat(20);
+// keccak256("EXECUTOR_ROLE"), as `cast keccak EXECUTOR_ROLE` prints it.
+const TL_EXECUTOR =
+  "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63";
+const TL_ADDRESS_ZERO = "0x" + "0".repeat(40);
 const tlWord = (hex) => hex.replace(/^0x/, "").padStart(64, "0");
 const tlCallData = (sel, ...words) => sel + words.map(tlWord).join("");
 const SEL = {
@@ -11751,6 +11755,24 @@ function tlFake(over = {}) {
     grantedAtBlock: "11",
     grantedAtTimestamp: "1791883011",
     role: { id: RBAC_AUTH + ROLE_IDS.DEPOSIT.slice(2) },
+  });
+  // EXECUTOR_ROLE on the timelock, held by address(0): open execution.
+  f.rows.roles.push({
+    id: RBAC_TL + TL_EXECUTOR.slice(2),
+    role: TL_EXECUTOR,
+    admin: RBAC_ZERO,
+    contract: {
+      id: RBAC_TL,
+      kind: "GOVERNANCE_TIMELOCK",
+      firstIndexedBlock: "5",
+    },
+  });
+  f.rows.roleHolders.push({
+    id: "hx",
+    account: TL_ADDRESS_ZERO,
+    grantedAtBlock: "5",
+    grantedAtTimestamp: "1791883005",
+    role: { id: RBAC_TL + TL_EXECUTOR.slice(2) },
   });
   f.rows.contracts = [
     { id: RBAC_TL, kind: "GOVERNANCE_TIMELOCK", owner: null },
@@ -12118,4 +12140,227 @@ Deno.test("deployments: no timelock read when the network's index could not be r
     "no timelock section under an unreachable banner",
   );
   assert(!f.seen.some((s) => s.init.body.includes("__type")), "not probed");
+});
+
+// One ready pending operation (p2, readyAt == now), on its own, with the
+// timelock's EXECUTOR_ROLE holders and the operation's predecessor varied.
+function tlReadyFake(over = {}, opOver = {}) {
+  const f = tlFake(over);
+  f.rows.timelockOperations = [
+    tlOpRow("0xp2", "PENDING", TL_NOW, opOver),
+    ...f.rows.timelockOperations.filter((o) => o.id !== "0xp2"),
+  ].filter((o) => o.status !== "PENDING" || o.id === "0xp2");
+  return f;
+}
+const readyCard = (p) =>
+  pendingCards(p).find((c) => textOf(c).includes("upgradeTo("));
+const execLine = (card) => collect(card, "tl-exec");
+
+Deno.test("deployments: a ready operation is open to anyone only while address(0) holds EXECUTOR_ROLE", async () => {
+  const p = await rbacPanelLive(tlReadyFake());
+  const w = textOf(collect(readyCard(p), "tl-when")[0]);
+  assert(w.startsWith("ready now"), "ready: " + w);
+  assert(
+    w.includes("anyone can execute it") && w.includes("only a cancel stops it"),
+    "open executor: " + w,
+  );
+});
+
+Deno.test("deployments: a restricted EXECUTOR_ROLE names its holders, never 'anyone'", async () => {
+  const f = tlReadyFake();
+  const ex = f.rows.roleHolders.find((h) => h.id === "hx");
+  ex.account = RBAC_AUTH;
+  f.rows.roleHolders.push({ ...ex, id: "hy", account: TL_STRANGER });
+  const p = await rbacPanelLive(
+    f,
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
+  const card = readyCard(p);
+  const w = textOf(collect(card, "tl-when")[0]);
+  assert(w.startsWith("ready now"), "still ready: " + w);
+  assert(!w.includes("anyone"), "not open: " + w);
+  const line = execLine(card);
+  assert(line.length === 1, "one executor line");
+  assert(
+    textOf(line[0]).startsWith("only an EXECUTOR_ROLE holder can execute it"),
+    textOf(line[0]),
+  );
+  const who = whoOf(line[0]);
+  assert(
+    who.length === 2 &&
+      who[1].name === "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM" &&
+      who[0].unknown && who[0].hex === TL_STRANGER,
+    "holders named, unpinned one unrecognised: " + JSON.stringify(who),
+  );
+  // address(0) among other holders still opens it.
+  f.rows.roleHolders.push({ ...ex, id: "hz", account: TL_ADDRESS_ZERO });
+  const q = await rbacPanelLive(f);
+  assert(
+    textOf(execLine(readyCard(q))[0]).includes("anyone can execute it"),
+    "address(0) beside others is open",
+  );
+});
+
+Deno.test("deployments: no EXECUTOR_ROLE holder means nobody can execute", async () => {
+  const f = tlReadyFake();
+  f.rows.roleHolders = f.rows.roleHolders.filter((h) => h.id !== "hx");
+  const p = await rbacPanelLive(f);
+  const t = textOf(execLine(readyCard(p))[0]);
+  assert(t.includes("nobody can execute it"), t);
+  assert(!t.includes("anyone"), t);
+  // EXECUTOR_ROLE held on ANOTHER contract does not count for this timelock.
+  const g = tlReadyFake();
+  g.rows.roles.find((r) => r.role === TL_EXECUTOR).contract = {
+    id: RBAC_AUTH,
+    kind: "AUTHORIZER",
+    firstIndexedBlock: "5",
+  };
+  g.rows.roles.find((r) => r.role === TL_EXECUTOR).id = RBAC_AUTH +
+    TL_EXECUTOR.slice(2);
+  g.rows.roleHolders.find((h) => h.id === "hx").role.id = RBAC_AUTH +
+    TL_EXECUTOR.slice(2);
+  const q = await rbacPanelLive(g);
+  assert(
+    textOf(execLine(readyCard(q))[0]).includes("nobody can execute it"),
+    "another contract's executor: " + textOf(execLine(readyCard(q))[0]),
+  );
+  // address(0) holding some OTHER role on the timelock is not open execution.
+  const h = tlReadyFake();
+  h.rows.roles.find((r) => r.role === TL_EXECUTOR).role = ROLE_IDS.WITHDRAW;
+  const r = await rbacPanelLive(h);
+  assert(
+    textOf(execLine(readyCard(r))[0]).includes("nobody can execute it"),
+    "another role's holder: " + textOf(execLine(readyCard(r))[0]),
+  );
+});
+
+Deno.test("deployments: unreadable roles leave the executor unknown, never asserted", async () => {
+  const p = await rbacPanelLive(
+    tlReadyFake({ raw: { roleHolders: { errors: [{ message: "boom" }] } } }),
+  );
+  const card = readyCard(p);
+  const w = textOf(collect(card, "tl-when")[0]);
+  assert(!w.includes("anyone"), "no open claim: " + w);
+  assert(
+    textOf(execLine(card)[0]).startsWith("executor unknown"),
+    textOf(execLine(card)[0]),
+  );
+});
+
+Deno.test("deployments: the executor is said only for an operation that can run now", async () => {
+  const p = await rbacPanelLive(tlFake());
+  const notReady = pendingCards(p).filter((c) =>
+    !textOf(c).includes("upgradeTo(")
+  );
+  assert(notReady.length === 2, "two not-yet-ready cards");
+  for (const c of notReady) {
+    assert(execLine(c).length === 0, "no executor line: " + textOf(c));
+  }
+});
+
+Deno.test("deployments: a predecessor must have executed before an operation is ready", async () => {
+  const pred = (id) => "0x" + id.slice(2).padEnd(64, "0");
+  const when = (p) => textOf(collect(readyCard(p), "tl-when")[0]);
+  // Executed (h1): no extra condition.
+  const done = await rbacPanelLive(
+    tlReadyFake({}, { predecessor: pred("0xh1") }),
+  );
+  assert(when(done).startsWith("ready now"), "executed: " + when(done));
+  assert(
+    when(done).includes(`predecessor ${pred("0xh1")} executed`) &&
+      when(done).includes("anyone can execute it"),
+    when(done),
+  );
+  // Pending: not ready, whatever the clock says.
+  const f = tlReadyFake({}, { predecessor: pred("0xq1") });
+  f.rows.timelockOperations.push(tlOpRow("0xq1", "PENDING", TL_NOW + 60));
+  const pend = await rbacPanelLive(f);
+  const w = when(pend);
+  assert(w.startsWith("waits on predecessor"), "pending: " + w);
+  assert(!w.includes("ready now") && !w.includes("anyone"), w);
+  assert(
+    w.includes(
+      `waits on predecessor ${pred("0xq1")}, not yet executed (it is PENDING)`,
+    ),
+    w,
+  );
+  assert(execLine(readyCard(pend)).length === 0, "no executor claim");
+  // Cancelled (h2): still not executed.
+  const canc = await rbacPanelLive(
+    tlReadyFake({}, { predecessor: pred("0xh2") }),
+  );
+  assert(
+    when(canc).startsWith("waits on predecessor") &&
+      when(canc).includes("not yet executed (it is CANCELLED)"),
+    when(canc),
+  );
+  // Absent from the read: said, and not ready.
+  const abs = await rbacPanelLive(
+    tlReadyFake({}, { predecessor: "0x" + "77".repeat(32) }),
+  );
+  const a = when(abs);
+  assert(a.startsWith("predecessor not indexed"), "absent: " + a);
+  assert(
+    a.includes(
+      `predecessor 0x${
+        "77".repeat(32)
+      } is not in the index — whether it executed is unknown`,
+    ) && !a.includes("ready now") && !a.includes("anyone"),
+    a,
+  );
+  // Executed on ANOTHER timelock does not satisfy this one.
+  const g = tlReadyFake({}, { predecessor: pred("0xh1") });
+  g.rows.timelockOperations.find((o) => o.id === "0xh1").timelock = {
+    id: TL_BEACON,
+  };
+  const other = await rbacPanelLive(g);
+  assert(
+    when(other).startsWith("predecessor not indexed"),
+    "other timelock: " + when(other),
+  );
+});
+
+Deno.test("deployments: a predecessor's executed scheduling outranks a cancelled one", async () => {
+  const id = "0x" + "q1".padEnd(64, "0");
+  const f = tlReadyFake({}, { predecessor: id });
+  f.rows.timelockOperations.push(
+    tlOpRow("0xqa", "CANCELLED", TL_NOW - 50, {
+      operationId: id,
+      scheduledAtBlock: "600",
+    }),
+    tlOpRow("0xqb", "EXECUTED", TL_NOW - 40, {
+      operationId: id,
+      scheduledAtBlock: "500",
+    }),
+  );
+  const p = await rbacPanelLive(f);
+  const w = textOf(collect(readyCard(p), "tl-when")[0]);
+  assert(w.startsWith("ready now"), w);
+  // Cancelled then rescheduled and still pending: the newest scheduling speaks.
+  const g = tlReadyFake({}, { predecessor: id });
+  g.rows.timelockOperations.push(
+    tlOpRow("0xqa", "CANCELLED", TL_NOW - 50, {
+      operationId: id,
+      scheduledAtBlock: "600",
+    }),
+    tlOpRow("0xqb", "PENDING", TL_NOW + 50, {
+      operationId: id,
+      scheduledAtBlock: "650",
+    }),
+  );
+  const q = await rbacPanelLive(g);
+  const v = textOf(collect(readyCard(q), "tl-when")[0]);
+  assert(v.includes("not yet executed (it is PENDING)"), v);
+});
+
+Deno.test("deployments: a predecessor still pending before the delay ends keeps the countdown", async () => {
+  const f = tlFake();
+  f.rows.timelockOperations.find((o) => o.id === "0xp1").predecessor = "0x" +
+    "77".repeat(32);
+  const p = await rbacPanelLive(f);
+  const card = pendingCards(p).find((c) => textOf(c).includes("grantRole("));
+  const w = textOf(collect(card, "tl-when")[0]);
+  assert(w.startsWith("ready in 1d 12h"), w);
+  assert(w.includes("delay ends") && !w.includes("executable at"), w);
+  assert(w.includes("is not in the index"), w);
 });

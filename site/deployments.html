@@ -1535,6 +1535,9 @@ function renderDeployments(document, $, data, io) {
     "0x64d62353": { name: "updateDelay", args: ["seconds"] },
     "0xc4d252f5": { name: "cancel", args: ["operation"] },
   };
+  // keccak256("EXECUTOR_ROLE"), and the holder that opens it to everyone.
+  const TL_EXECUTOR_ROLE = "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63";
+  const TL_OPEN_ROLE = "0x" + "0".repeat(40);
   // One call's calldata, decoded where its selector is one of the above:
   // { empty } | { selector, fn?, args?, error? }. Every argument is checked
   // against its ABI shape; a word that is not one is an error, not a value.
@@ -1695,6 +1698,49 @@ function renderDeployments(document, $, data, io) {
         governed: why,
       });
     }
+    // Who may execute a ready operation: `execute` is
+    // `onlyRoleOrOpenRole(EXECUTOR_ROLE)`, so it is open to anyone only while
+    // address(0) holds the role. Read from the role read at the same block;
+    // `null` when that read failed, so nothing is asserted about it.
+    for (const [tl, t] of timelocks) {
+      if (!Array.isArray(contracts)) {
+        t.executors = null;
+        continue;
+      }
+      const holders = [];
+      for (const c of contracts) {
+        if (str(c.address) !== tl) continue;
+        for (const r of c.roles) {
+          if (str(r.roleId) !== TL_EXECUTOR_ROLE) continue;
+          for (const h of r.holders) if (str(h.account)) holders.push(str(h.account));
+        }
+      }
+      t.executors = { open: holders.includes(TL_OPEN_ROLE), holders };
+    }
+    // A non-zero predecessor must have executed on the same timelock before
+    // the operation can: `predecessorState` is "none" | "executed" |
+    // "waiting" (in the read, not executed; `predecessorStatus` says what it
+    // is) | "absent" (not in the read, so whether it executed is unknown).
+    const byId = new Map();
+    for (const { tl, op } of byOp.values()) {
+      const k = tl + " " + str(op.operationId);
+      if (!byId.has(k)) byId.set(k, []);
+      byId.get(k).push(op);
+    }
+    for (const { tl, op } of byOp.values()) {
+      if (isZeroWord(op.predecessor)) {
+        op.predecessorState = "none";
+        continue;
+      }
+      const prior = byId.get(tl + " " + str(op.predecessor)) || [];
+      if (prior.some((p) => p.status === "EXECUTED")) op.predecessorState = "executed";
+      else if (prior.length) {
+        op.predecessorState = "waiting";
+        // A cancelled id can be scheduled again; the newest scheduling speaks.
+        const newest = prior.reduce((a, b) => ((b.scheduledAtBlock ?? -1) > (a.scheduledAtBlock ?? -1) ? b : a));
+        op.predecessorStatus = String(newest.status);
+      } else op.predecessorState = "absent";
+    }
     const out = [...timelocks.values()];
     out.sort((a, b) => a.address.localeCompare(b.address));
     for (const t of out) {
@@ -1848,18 +1894,50 @@ function renderDeployments(document, $, data, io) {
   };
   // One operation. A pending one says when it can run against the viewer's
   // clock; a finished one says how it finished.
-  const tlOp = (op, chain, pins, nowSecs) => {
+  // Who can execute a ready operation, from the timelock's EXECUTOR_ROLE
+  // holders (`null`: the role read failed, so it is not known).
+  const tlExecutors = (ex, chain, pins) => {
+    const line = el("span", "own-verify-src tl-exec");
+    if (!ex) {
+      line.append("executor unknown — the role read failed, so who can execute it is not known");
+    } else if (ex.open) {
+      line.append("anyone can execute it (EXECUTOR_ROLE is open); only a cancel stops it");
+    } else if (ex.holders.length === 0) {
+      line.append("no address holds EXECUTOR_ROLE — nobody can execute it until one is granted");
+    } else {
+      line.append("only an EXECUTOR_ROLE holder can execute it: ");
+      ex.holders.forEach((h, i) => {
+        if (i) line.append(", ");
+        line.append(whoNode(h, chain, pins));
+      });
+    }
+    return line;
+  };
+  const tlOp = (op, chain, pins, nowSecs, executors) => {
     const pending = op.status === "PENDING";
     const governed = op.calls.some((c) => c.governed.length);
     const card = el("div", pending ? `tl-op tl-pending${governed ? " tl-governs" : ""}` : "own-row tl-done");
     const when = el("div", pending ? "tl-when" : "own-rc");
     if (pending) {
-      const ready = op.readyAt !== null && op.readyAt <= nowSecs;
+      // Executable once its delay has passed AND its predecessor (if any) has
+      // executed; a predecessor not in the read is not assumed done.
+      const timeReady = op.readyAt !== null && op.readyAt <= nowSecs;
+      const pred = op.predecessorState;
+      const blocked = pred === "waiting" || pred === "absent";
+      const ready = timeReady && !blocked;
       when.append(
         el(
           "span",
           `own-chip ${ready ? "own-chip-no" : "own-chip-roll"}`,
-          op.readyAt === null ? "ready time unknown" : ready ? "ready now" : `ready in ${span(op.readyAt - nowSecs)}`,
+          op.readyAt === null
+            ? "ready time unknown"
+            : !timeReady
+              ? `ready in ${span(op.readyAt - nowSecs)}`
+              : pred === "waiting"
+                ? "waits on predecessor"
+                : pred === "absent"
+                  ? "predecessor not indexed"
+                  : "ready now",
         ),
       );
       when.append(
@@ -1869,10 +1947,34 @@ function renderDeployments(document, $, data, io) {
           op.readyAt === null
             ? "readyAt missing"
             : ready
-              ? `executable since ${utc(op.readyAt)} — anyone can execute it; only a cancel stops it`
-              : `executable at ${utc(op.readyAt)}`,
+              ? `executable since ${utc(op.readyAt)}`
+              : timeReady
+                ? `delay elapsed ${utc(op.readyAt)}`
+                : blocked
+                  ? `delay ends ${utc(op.readyAt)}`
+                  : `executable at ${utc(op.readyAt)}`,
         ),
       );
+      if (pred === "executed") {
+        when.append(el("span", "own-verify-src tl-pred", `predecessor ${op.predecessor} executed`));
+      } else if (pred === "waiting") {
+        when.append(
+          el(
+            "span",
+            "viol-got tl-pred",
+            `waits on predecessor ${op.predecessor}, not yet executed (it is ${op.predecessorStatus})`,
+          ),
+        );
+      } else if (pred === "absent") {
+        when.append(
+          el(
+            "span",
+            "rbac-unknown tl-pred",
+            `predecessor ${op.predecessor} is not in the index — whether it executed is unknown`,
+          ),
+        );
+      }
+      if (ready) when.append(tlExecutors(executors, chain, pins));
     } else {
       when.append(el("div", "own-role", utc(op.scheduledAtTimestamp)));
       when.append(el("div", "own-note", `scheduled at block ${op.scheduledAtBlock ?? "?"}`));
@@ -1965,14 +2067,14 @@ function renderDeployments(document, $, data, io) {
       if (p === 0) {
         sec.append(el("div", "own-groupnote", "Nothing is scheduled on this timelock."));
       }
-      for (const op of tl.pending) sec.append(tlOp(op, chain, pins, nowSecs));
+      for (const op of tl.pending) sec.append(tlOp(op, chain, pins, nowSecs, tl.executors));
       const h = tl.history.length;
       sec.append(
         el("div", "own-groupnote rbac-hist", `${h} executed or cancelled operation${h === 1 ? "" : "s"}, newest first`),
       );
       if (h) {
         const hist = el("div", "own-table tl-hist");
-        for (const op of tl.history) hist.append(tlOp(op, chain, pins, nowSecs));
+        for (const op of tl.history) hist.append(tlOp(op, chain, pins, nowSecs, tl.executors));
         sec.append(hist);
       }
     }
