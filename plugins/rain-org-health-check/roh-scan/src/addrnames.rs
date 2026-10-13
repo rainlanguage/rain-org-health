@@ -9,9 +9,10 @@
 //! pin and a declaration wrapped over two lines is still one.
 //!
 //! A constant is either a literal (`= 0x…` / `= address(0x…)`) or an alias of
-//! another constant (`= OtherLib.NAME` / `= NAME`). Aliases are followed to
-//! their literal; one whose target is not among the sources read (an imported
-//! generated pointer, say) has no address here and names nothing.
+//! another constant (`= OtherLib.NAME` / `= NAME`), either one optionally
+//! wrapped in `payable(…)`. Aliases are followed to their literal; one whose
+//! target is not among the sources read (an imported generated pointer, say)
+//! has no address here and names nothing.
 //!
 //! One address means different things on different chains, so names are
 //! scoped per chain by the deploy repo's own suffix convention — the one
