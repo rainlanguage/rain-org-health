@@ -75,6 +75,23 @@
   .rbac-names-gap { color: var(--crit); }
   .rbac-unknown { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
                   color: var(--crit); border: 1px solid var(--crit); border-radius: 5px; padding: 1px 5px; }
+  /* Governance timelock operations. A pending one is a change to production
+     that happens unless someone cancels it, so it is a boxed card in the
+     rollout amber; one whose call lands on a contract the timelock governs
+     gets the red edge — that is the operation a reader is here to catch.
+     Executed and cancelled ones are history, in the ordinary table. */
+  .tl-sec { margin: 6px 0 22px; }
+  .tl-op { display: grid; grid-template-columns: 210px 1fr; gap: 8px 16px; align-items: start;
+           border: 1px solid var(--debt-border); background: var(--debt-bg); border-radius: 11px;
+           padding: 11px 14px; margin: 8px 0; }
+  .tl-op.tl-governs { border: 2px solid var(--crit); }
+  .tl-when { display: flex; flex-direction: column; align-items: flex-start; gap: 5px; }
+  .tl-call + .tl-call { border-top: 1px dashed var(--border); padding-top: 5px; }
+  .tl-data { overflow-wrap: anywhere; word-break: break-all; opacity: 0.8; }
+  .tl-hist .own-row { opacity: 0.85; }
+  @media (max-width: 620px) {
+    .tl-op { grid-template-columns: 1fr; }
+  }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
   .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
@@ -1496,7 +1513,197 @@ function renderDeployments(document, $, data, io) {
       out.state = "error";
       out.detail = e instanceof Error ? e.message : String(e);
     }
+    out.timelock = await tlRead(url, block, out.contracts, names);
     return out;
+  };
+  // Governance timelock operations: every `schedule` / `scheduleBatch` the
+  // index has seen, with its calls and what became of it. A pending operation
+  // is a change to production that will happen unless it is cancelled, so it
+  // is the first thing said about each timelock.
+  //
+  // Selectors this page decodes, and the shape of their arguments. Everything
+  // else is shown as its selector and raw calldata, never guessed at.
+  const TL_SELECTORS = {
+    "0x2f2ff15d": { name: "grantRole", args: ["role", "address"] },
+    "0xd547741f": { name: "revokeRole", args: ["role", "address"] },
+    "0x36568abe": { name: "renounceRole", args: ["role", "address"] },
+    "0xf2fde38b": { name: "transferOwnership", args: ["address"] },
+    "0x715018a6": { name: "renounceOwnership", args: [] },
+    "0x79ba5097": { name: "acceptOwnership", args: [] },
+    "0x3659cfe6": { name: "upgradeTo", args: ["address"] },
+    "0x4f1ef286": { name: "upgradeToAndCall", args: ["address", "bytes"] },
+    "0x64d62353": { name: "updateDelay", args: ["seconds"] },
+    "0xc4d252f5": { name: "cancel", args: ["operation"] },
+  };
+  // One call's calldata, decoded where its selector is one of the above:
+  // { empty } | { selector, fn?, args?, error? }. Every argument is checked
+  // against its ABI shape; a word that is not one is an error, not a value.
+  const tlDecode = (data) => {
+    if (typeof data !== "string" || !/^0x([0-9a-fA-F]{2})*$/.test(data)) return { error: "calldata is not hex" };
+    const hex = data.slice(2).toLowerCase();
+    if (hex.length === 0) return { empty: true };
+    if (hex.length < 8) return { error: "calldata shorter than a function selector" };
+    const selector = "0x" + hex.slice(0, 8);
+    const sig = Object.prototype.hasOwnProperty.call(TL_SELECTORS, selector) ? TL_SELECTORS[selector] : null;
+    if (!sig) return { selector };
+    const body = hex.slice(8);
+    const word = (at) => (at + 64 <= body.length ? body.slice(at, at + 64) : null);
+    const out = { selector, fn: sig.name, args: [] };
+    let end = sig.args.length * 64;
+    if (body.length < end) return { ...out, args: null, error: "calldata too short for its arguments" };
+    for (let i = 0; i < sig.args.length; i++) {
+      const kind = sig.args[i];
+      const w = word(i * 64);
+      if (kind === "address") {
+        if (!w.startsWith("0".repeat(24))) return { ...out, args: null, error: `argument ${i} is not an address` };
+        out.args.push({ kind, value: "0x" + w.slice(24) });
+      } else if (kind === "role" || kind === "operation") {
+        out.args.push({ kind, value: "0x" + w });
+      } else if (kind === "seconds") {
+        out.args.push({ kind, value: BigInt("0x" + w).toString() });
+      } else {
+        // Dynamic `bytes`: the word is an offset to a length-prefixed tail.
+        const off = BigInt("0x" + w) * 2n;
+        const len = off + 64n <= BigInt(body.length) ? word(Number(off)) : null;
+        const n = len === null ? null : BigInt("0x" + len) * 2n;
+        if (n === null || off + 64n + n > BigInt(body.length)) {
+          return { ...out, args: null, error: `argument ${i} runs past the calldata` };
+        }
+        const start = Number(off) + 64;
+        out.args.push({ kind, value: "0x" + body.slice(start, start + Number(n)) });
+        end = Math.max(end, start + Math.ceil(Number(n) / 64) * 64);
+      }
+    }
+    if (body.length > end) out.trailing = (body.length - end) / 2;
+    return out;
+  };
+  // The timelock half of one network's read, at the same block as the roles.
+  // The entities exist only from the subgraph version that indexes them, so
+  // the schema is asked first: a version without them is a state of its own,
+  // not an error and not "no operations". Never throws.
+  //
+  // `contracts` is the role read's grouping (absent when it failed), used with
+  // `Contract.owner` to say which call targets the timelock governs.
+  const tlRead = async (url, block, contracts, names) => {
+    const probe = await rbacAsk(url, '{ t: __type(name: "TimelockOperation") { name } }');
+    if (probe.missing) return { state: "error", detail: "the subgraph vanished mid-read" };
+    if (probe.unreachable) return { state: "error", detail: "no readable answer to the schema probe" };
+    if (probe.error) return { state: "error", detail: probe.error };
+    if (probe.data.t === null) return { state: "absent" };
+    if (!probe.data.t || probe.data.t.name !== "TimelockOperation") {
+      return { state: "error", detail: "the schema probe answered with something that is not a type" };
+    }
+    let all, ops, calls;
+    try {
+      [all, ops, calls] = await Promise.all([
+        rbacReadAll(url, "contracts", "", "kind owner", block),
+        rbacReadAll(
+          url,
+          "timelockOperations",
+          "",
+          "timelock { id } operationId schedulingIndex status callCount predecessor salt delay readyAt " +
+            "scheduledAtBlock scheduledAtTimestamp scheduledTransactionHash " +
+            "executedAtBlock executedAtTimestamp executedTransactionHash " +
+            "cancelledAtBlock cancelledAtTimestamp cancelledTransactionHash",
+          block,
+        ),
+        rbacReadAll(url, "timelockCalls", "", "index target value data operation { id }", block),
+      ]);
+    } catch (e) {
+      return { state: "error", detail: e instanceof Error ? e.message : String(e) };
+    }
+    const str = (v) => (typeof v === "string" ? v.toLowerCase() : "");
+    // What each timelock governs, and why: itself, what it owns, and every
+    // contract it holds a role on right now.
+    const governs = new Map();
+    const govern = (tl, target, why) => {
+      if (!governs.has(tl)) governs.set(tl, new Map());
+      const m = governs.get(tl);
+      if (!m.has(target)) m.set(target, []);
+      if (!m.get(target).includes(why)) m.get(target).push(why);
+    };
+    const timelocks = new Map();
+    const tlOf = (id) => {
+      if (!timelocks.has(id)) timelocks.set(id, { address: id, pending: [], history: [] });
+      return timelocks.get(id);
+    };
+    for (const c of all) {
+      if (c && c.kind === "GOVERNANCE_TIMELOCK" && str(c.id)) tlOf(str(c.id));
+    }
+    for (const tl of timelocks.keys()) govern(tl, tl, "it is this timelock");
+    for (const c of all) {
+      if (c && str(c.owner) && timelocks.has(str(c.owner))) govern(str(c.owner), str(c.id), "this timelock owns it");
+    }
+    for (const c of Array.isArray(contracts) ? contracts : []) {
+      for (const r of c.roles) {
+        for (const h of r.holders) {
+          if (timelocks.has(str(h.account))) {
+            govern(str(h.account), str(c.address), `this timelock holds ${roleLabel(r.name, r.roleId)} on it`);
+          }
+        }
+      }
+    }
+    // A role argument is named the way the role history names it.
+    const named = (d) => {
+      for (const a of Array.isArray(d.args) ? d.args : []) {
+        if (a.kind === "role" && names && Object.prototype.hasOwnProperty.call(names, a.value)) {
+          a.name = typeof names[a.value] === "string" ? names[a.value] : null;
+        }
+      }
+      return d;
+    };
+    const byOp = new Map();
+    for (const o of ops) {
+      const tl = str(o && o.timelock && o.timelock.id);
+      if (!tl || typeof o.id !== "string") continue;
+      const op = {
+        id: o.id,
+        operationId: o.operationId,
+        schedulingIndex: rbacNum(o.schedulingIndex),
+        status: o.status,
+        callCount: rbacNum(o.callCount),
+        predecessor: o.predecessor,
+        salt: o.salt,
+        delay: rbacNum(o.delay),
+        readyAt: rbacNum(o.readyAt),
+        scheduledAtBlock: rbacNum(o.scheduledAtBlock),
+        scheduledAtTimestamp: rbacNum(o.scheduledAtTimestamp),
+        scheduledTransactionHash: o.scheduledTransactionHash,
+        executedAtBlock: rbacNum(o.executedAtBlock),
+        executedAtTimestamp: rbacNum(o.executedAtTimestamp),
+        executedTransactionHash: o.executedTransactionHash,
+        cancelledAtBlock: rbacNum(o.cancelledAtBlock),
+        cancelledAtTimestamp: rbacNum(o.cancelledAtTimestamp),
+        cancelledTransactionHash: o.cancelledTransactionHash,
+        calls: [],
+      };
+      byOp.set(o.id, { tl, op });
+      const t = tlOf(tl);
+      (o.status === "PENDING" ? t.pending : t.history).push(op);
+    }
+    for (const c of calls) {
+      const at = byOp.get(c && c.operation && c.operation.id);
+      if (!at) continue;
+      const target = str(c.target);
+      const why = (governs.get(at.tl) && governs.get(at.tl).get(target)) || [];
+      at.op.calls.push({
+        index: rbacNum(c.index),
+        target: c.target,
+        value: typeof c.value === "string" || typeof c.value === "number" ? String(c.value) : null,
+        data: c.data,
+        decoded: named(tlDecode(c.data)),
+        governed: why,
+      });
+    }
+    const out = [...timelocks.values()];
+    out.sort((a, b) => a.address.localeCompare(b.address));
+    for (const t of out) {
+      for (const op of [...t.pending, ...t.history]) op.calls.sort((a, b) => (a.index ?? -1) - (b.index ?? -1));
+      // Pending: soonest executable first. History: newest scheduling first.
+      t.pending.sort((a, b) => (a.readyAt ?? Infinity) - (b.readyAt ?? Infinity));
+      t.history.sort((a, b) => (b.scheduledAtBlock ?? -1) - (a.scheduledAtBlock ?? -1));
+    }
+    return { state: "ok", timelocks: out };
   };
   const utc = (ts) =>
     typeof ts === "number"
@@ -1588,9 +1795,193 @@ function renderDeployments(document, $, data, io) {
     if (typeof endpoint === "string") b.append(el("span", "own-verify-src", endpoint));
     return b;
   };
+  // A span of seconds in its two largest units: "2d 4h", "3h 10m", "45s".
+  const span = (s) => {
+    const d = Math.floor(s / 86400);
+    const h = Math.floor((s % 86400) / 3600);
+    const m = Math.floor((s % 3600) / 60);
+    return d ? `${d}d ${h}h` : h ? `${h}h ${m}m` : m ? `${m}m ${s % 60}s` : `${s}s`;
+  };
+  const isZeroWord = (v) => typeof v === "string" && /^0x0*$/.test(v);
+  // One call of an operation: who it calls, what, and with what value.
+  const tlCall = (c, chain, pins) => {
+    const row = el("div", "tl-call");
+    const head = el("div", "grt-addr");
+    if (c.index !== null) head.append(el("span", "own-verify-src", `call ${c.index}`));
+    if (typeof c.target === "string") head.append(whoNode(c.target, chain, pins));
+    if (c.governed.length) {
+      const g = el("span", "own-chip own-chip-no tl-governed", "governed by this timelock");
+      g.title = c.governed.join("\n");
+      head.append(g);
+    }
+    row.append(head);
+    const d = c.decoded;
+    const what = el("div", "grt-addr tl-fn");
+    if (d.empty) {
+      what.append(el("span", "viol-role", "no calldata"));
+    } else if (d.fn) {
+      what.append(el("span", "viol-role", `${d.fn}(`));
+      (d.args || []).forEach((a, i) => {
+        if (i) what.append(", ");
+        if (a.kind === "address") what.append(whoNode(a.value, chain, pins));
+        else if (a.kind === "role") {
+          const r = el("span", "viol-role", roleLabel(a.name, a.value));
+          r.title = a.value;
+          what.append(r);
+        } else if (a.kind === "seconds") what.append(el("span", "own-addr", `${a.value}s (${span(Number(a.value))})`));
+        else if (a.kind === "bytes") what.append(el("span", "own-addr", `${(a.value.length - 2) / 2} bytes`));
+        else what.append(el("span", "own-addr", a.value));
+      });
+      what.append(el("span", "viol-role", ")"));
+    } else if (d.selector) {
+      what.append(el("span", "viol-role", `${d.selector} — not a function this page decodes`));
+    }
+    if (d.error) what.append(el("span", "rbac-unknown", d.error));
+    if (d.trailing) what.append(el("span", "rbac-unknown", `${d.trailing} bytes past the arguments`));
+    row.append(what);
+    const v = el("div", "grt-addr");
+    const value = c.value === null ? "value unknown" : `value ${c.value} wei`;
+    v.append(el("span", c.value === "0" ? "own-verify-src" : "viol-got", value));
+    if (typeof c.data === "string" && !d.empty) v.append(el("span", "own-verify-src tl-data", c.data));
+    row.append(v);
+    return row;
+  };
+  // One operation. A pending one says when it can run against the viewer's
+  // clock; a finished one says how it finished.
+  const tlOp = (op, chain, pins, nowSecs) => {
+    const pending = op.status === "PENDING";
+    const governed = op.calls.some((c) => c.governed.length);
+    const card = el("div", pending ? `tl-op tl-pending${governed ? " tl-governs" : ""}` : "own-row tl-done");
+    const when = el("div", pending ? "tl-when" : "own-rc");
+    if (pending) {
+      const ready = op.readyAt !== null && op.readyAt <= nowSecs;
+      when.append(
+        el(
+          "span",
+          `own-chip ${ready ? "own-chip-no" : "own-chip-roll"}`,
+          op.readyAt === null ? "ready time unknown" : ready ? "ready now" : `ready in ${span(op.readyAt - nowSecs)}`,
+        ),
+      );
+      when.append(
+        el(
+          "span",
+          "own-verify-src",
+          op.readyAt === null
+            ? "readyAt missing"
+            : ready
+              ? `executable since ${utc(op.readyAt)} — anyone can execute it; only a cancel stops it`
+              : `executable at ${utc(op.readyAt)}`,
+        ),
+      );
+    } else {
+      when.append(el("div", "own-role", utc(op.scheduledAtTimestamp)));
+      when.append(el("div", "own-note", `scheduled at block ${op.scheduledAtBlock ?? "?"}`));
+    }
+    card.append(when);
+    const body = el("div", "bcn-detail");
+    const n = op.calls.length;
+    if (op.callCount !== n) {
+      body.append(
+        el("span", "rbac-unknown", `${n} of ${op.callCount ?? "?"} calls indexed — the operation is not shown whole`),
+      );
+    }
+    for (const c of op.calls) body.append(tlCall(c, chain, pins));
+    const meta = el("div", "grt-addr");
+    meta.append(el("span", "own-verify-src", `op ${op.operationId}`));
+    if (op.schedulingIndex) meta.append(el("span", "own-verify-src", `scheduling #${op.schedulingIndex}`));
+    if (op.delay !== null) meta.append(el("span", "own-verify-src", `delay ${span(op.delay)}`));
+    if (!isZeroWord(op.predecessor)) meta.append(el("span", "viol-got", `runs only after ${op.predecessor}`));
+    if (pending) {
+      meta.append(el("span", "own-verify-src", `scheduled ${utc(op.scheduledAtTimestamp)}`));
+    }
+    meta.append(txNode(op.scheduledTransactionHash, chain));
+    body.append(meta);
+    card.append(body);
+    if (!pending) {
+      const executed = op.status === "EXECUTED";
+      const cancelled = op.status === "CANCELLED";
+      const tail = el("div", "own-prov");
+      tail.append(
+        el(
+          "span",
+          `own-chip own-chip-${executed ? "yes" : cancelled ? "dim" : "no"}`,
+          executed ? "executed" : cancelled ? "cancelled" : `status ${String(op.status)}`,
+        ),
+      );
+      if (executed || cancelled) {
+        const ts = executed ? op.executedAtTimestamp : op.cancelledAtTimestamp;
+        tail.append(el("span", "own-verify-src", utc(ts)));
+        tail.append(txNode(executed ? op.executedTransactionHash : op.cancelledTransactionHash, chain));
+      }
+      card.append(tail);
+    }
+    return card;
+  };
+  // The timelock section of one network: pending operations first and loud,
+  // then what already ran or was cancelled.
+  const tlSection = (slot, t, chain, pins) => {
+    const sec = el("div", "tl-sec");
+    sec.append(el("div", "own-grouphead", "Governance timelock operations"));
+    if (t.state === "absent") {
+      const b = el("div", "own-verify own-verify-roll tl-absent");
+      b.append(
+        el(
+          "span",
+          "own-verify-msg",
+          "Timelock operations not indexed by this subgraph version — it has no TimelockOperation entity, so " +
+            "pending governance operations cannot be shown. That is not the same as none pending.",
+        ),
+      );
+      sec.append(b);
+      slot.append(sec);
+      return;
+    }
+    if (t.state !== "ok") {
+      const b = el("div", "own-verify own-verify-drift tl-error");
+      b.append(
+        el(
+          "span",
+          "own-verify-msg",
+          `Timelock operations unreadable — ${t.detail || "no detail"}. None are shown, which is not the same as none pending.`,
+        ),
+      );
+      sec.append(b);
+      slot.append(sec);
+      return;
+    }
+    if (t.timelocks.length === 0) {
+      sec.append(el("div", "rbac-empty", "The index holds no governance timelock on this network."));
+      slot.append(sec);
+      return;
+    }
+    const nowSecs = Math.floor(io.now() / 1000);
+    for (const tl of t.timelocks) {
+      const head = el("div", "rbac-contract");
+      head.append("Timelock ");
+      head.append(whoNode(tl.address, chain, pins));
+      const p = tl.pending.length;
+      head.append(el("span", `own-chip own-chip-${p ? "no" : "yes"}`, `${p} pending`));
+      sec.append(head);
+      if (p === 0) {
+        sec.append(el("div", "own-groupnote", "Nothing is scheduled on this timelock."));
+      }
+      for (const op of tl.pending) sec.append(tlOp(op, chain, pins, nowSecs));
+      const h = tl.history.length;
+      sec.append(
+        el("div", "own-groupnote rbac-hist", `${h} executed or cancelled operation${h === 1 ? "" : "s"}, newest first`),
+      );
+      if (h) {
+        const hist = el("div", "own-table tl-hist");
+        for (const op of tl.history) hist.append(tlOp(op, chain, pins, nowSecs));
+        sec.append(hist);
+      }
+    }
+    slot.append(sec);
+  };
   // One network's banner and, where the read is whole, its contracts.
   const rbacBody = (slot, n, chain, endpoint, published, pins) => {
     slot.replaceChildren(rbacBanner(n, endpoint, published));
+    if (n.timelock) tlSection(slot, n.timelock, chain, pins);
     if (!Array.isArray(n.contracts)) return;
     if (n.contracts.length === 0) {
       slot.append(el("div", "rbac-empty", "The index holds no role events for any contract."));

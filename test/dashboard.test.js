@@ -273,7 +273,9 @@ const zoomScale = bind(
   [1.25, 3],
 );
 
-const zoomBtnDisabled = bind("audit.html", "zoomBtnDisabled", ["GRAPH_ZOOM_MAX"], [3]);
+const zoomBtnDisabled = bind("audit.html", "zoomBtnDisabled", [
+  "GRAPH_ZOOM_MAX",
+], [3]);
 
 Deno.test("graph zoom: at the initial fit only zoom-IN is live", () => {
   // What the page shows on first render: fitted, so out/Fit are dead ends and the
@@ -293,9 +295,15 @@ Deno.test("graph zoom: at the ceiling only zoom-OUT and Fit are live", () => {
 
 Deno.test("graph fit: fits the whole graph inside the box padding, never magnifying", () => {
   // 16px padding each side, so a 1032-wide box holds 1000px of graph at 1:1.
-  assert(graphFit(1032, 1032, 1000, 1000) === 1, "exactly-fitting graph sits at 1:1");
+  assert(
+    graphFit(1032, 1032, 1000, 1000) === 1,
+    "exactly-fitting graph sits at 1:1",
+  );
   // A graph twice the box width fits at half scale, and the TIGHTER axis wins.
-  assert(graphFit(532, 1032, 1000, 1000) === 0.5, "width-constrained: " + graphFit(532, 1032, 1000, 1000));
+  assert(
+    graphFit(532, 1032, 1000, 1000) === 0.5,
+    "width-constrained: " + graphFit(532, 1032, 1000, 1000),
+  );
   assert(graphFit(1032, 532, 1000, 1000) === 0.5, "height-constrained");
   // Small graph in a big box is NOT blown up — 1 is the ceiling.
   assert(graphFit(2032, 2032, 100, 100) === 1, "never magnifies past 1:1");
@@ -303,21 +311,36 @@ Deno.test("graph fit: fits the whole graph inside the box padding, never magnify
 
 Deno.test("graph zoom: steps in and out, clamped by the fit below and the max above", () => {
   const fit = 0.5;
-  assert(zoomScale(fit, fit, "in") === 0.625, "one step in: " + zoomScale(fit, fit, "in"));
-  assert(zoomScale(1, fit, "out") === 0.8, "one step out: " + zoomScale(1, fit, "out"));
+  assert(
+    zoomScale(fit, fit, "in") === 0.625,
+    "one step in: " + zoomScale(fit, fit, "in"),
+  );
+  assert(
+    zoomScale(1, fit, "out") === 0.8,
+    "one step out: " + zoomScale(1, fit, "out"),
+  );
   // Nothing smaller than "the whole graph" is useful, so the fit is the floor.
   assert(zoomScale(fit, fit, "out") === fit, "cannot zoom out past the fit");
-  assert(zoomScale(0.55, fit, "out") === fit, "a step that would undershoot clamps to the fit");
+  assert(
+    zoomScale(0.55, fit, "out") === fit,
+    "a step that would undershoot clamps to the fit",
+  );
   // And a step cannot launch the graph out of its own scrollport.
   assert(zoomScale(3, fit, "in") === 3, "cannot zoom in past the max");
-  assert(zoomScale(2.9, fit, "in") === 3, "a step that would overshoot clamps to the max");
+  assert(
+    zoomScale(2.9, fit, "in") === 3,
+    "a step that would overshoot clamps to the max",
+  );
 });
 
 Deno.test("graph zoom: fit action returns the CURRENT fit, not a remembered one", () => {
   // Reset recomputes, so after a resize it lands on the new fit rather than the
   // scale the graph first rendered at.
   assert(zoomScale(2.4, 0.5, "fit") === 0.5, "resets to the fit passed in");
-  assert(zoomScale(2.4, 0.31, "fit") === 0.31, "a resized box resets to its NEW fit");
+  assert(
+    zoomScale(2.4, 0.31, "fit") === 0.31,
+    "a resized box resets to its NEW fit",
+  );
 });
 
 const standsOn = bind("audit.html", "standsOn", [], []);
@@ -526,14 +549,29 @@ Deno.test("graph node: an unresolvable package renders as UNKNOWN, not as no-pac
   // can read as standing on clear ground — and the node must say so, the same
   // way depsKnown keeps unknown deps apart from zero deps.
   const box = graphNode(
-    { repo: "migrated", org: "o", audit: "never", depsKnown: true, packageKnown: false },
+    {
+      repo: "migrated",
+      org: "o",
+      audit: "never",
+      depsKnown: true,
+      packageKnown: false,
+    },
     null,
   );
   const t = textOf(box);
-  assert(t.includes("package unknown"), "must flag the unreadable package: " + t);
+  assert(
+    t.includes("package unknown"),
+    "must flag the unreadable package: " + t,
+  );
   // a resolved (or genuinely absent) package renders no flag…
   const known = graphNode(
-    { repo: "plain", org: "o", audit: "never", depsKnown: true, packageKnown: true },
+    {
+      repo: "plain",
+      org: "o",
+      audit: "never",
+      depsKnown: true,
+      packageKnown: true,
+    },
     null,
   );
   assert(
@@ -569,7 +607,10 @@ function backlogNode(openAuditIssues) {
 Deno.test("graph node: a non-zero open-findings backlog reads critical, with a non-color cue", () => {
   const carrying = backlogNode(3);
   const [count] = collect(carrying, "gn-open");
-  assert(count, "3 open findings takes the critical class: " + textOf(carrying));
+  assert(
+    count,
+    "3 open findings takes the critical class: " + textOf(carrying),
+  );
   assert(
     collect(carrying, "ok").length === 0,
     "and is not also rendered as the recessive/clean one",
@@ -620,9 +661,13 @@ Deno.test("graph node: a zero backlog stays recessive — no critical color, no 
 // semantic critical token — not the accent hue, and not a hue hard-coded past the
 // themes, which is what would break the dark render.
 Deno.test("audit page: the open-findings count resolves to the semantic --crit token, defined for both themes", () => {
-  const css = Deno.readTextFileSync(new URL("../site/audit.html", import.meta.url));
+  const css = Deno.readTextFileSync(
+    new URL("../site/audit.html", import.meta.url),
+  );
   for (const sel of [".gn-open", ".au-open"]) {
-    const rule = new RegExp("^\\s*\\" + sel + "\\s*\\{([^}]*)\\}", "m").exec(css);
+    const rule = new RegExp("^\\s*\\" + sel + "\\s*\\{([^}]*)\\}", "m").exec(
+      css,
+    );
     assert(rule, "no rule for " + sel);
     assert(
       /color:\s*var\(--crit\)/.test(rule[1]),
@@ -655,7 +700,12 @@ Deno.test("audit report: a row's open-findings backlog reads critical too, zero 
       auditRow({ name: "clean" }),
     ], 0),
     audits: [
-      { name: "carrying", org: "testorg", lastAudit: null, openAuditIssues: 14 },
+      {
+        name: "carrying",
+        org: "testorg",
+        lastAudit: null,
+        openAuditIssues: 14,
+      },
       { name: "clean", org: "testorg", lastAudit: null, openAuditIssues: 0 },
     ],
   };
@@ -1302,7 +1352,10 @@ Deno.test("pipeline FSM: the leak state lists its PRs on click", () => {
   leak.click();
   const text = textOf(box);
   assert(text.includes("unlabelled one"), "first leaked PR listed");
-  assert(text.includes("rain.flare#22"), "second leaked PR listed by repo#number");
+  assert(
+    text.includes("rain.flare#22"),
+    "second leaked PR listed by repo#number",
+  );
 });
 
 Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", () => {
@@ -1316,7 +1369,12 @@ Deno.test("pipeline FSM: unwired queue renders the not-wired-yet empty state", (
 // otherwise), and the bare, ambiguous "ai:close-candidate" never renders.
 Deno.test("pipeline FSM: the close-candidate states carry distinct labels", () => {
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateUnvetted: 18, closeCandidateUpheld: 4 },
+    counts: {
+      leaks: 0,
+      ready: 0,
+      closeCandidateUnvetted: 18,
+      closeCandidateUpheld: 4,
+    },
     lanes: {},
   });
   const labels = collect(box, "sk").map((s) => s.textContent);
@@ -1326,7 +1384,10 @@ Deno.test("pipeline FSM: the close-candidate states carry distinct labels", () =
   const cc = labels.filter((l) => l.includes("close-candidate")).sort();
   assert(
     JSON.stringify(cc) ===
-      JSON.stringify(["ai:close-candidate (unvetted)", "ai:close-candidate (upheld)"]),
+      JSON.stringify([
+        "ai:close-candidate (unvetted)",
+        "ai:close-candidate (upheld)",
+      ]),
     `exactly the two close-candidate labels render: ${JSON.stringify(cc)}`,
   );
   assert(
@@ -1345,7 +1406,12 @@ Deno.test("pipeline FSM: clicking a state opens the bottom panel with a header n
     // A mixed upheld list — an issue, a PR (resolved url), another issue — one inbox.
     closeCandidateUpheld: [
       { repo: "o/a", number: 1, title: "flagged issue one" },
-      { repo: "o/b", number: 2, title: "flagged pr two", url: "https://github.com/o/b/pull/2" },
+      {
+        repo: "o/b",
+        number: 2,
+        title: "flagged pr two",
+        url: "https://github.com/o/b/pull/2",
+      },
       { repo: "o/c", number: 3, title: "flagged issue three" },
     ],
     uncoveredIssues: [
@@ -1440,7 +1506,9 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
     groups[0].title.includes("Producer action") &&
       groups[1].title.includes("Vetter action") &&
       groups[2].title.includes("Human action"),
-    `headings are the three actors in order: ${JSON.stringify(groups.map((g) => g.title))}`,
+    `headings are the three actors in order: ${
+      JSON.stringify(groups.map((g) => g.title))
+    }`,
   );
   const [producer, vetter, human] = groups;
   // Vetter owns the ONE vet-lifecycle state. `awaiting-re-vet` is retired
@@ -1453,7 +1521,9 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
   );
   assert(
     !vetter.states.includes("awaiting-re-vet"),
-    `the retired awaiting-re-vet state renders nowhere: ${JSON.stringify(vetter.states)}`,
+    `the retired awaiting-re-vet state renders nowhere: ${
+      JSON.stringify(vetter.states)
+    }`,
   );
   // ai:blocked-on is the vetter's too (issue-pr-cron#161): deps are typed `--blocked-by`
   // refs and the vetter's state-load clears the flag the run after every dep merges or
@@ -1477,7 +1547,9 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
   // history folds into reject via HIST_FOLD.
   assert(
     groups.every((g) => !g.states.includes("ai:relink")),
-    `retired ai:relink renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
+    `retired ai:relink renders nowhere: ${
+      JSON.stringify(groups.map((g) => g.states))
+    }`,
   );
   // Human owns the merge/ruling/close states + the upheld close-candidate inbox.
   assert(
@@ -1491,13 +1563,17 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
   );
   assert(
     !human.states.includes("ai:blocked-on"),
-    `ai:blocked-on is not in the human's inbox: ${JSON.stringify(human.states)}`,
+    `ai:blocked-on is not in the human's inbox: ${
+      JSON.stringify(human.states)
+    }`,
   );
   // ai:blocked-deploy is no longer a modeled state (issue-pr-cron#225), so the drained cell
   // in the fixture files under NO actor — it is not a human inbox with nothing in it.
   assert(
     groups.every((g) => !g.states.includes("ai:blocked-deploy")),
-    `the drained ai:blocked-deploy residue renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
+    `the drained ai:blocked-deploy residue renders nowhere: ${
+      JSON.stringify(groups.map((g) => g.states))
+    }`,
   );
   // Every state box sits under exactly one heading (no leaks into a fourth group).
   // 10 = every STATES entry filed once: producer 2 (ai:reject, the untouched backlog),
@@ -1508,10 +1584,19 @@ Deno.test("pipeline FSM: states group under the three actor headings, no fourth 
   // Both directions, same as awaiting-re-vet: a reintroduction fails here. Each retired
   // lane key in the fixture above is a DECOY — a stale snapshot still carrying it must
   // render it in NO group.
-  for (const retired of ["human:reject", "ai:close-candidate", "ai:close-candidate (PRs)", "human:close-candidate"]) {
+  for (
+    const retired of [
+      "human:reject",
+      "ai:close-candidate",
+      "ai:close-candidate (PRs)",
+      "human:close-candidate",
+    ]
+  ) {
     assert(
       groups.every((g) => !g.states.includes(retired)),
-      `retired ${retired} renders nowhere: ${JSON.stringify(groups.map((g) => g.states))}`,
+      `retired ${retired} renders nowhere: ${
+        JSON.stringify(groups.map((g) => g.states))
+      }`,
     );
   }
 });
@@ -1525,18 +1610,29 @@ Deno.test("pipeline FSM: the retired awaiting-re-vet state draws no box, even fr
   // A snapshot from a pre-#128 emitter: the retired lane cell AND its counts key, both
   // non-zero. Nothing here may resurrect the box.
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, unvetted: 2, awaitingReVet: 7 },
+    counts: {
+      leaks: 0,
+      ready: 0,
+      closeCandidateIssues: 0,
+      unvetted: 2,
+      awaitingReVet: 7,
+    },
     lanes: {
       "vet-lifecycle": {
         "un-vetted": { count: 2, prs: [] },
-        "awaiting-re-vet": { count: 7, prs: [{ repo: "o/a", number: 1, title: "moved head" }] },
+        "awaiting-re-vet": {
+          count: 7,
+          prs: [{ repo: "o/a", number: 1, title: "moved head" }],
+        },
       },
     },
   });
   const boxes = collect(box, "fsm-state");
   assert(
     !boxes.some((b) => b.dataset.t === "awaiting-re-vet"),
-    `no box is keyed to the retired state: ${JSON.stringify(boxes.map((b) => b.dataset.t))}`,
+    `no box is keyed to the retired state: ${
+      JSON.stringify(boxes.map((b) => b.dataset.t))
+    }`,
   );
   const labels = collect(box, "sk").map((s) => s.textContent);
   assert(
@@ -1552,17 +1648,26 @@ Deno.test("pipeline FSM: the retired awaiting-re-vet state draws no box, even fr
   assert(unvetted, "the surviving un-vetted box renders");
   assert(
     collect(unvetted, "sc")[0].textContent === "2",
-    `un-vetted reads its own count, not the sum: ${collect(unvetted, "sc")[0].textContent}`,
+    `un-vetted reads its own count, not the sum: ${
+      collect(unvetted, "sc")[0].textContent
+    }`,
   );
   // Its ACTION describes the collapsed state, not the half that survived the name. "first
   // vet" would say this box holds only never-judged PRs, which is the deleted machine.
   assert(
     collect(unvetted, "sa")[0].textContent === "vet at current head",
-    `the action covers a first vet and a re-vet alike: ${collect(unvetted, "sa")[0].textContent}`,
+    `the action covers a first vet and a re-vet alike: ${
+      collect(unvetted, "sa")[0].textContent
+    }`,
   );
   // The vetter heading's total moves with it: 2, never 9.
-  const vetter = ownerGroups(box).find((g) => g.title.includes("Vetter action"));
-  assert(vetter.title.endsWith("2"), `vetter total is the un-vetted count: ${vetter.title}`);
+  const vetter = ownerGroups(box).find((g) =>
+    g.title.includes("Vetter action")
+  );
+  assert(
+    vetter.title.endsWith("2"),
+    `vetter total is the un-vetted count: ${vetter.title}`,
+  );
 });
 
 // rain-org-health#145: deleting the state must not delete its HISTORY. Every rollup line
@@ -1587,17 +1692,23 @@ Deno.test("fsm history: retired awaiting-re-vet samples fold into un-vetted, so 
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, unvetted: 10 },
     lanes: { "vet-lifecycle": { "un-vetted": { count: 10, prs: [] } } },
   }, history);
-  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "un-vetted");
+  const unvetted = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "un-vetted"
+  );
   assert(unvetted, "un-vetted box rendered");
   const line = tags(unvetted, "polyline")[0];
   assert(line, "the folded series draws a line");
-  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  const ys = line.getAttribute("points").split(" ").map((p) =>
+    Number(p.split(",")[1])
+  );
   assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
   // A flat series normalises to one y for every point. Drop the fold and the first three
   // sit at the floor while the last two sit at the ceiling.
   assert(
     ys.every((y) => y === ys[0]),
-    `the line is continuous, with no cliff at the collapse: ${JSON.stringify(ys)}`,
+    `the line is continuous, with no cliff at the collapse: ${
+      JSON.stringify(ys)
+    }`,
   );
   // And the collapse is not misread as an accumulating constraint.
   assert(
@@ -1625,15 +1736,21 @@ Deno.test("fsm history: retired human-reject samples fold into reject, so the se
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, reject: 70 },
     lanes: { "vetter-verdicts": { "ai:reject": { count: 70, prs: [] } } },
   }, history);
-  const reject = collect(box, "fsm-state").find((b) => b.dataset.t === "ai:reject");
+  const reject = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "ai:reject"
+  );
   assert(reject, "ai:reject box rendered");
   const line = tags(reject, "polyline")[0];
   assert(line, "the folded series draws a line");
-  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  const ys = line.getAttribute("points").split(" ").map((p) =>
+    Number(p.split(",")[1])
+  );
   assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
   assert(
     ys.every((y) => y === ys[0]),
-    `the line is continuous, with no cliff at the consolidation: ${JSON.stringify(ys)}`,
+    `the line is continuous, with no cliff at the consolidation: ${
+      JSON.stringify(ys)
+    }`,
   );
   assert(
     !reject.classList.contains("rising"),
@@ -1660,22 +1777,27 @@ Deno.test("fsm history: retired relink samples fold into reject too, so the seri
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, reject: 70 },
     lanes: { "vetter-verdicts": { "ai:reject": { count: 70, prs: [] } } },
   }, history);
-  const reject = collect(box, "fsm-state").find((b) => b.dataset.t === "ai:reject");
+  const reject = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "ai:reject"
+  );
   assert(reject, "ai:reject box rendered");
   const line = tags(reject, "polyline")[0];
   assert(line, "the folded series draws a line");
-  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  const ys = line.getAttribute("points").split(" ").map((p) =>
+    Number(p.split(",")[1])
+  );
   assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
   assert(
     ys.every((y) => y === ys[0]),
-    `the line is continuous, with no cliff at the relink retirement: ${JSON.stringify(ys)}`,
+    `the line is continuous, with no cliff at the relink retirement: ${
+      JSON.stringify(ys)
+    }`,
   );
   assert(
     !reject.classList.contains("rising"),
     "folding a flat inventory raises no bottleneck flag",
   );
 });
-
 
 // Same shape for the upheld merge (issue-pr-cron#212): a snapshot written before the
 // upheld inbox absorbed its PR half carries `counts.closeCandidatePrs` beside
@@ -1697,11 +1819,15 @@ Deno.test("fsm history: pre-merge closeCandidatePrs samples fold into the upheld
     counts: { leaks: 0, ready: 0, closeCandidateUpheld: 10 },
     lanes: {},
   }, history);
-  const upheld = collect(box, "fsm-state").find((b) => b.dataset.t === "closeCandidateUpheld");
+  const upheld = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "closeCandidateUpheld"
+  );
   assert(upheld, "upheld box rendered");
   const line = tags(upheld, "polyline")[0];
   assert(line, "the folded series draws a line");
-  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  const ys = line.getAttribute("points").split(" ").map((p) =>
+    Number(p.split(",")[1])
+  );
   assert(ys.length === 5, `all five samples are plotted: ${ys.length}`);
   assert(
     ys.every((y) => y === ys[0]),
@@ -1733,14 +1859,22 @@ Deno.test("fsm history: a refresh carrying neither the surviving nor the retired
     counts: { leaks: 0, ready: 5, closeCandidateIssues: 0, unvetted: 6 },
     lanes: { "vet-lifecycle": { "un-vetted": { count: 6, prs: [] } } },
   }, history);
-  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "un-vetted");
+  const unvetted = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "un-vetted"
+  );
   const pts = tags(unvetted, "polyline")[0].getAttribute("points").split(" ");
-  assert(pts.length === 2, `only the two carrying refreshes are plotted: ${pts.length}`);
+  assert(
+    pts.length === 2,
+    `only the two carrying refreshes are plotted: ${pts.length}`,
+  );
   // Both plotted points are the SUM, so the older one (4+2=6) matches the newer (6) and the
   // line is flat — the fold reads the retired key wherever it appears, not just on a key
   // the newest sample happens to carry.
   const ys = pts.map((p) => Number(p.split(",")[1]));
-  assert(ys[0] === ys[1], `4+2 == 6, so the two samples sit level: ${JSON.stringify(ys)}`);
+  assert(
+    ys[0] === ys[1],
+    `4+2 == 6, so the two samples sit level: ${JSON.stringify(ys)}`,
+  );
 });
 
 // The rollup is an artifact this page does not own, so a count that is not a number is
@@ -1759,13 +1893,24 @@ Deno.test("fsm history: a junk count is skipped like an absent one and cannot po
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 0, unvetted: 6 },
     lanes: { "vet-lifecycle": { "un-vetted": { count: 6, prs: [] } } },
   }, history);
-  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "un-vetted");
+  const unvetted = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "un-vetted"
+  );
   const points = tags(unvetted, "polyline")[0].getAttribute("points");
-  assert(!points.includes("NaN"), `no NaN reaches the chart geometry: ${points}`);
+  assert(
+    !points.includes("NaN"),
+    `no NaN reaches the chart geometry: ${points}`,
+  );
   const pts = points.split(" ");
-  assert(pts.length === 2, `the junk-only refresh contributes no point: ${points}`);
+  assert(
+    pts.length === 2,
+    `the junk-only refresh contributes no point: ${points}`,
+  );
   const ys = pts.map((p) => Number(p.split(",")[1]));
-  assert(ys[0] === ys[1], `both samples read 6, so the line is flat: ${JSON.stringify(ys)}`);
+  assert(
+    ys[0] === ys[1],
+    `both samples read 6, so the line is flat: ${JSON.stringify(ys)}`,
+  );
 });
 
 // #69: a historically dual-owner state resolves to ONE actor.
@@ -1811,7 +1956,15 @@ Deno.test("pipeline FSM: a vet-lifecycle blocked-on cell renders its count under
     lanes: {
       "vet-lifecycle": {
         "un-vetted": { count: 2, prs: [] },
-        "ai:blocked-on": { count: 17, prs: [{ repo: "o/r", number: 1, url: "https://github.com/o/r/pull/1", title: "blocked" }] },
+        "ai:blocked-on": {
+          count: 17,
+          prs: [{
+            repo: "o/r",
+            number: 1,
+            url: "https://github.com/o/r/pull/1",
+            title: "blocked",
+          }],
+        },
       },
     },
   });
@@ -1820,13 +1973,20 @@ Deno.test("pipeline FSM: a vet-lifecycle blocked-on cell renders its count under
   assert(blocked, "the blocked-on box renders");
   assert(
     collect(blocked, "sc")[0].textContent === "17",
-    `the box reads the vet-lifecycle cell's count: ${collect(blocked, "sc")[0].textContent}`,
+    `the box reads the vet-lifecycle cell's count: ${
+      collect(blocked, "sc")[0].textContent
+    }`,
   );
-  assert(!blocked.className.includes("zero"), "17 blocked PRs never read as a dimmed zero");
+  assert(
+    !blocked.className.includes("zero"),
+    "17 blocked PRs never read as a dimmed zero",
+  );
   // The act is the #161 exit — the vetter's state-load clearance, not a human merge.
   assert(
     collect(blocked, "sa")[0].textContent === "clears when deps merge/close",
-    `the act is the automated clearance: ${collect(blocked, "sa")[0].textContent}`,
+    `the act is the automated clearance: ${
+      collect(blocked, "sa")[0].textContent
+    }`,
   );
   const groups = ownerGroups(box);
   const vetter = groups.find((g) => g.title.includes("Vetter action"));
@@ -1836,7 +1996,10 @@ Deno.test("pipeline FSM: a vet-lifecycle blocked-on cell renders its count under
     `the box sits under Vetter action: ${JSON.stringify(vetter.states)}`,
   );
   // The count lands in the vetter's total (2 un-vetted + 17 blocked-on), not the human's.
-  assert(vetter.title.endsWith("19"), `vetter total carries the 17: ${vetter.title}`);
+  assert(
+    vetter.title.endsWith("19"),
+    `vetter total carries the 17: ${vetter.title}`,
+  );
   assert(human.title.endsWith("0"), `human total does not: ${human.title}`);
   // The click-to-expand lists the cell's own prs — the moved read carries the list too.
   const detail = box.querySelectorAll("#fsmdetail")[0];
@@ -1856,22 +2019,40 @@ Deno.test("pipeline FSM: a stale producer-blocked blocked-on cell still surfaces
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 0 },
     lanes: {
       "producer-blocked": {
-        "ai:blocked-on": { count: 5, prs: [{ repo: "o/r", number: 2, url: "https://github.com/o/r/pull/2", title: "old snapshot" }] },
+        "ai:blocked-on": {
+          count: 5,
+          prs: [{
+            repo: "o/r",
+            number: 2,
+            url: "https://github.com/o/r/pull/2",
+            title: "old snapshot",
+          }],
+        },
       },
     },
   });
-  const byKey = (b, k) => collect(b, "fsm-state").find((x) => x.dataset.t === k);
+  const byKey = (b, k) =>
+    collect(b, "fsm-state").find((x) => x.dataset.t === k);
   const staleBox = byKey(stale, "ai:blocked-on");
   assert(
     collect(staleBox, "sc")[0].textContent === "5",
-    `the stale cell's count surfaces, never a silent 0: ${collect(staleBox, "sc")[0].textContent}`,
+    `the stale cell's count surfaces, never a silent 0: ${
+      collect(staleBox, "sc")[0].textContent
+    }`,
   );
-  assert(!staleBox.className.includes("zero"), "5 blocked PRs on an old snapshot never dim to zero");
+  assert(
+    !staleBox.className.includes("zero"),
+    "5 blocked PRs on an old snapshot never dim to zero",
+  );
   // It surfaces under the state's owner — the vetter — not under the lane's old actor.
-  const vetter = ownerGroups(stale).find((g) => g.title.includes("Vetter action"));
+  const vetter = ownerGroups(stale).find((g) =>
+    g.title.includes("Vetter action")
+  );
   assert(
     vetter.states.includes("ai:blocked-on"),
-    `the stale cell files under Vetter action: ${JSON.stringify(vetter.states)}`,
+    `the stale cell files under Vetter action: ${
+      JSON.stringify(vetter.states)
+    }`,
   );
   // The stale read carries the list too, so the count opens onto its own rows (#141).
   const detail = stale.querySelectorAll("#fsmdetail")[0];
@@ -1889,11 +2070,18 @@ Deno.test("pipeline FSM: a stale producer-blocked blocked-on cell still surfaces
       "producer-blocked": { "ai:blocked-on": { count: 5, prs: [] } },
     },
   });
-  const boxes = collect(both, "fsm-state").filter((x) => x.dataset.t === "ai:blocked-on");
-  assert(boxes.length === 1, `one box, whichever keys the snapshot carries: ${boxes.length}`);
+  const boxes = collect(both, "fsm-state").filter((x) =>
+    x.dataset.t === "ai:blocked-on"
+  );
+  assert(
+    boxes.length === 1,
+    `one box, whichever keys the snapshot carries: ${boxes.length}`,
+  );
   assert(
     collect(boxes[0], "sc")[0].textContent === "3",
-    `the current lane's cell wins, no sum with the stale one: ${collect(boxes[0], "sc")[0].textContent}`,
+    `the current lane's cell wins, no sum with the stale one: ${
+      collect(boxes[0], "sc")[0].textContent
+    }`,
   );
 });
 
@@ -1932,8 +2120,18 @@ Deno.test("pipeline FSM: a nonzero no-successor retiree count surfaces as a huma
           [state]: {
             count: 2,
             prs: [
-              { repo: "rainlanguage/rain.flow", number: 12, url: "https://github.com/rainlanguage/rain.flow/pull/12", title: `stale ${state} straggler` },
-              { repo: "rainlanguage/rain.dia", number: 34, url: "https://github.com/rainlanguage/rain.dia/pull/34", title: "hand relabelled" },
+              {
+                repo: "rainlanguage/rain.flow",
+                number: 12,
+                url: "https://github.com/rainlanguage/rain.flow/pull/12",
+                title: `stale ${state} straggler`,
+              },
+              {
+                repo: "rainlanguage/rain.dia",
+                number: 34,
+                url: "https://github.com/rainlanguage/rain.dia/pull/34",
+                title: "hand relabelled",
+              },
             ],
           },
         },
@@ -1942,35 +2140,56 @@ Deno.test("pipeline FSM: a nonzero no-successor retiree count surfaces as a huma
     const b = collect(box, "fsm-state").find((x) => x.dataset.t === state);
     assert(b, `${state}: the straggler box renders while the count is nonzero`);
     assert(
-      collect(box, "fsm-state").filter((x) => x.dataset.t === state).length === 1,
+      collect(box, "fsm-state").filter((x) => x.dataset.t === state).length ===
+        1,
       `${state}: exactly one straggler box on the whole board`,
     );
     assert(
       collect(b, "sc")[0].textContent === "2",
-      `${state}: it carries the snapshot's count: ${collect(b, "sc")[0].textContent}`,
+      `${state}: it carries the snapshot's count: ${
+        collect(b, "sc")[0].textContent
+      }`,
     );
     assert(
       collect(b, "sa")[0].textContent === "strip the label",
-      `${state}: the act clears the residue: ${collect(b, "sa")[0].textContent}`,
+      `${state}: the act clears the residue: ${
+        collect(b, "sa")[0].textContent
+      }`,
     );
-    assert(b.className.includes("blk"), `${state}: a stuck pile, kind blk: ${b.className}`);
+    assert(
+      b.className.includes("blk"),
+      `${state}: a stuck pile, kind blk: ${b.className}`,
+    );
     assert(
       collect(b, "fsm-spark").length === 0,
       `${state}: no sparkline — the retired series is drawn nowhere`,
     );
     // Filed under the human — the actor who strips the label — and counted in that total
     // (1 ready + 2 stragglers).
-    const human = ownerGroups(box).find((g) => g.title.includes("Human action"));
+    const human = ownerGroups(box).find((g) =>
+      g.title.includes("Human action")
+    );
     assert(
       human.states.includes(state),
-      `${state}: the straggler files under the human: ${JSON.stringify(human.states)}`,
+      `${state}: the straggler files under the human: ${
+        JSON.stringify(human.states)
+      }`,
     );
-    assert(human.title.endsWith("3"), `${state}: the human total counts it: ${human.title}`);
+    assert(
+      human.title.endsWith("3"),
+      `${state}: the human total counts it: ${human.title}`,
+    );
     // Click-through lists the stragglers like any state box.
     b.click();
     const text = textOf(box);
-    assert(text.includes(`stale ${state} straggler`), `${state}: first straggler PR listed`);
-    assert(text.includes("rain.dia#34"), `${state}: second straggler PR listed by repo#number`);
+    assert(
+      text.includes(`stale ${state} straggler`),
+      `${state}: first straggler PR listed`,
+    );
+    assert(
+      text.includes("rain.dia#34"),
+      `${state}: second straggler PR listed by repo#number`,
+    );
   }
 });
 
@@ -1986,13 +2205,28 @@ Deno.test("pipeline FSM: two no-successor retirees on one snapshot render as two
       "producer-blocked": {
         "ai:blocked-deploy": {
           count: 1,
-          prs: [{ repo: "rainlanguage/rain.flow", number: 12, url: "https://github.com/rainlanguage/rain.flow/pull/12", title: "deploy residue" }],
+          prs: [{
+            repo: "rainlanguage/rain.flow",
+            number: 12,
+            url: "https://github.com/rainlanguage/rain.flow/pull/12",
+            title: "deploy residue",
+          }],
         },
         "ai:blocked-infra": {
           count: 2,
           prs: [
-            { repo: "rainlanguage/rain.dia", number: 34, url: "https://github.com/rainlanguage/rain.dia/pull/34", title: "infra residue A" },
-            { repo: "rainlanguage/rain.flare", number: 56, url: "https://github.com/rainlanguage/rain.flare/pull/56", title: "infra residue B" },
+            {
+              repo: "rainlanguage/rain.dia",
+              number: 34,
+              url: "https://github.com/rainlanguage/rain.dia/pull/34",
+              title: "infra residue A",
+            },
+            {
+              repo: "rainlanguage/rain.flare",
+              number: 56,
+              url: "https://github.com/rainlanguage/rain.flare/pull/56",
+              title: "infra residue B",
+            },
           ],
         },
       },
@@ -2008,19 +2242,24 @@ Deno.test("pipeline FSM: two no-successor retirees on one snapshot render as two
   );
   // 1 ready + 1 deploy + 2 infra: both stragglers land in the human total.
   const human = ownerGroups(box).find((g) => g.title.includes("Human action"));
-  assert(human.title.endsWith("4"), `both stragglers count toward the human total: ${human.title}`);
+  assert(
+    human.title.endsWith("4"),
+    `both stragglers count toward the human total: ${human.title}`,
+  );
   // Each click-through opens onto its own rows, never the other's.
   at("ai:blocked-deploy")[0].click();
   const deployText = textOf(box);
   assert(
-    deployText.includes("deploy residue") && !deployText.includes("infra residue"),
+    deployText.includes("deploy residue") &&
+      !deployText.includes("infra residue"),
     `the deploy box lists only its own PRs: ${deployText}`,
   );
   at("ai:blocked-deploy")[0].click();
   at("ai:blocked-infra")[0].click();
   const infraText = textOf(box);
   assert(
-    infraText.includes("infra residue A") && infraText.includes("infra residue B") &&
+    infraText.includes("infra residue A") &&
+      infraText.includes("infra residue B") &&
       !infraText.includes("deploy residue"),
     `the infra box lists only its own PRs: ${infraText}`,
   );
@@ -2099,7 +2338,12 @@ Deno.test("pipeline FSM: a pre-lanes snapshot with a nonzero no-successor count 
       counts: { leaks: 0, ready: 1, [legacy]: 3 },
       states: {
         [state]: [
-          { repo: "rainlanguage/rain.flare", number: 5, url: "https://github.com/rainlanguage/rain.flare/pull/5", title: "legacy straggler" },
+          {
+            repo: "rainlanguage/rain.flare",
+            number: 5,
+            url: "https://github.com/rainlanguage/rain.flare/pull/5",
+            title: "legacy straggler",
+          },
         ],
       },
     }, history);
@@ -2107,14 +2351,19 @@ Deno.test("pipeline FSM: a pre-lanes snapshot with a nonzero no-successor count 
     assert(b, `${state}: the straggler renders from the legacy counts key`);
     assert(
       collect(b, "sc")[0].textContent === "3",
-      `${state}: it carries the legacy count: ${collect(b, "sc")[0].textContent}`,
+      `${state}: it carries the legacy count: ${
+        collect(b, "sc")[0].textContent
+      }`,
     );
     assert(
       collect(b, "fsm-spark").length === 0,
       `${state}: no sparkline on the legacy straggler either`,
     );
     b.click();
-    assert(textOf(box).includes("rain.flare#5"), `${state}: click lists the legacy stragglers`);
+    assert(
+      textOf(box).includes("rain.flare#5"),
+      `${state}: click lists the legacy stragglers`,
+    );
   }
   // A legacy snapshot without either key draws nothing.
   const clean = fsmBox({ counts: { leaks: 0, ready: 1 } });
@@ -2139,13 +2388,22 @@ Deno.test("fsm history: retired no-successor samples fold into NO surviving seri
   // reject holds flat at 2 while both retired keys swing to 0. Unfolded, reject's line is
   // FLAT; folding blockedDeploy would step it 11 → 2, blockedInfra 9 → 2, both 18 → 2.
   const history = [
-    { t: at(1), counts: { reject: 2, ready: 2, blockedDeploy: 9, blockedInfra: 7 } },
-    { t: at(0), counts: { reject: 2, ready: 2, blockedDeploy: 0, blockedInfra: 0 } },
+    {
+      t: at(1),
+      counts: { reject: 2, ready: 2, blockedDeploy: 9, blockedInfra: 7 },
+    },
+    {
+      t: at(0),
+      counts: { reject: 2, ready: 2, blockedDeploy: 0, blockedInfra: 0 },
+    },
   ];
   const box = fsmBox({
     counts: { leaks: 0, ready: 2 },
     lanes: {
-      "vetter-verdicts": { "ai:reject": { count: 2, prs: [] }, "ai:ready": { count: 2, prs: [] } },
+      "vetter-verdicts": {
+        "ai:reject": { count: 2, prs: [] },
+        "ai:ready": { count: 2, prs: [] },
+      },
     },
   }, history);
   // Every surviving series that draws a line reads flat — no state anywhere absorbs them.
@@ -2174,14 +2432,29 @@ Deno.test("fsm trend: a rising 7d series slopes up, flat ≈ 0, falling down, a 
   // one point per day for the 8 days ending at `now` (all inside the trailing-7d window).
   const daily = (vals) =>
     vals.map((v, i) => ({ t: now - (vals.length - 1 - i) * DAY, v }));
-  assert(sevenDaySlope(daily([1, 2, 3, 4, 5, 6, 7, 8]), now) > 0.9, "steady rise ≈ +1/day");
-  assert(Math.abs(sevenDaySlope(daily([5, 5, 5, 5, 5, 5, 5, 5]), now)) < 1e-9, "flat ≈ 0");
-  assert(sevenDaySlope(daily([8, 7, 6, 5, 4, 3, 2, 1]), now) < -0.9, "steady fall ≈ -1/day");
-  assert(sevenDaySlope([{ t: now, v: 5 }], now) === null, "single point → null (no trend)");
+  assert(
+    sevenDaySlope(daily([1, 2, 3, 4, 5, 6, 7, 8]), now) > 0.9,
+    "steady rise ≈ +1/day",
+  );
+  assert(
+    Math.abs(sevenDaySlope(daily([5, 5, 5, 5, 5, 5, 5, 5]), now)) < 1e-9,
+    "flat ≈ 0",
+  );
+  assert(
+    sevenDaySlope(daily([8, 7, 6, 5, 4, 3, 2, 1]), now) < -0.9,
+    "steady fall ≈ -1/day",
+  );
+  assert(
+    sevenDaySlope([{ t: now, v: 5 }], now) === null,
+    "single point → null (no trend)",
+  );
   assert(sevenDaySlope([], now) === null, "empty series → null");
   // Points whose window is entirely older than 7 days no longer count as a trend.
   const stale = [{ t: now - 20 * DAY, v: 1 }, { t: now - 15 * DAY, v: 9 }];
-  assert(sevenDaySlope(stale, now) === null, "all points outside the 7d window → null");
+  assert(
+    sevenDaySlope(stale, now) === null,
+    "all points outside the 7d window → null",
+  );
 });
 
 // (a) a sparkline renders per state from a history rollup.
@@ -2202,11 +2475,19 @@ Deno.test("fsm sparkline: a state with ≥2 history points renders an inline spa
     },
   };
   const box = fsmBox(hq, history);
-  const ready = collect(box, "fsm-state").find((b) => b.dataset.t === "ai:ready");
+  const ready = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "ai:ready"
+  );
   assert(ready, "ai:ready state box rendered");
-  assert(collect(ready, "fsm-spark").length === 1, "one inline sparkline in the state");
+  assert(
+    collect(ready, "fsm-spark").length === 1,
+    "one inline sparkline in the state",
+  );
   assert(tags(ready, "polyline").length === 1, "sparkline draws a polyline");
-  assert(tags(ready, "circle").length === 1, "sparkline has an emphasized endpoint dot");
+  assert(
+    tags(ready, "circle").length === 1,
+    "sparkline has an emphasized endpoint dot",
+  );
 });
 
 // (a2) a state whose counts key is NEW — carried by only the newest refresh — still gets a
@@ -2223,22 +2504,42 @@ Deno.test("fsm sparkline: a brand-new counts key with ONE history point draws it
     counts: i === 4 ? { ready: v, uncoveredIssues: 616 } : { ready: v },
   }));
   const hq = {
-    counts: { leaks: 0, ready: 9, closeCandidateIssues: 0, uncoveredIssues: 616 },
+    counts: {
+      leaks: 0,
+      ready: 9,
+      closeCandidateIssues: 0,
+      uncoveredIssues: 616,
+    },
     lanes: { "vetter-verdicts": { "ai:ready": { count: 9, prs: [] } } },
   };
   const box = fsmBox(hq, history);
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
   const untouched = byKey("uncoveredIssues");
   assert(untouched, "untouched (no PR) state box rendered");
-  assert(collect(untouched, "fsm-spark").length === 1, "a single-sample state still gets a sparkline");
-  assert(tags(untouched, "circle").length === 1, "the single sample renders as an endpoint dot");
+  assert(
+    collect(untouched, "fsm-spark").length === 1,
+    "a single-sample state still gets a sparkline",
+  );
+  assert(
+    tags(untouched, "circle").length === 1,
+    "the single sample renders as an endpoint dot",
+  );
   assert(tags(untouched, "polyline").length === 0, "one point draws no line");
   // A single point can't establish a trend, so it is still never flagged as the bottleneck.
-  assert(!untouched.classList.contains("rising"), "one sample never flags a bottleneck");
+  assert(
+    !untouched.classList.contains("rising"),
+    "one sample never flags a bottleneck",
+  );
   // Siblings with a full series are untouched by this: line AND dot, exactly as before.
   const ready = byKey("ai:ready");
-  assert(tags(ready, "polyline").length === 1, "a multi-sample sibling still draws its line");
-  assert(tags(ready, "circle").length === 1, "a multi-sample sibling still draws its dot");
+  assert(
+    tags(ready, "polyline").length === 1,
+    "a multi-sample sibling still draws its line",
+  );
+  assert(
+    tags(ready, "circle").length === 1,
+    "a multi-sample sibling still draws its dot",
+  );
 });
 
 // issue-pr-cron#73: the close-candidate lifecycle gains a vetter verdict, so the single
@@ -2246,7 +2547,13 @@ Deno.test("fsm sparkline: a brand-new counts key with ONE history point draws it
 // vetter judges the flag) and upheld (a human closes the subject).
 Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a human inbox", () => {
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
+    counts: {
+      leaks: 0,
+      ready: 0,
+      closeCandidateIssues: 29,
+      closeCandidateUnvetted: 20,
+      closeCandidateUpheld: 9,
+    },
     lanes: {},
   });
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
@@ -2276,7 +2583,9 @@ Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a 
   // naming one subject type would mislabel the other half of its own list.
   assert(
     collect(upheld, "sa")[0].textContent === "close",
-    `the upheld act is subject-type-neutral: ${collect(upheld, "sa")[0].textContent}`,
+    `the upheld act is subject-type-neutral: ${
+      collect(upheld, "sa")[0].textContent
+    }`,
   );
 });
 
@@ -2285,7 +2594,13 @@ Deno.test("pipeline FSM: close-candidate issues split into a vetter inbox and a 
 // toward its own actor's total — the invariant a combined box could not satisfy.
 Deno.test("pipeline FSM: no combined close-candidate box; each split state counts toward its own actor total", () => {
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20, closeCandidateUpheld: 9 },
+    counts: {
+      leaks: 0,
+      ready: 0,
+      closeCandidateIssues: 29,
+      closeCandidateUnvetted: 20,
+      closeCandidateUpheld: 9,
+    },
     lanes: {},
   });
   const groups = ownerGroups(box);
@@ -2297,8 +2612,14 @@ Deno.test("pipeline FSM: no combined close-candidate box; each split state count
   // The heading concatenates title + sub + count, so the total is its trailing number.
   const vetter = groups.find((g) => g.title.includes("Vetter action"));
   const human = groups.find((g) => g.title.includes("Human action"));
-  assert(vetter.title.endsWith("20"), `vetter total counts the 20 unvetted: ${vetter.title}`);
-  assert(human.title.endsWith("9"), `human total counts the 9 upheld: ${human.title}`);
+  assert(
+    vetter.title.endsWith("20"),
+    `vetter total counts the 20 unvetted: ${vetter.title}`,
+  );
+  assert(
+    human.title.endsWith("9"),
+    `human total counts the 9 upheld: ${human.title}`,
+  );
   // Neither total silently absorbs the 29 that used to be rendered as its own box.
   assert(
     !vetter.title.includes("29") && !human.title.includes("29"),
@@ -2314,8 +2635,14 @@ Deno.test("pipeline FSM: close-candidate split states render zeroed when the too
     counts: { leaks: 0, ready: 0, closeCandidateIssues: 29 },
     lanes: {},
   }, [
-    { t: Date.parse("2026-07-25T00:00:00Z"), counts: { closeCandidateIssues: 29 } },
-    { t: Date.parse("2026-07-26T00:00:00Z"), counts: { closeCandidateIssues: 29 } },
+    {
+      t: Date.parse("2026-07-25T00:00:00Z"),
+      counts: { closeCandidateIssues: 29 },
+    },
+    {
+      t: Date.parse("2026-07-26T00:00:00Z"),
+      counts: { closeCandidateIssues: 29 },
+    },
   ]);
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
   for (const k of ["closeCandidateUnvetted", "closeCandidateUpheld"]) {
@@ -2324,8 +2651,14 @@ Deno.test("pipeline FSM: close-candidate split states render zeroed when the too
     // `zero` is baked into the className at construction (only `rising` is added via
     // classList), so read the string the box was built with.
     assert(b.className.includes("zero"), `${k} reads as zero, dimmed`);
-    assert(collect(b, "fsm-spark").length === 0, `${k} has no spark with no samples`);
-    assert(!b.classList.contains("rising"), `${k} cannot flag a bottleneck with no data`);
+    assert(
+      collect(b, "fsm-spark").length === 0,
+      `${k} has no spark with no samples`,
+    );
+    assert(
+      !b.classList.contains("rising"),
+      `${k} cannot flag a bottleneck with no data`,
+    );
   }
 });
 
@@ -2336,17 +2669,35 @@ Deno.test("pipeline FSM: a freshly-emitted close-candidate split key draws its l
   const at = (d) => now - d * DAY;
   const history = [0, 1, 2, 3, 4].map((i) => ({
     t: at(4 - i),
-    counts: i === 4 ? { closeCandidateIssues: 29, closeCandidateUnvetted: 20 } : { closeCandidateIssues: 29 },
+    counts: i === 4
+      ? { closeCandidateIssues: 29, closeCandidateUnvetted: 20 }
+      : { closeCandidateIssues: 29 },
   }));
   const box = fsmBox({
-    counts: { leaks: 0, ready: 0, closeCandidateIssues: 29, closeCandidateUnvetted: 20 },
+    counts: {
+      leaks: 0,
+      ready: 0,
+      closeCandidateIssues: 29,
+      closeCandidateUnvetted: 20,
+    },
     lanes: {},
   }, history);
-  const unvetted = collect(box, "fsm-state").find((b) => b.dataset.t === "closeCandidateUnvetted");
-  assert(collect(unvetted, "fsm-spark").length === 1, "one sample still gets a sparkline");
-  assert(tags(unvetted, "circle").length === 1, "the sample renders as an endpoint dot");
+  const unvetted = collect(box, "fsm-state").find((b) =>
+    b.dataset.t === "closeCandidateUnvetted"
+  );
+  assert(
+    collect(unvetted, "fsm-spark").length === 1,
+    "one sample still gets a sparkline",
+  );
+  assert(
+    tags(unvetted, "circle").length === 1,
+    "the sample renders as an endpoint dot",
+  );
   assert(tags(unvetted, "polyline").length === 0, "one point draws no line");
-  assert(!unvetted.classList.contains("rising"), "one sample never flags a bottleneck");
+  assert(
+    !unvetted.classList.contains("rising"),
+    "one sample never flags a bottleneck",
+  );
 });
 
 // (b) the red border applies on an up-trend and NOT on a flat / single-blip series.
@@ -2366,7 +2717,13 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
     counts: { ready: ready[i], reject: 10, relink: relink[i], leaks: 0 },
   }));
   const hq = {
-    counts: { leaks: 0, ready: 54, reject: 10, relink: 4, closeCandidateIssues: 0 },
+    counts: {
+      leaks: 0,
+      ready: 54,
+      reject: 10,
+      relink: 4,
+      closeCandidateIssues: 0,
+    },
     lanes: {
       "vetter-verdicts": {
         "ai:ready": { count: 54, prs: [] },
@@ -2377,12 +2734,23 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
   };
   const box = fsmBox(hq, history);
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
-  const readyBox = byKey("ai:ready"), rejectBox = byKey("ai:reject"), relinkBox = byKey("ai:relink");
-  assert(readyBox.classList.contains("rising"), "up-trending ai:ready gets the rising border");
-  assert(!rejectBox.classList.contains("rising"), "the folded blip stays under epsilon, not flagged");
+  const readyBox = byKey("ai:ready"),
+    rejectBox = byKey("ai:reject"),
+    relinkBox = byKey("ai:relink");
+  assert(
+    readyBox.classList.contains("rising"),
+    "up-trending ai:ready gets the rising border",
+  );
+  assert(
+    !rejectBox.classList.contains("rising"),
+    "the folded blip stays under epsilon, not flagged",
+  );
   // (the under-epsilon blip rides reject's FOLDED series above — retired relink renders no box)
   // Never color-alone: a visible ▲ badge + an aria-label spell the flag out.
-  assert(collect(readyBox, "fsm-rise").length === 1, "rising state carries a visible ▲ cue");
+  assert(
+    collect(readyBox, "fsm-rise").length === 1,
+    "rising state carries a visible ▲ cue",
+  );
   assert(
     (readyBox.getAttribute("aria-label") || "").includes("rising"),
     `rising state carries an aria cue: ${readyBox.getAttribute("aria-label")}`,
@@ -2393,16 +2761,23 @@ Deno.test("fsm trend border: an up-trending state gets the rising warning border
   // by design. What must never travel with the mark is the trend CLAIM.
   assert(
     !(rejectBox.getAttribute("aria-label") || "").includes("rising"),
-    `a non-rising state never claims a trend: ${rejectBox.getAttribute("aria-label")}`,
+    `a non-rising state never claims a trend: ${
+      rejectBox.getAttribute("aria-label")
+    }`,
   );
   assert(
-    !(collect(rejectBox, "fsm-rise")[0]?.getAttribute("title") || "").includes("rising"),
+    !(collect(rejectBox, "fsm-rise")[0]?.getAttribute("title") || "").includes(
+      "rising",
+    ),
     "the ▲ on a fallback pick does not claim a trend either",
   );
   // ai:relink is fully retired (issue-pr-cron#135/#139): the fixture still carries its
   // lane data and history — an old snapshot — and it must render NO box at all; its
   // history folds into reject's series via HIST_FOLD instead.
-  assert(relinkBox === undefined, "retired ai:relink draws no box, even from a snapshot that carries it");
+  assert(
+    relinkBox === undefined,
+    "retired ai:relink draws no box, even from a snapshot that carries it",
+  );
 });
 
 // The fallback that keeps every working actor pointed somewhere. `sevenDaySlope` needs two
@@ -2424,19 +2799,34 @@ Deno.test("fsm lead fallback: a group with no bottleneck marks its largest non-z
   });
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
   const ready = byKey("ai:ready");
-  assert(ready.classList.contains("lead"), "human's largest queue (44 ai:ready) is marked");
-  assert(!ready.classList.contains("rising"), "identical on screen, still distinct in the DOM");
+  assert(
+    ready.classList.contains("lead"),
+    "human's largest queue (44 ai:ready) is marked",
+  );
+  assert(
+    !ready.classList.contains("rising"),
+    "identical on screen, still distinct in the DOM",
+  );
   // The fallback wears the EXISTING highlight, not a second visual language: the same ▲ in
   // the same row, and a `.lead` class whose stylesheet rule is shared verbatim with
   // `.rising`. A reader sees one kind of "look here", never two competing ones.
   const up = collect(ready, "fsm-rise");
-  assert(up.length === 1, "the fallback carries the same visible ▲ cue a bottleneck does");
-  assert(up[0]._text === "▲", `the same glyph, not a substitute: ${up[0]._text}`);
+  assert(
+    up.length === 1,
+    "the fallback carries the same visible ▲ cue a bottleneck does",
+  );
+  assert(
+    up[0]._text === "▲",
+    `the same glyph, not a substitute: ${up[0]._text}`,
+  );
   assert(
     ready.querySelector(".fsm-scrow").children.includes(up[0]),
     "the ▲ sits in the same row it does on a bottleneck",
   );
-  assert(collect(ready, "fsm-lead").length === 0, "no separate chip — nothing new is invented");
+  assert(
+    collect(ready, "fsm-lead").length === 0,
+    "no separate chip — nothing new is invented",
+  );
   // Only the WORDING differs, because only the wording can lie: this box has no trend.
   assert(
     (ready.getAttribute("aria-label") || "").includes("largest queue"),
@@ -2447,9 +2837,18 @@ Deno.test("fsm lead fallback: a group with no bottleneck marks its largest non-z
     "the fallback never claims a trend it does not have",
   );
   // One mark per actor group, and only on that group's own biggest pile.
-  assert(!byKey("ai:design").classList.contains("lead"), "a smaller queue in the group is not marked");
-  assert(byKey("ai:reject").classList.contains("lead"), "producer's largest queue is marked too");
-  assert(byKey("un-vetted").classList.contains("lead"), "vetter's largest queue is marked too");
+  assert(
+    !byKey("ai:design").classList.contains("lead"),
+    "a smaller queue in the group is not marked",
+  );
+  assert(
+    byKey("ai:reject").classList.contains("lead"),
+    "producer's largest queue is marked too",
+  );
+  assert(
+    byKey("un-vetted").classList.contains("lead"),
+    "vetter's largest queue is marked too",
+  );
 });
 
 Deno.test("fsm lead fallback: a group that already flags a bottleneck is left alone", () => {
@@ -2473,7 +2872,10 @@ Deno.test("fsm lead fallback: a group that already flags a bottleneck is left al
   };
   const box = fsmBox(hq, history);
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
-  assert(byKey("ai:ready").classList.contains("rising"), "the rising flag still fires");
+  assert(
+    byKey("ai:ready").classList.contains("rising"),
+    "the rising flag still fires",
+  );
   assert(
     !byKey("ai:ready").classList.contains("lead"),
     "a flagged bottleneck is not also given the fallback mark",
@@ -2500,16 +2902,34 @@ Deno.test("fsm lead fallback: an all-zero group gets nothing, and equal counts b
     },
   });
   const byKey = (k) => collect(box, "fsm-state").find((b) => b.dataset.t === k);
-  assert(!byKey("un-vetted").classList.contains("lead"), "an all-zero group is never marked");
-  assert(!byKey("ai:design").classList.contains("lead"), "no work really is nothing to do");
+  assert(
+    !byKey("un-vetted").classList.contains("lead"),
+    "an all-zero group is never marked",
+  );
+  assert(
+    !byKey("ai:design").classList.contains("lead"),
+    "no work really is nothing to do",
+  );
   // ai:relink is fully retired (issue-pr-cron#135/#139): its equal count renders no box
   // and leads nothing — reject leads its group with relink data present but inert.
-  assert(byKey("ai:reject").classList.contains("lead"), "reject leads the producer group");
-  assert(byKey("ai:relink") === undefined, "retired ai:relink draws no box and leads nothing");
+  assert(
+    byKey("ai:reject").classList.contains("lead"),
+    "reject leads the producer group",
+  );
+  assert(
+    byKey("ai:relink") === undefined,
+    "retired ai:relink draws no box and leads nothing",
+  );
   // Same-group ties still break toward the earlier STATES entry: the human group carries
   // two equal states, and human:design precedes the upheld close-candidate box.
-  assert(byKey("human:design").classList.contains("lead"), "ties break toward the earlier STATES entry");
-  assert(!byKey("closeCandidateUpheld").classList.contains("lead"), "the later of two equal counts is not marked");
+  assert(
+    byKey("human:design").classList.contains("lead"),
+    "ties break toward the earlier STATES entry",
+  );
+  assert(
+    !byKey("closeCandidateUpheld").classList.contains("lead"),
+    "the later of two equal counts is not marked",
+  );
 });
 
 Deno.test("fsm flow layer: with no history rollup there are no sparklines and no trend borders", () => {
@@ -2522,7 +2942,10 @@ Deno.test("fsm flow layer: with no history rollup there are no sparklines and no
       },
     },
   });
-  assert(collect(box, "fsm-spark").length === 0, "no sparklines without a history rollup");
+  assert(
+    collect(box, "fsm-spark").length === 0,
+    "no sparklines without a history rollup",
+  );
   assert(
     !collect(box, "fsm-state").some((b) => b.classList.contains("rising")),
     "no trend borders without a history rollup",
@@ -2539,7 +2962,10 @@ Deno.test("fsm history: parseHistory keeps well-formed {ts,counts} lines, sorts 
     '{"ts":"2026-07-19T00:00:00Z"}', // no counts object → dropped
   ].join("\n");
   const pts = parseHistory(text);
-  assert(pts.length === 2, `only the two well-formed lines are kept: ${pts.length}`);
+  assert(
+    pts.length === 2,
+    `only the two well-formed lines are kept: ${pts.length}`,
+  );
   assert(pts[0].t < pts[1].t, "sorted oldest→newest");
   assert(
     pts[0].counts.ready === 3 && pts[1].counts.ready === 5,
@@ -2578,7 +3004,10 @@ const agesOf = (mean, median, oldest) => ({
 // mid-history. `stats[i]` is [mean, median, oldest], or null for a refresh that reported none.
 function openHistory(now, sizes, stats) {
   return sizes.map((n, i) => {
-    const p = { t: now - (sizes.length - 1 - i) * DAY, counts: { openIssues: n } };
+    const p = {
+      t: now - (sizes.length - 1 - i) * DAY,
+      counts: { openIssues: n },
+    };
     if (stats[i]) p.ages = agesOf(stats[i][0], stats[i][1], stats[i][2]);
     return p;
   });
@@ -2594,8 +3023,12 @@ const bandOf = (box) => collect(box, "fsm-open")[0];
 // test, so a test that found a line by line-class alone could not tell which chart it was in.
 const chartOf = (band, which) => collect(band, which)[0];
 const ptsOf = (node, cls) => {
-  const l = tags(node, "polyline").find((x) => x.className.split(" ").includes(cls));
-  return l ? l.getAttribute("points").split(" ").map((p) => p.split(",").map(Number)) : null;
+  const l = tags(node, "polyline").find((x) =>
+    x.className.split(" ").includes(cls)
+  );
+  return l
+    ? l.getAttribute("points").split(" ").map((p) => p.split(",").map(Number))
+    : null;
 };
 
 Deno.test("fsm ages: parseHistory carries a well-formed ages block and drops a malformed one — without costing the line its counts", () => {
@@ -2606,50 +3039,85 @@ Deno.test("fsm ages: parseHistory carries a well-formed ages block and drops a m
   ].join("\n");
   const pts = parseHistory(text);
   assert(pts.length === 3, `all three lines keep their counts: ${pts.length}`);
-  assert(!("ages" in pts[0]), "a line without ages yields a point without the key — absence, not null");
+  assert(
+    !("ages" in pts[0]),
+    "a line without ages yields a point without the key — absence, not null",
+  );
   assert(
     pts[1].ages.openIssues.meanDays === 333.8 &&
       pts[1].ages.openIssues.medianDays === 99.0 &&
       pts[1].ages.openIssues.oldestDays === 1654.5,
     "all three statistics ride through verbatim, as siblings",
   );
-  assert(!("ages" in pts[2]), "a malformed ages block is dropped, not forwarded");
-  assert(pts[2].counts.openIssues === 802, "…and never invalidates the line's counts");
+  assert(
+    !("ages" in pts[2]),
+    "a malformed ages block is dropped, not forwarded",
+  );
+  assert(
+    pts[2].counts.openIssues === 802,
+    "…and never invalidates the line's counts",
+  );
 });
 
 Deno.test("fsm open band: the open-issue population draws its size and BOTH statistics, as equals", () => {
   const now = Date.parse("2026-08-05T00:00:00Z");
-  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [320, 95, 1620], [333.8, 99.0, 1654.5]]);
+  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [
+    320,
+    95,
+    1620,
+  ], [333.8, 99.0, 1654.5]]);
   const box = fsmBox(
-    { counts: { openIssues: 802, uncoveredIssues: 617 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) },
+    {
+      counts: { openIssues: 802, uncoveredIssues: 617 },
+      lanes: {},
+      ages: agesOf(333.8, 99.0, 1654.5),
+    },
     history,
   );
   const band = bandOf(box);
   assert(band, "a snapshot carrying the population draws the band");
   // Above the machine: this is the population the machine has to move, and the one figure on
   // the panel that belongs to no actor's inbox.
-  assert(box.children[0] === band, "the band leads the panel, ahead of the actor lanes");
-  assert(collect(band, "oi-n")[0].textContent === "802", "the population's own size, from counts.openIssues");
+  assert(
+    box.children[0] === band,
+    "the band leads the panel, ahead of the actor lanes",
+  );
+  assert(
+    collect(band, "oi-n")[0].textContent === "802",
+    "the population's own size, from counts.openIssues",
+  );
   assert(
     textOf(band).includes("every open issue in the pipeline's scope"),
     `the copy says which population this is: "${textOf(band)}"`,
   );
   const stats = collect(band, "oi-stat");
   assert(stats.length === 2, `mean and median, both drawn: ${stats.length}`);
-  assert(textOf(stats[0]).includes("mean") && textOf(stats[0]).includes("333.8d"), `mean, unit attached: "${textOf(stats[0])}"`);
-  assert(textOf(stats[1]).includes("median") && textOf(stats[1]).includes("99d"), `median, unit attached: "${textOf(stats[1])}"`);
+  assert(
+    textOf(stats[0]).includes("mean") && textOf(stats[0]).includes("333.8d"),
+    `mean, unit attached: "${textOf(stats[0])}"`,
+  );
+  assert(
+    textOf(stats[1]).includes("median") && textOf(stats[1]).includes("99d"),
+    `median, unit attached: "${textOf(stats[1])}"`,
+  );
   // EQUALS: same row class, same value class, one trend chart each — neither is a headline
   // and neither is a footnote hidden in a tooltip.
-  assert(collect(band, "oi-sv").length === 2, "both values carry the same value class");
   assert(
-    collect(band, "oi-mean").length === 1 && collect(band, "oi-med").length === 1,
+    collect(band, "oi-sv").length === 2,
+    "both values carry the same value class",
+  );
+  assert(
+    collect(band, "oi-mean").length === 1 &&
+      collect(band, "oi-med").length === 1,
     "each statistic gets its own trend chart — one is never drawn without the other",
   );
   // The tail number is detail, and VISIBLE detail — a tooltip is unreadable on a touch
   // screen and invisible in a screenshot.
   assert(
     collect(band, "oi-tail")[0].textContent === "oldest 1654.5d",
-    `oldest renders as visible text: "${collect(band, "oi-tail").map((n) => n.textContent)}"`,
+    `oldest renders as visible text: "${
+      collect(band, "oi-tail").map((n) => n.textContent)
+    }"`,
   );
 });
 
@@ -2668,13 +3136,21 @@ Deno.test("fsm open band: each statistic's trend is drawn on its OWN scale, so a
     [800, 801, 802],
     [[330.0, 97.0, 1650], [332.0, 98.0, 1652], [333.8, 99.0, 1654.5]],
   );
-  const box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) }, history);
+  const box = fsmBox({
+    counts: { openIssues: 802 },
+    lanes: {},
+    ages: agesOf(333.8, 99.0, 1654.5),
+  }, history);
   const band = bandOf(box);
   for (const [chart, name] of [["oi-mean", "mean"], ["oi-med", "median"]]) {
     const ys = ptsOf(chartOf(band, chart), "a-l").map((pt) => pt[1]);
     assert(
       Math.min(...ys) === OI_PAD && Math.max(...ys) === OI_AGE.h - OI_PAD,
-      `the ${name} trend spans its own full height [${OI_PAD},${OI_AGE.h - OI_PAD}], got [${Math.min(...ys)},${Math.max(...ys)}] — on a ruler set by the OTHER statistic's level it would be a flat smear`,
+      `the ${name} trend spans its own full height [${OI_PAD},${
+        OI_AGE.h - OI_PAD
+      }], got [${Math.min(...ys)},${
+        Math.max(...ys)
+      }] — on a ruler set by the OTHER statistic's level it would be a flat smear`,
     );
   }
   // …and the two are drawn identically: same stroke class, same geometry. Nothing in the
@@ -2683,24 +3159,44 @@ Deno.test("fsm open band: each statistic's trend is drawn on its OWN scale, so a
     const svg = chartOf(band, chart);
     return svg.getAttribute("width") + "x" + svg.getAttribute("height");
   };
-  assert(geom("oi-mean") === geom("oi-med"), `same chart geometry for both: ${geom("oi-mean")} vs ${geom("oi-med")}`);
   assert(
-    tags(band, "polyline").filter((l) => l.className.split(" ").includes("a-l")).length === 2,
+    geom("oi-mean") === geom("oi-med"),
+    `same chart geometry for both: ${geom("oi-mean")} vs ${geom("oi-med")}`,
+  );
+  assert(
+    tags(band, "polyline").filter((l) => l.className.split(" ").includes("a-l"))
+      .length === 2,
     "both age trends draw in the same stroke — the names tell them apart, not a visual hierarchy",
   );
 });
 
 Deno.test("fsm open band: one quantity per chart — no chart mixes days with items", () => {
   const now = Date.parse("2026-08-05T00:00:00Z");
-  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [320, 95, 1620], [333.8, 99.0, 1654.5]]);
+  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [
+    320,
+    95,
+    1620,
+  ], [333.8, 99.0, 1654.5]]);
   const box = fsmBox(
-    { counts: { openIssues: 802, uncoveredIssues: 617 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) },
+    {
+      counts: { openIssues: 802, uncoveredIssues: 617 },
+      lanes: {},
+      ages: agesOf(333.8, 99.0, 1654.5),
+    },
     history,
   );
   const band = bandOf(box);
-  assert(collect(band, "oi-chart").length === 3, "three quantities, three charts");
+  assert(
+    collect(band, "oi-chart").length === 3,
+    "three quantities, three charts",
+  );
   const cls = (n) => tags(n, "polyline").map((l) => l.className);
-  for (const [chart, want] of [["oi-size", "q-l"], ["oi-mean", "a-l"], ["oi-med", "a-l"]]) {
+  for (
+    const [chart, want] of [["oi-size", "q-l"], ["oi-mean", "a-l"], [
+      "oi-med",
+      "a-l",
+    ]]
+  ) {
     const c = chartOf(band, chart);
     assert(c, `${chart} draws`);
     assert(
@@ -2708,9 +3204,14 @@ Deno.test("fsm open band: one quantity per chart — no chart mixes days with it
       `${chart} holds exactly one series, its own: ${cls(c)}`,
     );
   }
-  assert(cls(chartOf(band, "oi-size")).every((k) => !k.includes("a-l")), "no age line inside the queue-size chart");
+  assert(
+    cls(chartOf(band, "oi-size")).every((k) => !k.includes("a-l")),
+    "no age line inside the queue-size chart",
+  );
   // …and the machine's own sparklines are untouched: no age mark ever enters a state box.
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
+  const b = collect(box, "fsm-state").find((x) =>
+    x.dataset.t === "uncoveredIssues"
+  );
   assert(collect(b, "sg").length === 0, "no age label in the backlog box");
   assert(
     tags(b, "polyline").every((l) => l.className.split(" ").includes("sl")),
@@ -2723,47 +3224,91 @@ Deno.test("fsm open band: one quantity per chart — no chart mixes days with it
 Deno.test("fsm open band: every chart shares one time domain, so a late-starting series starts late", () => {
   const now = Date.parse("2026-08-05T00:00:00Z");
   // Four refreshes of the size; the ages only on the last two — the live rollout shape.
-  const history = openHistory(now, [800, 801, 802, 802], [null, null, [320, 95, 1600], [340, 100, 1654.5]]);
-  const box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(340, 100, 1654.5) }, history);
+  const history = openHistory(now, [800, 801, 802, 802], [null, null, [
+    320,
+    95,
+    1600,
+  ], [340, 100, 1654.5]]);
+  const box = fsmBox({
+    counts: { openIssues: 802 },
+    lanes: {},
+    ages: agesOf(340, 100, 1654.5),
+  }, history);
   const band = bandOf(box);
   const frac = (chart, cls, w) => {
     const pts = ptsOf(chartOf(band, chart), cls);
     return pts.map(([x]) => (x - OI_PAD) / (w - 2 * OI_PAD));
   };
-  const size = frac("oi-size", "q-l", OI_SIZE.w), mean = frac("oi-mean", "a-l", OI_AGE.w);
-  assert(Math.abs(size[0]) < 0.02, `the size series starts at the left edge: ${size[0]}`);
-  assert(Math.abs(size[size.length - 1] - 1) < 0.02, `…and ends at the right: ${size[size.length - 1]}`);
+  const size = frac("oi-size", "q-l", OI_SIZE.w),
+    mean = frac("oi-mean", "a-l", OI_AGE.w);
+  assert(
+    Math.abs(size[0]) < 0.02,
+    `the size series starts at the left edge: ${size[0]}`,
+  );
+  assert(
+    Math.abs(size[size.length - 1] - 1) < 0.02,
+    `…and ends at the right: ${size[size.length - 1]}`,
+  );
   assert(
     Math.abs(mean[0] - 2 / 3) < 0.02,
-    `the ages start two thirds in, where their first refresh is — not at the left edge of their own private axis: ${mean[0]}`,
+    `the ages start two thirds in, where their first refresh is — not at the left edge of their own private axis: ${
+      mean[0]
+    }`,
   );
-  assert(Math.abs(mean[mean.length - 1] - 1) < 0.02, "…and end at the same right edge as the size");
+  assert(
+    Math.abs(mean[mean.length - 1] - 1) < 0.02,
+    "…and end at the same right edge as the size",
+  );
 });
 
 Deno.test("fsm open band: the current statistics come from the snapshot, else the newest rollup line that carries them", () => {
   const now = Date.parse("2026-08-05T00:00:00Z");
-  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [320, 95, 1620], [333.8, 99.0, 1654.5]]);
+  const history = openHistory(now, [800, 801, 802], [[300, 90, 1600], [
+    320,
+    95,
+    1620,
+  ], [333.8, 99.0, 1654.5]]);
   // The snapshot is the present and wins, exactly as counts do.
-  let band = bandOf(fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(400, 120, 1700) }, history));
-  assert(textOf(band).includes("400d") && textOf(band).includes("120d"), `snapshot wins: "${textOf(band)}"`);
+  let band = bandOf(
+    fsmBox({
+      counts: { openIssues: 802 },
+      lanes: {},
+      ages: agesOf(400, 120, 1700),
+    }, history),
+  );
+  assert(
+    textOf(band).includes("400d") && textOf(band).includes("120d"),
+    `snapshot wins: "${textOf(band)}"`,
+  );
   // No snapshot block: the newest rollup sample stands in.
   band = bandOf(fsmBox({ counts: { openIssues: 802 }, lanes: {} }, history));
   assert(
-    textOf(band).includes("333.8d") && textOf(band).includes("99d") && textOf(band).includes("oldest 1654.5d"),
+    textOf(band).includes("333.8d") && textOf(band).includes("99d") &&
+      textOf(band).includes("oldest 1654.5d"),
     `newest rollup sample: "${textOf(band)}"`,
   );
   // A newer refresh whose coverage read failed carries no ages — the newest line that HAS
   // them is the current reading, not "no reading at all".
   const stale = history.concat([{ t: now + DAY, counts: { openIssues: 803 } }]);
   band = bandOf(fsmBox({ counts: { openIssues: 803 }, lanes: {} }, stale));
-  assert(textOf(band).includes("333.8d"), `the newest line that carried the ages: "${textOf(band)}"`);
+  assert(
+    textOf(band).includes("333.8d"),
+    `the newest line that carried the ages: "${textOf(band)}"`,
+  );
   // Selection is by TIMESTAMP, never by array position: this page does not assume the order
   // it is handed, the same way every series builder sorts before drawing. Reversed, the
   // NEWEST reading is now the array's first element.
-  band = bandOf(fsmBox({ counts: { openIssues: 802 }, lanes: {} }, history.slice().reverse()));
+  band = bandOf(
+    fsmBox(
+      { counts: { openIssues: 802 }, lanes: {} },
+      history.slice().reverse(),
+    ),
+  );
   assert(
     textOf(band).includes("333.8d") && !textOf(band).includes("300d"),
-    `an out-of-order rollup still reads the newest reading, not the last element: "${textOf(band)}"`,
+    `an out-of-order rollup still reads the newest reading, not the last element: "${
+      textOf(band)
+    }"`,
   );
 });
 
@@ -2775,11 +3320,25 @@ Deno.test("fsm open band: a snapshot with neither the open count nor any ages dr
     { t: now, counts: { uncoveredIssues: 617 } },
   ];
   const box = fsmBox({ counts: { uncoveredIssues: 617 }, lanes: {} }, history);
-  assert(collect(box, "fsm-open").length === 0, "no band — absence degrades to exactly the page as it was");
-  assert(collect(box, "oi-k").length === 0, "no population copy about a population the snapshot never reported");
-  assert(!textOf(box).includes("median age in days"), "and no legend describing a mark that is not on screen");
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  assert(collect(b, "fsm-spark").length === 1, "the machine's own sparkline still draws");
+  assert(
+    collect(box, "fsm-open").length === 0,
+    "no band — absence degrades to exactly the page as it was",
+  );
+  assert(
+    collect(box, "oi-k").length === 0,
+    "no population copy about a population the snapshot never reported",
+  );
+  assert(
+    !textOf(box).includes("median age in days"),
+    "and no legend describing a mark that is not on screen",
+  );
+  const b = collect(box, "fsm-state").find((x) =>
+    x.dataset.t === "uncoveredIssues"
+  );
+  assert(
+    collect(b, "fsm-spark").length === 1,
+    "the machine's own sparkline still draws",
+  );
 });
 
 // The retired key measured the producer backlog (622). Reading it into a band labelled
@@ -2788,15 +3347,33 @@ Deno.test("fsm open band: a snapshot with neither the open count nor any ages dr
 Deno.test("fsm open band: the retired ages.uncoveredIssues is never read as this population's age", () => {
   const now = Date.parse("2026-08-05T00:00:00Z");
   const history = [
-    { t: now - DAY, counts: { uncoveredIssues: 610 }, ages: { uncoveredIssues: { medianDays: 41.0, oldestDays: 812.3 } } },
-    { t: now, counts: { uncoveredIssues: 617 }, ages: { uncoveredIssues: { medianDays: 43.0, oldestDays: 813.3 } } },
+    {
+      t: now - DAY,
+      counts: { uncoveredIssues: 610 },
+      ages: { uncoveredIssues: { medianDays: 41.0, oldestDays: 812.3 } },
+    },
+    {
+      t: now,
+      counts: { uncoveredIssues: 617 },
+      ages: { uncoveredIssues: { medianDays: 43.0, oldestDays: 813.3 } },
+    },
   ];
   const box = fsmBox(
-    { counts: { uncoveredIssues: 617 }, lanes: {}, ages: { uncoveredIssues: { medianDays: 43.0, oldestDays: 813.3 } } },
+    {
+      counts: { uncoveredIssues: 617 },
+      lanes: {},
+      ages: { uncoveredIssues: { medianDays: 43.0, oldestDays: 813.3 } },
+    },
     history,
   );
-  assert(collect(box, "fsm-open").length === 0, "the narrower population's ages are not this one's — no band");
-  assert(collect(box, "oi-stat").length === 0, "and no statistic anywhere on the page");
+  assert(
+    collect(box, "fsm-open").length === 0,
+    "the narrower population's ages are not this one's — no band",
+  );
+  assert(
+    collect(box, "oi-stat").length === 0,
+    "and no statistic anywhere on the page",
+  );
 });
 
 // `Number()` coercion would turn a malformed `null`/`""` into a fabricated 0 — for the ages
@@ -2805,25 +3382,50 @@ Deno.test("fsm open band: the retired ages.uncoveredIssues is never read as this
 Deno.test("fsm open band: null, string and negative values render nothing — never a fabricated zero", () => {
   for (const v of [null, "99", -5]) {
     const box = fsmBox(
-      { counts: { openIssues: v, uncoveredIssues: 617 }, lanes: {}, ages: { openIssues: { meanDays: v, medianDays: v, oldestDays: v } } },
+      {
+        counts: { openIssues: v, uncoveredIssues: 617 },
+        lanes: {},
+        ages: { openIssues: { meanDays: v, medianDays: v, oldestDays: v } },
+      },
       [],
     );
     assert(
       collect(box, "fsm-open").length === 0,
-      `openIssues=${JSON.stringify(v)} draws no band — a coerced 0 would claim an empty, ageless backlog`,
+      `openIssues=${
+        JSON.stringify(v)
+      } draws no band — a coerced 0 would claim an empty, ageless backlog`,
     );
   }
   // A size that did not arrive alongside statistics that did: the size reads as unreported,
   // never as zero, and the statistics still draw.
-  const box = fsmBox({ counts: { openIssues: null, uncoveredIssues: 617 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) }, []);
-  assert(collect(box, "oi-n")[0].textContent === "—", `an unreported size is a dash: "${collect(box, "oi-n")[0].textContent}"`);
-  assert(collect(box, "oi-stat").length === 2, "…and both statistics still draw");
+  const box = fsmBox({
+    counts: { openIssues: null, uncoveredIssues: 617 },
+    lanes: {},
+    ages: agesOf(333.8, 99.0, 1654.5),
+  }, []);
+  assert(
+    collect(box, "oi-n")[0].textContent === "—",
+    `an unreported size is a dash: "${collect(box, "oi-n")[0].textContent}"`,
+  );
+  assert(
+    collect(box, "oi-stat").length === 2,
+    "…and both statistics still draw",
+  );
   // A malformed oldest never costs the two statistics their rows.
   const box2 = fsmBox(
-    { counts: { openIssues: 802 }, lanes: {}, ages: { openIssues: { meanDays: 333.8, medianDays: 99.0, oldestDays: "-" } } },
+    {
+      counts: { openIssues: 802 },
+      lanes: {},
+      ages: {
+        openIssues: { meanDays: 333.8, medianDays: 99.0, oldestDays: "-" },
+      },
+    },
     [],
   );
-  assert(collect(box2, "oi-stat").length === 2, "mean and median survive a malformed tail");
+  assert(
+    collect(box2, "oi-stat").length === 2,
+    "mean and median survive a malformed tail",
+  );
   assert(collect(box2, "oi-tail").length === 0, "no fabricated oldest");
 });
 
@@ -2834,50 +3436,96 @@ Deno.test("fsm open band: a refresh that carried no ages contributes no point �
     [800, 801, 802, 802],
     [null, [300, 90, 1600], null, [340, 100, 1654.5]],
   );
-  const box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(340, 100, 1654.5) }, history);
+  const box = fsmBox({
+    counts: { openIssues: 802 },
+    lanes: {},
+    ages: agesOf(340, 100, 1654.5),
+  }, history);
   const band = bandOf(box);
   const mean = ptsOf(chartOf(band, "oi-mean"), "a-l");
-  assert(mean.length === 2, `only the two refreshes that reported a mean are plotted: ${mean.length}`);
+  assert(
+    mean.length === 2,
+    `only the two refreshes that reported a mean are plotted: ${mean.length}`,
+  );
   // A fabricated 0 for the missing refresh would be the series' minimum and would pin to the
   // bottom of the chart; with only the two real readings, the LOWER of them is the minimum.
   assert(
     Math.max(...mean.map((pt) => pt[1])) === OI_AGE.h - OI_PAD &&
       mean[0][1] === OI_AGE.h - OI_PAD,
-    `the earlier real reading is the series minimum — a gap plotted as 0d would take that place: ${mean.map((pt) => pt[1])}`,
+    `the earlier real reading is the series minimum — a gap plotted as 0d would take that place: ${
+      mean.map((pt) => pt[1])
+    }`,
   );
   const size = ptsOf(chartOf(band, "oi-size"), "q-l");
-  assert(size.length === 4, `the size was carried on every line, so all four points draw: ${size.length}`);
+  assert(
+    size.length === 4,
+    `the size was carried on every line, so all four points draw: ${size.length}`,
+  );
 });
 
 Deno.test("fsm open band: the legend explains the two age series only when they are drawn", () => {
   // A size with no ages at all: the band reports the size and explains no age mark.
   let box = fsmBox({ counts: { openIssues: 802 }, lanes: {} }, []);
-  assert(collect(box, "fsm-open").length === 1, "a reported size still draws, ages or not");
+  assert(
+    collect(box, "fsm-open").length === 1,
+    "a reported size still draws, ages or not",
+  );
   assert(collect(box, "oi-stat").length === 0, "no statistics to draw");
-  assert(collect(box, "oi-chart").length === 0, "and no chart: an empty series is no chart, never an empty frame");
-  assert(!textOf(box).includes("median age in days"), "…so nothing about them in the legend");
+  assert(
+    collect(box, "oi-chart").length === 0,
+    "and no chart: an empty series is no chart, never an empty frame",
+  );
+  assert(
+    !textOf(box).includes("median age in days"),
+    "…so nothing about them in the legend",
+  );
   // An empty block draws nothing either, and explains nothing.
   box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: {} }, []);
-  assert(!textOf(box).includes("median age in days"), "an empty ages block gets no legend");
+  assert(
+    !textOf(box).includes("median age in days"),
+    "an empty ages block gets no legend",
+  );
   // Drawable statistics: exactly one sentence, and it names what the reader is looking at.
-  box = fsmBox({ counts: { openIssues: 802 }, lanes: {}, ages: agesOf(333.8, 99.0, 1654.5) }, []);
+  box = fsmBox({
+    counts: { openIssues: 802 },
+    lanes: {},
+    ages: agesOf(333.8, 99.0, 1654.5),
+  }, []);
   const txt = textOf(box);
-  assert(txt.includes("median age in days") && txt.includes("mean"), `the drawn marks are explained: "${txt}"`);
+  assert(
+    txt.includes("median age in days") && txt.includes("mean"),
+    `the drawn marks are explained: "${txt}"`,
+  );
   assert(
     txt.includes("own trend on its own scale"),
     "…including the one property a reader must know before comparing two charts by eye",
   );
-  assert(txt.includes("is that tail"), "…and it names the tail number, which is on screen");
+  assert(
+    txt.includes("is that tail"),
+    "…and it names the tail number, which is on screen",
+  );
   // A malformed oldest costs the two statistics nothing, draws no tail number — and must
   // therefore cost the legend its tail clause too.
   box = fsmBox(
-    { counts: { openIssues: 802 }, lanes: {}, ages: { openIssues: { meanDays: 333.8, medianDays: 99.0, oldestDays: "-" } } },
+    {
+      counts: { openIssues: 802 },
+      lanes: {},
+      ages: {
+        openIssues: { meanDays: 333.8, medianDays: 99.0, oldestDays: "-" },
+      },
+    },
     [],
   );
   const noTail = textOf(box);
   assert(collect(box, "oi-tail").length === 0, "no tail number is drawn");
-  assert(noTail.includes("median age in days"), "the two statistics are still explained");
-  assert(!noTail.includes("is that tail"), `…and the legend names no tail that is not there: "${noTail}"`);
+  assert(
+    noTail.includes("median age in days"),
+    "the two statistics are still explained",
+  );
+  assert(
+    !noTail.includes("is that tail"),
+    `…and the legend names no tail that is not there: "${noTail}"`,
+  );
 });
 
 // The bottleneck flag reads the COUNT trend of the state it is on, and only that: a
@@ -2890,9 +3538,18 @@ Deno.test("fsm open band: a fast-ageing population never flags a bottleneck in t
     counts: { uncoveredIssues: 600, openIssues: 802 },
     ages: agesOf(m * 3, m, 1654.5),
   }));
-  const box = fsmBox({ counts: { uncoveredIssues: 600, openIssues: 802 }, lanes: {}, ages: agesOf(240, 80, 1654.5) }, history);
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "uncoveredIssues");
-  assert(!b.classList.contains("rising"), "a flat count is not a bottleneck, however fast the population ages");
+  const box = fsmBox({
+    counts: { uncoveredIssues: 600, openIssues: 802 },
+    lanes: {},
+    ages: agesOf(240, 80, 1654.5),
+  }, history);
+  const b = collect(box, "fsm-state").find((x) =>
+    x.dataset.t === "uncoveredIssues"
+  );
+  assert(
+    !b.classList.contains("rising"),
+    "a flat count is not a bottleneck, however fast the population ages",
+  );
   assert(bandOf(box), "the band still draws the ageing it is measuring");
 });
 
@@ -2908,11 +3565,15 @@ Deno.test("pipeline FSM: producer untouched-backlog count + items render under P
       { repo: "o/y", number: 21, title: "untouched twenty-one" },
     ],
   });
-  const producer = ownerGroups(box).find((g) => g.title.includes("Producer action"));
+  const producer = ownerGroups(box).find((g) =>
+    g.title.includes("Producer action")
+  );
   assert(producer, "a Producer action group exists");
   assert(
     producer.states.includes("untouched (no PR)"),
-    `producer owns the untouched-backlog box: ${JSON.stringify(producer.states)}`,
+    `producer owns the untouched-backlog box: ${
+      JSON.stringify(producer.states)
+    }`,
   );
   // Clicking it opens the panel with count == the item list length (rendered as issues).
   const boxByT = (k) =>
@@ -3006,7 +3667,8 @@ Deno.test("pipeline FSM: every fromCounts state expands to its own items, not an
     // The bug in one assertion: the box says n, the panel says 0.
     assert(rows === n, `${key} shows ${n} but expands to ${rows} rows`);
     assert(
-      collect(detail, "dhc")[0].textContent === n + (n === 1 ? " item" : " items"),
+      collect(detail, "dhc")[0].textContent ===
+        n + (n === 1 ? " item" : " items"),
       `${key} header count == its own list length`,
     );
     assert(
@@ -3065,7 +3727,10 @@ Deno.test("pipeline FSM: a zero state reads as deliberately empty; a count with 
     "closeCandidateUpheld",
   );
   const etxt = textOf(empty);
-  assert(etxt.includes("Empty"), `a zero state reads as deliberately empty: ${etxt}`);
+  assert(
+    etxt.includes("Empty"),
+    `a zero state reads as deliberately empty: ${etxt}`,
+  );
   assert(
     collect(empty, "miswired").length === 0,
     "a genuinely empty state is never flagged as a defect",
@@ -3144,14 +3809,21 @@ Deno.test("pipeline FSM: every box's count equals the number of rows it expands 
   // 11 = the 10 STATES entries + the ai:blocked-deploy straggler the stale cell surfaces.
   assert(checked === 11, `the whole machine was walked, got ${checked} boxes`);
   assert(
-    box.querySelectorAll("[data-t]").some((b) => b.dataset.t === "ai:blocked-deploy"),
+    box.querySelectorAll("[data-t]").some((b) =>
+      b.dataset.t === "ai:blocked-deploy"
+    ),
     "the straggler is one of the boxes walked, not skipped by the sweep",
   );
   // Guard the guard: a fixture that zeroed everything would satisfy the invariant vacuously.
-  assert(nonZero >= 8, `the fixture must exercise non-zero states, got ${nonZero}`);
+  assert(
+    nonZero >= 8,
+    `the fixture must exercise non-zero states, got ${nonZero}`,
+  );
   assert(
     mismatches.length === 0,
-    `a count that opens onto a different number of rows:\n  ${mismatches.join("\n  ")}`,
+    `a count that opens onto a different number of rows:\n  ${
+      mismatches.join("\n  ")
+    }`,
   );
 });
 
@@ -3168,7 +3840,12 @@ Deno.test("pipeline FSM: a top-level item's link is built from repo + number, an
     leaks: [{ repo: "o/p", number: 7, title: "a leaked PR" }],
     uncoveredIssues: [
       { repo: "o/i", number: 8, title: "an untouched issue" },
-      { repo: "o/i", number: 9, url: "https://github.com/o/i/pull/9", title: "already resolved" },
+      {
+        repo: "o/i",
+        number: 9,
+        url: "https://github.com/o/i/pull/9",
+        title: "already resolved",
+      },
     ],
   });
   const detail = box.querySelectorAll("#fsmdetail")[0];
@@ -3211,15 +3888,25 @@ Deno.test("pipeline FSM: a malformed item renders as a malformed row, taking no 
     ],
   });
   const detail = box.querySelectorAll("#fsmdetail")[0];
-  box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "uncoveredIssues").click();
+  box.querySelectorAll("[data-t]").find((b) =>
+    b.dataset.t === "uncoveredIssues"
+  ).click();
   const text = textOf(detail);
   // The row AFTER the malformed ones still rendered — i.e. nothing threw partway through.
-  assert(text.includes("first good"), `the row before the malformed ones survives: ${text}`);
-  assert(text.includes("last good"), `the row AFTER the malformed ones survives: ${text}`);
+  assert(
+    text.includes("first good"),
+    `the row before the malformed ones survives: ${text}`,
+  );
+  assert(
+    text.includes("last good"),
+    `the row AFTER the malformed ones survives: ${text}`,
+  );
   // Four entries in, four rows out: the header count and the rows still agree.
   assert(
     collect(detail, "li").length === 4,
-    `every entry gets a row, malformed included: ${collect(detail, "li").length}`,
+    `every entry gets a row, malformed included: ${
+      collect(detail, "li").length
+    }`,
   );
   assert(
     collect(detail, "dhc")[0].textContent === "4 items",
@@ -3262,7 +3949,9 @@ function descHq() {
     },
     lanes: {
       "vetter-verdicts": { "ai:ready": { count: 5, prs: fcItems("ready", 5) } },
-      "vet-lifecycle": { "ai:blocked-on": { count: 3, prs: fcItems("blocked", 3) } },
+      "vet-lifecycle": {
+        "ai:blocked-on": { count: 3, prs: fcItems("blocked", 3) },
+      },
     },
     uncoveredIssues: fcItems("uncovered", 4),
     leaks: fcItems("leak", 2),
@@ -3274,7 +3963,11 @@ function descHq() {
         kind: "flow",
         hist: "uncoveredIssues",
         histFold: [],
-        occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true },
+        occupancy: {
+          counts: "uncoveredIssues",
+          items: "uncoveredIssues",
+          itemsAreIssues: true,
+        },
         label: "untouched (no PR)",
       },
       {
@@ -3286,12 +3979,36 @@ function descHq() {
         histFold: [],
         occupancy: { lane: "vet-lifecycle" },
       },
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "ready",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
       // Sparse-absent lane cell (renders 0, dimmed) deliberately BETWEEN two non-zero
       // states: descriptor order is NOT count order, so an ordering mutant cannot pass by
       // sorting.
-      { key: "ai:design", owner: "human", act: "rule on design Q", kind: "rule", hist: "design", histFold: [], occupancy: { lane: "vetter-verdicts" } },
-      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "leaks", histFold: [], occupancy: { counts: "leaks", items: "leaks" } },
+      {
+        key: "ai:design",
+        owner: "human",
+        act: "rule on design Q",
+        kind: "rule",
+        hist: "design",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
+      {
+        key: "leak",
+        owner: "human",
+        act: "model it",
+        kind: "blk",
+        hist: "leaks",
+        histFold: [],
+        occupancy: { counts: "leaks", items: "leaks" },
+      },
     ],
   };
 }
@@ -3303,65 +4020,100 @@ Deno.test("pipeline FSM: stateDescriptors drive the machine — owner grouping, 
   const keys = box.querySelectorAll("[data-t]").map((b) => b.dataset.t);
   assert(
     JSON.stringify(keys) ===
-      JSON.stringify(["uncoveredIssues", "ai:blocked-on", "ai:ready", "ai:design", "leak"]),
-    `descriptor order is render order, and only descriptor states render: ${JSON.stringify(keys)}`,
+      JSON.stringify([
+        "uncoveredIssues",
+        "ai:blocked-on",
+        "ai:ready",
+        "ai:design",
+        "leak",
+      ]),
+    `descriptor order is render order, and only descriptor states render: ${
+      JSON.stringify(keys)
+    }`,
   );
   const groups = ownerGroups(box);
   assert(groups.length === 3, `three actor groups: ${groups.length}`);
   const [producer, vetter, human] = groups;
   assert(
     JSON.stringify(producer.states) === JSON.stringify(["untouched (no PR)"]),
-    `producer files the descriptor's own states: ${JSON.stringify(producer.states)}`,
+    `producer files the descriptor's own states: ${
+      JSON.stringify(producer.states)
+    }`,
   );
   // The re-laned state files under the VETTER — the descriptor's owner, not the frozen
   // table's human resolution.
   assert(
     JSON.stringify(vetter.states) === JSON.stringify(["ai:blocked-on"]),
-    `blocked-on is vetter-owned by descriptor: ${JSON.stringify(vetter.states)}`,
+    `blocked-on is vetter-owned by descriptor: ${
+      JSON.stringify(vetter.states)
+    }`,
   );
   assert(
-    JSON.stringify(human.states) === JSON.stringify(["ai:ready", "ai:design", "leak"]),
+    JSON.stringify(human.states) ===
+      JSON.stringify(["ai:ready", "ai:design", "leak"]),
     `human states in descriptor order: ${JSON.stringify(human.states)}`,
   );
   // Counts come from each descriptor's DECLARED source: the vet-lifecycle cell (3), never
   // the counts mirror (99) and never the frozen table's producer-blocked lane (absent).
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const byT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
   assert(
     collect(byT("ai:blocked-on"), "sc")[0].textContent === "3",
-    `blocked-on reads its declared lane cell: ${collect(byT("ai:blocked-on"), "sc")[0].textContent}`,
+    `blocked-on reads its declared lane cell: ${
+      collect(byT("ai:blocked-on"), "sc")[0].textContent
+    }`,
   );
-  assert(vetter.title.endsWith("3"), `the vetter total is the cell's count: ${vetter.title}`);
+  assert(
+    vetter.title.endsWith("3"),
+    `the vetter total is the cell's count: ${vetter.title}`,
+  );
   assert(
     collect(byT("ai:ready"), "sc")[0].textContent === "5",
-    `ready reads its lane cell: ${collect(byT("ai:ready"), "sc")[0].textContent}`,
+    `ready reads its lane cell: ${
+      collect(byT("ai:ready"), "sc")[0].textContent
+    }`,
   );
   assert(
     collect(byT("uncoveredIssues"), "sc")[0].textContent === "4",
-    `a counts-source state reads counts.<key>: ${collect(byT("uncoveredIssues"), "sc")[0].textContent}`,
+    `a counts-source state reads counts.<key>: ${
+      collect(byT("uncoveredIssues"), "sc")[0].textContent
+    }`,
   );
   // act + kind ride the descriptor.
   assert(
-    collect(byT("ai:blocked-on"), "sa")[0].textContent === "clears when every typed dep merges/closes",
-    `the act is the descriptor's: ${collect(byT("ai:blocked-on"), "sa")[0].textContent}`,
+    collect(byT("ai:blocked-on"), "sa")[0].textContent ===
+      "clears when every typed dep merges/closes",
+    `the act is the descriptor's: ${
+      collect(byT("ai:blocked-on"), "sa")[0].textContent
+    }`,
   );
   assert(
     byT("ai:blocked-on").className.split(" ").includes("blk"),
     `the kind is the descriptor's: ${byT("ai:blocked-on").className}`,
   );
   // Sparse-absent lane cell ⇒ 0, dimmed — the existing empty-state language.
-  assert(collect(byT("ai:design"), "sc")[0].textContent === "0", "sparse-absent reads 0");
+  assert(
+    collect(byT("ai:design"), "sc")[0].textContent === "0",
+    "sparse-absent reads 0",
+  );
   assert(
     byT("ai:design").className.split(" ").includes("zero"),
-    `a zero descriptor state dims like any other: ${byT("ai:design").className}`,
+    `a zero descriptor state dims like any other: ${
+      byT("ai:design").className
+    }`,
   );
   // Everything claimed ⇒ no conservation band.
-  assert(collect(box, "fsm-defect").length === 0, "a conserved snapshot draws no defect band");
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    "a conserved snapshot draws no defect band",
+  );
 });
 
 Deno.test("pipeline FSM: descriptor occupancy reads its declared source — lane prs and counts+items alike, itemsAreIssues picking the path", () => {
   const box = fsmBox(descHq());
   const detail = box.querySelectorAll("#fsmdetail")[0];
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const byT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
 
   // Lane source: the cell's own prs, linked as PRs.
   byT("ai:blocked-on").click();
@@ -3369,7 +4121,10 @@ Deno.test("pipeline FSM: descriptor occupancy reads its declared source — lane
     collect(detail, "li").length === 3,
     `the lane cell's 3 prs list: ${collect(detail, "li").length}`,
   );
-  assert(textOf(detail).includes("blocked 1"), `the cell's OWN items: ${textOf(detail)}`);
+  assert(
+    textOf(detail).includes("blocked 1"),
+    `the cell's OWN items: ${textOf(detail)}`,
+  );
   assert(
     collect(detail, "li")[0].href === "https://github.com/o/blocked/pull/1",
     `lane items link as PRs: ${collect(detail, "li")[0].href}`,
@@ -3428,20 +4183,35 @@ Deno.test("pipeline FSM: a descriptor's histFold folds retired-key samples into 
     counts: {},
     lanes: { "vet-lifecycle": { st: { count: 10, prs: [] } } },
     stateDescriptors: [
-      { key: "st", owner: "vetter", act: "vet", kind: "flow", hist: "current", histFold: ["retiredKey"], occupancy: { lane: "vet-lifecycle" } },
+      {
+        key: "st",
+        owner: "vetter",
+        act: "vet",
+        kind: "flow",
+        hist: "current",
+        histFold: ["retiredKey"],
+        occupancy: { lane: "vet-lifecycle" },
+      },
     ],
   }, history);
   const b = collect(box, "fsm-state").find((x) => x.dataset.t === "st");
   assert(b, "the descriptor box renders");
   const line = tags(b, "polyline")[0];
   assert(line, "the folded series draws a line");
-  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  const ys = line.getAttribute("points").split(" ").map((p) =>
+    Number(p.split(",")[1])
+  );
   assert(ys.length === 5, `all five samples plot: ${ys.length}`);
   assert(
     ys.every((y) => y === ys[0]),
-    `the folded line is continuous, no cliff at the collapse: ${JSON.stringify(ys)}`,
+    `the folded line is continuous, no cliff at the collapse: ${
+      JSON.stringify(ys)
+    }`,
   );
-  assert(!b.classList.contains("rising"), "a folded flat inventory raises no bottleneck flag");
+  assert(
+    !b.classList.contains("rising"),
+    "a folded flat inventory raises no bottleneck flag",
+  );
 });
 
 Deno.test("pipeline FSM: a descriptor's empty histFold folds nothing — the hand-maintained fallback Map never applies", () => {
@@ -3459,16 +4229,28 @@ Deno.test("pipeline FSM: a descriptor's empty histFold folds nothing — the han
     counts: {},
     lanes: { "vetter-verdicts": { "ai:reject": { count: 28, prs: [] } } },
     stateDescriptors: [
-      { key: "ai:reject", owner: "producer", act: "rework per note", kind: "blk", hist: "reject", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:reject",
+        owner: "producer",
+        act: "rework per note",
+        kind: "blk",
+        hist: "reject",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   }, history);
   const b = collect(box, "fsm-state").find((x) => x.dataset.t === "ai:reject");
   const line = tags(b, "polyline")[0];
   assert(line, "the series draws");
-  const ys = line.getAttribute("points").split(" ").map((p) => Number(p.split(",")[1]));
+  const ys = line.getAttribute("points").split(" ").map((p) =>
+    Number(p.split(",")[1])
+  );
   assert(
     ys.length === 3 && ys.every((y) => y === ys[0]),
-    `an empty histFold reads the bare key — flat, no Map fold: ${JSON.stringify(ys)}`,
+    `an empty histFold reads the bare key — flat, no Map fold: ${
+      JSON.stringify(ys)
+    }`,
   );
 });
 
@@ -3479,7 +4261,9 @@ Deno.test("pipeline FSM: a lane cell no descriptor claims surfaces as a loud def
   const hq = descHq();
   // The tool re-laned a state but its descriptor list missed the old cell: 17 real PRs
   // sit in occupancy nothing renders.
-  hq.lanes["producer-blocked"] = { "ai:blocked-on": { count: 17, prs: fcItems("stranded", 17) } };
+  hq.lanes["producer-blocked"] = {
+    "ai:blocked-on": { count: 17, prs: fcItems("stranded", 17) },
+  };
   const box = fsmBox(hq);
   const bands = collect(box, "fsm-defect");
   assert(bands.length === 1, `one defect band renders: ${bands.length}`);
@@ -3489,10 +4273,15 @@ Deno.test("pipeline FSM: a lane cell no descriptor claims surfaces as a loud def
     `it names the unclaimed cell: ${text}`,
   );
   assert(text.includes("17"), `it names the held inventory: ${text}`);
-  assert(text.includes("renders nowhere"), `it says the failure in words: ${text}`);
+  assert(
+    text.includes("renders nowhere"),
+    `it says the failure in words: ${text}`,
+  );
   assert(
     collect(bands[0], "fd-li").length === 1,
-    `exactly the one unclaimed key is reported: ${collect(bands[0], "fd-li").length}`,
+    `exactly the one unclaimed key is reported: ${
+      collect(bands[0], "fd-li").length
+    }`,
   );
   // The band ADDS to the machine — every claimed state still renders beside it.
   assert(
@@ -3512,9 +4301,13 @@ Deno.test("pipeline FSM: a counts key no descriptor claims is a defect; a bare t
   const band = collect(box, "fsm-defect")[0];
   assert(band, "the defect band renders");
   const rows = collect(band, "fd-li").map((r) => r.textContent);
-  assert(rows.length === 1, `exactly the leaks row is reported: ${JSON.stringify(rows)}`);
   assert(
-    rows[0].includes("leaks") && rows[0].includes("2 held") && rows[0].includes("renders nowhere"),
+    rows.length === 1,
+    `exactly the leaks row is reported: ${JSON.stringify(rows)}`,
+  );
+  assert(
+    rows[0].includes("leaks") && rows[0].includes("2 held") &&
+      rows[0].includes("renders nowhere"),
     `it names the array and its held inventory: ${rows[0]}`,
   );
 });
@@ -3542,7 +4335,8 @@ Deno.test("pipeline FSM: occupancy claimed by TWO descriptors is a defect too �
   assert(band, "a double claim surfaces");
   const text = textOf(band);
   assert(
-    text.includes('counts["ready"]') && text.includes("2 descriptors") && text.includes("renders 2 times"),
+    text.includes('counts["ready"]') && text.includes("2 descriptors") &&
+      text.includes("renders 2 times"),
     `it names the key and says the inventory double-renders: ${text}`,
   );
   assert(
@@ -3558,8 +4352,20 @@ Deno.test("pipeline FSM: a malformed descriptor renders no state but is reported
     uncoveredIssues: fcItems("uncovered", 4),
     stateDescriptors: [
       "junk",
-      { key: "no-occupancy", owner: "human", act: "x", kind: "blk", occupancy: {} },
-      { key: "bad-owner", owner: "misc", act: "x", kind: "blk", occupancy: { lane: "vet-lifecycle" } },
+      {
+        key: "no-occupancy",
+        owner: "human",
+        act: "x",
+        kind: "blk",
+        occupancy: {},
+      },
+      {
+        key: "bad-owner",
+        owner: "misc",
+        act: "x",
+        kind: "blk",
+        occupancy: { lane: "vet-lifecycle" },
+      },
       {
         key: "uncoveredIssues",
         owner: "producer",
@@ -3567,7 +4373,11 @@ Deno.test("pipeline FSM: a malformed descriptor renders no state but is reported
         kind: "flow",
         hist: "uncoveredIssues",
         histFold: [],
-        occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true },
+        occupancy: {
+          counts: "uncoveredIssues",
+          items: "uncoveredIssues",
+          itemsAreIssues: true,
+        },
         label: "untouched (no PR)",
       },
     ],
@@ -3607,7 +4417,11 @@ Deno.test("pipeline FSM: a descriptor's kind is clamped to the display kinds —
         kind: "zero",
         hist: "",
         histFold: [],
-        occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true },
+        occupancy: {
+          counts: "uncoveredIssues",
+          items: "uncoveredIssues",
+          itemsAreIssues: true,
+        },
       },
     ],
   });
@@ -3615,7 +4429,10 @@ Deno.test("pipeline FSM: a descriptor's kind is clamped to the display kinds —
   assert(b, "the box renders, with the neutral default border");
   const classes = b.className.split(" ");
   for (const cls of ["zero", "rising", "sel", "lead"]) {
-    assert(!classes.includes(cls), `unknown kind never lands as .${cls}: ${b.className}`);
+    assert(
+      !classes.includes(cls),
+      `unknown kind never lands as .${cls}: ${b.className}`,
+    );
   }
 });
 
@@ -3628,7 +4445,15 @@ Deno.test("pipeline FSM: a descriptor lane cell with a junk count renders 0, nev
     counts: {},
     lanes: { "vetter-verdicts": { "ai:ready": { count: "junk", prs: [] } } },
     stateDescriptors: [
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   });
   const b = collect(box, "fsm-state")[0];
@@ -3652,7 +4477,15 @@ Deno.test("pipeline FSM: a descriptor claims BOTH its counts key and a different
     lanes: {},
     leakItems: fcItems("leak", 2),
     stateDescriptors: [
-      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "", histFold: [], occupancy: { counts: "leakCount", items: "leakItems" } },
+      {
+        key: "leak",
+        owner: "human",
+        act: "model it",
+        kind: "blk",
+        hist: "",
+        histFold: [],
+        occupancy: { counts: "leakCount", items: "leakItems" },
+      },
     ],
   });
   assert(
@@ -3680,16 +4513,37 @@ Deno.test("pipeline FSM: a residue descriptor renders while emitted; drained, it
   const withResidue = {
     counts: { blockedInfra: 2, ready: 1 },
     lanes: {
-      "producer-blocked": { "ai:blocked-infra": { count: 2, prs: fcItems("residue", 2) } },
+      "producer-blocked": {
+        "ai:blocked-infra": { count: 2, prs: fcItems("residue", 2) },
+      },
       "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } },
     },
     stateDescriptors: [
-      { key: "ai:blocked-infra", owner: "producer", act: "strip the label", kind: "blk", hist: "blockedInfra", histFold: [], occupancy: { lane: "producer-blocked" }, label: "ai:blocked-infra (retired #108)" },
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:blocked-infra",
+        owner: "producer",
+        act: "strip the label",
+        kind: "blk",
+        hist: "blockedInfra",
+        histFold: [],
+        occupancy: { lane: "producer-blocked" },
+        label: "ai:blocked-infra (retired #108)",
+      },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "ready",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   };
   const box = fsmBox(withResidue);
-  const b = collect(box, "fsm-state").find((x) => x.dataset.t === "ai:blocked-infra");
+  const b = collect(box, "fsm-state").find((x) =>
+    x.dataset.t === "ai:blocked-infra"
+  );
   assert(b, "the residue renders while the tool emits its descriptor");
   assert(
     collect(b, "sc")[0].textContent === "2",
@@ -3697,16 +4551,29 @@ Deno.test("pipeline FSM: a residue descriptor renders while emitted; drained, it
   );
   assert(
     collect(b, "sk")[0].textContent === "ai:blocked-infra (retired #108)",
-    `the retired suffix rides the emitted label: ${collect(b, "sk")[0].textContent}`,
+    `the retired suffix rides the emitted label: ${
+      collect(b, "sk")[0].textContent
+    }`,
   );
-  assert(collect(box, "fsm-defect").length === 0, "a claimed residue is conserved");
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    "a claimed residue is conserved",
+  );
 
   // Drained: the tool drops the descriptor, the cell and the counts key TOGETHER.
   const drained = {
     counts: { ready: 1 },
     lanes: { "vetter-verdicts": { "ai:ready": { count: 1, prs: [] } } },
     stateDescriptors: [
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "ready",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   };
   const box2 = fsmBox(drained);
@@ -3718,7 +4585,10 @@ Deno.test("pipeline FSM: a residue descriptor renders while emitted; drained, it
     collect(box2, "fsm-state").some((x) => x.dataset.t === "ai:ready"),
     "the live machine still renders",
   );
-  assert(collect(box2, "fsm-defect").length === 0, "and nothing screams: nothing unclaimed remains");
+  assert(
+    collect(box2, "fsm-defect").length === 0,
+    "and nothing screams: nothing unclaimed remains",
+  );
 });
 
 // The counts-side scoping the ratified contract froze: exactly five named keys may go
@@ -3729,12 +4599,27 @@ Deno.test("pipeline FSM: a residue descriptor renders while emitted; drained, it
 // state-shaped occupancy rendering nowhere.
 Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other unclaimed counts key does", () => {
   const conserved = () => ({
-    counts: { ready: 2, totalProducerPrs: 145, openIssues: 767, archivedRepoPrs: 4, closeCandidateIssues: 0, designNoQuestion: 6 },
+    counts: {
+      ready: 2,
+      totalProducerPrs: 145,
+      openIssues: 767,
+      archivedRepoPrs: 4,
+      closeCandidateIssues: 0,
+      designNoQuestion: 6,
+    },
     lanes: { "vetter-verdicts": { "ai:ready": { count: 2, prs: [] } } },
     closeCandidateIssues: [],
     archivedRepoPrs: fcItems("archived", 4),
     stateDescriptors: [
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "ready",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   });
   assert(
@@ -3747,7 +4632,8 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
   assert(band, "an unclaimed state-shaped counts key surfaces");
   const text = textOf(band);
   assert(
-    text.includes("blockedOn") && text.includes("17 held") && text.includes("renders nowhere"),
+    text.includes("blockedOn") && text.includes("17 held") &&
+      text.includes("renders nowhere"),
     `it names the key and its held inventory: ${text}`,
   );
 });
@@ -3757,35 +4643,52 @@ Deno.test("pipeline FSM: the frozen-legacy counts keys never defect; any other u
 // broken or absent count over a populated list would render 0 while the click expanded
 // onto real PRs, in silence.
 Deno.test("pipeline FSM: a lane cell whose count disagrees with its prs is reported, and the box renders the larger", () => {
-  for (const [what, count] of [["junk count", "many"], ["absent count", undefined]]) {
+  for (
+    const [what, count] of [["junk count", "many"], ["absent count", undefined]]
+  ) {
     const cell = { prs: fcItems("stranded", 17) };
     if (count !== undefined) cell.count = count;
     const box = fsmBox({
       counts: {},
       lanes: { "vet-lifecycle": { "ai:blocked-on": cell } },
       stateDescriptors: [
-        { key: "ai:blocked-on", owner: "vetter", act: "clears when deps merge/close", kind: "blk", hist: "", histFold: [], occupancy: { lane: "vet-lifecycle" } },
+        {
+          key: "ai:blocked-on",
+          owner: "vetter",
+          act: "clears when deps merge/close",
+          kind: "blk",
+          hist: "",
+          histFold: [],
+          occupancy: { lane: "vet-lifecycle" },
+        },
       ],
     });
-    const b = collect(box, "fsm-state").find((x) => x.dataset.t === "ai:blocked-on");
+    const b = collect(box, "fsm-state").find((x) =>
+      x.dataset.t === "ai:blocked-on"
+    );
     assert(b, `the box renders (${what})`);
     // The box shows the larger, so the list cannot hide inventory behind a broken count.
     assert(
       collect(b, "sc")[0].textContent === "17",
-      `the box renders the PRs it holds, not 0 (${what}): ${collect(b, "sc")[0].textContent}`,
+      `the box renders the PRs it holds, not 0 (${what}): ${
+        collect(b, "sc")[0].textContent
+      }`,
     );
     // …and the count-vs-rows invariant holds: the number on the box is the number of rows.
     const detail = box.querySelectorAll("#fsmdetail")[0];
     b.click();
     assert(
       collect(detail, "li").length === 17,
-      `the box's number equals the rows it expands to (${what}): ${collect(detail, "li").length}`,
+      `the box's number equals the rows it expands to (${what}): ${
+        collect(detail, "li").length
+      }`,
     );
     const band = collect(box, "fsm-defect")[0];
     assert(band, `the disagreement is reported (${what})`);
     const text = textOf(band);
     assert(
-      text.includes("states count 0") && text.includes("carries 17 PRs") && text.includes("renders 17"),
+      text.includes("states count 0") && text.includes("carries 17 PRs") &&
+        text.includes("renders 17"),
       `it names both numbers and which was rendered (${what}): ${text}`,
     );
   }
@@ -3794,14 +4697,32 @@ Deno.test("pipeline FSM: a lane cell whose count disagrees with its prs is repor
 Deno.test("pipeline FSM: a lane cell whose count agrees with its prs reports nothing", () => {
   const box = fsmBox({
     counts: {},
-    lanes: { "vet-lifecycle": { "ai:blocked-on": { count: 3, prs: fcItems("blocked", 3) } } },
+    lanes: {
+      "vet-lifecycle": {
+        "ai:blocked-on": { count: 3, prs: fcItems("blocked", 3) },
+      },
+    },
     stateDescriptors: [
-      { key: "ai:blocked-on", owner: "vetter", act: "clears when deps merge/close", kind: "blk", hist: "", histFold: [], occupancy: { lane: "vet-lifecycle" } },
+      {
+        key: "ai:blocked-on",
+        owner: "vetter",
+        act: "clears when deps merge/close",
+        kind: "blk",
+        hist: "",
+        histFold: [],
+        occupancy: { lane: "vet-lifecycle" },
+      },
     ],
   });
-  assert(collect(box, "fsm-defect").length === 0, "an agreeing cell draws no band");
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    "an agreeing cell draws no band",
+  );
   const b = collect(box, "fsm-state")[0];
-  assert(collect(b, "sc")[0].textContent === "3", "and renders its stated count");
+  assert(
+    collect(b, "sc")[0].textContent === "3",
+    "and renders its stated count",
+  );
 });
 
 // The page holds TWO numbers for a lane state — the lane cell it RENDERS and the `counts`
@@ -3818,25 +4739,52 @@ Deno.test("pipeline FSM: a lane state whose counts mirror contradicts its render
     counts: { ready: 23, unvetted: 24 },
     lanes: { "vet-lifecycle": { "un-vetted": { count: 24, prs: [] } } },
     stateDescriptors: [
-      { key: "un-vetted", owner: "vetter", act: "vet at current head", kind: "flow", hist: "unvetted", histFold: [], occupancy: { lane: "vet-lifecycle" } },
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "un-vetted",
+        owner: "vetter",
+        act: "vet at current head",
+        kind: "flow",
+        hist: "unvetted",
+        histFold: [],
+        occupancy: { lane: "vet-lifecycle" },
+      },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "ready",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   });
   // The box renders its DECLARED occupancy — the cell, not the mirror.
-  const ready = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:ready");
+  const ready = box.querySelectorAll("[data-t]").find((b) =>
+    b.dataset.t === "ai:ready"
+  );
   assert(
     collect(ready, "sc")[0].textContent === "0",
-    `the box renders the lane cell, absent ⇒ 0: ${collect(ready, "sc")[0].textContent}`,
+    `the box renders the lane cell, absent ⇒ 0: ${
+      collect(ready, "sc")[0].textContent
+    }`,
   );
   const band = collect(box, "fsm-defect")[0];
   assert(band, "the disagreement surfaces");
   const text = textOf(band);
-  assert(text.includes('counts["ready"]') && text.includes("23"), `it names the mirror and its number: ${text}`);
   assert(
-    text.includes('lanes["vetter-verdicts"]["ai:ready"]') && text.includes("holds 0"),
+    text.includes('counts["ready"]') && text.includes("23"),
+    `it names the mirror and its number: ${text}`,
+  );
+  assert(
+    text.includes('lanes["vetter-verdicts"]["ai:ready"]') &&
+      text.includes("holds 0"),
     `it names the rendered occupancy and its number: ${text}`,
   );
-  assert(text.includes("renders 0"), `it says which number is on screen: ${text}`);
+  assert(
+    text.includes("renders 0"),
+    `it says which number is on screen: ${text}`,
+  );
   assert(
     text.includes("disagrees with itself"),
     `it reports a snapshot contradiction, not a guess at the right number: ${text}`,
@@ -3847,7 +4795,10 @@ Deno.test("pipeline FSM: a lane state whose counts mirror contradicts its render
     `a state whose two numbers agree stays silent: ${text}`,
   );
   // And the claim is KEPT: no "unclaimed counts key" defect rides along.
-  assert(!text.includes("renders nowhere"), `the mirror is still claimed: ${text}`);
+  assert(
+    !text.includes("renders nowhere"),
+    `the mirror is still claimed: ${text}`,
+  );
 });
 
 Deno.test("pipeline FSM: lane states whose counts mirror agrees draw no divergence defect", () => {
@@ -3867,8 +4818,24 @@ Deno.test("pipeline FSM: a frozen-legacy counts key is exempt from unclaimed, ne
     counts: { openIssues: 767, ready: 0 },
     lanes: {},
     stateDescriptors: [
-      { key: "a", owner: "producer", act: "x", kind: "flow", hist: "openIssues", histFold: [], occupancy: { lane: "vetter-verdicts" } },
-      { key: "b", owner: "vetter", act: "y", kind: "flow", hist: "openIssues", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "a",
+        owner: "producer",
+        act: "x",
+        kind: "flow",
+        hist: "openIssues",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
+      {
+        key: "b",
+        owner: "vetter",
+        act: "y",
+        kind: "flow",
+        hist: "openIssues",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   });
   const band = collect(box, "fsm-defect")[0];
@@ -3889,15 +4856,32 @@ Deno.test("pipeline FSM: two descriptors naming the same items array is a defect
     lanes: {},
     leaks: fcItems("leak", 2),
     stateDescriptors: [
-      { key: "leak", owner: "human", act: "model it", kind: "blk", hist: "leaks", histFold: [], occupancy: { counts: "leaks", items: "leaks" } },
-      { key: "leak-copy", owner: "producer", act: "model it", kind: "blk", hist: "alsoLeaks", histFold: [], occupancy: { counts: "alsoLeaks", items: "leaks" } },
+      {
+        key: "leak",
+        owner: "human",
+        act: "model it",
+        kind: "blk",
+        hist: "leaks",
+        histFold: [],
+        occupancy: { counts: "leaks", items: "leaks" },
+      },
+      {
+        key: "leak-copy",
+        owner: "producer",
+        act: "model it",
+        kind: "blk",
+        hist: "alsoLeaks",
+        histFold: [],
+        occupancy: { counts: "alsoLeaks", items: "leaks" },
+      },
     ],
   });
   const band = collect(box, "fsm-defect")[0];
   assert(band, "the shared list surfaces");
   const text = textOf(band);
   assert(
-    text.includes('"leaks" is named by 2 descriptors') && text.includes("open onto the same list"),
+    text.includes('"leaks" is named by 2 descriptors') &&
+      text.includes("open onto the same list"),
     `it names the array and the collision: ${text}`,
   );
   // One array named once is not a defect.
@@ -3910,10 +4894,12 @@ Deno.test("pipeline FSM: two descriptors naming the same items array is a defect
 // The zero-held carve-out must not swallow a cell that HOLDS PRs behind a dropped or
 // non-numeric count — the one place the sweep has the list in hand to check.
 Deno.test("pipeline FSM: an unclaimed cell holding PRs with no usable count still screams", () => {
-  for (const [what, cell] of [
-    ["absent count", { prs: fcItems("stranded", 17) }],
-    ["junk count", { count: "many", prs: fcItems("stranded", 17) }],
-  ]) {
+  for (
+    const [what, cell] of [
+      ["absent count", { prs: fcItems("stranded", 17) }],
+      ["junk count", { count: "many", prs: fcItems("stranded", 17) }],
+    ]
+  ) {
     const box = fsmBox({
       counts: { ready: 1 },
       lanes: {
@@ -3921,7 +4907,15 @@ Deno.test("pipeline FSM: an unclaimed cell holding PRs with no usable count stil
         "producer-blocked": { "ai:blocked-on": cell },
       },
       stateDescriptors: [
-        { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+        {
+          key: "ai:ready",
+          owner: "human",
+          act: "merge",
+          kind: "flow",
+          hist: "ready",
+          histFold: [],
+          occupancy: { lane: "vetter-verdicts" },
+        },
       ],
     });
     const band = collect(box, "fsm-defect")[0];
@@ -3942,38 +4936,71 @@ Deno.test("pipeline FSM: prototype-shaped keys, counts, items and lane names are
   // Built through JSON.parse — the only way to get a genuine OWN `__proto__` key (an
   // object literal's `__proto__:` sets the prototype instead), and exactly how the page
   // receives the snapshot: `fetch(...).then((r) => r.json())`.
-  const box = fsmBox(JSON.parse(JSON.stringify({
-    counts: { PROTO: 3, constructor: 2, toString: 0 },
-    lanes: { constructor: { PROTO: { count: 4, prs: fcItems("proto", 4) } } },
-    PROTO: fcItems("protoitems", 3),
-    stateDescriptors: [
-      // A lane-sourced state whose key AND lane are prototype-shaped.
-      { key: "PROTO", owner: "vetter", act: "vet", kind: "flow", hist: "", histFold: [], occupancy: { lane: "constructor" } },
-      // A counts-sourced state whose counts key and items array are prototype-shaped.
-      { key: "protoCounts", owner: "producer", act: "open a PR", kind: "flow", hist: "constructor", histFold: [], occupancy: { counts: "constructor", items: "PROTO", itemsAreIssues: true } },
-    ],
-  }).replace(/PROTO/g, "__proto__")));
+  const box = fsmBox(JSON.parse(
+    JSON.stringify({
+      counts: { PROTO: 3, constructor: 2, toString: 0 },
+      lanes: { constructor: { PROTO: { count: 4, prs: fcItems("proto", 4) } } },
+      PROTO: fcItems("protoitems", 3),
+      stateDescriptors: [
+        // A lane-sourced state whose key AND lane are prototype-shaped.
+        {
+          key: "PROTO",
+          owner: "vetter",
+          act: "vet",
+          kind: "flow",
+          hist: "",
+          histFold: [],
+          occupancy: { lane: "constructor" },
+        },
+        // A counts-sourced state whose counts key and items array are prototype-shaped.
+        {
+          key: "protoCounts",
+          owner: "producer",
+          act: "open a PR",
+          kind: "flow",
+          hist: "constructor",
+          histFold: [],
+          occupancy: {
+            counts: "constructor",
+            items: "PROTO",
+            itemsAreIssues: true,
+          },
+        },
+      ],
+    }).replace(/PROTO/g, "__proto__"),
+  ));
   const keys = box.querySelectorAll("[data-t]").map((b) => b.dataset.t);
   assert(
     JSON.stringify(keys) === JSON.stringify(["protoCounts", "__proto__"]),
     `both states render, keyed by their own strings: ${JSON.stringify(keys)}`,
   );
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const byT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
   assert(
     collect(byT("__proto__"), "sc")[0].textContent === "4",
-    `a prototype-shaped lane+key resolves its own cell: ${collect(byT("__proto__"), "sc")[0].textContent}`,
+    `a prototype-shaped lane+key resolves its own cell: ${
+      collect(byT("__proto__"), "sc")[0].textContent
+    }`,
   );
   assert(
     collect(byT("protoCounts"), "sc")[0].textContent === "2",
-    `a prototype-shaped counts key resolves its own number: ${collect(byT("protoCounts"), "sc")[0].textContent}`,
+    `a prototype-shaped counts key resolves its own number: ${
+      collect(byT("protoCounts"), "sc")[0].textContent
+    }`,
   );
   // Each opens onto its OWN list — registration is keyed by these strings too.
   const detail = box.querySelectorAll("#fsmdetail")[0];
   byT("__proto__").click();
-  assert(textOf(detail).includes("proto 1"), `the lane cell's own list: ${textOf(detail)}`);
+  assert(
+    textOf(detail).includes("proto 1"),
+    `the lane cell's own list: ${textOf(detail)}`,
+  );
   byT("__proto__").click();
   byT("protoCounts").click();
-  assert(textOf(detail).includes("protoitems 1"), `the named array's own list: ${textOf(detail)}`);
+  assert(
+    textOf(detail).includes("protoitems 1"),
+    `the named array's own list: ${textOf(detail)}`,
+  );
   // The sweep treats them as data: `counts.__proto__` (3 held) is claimed by nobody and
   // reports; the claimed `constructor` does not; `toString` holds 0 and is skipped.
   const band = collect(box, "fsm-defect")[0];
@@ -3989,7 +5016,9 @@ Deno.test("pipeline FSM: prototype-shaped keys, counts, items and lane names are
   );
   assert(
     !rows.some((r) => r.includes('counts["toString"]')),
-    `a zero-held prototype-shaped key is skipped like any other: ${JSON.stringify(rows)}`,
+    `a zero-held prototype-shaped key is skipped like any other: ${
+      JSON.stringify(rows)
+    }`,
   );
 });
 
@@ -4002,40 +5031,81 @@ Deno.test("pipeline FSM: prototype-shaped keys, counts, items and lane names are
 Deno.test("pipeline FSM: a repeated descriptor key renders one box and is reported, with the loser's occupancy named unclaimed", () => {
   const box = fsmBox({
     counts: { ready: 5, readyDupe: 9 },
-    lanes: { "vetter-verdicts": { "ai:ready": { count: 5, prs: fcItems("first", 5) } } },
+    lanes: {
+      "vetter-verdicts": { "ai:ready": { count: 5, prs: fcItems("first", 5) } },
+    },
     readyDupe: fcItems("second", 9),
     stateDescriptors: [
       // FIRST wins: array order is render order.
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "ready",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
       // Same key, a DIFFERENT occupancy source — so the two claims are different ids and
       // the sweep alone would call both singly claimed.
-      { key: "ai:ready", owner: "producer", act: "open a PR", kind: "flow", hist: "readyDupe", histFold: [], occupancy: { counts: "readyDupe", items: "readyDupe", itemsAreIssues: true } },
+      {
+        key: "ai:ready",
+        owner: "producer",
+        act: "open a PR",
+        kind: "flow",
+        hist: "readyDupe",
+        histFold: [],
+        occupancy: {
+          counts: "readyDupe",
+          items: "readyDupe",
+          itemsAreIssues: true,
+        },
+      },
     ],
   });
-  const boxes = box.querySelectorAll("[data-t]").filter((b) => b.dataset.t === "ai:ready");
-  assert(boxes.length === 1, `exactly one box carries the key: ${boxes.length}`);
+  const boxes = box.querySelectorAll("[data-t]").filter((b) =>
+    b.dataset.t === "ai:ready"
+  );
+  assert(
+    boxes.length === 1,
+    `exactly one box carries the key: ${boxes.length}`,
+  );
   assert(
     collect(boxes[0], "sc")[0].textContent === "5",
-    `the FIRST descriptor's occupancy renders: ${collect(boxes[0], "sc")[0].textContent}`,
+    `the FIRST descriptor's occupancy renders: ${
+      collect(boxes[0], "sc")[0].textContent
+    }`,
   );
   // Its click-through is its OWN list, not the repeat's — the overwrite this guard exists
   // to prevent.
   const detail = box.querySelectorAll("#fsmdetail")[0];
   boxes[0].click();
-  assert(collect(detail, "li").length === 5, `it opens onto its own 5 rows: ${collect(detail, "li").length}`);
-  assert(textOf(detail).includes("first 1"), `and onto its own items: ${textOf(detail)}`);
+  assert(
+    collect(detail, "li").length === 5,
+    `it opens onto its own 5 rows: ${collect(detail, "li").length}`,
+  );
+  assert(
+    textOf(detail).includes("first 1"),
+    `and onto its own items: ${textOf(detail)}`,
+  );
   assert(!textOf(detail).includes("second 1"), "never the repeat's list");
 
   const band = collect(box, "fsm-defect")[0];
   assert(band, "the repeat is reported");
   const rows = collect(band, "fd-li").map((r) => r.textContent);
   assert(
-    rows.some((r) => r.includes("stateDescriptors[1]") && r.includes('repeats the key "ai:ready"')),
+    rows.some((r) =>
+      r.includes("stateDescriptors[1]") &&
+      r.includes('repeats the key "ai:ready"')
+    ),
     `named by index and key: ${JSON.stringify(rows)}`,
   );
   // Its claim was never registered, so the occupancy it meant to claim reads unclaimed.
   assert(
-    rows.some((r) => r.includes("readyDupe") && r.includes("9 held") && r.includes("renders nowhere")),
+    rows.some((r) =>
+      r.includes("readyDupe") && r.includes("9 held") &&
+      r.includes("renders nowhere")
+    ),
     `the loser's occupancy is named unclaimed: ${JSON.stringify(rows)}`,
   );
 });
@@ -4058,25 +5128,53 @@ Deno.test("pipeline FSM: a folded retired counts key is claimed by the folding d
     counts: { reject: 66, humanReject: 4, relink: 0 },
     lanes: {
       "vetter-verdicts": { "ai:reject": { count: 66, prs: [] } },
-      "human-decisions": { "human:reject": { count: 4, prs: fcItems("hreject", 4) } },
+      "human-decisions": {
+        "human:reject": { count: 4, prs: fcItems("hreject", 4) },
+      },
     },
     stateDescriptors: [
       // The live row folds both retired keys and owns the continuous series.
-      { key: "ai:reject", owner: "producer", act: "rework per note", kind: "blk", hist: "reject", histFold: ["humanReject", "relink"], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:reject",
+        owner: "producer",
+        act: "rework per note",
+        kind: "blk",
+        hist: "reject",
+        histFold: ["humanReject", "relink"],
+        occupancy: { lane: "vetter-verdicts" },
+      },
       // The residue row: its LANE cell is its occupancy; it carries no hist, because the
       // successor above already draws its past.
-      { key: "human:reject", owner: "human", act: "strip the label", kind: "blk", hist: "", histFold: [], occupancy: { lane: "human-decisions" }, label: "human:reject (retired #133)" },
+      {
+        key: "human:reject",
+        owner: "human",
+        act: "strip the label",
+        kind: "blk",
+        hist: "",
+        histFold: [],
+        occupancy: { lane: "human-decisions" },
+        label: "human:reject (retired #133)",
+      },
     ],
   };
   const box = fsmBox(hq);
   assert(
     collect(box, "fsm-defect").length === 0,
-    `a folded nonzero retired key is claimed, not a defect: ${textOf(collect(box, "fsm-defect")[0] || makeEl("div"))}`,
+    `a folded nonzero retired key is claimed, not a defect: ${
+      textOf(collect(box, "fsm-defect")[0] || makeEl("div"))
+    }`,
   );
   // Both rows render, each off its own lane cell.
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
-  assert(collect(byT("ai:reject"), "sc")[0].textContent === "66", "the live row reads its cell");
-  assert(collect(byT("human:reject"), "sc")[0].textContent === "4", "the residue row reads its cell");
+  const byT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  assert(
+    collect(byT("ai:reject"), "sc")[0].textContent === "66",
+    "the live row reads its cell",
+  );
+  assert(
+    collect(byT("human:reject"), "sc")[0].textContent === "4",
+    "the residue row reads its cell",
+  );
 
   // And the fold is not a blanket amnesty: a retired counts key NO descriptor folds or
   // reads still screams when it holds inventory.
@@ -4102,17 +5200,34 @@ Deno.test("pipeline FSM: a counts key claimed as both a fold and another descrip
       "human-decisions": { "human:reject": { count: 4, prs: [] } },
     },
     stateDescriptors: [
-      { key: "ai:reject", owner: "producer", act: "rework per note", kind: "blk", hist: "reject", histFold: ["humanReject"], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:reject",
+        owner: "producer",
+        act: "rework per note",
+        kind: "blk",
+        hist: "reject",
+        histFold: ["humanReject"],
+        occupancy: { lane: "vetter-verdicts" },
+      },
       // Illegal per the contract: the residue row draws the SAME history the fold above
       // already absorbed, so humanReject's inventory would render twice.
-      { key: "human:reject", owner: "human", act: "strip the label", kind: "blk", hist: "humanReject", histFold: [], occupancy: { lane: "human-decisions" } },
+      {
+        key: "human:reject",
+        owner: "human",
+        act: "strip the label",
+        kind: "blk",
+        hist: "humanReject",
+        histFold: [],
+        occupancy: { lane: "human-decisions" },
+      },
     ],
   });
   const band = collect(box, "fsm-defect")[0];
   assert(band, "the double claim surfaces");
   const text = textOf(band);
   assert(
-    text.includes("humanReject") && text.includes("2 descriptors") && text.includes("renders 2 times"),
+    text.includes("humanReject") && text.includes("2 descriptors") &&
+      text.includes("renders 2 times"),
     `it names the key and says it renders twice: ${text}`,
   );
 });
@@ -4131,7 +5246,15 @@ Deno.test("pipeline FSM: zero-held unclaimed occupancy is vacuously conserved; n
       "producer-blocked": { "ai:blocked-deploy": { count: 0, prs: [] } },
     },
     stateDescriptors: [
-      { key: "ai:ready", owner: "human", act: "merge", kind: "flow", hist: "ready", histFold: [], occupancy: { lane: "vetter-verdicts" } },
+      {
+        key: "ai:ready",
+        owner: "human",
+        act: "merge",
+        kind: "flow",
+        hist: "ready",
+        histFold: [],
+        occupancy: { lane: "vetter-verdicts" },
+      },
     ],
   });
   assert(
@@ -4158,8 +5281,24 @@ Deno.test("pipeline FSM: zero-held unclaimed occupancy is vacuously conserved; n
   // a duplicate key (which is its own, earlier defect).
   const doubled = base();
   doubled.stateDescriptors.push(
-    { key: "ai:blocked-infra", owner: "human", act: "strip the label", kind: "blk", hist: "blockedInfra", histFold: [], occupancy: { lane: "producer-blocked" } },
-    { key: "ai:blocked-infra-mirror", owner: "producer", act: "strip the label", kind: "blk", hist: "blockedInfra", histFold: [], occupancy: { lane: "producer-blocked" } },
+    {
+      key: "ai:blocked-infra",
+      owner: "human",
+      act: "strip the label",
+      kind: "blk",
+      hist: "blockedInfra",
+      histFold: [],
+      occupancy: { lane: "producer-blocked" },
+    },
+    {
+      key: "ai:blocked-infra-mirror",
+      owner: "producer",
+      act: "strip the label",
+      kind: "blk",
+      hist: "blockedInfra",
+      histFold: [],
+      occupancy: { lane: "producer-blocked" },
+    },
   );
   const band2 = collect(fsmBox(doubled), "fsm-defect")[0];
   assert(band2, "a double claim on a zero-held cell still surfaces");
@@ -4177,19 +5316,40 @@ Deno.test("pipeline FSM: a descriptor whose counts or items source does not reso
     counts: {},
     lanes: {},
     stateDescriptors: [
-      { key: "uncoveredIssues", owner: "producer", act: "open a PR", kind: "flow", hist: "", histFold: [], occupancy: { counts: "uncoveredIssues", items: "uncoveredIssues", itemsAreIssues: true } },
+      {
+        key: "uncoveredIssues",
+        owner: "producer",
+        act: "open a PR",
+        kind: "flow",
+        hist: "",
+        histFold: [],
+        occupancy: {
+          counts: "uncoveredIssues",
+          items: "uncoveredIssues",
+          itemsAreIssues: true,
+        },
+      },
     ],
   });
   const band = collect(box, "fsm-defect")[0];
   assert(band, "unresolved sources surface");
   const rows = collect(band, "fd-li").map((r) => r.textContent);
-  assert(rows.length === 2, `both unresolved sources report: ${JSON.stringify(rows)}`);
   assert(
-    rows.some((r) => r.includes('counts source "uncoveredIssues"') && r.includes("does not resolve")),
+    rows.length === 2,
+    `both unresolved sources report: ${JSON.stringify(rows)}`,
+  );
+  assert(
+    rows.some((r) =>
+      r.includes('counts source "uncoveredIssues"') &&
+      r.includes("does not resolve")
+    ),
     `the counts source is named: ${JSON.stringify(rows)}`,
   );
   assert(
-    rows.some((r) => r.includes('items source "uncoveredIssues"') && r.includes("does not resolve")),
+    rows.some((r) =>
+      r.includes('items source "uncoveredIssues"') &&
+      r.includes("does not resolve")
+    ),
     `the items source is named: ${JSON.stringify(rows)}`,
   );
 });
@@ -4199,7 +5359,13 @@ Deno.test("pipeline FSM: a descriptor whose counts or items source does not reso
 // non-array) is not a descriptor list and falls back the same way.
 Deno.test("pipeline FSM: a descriptor-less snapshot renders the frozen hand table, defect-free — junk stateDescriptors falls back too", () => {
   const lanesHq = () => ({
-    counts: { leaks: 1, ready: 2, uncoveredIssues: 3, closeCandidateUnvetted: 0, closeCandidateUpheld: 0 },
+    counts: {
+      leaks: 1,
+      ready: 2,
+      uncoveredIssues: 3,
+      closeCandidateUnvetted: 0,
+      closeCandidateUpheld: 0,
+    },
     lanes: {
       "vetter-verdicts": {
         "ai:ready": { count: 2, prs: [] },
@@ -4224,7 +5390,9 @@ Deno.test("pipeline FSM: a descriptor-less snapshot renders the frozen hand tabl
         "human:design",
         "closeCandidateUpheld",
       ]),
-      `the frozen table renders whole and in order (${what}): ${JSON.stringify(keys)}`,
+      `the frozen table renders whole and in order (${what}): ${
+        JSON.stringify(keys)
+      }`,
     );
     assert(
       collect(box, "fsm-defect").length === 0,
@@ -4232,7 +5400,10 @@ Deno.test("pipeline FSM: a descriptor-less snapshot renders the frozen hand tabl
     );
   };
   frozen(fsmBox(lanesHq()), "absent");
-  frozen(fsmBox({ ...lanesHq(), stateDescriptors: "junk" }), "junk descriptors");
+  frozen(
+    fsmBox({ ...lanesHq(), stateDescriptors: "junk" }),
+    "junk descriptors",
+  );
 });
 
 // An EMPTY stateDescriptors array is a present — broken — declaration: the machine claims
@@ -4265,7 +5436,8 @@ Deno.test("pipeline FSM: descriptor boxes keep sparklines and the lead fallback"
     { t: now, counts: { ready: 5 } },
   ];
   const box = fsmBox(descHq(), history);
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const byT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
   const ready = byT("ai:ready");
   assert(
     collect(ready, "fsm-spark").length === 1,
@@ -4293,7 +5465,13 @@ function splitHq() {
   hq.lanes["vetter-verdicts"]["ai:design"] = {
     count: 6,
     prs: fcItems("design", 6).map((e) => ({ ...e, bucket: "noQuestion" })),
-    breakdown: { presentable: 0, noQuestion: 6, draft: 0, unaddressable: 0, fetchErrors: 0 },
+    breakdown: {
+      presentable: 0,
+      noQuestion: 6,
+      draft: 0,
+      unaddressable: 0,
+      fetchErrors: 0,
+    },
   };
   hq.counts.design = 6;
   hq.counts.designPresentable = 0;
@@ -4303,46 +5481,71 @@ function splitHq() {
 
 Deno.test("pipeline FSM: the design box is the /ndd inbox — presentable, never the raw label total", () => {
   const box = fsmBox(splitHq());
-  const byT = (k) => box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
+  const byT = (k) =>
+    box.querySelectorAll("[data-t]").find((b) => b.dataset.t === k);
   const design = byT("ai:design");
   // Six PRs wear the label; /ndd will present zero. The box says zero — the number that
   // goes to zero when a human drains the queue is the number a human inbox shows — and
   // dims like any other empty inbox.
-  assert(collect(design, "sc")[0].textContent === "0", "the inbox is presentable, not 6");
+  assert(
+    collect(design, "sc")[0].textContent === "0",
+    "the inbox is presentable, not 6",
+  );
   assert(design.className.split(" ").includes("zero"), "an empty inbox dims");
   // The human owner total counts the inbox: ready 5 + design 0 + leak 2.
   const groups = ownerGroups(box);
   const human = groups.find((g) => g.title.startsWith("Human action"));
-  assert(human.title.endsWith("7"), `the human total is the inbox: ${human.title}`);
+  assert(
+    human.title.endsWith("7"),
+    `the human total is the inbox: ${human.title}`,
+  );
   // The withheld rows are drawn NOWHERE: no extra group beside the three actors, no box
   // of their own, and no listing under the design box, which opens onto the presentable
   // rows and holds none.
-  assert(groups.length === 3, `the three actor groups are the whole machine: ${groups.length}`);
   assert(
-    !byT("designNoQuestion") && !byT("designDraft") && !byT("designFetchErrors") &&
+    groups.length === 3,
+    `the three actor groups are the whole machine: ${groups.length}`,
+  );
+  assert(
+    !byT("designNoQuestion") && !byT("designDraft") &&
+      !byT("designFetchErrors") &&
       !byT("designUnaddressable"),
     "no box is built out of the rows /ndd withholds",
   );
   design.click();
   const text = textOf(box);
-  assert(!text.includes("o/design#"), `no withheld row is listed: ${text.slice(0, 400)}`);
+  assert(
+    !text.includes("o/design#"),
+    `no withheld row is listed: ${text.slice(0, 400)}`,
+  );
   // A conserved split snapshot draws no defect band: the key the box draws is claimed by
   // it, and the withheld half's key is the ratified unclaimed one below.
-  assert(collect(box, "fsm-defect").length === 0, "no conservation defect on a clean split");
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    "no conservation defect on a clean split",
+  );
 });
 
 Deno.test("pipeline FSM: a snapshot without the split renders the design cell exactly as before", () => {
   const hq = descHq();
-  hq.lanes["vetter-verdicts"]["ai:design"] = { count: 2, prs: fcItems("design", 2) };
+  hq.lanes["vetter-verdicts"]["ai:design"] = {
+    count: 2,
+    prs: fcItems("design", 2),
+  };
   hq.counts.design = 2;
   const box = fsmBox(hq);
-  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
+  const design = box.querySelectorAll("[data-t]").find((b) =>
+    b.dataset.t === "ai:design"
+  );
   assert(
     collect(design, "sc")[0].textContent === "2",
     "without a breakdown the raw cell count renders, as it always did",
   );
   design.click();
-  assert(textOf(box).includes("o/design#1"), "and opens onto the whole cell's PRs");
+  assert(
+    textOf(box).includes("o/design#1"),
+    "and opens onto the whole cell's PRs",
+  );
   assert(collect(box, "fsm-defect").length === 0, "and nothing screams");
 });
 
@@ -4351,17 +5554,34 @@ Deno.test("pipeline FSM: presentable rows list under the design box", () => {
   hq.lanes["vetter-verdicts"]["ai:design"] = {
     count: 2,
     prs: fcItems("design", 2).map((e) => ({ ...e, bucket: "presentable" })),
-    breakdown: { presentable: 2, noQuestion: 0, draft: 0, unaddressable: 0, fetchErrors: 0 },
+    breakdown: {
+      presentable: 2,
+      noQuestion: 0,
+      draft: 0,
+      unaddressable: 0,
+      fetchErrors: 0,
+    },
   };
   hq.counts.design = 2;
   hq.counts.designPresentable = 2;
   hq.counts.designNoQuestion = 0;
   const box = fsmBox(hq);
-  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
-  assert(collect(design, "sc")[0].textContent === "2", "two presentable rows are the inbox");
+  const design = box.querySelectorAll("[data-t]").find((b) =>
+    b.dataset.t === "ai:design"
+  );
+  assert(
+    collect(design, "sc")[0].textContent === "2",
+    "two presentable rows are the inbox",
+  );
   design.click();
-  assert(textOf(box).includes("o/design#1"), "the inbox lists the presentable rows");
-  assert(collect(box, "fsm-defect").length === 0, "a clean split draws no defect band");
+  assert(
+    textOf(box).includes("o/design#1"),
+    "the inbox lists the presentable rows",
+  );
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    "a clean split draws no defect band",
+  );
 });
 
 Deno.test("pipeline FSM: a malformed presentable falls back to the raw cell, never a fabricated zero inbox", () => {
@@ -4372,13 +5592,20 @@ Deno.test("pipeline FSM: a malformed presentable falls back to the raw cell, nev
   // one degrades the cell to exactly the pre-split rendering.
   hq.lanes["vetter-verdicts"]["ai:design"].breakdown.presentable = "0";
   const box = fsmBox(hq);
-  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
+  const design = box.querySelectorAll("[data-t]").find((b) =>
+    b.dataset.t === "ai:design"
+  );
   assert(
     collect(design, "sc")[0].textContent === "6",
-    `an unreadable split renders the whole cell: ${collect(design, "sc")[0].textContent}`,
+    `an unreadable split renders the whole cell: ${
+      collect(design, "sc")[0].textContent
+    }`,
   );
   design.click();
-  assert(textOf(box).includes("o/design#6"), "and opens onto the whole cell's PRs");
+  assert(
+    textOf(box).includes("o/design#6"),
+    "and opens onto the whole cell's PRs",
+  );
 });
 
 Deno.test("pipeline FSM: a breakdown carrying only presentable still renders the inbox", () => {
@@ -4398,11 +5625,19 @@ Deno.test("pipeline FSM: a breakdown carrying only presentable still renders the
   hq.counts.designPresentable = 2;
   delete hq.counts.designNoQuestion;
   const box = fsmBox(hq);
-  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
-  assert(collect(design, "sc")[0].textContent === "2", "the inbox draws off the one bucket");
+  const design = box.querySelectorAll("[data-t]").find((b) =>
+    b.dataset.t === "ai:design"
+  );
+  assert(
+    collect(design, "sc")[0].textContent === "2",
+    "the inbox draws off the one bucket",
+  );
   design.click();
   assert(textOf(box).includes("o/present#1"), "and opens onto its rows");
-  assert(collect(box, "fsm-defect").length === 0, "and nothing screams over the absent buckets");
+  assert(
+    collect(box, "fsm-defect").length === 0,
+    "and nothing screams over the absent buckets",
+  );
 });
 
 Deno.test("pipeline FSM: a presentable count broken low cannot hide the rows annotated into it", () => {
@@ -4411,21 +5646,45 @@ Deno.test("pipeline FSM: a presentable count broken low cannot hide the rows ann
     count: 6,
     prs: [
       ...fcItems("design", 4).map((e) => ({ ...e, bucket: "noQuestion" })),
-      { repo: "o/present", number: 5, title: "present 5", bucket: "presentable" },
-      { repo: "o/present", number: 6, title: "present 6", bucket: "presentable" },
+      {
+        repo: "o/present",
+        number: 5,
+        title: "present 5",
+        bucket: "presentable",
+      },
+      {
+        repo: "o/present",
+        number: 6,
+        title: "present 6",
+        bucket: "presentable",
+      },
     ],
-    breakdown: { presentable: 0, noQuestion: 4, draft: 0, unaddressable: 0, fetchErrors: 0 },
+    breakdown: {
+      presentable: 0,
+      noQuestion: 4,
+      draft: 0,
+      unaddressable: 0,
+      fetchErrors: 0,
+    },
   };
   hq.counts.designPresentable = 2;
   hq.counts.designNoQuestion = 4;
   const box = fsmBox(hq);
-  const design = box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design");
+  const design = box.querySelectorAll("[data-t]").find((b) =>
+    b.dataset.t === "ai:design"
+  );
   // The bucket's stated count says nobody is servable; two rows are annotated into it. The
   // box renders the larger, so a broken count cannot hide an inbox the list proves is
   // there — and it opens onto exactly those rows.
-  assert(collect(design, "sc")[0].textContent === "2", "the box renders the larger");
+  assert(
+    collect(design, "sc")[0].textContent === "2",
+    "the box renders the larger",
+  );
   design.click();
-  assert(textOf(box).includes("o/present#5"), "and opens onto the annotated rows");
+  assert(
+    textOf(box).includes("o/present#5"),
+    "and opens onto the annotated rows",
+  );
   const defects = textOf(collect(box, "fsm-defect")[0] || makeEl("div"));
   assert(
     defects.includes("breakdown.presentable states 0 but 2"),
@@ -4442,23 +5701,42 @@ Deno.test("pipeline FSM: the design box's trend is drawn from designPresentable,
     hq.lanes["vetter-verdicts"]["ai:design"] = {
       count: presentable + noQuestion,
       prs: [
-        ...fcItems("present", presentable).map((e) => ({ ...e, bucket: "presentable" })),
-        ...fcItems("design", noQuestion).map((e) => ({ ...e, bucket: "noQuestion" })),
+        ...fcItems("present", presentable).map((e) => ({
+          ...e,
+          bucket: "presentable",
+        })),
+        ...fcItems("design", noQuestion).map((e) => ({
+          ...e,
+          bucket: "noQuestion",
+        })),
       ],
-      breakdown: { presentable, noQuestion, draft: 0, unaddressable: 0, fetchErrors: 0 },
+      breakdown: {
+        presentable,
+        noQuestion,
+        draft: 0,
+        unaddressable: 0,
+        fetchErrors: 0,
+      },
     };
     hq.counts.design = presentable + noQuestion;
     hq.counts.designPresentable = presentable;
     hq.counts.designNoQuestion = noQuestion;
     return hq;
   };
-  const designOf = (box) => collect(box, "fsm-state").find((b) => b.dataset.t === "ai:design");
+  const designOf = (box) =>
+    collect(box, "fsm-state").find((b) => b.dataset.t === "ai:design");
   // The raw label total climbs 9→16 while the half the box draws sits at 0: every new PR
   // is withheld. A rising border here would announce a bottleneck in a queue no human
   // command serves — the exact claim issue-pr-cron#240 removed from this box.
   const withheldClimb = rise.map((n, i) => ({
     t: at(7 - i),
-    counts: { design: n + 8, designPresentable: 0, designNoQuestion: n + 8, ready: 5, leaks: 2 },
+    counts: {
+      design: n + 8,
+      designPresentable: 0,
+      designNoQuestion: n + 8,
+      ready: 5,
+      leaks: 2,
+    },
   }));
   assert(
     !designOf(fsmBox(cell(0, 16), withheldClimb)).classList.contains("rising"),
@@ -4468,7 +5746,13 @@ Deno.test("pipeline FSM: the design box's trend is drawn from designPresentable,
   // total that never moves, and the box flags the bottleneck it does own.
   const presentableClimb = rise.map((n, i) => ({
     t: at(7 - i),
-    counts: { design: 16, designPresentable: n, designNoQuestion: 16 - n, ready: 5, leaks: 2 },
+    counts: {
+      design: 16,
+      designPresentable: n,
+      designNoQuestion: 16 - n,
+      ready: 5,
+      leaks: 2,
+    },
   }));
   const flagged = designOf(fsmBox(cell(8, 8), presentableClimb));
   assert(flagged.classList.contains("rising"), "a filling /ndd inbox is");
@@ -4487,7 +5771,8 @@ Deno.test("pipeline FSM: a split whose counts mirror disagrees is a loud defect 
   const box = fsmBox(hq);
   const defects = textOf(collect(box, "fsm-defect")[0] || makeEl("div"));
   assert(
-    defects.includes("designPresentable") && defects.includes("counted two ways"),
+    defects.includes("designPresentable") &&
+      defects.includes("counted two ways"),
     `the divergence is named: ${defects}`,
   );
 });
@@ -4498,9 +5783,12 @@ Deno.test("pipeline FSM: the drawn split key must be claimed; the withheld half'
   // vanish.
   const orphan = descHq();
   orphan.counts.designPresentable = 3;
-  const named = textOf(collect(fsmBox(orphan), "fsm-defect")[0] || makeEl("div"));
+  const named = textOf(
+    collect(fsmBox(orphan), "fsm-defect")[0] || makeEl("div"),
+  );
   assert(
-    named.includes("designPresentable") && named.includes("claimed by no descriptor"),
+    named.includes("designPresentable") &&
+      named.includes("claimed by no descriptor"),
     `an orphaned inbox key screams: ${named}`,
   );
   // `designNoQuestion` counts the rows /ndd withholds. Nothing here draws it: those PRs
@@ -4897,8 +6185,7 @@ function grantsData(over = {}) {
   };
 }
 // The h3 section headings the grants block emits, in order.
-const grantSections = (box) =>
-  collect(box, "tok-h3").map((h) => h.textContent);
+const grantSections = (box) => collect(box, "tok-h3").map((h) => h.textContent);
 // Every chip label under the grants block, as text.
 const chipText = (box) => collect(box, "own-chip").map((c) => c.textContent);
 
@@ -4931,14 +6218,19 @@ Deno.test("deployments: each grantee lists its own roles and per-chain live stat
     assert(keys.includes(r), "role " + r + " listed, got " + keys.join(","));
   }
   assert(
-    collect(box, "bcn-key").every((k) => !/^[A-Z_]+$/.test(k.textContent || "")),
+    collect(box, "bcn-key").every((k) =>
+      !/^[A-Z_]+$/.test(k.textContent || "")
+    ),
     "no role name is rendered into the narrow fixed-width key",
   );
   const chips = chipText(box);
   assert(chips.includes("base ✓"), "granted on base");
   assert(chips.includes("ethereum ○"), "not yet granted on ethereum");
   // The per-grantee tally counts the chain cells, not the roles.
-  assert(chips.includes("3/6 live"), "service key 3 of 6 cells: " + chips.join(","));
+  assert(
+    chips.includes("3/6 live"),
+    "service key 3 of 6 cells: " + chips.join(","),
+  );
 });
 
 // Reviewing a governance bundle means reading 32-byte role words out of
@@ -5010,7 +6302,8 @@ Deno.test("deployments: a grant not yet live on a chain reads as a rollout, neve
   const rollChips = collect(box, "own-chip-roll").map((c) => c.textContent);
   assert(
     rollChips.filter((t) => t === "ethereum ○").length === 3,
-    "three not-yet-granted cells carry the rollout chip: " + rollChips.join(","),
+    "three not-yet-granted cells carry the rollout chip: " +
+      rollChips.join(","),
   );
   assert(
     !chipText(box).some((t) => t === "ethereum ✗"),
@@ -5130,11 +6423,17 @@ Deno.test("deployments: admin and action roles split into their own tables, and 
   const safeRows = collect(box, "own-role").filter((r) =>
     r.textContent === "tokenOwnerSafe"
   );
-  assert(safeRows.length === 2, "the Safe is in both tables, got " + safeRows.length);
+  assert(
+    safeRows.length === 2,
+    "the Safe is in both tables, got " + safeRows.length,
+  );
   const svcRows = collect(box, "own-role").filter((r) =>
     r.textContent === "GRANTEE_SERVICE_1C66"
   );
-  assert(svcRows.length === 1, "the service key holds no admin role, so one row");
+  assert(
+    svcRows.length === 1,
+    "the service key holds no admin role, so one row",
+  );
   // The admin role itself is only under the admin heading.
   const keys = collect(box, "grt-role").map((k) => k.textContent);
   assert(
@@ -5170,9 +6469,8 @@ Deno.test("deployments: the Safe grantee shows the address it was checked at on 
   // different keys holding the same roles, i.e. exactly the miscount this
   // section exists to prevent.
   // Scoped to the KEY LIST rows, for the same reason as above.
-  const svc = collect(box, "own-row").flatMap((r) => collect(r, "own-addr")).filter((a) =>
-    a.textContent === SERVICE_EOA
-  );
+  const svc = collect(box, "own-row").flatMap((r) => collect(r, "own-addr"))
+    .filter((a) => a.textContent === SERVICE_EOA);
   assert(
     svc.length === 1,
     "the service key's one address renders once, got " + svc.length,
@@ -5210,7 +6508,10 @@ Deno.test("deployments: an unread chain says why, and never reads as revoked", (
     "it says why and refuses the revoked reading: " + textOf(down[0]),
   );
   const chips = chipText(box);
-  assert(chips.includes("hyperevm ?"), "unread cells are a question, not a cross");
+  assert(
+    chips.includes("hyperevm ?"),
+    "unread cells are a question, not a cross",
+  );
   assert(
     !chips.includes("hyperevm ○") && !chips.includes("hyperevm ✗"),
     "an unread cell is neither a rollout gap nor a fault",
@@ -5223,7 +6524,10 @@ Deno.test("deployments: an unread chain says why, and never reads as revoked", (
   );
   // The grantee tally counts only what was actually read as granted, so an
   // unread chain lowers the ratio rather than inflating or hiding it.
-  assert(chips.includes("3/6 live"), "3 of 6 cells confirmed: " + chips.join(","));
+  assert(
+    chips.includes("3/6 live"),
+    "3 of 6 cells confirmed: " + chips.join(","),
+  );
 });
 
 Deno.test("deployments: a grant map that parsed short says so before any count is read", () => {
@@ -5241,10 +6545,15 @@ Deno.test("deployments: a grant map that parsed short says so before any count i
 Deno.test("deployments: with no grant data the section is absent and the rest of the page survives", () => {
   const box = deploymentsBox({ ...OWNERS, deploymentGrants: null });
   assert(
-    !collect(box, "tok-h3").some((h) => h.textContent.startsWith("Action roles")),
+    !collect(box, "tok-h3").some((h) =>
+      h.textContent.startsWith("Action roles")
+    ),
     "no grants section",
   );
-  assert(collect(box, "own-group").length === 4, "the owner groups still render");
+  assert(
+    collect(box, "own-group").length === 4,
+    "the owner groups still render",
+  );
   // …and an empty grantee list is the same: nothing, rather than a table that
   // would read as "no key holds these roles".
   const empty = deploymentsBox(grantsData({ grantees: [] }));
@@ -5428,7 +6737,10 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
   const chips = collect(box, "own-chip").map((c) => c.textContent);
   // The owner is NAMED as the timelock, not rendered as an unknown dash — the
   // reader has to be able to see which governing holder it is.
-  assert(chips.includes("timelock"), "owner labelled timelock: " + chips.join(","));
+  assert(
+    chips.includes("timelock"),
+    "owner labelled timelock: " + chips.join(","),
+  );
   assert(!chips.includes("—"), "a timelock owner is not an unknown dash");
   assert(!chips.includes("foreign"), "a timelock owner is not foreign");
   // Before the timelock arm this beacon rendered drift, i.e. the completed
@@ -5449,34 +6761,58 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
 Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", () => {
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
-  assert(btns.length === 3, "three sub-tabs: " + btns.map((b) => b.textContent).join(","));
+  assert(
+    btns.length === 3,
+    "three sub-tabs: " + btns.map((b) => b.textContent).join(","),
+  );
   assert(
     btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac",
-    "tabs in order safe,contracts,rbac: " + btns.map((b) => b.dataset.tab).join(","),
+    "tabs in order safe,contracts,rbac: " +
+      btns.map((b) => b.dataset.tab).join(","),
   );
   // Exactly one active, and it is the first — a page that opens with none
   // active looks broken, and one that opens with both looks like no tabs.
   const active = btns.filter((b) => b.classList.contains("active"));
-  assert(active.length === 1 && active[0].dataset.tab === "safe", "safe tab active on load");
+  assert(
+    active.length === 1 && active[0].dataset.tab === "safe",
+    "safe tab active on load",
+  );
 
   const panels = collect(box, "tabpanel");
   assert(panels.length === 3, "three panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
-  assert(!byTab.safe.classList.contains("tab-hidden"), "safe panel visible on load");
-  assert(byTab.contracts.classList.contains("tab-hidden"), "contracts panel hidden on load");
-  assert(byTab.rbac.classList.contains("tab-hidden"), "rbac panel hidden on load");
+  assert(
+    !byTab.safe.classList.contains("tab-hidden"),
+    "safe panel visible on load",
+  );
+  assert(
+    byTab.contracts.classList.contains("tab-hidden"),
+    "contracts panel hidden on load",
+  );
+  assert(
+    byTab.rbac.classList.contains("tab-hidden"),
+    "rbac panel hidden on load",
+  );
 });
 
 Deno.test("deployments: clicking a sub-tab moves both the panel and the active mark", () => {
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
-  const panels = Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
+  const panels = Object.fromEntries(
+    collect(box, "tabpanel").map((p) => [p.dataset.tab, p]),
+  );
   const contractsBtn = btns.find((b) => b.dataset.tab === "contracts");
 
   contractsBtn.click();
-  assert(panels.contracts && !panels.contracts.classList.contains("tab-hidden"), "contracts shown");
+  assert(
+    panels.contracts && !panels.contracts.classList.contains("tab-hidden"),
+    "contracts shown",
+  );
   assert(panels.safe.classList.contains("tab-hidden"), "safe hidden");
-  assert(contractsBtn.classList.contains("active"), "clicked tab marked active");
+  assert(
+    contractsBtn.classList.contains("active"),
+    "clicked tab marked active",
+  );
   assert(
     !btns.find((b) => b.dataset.tab === "safe").classList.contains("active"),
     "the other tab is no longer active",
@@ -5485,7 +6821,10 @@ Deno.test("deployments: clicking a sub-tab moves both the panel and the active m
   // And back, so the toggle is not one-way.
   btns.find((b) => b.dataset.tab === "safe").click();
   assert(!panels.safe.classList.contains("tab-hidden"), "safe shown again");
-  assert(panels.contracts.classList.contains("tab-hidden"), "contracts hidden again");
+  assert(
+    panels.contracts.classList.contains("tab-hidden"),
+    "contracts hidden again",
+  );
 });
 
 Deno.test("deployments: a closed tab's content is still in the document", () => {
@@ -5520,11 +6859,21 @@ Deno.test("deployments: a closed tab's content is still in the document", () => 
       }],
     },
   });
-  const panels = Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
+  const panels = Object.fromEntries(
+    collect(box, "tabpanel").map((p) => [p.dataset.tab, p]),
+  );
   // Beacons live on the contracts tab, which is closed on load.
-  assert(panels.contracts.classList.contains("tab-hidden"), "contracts tab is the closed one");
-  const beaconChips = collect(panels.contracts, "own-chip").map((c) => c.textContent);
-  assert(beaconChips.includes("timelock"), "closed tab still holds its rows: " + beaconChips.join(","));
+  assert(
+    panels.contracts.classList.contains("tab-hidden"),
+    "contracts tab is the closed one",
+  );
+  const beaconChips = collect(panels.contracts, "own-chip").map((c) =>
+    c.textContent
+  );
+  assert(
+    beaconChips.includes("timelock"),
+    "closed tab still holds its rows: " + beaconChips.join(","),
+  );
   // And the whole-box queries the rest of this suite relies on still find it.
   assert(
     collect(box, "own-chip").map((c) => c.textContent).includes("timelock"),
@@ -5551,7 +6900,9 @@ Deno.test("deployments: the Safe tab holds the ownership sections, not the contr
       }],
     },
   });
-  const panels = Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
+  const panels = Object.fromEntries(
+    collect(box, "tabpanel").map((p) => [p.dataset.tab, p]),
+  );
   const safeText = textOf(panels.safe);
   assert(safeText.includes("Known owners"), "Known owners is on the Safe tab");
   assert(
@@ -5680,7 +7031,8 @@ Deno.test("deployments: an address on an unknown chain is plain text, not a Base
   );
   assert(
     nodes.some((n) => n.textContent === A),
-    "and is still readable as text: " + nodes.map((n) => n.textContent).join(","),
+    "and is still readable as text: " +
+      nodes.map((n) => n.textContent).join(","),
   );
 });
 
@@ -6798,7 +8150,10 @@ Deno.test("metrics accessors: an absent figure reads null, never undefined", () 
   assert(startupMinReal(partial) === null, "startupMin must return null");
   assert(ttlMinReal(partial) === null, "ttlMin must return null");
   // …and a present figure still comes back as a number, in minutes.
-  assert(bootMinReal(partial) === 774 / 60000, "bootMin must convert to minutes");
+  assert(
+    bootMinReal(partial) === 774 / 60000,
+    "bootMin must convert to minutes",
+  );
   assert(
     startupPctOfReal({ startupPct: 61.5 }) === 61.5,
     "a real proportion must pass through unchanged",
@@ -7280,7 +8635,9 @@ Deno.test("metrics records: the typed outcome alone routes a row to the skips", 
     exitCode: 10,
     outcome: "skipped",
   };
-  const { runs, skips } = pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, bare)));
+  const { runs, skips } = pmPartitionReal(
+    pmRecordsReal(jsonl(RUN_SPLIT, bare)),
+  );
   assert(
     runs.length === 1 && skips.length === 1,
     "the typed outcome must partition as a skip: " + JSON.stringify(skips),
@@ -7600,7 +8957,10 @@ Deno.test("metrics forced: the gate field marks a forced run and nothing else", 
   // would silently stop marking the first other gate a force is ever aimed at.
   // Ordinary rows carry it not-at-all (absent, not null), which is what keeps
   // every row written before the field existed rendering exactly as it did.
-  assert(isForcedReal(FORCED_RUN) === true, "the emitter's forced row is forced");
+  assert(
+    isForcedReal(FORCED_RUN) === true,
+    "the emitter's forced row is forced",
+  );
   assert(
     isForcedReal({ ...FORCED_RUN, forced: ["some-future-stop"] }) === true,
     "an unknown stop kind is still a force",
@@ -7700,8 +9060,7 @@ Deno.test("metrics forced: the end label clears the ring on a forced last run", 
     pmPartitionReal(pmRecordsReal(jsonl(RUN_SPLIT, RUN_SPLIT2))).runs,
     "abs",
   );
-  const labelX = (wrap) =>
-    Number(collect(wrap, "pm-endlabel")[0].attrs.x);
+  const labelX = (wrap) => Number(collect(wrap, "pm-endlabel")[0].attrs.x);
   const dotX = (wrap) => {
     const dots = collect(wrap, "pm-dot");
     return Number(dots[dots.length - 1].attrs.cx);
@@ -8343,7 +9702,11 @@ Deno.test("hostile input: hovering a hostile forced run lands it in the tip as t
   svg._rect = rect;
   wrap._rect = rect;
   svg.fire("mousemove", { clientX: 719, clientY: 10 });
-  assertInert(collect(wrap, "pm-tip")[0], XSS_SCRIPT, "forced tooltip on hover");
+  assertInert(
+    collect(wrap, "pm-tip")[0],
+    XSS_SCRIPT,
+    "forced tooltip on hover",
+  );
   assert(
     markupNodes(wrap).length === 0,
     "no payload may become markup anywhere on the chart: " +
@@ -8364,16 +9727,28 @@ Deno.test("hostile input: a design row's title and repo render as text on the pr
     count: 3,
     prs: [
       { repo: "o/design", number: 1, title: XSS_IMG, bucket: "presentable" },
-      { repo: XSS_ATTR, number: 2, title: "withheld one", bucket: "noQuestion" },
+      {
+        repo: XSS_ATTR,
+        number: 2,
+        title: "withheld one",
+        bucket: "noQuestion",
+      },
       { repo: "o/design", number: 3, title: XSS_SCRIPT, bucket: "draft" },
     ],
-    breakdown: { presentable: 1, noQuestion: 1, draft: 1, unaddressable: 0, fetchErrors: 0 },
+    breakdown: {
+      presentable: 1,
+      noQuestion: 1,
+      draft: 1,
+      unaddressable: 0,
+      fetchErrors: 0,
+    },
   };
   hq.counts.design = 3;
   hq.counts.designPresentable = 1;
   hq.counts.designNoQuestion = 1;
   const box = fsmBox(hq);
-  box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design").click();
+  box.querySelectorAll("[data-t]").find((b) => b.dataset.t === "ai:design")
+    .click();
   assertInert(box, XSS_IMG, "presentable row title");
   const text = textOf(box);
   assert(
@@ -8382,7 +9757,8 @@ Deno.test("hostile input: a design row's title and repo render as text on the pr
   );
   assert(
     markupNodes(box).length === 0,
-    "no payload may become markup anywhere on the panel: " + markupNodes(box).join(", "),
+    "no payload may become markup anywhere on the panel: " +
+      markupNodes(box).join(", "),
   );
 });
 
@@ -8523,19 +9899,23 @@ const scanCss = (css) => {
   let out = "", i = 0, depth = 0, openedAt = -1;
   while (i < css.length) {
     if (css.startsWith("/*", i)) {
-      if (depth > 0) faults.push(`nested /* at offset ${i} (CSS comments do not nest)`);
-      else openedAt = i;
+      if (depth > 0) {
+        faults.push(`nested /* at offset ${i} (CSS comments do not nest)`);
+      } else openedAt = i;
       depth++, i += 2;
     } else if (css.startsWith("*/", i)) {
-      if (depth === 0) faults.push(`stray */ at offset ${i} with no comment open`);
-      else depth--;
+      if (depth === 0) {
+        faults.push(`stray */ at offset ${i} with no comment open`);
+      } else depth--;
       i += 2;
     } else {
       if (depth === 0) out += css[i];
       i++;
     }
   }
-  if (depth > 0) faults.push(`comment opened at offset ${openedAt} is never closed`);
+  if (depth > 0) {
+    faults.push(`comment opened at offset ${openedAt} is never closed`);
+  }
   return { out, faults };
 };
 
@@ -8546,10 +9926,15 @@ Deno.test("stylesheet comments are balanced, so no rule is silently swallowed", 
     if (!entry.isFile || !entry.name.endsWith(".html")) continue;
     const src = Deno.readTextFileSync(new URL(entry.name, dir));
     styleBlocks(src).forEach((css, n) => {
-      for (const f of scanCss(css).faults) faults.push(`${entry.name} <style> #${n + 1}: ${f}`);
+      for (const f of scanCss(css).faults) {
+        faults.push(`${entry.name} <style> #${n + 1}: ${f}`);
+      }
     });
   }
-  assert(faults.length === 0, "malformed stylesheet comment:\n" + faults.join("\n"));
+  assert(
+    faults.length === 0,
+    "malformed stylesheet comment:\n" + faults.join("\n"),
+  );
 });
 
 // Prose landing in selector position is the SYMPTOM a browser acts on, whatever produced it.
@@ -8605,7 +9990,11 @@ Deno.test("nothing but selectors sits between stylesheet rules", () => {
       const flush = () => {
         const s = gap.trim();
         if (s && isProse(s)) {
-          offenders.push(`${entry.name} <style> #${n + 1}: not a selector: ${JSON.stringify(s.slice(0, 90))}`);
+          offenders.push(
+            `${entry.name} <style> #${n + 1}: not a selector: ${
+              JSON.stringify(s.slice(0, 90))
+            }`,
+          );
         }
         gap = "";
       };
@@ -8617,17 +10006,26 @@ Deno.test("nothing but selectors sits between stylesheet rules", () => {
       flush();
     });
   }
-  assert(offenders.length === 0, "prose in stylesheet position swallows the next rule:\n" + offenders.join("\n"));
+  assert(
+    offenders.length === 0,
+    "prose in stylesheet position swallows the next rule:\n" +
+      offenders.join("\n"),
+  );
 });
 
 // The two guards above are structural. This one pins the specific rule the bug destroyed, in
 // the terms that matter to a reader: the bottleneck highlight and its fallback must actually
 // declare the red border, and must declare it TOGETHER so they can never drift apart.
 Deno.test("the bottleneck highlight and its fallback survive parsing with the red border intact", () => {
-  const src = Deno.readTextFileSync(new URL("../site/pipeline.html", import.meta.url));
+  const src = Deno.readTextFileSync(
+    new URL("../site/pipeline.html", import.meta.url),
+  );
   const rules = styleBlocks(src).flatMap(cssRules);
   const hit = rules.find((r) => /\.fsm-state\.rising\b/.test(r.sel));
-  assert(hit, "the .fsm-state.rising rule survives parsing — it is not swallowed by recovery");
+  assert(
+    hit,
+    "the .fsm-state.rising rule survives parsing — it is not swallowed by recovery",
+  );
   assert(
     /\.fsm-state\.lead\b/.test(hit.sel),
     `the fallback shares the rule rather than restating it: ${hit.sel}`,
@@ -8659,21 +10057,31 @@ const NAV_TABS = [
 Deno.test("every page renders the same five nav tabs in the same order, its own tab active", () => {
   const want = NAV_TABS.map(([href, label]) => `${href}|${label}`).join(" ");
   for (const [page] of NAV_TABS) {
-    const src = Deno.readTextFileSync(new URL(`../site/${page}`, import.meta.url));
+    const src = Deno.readTextFileSync(
+      new URL(`../site/${page}`, import.meta.url),
+    );
     const nav = src.match(/<nav class="nav">([\s\S]*?)<\/nav>/);
     assert(nav, `${page}: has a <nav class="nav"> block`);
     const tabs = [...nav[1].matchAll(/<a href="([^"]+)"([^>]*)>([^<]+)<\/a>/g)]
-      .map((m) => ({ href: m[1], active: /\bclass="active"/.test(m[2]), label: m[3] }));
+      .map((m) => ({
+        href: m[1],
+        active: /\bclass="active"/.test(m[2]),
+        label: m[3],
+      }));
     const got = tabs.map((t) => `${t.href}|${t.label}`).join(" ");
     assert(
       got === want,
-      `${page}: nav tabs are ${NAV_TABS.map(([, l]) => l).join(" · ")} in that order, got ` +
+      `${page}: nav tabs are ${
+        NAV_TABS.map(([, l]) => l).join(" · ")
+      } in that order, got ` +
         tabs.map((t) => t.label).join(" · "),
     );
     const active = tabs.filter((t) => t.active).map((t) => t.href);
     assert(
       active.length === 1 && active[0] === page,
-      `${page}: exactly its own tab carries class="active", got [${active.join(", ")}]`,
+      `${page}: exactly its own tab carries class="active", got [${
+        active.join(", ")
+      }]`,
     );
   }
 });
@@ -8726,7 +10134,7 @@ Deno.test("deployments: an unanswered vault is not listed as this chain's", () =
   const listed = rows.map((r) => r.textContent);
   assert(
     listed.includes("0xaaa"),
-    "the answered vault is listed, got: " + listed.join(",")
+    "the answered vault is listed, got: " + listed.join(","),
   );
   assert(
     !listed.includes("0xbbb") && !listed.includes("0xccc"),
@@ -8749,11 +10157,13 @@ Deno.test("deployments: no vault-owner data says unavailable, never silence", ()
   // chain pins failed to parse. Silence would read as "the page does not cover
   // this", which is the blindness this section exists to end and exactly how
   // the grant map went unnoticed.
-  for (const d of [
-    { deploymentVaultOwners: null },
-    {},
-    { deploymentVaultOwners: { total: 0, chains: [] } },
-  ]) {
+  for (
+    const d of [
+      { deploymentVaultOwners: null },
+      {},
+      { deploymentVaultOwners: { total: 0, chains: [] } },
+    ]
+  ) {
     const t = textOf(deploymentsBox(d));
     assert(
       t.includes("Vault ownership unavailable"),
@@ -8838,7 +10248,10 @@ Deno.test("deployments: every chain is rendered, named, with its own counts", ()
     text.includes("0 timelock, 0 safe, 1 other, 0 unpinned of 1 here"),
     "ethereum's tally, got: " + text,
   );
-  assert(text.includes("2 unread") && text.includes("3 unread"), "both unread counts");
+  assert(
+    text.includes("2 unread") && text.includes("3 unread"),
+    "both unread counts",
+  );
 });
 
 Deno.test("deployments: a red other row carries the pins to compare it against", () => {
@@ -8860,12 +10273,14 @@ Deno.test("deployments: one malformed chain does not abandon the page", () => {
   // here does not degrade this section — it stops the page, and the sections
   // after it never render. They are the ones most likely to be read as "no
   // problems found".
-  for (const chains of [
-    [null],
-    [{ network: "base", vaults: "oops" }],
-    [{ network: "base", vaults: [null] }],
-    [{ network: "base", vaults: [{ label: "safe" }] }],
-  ]) {
+  for (
+    const chains of [
+      [null],
+      [{ network: "base", vaults: "oops" }],
+      [{ network: "base", vaults: [null] }],
+      [{ network: "base", vaults: [{ label: "safe" }] }],
+    ]
+  ) {
     const box = deploymentsBox({
       deploymentVaultOwners: { total: 1, chains },
     });
@@ -9065,12 +10480,22 @@ Deno.test("deployments: a chain lists the expectations it does not meet", () => 
       {
         role: "DEPOSIT_ADMIN",
         admin: true,
-        chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds: true }],
+        chains: [{
+          network: "base",
+          address: "0x48ba",
+          status: "missing",
+          safeHolds: true,
+        }],
       },
       {
         role: "WITHDRAW_ADMIN",
         admin: true,
-        chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds: true }],
+        chains: [{
+          network: "base",
+          address: "0x48ba",
+          status: "missing",
+          safeHolds: true,
+        }],
       },
     ],
   }];
@@ -9085,11 +10510,17 @@ Deno.test("deployments: a chain lists the expectations it does not meet", () => 
   assert(t.includes("adminHolder"), "names the holder: " + t);
   assert(t.includes("0x48ba"), "and the address it should be: " + t);
   assert(t.includes("should hold"), "and what it should hold: " + t);
-  assert(t.includes("DEPOSIT_ADMIN") && t.includes("WITHDRAW_ADMIN"), "lists both roles: " + t);
+  assert(
+    t.includes("DEPOSIT_ADMIN") && t.includes("WITHDRAW_ADMIN"),
+    "lists both roles: " + t,
+  );
   assert(t.includes("it does not"), "states the violation: " + t);
   // No narrative about any particular rollout.
   const page = textOf(box);
-  assert(!page.includes("migration has not run"), "no migration-specific narrative");
+  assert(
+    !page.includes("migration has not run"),
+    "no migration-specific narrative",
+  );
   assert(!page.includes("not provisioned"), "no provisioning vocabulary");
 });
 
@@ -9116,22 +10547,39 @@ Deno.test("deployments: an unprobed holder is not reported as nobody holding it"
     roles: [{
       role: "DEPOSIT_ADMIN",
       admin: true,
-      chains: [{ network: "base", address: "0x48ba", status: "missing", safeHolds }],
+      chains: [{
+        network: "base",
+        address: "0x48ba",
+        status: "missing",
+        safeHolds,
+      }],
     }],
   });
 
   d.deploymentGrants.grantees = [mk(null)];
   const unread = textOf(collect(deploymentsBox(d), "viol")[0]);
-  assert(unread.includes("no other holder was read"), "unprobed says so: " + unread);
-  assert(!unread.includes("nor does"), "and does not claim nobody holds it: " + unread);
+  assert(
+    unread.includes("no other holder was read"),
+    "unprobed says so: " + unread,
+  );
+  assert(
+    !unread.includes("nor does"),
+    "and does not claim nobody holds it: " + unread,
+  );
 
   d.deploymentGrants.grantees = [mk(false)];
   const none = textOf(collect(deploymentsBox(d), "viol")[0]);
-  assert(none.includes("nor does the chain's Safe"), "a probed absence says so: " + none);
+  assert(
+    none.includes("nor does the chain's Safe"),
+    "a probed absence says so: " + none,
+  );
 
   d.deploymentGrants.grantees = [mk(true)];
   const safe = textOf(collect(deploymentsBox(d), "viol")[0]);
-  assert(safe.includes("the chain's Safe does"), "a Safe-held role says so: " + safe);
+  assert(
+    safe.includes("the chain's Safe does"),
+    "a Safe-held role says so: " + safe,
+  );
 });
 
 Deno.test("deployments: an admin role the Safe still holds says so", () => {
@@ -9167,7 +10615,10 @@ Deno.test("deployments: an admin role the Safe still holds says so", () => {
     },
   ];
   const text = textOf(deploymentsBox(d));
-  assert(text.includes("base ○ safe"), "the Safe holding it is named, got: " + text);
+  assert(
+    text.includes("base ○ safe"),
+    "the Safe holding it is named, got: " + text,
+  );
   assert(
     text.includes("ethereum ○ unheld"),
     "and nobody holding it is distinct from that, got: " + text,
@@ -9221,7 +10672,9 @@ Deno.test("deployments: a Safe that kept an admin role is a violated expectation
   // while the Safe keeps a role: that green banner was the whole defect.
   // Scoped to THIS chain's banner — the page carries other verify banners
   // (the Safe roster's, for one) that have nothing to do with the grants.
-  const banner = collect(box, "own-verify").find((b) => textOf(b).startsWith("base —"));
+  const banner = collect(box, "own-verify").find((b) =>
+    textOf(b).startsWith("base —")
+  );
   assert(banner, "found the chain's banner");
   assert(
     !banner.className.includes("own-verify-ok"),
@@ -9241,7 +10694,9 @@ Deno.test("deployments: a Safe that kept an admin role is a violated expectation
   );
   // Against the Safe's OWN address, not the timelock's — naming the wrong
   // address here points the reader at the holder that is behaving correctly.
-  const viol = collect(box, "viol").find((v) => textOf(v).includes("should NOT hold"));
+  const viol = collect(box, "viol").find((v) =>
+    textOf(v).includes("should NOT hold")
+  );
   assert(viol, "found the retention row");
   const addrs = collect(viol, "own-addr").map((a) => a.textContent);
   assert(
@@ -9271,17 +10726,30 @@ Deno.test("deployments: a Safe that gave the role up is not reported", () => {
       roleId: ROLE_IDS.DEPOSIT_ADMIN,
       admin: true,
       chains: [
-        { network: "base", address: BASE_SAFE, status: "granted", safeHolds: false },
+        {
+          network: "base",
+          address: BASE_SAFE,
+          status: "granted",
+          safeHolds: false,
+        },
         // Unprobed is not evidence of absence, but it is not evidence of
         // retention either — it must not manufacture a violation.
-        { network: "ethereum", address: ETH_SAFE, status: "granted", safeHolds: null },
+        {
+          network: "ethereum",
+          address: ETH_SAFE,
+          status: "granted",
+          safeHolds: null,
+        },
       ],
     }],
   }];
   const box = deploymentsBox(d);
   const text = textOf(box);
   assert(!text.includes("should NOT hold"), "no retention row, got: " + text);
-  assert(!text.includes("it still does"), "and no retention clause, got: " + text);
+  assert(
+    !text.includes("it still does"),
+    "and no retention clause, got: " + text,
+  );
   // The MIGRATED end state. `safeHolds: false` on a granted row means the
   // declared holder has it and the Safe gave it up — the chip said "✓ unheld"
   // there, a green tick calling a correctly-held role unheld, because the
@@ -9310,10 +10778,17 @@ Deno.test("deployments: a granted role the Safe also kept is marked on the chip"
       role: "DEPOSIT_ADMIN",
       roleId: ROLE_IDS.DEPOSIT_ADMIN,
       admin: true,
-      chains: [{ network: "base", address: BASE_SAFE, status: "granted", safeHolds: true }],
+      chains: [{
+        network: "base",
+        address: BASE_SAFE,
+        status: "granted",
+        safeHolds: true,
+      }],
     }],
   }];
-  const chips = collect(deploymentsBox(d), "own-chip").map((c) => c.textContent);
+  const chips = collect(deploymentsBox(d), "own-chip").map((c) =>
+    c.textContent
+  );
   assert(
     chips.includes("base ✓ +safe"),
     "granted, and the Safe has it too, got " + chips.join(","),
@@ -9431,7 +10906,15 @@ function fakeSubgraph(over = {}) {
         // A grant on a role this snapshot holds no row for is not attributed.
         grant("g4", "0xnope", "0xdd", true, 11, 1, "0xt2"),
       ],
+      // Read only when the schema probe finds the timelock entities.
+      contracts: [],
+      timelockOperations: [],
+      timelockCalls: [],
     },
+    // The schema probe's answer: `t: null` is a subgraph version without
+    // `TimelockOperation`, which is what the prod tag serves until it moves.
+    // `null` here is a failed fetch.
+    schema: { data: { t: null } },
     // entity name -> a raw response body to answer with instead of rows.
     raw: {},
     status: 200,
@@ -9459,10 +10942,18 @@ function fakeSubgraph(over = {}) {
           ? Promise.reject(new TypeError("Failed to fetch"))
           : reply(f.meta);
       }
+      if (q.includes("__type")) {
+        return f.schema === null
+          ? Promise.reject(new TypeError("Failed to fetch"))
+          : reply(f.schema);
+      }
       const entity = /page: (\w+)\(/.exec(q)[1];
       if (entity in f.raw) return reply(f.raw[entity]);
       const cursor = /id_gt: "([^"]*)"/.exec(q)[1];
       const first = Number(/first: (\d+)/.exec(q)[1]);
+      if (!(entity in f.rows)) {
+        throw new Error("fake subgraph: unknown entity " + entity);
+      }
       const page = f.rows[entity]
         .filter((r) => r.id > cursor)
         .sort((a, b) => (a.id < b.id ? -1 : 1))
@@ -9478,7 +10969,9 @@ async function rbacPanelLive(f, data = rbacData([rbacNet()])) {
   await done;
   return collect(box, "tabpanel").find((p) => p.dataset.tab === "rbac");
 }
-const rbacBanners = (p) => collect(p, "own-verify");
+// The network banners: the timelock section's own banners are not one.
+const rbacBanners = (p) =>
+  collect(p, "own-verify").filter((b) => !/\btl-/.test(b.className));
 
 Deno.test("deployments: role changes get their own tab beside the untouched grants view", async () => {
   const f = fakeSubgraph();
@@ -9631,10 +11124,26 @@ Deno.test("deployments: every entity read is pinned to the indexed block, holder
   const f = fakeSubgraph();
   await rbacPanelLive(f);
   const qs = f.seen.map((s) => JSON.parse(s.init.body).query);
-  const reads = qs.filter((q) => !q.includes("_meta"));
+  // The schema probe is a question about the version, not the history, so
+  // it is the one read with no block.
+  const reads = qs.filter((q) => !q.includes("_meta") && !q.includes("__type"));
   assert(reads.length === 3, "three entity reads, got " + reads.length);
   for (const q of reads) {
     assert(q.includes("block: {number: 900}"), "unpinned read: " + q);
+  }
+  // A version with the timelock entities reads three more, at the same block.
+  const t = fakeSubgraph({ schema: TL_SCHEMA });
+  await rbacPanelLive(t);
+  const tq = t.seen
+    .map((s) => JSON.parse(s.init.body).query)
+    .filter((q) => !q.includes("_meta") && !q.includes("__type"));
+  assert(tq.length === 6, "six entity reads, got " + tq.length);
+  for (const e of ["contracts(", "timelockOperations(", "timelockCalls("]) {
+    const q = tq.find((x) => x.includes(e));
+    assert(
+      q && q.includes("block: {number: 900}"),
+      "unpinned or missing read: " + e,
+    );
   }
   assert(
     reads.find((q) => q.includes("roleHolders(")).includes("held: true"),
@@ -9926,7 +11435,9 @@ const RBAC_PINS = {
       pinned("STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM", "LibProdDeployV4"),
       pinned("ALIAS_OF_IT", "LibAuthoriserInvariants"),
     ],
-    [RBAC_TL]: [pinned("STOX_GOVERNANCE_TIMELOCK_ETHEREUM", "LibTimelockInvariants")],
+    [RBAC_TL]: [
+      pinned("STOX_GOVERNANCE_TIMELOCK_ETHEREUM", "LibTimelockInvariants"),
+    ],
     "0xaa": [pinned("GRANTEE_SERVICE_AA", "LibAuthoriserInvariants")],
   },
   base: { [RBAC_AUTH]: [pinned("SOMETHING_ON_BASE", "LibX")] },
@@ -9957,7 +11468,8 @@ Deno.test("deployments: role changes name pinned addresses and keep the hex link
     "authoriser header named by its chain's pin: " + JSON.stringify(auth),
   );
   assert(
-    auth.hex === RBAC_AUTH && auth.href === "https://etherscan.io/address/" + RBAC_AUTH,
+    auth.hex === RBAC_AUTH &&
+      auth.href === "https://etherscan.io/address/" + RBAC_AUTH,
     "hex kept as the explorer link",
   );
   assert(
@@ -9965,9 +11477,14 @@ Deno.test("deployments: role changes name pinned addresses and keep the hex link
       "LibProdDeployV4.STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM\nLibAuthoriserInvariants.ALIAS_OF_IT",
     "every pinning constant in the tooltip, qualified: " + auth.title,
   );
-  assert(tl.name === "STOX_GOVERNANCE_TIMELOCK_ETHEREUM", "timelock header named");
+  assert(
+    tl.name === "STOX_GOVERNANCE_TIMELOCK_ETHEREUM",
+    "timelock header named",
+  );
   // Holder rows: 0xaa is pinned, 0xbb is not.
-  const held = collect(p, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+  const held = collect(p, "own-row").filter((r) =>
+    !r.className.includes("rbac-chg")
+  );
   const holders = whoOf(held[0]);
   assert(
     holders.length === 2 && holders[0].hex === "0xaa" &&
@@ -9993,7 +11510,10 @@ Deno.test("deployments: role changes name pinned addresses and keep the hex link
     textOf(p).includes("An address no constant pins is marked unrecognised"),
     "the marking is explained",
   );
-  assert(collect(p, "rbac-names-gap").length === 0, "no gap when all were read");
+  assert(
+    collect(p, "rbac-names-gap").length === 0,
+    "no gap when all were read",
+  );
 });
 
 Deno.test("deployments: an address is named by its own chain's pins only", async () => {
@@ -10010,7 +11530,10 @@ Deno.test("deployments: an address is named by its own chain's pins only", async
   );
   const nets = collect(p, "rbac-net");
   const baseAuth = whoOf(collect(nets[0], "rbac-contract")[0])[0];
-  assert(baseAuth.name === "SOMETHING_ON_BASE", "base's own name, not ethereum's");
+  assert(
+    baseAuth.name === "SOMETHING_ON_BASE",
+    "base's own name, not ethereum's",
+  );
   const baseTl = whoOf(collect(nets[0], "rbac-contract")[1])[0];
   assert(baseTl.unknown, "ethereum's timelock pin does not name it on base");
   // A chain the table has no entry for pins nothing: everything stands out.
@@ -10025,14 +11548,23 @@ Deno.test("deployments: an address is named by its own chain's pins only", async
 Deno.test("deployments: an upper-case address still finds its lower-case pin", async () => {
   const f = fakeSubgraph();
   f.rows.roleGrants[0].account = "0xAA";
-  const p = await rbacPanelLive(f, rbacData([rbacNet()], { addressNames: RBAC_PINS }));
+  const p = await rbacPanelLive(
+    f,
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
   const row = collect(p, "rbac-chg").map(whoOf)[1];
-  assert(row[0].hex === "0xAA" && row[0].name === "GRANTEE_SERVICE_AA", JSON.stringify(row));
+  assert(
+    row[0].hex === "0xAA" && row[0].name === "GRANTEE_SERVICE_AA",
+    JSON.stringify(row),
+  );
 });
 
 Deno.test("deployments: no pin table marks nothing unrecognised and says names are missing", async () => {
   const p = await rbacPanelLive(fakeSubgraph());
-  assert(collect(p, "rbac-unknown").length === 0, "nothing marked without a table");
+  assert(
+    collect(p, "rbac-unknown").length === 0,
+    "nothing marked without a table",
+  );
   assert(collect(p, "rbac-name").length === 0, "nothing named");
   assert(collect(p, "rbac-who").length > 0, "addresses still rendered");
   assert(
@@ -10044,11 +11576,19 @@ Deno.test("deployments: no pin table marks nothing unrecognised and says names a
 Deno.test("deployments: a network with no chain is not looked up in the pin table", async () => {
   const p = await rbacPanelLive(
     fakeSubgraph(),
-    rbacData([rbacNet({ network: "arbitrum-one", chain: null })], { addressNames: RBAC_PINS }),
+    rbacData([rbacNet({ network: "arbitrum-one", chain: null })], {
+      addressNames: RBAC_PINS,
+    }),
   );
   assert(collect(p, "rbac-who").length > 0, "addresses rendered");
-  assert(collect(p, "rbac-unknown").length === 0, "nothing marked on an unknown chain");
-  assert(collect(p, "rbac-name").length === 0, "nothing named on an unknown chain");
+  assert(
+    collect(p, "rbac-unknown").length === 0,
+    "nothing marked on an unknown chain",
+  );
+  assert(
+    collect(p, "rbac-name").length === 0,
+    "nothing named on an unknown chain",
+  );
 });
 
 Deno.test("deployments: unread pin sources are named, and inherited keys are not pins", async () => {
@@ -10074,10 +11614,18 @@ Deno.test("deployments: unread pin sources are named, and inherited keys are not
   // right shape: a polluted prototype must not name anything.
   Object.prototype["0xbb"] = [pinned("POLLUTED_HOLDER", "LibX")];
   try {
-    const q = await rbacPanelLive(fakeSubgraph(), rbacData([rbacNet()], { addressNames: RBAC_PINS }));
-    const held = collect(q, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+    const q = await rbacPanelLive(
+      fakeSubgraph(),
+      rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+    );
+    const held = collect(q, "own-row").filter((r) =>
+      !r.className.includes("rbac-chg")
+    );
     const bb = whoOf(held[0])[1];
-    assert(bb.hex === "0xbb" && bb.unknown && bb.name === null, "inherited entry named: " + JSON.stringify(bb));
+    assert(
+      bb.hex === "0xbb" && bb.unknown && bb.name === null,
+      "inherited entry named: " + JSON.stringify(bb),
+    );
   } finally {
     delete Object.prototype["0xbb"];
   }
@@ -10085,10 +11633,15 @@ Deno.test("deployments: unread pin sources are named, and inherited keys are not
   try {
     const q = await rbacPanelLive(
       fakeSubgraph(),
-      rbacData([rbacNet({ network: "bsc", chain: "bsc" })], { addressNames: RBAC_PINS }),
+      rbacData([rbacNet({ network: "bsc", chain: "bsc" })], {
+        addressNames: RBAC_PINS,
+      }),
     );
     const auth = whoOf(collect(q, "rbac-contract")[0])[0];
-    assert(auth.unknown && auth.name === null, "inherited chain table named: " + JSON.stringify(auth));
+    assert(
+      auth.unknown && auth.name === null,
+      "inherited chain table named: " + JSON.stringify(auth),
+    );
   } finally {
     delete Object.prototype.bsc;
   }
@@ -10100,19 +11653,31 @@ Deno.test("deployments: malformed pin entries are skipped, never shown as a name
     rbacData([rbacNet()], {
       addressNames: {
         ethereum: {
-          "0xaa": [null, { name: "" }, { name: 7 }, { contract: "LibX" }, pinned("REAL_AA", "LibA")],
+          "0xaa": [
+            null,
+            { name: "" },
+            { name: 7 },
+            { contract: "LibX" },
+            pinned("REAL_AA", "LibA"),
+          ],
           "0xbb": [null, {}, { name: "" }],
         },
       },
     }),
   );
-  const held = collect(p, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+  const held = collect(p, "own-row").filter((r) =>
+    !r.className.includes("rbac-chg")
+  );
   const [aa, bb] = whoOf(held[0]);
   assert(
     aa.name === "REAL_AA" && aa.title === "LibA.REAL_AA" && !aa.unknown,
-    "first well-formed entry names it, alone in the tooltip: " + JSON.stringify(aa),
+    "first well-formed entry names it, alone in the tooltip: " +
+      JSON.stringify(aa),
   );
-  assert(bb.unknown && bb.name === null, "no well-formed entry is unrecognised: " + JSON.stringify(bb));
+  assert(
+    bb.unknown && bb.name === null,
+    "no well-formed entry is unrecognised: " + JSON.stringify(bb),
+  );
 });
 
 Deno.test("deployments: pinned names land as text", async () => {
@@ -10124,4 +11689,430 @@ Deno.test("deployments: pinned names land as text", async () => {
   );
   assert(textOf(p).includes(XSS_IMG), "payload rendered as text");
   assert(tags(p, "img").length === 0, "no element created from it");
+});
+
+// ---- deployments.html: governance timelock operations ----
+
+// A subgraph version that indexes `TimelockOperation`.
+const TL_SCHEMA = { data: { t: { name: "TimelockOperation" } } };
+const TL_NOW = RBAC_TS + 12; // the fake's default clock, in seconds
+const TL_BEACON = "0x" + "be".repeat(20);
+const TL_STRANGER = "0x" + "5e".repeat(20);
+const TL_IMPL = "0x" + "11".repeat(20);
+const tlWord = (hex) => hex.replace(/^0x/, "").padStart(64, "0");
+const tlCallData = (sel, ...words) => sel + words.map(tlWord).join("");
+const SEL = {
+  grantRole: "0x2f2ff15d",
+  upgradeTo: "0x3659cfe6",
+  upgradeToAndCall: "0x4f1ef286",
+  updateDelay: "0x64d62353",
+  transferOwnership: "0xf2fde38b",
+  renounceOwnership: "0x715018a6",
+};
+const tlOpRow = (id, status, readyAt, over = {}) => ({
+  id,
+  timelock: { id: RBAC_TL },
+  operationId: "0x" + id.slice(2).padEnd(64, "0"),
+  schedulingIndex: 0,
+  status,
+  callCount: 1,
+  predecessor: RBAC_ZERO,
+  salt: RBAC_ZERO,
+  delay: "172800",
+  readyAt: String(readyAt),
+  scheduledAtBlock: "800",
+  scheduledAtTimestamp: String(readyAt - 172800),
+  scheduledTransactionHash: "0xs" + id.slice(2),
+  executedAtBlock: null,
+  executedAtTimestamp: null,
+  executedTransactionHash: null,
+  cancelledAtBlock: null,
+  cancelledAtTimestamp: null,
+  cancelledTransactionHash: null,
+  ...over,
+});
+const tlCallRow = (id, op, index, target, data, value = "0") => ({
+  id,
+  operation: { id: op },
+  index,
+  target,
+  value,
+  data,
+});
+
+// The timelock holds DEPOSIT on the authoriser and owns the beacon. Three
+// pending operations — one on each of those, one on a stranger — and two
+// finished ones.
+function tlFake(over = {}) {
+  const f = fakeSubgraph({ schema: TL_SCHEMA, ...over });
+  f.rows.roleHolders.push({
+    id: "h3",
+    account: RBAC_TL,
+    grantedAtBlock: "11",
+    grantedAtTimestamp: "1791883011",
+    role: { id: RBAC_AUTH + ROLE_IDS.DEPOSIT.slice(2) },
+  });
+  f.rows.contracts = [
+    { id: RBAC_TL, kind: "GOVERNANCE_TIMELOCK", owner: null },
+    { id: RBAC_AUTH, kind: "AUTHORIZER", owner: null },
+    { id: TL_BEACON, kind: "BEACON", owner: RBAC_TL },
+  ];
+  f.rows.timelockOperations = [
+    tlOpRow("0xp1", "PENDING", TL_NOW + 36 * 3600),
+    tlOpRow("0xp2", "PENDING", TL_NOW),
+    tlOpRow("0xp3", "PENDING", TL_NOW + 1, {
+      callCount: 2,
+      predecessor: "0x" + "77".repeat(32),
+    }),
+    tlOpRow("0xh1", "EXECUTED", TL_NOW - 9000, {
+      scheduledAtBlock: "700",
+      executedAtBlock: "750",
+      executedAtTimestamp: String(TL_NOW - 8000),
+      executedTransactionHash: "0xe1",
+    }),
+    tlOpRow("0xh2", "CANCELLED", TL_NOW - 5000, {
+      scheduledAtBlock: "720",
+      cancelledAtBlock: "760",
+      cancelledAtTimestamp: String(TL_NOW - 4000),
+      cancelledTransactionHash: "0xc2",
+    }),
+  ];
+  f.rows.timelockCalls = [
+    tlCallRow(
+      "0xc1",
+      "0xp1",
+      0,
+      RBAC_AUTH,
+      tlCallData(SEL.grantRole, ROLE_IDS.DEPOSIT, TL_STRANGER),
+    ),
+    tlCallRow("0xc2", "0xp2", 0, TL_BEACON, tlCallData(SEL.upgradeTo, TL_IMPL)),
+    tlCallRow("0xc3", "0xp3", 0, TL_STRANGER, "0xdeadbeef00", "5"),
+    tlCallRow(
+      "0xc4",
+      "0xh1",
+      0,
+      RBAC_TL,
+      tlCallData(SEL.updateDelay, (172800).toString(16)),
+    ),
+    tlCallRow(
+      "0xc5",
+      "0xh2",
+      0,
+      TL_BEACON,
+      tlCallData(SEL.transferOwnership, TL_STRANGER),
+    ),
+  ];
+  return f;
+}
+const tlSec = (p) => collect(p, "tl-sec");
+const pendingCards = (p) => collect(p, "tl-pending");
+const historyRows = (p) => collect(p, "tl-done");
+
+Deno.test("deployments: a subgraph version without timelock operations says so and keeps the roles", async () => {
+  const p = await rbacPanelLive(fakeSubgraph());
+  const absent = collect(p, "tl-absent");
+  assert(absent.length === 1, "one not-indexed banner for the network");
+  assert(
+    textOf(absent[0]).includes("not indexed by this subgraph version") &&
+      textOf(absent[0]).includes("not the same as none pending"),
+    "states the version gap honestly: " + textOf(absent[0]),
+  );
+  assert(collect(p, "tl-error").length === 0, "not reported as an error");
+  assert(pendingCards(p).length === 0, "no operations invented");
+  // The rest of the tab is untouched.
+  const banners = rbacBanners(p);
+  assert(
+    banners.length === 1 && banners[0].className.includes("own-verify-ok"),
+    "network banner still current",
+  );
+  assert(collect(p, "rbac-chg").length === 3, "role history still rendered");
+});
+
+Deno.test("deployments: an unreadable timelock read is an error, distinct from an old version", async () => {
+  const cases = [
+    [{ schema: null }, "no readable answer to the schema probe"],
+    [
+      { schema: { errors: [{ message: "introspection off" }] } },
+      "introspection off",
+    ],
+    [
+      { schema: { error: "subgraph name/version error" } },
+      "the subgraph vanished mid-read",
+    ],
+    [{ schema: { data: { t: { name: "Other" } } } }, "not a type"],
+    [{ schema: { data: { t: 7 } } }, "not a type"],
+    [
+      { raw: { timelockCalls: { errors: [{ message: "calls boom" }] } } },
+      "timelockCalls: calls boom",
+    ],
+    [
+      { raw: { contracts: { data: {} } } },
+      "contracts: the response carried no rows",
+    ],
+  ];
+  for (const [over, phrase] of cases) {
+    const label = JSON.stringify(over);
+    const p = await rbacPanelLive(tlFake(over));
+    const err = collect(p, "tl-error");
+    assert(err.length === 1, label + ": one error banner");
+    assert(textOf(err[0]).includes(phrase), label + ": says " + textOf(err[0]));
+    assert(
+      textOf(err[0]).includes("not the same as none pending"),
+      label + ": no data is not none",
+    );
+    assert(
+      collect(p, "tl-absent").length === 0,
+      label + ": not called an old version",
+    );
+    assert(
+      pendingCards(p).length === 0 && historyRows(p).length === 0,
+      label + ": nothing shown short",
+    );
+    assert(
+      collect(p, "rbac-chg").length === 3,
+      label + ": role history unaffected",
+    );
+  }
+});
+
+Deno.test("deployments: pending timelock operations lead, soonest first, readiness from the clock", async () => {
+  const p = await rbacPanelLive(
+    tlFake(),
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
+  const sec = tlSec(p);
+  assert(sec.length === 1, "one timelock section");
+  // The section sits above the role contracts.
+  const net = collect(p, "rbac-net")[0];
+  const order = net.children.map((c) => c.className);
+  assert(
+    order.indexOf("tl-sec") <
+      order.findIndex((c) => c.includes("rbac-contract")),
+    "timelock first: " + order,
+  );
+  const head = collect(sec[0], "rbac-contract")[0];
+  assert(textOf(head).includes("3 pending"), "pending count: " + textOf(head));
+  assert(
+    whoOf(head)[0].name === "STOX_GOVERNANCE_TIMELOCK_ETHEREUM",
+    "timelock named",
+  );
+  const cards = pendingCards(p);
+  assert(cards.length === 3, "three pending cards");
+  const when = cards.map((c) => textOf(collect(c, "tl-when")[0]));
+  // readyAt == now is ready (OpenZeppelin's `<=`); one second later is not.
+  assert(
+    when[0].startsWith("ready now") && when[0].includes("anyone can execute"),
+    "boundary is ready: " + when[0],
+  );
+  assert(when[1].startsWith("ready in 1s"), "one second out: " + when[1]);
+  assert(when[2].startsWith("ready in 1d 12h"), "countdown: " + when[2]);
+  // Pending cards come before the history table in the section.
+  const kids = sec[0].children.map((c) => c.className);
+  assert(
+    kids.lastIndexOf("tl-op tl-pending tl-governs") <
+      kids.indexOf("own-table tl-hist"),
+    "pending before history",
+  );
+});
+
+Deno.test("deployments: a pending call on a contract the timelock governs stands out, and why", async () => {
+  const p = await rbacPanelLive(
+    tlFake(),
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
+  const [beacon, stranger, auth] = pendingCards(p);
+  assert(beacon.className.includes("tl-governs"), "owned beacon: governed");
+  assert(
+    collect(beacon, "tl-governed")[0].textContent === "governed by this timelock",
+    "chip text",
+  );
+  assert(
+    collect(beacon, "tl-governed")[0].title === "this timelock owns it",
+    "owner reason",
+  );
+  assert(
+    auth.className.includes("tl-governs"),
+    "role-held authoriser: governed",
+  );
+  assert(
+    collect(auth, "tl-governed")[0].title ===
+      "this timelock holds DEPOSIT on it",
+    "role reason: " + collect(auth, "tl-governed")[0].title,
+  );
+  assert(!stranger.className.includes("tl-governs"), "stranger: not governed");
+  assert(
+    collect(stranger, "tl-governed").length === 0,
+    "no chip on a stranger",
+  );
+  // The target and the role arguments are named the way the role tab names them.
+  const authWho = whoOf(auth);
+  assert(
+    authWho[0].name === "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM",
+    "target named",
+  );
+  assert(
+    authWho[1].unknown && authWho[1].hex === TL_STRANGER,
+    "unpinned grantee marked unrecognised",
+  );
+  const fn = textOf(collect(auth, "tl-fn")[0]);
+  assert(
+    fn.startsWith("grantRole(DEPOSIT, ") && fn.endsWith(")"),
+    "decoded with the role named: " + fn,
+  );
+  assert(
+    textOf(collect(beacon, "tl-fn")[0]).includes("upgradeTo(") &&
+      textOf(beacon).includes(TL_IMPL),
+    "upgradeTo decoded",
+  );
+  // Unknown selector, value, predecessor and a short call list are all said.
+  const s = textOf(stranger);
+  assert(
+    s.includes("0xdeadbeef — not a function this page decodes"),
+    "unknown selector: " + s,
+  );
+  assert(s.includes("0xdeadbeef00"), "raw calldata shown");
+  assert(s.includes("value 5 wei"), "value shown");
+  assert(
+    s.includes("runs only after 0x" + "77".repeat(32)),
+    "predecessor shown",
+  );
+  assert(s.includes("1 of 2 calls indexed"), "missing call flagged");
+  assert(
+    !textOf(beacon).includes("calls indexed"),
+    "a whole operation is not flagged",
+  );
+});
+
+Deno.test("deployments: executed and cancelled timelock operations are history, newest first", async () => {
+  const p = await rbacPanelLive(tlFake());
+  const rows = historyRows(p);
+  assert(rows.length === 2, "two history rows");
+  // h2 was scheduled at block 720, h1 at 700.
+  assert(
+    textOf(rows[0]).includes("cancelled") &&
+      textOf(rows[0]).includes("transferOwnership("),
+    "cancelled first",
+  );
+  assert(
+    textOf(rows[1]).includes("executed") &&
+      textOf(rows[1]).includes("updateDelay(172800s (2d 0h))"),
+    "executed: " + textOf(rows[1]),
+  );
+  assert(
+    collect(rows[1], "tl-governed")[0].title === "it is this timelock",
+    "a call on itself is governed",
+  );
+  const links = (r) => tags(r, "a").map((a) => a.href);
+  assert(
+    links(rows[0]).includes("https://etherscan.io/tx/0xc2"),
+    "cancel tx linked",
+  );
+  assert(
+    links(rows[1]).includes("https://etherscan.io/tx/0xe1"),
+    "execute tx linked",
+  );
+  assert(
+    links(rows[1]).includes("https://etherscan.io/tx/0xsh1"),
+    "schedule tx linked",
+  );
+  assert(
+    textOf(tlSec(p)[0]).includes("2 executed or cancelled operations"),
+    "history counted",
+  );
+  assert(
+    pendingCards(p).every((c) => !c.className.includes("tl-done")),
+    "pending is not history",
+  );
+});
+
+Deno.test("deployments: timelock calldata is decoded only where it fits its ABI", async () => {
+  const f = tlFake();
+  const A = tlWord(TL_STRANGER);
+  const calls = [
+    ["0x", "no calldata"],
+    ["0x2f2f", "calldata shorter than a function selector"],
+    [
+      SEL.grantRole + tlWord(ROLE_IDS.DEPOSIT),
+      "calldata too short for its arguments",
+    ],
+    [SEL.transferOwnership + "ff" + A.slice(2), "argument 0 is not an address"],
+    [SEL.transferOwnership + A + "00", "1 bytes past the arguments"],
+    [SEL.renounceOwnership, "renounceOwnership()"],
+    [
+      SEL.upgradeToAndCall + tlWord(TL_IMPL) + tlWord("40") + tlWord("3") +
+      "abcdef".padEnd(64, "0"),
+      "3 bytes)",
+    ],
+    [
+      SEL.upgradeToAndCall + tlWord(TL_IMPL) + tlWord("40") + tlWord("21") +
+      "ab".padEnd(64, "0"),
+      "argument 1 runs past the calldata",
+    ],
+    [
+      SEL.upgradeToAndCall + tlWord(TL_IMPL) + tlWord("ffff"),
+      "argument 1 runs past the calldata",
+    ],
+    [XSS_IMG, "calldata is not hex"],
+    ["0xabc", "calldata is not hex"],
+  ];
+  f.rows.timelockOperations = [
+    tlOpRow("0xd1", "PENDING", TL_NOW + 60, { callCount: calls.length }),
+  ];
+  f.rows.timelockCalls = calls.map(([data], i) =>
+    tlCallRow("0xd" + String(i).padStart(2, "0"), "0xd1", i, TL_STRANGER, data)
+  );
+  const p = await rbacPanelLive(f);
+  const rows = collect(p, "tl-call");
+  assert(rows.length === calls.length, "every call rendered, in index order");
+  calls.forEach(([, want], i) => {
+    assert(
+      textOf(rows[i]).includes(want),
+      `call ${i}: wants "${want}", got ${textOf(rows[i])}`,
+    );
+  });
+  assert(
+    !textOf(rows[5]).includes("past the arguments"),
+    "an exact fit has no trailing bytes",
+  );
+  assert(
+    textOf(rows[6]).includes("upgradeToAndCall(") &&
+      !textOf(rows[6]).includes("runs past"),
+    "valid bytes arg decoded",
+  );
+  assert(tags(p, "img").length === 0, "calldata payload lands as text");
+});
+
+Deno.test("deployments: a network whose index holds no timelock says so", async () => {
+  const f = tlFake();
+  f.rows.contracts = [];
+  f.rows.timelockOperations = [];
+  f.rows.timelockCalls = [];
+  const p = await rbacPanelLive(f);
+  assert(
+    textOf(tlSec(p)[0]).includes("holds no governance timelock"),
+    textOf(tlSec(p)[0]),
+  );
+  const g = tlFake();
+  g.rows.timelockOperations = [];
+  g.rows.timelockCalls = [];
+  const q = await rbacPanelLive(g);
+  const head = collect(tlSec(q)[0], "rbac-contract")[0];
+  assert(
+    textOf(head).includes("0 pending"),
+    "a timelock with nothing scheduled: " + textOf(head),
+  );
+  assert(
+    textOf(tlSec(q)[0]).includes("Nothing is scheduled on this timelock."),
+    "said in words",
+  );
+});
+
+Deno.test("deployments: no timelock read when the network's index could not be read at all", async () => {
+  const f = tlFake({ meta: null });
+  const p = await rbacPanelLive(f);
+  assert(
+    tlSec(p).length === 0,
+    "no timelock section under an unreachable banner",
+  );
+  assert(!f.seen.some((s) => s.init.body.includes("__type")), "not probed");
 });
