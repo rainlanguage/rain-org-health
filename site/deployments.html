@@ -1302,19 +1302,27 @@ function renderDeployments(document, $, data, io) {
   const RBAC_MISSING = "subgraph name/version error";
   // One GraphQL POST, classified: { data } | { missing } | { error } | { unreachable }.
   const rbacAsk = async (url, query) => {
-    let body;
+    let r;
     try {
-      const r = await io.fetch(url, {
+      r = await io.fetch(url, {
         method: "POST",
         headers: { "content-type": "application/json" },
         body: JSON.stringify({ query }),
         cache: "no-store",
       });
-      body = await r.json();
     } catch {
       return { unreachable: true };
     }
-    if (!body || typeof body !== "object") return { error: "the endpoint answered with something that is not a JSON object" };
+    // A non-2xx answer was received, so it is never "unreachable"; its status
+    // is what says what went wrong when the body has no GraphQL shape.
+    const status = r.ok === false ? `the endpoint answered HTTP ${r.status}` : null;
+    let body;
+    try {
+      body = await r.json();
+    } catch {
+      return status ? { error: status } : { unreachable: true };
+    }
+    if (!body || typeof body !== "object") return { error: status || "the endpoint answered with something that is not a JSON object" };
     // `errors` beside `data` is a failure, not a partial answer.
     if ("errors" in body) {
       const errs = Array.isArray(body.errors) ? body.errors : [body.errors];
@@ -1328,7 +1336,7 @@ function renderDeployments(document, $, data, io) {
       if (body.error === RBAC_MISSING) return { missing: true };
       return { error: typeof body.error === "string" ? body.error : JSON.stringify(body.error) };
     }
-    if (!body.data || typeof body.data !== "object") return { error: "the response carried no data" };
+    if (!body.data || typeof body.data !== "object") return { error: status || "the response carried no data" };
     return { data: body.data };
   };
   // Every row of one entity at `block`, paged by id. Pinned to one block so the

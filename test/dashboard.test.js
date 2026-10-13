@@ -9434,6 +9434,7 @@ function fakeSubgraph(over = {}) {
     },
     // entity name -> a raw response body to answer with instead of rows.
     raw: {},
+    status: 200,
     now: (RBAC_TS + 12) * 1000,
     seen: [],
     ...over,
@@ -9443,8 +9444,11 @@ function fakeSubgraph(over = {}) {
     fetch: (url, init) => {
       f.seen.push({ url, init });
       const q = JSON.parse(init.body).query;
+      // `status` is the HTTP status of every answer (fetch resolves on any).
       const reply = (body) =>
         Promise.resolve({
+          ok: f.status >= 200 && f.status < 300,
+          status: f.status,
           json: () =>
             typeof body === "string"
               ? Promise.reject(new SyntaxError("not JSON"))
@@ -9679,6 +9683,28 @@ Deno.test("deployments: every index state is stated, and no data never reads as 
     ],
     [{ meta: null }, "No readable answer", "down", false],
     [{ meta: "<html>" }, "No readable answer", "down", false],
+    // A non-2xx answer was received: its status is the error, never
+    // "unreachable", unless the body has a GraphQL shape of its own.
+    [{ meta: "<html>", status: 502 }, "answered HTTP 502", "drift", false],
+    [
+      { meta: { message: "rate limited" }, status: 429 },
+      "answered HTTP 429",
+      "drift",
+      false,
+    ],
+    [{ meta: 5, status: 500 }, "answered HTTP 500", "drift", false],
+    [
+      { meta: { errors: [{ message: "bad query" }] }, status: 400 },
+      "bad query",
+      "drift",
+      false,
+    ],
+    [
+      { meta: { error: "subgraph name/version error" }, status: 404 },
+      "No subgraph — nothing is published at st0x-rbac-mainnet/prod",
+      "down",
+      false,
+    ],
     [
       { meta: { errors: [{ message: "has not started syncing yet" }] } },
       "has not started syncing yet",
