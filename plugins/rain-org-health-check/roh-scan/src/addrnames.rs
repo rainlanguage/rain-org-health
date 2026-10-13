@@ -5,8 +5,8 @@
 //! The set is a category, not a list: every `address … constant` declared in
 //! the sources handed in is a name, so a pin added to the deploy repo is named
 //! here without a change to this file. Declarations are read with
-//! [`solang_parser`] — the lexer `forge fmt` uses — so a commented-out pin is
-//! not a pin and a declaration wrapped over two lines is still one.
+//! [`solar_parse`] — the parser foundry uses — so a commented-out pin is not a
+//! pin and a declaration wrapped over two lines is still one.
 //!
 //! A constant is either a literal (`= 0x…` / `= address(0x…)`) or an alias of
 //! another constant (`= OtherLib.NAME` / `= NAME`). Aliases are followed to
@@ -25,9 +25,12 @@
 
 use crate::owners;
 use serde_json::{json, Map, Value};
-use solang_parser::pt::{
-    ContractPart, Expression, SourceUnitPart, Type, VariableAttribute, VariableDefinition,
+use solar_parse::ast::{
+    Arena, CallArgsKind, ElementaryType, Expr, ExprKind, ItemKind, LitKind, TypeKind, VarMut,
+    VariableDefinition,
 };
+use solar_parse::interface::{source_map::FileName, Session};
+use solar_parse::Parser;
 
 /// What a constant is set to.
 #[derive(Debug, PartialEq, Eq, Clone)]
@@ -48,85 +51,89 @@ pub struct Pin {
     pub value: PinValue,
 }
 
-fn literal(e: &Expression) -> Option<String> {
-    match e {
-        Expression::HexNumberLiteral(_, s, None) | Expression::AddressLiteral(_, s) => {
-            let hex = s.strip_prefix("0x")?;
-            (hex.len() == 40 && hex.chars().all(|c| c.is_ascii_hexdigit()))
-                .then(|| format!("0x{hex}"))
-        }
-        _ => None,
-    }
+fn is_address(kind: &TypeKind<'_>) -> bool {
+    matches!(kind, TypeKind::Elementary(ElementaryType::Address(_)))
 }
 
-fn pin_value(e: &Expression) -> Option<PinValue> {
+/// A 40-digit hex number literal, as written in the source. One written with
+/// a `_` separator or a unit is not an address.
+fn literal(e: &Expr<'_>) -> Option<String> {
+    let ExprKind::Lit(lit, None) = &e.kind else {
+        return None;
+    };
+    let LitKind::Address(_) = lit.kind else {
+        return None;
+    };
+    let written = lit.symbol.as_str();
+    (!written.contains('_')).then(|| written.to_string())
+}
+
+fn pin_value(e: &Expr<'_>) -> Option<PinValue> {
     if let Some(l) = literal(e) {
         return Some(PinValue::Literal(l));
     }
-    match e {
+    match &e.kind {
         // `address(0x…)`, the form most pins are written in.
-        Expression::FunctionCall(_, f, args)
-            if matches!(
-                **f,
-                Expression::Type(_, Type::Address | Type::AddressPayable)
-            ) && args.len() == 1 =>
-        {
-            literal(&args[0]).map(PinValue::Literal)
-        }
-        Expression::MemberAccess(_, base, member) => match &**base {
-            Expression::Variable(lib) => {
-                Some(PinValue::Alias(Some(lib.name.clone()), member.name.clone()))
+        ExprKind::Call(f, args) => match (&f.kind, &args.kind) {
+            (ExprKind::Type(t), CallArgsKind::Unnamed(a))
+                if is_address(&t.kind) && a.len() == 1 =>
+            {
+                literal(a[0]).map(PinValue::Literal)
             }
             _ => None,
         },
-        Expression::Variable(v) => Some(PinValue::Alias(None, v.name.clone())),
+        ExprKind::Member(base, member) => match &base.kind {
+            ExprKind::Ident(lib) => Some(PinValue::Alias(
+                Some(lib.as_str().to_string()),
+                member.as_str().to_string(),
+            )),
+            _ => None,
+        },
+        ExprKind::Ident(v) => Some(PinValue::Alias(None, v.as_str().to_string())),
         _ => None,
     }
 }
 
-fn pin_of(contract: &str, v: &VariableDefinition) -> Option<Pin> {
-    if !matches!(
-        v.ty,
-        Expression::Type(_, Type::Address | Type::AddressPayable)
-    ) {
-        return None;
-    }
-    if !v
-        .attrs
-        .iter()
-        .any(|a| matches!(a, VariableAttribute::Constant(_)))
-    {
+fn pin_of(contract: &str, v: &VariableDefinition<'_>) -> Option<Pin> {
+    if !is_address(&v.ty.kind) || v.mutability != Some(VarMut::Constant) {
         return None;
     }
     Some(Pin {
         contract: contract.to_string(),
-        name: v.name.as_ref()?.name.clone(),
+        name: v.name?.as_str().to_string(),
         value: pin_value(v.initializer.as_ref()?)?,
     })
 }
 
 /// Every `address … constant` declared in one Solidity source, in source
 /// order. `None` when the source does not parse — unread, not "pins nothing".
+/// Any parse error makes the source unread, including one the parser
+/// recovered from, so a source is never half-read.
 pub fn parse_pins(src: &str) -> Option<Vec<Pin>> {
-    let (unit, _) = solang_parser::parse(src, 0).ok()?;
-    let mut out = Vec::new();
-    for part in &unit.0 {
-        match part {
-            SourceUnitPart::VariableDefinition(v) => out.extend(pin_of("", v)),
-            SourceUnitPart::ContractDefinition(c) => {
-                let Some(cname) = c.name.as_ref().map(|i| i.name.as_str()) else {
-                    continue;
-                };
-                for p in &c.parts {
-                    if let ContractPart::VariableDefinition(v) = p {
-                        out.extend(pin_of(cname, v));
+    let sess = Session::builder().with_silent_emitter(None).build();
+    sess.enter_sequential(|| {
+        let arena = Arena::new();
+        let mut parser =
+            Parser::from_source_code(&sess, &arena, FileName::Custom("pins".into()), src).ok()?;
+        let unit = parser.parse_file().map_err(|e| e.emit()).ok()?;
+        sess.dcx.has_errors().ok()?;
+        let mut out = Vec::new();
+        for item in unit.items.iter() {
+            match &item.kind {
+                ItemKind::Variable(v) => out.extend(pin_of("", v)),
+                ItemKind::Contract(c) => {
+                    let cname = c.name.as_str();
+                    for part in c.body.iter() {
+                        if let ItemKind::Variable(v) = &part.kind {
+                            out.extend(pin_of(cname, v));
+                        }
                     }
                 }
+                _ => {}
             }
-            _ => {}
         }
-    }
-    Some(out)
+        Some(out)
+    })
 }
 
 /// The chain a constant's own name pins it to, by its `_<CHAIN>` suffix.
@@ -314,6 +321,9 @@ mod tests {
                 address internal constant TWO_ARGS = address(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
                 address internal constant NOT_ADDRESS_CAST = bytes20(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
                 bytes20 internal constant NOT_ADDRESS_TYPE = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
+                address internal immutable IMMUTABLE = address(0xcccccccccccccccccccccccccccccccccccccccc);
+                address internal constant STRING ="0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+                address internal constant WITH_UNIT = address(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa wei);
             }
             "#,
         )
@@ -363,6 +373,48 @@ mod tests {
         );
         assert_eq!(unread, vec!["bad.sol".to_string(), "empty.sol".to_string()]);
         assert_eq!(map["base"], json!({}));
+    }
+
+    /// Valid Solidity that solang-parser rejects: `instance` is an ordinary
+    /// identifier (st0x.deploy's `LibOrchestratorInvariants` names an error
+    /// parameter and a local with it), and so are other words solang reserves.
+    #[test]
+    fn valid_solidity_using_non_keyword_identifiers_is_read() {
+        let pins = parse_pins(&format!(
+            "pragma solidity ^0.8.25;
+            error OrchestratorInstanceMissing(address instance);
+            library LibO {{
+                address internal constant INSTANCE = address({A});
+                function check() internal view {{
+                    address instance = INSTANCE;
+                    if (instance.code.length == 0) revert OrchestratorInstanceMissing(instance);
+                }}
+            }}"
+        ))
+        .unwrap();
+        assert_eq!(
+            pins,
+            vec![Pin {
+                contract: "LibO".into(),
+                name: "INSTANCE".into(),
+                value: PinValue::Literal(A.into()),
+            }]
+        );
+    }
+
+    /// The parser recovers from some errors and still returns a tree; any
+    /// error at all leaves the source unread rather than half-read.
+    #[test]
+    fn a_source_with_a_recovered_parse_error_is_unread() {
+        assert_eq!(
+            parse_pins(&format!(
+                "library L {{
+                    address internal constant X = address({A});
+                    import \"./x.sol\";
+                }}"
+            )),
+            None
+        );
     }
 
     #[test]
