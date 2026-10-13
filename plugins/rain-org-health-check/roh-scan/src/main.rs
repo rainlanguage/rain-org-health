@@ -2700,10 +2700,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .unwrap_or(serde_json::Value::Null)
         };
 
-        // Every role grant and revoke, and the current holders, per contract per
-        // network, from the deploy repo's RBAC subgraph. Where it is published
-        // and which networks it covers are read from the deploy repo; see
-        // `rbac`'s module doc for why the `prod` tag is what is queried.
+        // Where the deploy repo's RBAC subgraph is published per network, and
+        // the role names its sources spell out. The role history itself is read
+        // by the page when it loads; see `rbac`'s module doc.
         let deployment_rbac = {
             let workflow = gh_file(
                 deploy_org,
@@ -2719,39 +2718,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
             );
             let names = rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer]);
-            let source = rbac::parse_deploy_workflow(&workflow);
-            let networks = rbac::parse_networks(&networks_json);
-            let query = |url: &str, body: &str| -> Option<Vec<u8>> {
-                let o = Command::new("curl")
-                    .args([
-                        "-fsS",
-                        "-m",
-                        "25",
-                        "-X",
-                        "POST",
-                        url,
-                        "-H",
-                        "content-type: application/json",
-                        "-d",
-                        body,
-                    ])
-                    .output()
-                    .ok()?;
-                o.status.success().then_some(o.stdout)
-            };
-            let head = |chain: &str| -> Option<rbac::Head> {
-                let session = rpc_session(Chain::from_network(chain)?);
-                let payload = r#"{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["latest",false]}"#;
-                curl_json(session, payload).and_then(|b| rbac::parse_head(&b))
-            };
             rbac::build_rbac(
                 deploy_org,
                 deploy_repo,
-                source.as_ref(),
-                networks.as_deref(),
+                rbac::parse_deploy_workflow(&workflow).as_ref(),
+                rbac::parse_networks(&networks_json).as_deref(),
                 &names,
-                &query,
-                &head,
             )
         };
 
