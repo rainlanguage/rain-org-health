@@ -309,6 +309,11 @@ mod tests {
                 uint256 internal constant N = 5;
                 address internal immutable_like = address(0xcccccccccccccccccccccccccccccccccccccccc);
                 address internal constant SHORT = address(0x1);
+                address internal constant LONG = address(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                address internal constant SEPARATED = address(0xaaaaaaaaaaaaaaaaaaaa_aaaaaaaaaaaaaaaaaaa);
+                address internal constant TWO_ARGS = address(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
+                address internal constant NOT_ADDRESS_CAST = bytes20(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
+                bytes20 internal constant NOT_ADDRESS_TYPE = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
             }
             "#,
         )
@@ -409,6 +414,49 @@ mod tests {
     }
 
     #[test]
+    fn a_chain_suffix_needs_an_underscore_and_a_stem() {
+        let (map, _) = build_address_names(
+            &[src(
+                "L.sol",
+                &format!(
+                    "library L {{
+                        address internal constant XETHEREUM = address({A});
+                        address internal constant _ETHEREUM = address({B});
+                    }}"
+                ),
+            )],
+            &chains(),
+        );
+        for c in chains() {
+            assert_eq!(names(&map, &c, A), vec!["L.XETHEREUM"], "{c}");
+            assert_eq!(names(&map, &c, B), vec!["L._ETHEREUM"], "{c}");
+        }
+    }
+
+    #[test]
+    fn a_literal_names_before_its_aliases_whatever_the_source_order() {
+        let (map, _) = build_address_names(
+            &[
+                src(
+                    "Auth.sol",
+                    "library LibAuth { address internal constant GRANTEE = LibSafe.SAFE; }",
+                ),
+                src(
+                    "Safe.sol",
+                    &format!(
+                        "library LibSafe {{ address internal constant SAFE = address({A}); }}"
+                    ),
+                ),
+            ],
+            &chains(),
+        );
+        assert_eq!(
+            names(&map, "base", A),
+            vec!["LibSafe.SAFE", "LibAuth.GRANTEE"]
+        );
+    }
+
+    #[test]
     fn a_sibling_in_another_library_does_not_scope_a_bare_pin() {
         let (map, _) = build_address_names(
             &[
@@ -481,14 +529,23 @@ mod tests {
                     &format!("address constant TWICE = address({A});\naddress constant TWICE = address({B});"),
                 ),
                 src("M.sol", "library M { address constant AMBIG = TWICE; }"),
+                // A qualified name is looked up in that library only, never
+                // at file level.
+                src("N.sol", "library N { address constant QUALIFIED = Missing.PTR; }"),
+                // A bare name is never another library's constant.
+                src("O.sol", "library O { address constant CROSS = INNER; }"),
+                src(
+                    "P.sol",
+                    &format!("library P {{ address constant INNER = address({B}); }}"),
+                ),
             ],
             &chains(),
         );
         assert_eq!(names(&map, "ethereum", C), vec![".PTR", "L.VIA"]);
-        assert!(
-            !map.to_string().contains("AMBIG"),
-            "an ambiguous name resolved"
-        );
+        let all = map.to_string();
+        for n in ["AMBIG", "QUALIFIED", "CROSS"] {
+            assert!(!all.contains(n), "{n} resolved");
+        }
     }
 
     #[test]
@@ -519,17 +576,26 @@ mod tests {
     #[test]
     fn entries_carry_the_declaring_path_and_addresses_key_lowercase() {
         let (map, _) = build_address_names(
-            &[src(
-                "src/lib/L.sol",
-                "library L { address constant X = 0xAbCdEfabcdefABCDEFabcdefABCDEFabcdefABCD; }",
-            )],
+            &[
+                src(
+                    "src/lib/L.sol",
+                    "library L { address constant X = 0xAbCdEfabcdefABCDEFabcdefABCDEFabcdefABCD; }",
+                ),
+                src(
+                    "src/generated/M.sol",
+                    &format!("library M {{ address constant Y = address({A}); }}"),
+                ),
+            ],
             &["base".to_string()],
         );
         assert_eq!(
             map,
-            json!({"base": {"0xabcdefabcdefabcdefabcdefabcdefabcdefabcd": [
-                {"name": "X", "contract": "L", "path": "src/lib/L.sol"}
-            ]}})
+            json!({"base": {
+                "0xabcdefabcdefabcdefabcdefabcdefabcdefabcd": [
+                    {"name": "X", "contract": "L", "path": "src/lib/L.sol"}
+                ],
+                A: [{"name": "Y", "contract": "M", "path": "src/generated/M.sol"}]
+            }})
         );
     }
 }

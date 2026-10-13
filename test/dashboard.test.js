@@ -10070,6 +10070,49 @@ Deno.test("deployments: unread pin sources are named, and inherited keys are not
   );
   const row = collect(p, "rbac-chg").map(whoOf)[1];
   assert(row[0].hex === "constructor" && row[0].unknown, JSON.stringify(row));
+  // An inherited table or entry is not the scan's, even when it has the
+  // right shape: a polluted prototype must not name anything.
+  Object.prototype["0xbb"] = [pinned("POLLUTED_HOLDER", "LibX")];
+  try {
+    const q = await rbacPanelLive(fakeSubgraph(), rbacData([rbacNet()], { addressNames: RBAC_PINS }));
+    const held = collect(q, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+    const bb = whoOf(held[0])[1];
+    assert(bb.hex === "0xbb" && bb.unknown && bb.name === null, "inherited entry named: " + JSON.stringify(bb));
+  } finally {
+    delete Object.prototype["0xbb"];
+  }
+  Object.prototype.bsc = { [RBAC_AUTH]: [pinned("POLLUTED_CHAIN", "LibX")] };
+  try {
+    const q = await rbacPanelLive(
+      fakeSubgraph(),
+      rbacData([rbacNet({ network: "bsc", chain: "bsc" })], { addressNames: RBAC_PINS }),
+    );
+    const auth = whoOf(collect(q, "rbac-contract")[0])[0];
+    assert(auth.unknown && auth.name === null, "inherited chain table named: " + JSON.stringify(auth));
+  } finally {
+    delete Object.prototype.bsc;
+  }
+});
+
+Deno.test("deployments: malformed pin entries are skipped, never shown as a name", async () => {
+  const p = await rbacPanelLive(
+    fakeSubgraph(),
+    rbacData([rbacNet()], {
+      addressNames: {
+        ethereum: {
+          "0xaa": [null, { name: "" }, { name: 7 }, { contract: "LibX" }, pinned("REAL_AA", "LibA")],
+          "0xbb": [null, {}, { name: "" }],
+        },
+      },
+    }),
+  );
+  const held = collect(p, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+  const [aa, bb] = whoOf(held[0]);
+  assert(
+    aa.name === "REAL_AA" && aa.title === "LibA.REAL_AA" && !aa.unknown,
+    "first well-formed entry names it, alone in the tooltip: " + JSON.stringify(aa),
+  );
+  assert(bb.unknown && bb.name === null, "no well-formed entry is unrecognised: " + JSON.stringify(bb));
 });
 
 Deno.test("deployments: pinned names land as text", async () => {
