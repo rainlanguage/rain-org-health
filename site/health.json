@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T07:47:38Z",
+  "generatedAt": "2026-10-13T10:28:06Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2488,11 +2488,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 15,
+        "granted": 14,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 1,
         "total": 15,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -2855,7 +2855,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -3186,6 +3186,62 @@
         }
       }
     ]
+  },
+  "deploymentRbac": {
+    "org": "S01-Issuer",
+    "repo": "st0x.deploy",
+    "tag": "prod",
+    "subgraph": "st0x-rbac",
+    "networks": [
+      {
+        "network": "base",
+        "chain": "base",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-base/prod/gn"
+      },
+      {
+        "network": "mainnet",
+        "chain": "ethereum",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-mainnet/prod/gn"
+      },
+      {
+        "network": "hyperevm",
+        "chain": "hyperevm",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-hyperevm/prod/gn"
+      },
+      {
+        "network": "robinhood",
+        "chain": "robinhood",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-robinhood/prod/gn"
+      },
+      {
+        "network": "bsc",
+        "chain": "bsc",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-bsc/prod/gn"
+      }
+    ],
+    "roleNames": {
+      "0x0000000000000000000000000000000000000000000000000000000000000000": "DEFAULT_ADMIN_ROLE",
+      "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821": "DEPOSIT",
+      "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869": "WITHDRAW",
+      "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02": "DEPOSIT_ADMIN",
+      "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3": "WITHDRAW_ADMIN",
+      "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b": "CERTIFY_ADMIN",
+      "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c": "CONFISCATE_SHARES_ADMIN",
+      "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d": "CONFISCATE_RECEIPT_ADMIN",
+      "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2": "SCHEDULE_CORPORATE_ACTION_ADMIN",
+      "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373": "CANCEL_CORPORATE_ACTION_ADMIN",
+      "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391": "CERTIFY",
+      "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed": "CONFISCATE_SHARES",
+      "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3": "CONFISCATE_RECEIPT",
+      "0xfc0b9a47b723baf66339577301d13949cab2da29c3baeaa9cfc1f36c513e8f89": "SCHEDULE_CORPORATE_ACTION",
+      "0x921a3c774c4abecc1bddc4f7beb397fdb2cde7806021d9571086abb74cd023e7": "CANCEL_CORPORATE_ACTION",
+      "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1": "PROPOSER_ROLE",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63": "EXECUTOR_ROLE",
+      "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783": "CANCELLER_ROLE",
+      "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba": "MINT",
+      "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3": "BURN",
+      "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de": "EMERGENCY"
+    }
   },
   "deploymentHealth": {
     "org": "S01-Issuer",
@@ -6567,7 +6623,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 104,
-      "commitsSinceAudit": 699,
+      "commitsSinceAudit": 703,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
