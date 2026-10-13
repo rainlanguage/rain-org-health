@@ -10,6 +10,7 @@
 // wide enough to exceed the default 128-deep limit.
 #![recursion_limit = "512"]
 
+mod addrnames;
 mod audit;
 mod blobs;
 mod cli;
@@ -2718,13 +2719,57 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
             );
             let names = rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer]);
-            rbac::build_rbac(
+            let mut doc = rbac::build_rbac(
                 deploy_org,
                 deploy_repo,
                 rbac::parse_deploy_workflow(&workflow).as_ref(),
                 rbac::parse_networks(&networks_json).as_deref(),
                 &names,
-            )
+            );
+            // Who each address on the tab is: every `address` constant in the
+            // deploy repo's libraries, per chain. Every `.sol` the two
+            // directories list is read, so a new library or pin is named
+            // without a change here. Bodies this scan already fetched are
+            // reused rather than fetched again.
+            let fetched: [(&str, &str); 6] = [
+                ("src/lib/LibSafeInvariants.sol", &safe),
+                ("src/lib/LibAuthoriserInvariants.sol", &auth),
+                ("src/generated/LibProdDeployV4.sol", &v4),
+                ("src/lib/LibTokenInvariants.sol", &governed_tok_lib),
+                ("src/lib/LibTimelockInvariants.sol", &timelock),
+                ("src/lib/LibProdDeployV2BaseOverrides.sol", &overrides),
+            ];
+            let mut sources: Vec<(String, String)> = Vec::new();
+            let mut listed_all = true;
+            for dir in ["src/lib", "src/generated"] {
+                let Some(listing) = gh_stdout(&[
+                    "api",
+                    &format!("repos/{deploy_org}/{deploy_repo}/contents/{dir}"),
+                    "--jq",
+                    ".[] | select(.type == \"file\") | .name",
+                ]) else {
+                    listed_all = false;
+                    continue;
+                };
+                for name in listing.lines().map(str::trim) {
+                    if !name.ends_with(".sol") {
+                        continue;
+                    }
+                    let path = format!("{dir}/{name}");
+                    let body = match fetched.iter().find(|(p, _)| *p == path) {
+                        Some((_, b)) => b.to_string(),
+                        None => gh_file(deploy_org, deploy_repo, &path),
+                    };
+                    sources.push((path, body));
+                }
+            }
+            let chain_names: Vec<String> = chains.iter().map(|c| c.network.clone()).collect();
+            if listed_all && !chain_names.is_empty() {
+                let (map, unread) = addrnames::build_address_names(&sources, &chain_names);
+                doc["addressNames"] = map;
+                doc["addressNamesUnread"] = serde_json::Value::from(unread);
+            }
+            doc
         };
 
         // Ownership of the governed vaults, which the governance migration

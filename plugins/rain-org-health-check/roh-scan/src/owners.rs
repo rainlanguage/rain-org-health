@@ -478,6 +478,11 @@ fn role_grant_pairs(body: &str) -> Vec<GrantPin> {
         .collect()
 }
 
+/// The chain a bare (unsuffixed) per-chain pin belongs to: the deploy repo
+/// writes the home chain's pin as `NAME` and every other chain's as
+/// `NAME_<CHAIN>`.
+pub const REFERENCE_NETWORK: &str = "base";
+
 /// A chain the deploy repo pins production state for: its authoriser (the
 /// contract the grants live on) and its token-owner Safe (the per-chain grantee
 /// the map is parameterised by).
@@ -523,7 +528,7 @@ pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str, timelock_lib: &str) -> Vec
     for c in re.captures_iter(v4_lib) {
         let suffix = c.get(1).map(|m| m.as_str().to_string());
         let network = match &suffix {
-            None => "base".to_string(),
+            None => REFERENCE_NETWORK.to_string(),
             Some(s) => s.trim_start_matches('_').to_lowercase(),
         };
         if out.iter().any(|p| p.network == network) {
