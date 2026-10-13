@@ -9580,17 +9580,19 @@ Deno.test("deployments: contracts order by kind then address, changes by block t
   const f = fakeSubgraph();
   const low = "0x1111111111111111111111111111111111111111";
   const high = "0xffffffffffffffffffffffffffffffffffffffff";
-  const role = (c, kind) => ({
-    id: c + ROLE_IDS.DEPOSIT.slice(2),
+  const role = (id, c, kind) => ({
+    id,
     role: ROLE_IDS.DEPOSIT,
     admin: RBAC_ZERO,
     contract: { id: c, kind, firstIndexedBlock: "1" },
   });
-  // Neither the read order nor the address order is the kind order.
+  // The pager reads in row-id order, chosen here so that neither the read
+  // order nor the address order is the kind order, and the two authorisers
+  // arrive in the reverse of their address order.
   f.rows.roles = [
-    role(high, "AUTHORIZER"),
-    role(low, "GOVERNANCE_TIMELOCK"),
-    role(RBAC_AUTH, "AUTHORIZER"),
+    role("r1", high, "AUTHORIZER"),
+    role("r2", low, "GOVERNANCE_TIMELOCK"),
+    role("r3", RBAC_AUTH, "AUTHORIZER"),
   ];
   f.rows.roleHolders = [];
   const g = (id, block, log) => ({
@@ -9602,7 +9604,7 @@ Deno.test("deployments: contracts order by kind then address, changes by block t
     blockTimestamp: "1",
     transactionHash: "0xt",
     logIndex: String(log),
-    role: { id: RBAC_AUTH + ROLE_IDS.DEPOSIT.slice(2) },
+    role: { id: "r3" },
   });
   // A later block wins over a higher log index.
   f.rows.roleGrants = [g("a1", 10, 9), g("a2", 12, 3), g("a3", 12, 7)];
