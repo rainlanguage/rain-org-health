@@ -9913,3 +9913,215 @@ Deno.test("deployments: role-change strings land as text", async () => {
   assert(textOf(p).includes(XSS_IMG), "payload rendered as text");
   assert(tags(p, "img").length === 0, "no element created from it");
 });
+
+// ---- deployments.html: role changes name every address the deploy repo pins ----
+
+// The scan's per-chain pin table: on Ethereum the authoriser, holder 0xaa and
+// the timelock are pinned; holder 0xbb, revoked 0xcc and sender 0x5a are not.
+// Base pins the authoriser's address as something else entirely.
+const pinned = (name, contract) => ({ name, contract, path: "src/lib/L.sol" });
+const RBAC_PINS = {
+  ethereum: {
+    [RBAC_AUTH]: [
+      pinned("STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM", "LibProdDeployV4"),
+      pinned("ALIAS_OF_IT", "LibAuthoriserInvariants"),
+    ],
+    [RBAC_TL]: [pinned("STOX_GOVERNANCE_TIMELOCK_ETHEREUM", "LibTimelockInvariants")],
+    "0xaa": [pinned("GRANTEE_SERVICE_AA", "LibAuthoriserInvariants")],
+  },
+  base: { [RBAC_AUTH]: [pinned("SOMETHING_ON_BASE", "LibX")] },
+};
+const whoOf = (node) =>
+  collect(node, "rbac-who").map((w) => {
+    const n = collect(w, "rbac-name")[0];
+    const a = collect(w, "own-addr")[0];
+    return {
+      name: n ? n.textContent : null,
+      title: n ? n.title : null,
+      unknown: collect(w, "rbac-unknown").length === 1,
+      hex: a ? a.textContent : null,
+      href: a ? a.href : null,
+    };
+  });
+
+Deno.test("deployments: role changes name pinned addresses and keep the hex link", async () => {
+  const p = await rbacPanelLive(
+    fakeSubgraph(),
+    rbacData([rbacNet()], { addressNames: RBAC_PINS, addressNamesUnread: [] }),
+  );
+  const heads = collect(p, "rbac-contract").map(whoOf);
+  assert(heads.length === 2, "two contracts");
+  const [auth, tl] = heads.map((h) => h[0]);
+  assert(
+    auth.name === "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM" && !auth.unknown,
+    "authoriser header named by its chain's pin: " + JSON.stringify(auth),
+  );
+  assert(
+    auth.hex === RBAC_AUTH && auth.href === "https://etherscan.io/address/" + RBAC_AUTH,
+    "hex kept as the explorer link",
+  );
+  assert(
+    auth.title ===
+      "LibProdDeployV4.STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM\nLibAuthoriserInvariants.ALIAS_OF_IT",
+    "every pinning constant in the tooltip, qualified: " + auth.title,
+  );
+  assert(tl.name === "STOX_GOVERNANCE_TIMELOCK_ETHEREUM", "timelock header named");
+  // Holder rows: 0xaa is pinned, 0xbb is not.
+  const held = collect(p, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+  const holders = whoOf(held[0]);
+  assert(
+    holders.length === 2 && holders[0].hex === "0xaa" &&
+      holders[0].name === "GRANTEE_SERVICE_AA" && !holders[0].unknown,
+    "pinned holder named: " + JSON.stringify(holders),
+  );
+  assert(
+    holders[1].hex === "0xbb" && holders[1].name === null && holders[1].unknown,
+    "unpinned holder marked unrecognised: " + JSON.stringify(holders[1]),
+  );
+  // History rows: the account and the sender are both looked up.
+  const rows = collect(p, "rbac-chg").map(whoOf);
+  assert(
+    rows[0].length === 2 && rows[0][0].hex === "0xcc" && rows[0][0].unknown &&
+      rows[0][1].hex === "0x5a" && rows[0][1].unknown,
+    "revoked account and sender both unrecognised: " + JSON.stringify(rows[0]),
+  );
+  assert(
+    rows[1][0].name === "GRANTEE_SERVICE_AA" && rows[1][1].unknown,
+    "granted account named, sender unrecognised: " + JSON.stringify(rows[1]),
+  );
+  assert(
+    textOf(p).includes("An address no constant pins is marked unrecognised"),
+    "the marking is explained",
+  );
+  assert(collect(p, "rbac-names-gap").length === 0, "no gap when all were read");
+});
+
+Deno.test("deployments: an address is named by its own chain's pins only", async () => {
+  const f = fakeSubgraph();
+  const p = await rbacPanelLive(
+    f,
+    rbacData(
+      [
+        rbacNet({ network: "base", chain: "base" }),
+        rbacNet({ network: "bsc", chain: "bsc" }),
+      ],
+      { addressNames: RBAC_PINS },
+    ),
+  );
+  const nets = collect(p, "rbac-net");
+  const baseAuth = whoOf(collect(nets[0], "rbac-contract")[0])[0];
+  assert(baseAuth.name === "SOMETHING_ON_BASE", "base's own name, not ethereum's");
+  const baseTl = whoOf(collect(nets[0], "rbac-contract")[1])[0];
+  assert(baseTl.unknown, "ethereum's timelock pin does not name it on base");
+  // A chain the table has no entry for pins nothing: everything stands out.
+  const bsc = collect(nets[1], "rbac-who").map(whoOf).flat();
+  const all = collect(nets[1], "rbac-who").length;
+  assert(
+    all > 0 && collect(nets[1], "rbac-unknown").length === all,
+    "every bsc address unrecognised: " + JSON.stringify(bsc),
+  );
+});
+
+Deno.test("deployments: an upper-case address still finds its lower-case pin", async () => {
+  const f = fakeSubgraph();
+  f.rows.roleGrants[0].account = "0xAA";
+  const p = await rbacPanelLive(f, rbacData([rbacNet()], { addressNames: RBAC_PINS }));
+  const row = collect(p, "rbac-chg").map(whoOf)[1];
+  assert(row[0].hex === "0xAA" && row[0].name === "GRANTEE_SERVICE_AA", JSON.stringify(row));
+});
+
+Deno.test("deployments: no pin table marks nothing unrecognised and says names are missing", async () => {
+  const p = await rbacPanelLive(fakeSubgraph());
+  assert(collect(p, "rbac-unknown").length === 0, "nothing marked without a table");
+  assert(collect(p, "rbac-name").length === 0, "nothing named");
+  assert(collect(p, "rbac-who").length > 0, "addresses still rendered");
+  assert(
+    textOf(p).includes("no address-name table"),
+    "the missing names are stated: " + textOf(p),
+  );
+});
+
+Deno.test("deployments: a network with no chain is not looked up in the pin table", async () => {
+  const p = await rbacPanelLive(
+    fakeSubgraph(),
+    rbacData([rbacNet({ network: "arbitrum-one", chain: null })], { addressNames: RBAC_PINS }),
+  );
+  assert(collect(p, "rbac-who").length > 0, "addresses rendered");
+  assert(collect(p, "rbac-unknown").length === 0, "nothing marked on an unknown chain");
+  assert(collect(p, "rbac-name").length === 0, "nothing named on an unknown chain");
+});
+
+Deno.test("deployments: unread pin sources are named, and inherited keys are not pins", async () => {
+  const f = fakeSubgraph();
+  // An address spelled like an Object.prototype member must not resolve.
+  f.rows.roleGrants[0].account = "constructor";
+  const p = await rbacPanelLive(
+    f,
+    rbacData([rbacNet()], {
+      addressNames: RBAC_PINS,
+      addressNamesUnread: ["src/lib/LibGone.sol", 7],
+    }),
+  );
+  const gap = collect(p, "rbac-names-gap");
+  assert(
+    gap.length === 1 && gap[0].textContent.includes("src/lib/LibGone.sol") &&
+      !gap[0].textContent.includes("7"),
+    "the unread path is named: " + (gap[0] && gap[0].textContent),
+  );
+  const row = collect(p, "rbac-chg").map(whoOf)[1];
+  assert(row[0].hex === "constructor" && row[0].unknown, JSON.stringify(row));
+  // An inherited table or entry is not the scan's, even when it has the
+  // right shape: a polluted prototype must not name anything.
+  Object.prototype["0xbb"] = [pinned("POLLUTED_HOLDER", "LibX")];
+  try {
+    const q = await rbacPanelLive(fakeSubgraph(), rbacData([rbacNet()], { addressNames: RBAC_PINS }));
+    const held = collect(q, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+    const bb = whoOf(held[0])[1];
+    assert(bb.hex === "0xbb" && bb.unknown && bb.name === null, "inherited entry named: " + JSON.stringify(bb));
+  } finally {
+    delete Object.prototype["0xbb"];
+  }
+  Object.prototype.bsc = { [RBAC_AUTH]: [pinned("POLLUTED_CHAIN", "LibX")] };
+  try {
+    const q = await rbacPanelLive(
+      fakeSubgraph(),
+      rbacData([rbacNet({ network: "bsc", chain: "bsc" })], { addressNames: RBAC_PINS }),
+    );
+    const auth = whoOf(collect(q, "rbac-contract")[0])[0];
+    assert(auth.unknown && auth.name === null, "inherited chain table named: " + JSON.stringify(auth));
+  } finally {
+    delete Object.prototype.bsc;
+  }
+});
+
+Deno.test("deployments: malformed pin entries are skipped, never shown as a name", async () => {
+  const p = await rbacPanelLive(
+    fakeSubgraph(),
+    rbacData([rbacNet()], {
+      addressNames: {
+        ethereum: {
+          "0xaa": [null, { name: "" }, { name: 7 }, { contract: "LibX" }, pinned("REAL_AA", "LibA")],
+          "0xbb": [null, {}, { name: "" }],
+        },
+      },
+    }),
+  );
+  const held = collect(p, "own-row").filter((r) => !r.className.includes("rbac-chg"));
+  const [aa, bb] = whoOf(held[0]);
+  assert(
+    aa.name === "REAL_AA" && aa.title === "LibA.REAL_AA" && !aa.unknown,
+    "first well-formed entry names it, alone in the tooltip: " + JSON.stringify(aa),
+  );
+  assert(bb.unknown && bb.name === null, "no well-formed entry is unrecognised: " + JSON.stringify(bb));
+});
+
+Deno.test("deployments: pinned names land as text", async () => {
+  const p = await rbacPanelLive(
+    fakeSubgraph(),
+    rbacData([rbacNet()], {
+      addressNames: { ethereum: { "0xaa": [pinned(XSS_IMG, XSS_IMG)] } },
+    }),
+  );
+  assert(textOf(p).includes(XSS_IMG), "payload rendered as text");
+  assert(tags(p, "img").length === 0, "no element created from it");
+});

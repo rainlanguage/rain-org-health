@@ -24,3 +24,7 @@ alloy-sol-types = "0.8"
 alloy-primitives = "0.8"
 # Decodes the `contents` API body in-process.
 base64 = "0.22"
+# The address-name pins are read with the parser foundry uses: solang-parser
+# rejects valid Solidity that names a variable `instance`. 0.1, as 0.2 needs
+# rustc 1.95, above the flake toolchain.
+solar-parse = "0.1.8"

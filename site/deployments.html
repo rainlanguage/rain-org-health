@@ -65,6 +65,16 @@
   .rbac-empty { color: var(--ink-3); padding: 12px 4px; line-height: 1.6; }
   .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
   .rbac-hist { margin-top: 10px; }
+  /* An address on the Role changes tab reads as the deploy repo's name for it,
+     the hex beside it as the secondary fact. One the repo does not pin gets a
+     red mark: an unknown role holder is the thing that must stand out. */
+  .rbac-who { display: inline-flex; flex-wrap: wrap; align-items: baseline; gap: 2px 6px; }
+  .rbac-name { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px;
+               font-weight: 650; color: var(--ink); overflow-wrap: anywhere; }
+  .rbac-who .rbac-name + .own-addr { font-size: 11px; color: var(--ink-3); }
+  .rbac-names-gap { color: var(--crit); }
+  .rbac-unknown { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
+                  color: var(--crit); border: 1px solid var(--crit); border-radius: 5px; padding: 1px 5px; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
   .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
@@ -1503,6 +1513,32 @@ function renderDeployments(document, $, data, io) {
   };
   const roleLabel = (name, id) =>
     typeof name === "string" && name ? name : typeof id === "string" ? id : "(unknown role)";
+  // An address as the deploy repo names it on this chain, its hex kept as the
+  // link. `pins` is the scan's address → names table for the chain, best name
+  // first; every name is in the tooltip. `null` means the scan carried no
+  // table, so nothing can be called unrecognised and the hex shows as before.
+  const whoNode = (address, chain, pins) => {
+    const box = el("span", "rbac-who");
+    if (pins) {
+      const key = address.toLowerCase();
+      const hits = Object.prototype.hasOwnProperty.call(pins, key) && Array.isArray(pins[key])
+        ? pins[key].filter((h) => h && typeof h.name === "string" && h.name)
+        : [];
+      if (hits.length) {
+        const name = el("span", "rbac-name", hits[0].name);
+        name.title = hits
+          .map((h) => (typeof h.contract === "string" && h.contract ? `${h.contract}.${h.name}` : h.name))
+          .join("\n");
+        box.append(name);
+      } else {
+        const unknown = el("span", "rbac-unknown", "unrecognised");
+        unknown.title = "No address constant in the deploy repo pins this address on this chain.";
+        box.append(unknown);
+      }
+    }
+    box.append(addrNode("own-addr", address, chain));
+    return box;
+  };
   const rbacBanner = (n, endpoint, published) => {
     const at = typeof n.indexedBlock === "number" ? n.indexedBlock : null;
     const atText = at === null ? "" : `block ${at} (${utc(n.indexedTimestamp)})`;
@@ -1553,7 +1589,7 @@ function renderDeployments(document, $, data, io) {
     return b;
   };
   // One network's banner and, where the read is whole, its contracts.
-  const rbacBody = (slot, n, chain, endpoint, published) => {
+  const rbacBody = (slot, n, chain, endpoint, published, pins) => {
     slot.replaceChildren(rbacBanner(n, endpoint, published));
     if (!Array.isArray(n.contracts)) return;
     if (n.contracts.length === 0) {
@@ -1563,7 +1599,7 @@ function renderDeployments(document, $, data, io) {
     for (const c of n.contracts) {
       const ch = el("div", "own-grouphead rbac-contract");
       ch.append(`${RBAC_KINDS[c.kind] || String(c.kind)} `);
-      if (typeof c.address === "string") ch.append(addrNode("own-addr", c.address, chain));
+      if (typeof c.address === "string") ch.append(whoNode(c.address, chain, pins));
       slot.append(ch);
       if (typeof c.firstIndexedBlock === "number") {
         slot.append(el("div", "own-groupnote", `indexed from block ${c.firstIndexedBlock}`));
@@ -1581,7 +1617,7 @@ function renderDeployments(document, $, data, io) {
         const ac = el("div", "bcn-detail");
         for (const h of role.holders) {
           const line = el("div", "grt-addr");
-          if (typeof h.account === "string") line.append(addrNode("own-addr", h.account, chain));
+          if (typeof h.account === "string") line.append(whoNode(h.account, chain, pins));
           line.append(el("span", "own-verify-src", `since block ${h.grantedAtBlock ?? "?"} · ${utc(h.grantedAtTimestamp)}`));
           ac.append(line);
         }
@@ -1607,11 +1643,11 @@ function renderDeployments(document, $, data, io) {
         what.append(el("span", "viol-role", roleLabel(g.name, g.roleId)));
         const acct = el("div", "grt-addr");
         acct.append(granted ? "to " : known ? "from " : "");
-        if (typeof g.account === "string") acct.append(addrNode("own-addr", g.account, chain));
+        if (typeof g.account === "string") acct.append(whoNode(g.account, chain, pins));
         what.append(acct);
         const by = el("div", "grt-addr");
         by.append("by ");
-        if (typeof g.sender === "string") by.append(addrNode("own-addr", g.sender, chain));
+        if (typeof g.sender === "string") by.append(whoNode(g.sender, chain, pins));
         by.append(txNode(g.transactionHash, chain));
         what.append(by);
         row.append(
@@ -1654,21 +1690,53 @@ function renderDeployments(document, $, data, io) {
       return Promise.resolve();
     }
     const names = r.roleNames && typeof r.roleNames === "object" ? r.roleNames : {};
+    // Who each address is, from the deploy repo's own `address` constants,
+    // per chain. Without the table nothing can be called unrecognised, so the
+    // tab says the names are missing rather than marking every address.
+    const pinTable = r.addressNames && typeof r.addressNames === "object" ? r.addressNames : null;
+    const pinsFor = (chain) => {
+      if (!pinTable || typeof chain !== "string") return null;
+      const t = Object.prototype.hasOwnProperty.call(pinTable, chain) ? pinTable[chain] : null;
+      return t && typeof t === "object" ? t : {};
+    };
+    if (!pinTable) {
+      sink.append(el("div", "own-sub", "Addresses are shown unnamed — this scan carries no address-name table."));
+    } else {
+      sink.append(
+        el(
+          "div",
+          "own-sub",
+          "Addresses are named by the deploy repo's address constants pinned for that chain (hover a name for " +
+            "every constant that pins it). An address no constant pins is marked unrecognised.",
+        ),
+      );
+      const unread = Array.isArray(r.addressNamesUnread) ? r.addressNamesUnread.filter((p) => typeof p === "string") : [];
+      if (unread.length) {
+        sink.append(
+          el(
+            "div",
+            "own-sub rbac-names-gap",
+            `Names incomplete — the scan could not read ${unread.join(", ")}, so an address pinned only there shows as unrecognised.`,
+          ),
+        );
+      }
+    }
     const reads = [];
     for (const n of nets) {
       if (!n || typeof n !== "object") continue;
       const chain = typeof n.chain === "string" ? n.chain : null;
       const title = chain && chain !== n.network ? `${chain} (${n.network})` : String(n.network);
       const published = `${r.subgraph}-${n.network}/${r.tag}`;
+      const pins = pinsFor(chain);
       sink.append(el("h3", "tok-h3", title));
       const slot = el("div", "rbac-net");
       sink.append(slot);
       if (typeof n.endpoint !== "string" || !n.endpoint.startsWith("https://")) {
-        rbacBody(slot, { state: "error", detail: "the scan gave no https endpoint for this network" }, chain, null, published);
+        rbacBody(slot, { state: "error", detail: "the scan gave no https endpoint for this network" }, chain, null, published, pins);
         continue;
       }
-      rbacBody(slot, { state: "loading" }, chain, n.endpoint, published);
-      reads.push(rbacRead(n.endpoint, names).then((res) => rbacBody(slot, res, chain, n.endpoint, published)));
+      rbacBody(slot, { state: "loading" }, chain, n.endpoint, published, pins);
+      reads.push(rbacRead(n.endpoint, names).then((res) => rbacBody(slot, res, chain, n.endpoint, published, pins)));
     }
     return Promise.all(reads);
   };
