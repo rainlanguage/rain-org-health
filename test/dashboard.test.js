@@ -11923,7 +11923,8 @@ Deno.test("deployments: a pending call on a contract the timelock governs stands
   const [beacon, stranger, auth] = pendingCards(p);
   assert(beacon.className.includes("tl-governs"), "owned beacon: governed");
   assert(
-    collect(beacon, "tl-governed")[0].textContent === "governed by this timelock",
+    collect(beacon, "tl-governed")[0].textContent ===
+      "governed by this timelock",
     "chip text",
   );
   assert(
@@ -12076,7 +12077,9 @@ Deno.test("deployments: timelock calldata is decoded only where it fits its ABI"
   );
   assert(
     textOf(rows[6]).includes("upgradeToAndCall(") &&
-      !textOf(rows[6]).includes("runs past"),
+      !textOf(rows[6]).includes("runs past") &&
+      // The padded tail is part of the arguments, not past them.
+      !textOf(rows[6]).includes("past the arguments"),
     "valid bytes arg decoded",
   );
   assert(tags(p, "img").length === 0, "calldata payload lands as text");
