@@ -61,6 +61,10 @@
      empty states, and a second one indistinguishable from theirs would make
      their assertion about that section pass or fail on this one. */
   .vault-empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
+  /* Its own class for the same reason as `.vault-empty`. */
+  .rbac-empty { color: var(--ink-3); padding: 12px 4px; line-height: 1.6; }
+  .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
+  .rbac-hist { margin-top: 10px; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
   .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
@@ -310,6 +314,7 @@ function renderDeployments(document, $, data) {
   const TABS = [
     ["safe", "Safe & ownership"],
     ["contracts", "Contracts & tokens"],
+    ["rbac", "Role changes"],
   ];
   const subnav = el("div", "subnav");
   const panels = {};
@@ -351,7 +356,7 @@ function renderDeployments(document, $, data) {
     });
     subnav.append(b);
   }
-  box.append(subnav, panels.safe, panels.contracts);
+  box.append(subnav, panels.safe, panels.contracts, panels.rbac);
 
   // Where the section renderers append. Reassigned between groups rather than
   // threaded through every renderer as an argument, so a section moves tab by
@@ -1263,6 +1268,181 @@ function renderDeployments(document, $, data) {
       true,
     );
   };
+  // Role changes: every grant and revoke, and who holds each role now, per
+  // contract per network, as the deploy repo's RBAC subgraph indexed them.
+  //
+  // Each network's index is its own source with its own state, and the state
+  // is the first thing said about it. An index still syncing has a complete
+  // history only up to its own block; one that is not published, not reachable
+  // or erroring has none at all. Rendering any of those as a short list would
+  // read as "nothing changed", which is the claim this section exists to make
+  // only when it is true.
+  const RBAC_KINDS = {
+    AUTHORIZER: "Authoriser",
+    GOVERNANCE_TIMELOCK: "Governance timelock",
+    ORCHESTRATOR: "Orchestrator",
+  };
+  const utc = (ts) =>
+    typeof ts === "number"
+      ? new Date(ts * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC"
+      : "time unknown";
+  const txNode = (hash, chain) => {
+    const base = EXPLORERS[chain];
+    if (typeof hash !== "string" || !hash) return el("span", "own-verify-src", "tx unknown");
+    return base
+      ? link("own-verify-src", "tx", base.replace("/address/", "/tx/") + hash)
+      : el("span", "own-verify-src", hash);
+  };
+  const roleLabel = (name, id) =>
+    typeof name === "string" && name ? name : typeof id === "string" ? id : "(unknown role)";
+  const rbacBanner = (n) => {
+    const at = typeof n.indexedBlock === "number" ? n.indexedBlock : null;
+    const atText = at === null ? "" : `block ${at} (${utc(n.indexedTimestamp)})`;
+    const head = typeof n.headBlock === "number" ? `head ${n.headBlock}` : null;
+    let cls, msg;
+    switch (n.state) {
+      case "synced":
+        cls = "ok";
+        msg = `Indexed to ${atText}, ${n.lagBlocks} block${n.lagBlocks === 1 ? "" : "s"} behind ${head} — current.`;
+        break;
+      case "syncing":
+        cls = "roll";
+        msg = `Still syncing — indexed to ${atText}, ${head}. History below is complete only up to block ${at}; later changes are not shown.`;
+        break;
+      case "head-unknown":
+        cls = "down";
+        msg = `Indexed to ${atText}. The chain head could not be read, so whether this is current is unknown — complete only up to block ${at}.`;
+        break;
+      case "indexing-errors":
+        cls = "drift";
+        msg = `Indexing errors — the index stopped at ${atText}${head ? `, ${head}` : ""}. Changes after block ${at} are missing.`;
+        break;
+      case "missing":
+        cls = "down";
+        msg = `No subgraph — ${n.detail || "nothing is published for this network"}. No history is shown, which is not the same as no changes.`;
+        break;
+      case "unreachable":
+        cls = "down";
+        msg = `Index unreachable — ${n.detail || "no answer"}. No history is shown, which is not the same as no changes.`;
+        break;
+      case "error":
+        cls = "drift";
+        msg = `Index error${at === null ? "" : ` at ${atText}`} — ${n.detail || "no detail"}. No history is shown, which is not the same as no changes.`;
+        break;
+      default:
+        cls = "down";
+        msg = `Unrecognised index state "${String(n.state)}" — nothing is shown for it.`;
+    }
+    const b = el("div", `own-verify own-verify-${cls}`);
+    b.append(el("span", "own-verify-msg", msg));
+    if (typeof n.endpoint === "string") b.append(el("span", "own-verify-src", n.endpoint));
+    return b;
+  };
+  const renderRbac = (r) => {
+    sink.append(el("h2", null, "Role changes — every grant and revoke, per network"));
+    if (!r || typeof r !== "object") {
+      sink.append(el("div", "rbac-empty", "Role history unavailable — this scan carries no RBAC subgraph read."));
+      return;
+    }
+    if (typeof r.unavailable === "string") {
+      sink.append(el("div", "rbac-empty", `Role history unavailable — the scan ${r.unavailable}.`));
+      return;
+    }
+    const sub = el("div", "own-sub");
+    sub.append("Read from ");
+    sub.append(link("", `${r.org}/${r.repo}`, `https://github.com/${r.org}/${r.repo}/tree/main/subgraph`));
+    sub.append(
+      `'s RBAC subgraph, one index per network at its "${r.tag}" tag. Roles are named where the deploy repo ` +
+        `spells out the hash's preimage, and shown as the raw id otherwise.`,
+    );
+    sink.append(sub);
+    const nets = Array.isArray(r.networks) ? r.networks : [];
+    if (nets.length === 0) {
+      sink.append(el("div", "rbac-empty", "The subgraph declares no networks."));
+      return;
+    }
+    for (const n of nets) {
+      if (!n || typeof n !== "object") continue;
+      const chain = typeof n.chain === "string" ? n.chain : null;
+      const title = chain && chain !== n.network ? `${chain} (${n.network})` : String(n.network);
+      sink.append(el("h3", "tok-h3", title));
+      sink.append(rbacBanner(n));
+      if (!Array.isArray(n.contracts)) continue;
+      if (n.contracts.length === 0) {
+        sink.append(el("div", "rbac-empty", "The index holds no role events for any contract."));
+        continue;
+      }
+      for (const c of n.contracts) {
+        if (!c || typeof c !== "object") continue;
+        const ch = el("div", "own-grouphead rbac-contract");
+        ch.append(`${RBAC_KINDS[c.kind] || String(c.kind)} `);
+        if (typeof c.address === "string") ch.append(addrNode("own-addr", c.address, chain));
+        sink.append(ch);
+        if (typeof c.firstIndexedBlock === "number") {
+          sink.append(el("div", "own-groupnote", `indexed from block ${c.firstIndexedBlock}`));
+        }
+        // Current holders, one row per role.
+        const held = el("div", "own-table");
+        for (const role of Array.isArray(c.roles) ? c.roles : []) {
+          const row = el("div", "own-row");
+          const rc = el("div", "own-rc");
+          rc.append(el("div", "own-role", roleLabel(role.name, role.roleId)));
+          if (role.name && role.roleId) rc.append(el("div", "grt-roleid", role.roleId));
+          if (role.adminId) {
+            rc.append(el("div", "own-note", `admin: ${roleLabel(role.adminName, role.adminId)}`));
+          }
+          const hs = Array.isArray(role.holders) ? role.holders : [];
+          const ac = el("div", "bcn-detail");
+          for (const h of hs) {
+            const line = el("div", "grt-addr");
+            if (typeof h.account === "string") line.append(addrNode("own-addr", h.account, chain));
+            line.append(el("span", "own-verify-src", `since block ${h.grantedAtBlock ?? "?"} · ${utc(h.grantedAtTimestamp)}`));
+            ac.append(line);
+          }
+          if (hs.length === 0) ac.append(el("span", "own-addr own-missing", "no current holder"));
+          row.append(rc, ac, el("span", `own-chip own-chip-${hs.length ? "yes" : "dim"}`, `${hs.length} held`));
+          held.append(row);
+        }
+        sink.append(held);
+        // Change history, newest first.
+        const changes = Array.isArray(c.changes) ? c.changes : [];
+        sink.append(el("div", "own-groupnote rbac-hist", `${changes.length} grant/revoke event${changes.length === 1 ? "" : "s"}, newest first`));
+        if (changes.length === 0) continue;
+        const hist = el("div", "own-table");
+        for (const g of changes) {
+          if (!g || typeof g !== "object") continue;
+          const granted = g.granted === true;
+          const known = g.granted === true || g.granted === false;
+          const row = el("div", `own-row rbac-chg`);
+          const when = el("div", "own-rc");
+          when.append(el("div", "own-role", utc(g.blockTimestamp)));
+          when.append(el("div", "own-note", `block ${g.blockNumber ?? "?"}`));
+          const what = el("div", "bcn-detail");
+          what.append(el("span", "viol-role", roleLabel(g.name, g.roleId)));
+          const acct = el("div", "grt-addr");
+          acct.append(granted ? "to " : known ? "from " : "");
+          if (typeof g.account === "string") acct.append(addrNode("own-addr", g.account, chain));
+          what.append(acct);
+          const by = el("div", "grt-addr");
+          by.append("by ");
+          if (typeof g.sender === "string") by.append(addrNode("own-addr", g.sender, chain));
+          by.append(txNode(g.transactionHash, chain));
+          what.append(by);
+          row.append(
+            when,
+            what,
+            el(
+              "span",
+              `own-chip own-chip-${!known ? "dim" : granted ? "yes" : "no"}`,
+              !known ? "unknown" : granted ? "granted" : "revoked",
+            ),
+          );
+          hist.append(row);
+        }
+        sink.append(hist);
+      }
+    }
+  };
   const owners = data.deploymentOwners;
   sink.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
@@ -1278,6 +1458,8 @@ function renderDeployments(document, $, data) {
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
+    sink = panels.rbac;
+    renderRbac(data.deploymentRbac);
     show(hashTab() || TABS[0][0]);
     return;
   }
@@ -1349,6 +1531,8 @@ function renderDeployments(document, $, data) {
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
+  sink = panels.rbac;
+  renderRbac(data.deploymentRbac);
   show(hashTab() || TABS[0][0]);
 }
 let data = null;

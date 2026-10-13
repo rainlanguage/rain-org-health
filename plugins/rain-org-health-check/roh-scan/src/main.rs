@@ -20,6 +20,7 @@ mod graph;
 mod mutation;
 mod owners;
 mod protofire;
+mod rbac;
 mod rpc;
 mod signals;
 mod untested;
@@ -2699,6 +2700,61 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .unwrap_or(serde_json::Value::Null)
         };
 
+        // Every role grant and revoke, and the current holders, per contract per
+        // network, from the deploy repo's RBAC subgraph. Where it is published
+        // and which networks it covers are read from the deploy repo; see
+        // `rbac`'s module doc for why the `prod` tag is what is queried.
+        let deployment_rbac = {
+            let workflow = gh_file(
+                deploy_org,
+                deploy_repo,
+                ".github/workflows/deploy-subgraph.yaml",
+            );
+            let networks_json = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
+            let orchestrator =
+                gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
+            let authorizer = gh_file(
+                deploy_org,
+                deploy_repo,
+                "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
+            );
+            let names = rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer]);
+            let source = rbac::parse_deploy_workflow(&workflow);
+            let networks = rbac::parse_networks(&networks_json);
+            let query = |url: &str, body: &str| -> Option<Vec<u8>> {
+                let o = Command::new("curl")
+                    .args([
+                        "-fsS",
+                        "-m",
+                        "25",
+                        "-X",
+                        "POST",
+                        url,
+                        "-H",
+                        "content-type: application/json",
+                        "-d",
+                        body,
+                    ])
+                    .output()
+                    .ok()?;
+                o.status.success().then_some(o.stdout)
+            };
+            let head = |chain: &str| -> Option<rbac::Head> {
+                let session = rpc_session(Chain::from_network(chain)?);
+                let payload = r#"{"jsonrpc":"2.0","id":1,"method":"eth_getBlockByNumber","params":["latest",false]}"#;
+                curl_json(session, payload).and_then(|b| rbac::parse_head(&b))
+            };
+            rbac::build_rbac(
+                deploy_org,
+                deploy_repo,
+                source.as_ref(),
+                networks.as_deref(),
+                &names,
+                &query,
+                &head,
+            )
+        };
+
         // Ownership of the governed vaults, which the governance migration
         // moves one `transferOwnership` at a time. Nothing else here reads a
         // vault's `owner()` — only production beacons are owner-checked — so a
@@ -3266,6 +3322,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentOwners": deployment_owners,
             "deploymentGrants": deployment_grants,
             "deploymentVaultOwners": deployment_vault_owners,
+            "deploymentRbac": deployment_rbac,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
