@@ -1366,7 +1366,8 @@ function renderDeployments(document, $, data, io) {
   // so every role contract with any history is here, and `Ownable`-only
   // contracts (vaults, beacons) are not, having no roles to report.
   const rbacGroup = (roles, holders, grants, names) => {
-    const nameOf = (id) => (typeof id === "string" && names[id.toLowerCase()]) || null;
+    const nameOf = (id) =>
+      typeof id === "string" && typeof names[id] === "string" ? names[id] : null;
     const byContract = new Map();
     const roleById = new Map();
     for (const r of roles) {
@@ -1659,11 +1660,7 @@ function renderDeployments(document, $, data, io) {
         continue;
       }
       rbacBody(slot, { state: "loading" }, chain, n.endpoint, published);
-      reads.push(
-        rbacRead(n.endpoint, names)
-          .catch((e) => ({ state: "error", detail: e instanceof Error ? e.message : String(e) }))
-          .then((res) => rbacBody(slot, res, chain, n.endpoint, published)),
-      );
+      reads.push(rbacRead(n.endpoint, names).then((res) => rbacBody(slot, res, chain, n.endpoint, published)));
     }
     return Promise.all(reads);
   };

@@ -9645,6 +9645,16 @@ Deno.test("deployments: every index state is stated, and no data never reads as 
       false,
     ],
     [{ meta: { data: null } }, "carried no data", "drift", false],
+    [{ meta: 5 }, "not a JSON object", "drift", false],
+    [{ meta: { errors: "flat" } }, '"flat"', "drift", false],
+    [{ meta: { errors: [{ code: 1 }] } }, '{"code":1}', "drift", false],
+    [{ meta: { error: { code: 2 } } }, '{"code":2}', "drift", false],
+    [
+      { meta: meta({ number: 900, timestamp: RBAC_TS }, "no") },
+      "without a block position",
+      "drift",
+      false,
+    ],
     [
       { meta: meta(null, false) },
       "without a block position",
@@ -9659,10 +9669,15 @@ Deno.test("deployments: every index state is stated, and no data never reads as 
     ],
     [
       { now: (RBAC_TS + 601) * 1000 },
-      "complete only up to block 900",
+      "10m old. History below is complete only up to block 900",
       "roll",
       true,
     ],
+    [{ now: (RBAC_TS + 7200) * 1000 }, "2h old", "roll", true],
+    [{ now: (RBAC_TS + 119) * 1000 }, "119s old", "ok", true],
+    [{ now: RBAC_TS * 1000 }, "0s old", "ok", true],
+    [{ now: (RBAC_TS + 120) * 1000 }, "2m old", "ok", true],
+    [{ now: (RBAC_TS + 7199) * 1000 }, "120m old", "roll", true],
     [
       { meta: meta({ number: "900", timestamp: null }, false) },
       "complete only up to block 900",
@@ -9692,6 +9707,12 @@ Deno.test("deployments: every index state is stated, and no data never reads as 
     [
       { raw: { roleGrants: { data: {} } } },
       "roleGrants: the response carried no rows",
+      "drift",
+      false,
+    ],
+    [
+      { raw: { roles: "<html>" } },
+      "roles: no readable answer mid-read",
       "drift",
       false,
     ],
