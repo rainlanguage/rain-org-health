@@ -55,8 +55,8 @@ fn is_address(kind: &TypeKind<'_>) -> bool {
     matches!(kind, TypeKind::Elementary(ElementaryType::Address(_)))
 }
 
-/// A 40-digit hex number literal, as written in the source. One written with
-/// a `_` separator or a unit is not an address.
+/// A 40-digit hex number literal, as written in the source less any `_`
+/// separators. One written with a unit is not an address.
 fn literal(e: &Expr<'_>) -> Option<String> {
     let ExprKind::Lit(lit, None) = &e.kind else {
         return None;
@@ -64,8 +64,7 @@ fn literal(e: &Expr<'_>) -> Option<String> {
     let LitKind::Address(_) = lit.kind else {
         return None;
     };
-    let written = lit.symbol.as_str();
-    (!written.contains('_')).then(|| written.to_string())
+    Some(lit.symbol.as_str().replace('_', ""))
 }
 
 fn pin_value(e: &Expr<'_>) -> Option<PinValue> {
@@ -80,6 +79,11 @@ fn pin_value(e: &Expr<'_>) -> Option<PinValue> {
             {
                 literal(a[0]).map(PinValue::Literal)
             }
+            _ => None,
+        },
+        // `payable(…)`, the form an `address payable` pin is written in.
+        ExprKind::Payable(args) => match &args.kind {
+            CallArgsKind::Unnamed(a) if a.len() == 1 => pin_value(a[0]),
             _ => None,
         },
         ExprKind::Member(base, member) => match &base.kind {
@@ -312,12 +316,16 @@ mod tests {
                 address public constant MEMBER = LibB.OTHER;
                 address internal constant BARE = WRAPPED;
                 address payable internal constant PAYABLE = payable(address(0xcccccccccccccccccccccccccccccccccccccccc));
+                address payable internal constant PAYABLE_LITERAL = payable(0xcccccccccccccccccccccccccccccccccccccccc);
+                address payable internal constant PAYABLE_ALIAS = payable(WRAPPED);
+                address payable internal constant PAYABLE_TWO_ARGS = payable(0xcccccccccccccccccccccccccccccccccccccccc, 0xcccccccccccccccccccccccccccccccccccccccc);
+                address internal constant SEPARATED = address(0xaaaaaaaa_aaaaaaaaaaaa_aaaaaaaaaaaaaaaaaaaa);
                 bytes32 internal constant HASH = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
                 uint256 internal constant N = 5;
                 address internal immutable_like = address(0xcccccccccccccccccccccccccccccccccccccccc);
                 address internal constant SHORT = address(0x1);
                 address internal constant LONG = address(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
-                address internal constant SEPARATED = address(0xaaaaaaaaaaaaaaaaaaaa_aaaaaaaaaaaaaaaaaaa);
+                address internal constant SEPARATED_39_DIGITS = address(0xaaaaaaaaaaaaaaaaaaaa_aaaaaaaaaaaaaaaaaaa);
                 address internal constant TWO_ARGS = address(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa, 0xbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb);
                 address internal constant NOT_ADDRESS_CAST = bytes20(0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa);
                 bytes20 internal constant NOT_ADDRESS_TYPE = 0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa;
@@ -359,6 +367,22 @@ mod tests {
                     "LibA".into(),
                     "BARE".into(),
                     PinValue::Alias(None, "WRAPPED".into())
+                ),
+                ("LibA".into(), "PAYABLE".into(), PinValue::Literal(C.into())),
+                (
+                    "LibA".into(),
+                    "PAYABLE_LITERAL".into(),
+                    PinValue::Literal(C.into())
+                ),
+                (
+                    "LibA".into(),
+                    "PAYABLE_ALIAS".into(),
+                    PinValue::Alias(None, "WRAPPED".into())
+                ),
+                (
+                    "LibA".into(),
+                    "SEPARATED".into(),
+                    PinValue::Literal(A.into())
                 ),
             ]
         );
