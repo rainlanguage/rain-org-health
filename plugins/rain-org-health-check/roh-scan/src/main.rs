@@ -20,6 +20,7 @@ mod graph;
 mod mutation;
 mod owners;
 mod protofire;
+mod rbac;
 mod rpc;
 mod signals;
 mod untested;
@@ -2699,6 +2700,33 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .unwrap_or(serde_json::Value::Null)
         };
 
+        // Where the deploy repo's RBAC subgraph is published per network, and
+        // the role names its sources spell out. The role history itself is read
+        // by the page when it loads; see `rbac`'s module doc.
+        let deployment_rbac = {
+            let workflow = gh_file(
+                deploy_org,
+                deploy_repo,
+                ".github/workflows/deploy-subgraph.yaml",
+            );
+            let networks_json = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
+            let orchestrator =
+                gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
+            let authorizer = gh_file(
+                deploy_org,
+                deploy_repo,
+                "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
+            );
+            let names = rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer]);
+            rbac::build_rbac(
+                deploy_org,
+                deploy_repo,
+                rbac::parse_deploy_workflow(&workflow).as_ref(),
+                rbac::parse_networks(&networks_json).as_deref(),
+                &names,
+            )
+        };
+
         // Ownership of the governed vaults, which the governance migration
         // moves one `transferOwnership` at a time. Nothing else here reads a
         // vault's `owner()` — only production beacons are owner-checked — so a
@@ -3266,6 +3294,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentOwners": deployment_owners,
             "deploymentGrants": deployment_grants,
             "deploymentVaultOwners": deployment_vault_owners,
+            "deploymentRbac": deployment_rbac,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,

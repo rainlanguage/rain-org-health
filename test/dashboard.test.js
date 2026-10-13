@@ -4517,17 +4517,34 @@ Deno.test("pipeline FSM: the drawn split key must be claimed; the withheld half'
 
 // ---- deployments.html: known owners ----
 
-// renderDeployments takes (document, $, data) as its own params, so bind with no
-// injected free vars and call the returned function with the stubs.
-function deploymentsBox(data) {
+// The default `io` has no network: a test that renders a role-change section
+// without standing in a subgraph sees every index as unreachable, never a
+// real request.
+const NO_NETWORK = {
+  fetch: () => Promise.reject(new TypeError("no network in tests")),
+  now: () => 0,
+};
+function deploymentsBox(data, io = NO_NETWORK) {
+  return deploymentsRender(data, io).box;
+}
+// renderDeployments takes (document, $, data, io) as its own params, so bind
+// with no injected free vars and call the returned function with the stubs.
+// Returns the rendered box and the promise the live role-change read settles
+// with.
+function deploymentsRender(data, io = NO_NETWORK) {
   const box = makeEl("div");
   const document = {
     createElement: (t) => makeEl(t),
     createTextNode: (t) => t,
   };
   const $ = (id) => (id === "deployments" ? box : makeEl("div"));
-  bind("deployments.html", "renderDeployments", [], [])(document, $, data);
-  return box;
+  const done = bind("deployments.html", "renderDeployments", [], [])(
+    document,
+    $,
+    data,
+    io,
+  );
+  return { box, done };
 }
 
 const OWNERS = {
@@ -5432,10 +5449,10 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
 Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", () => {
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
-  assert(btns.length === 2, "two sub-tabs: " + btns.map((b) => b.textContent).join(","));
+  assert(btns.length === 3, "three sub-tabs: " + btns.map((b) => b.textContent).join(","));
   assert(
-    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts",
-    "tabs in order safe,contracts: " + btns.map((b) => b.dataset.tab).join(","),
+    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac",
+    "tabs in order safe,contracts,rbac: " + btns.map((b) => b.dataset.tab).join(","),
   );
   // Exactly one active, and it is the first — a page that opens with none
   // active looks broken, and one that opens with both looks like no tabs.
@@ -5443,10 +5460,11 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   assert(active.length === 1 && active[0].dataset.tab === "safe", "safe tab active on load");
 
   const panels = collect(box, "tabpanel");
-  assert(panels.length === 2, "two panels");
+  assert(panels.length === 3, "three panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
   assert(!byTab.safe.classList.contains("tab-hidden"), "safe panel visible on load");
   assert(byTab.contracts.classList.contains("tab-hidden"), "contracts panel hidden on load");
+  assert(byTab.rbac.classList.contains("tab-hidden"), "rbac panel hidden on load");
 });
 
 Deno.test("deployments: clicking a sub-tab moves both the panel and the active mark", () => {
@@ -9300,4 +9318,598 @@ Deno.test("deployments: a granted role the Safe also kept is marked on the chip"
     chips.includes("base ✓ +safe"),
     "granted, and the Safe has it too, got " + chips.join(","),
   );
+});
+
+// ---- deployments.html: role changes (live RBAC subgraph read) ----
+
+const RBAC_AUTH = "0x66566cc91deaf818859bd4b09b7903ac48998157";
+const RBAC_TL = "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b";
+const RBAC_HASH = "0x" + "ab".repeat(32);
+const RBAC_ZERO = "0x" + "0".repeat(64);
+const RBAC_URL = "https://q.example/subgraphs/st0x-rbac-mainnet/prod/gn";
+// The indexed block's time; `now` defaults to 12s later — a current index.
+const RBAC_TS = 1791883787;
+
+function rbacData(networks, extra = {}) {
+  return {
+    ...grantsData(),
+    deploymentRbac: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      tag: "prod",
+      subgraph: "st0x-rbac",
+      networks,
+      roleNames: {
+        [ROLE_IDS.DEPOSIT]: "DEPOSIT",
+        [ROLE_IDS.DEPOSIT_ADMIN]: "DEPOSIT_ADMIN",
+        [RBAC_ZERO]: "DEFAULT_ADMIN_ROLE",
+      },
+      ...extra,
+    },
+  };
+}
+const rbacNet = (over = {}) => ({
+  network: "mainnet",
+  chain: "ethereum",
+  endpoint: RBAC_URL,
+  ...over,
+});
+
+// A stand-in subgraph: answers `_meta` and the three paged entity reads the
+// way graph-node does (rows past the `id_gt` cursor, `first` honoured),
+// recording every request it was sent.
+function fakeSubgraph(over = {}) {
+  const rid = (c, r) => c + r.slice(2);
+  const role = (c, kind, r, admin) => ({
+    id: rid(c, r),
+    role: r,
+    admin,
+    contract: { id: c, kind, firstIndexedBlock: "5" },
+  });
+  const grant = (id, r, account, granted, block, log, tx) => ({
+    id,
+    account,
+    granted,
+    sender: "0x5a",
+    blockNumber: String(block),
+    blockTimestamp: String(1791883000 + block),
+    transactionHash: tx,
+    logIndex: String(log),
+    role: { id: r },
+  });
+  const f = {
+    meta: {
+      data: {
+        _meta: {
+          block: { number: 900, timestamp: RBAC_TS },
+          hasIndexingErrors: false,
+        },
+      },
+    },
+    rows: {
+      roles: [
+        role(RBAC_TL, "GOVERNANCE_TIMELOCK", ROLE_IDS.DEPOSIT, RBAC_ZERO),
+        role(RBAC_AUTH, "AUTHORIZER", ROLE_IDS.DEPOSIT, ROLE_IDS.DEPOSIT_ADMIN),
+        role(RBAC_AUTH, "AUTHORIZER", RBAC_HASH, ROLE_IDS.DEPOSIT_ADMIN),
+      ],
+      roleHolders: [
+        {
+          id: "h1",
+          account: "0xbb",
+          grantedAtBlock: "10",
+          grantedAtTimestamp: "1791883010",
+          role: { id: rid(RBAC_AUTH, ROLE_IDS.DEPOSIT) },
+        },
+        {
+          id: "h2",
+          account: "0xaa",
+          grantedAtBlock: "12",
+          grantedAtTimestamp: "1791883012",
+          role: { id: rid(RBAC_AUTH, ROLE_IDS.DEPOSIT) },
+        },
+      ],
+      roleGrants: [
+        grant(
+          "g1",
+          rid(RBAC_AUTH, ROLE_IDS.DEPOSIT),
+          "0xaa",
+          true,
+          12,
+          3,
+          "0xt1",
+        ),
+        grant("g2", rid(RBAC_AUTH, RBAC_HASH), "0xcc", false, 12, 7, "0xt1"),
+        grant(
+          "g3",
+          rid(RBAC_AUTH, ROLE_IDS.DEPOSIT),
+          "0xbb",
+          true,
+          10,
+          1,
+          "0xt0",
+        ),
+        // A grant on a role this snapshot holds no row for is not attributed.
+        grant("g4", "0xnope", "0xdd", true, 11, 1, "0xt2"),
+      ],
+    },
+    // entity name -> a raw response body to answer with instead of rows.
+    raw: {},
+    status: 200,
+    now: (RBAC_TS + 12) * 1000,
+    seen: [],
+    ...over,
+  };
+  f.io = {
+    now: () => f.now,
+    fetch: (url, init) => {
+      f.seen.push({ url, init });
+      const q = JSON.parse(init.body).query;
+      // `status` is the HTTP status of every answer (fetch resolves on any).
+      const reply = (body) =>
+        Promise.resolve({
+          ok: f.status >= 200 && f.status < 300,
+          status: f.status,
+          json: () =>
+            typeof body === "string"
+              ? Promise.reject(new SyntaxError("not JSON"))
+              : Promise.resolve(body),
+        });
+      if (q.includes("_meta")) {
+        return f.meta === null
+          ? Promise.reject(new TypeError("Failed to fetch"))
+          : reply(f.meta);
+      }
+      const entity = /page: (\w+)\(/.exec(q)[1];
+      if (entity in f.raw) return reply(f.raw[entity]);
+      const cursor = /id_gt: "([^"]*)"/.exec(q)[1];
+      const first = Number(/first: (\d+)/.exec(q)[1]);
+      const page = f.rows[entity]
+        .filter((r) => r.id > cursor)
+        .sort((a, b) => (a.id < b.id ? -1 : 1))
+        .slice(0, first);
+      return reply({ data: { page } });
+    },
+  };
+  return f;
+}
+
+async function rbacPanelLive(f, data = rbacData([rbacNet()])) {
+  const { box, done } = deploymentsRender(data, f.io);
+  await done;
+  return collect(box, "tabpanel").find((p) => p.dataset.tab === "rbac");
+}
+const rbacBanners = (p) => collect(p, "own-verify");
+
+Deno.test("deployments: role changes get their own tab beside the untouched grants view", async () => {
+  const f = fakeSubgraph();
+  const { box, done } = deploymentsRender(rbacData([rbacNet()]), f.io);
+  await done;
+  const tabs = collect(box, "subnav-btn").map((b) => b.textContent);
+  assert(tabs.includes("Role changes"), "tab listed, got " + tabs.join(","));
+  const byTab = Object.fromEntries(
+    collect(box, "tabpanel").map((p) => [p.dataset.tab, p]),
+  );
+  assert(
+    textOf(byTab.contracts).includes("Authoriser role grants"),
+    "grants view kept on the contracts tab",
+  );
+  assert(
+    !textOf(byTab.rbac).includes("Authoriser role grants"),
+    "and not moved",
+  );
+});
+
+Deno.test("deployments: each network reads as loading until its live answer lands", async () => {
+  const f = fakeSubgraph();
+  const { box, done } = deploymentsRender(rbacData([rbacNet()]), f.io);
+  const p = collect(box, "tabpanel").find((x) => x.dataset.tab === "rbac");
+  assert(
+    textOf(p).includes("Reading the index"),
+    "loading said before the read settles: " + textOf(p),
+  );
+  assert(collect(p, "rbac-chg").length === 0, "no rows while loading");
+  await done;
+  assert(!textOf(p).includes("Reading the index"), "loading replaced");
+  assert(rbacBanners(p).length === 1, "one banner per network, not two");
+});
+
+Deno.test("deployments: a current index lists holders and changes per contract, read live", async () => {
+  const f = fakeSubgraph();
+  const p = await rbacPanelLive(f);
+  const text = textOf(p);
+  assert(text.includes("Read live from"), "says the read is live: " + text);
+  assert(
+    text.includes("ethereum (mainnet)"),
+    "chain and subgraph network named",
+  );
+  assert(collect(p, "own-verify-ok").length === 1, "green banner");
+  assert(
+    text.includes("block 900") && text.includes("12s old"),
+    "position and age stated",
+  );
+  // Every request is a JSON POST to the scan's endpoint for the network.
+  for (const s of f.seen) {
+    assert(s.url === RBAC_URL, "posted to the endpoint, got " + s.url);
+    assert(s.init.method === "POST", "POST");
+    assert(
+      s.init.headers["content-type"] === "application/json",
+      "json content type",
+    );
+  }
+  // Contracts sorted by kind: the authoriser before the timelock.
+  const heads = collect(p, "rbac-contract").map((h) => textOf(h));
+  assert(
+    heads.length === 2 && heads[0].includes("Authoriser") &&
+      heads[0].includes(RBAC_AUTH) && heads[1].includes("Governance timelock"),
+    "contracts grouped and ordered: " + heads.join(" | "),
+  );
+  const roles = collect(p, "own-role").map((r) => r.textContent);
+  assert(roles[0] === "DEPOSIT", "named role first: " + roles.join(","));
+  assert(roles[1] === RBAC_HASH, "unnamed role after it, by its hash");
+  assert(text.includes("admin: DEPOSIT_ADMIN"), "admin role named");
+  assert(text.includes("admin: DEFAULT_ADMIN_ROLE"), "zero admin named");
+  assert(text.includes("no current holder"), "an unheld role says so");
+  const held = collect(p, "own-row").filter((r) =>
+    !r.className.includes("rbac-chg")
+  );
+  const holders = collect(held[0], "own-addr").map((a) => a.textContent);
+  assert(holders.join(",") === "0xaa,0xbb", "holders sorted: " + holders);
+  const chips = collect(p, "own-chip").map((c) => c.textContent);
+  assert(
+    chips.join(",") === "2 held,0 held,revoked,granted,granted,0 held",
+    "chips in order, got " + chips.join(","),
+  );
+  // Newest first by (block, logIndex); the unattributed grant is dropped.
+  const rows = collect(p, "rbac-chg").map((r) => textOf(r));
+  assert(rows.length === 3, "three attributed changes, got " + rows.length);
+  assert(
+    rows[0].includes("block 12") && rows[0].includes("0xcc") &&
+      rows[1].includes("0xaa") && rows[2].includes("block 10"),
+    "newest first: " + rows.join(" | "),
+  );
+  assert(!textOf(p).includes("0xdd"), "orphan grant not shown");
+  assert(
+    rows[0].includes("from ") && rows[1].includes("to "),
+    "revoke is from, grant is to",
+  );
+  assert(text.includes("3 grant/revoke events"), "count stated");
+  const tx = collect(p, "own-verify-src").find((a) => a.textContent === "tx");
+  assert(
+    tx && tx.href === "https://etherscan.io/tx/0xt1",
+    "tx links to the chain's explorer, got " + (tx && tx.href),
+  );
+});
+
+Deno.test("deployments: contracts order by kind then address, changes by block then log", async () => {
+  const f = fakeSubgraph();
+  const low = "0x1111111111111111111111111111111111111111";
+  const high = "0xffffffffffffffffffffffffffffffffffffffff";
+  const role = (id, c, kind) => ({
+    id,
+    role: ROLE_IDS.DEPOSIT,
+    admin: RBAC_ZERO,
+    contract: { id: c, kind, firstIndexedBlock: "1" },
+  });
+  // The pager reads in row-id order, chosen here so that neither the read
+  // order nor the address order is the kind order, and the two authorisers
+  // arrive in the reverse of their address order.
+  f.rows.roles = [
+    role("r1", high, "AUTHORIZER"),
+    role("r2", low, "GOVERNANCE_TIMELOCK"),
+    role("r3", RBAC_AUTH, "AUTHORIZER"),
+  ];
+  f.rows.roleHolders = [];
+  const g = (id, block, log) => ({
+    id,
+    account: "0x" + id,
+    granted: true,
+    sender: "0x5a",
+    blockNumber: String(block),
+    blockTimestamp: "1",
+    transactionHash: "0xt",
+    logIndex: String(log),
+    role: { id: "r3" },
+  });
+  // A later block wins over a higher log index.
+  f.rows.roleGrants = [g("a1", 10, 9), g("a2", 12, 3), g("a3", 12, 7)];
+  const p = await rbacPanelLive(f);
+  const heads = collect(p, "rbac-contract").map((h) => textOf(h));
+  assert(
+    heads.length === 3 && heads[0].includes(RBAC_AUTH) &&
+      heads[1].includes(high) && heads[2].includes(low),
+    "authorisers by address, then the timelock: " + heads.join(" | "),
+  );
+  const rows = collect(p, "rbac-chg").map((r) => textOf(r));
+  assert(
+    rows.length === 3 && rows[0].includes("0xa3") && rows[1].includes("0xa2") &&
+      rows[2].includes("0xa1"),
+    "newest block first, then newest log: " + rows.join(" | "),
+  );
+});
+
+Deno.test("deployments: every entity read is pinned to the indexed block, holders to held", async () => {
+  const f = fakeSubgraph();
+  await rbacPanelLive(f);
+  const qs = f.seen.map((s) => JSON.parse(s.init.body).query);
+  const reads = qs.filter((q) => !q.includes("_meta"));
+  assert(reads.length === 3, "three entity reads, got " + reads.length);
+  for (const q of reads) {
+    assert(q.includes("block: {number: 900}"), "unpinned read: " + q);
+  }
+  assert(
+    reads.find((q) => q.includes("roleHolders(")).includes("held: true"),
+    "only current holders",
+  );
+});
+
+Deno.test("deployments: the role pager follows the cursor and refuses an endless read", async () => {
+  const f = fakeSubgraph();
+  const base = f.rows.roleGrants[0];
+  f.rows.roleGrants = Array.from({ length: 2005 }, (_, i) => ({
+    ...base,
+    id: "g" + String(i).padStart(6, "0"),
+    blockNumber: String(i),
+  }));
+  const p = await rbacPanelLive(f);
+  assert(collect(p, "rbac-chg").length === 2005, "every row, once");
+  const grantReads = f.seen.filter((s) => s.init.body.includes("roleGrants("));
+  assert(grantReads.length === 3, "two full pages and a short one");
+
+  // An index that never ends a page is abandoned, not shown short.
+  const g = fakeSubgraph();
+  g.rows.roleGrants = Array.from({ length: 1000 }, (_, i) => ({
+    ...base,
+    id: "g" + String(i).padStart(6, "0"),
+  }));
+  g.raw.roleGrants = { data: { page: g.rows.roleGrants } };
+  const q = await rbacPanelLive(g);
+  assert(collect(q, "rbac-chg").length === 0, "no rows from an endless read");
+  assert(
+    textOf(q).includes("more than 100000 rows"),
+    "says why: " + textOf(q),
+  );
+});
+
+Deno.test("deployments: every index state is stated, and no data never reads as no changes", async () => {
+  const meta = (block, hasIndexingErrors) => ({
+    data: { _meta: { block, hasIndexingErrors } },
+  });
+  const cases = [
+    [
+      { meta: { error: "subgraph name/version error" } },
+      "No subgraph — nothing is published at st0x-rbac-mainnet/prod",
+      "down",
+      false,
+    ],
+    [{ meta: null }, "No readable answer", "down", false],
+    [{ meta: "<html>" }, "No readable answer", "down", false],
+    // A non-2xx answer was received: its status is the error, never
+    // "unreachable", unless the body has a GraphQL shape of its own.
+    [{ meta: "<html>", status: 502 }, "answered HTTP 502", "drift", false],
+    [
+      { meta: { message: "rate limited" }, status: 429 },
+      "answered HTTP 429",
+      "drift",
+      false,
+    ],
+    [{ meta: 5, status: 500 }, "answered HTTP 500", "drift", false],
+    [
+      { meta: { errors: [{ message: "bad query" }] }, status: 400 },
+      "bad query",
+      "drift",
+      false,
+    ],
+    [
+      { meta: { error: "subgraph name/version error" }, status: 404 },
+      "No subgraph — nothing is published at st0x-rbac-mainnet/prod",
+      "down",
+      false,
+    ],
+    [
+      { meta: { errors: [{ message: "has not started syncing yet" }] } },
+      "has not started syncing yet",
+      "drift",
+      false,
+    ],
+    [
+      { meta: { error: "path project error" } },
+      "path project error",
+      "drift",
+      false,
+    ],
+    [{ meta: { data: null } }, "carried no data", "drift", false],
+    [{ meta: 5 }, "not a JSON object", "drift", false],
+    [{ meta: { errors: "flat" } }, '"flat"', "drift", false],
+    [{ meta: { errors: [{ code: 1 }] } }, '{"code":1}', "drift", false],
+    [{ meta: { error: { code: 2 } } }, '{"code":2}', "drift", false],
+    [
+      { meta: meta({ number: 900, timestamp: RBAC_TS }, "no") },
+      "without a block position",
+      "drift",
+      false,
+    ],
+    [
+      { meta: meta(null, false) },
+      "without a block position",
+      "drift",
+      false,
+    ],
+    [
+      { meta: meta({ number: 900, timestamp: RBAC_TS }, true) },
+      "Indexing errors",
+      "drift",
+      true,
+    ],
+    [
+      { now: (RBAC_TS + 601) * 1000 },
+      "10m old. History below is complete only up to block 900",
+      "roll",
+      true,
+    ],
+    [{ now: (RBAC_TS + 7200) * 1000 }, "2h old", "roll", true],
+    [{ now: (RBAC_TS + 119) * 1000 }, "119s old", "ok", true],
+    [{ now: RBAC_TS * 1000 }, "0s old", "ok", true],
+    [{ now: (RBAC_TS + 120) * 1000 }, "2m old", "ok", true],
+    [{ now: (RBAC_TS + 7199) * 1000 }, "120m old", "roll", true],
+    [
+      { meta: meta({ number: "900", timestamp: null }, false) },
+      "of unknown age. History below is complete only up to block 900",
+      "roll",
+      true,
+    ],
+    [{ now: (RBAC_TS + 600) * 1000 }, "current", "ok", true],
+    // A browser clock behind the chain is not an index behind it.
+    [
+      { now: (RBAC_TS - 60) * 1000 },
+      "ahead of this browser's clock",
+      "ok",
+      true,
+    ],
+    [
+      { raw: { roleHolders: { errors: [{ message: "boom" }] } } },
+      "roleHolders: boom",
+      "drift",
+      false,
+    ],
+    [
+      { raw: { roles: { error: "subgraph name/version error" } } },
+      "roles: the subgraph vanished mid-read",
+      "drift",
+      false,
+    ],
+    [
+      { raw: { roleGrants: { data: {} } } },
+      "roleGrants: the response carried no rows",
+      "drift",
+      false,
+    ],
+    [
+      { raw: { roles: "<html>" } },
+      "roles: no readable answer mid-read",
+      "drift",
+      false,
+    ],
+  ];
+  for (const [over, phrase, cls, rows] of cases) {
+    const label = JSON.stringify(over);
+    const p = await rbacPanelLive(fakeSubgraph(over));
+    const banners = rbacBanners(p);
+    assert(banners.length === 1, label + ": one banner");
+    assert(
+      banners[0].className.includes("own-verify-" + cls),
+      label + ": class " + banners[0].className,
+    );
+    assert(
+      textOf(banners[0]).includes(phrase),
+      label + ": says " + textOf(banners[0]),
+    );
+    assert(
+      textOf(banners[0]).includes(RBAC_URL),
+      label + ": names the endpoint",
+    );
+    if (rows) {
+      assert(collect(p, "rbac-chg").length === 3, label + ": keeps its rows");
+    } else {
+      assert(
+        textOf(banners[0]).includes("not the same as no changes"),
+        label + ": no data is not no changes",
+      );
+      assert(collect(p, "rbac-chg").length === 0, label + ": no rows");
+      assert(
+        collect(p, "rbac-contract").length === 0,
+        label + ": no contracts",
+      );
+    }
+  }
+});
+
+Deno.test("deployments: an absent or unreadable role-history location says so", async () => {
+  const f = fakeSubgraph();
+  let p = await rbacPanelLive(f, grantsData());
+  assert(
+    textOf(p).includes("Role history unavailable"),
+    "absent key: " + textOf(p),
+  );
+  p = await rbacPanelLive(
+    f,
+    rbacData(undefined, {
+      unavailable: "could not read subgraph/networks.json",
+    }),
+  );
+  assert(
+    textOf(p).includes("could not read subgraph/networks.json"),
+    "reason named: " + textOf(p),
+  );
+  p = await rbacPanelLive(f, rbacData([]));
+  assert(textOf(p).includes("declares no networks"), "empty list stated");
+  assert(f.seen.length === 0, "nothing fetched for no location");
+  // A network whose endpoint is not https is never fetched.
+  p = await rbacPanelLive(f, rbacData([rbacNet({ endpoint: "http://x" })]));
+  assert(textOf(p).includes("no https endpoint"), "refused: " + textOf(p));
+  assert(f.seen.length === 0, "and not fetched");
+  // An index with no role rows at all says so rather than listing nothing.
+  const empty = fakeSubgraph();
+  empty.rows = { roles: [], roleHolders: [], roleGrants: [] };
+  p = await rbacPanelLive(empty);
+  assert(textOf(p).includes("no role events"), "empty index stated");
+  // The owners-unavailable path renders this tab too, and waits on it.
+  p = await rbacPanelLive(fakeSubgraph(), {
+    ...rbacData([rbacNet()]),
+    deploymentOwners: null,
+  });
+  assert(
+    collect(p, "rbac-chg").length === 3,
+    "rendered on the early-return path",
+  );
+});
+
+Deno.test("deployments: networks read independently, unnamed chains stay unlinked", async () => {
+  // One network down does not take the others with it, and a network with no
+  // chain mapping shows its addresses as text rather than a wrong-chain link.
+  const f = fakeSubgraph();
+  const io = {
+    now: f.io.now,
+    fetch: (url, init) =>
+      url.includes("down")
+        ? Promise.reject(new TypeError("Failed to fetch"))
+        : f.io.fetch(url, init),
+  };
+  const { box, done } = deploymentsRender(
+    rbacData([
+      rbacNet({ network: "base", chain: "base", endpoint: "https://down/gn" }),
+      rbacNet({ network: "arbitrum-one", chain: null }),
+    ]),
+    io,
+  );
+  await done;
+  const p = collect(box, "tabpanel").find((x) => x.dataset.tab === "rbac");
+  const banners = rbacBanners(p);
+  assert(banners.length === 2, "one banner each");
+  assert(textOf(banners[0]).includes("No readable answer"), "first down");
+  assert(collect(banners[1].parent, "rbac-chg").length === 3, "second read");
+  assert(textOf(p).includes("arbitrum-one"), "unmapped network titled by name");
+  const auth = collect(p, "own-addr").find((a) => a.textContent === RBAC_AUTH);
+  assert(auth && auth.tagName === "span", "unlinked on an unknown chain");
+});
+
+Deno.test("deployments: role-change strings land as text", async () => {
+  const f = fakeSubgraph();
+  f.rows.roleGrants[0].account = XSS_IMG;
+  f.rows.roles[1].contract.kind = XSS_IMG;
+  const bad = fakeSubgraph({ meta: { error: XSS_IMG } });
+  const io = {
+    now: f.io.now,
+    fetch: (url, init) =>
+      url.includes("bad") ? bad.io.fetch(url, init) : f.io.fetch(url, init),
+  };
+  const { box, done } = deploymentsRender(
+    rbacData([rbacNet(), rbacNet({ endpoint: "https://bad/gn" })], {
+      subgraph: XSS_IMG,
+    }),
+    io,
+  );
+  await done;
+  const p = collect(box, "tabpanel").find((x) => x.dataset.tab === "rbac");
+  assert(textOf(p).includes(XSS_IMG), "payload rendered as text");
+  assert(tags(p, "img").length === 0, "no element created from it");
 });

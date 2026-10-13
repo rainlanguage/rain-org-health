@@ -17,6 +17,7 @@ another repo's tooling. Every data source is owned + emitted by its
 | repo modernization signals       | `roh-scan` (this repo) → `health.json`                                       | same-origin fetch            |
 | producer-run metrics             | `issue-pr-cron` → `metrics/runs.jsonl`                                       | runtime fetch of its raw URL |
 | pipeline / FSM-conformance state | `issue-pr-cron`'s `pr-review-report human-queue --json` → `human-queue.json` | runtime fetch of its raw URL |
+| st0x role changes (RBAC)         | st0x.deploy's RBAC subgraph on Ormi (`roh-scan` only emits its location)     | runtime GraphQL POST         |
 
 Do not regress this:
 

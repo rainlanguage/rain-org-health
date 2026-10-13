@@ -61,6 +61,10 @@
      empty states, and a second one indistinguishable from theirs would make
      their assertion about that section pass or fail on this one. */
   .vault-empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
+  /* Its own class for the same reason as `.vault-empty`. */
+  .rbac-empty { color: var(--ink-3); padding: 12px 4px; line-height: 1.6; }
+  .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
+  .rbac-hist { margin-top: 10px; }
   footer { margin-top: 40px; color: var(--ink-3); font-size: 12px; }
   footer a { color: var(--ink-3); }
   .nav { display: flex; flex-wrap: wrap; gap: 2px; margin: 14px 0 6px; border-bottom: 1px solid var(--border); }
@@ -225,7 +229,10 @@ $("theme").addEventListener("click", () => {
 });
 // Renders the deployments view into #deployments. Kept a top-level function with
 // locally-declared helpers so test/dashboard.test.js can extract and eval it standalone.
-function renderDeployments(document, $, data) {
+// `io` carries the network and the clock (`fetch`, `now`) for the live role-change
+// read, so a test can stand both in. Returns a promise that settles once that read
+// has rendered.
+function renderDeployments(document, $, data, io) {
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -310,6 +317,7 @@ function renderDeployments(document, $, data) {
   const TABS = [
     ["safe", "Safe & ownership"],
     ["contracts", "Contracts & tokens"],
+    ["rbac", "Role changes"],
   ];
   const subnav = el("div", "subnav");
   const panels = {};
@@ -351,7 +359,7 @@ function renderDeployments(document, $, data) {
     });
     subnav.append(b);
   }
-  box.append(subnav, panels.safe, panels.contracts);
+  box.append(subnav, panels.safe, panels.contracts, panels.rbac);
 
   // Where the section renderers append. Reassigned between groups rather than
   // threaded through every renderer as an argument, so a section moves tab by
@@ -1263,6 +1271,407 @@ function renderDeployments(document, $, data) {
       true,
     );
   };
+  // Role changes: every grant and revoke, and who holds each role now, per
+  // contract per network, read from the deploy repo's RBAC subgraph WHEN THE
+  // PAGE LOADS. The subgraph is the producer; the scan only says where each
+  // network's index is published and which role ids it knows names for, so
+  // what is shown is the index as it is now, not as it was at scan time.
+  //
+  // Each network's index is its own source with its own state, and the state
+  // is the first thing said about it. An index still syncing has a complete
+  // history only up to its own block; one that is not published, not reachable
+  // or erroring has none at all. Rendering any of those as a short list would
+  // read as "nothing changed", which is the claim this section exists to make
+  // only when it is true.
+  const RBAC_KINDS = {
+    AUTHORIZER: "Authoriser",
+    GOVERNANCE_TIMELOCK: "Governance timelock",
+    ORCHESTRATOR: "Orchestrator",
+  };
+  // How far the newest indexed block's time may trail the viewer's clock and
+  // still read as current. A live index trails the chain by seconds; past this
+  // it has not reached the present, and its history is complete only up to
+  // its own block.
+  const RBAC_FRESH_SECS = 600;
+  // Rows per GraphQL page (graph-node's cap on `first`), and the pages read per
+  // entity before the read is abandoned as incomplete rather than shown short.
+  const RBAC_PAGE = 1000;
+  const RBAC_MAX_PAGES = 100;
+  // The exact body Ormi returns for a name/tag it does not host — the string
+  // rainix's `ormi-probe` treats as "missing".
+  const RBAC_MISSING = "subgraph name/version error";
+  // One GraphQL POST, classified: { data } | { missing } | { error } | { unreachable }.
+  const rbacAsk = async (url, query) => {
+    let r;
+    try {
+      r = await io.fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ query }),
+        cache: "no-store",
+      });
+    } catch {
+      return { unreachable: true };
+    }
+    // A non-2xx answer was received, so it is never "unreachable"; its status
+    // is what says what went wrong when the body has no GraphQL shape.
+    const status = r.ok === false ? `the endpoint answered HTTP ${r.status}` : null;
+    let body;
+    try {
+      body = await r.json();
+    } catch {
+      return status ? { error: status } : { unreachable: true };
+    }
+    if (!body || typeof body !== "object") return { error: status || "the endpoint answered with something that is not a JSON object" };
+    // `errors` beside `data` is a failure, not a partial answer.
+    if ("errors" in body) {
+      const errs = Array.isArray(body.errors) ? body.errors : [body.errors];
+      return {
+        error: errs
+          .map((e) => (e && typeof e.message === "string" ? e.message : JSON.stringify(e)))
+          .join("; "),
+      };
+    }
+    if ("error" in body) {
+      if (body.error === RBAC_MISSING) return { missing: true };
+      return { error: typeof body.error === "string" ? body.error : JSON.stringify(body.error) };
+    }
+    if (!body.data || typeof body.data !== "object") return { error: status || "the response carried no data" };
+    return { data: body.data };
+  };
+  // Every row of one entity at `block`, paged by id. Pinned to one block so the
+  // pages are one snapshot: an index that moves between pages would otherwise
+  // join history from two heights. A failed or malformed page fails the whole
+  // read — a short list shown as the list is the silent empty this refuses.
+  const rbacReadAll = async (url, entity, filter, fields, block) => {
+    const rows = [];
+    let cursor = "0x";
+    for (let i = 0; i < RBAC_MAX_PAGES; i++) {
+      const q =
+        `{ page: ${entity}(first: ${RBAC_PAGE}, orderBy: id, orderDirection: asc, ` +
+        `block: {number: ${block}}, where: {id_gt: "${cursor}"${filter}}) { id ${fields} } }`;
+      const a = await rbacAsk(url, q);
+      if (a.missing) throw new Error(`${entity}: the subgraph vanished mid-read`);
+      if (a.unreachable) throw new Error(`${entity}: no readable answer mid-read`);
+      if (a.error) throw new Error(`${entity}: ${a.error}`);
+      const page = a.data.page;
+      if (!Array.isArray(page)) throw new Error(`${entity}: the response carried no rows`);
+      rows.push(...page);
+      const last = page.length ? page[page.length - 1] : null;
+      if (page.length < RBAC_PAGE) return rows;
+      if (!last || typeof last.id !== "string") throw new Error(`${entity}: a row without an id`);
+      cursor = last.id;
+    }
+    throw new Error(`${entity}: more than ${RBAC_PAGE * RBAC_MAX_PAGES} rows; not shown short`);
+  };
+  // graph-node BigInt / Int arrive as strings or numbers.
+  const rbacNum = (v) => {
+    const x = typeof v === "string" && v !== "" ? Number(v) : v;
+    return typeof x === "number" && Number.isFinite(x) ? x : null;
+  };
+  // Group the three entity reads by contract. A contract appears when it has a
+  // role row, which the subgraph creates on the first event naming the role —
+  // so every role contract with any history is here, and `Ownable`-only
+  // contracts (vaults, beacons) are not, having no roles to report.
+  const rbacGroup = (roles, holders, grants, names) => {
+    const nameOf = (id) =>
+      typeof id === "string" && typeof names[id] === "string" ? names[id] : null;
+    const byContract = new Map();
+    const roleById = new Map();
+    for (const r of roles) {
+      const c = r && r.contract;
+      if (!c || typeof c.id !== "string") continue;
+      if (!byContract.has(c.id)) {
+        byContract.set(c.id, {
+          address: c.id,
+          kind: c.kind,
+          firstIndexedBlock: rbacNum(c.firstIndexedBlock),
+          roles: [],
+          changes: [],
+        });
+      }
+      const row = {
+        roleId: r.role,
+        name: nameOf(r.role),
+        adminId: r.admin,
+        adminName: nameOf(r.admin),
+        holders: [],
+      };
+      byContract.get(c.id).roles.push(row);
+      roleById.set(r.id, { contract: c.id, row });
+    }
+    for (const h of holders) {
+      const at = roleById.get(h && h.role && h.role.id);
+      if (!at) continue;
+      at.row.holders.push({
+        account: h.account,
+        grantedAtBlock: rbacNum(h.grantedAtBlock),
+        grantedAtTimestamp: rbacNum(h.grantedAtTimestamp),
+      });
+    }
+    for (const g of grants) {
+      // A grant on a role this snapshot holds no row for is not attributed.
+      const at = roleById.get(g && g.role && g.role.id);
+      if (!at) continue;
+      byContract.get(at.contract).changes.push({
+        roleId: at.row.roleId,
+        name: at.row.name,
+        account: g.account,
+        granted: g.granted,
+        sender: g.sender,
+        blockNumber: rbacNum(g.blockNumber),
+        blockTimestamp: rbacNum(g.blockTimestamp),
+        transactionHash: g.transactionHash,
+        logIndex: rbacNum(g.logIndex),
+      });
+    }
+    const str = (v) => (typeof v === "string" ? v : "");
+    const out = [...byContract.values()];
+    out.sort((a, b) => str(a.kind).localeCompare(str(b.kind)) || str(a.address).localeCompare(str(b.address)));
+    for (const c of out) {
+      // Named roles first by name, then unnamed ones by id.
+      const key = (r) => (r.name ? "0" + r.name : "1" + str(r.roleId));
+      c.roles.sort((a, b) => key(a).localeCompare(key(b)));
+      for (const r of c.roles) r.holders.sort((a, b) => str(a.account).localeCompare(str(b.account)));
+      // Newest first: the question a reader brings is "what changed lately".
+      c.changes.sort((a, b) => (b.blockNumber ?? -1) - (a.blockNumber ?? -1) || (b.logIndex ?? -1) - (a.logIndex ?? -1));
+    }
+    return out;
+  };
+  // Read one network's index: its position, then every role, current holder
+  // and grant/revoke at that position. Never throws; every failure is a state.
+  const rbacRead = async (url, names) => {
+    const m = await rbacAsk(url, "{ _meta { block { number timestamp } hasIndexingErrors } }");
+    if (m.missing) return { state: "missing" };
+    if (m.unreachable) return { state: "unreachable" };
+    if (m.error) return { state: "error", detail: m.error };
+    const meta = m.data._meta;
+    const block = rbacNum(meta && meta.block && meta.block.number);
+    if (block === null || typeof meta.hasIndexingErrors !== "boolean") {
+      return { state: "error", detail: "the index answered without a block position" };
+    }
+    const ts = rbacNum(meta.block.timestamp);
+    const out = {
+      indexedBlock: block,
+      indexedTimestamp: ts,
+      // Against the viewer's clock: the page has no RPC, and the question is
+      // whether the index has reached the present the reader is in.
+      ageSeconds: ts === null ? null : Math.round(io.now() / 1000 - ts),
+      hasIndexingErrors: meta.hasIndexingErrors,
+    };
+    // Indexing errors outrank age: an index that hit one has stopped, so
+    // "syncing" would promise a catch-up that will not come. An unknown block
+    // time is not a current one.
+    out.state = meta.hasIndexingErrors
+      ? "indexing-errors"
+      : out.ageSeconds !== null && out.ageSeconds <= RBAC_FRESH_SECS
+        ? "synced"
+        : "syncing";
+    try {
+      const [roles, holders, grants] = await Promise.all([
+        rbacReadAll(url, "roles", "", "role admin contract { id kind firstIndexedBlock }", block),
+        rbacReadAll(url, "roleHolders", ", held: true", "account grantedAtBlock grantedAtTimestamp role { id }", block),
+        rbacReadAll(
+          url,
+          "roleGrants",
+          "",
+          "account granted sender blockNumber blockTimestamp transactionHash logIndex role { id }",
+          block,
+        ),
+      ]);
+      out.contracts = rbacGroup(roles, holders, grants, names);
+    } catch (e) {
+      // The position is real but the history is not whole, so none of it is
+      // shown: a list missing a page reads as the list.
+      out.state = "error";
+      out.detail = e instanceof Error ? e.message : String(e);
+    }
+    return out;
+  };
+  const utc = (ts) =>
+    typeof ts === "number"
+      ? new Date(ts * 1000).toISOString().slice(0, 16).replace("T", " ") + " UTC"
+      : "time unknown";
+  const ago = (s) =>
+    s < 0 ? "ahead of this browser's clock" : s < 120 ? `${s}s old` : s < 7200 ? `${Math.round(s / 60)}m old` : `${Math.round(s / 3600)}h old`;
+  const txNode = (hash, chain) => {
+    const base = EXPLORERS[chain];
+    if (typeof hash !== "string" || !hash) return el("span", "own-verify-src", "tx unknown");
+    return base
+      ? link("own-verify-src", "tx", base.replace("/address/", "/tx/") + hash)
+      : el("span", "own-verify-src", hash);
+  };
+  const roleLabel = (name, id) =>
+    typeof name === "string" && name ? name : typeof id === "string" ? id : "(unknown role)";
+  const rbacBanner = (n, endpoint, published) => {
+    const at = typeof n.indexedBlock === "number" ? n.indexedBlock : null;
+    const atText = at === null ? "" : `block ${at} (${utc(n.indexedTimestamp)})`;
+    const age = typeof n.ageSeconds === "number" ? ago(n.ageSeconds) : "of unknown age";
+    let cls, msg;
+    switch (n.state) {
+      case "loading":
+        cls = "roll";
+        msg = "Reading the index…";
+        break;
+      case "synced":
+        cls = "ok";
+        msg = `Indexed to ${atText}, ${age} — current.`;
+        break;
+      case "syncing":
+        cls = "roll";
+        msg = `Still syncing — indexed to ${atText}, ${age}. History below is complete only up to block ${at}; later changes are not shown.`;
+        break;
+      case "indexing-errors":
+        cls = "drift";
+        msg = `Indexing errors — the index stopped at ${atText}. Changes after block ${at} are missing.`;
+        break;
+      case "missing":
+        cls = "down";
+        msg = `No subgraph — nothing is published at ${published}. No history is shown, which is not the same as no changes.`;
+        break;
+      case "unreachable":
+        // Ormi answers a name/tag it does not host WITHOUT CORS headers, so in
+        // a browser "not published" and "endpoint down" are the same failed
+        // fetch. Both are named rather than one guessed.
+        cls = "down";
+        msg =
+          `No readable answer — the endpoint is down, or nothing is published at ${published} ` +
+          `(Ormi answers that without CORS headers, so a browser cannot tell the two apart). ` +
+          `No history is shown, which is not the same as no changes.`;
+        break;
+      case "error":
+        cls = "drift";
+        msg = `Index error${at === null ? "" : ` at ${atText}`} — ${n.detail || "no detail"}. No history is shown, which is not the same as no changes.`;
+        break;
+      default:
+        cls = "down";
+        msg = `Unrecognised index state "${String(n.state)}" — nothing is shown for it.`;
+    }
+    const b = el("div", `own-verify own-verify-${cls}`);
+    b.append(el("span", "own-verify-msg", msg));
+    if (typeof endpoint === "string") b.append(el("span", "own-verify-src", endpoint));
+    return b;
+  };
+  // One network's banner and, where the read is whole, its contracts.
+  const rbacBody = (slot, n, chain, endpoint, published) => {
+    slot.replaceChildren(rbacBanner(n, endpoint, published));
+    if (!Array.isArray(n.contracts)) return;
+    if (n.contracts.length === 0) {
+      slot.append(el("div", "rbac-empty", "The index holds no role events for any contract."));
+      return;
+    }
+    for (const c of n.contracts) {
+      const ch = el("div", "own-grouphead rbac-contract");
+      ch.append(`${RBAC_KINDS[c.kind] || String(c.kind)} `);
+      if (typeof c.address === "string") ch.append(addrNode("own-addr", c.address, chain));
+      slot.append(ch);
+      if (typeof c.firstIndexedBlock === "number") {
+        slot.append(el("div", "own-groupnote", `indexed from block ${c.firstIndexedBlock}`));
+      }
+      // Current holders, one row per role.
+      const held = el("div", "own-table");
+      for (const role of c.roles) {
+        const row = el("div", "own-row");
+        const rc = el("div", "own-rc");
+        rc.append(el("div", "own-role", roleLabel(role.name, role.roleId)));
+        if (role.name && role.roleId) rc.append(el("div", "grt-roleid", role.roleId));
+        if (role.adminId) {
+          rc.append(el("div", "own-note", `admin: ${roleLabel(role.adminName, role.adminId)}`));
+        }
+        const ac = el("div", "bcn-detail");
+        for (const h of role.holders) {
+          const line = el("div", "grt-addr");
+          if (typeof h.account === "string") line.append(addrNode("own-addr", h.account, chain));
+          line.append(el("span", "own-verify-src", `since block ${h.grantedAtBlock ?? "?"} · ${utc(h.grantedAtTimestamp)}`));
+          ac.append(line);
+        }
+        const count = role.holders.length;
+        if (count === 0) ac.append(el("span", "own-addr own-missing", "no current holder"));
+        row.append(rc, ac, el("span", `own-chip own-chip-${count ? "yes" : "dim"}`, `${count} held`));
+        held.append(row);
+      }
+      slot.append(held);
+      // Change history, newest first.
+      const changes = c.changes;
+      slot.append(el("div", "own-groupnote rbac-hist", `${changes.length} grant/revoke event${changes.length === 1 ? "" : "s"}, newest first`));
+      if (changes.length === 0) continue;
+      const hist = el("div", "own-table");
+      for (const g of changes) {
+        const granted = g.granted === true;
+        const known = g.granted === true || g.granted === false;
+        const row = el("div", "own-row rbac-chg");
+        const when = el("div", "own-rc");
+        when.append(el("div", "own-role", utc(g.blockTimestamp)));
+        when.append(el("div", "own-note", `block ${g.blockNumber ?? "?"}`));
+        const what = el("div", "bcn-detail");
+        what.append(el("span", "viol-role", roleLabel(g.name, g.roleId)));
+        const acct = el("div", "grt-addr");
+        acct.append(granted ? "to " : known ? "from " : "");
+        if (typeof g.account === "string") acct.append(addrNode("own-addr", g.account, chain));
+        what.append(acct);
+        const by = el("div", "grt-addr");
+        by.append("by ");
+        if (typeof g.sender === "string") by.append(addrNode("own-addr", g.sender, chain));
+        by.append(txNode(g.transactionHash, chain));
+        what.append(by);
+        row.append(
+          when,
+          what,
+          el(
+            "span",
+            `own-chip own-chip-${!known ? "dim" : granted ? "yes" : "no"}`,
+            !known ? "unknown" : granted ? "granted" : "revoked",
+          ),
+        );
+        hist.append(row);
+      }
+      slot.append(hist);
+    }
+  };
+  // Builds the tab and starts one live read per network. Returns a promise
+  // that settles once every network has rendered its answer.
+  const renderRbac = (r) => {
+    sink.append(el("h2", null, "Role changes — every grant and revoke, per network"));
+    if (!r || typeof r !== "object") {
+      sink.append(el("div", "rbac-empty", "Role history unavailable — this scan carries no RBAC subgraph location."));
+      return Promise.resolve();
+    }
+    if (typeof r.unavailable === "string") {
+      sink.append(el("div", "rbac-empty", `Role history unavailable — the scan ${r.unavailable}.`));
+      return Promise.resolve();
+    }
+    const sub = el("div", "own-sub");
+    sub.append("Read live from ");
+    sub.append(link("", `${r.org}/${r.repo}`, `https://github.com/${r.org}/${r.repo}/tree/main/subgraph`));
+    sub.append(
+      `'s RBAC subgraph as this page loads, one index per network at its "${r.tag}" tag. Roles are named where ` +
+        `the deploy repo spells out the hash's preimage, and shown as the raw id otherwise.`,
+    );
+    sink.append(sub);
+    const nets = Array.isArray(r.networks) ? r.networks : [];
+    if (nets.length === 0) {
+      sink.append(el("div", "rbac-empty", "The subgraph declares no networks."));
+      return Promise.resolve();
+    }
+    const names = r.roleNames && typeof r.roleNames === "object" ? r.roleNames : {};
+    const reads = [];
+    for (const n of nets) {
+      if (!n || typeof n !== "object") continue;
+      const chain = typeof n.chain === "string" ? n.chain : null;
+      const title = chain && chain !== n.network ? `${chain} (${n.network})` : String(n.network);
+      const published = `${r.subgraph}-${n.network}/${r.tag}`;
+      sink.append(el("h3", "tok-h3", title));
+      const slot = el("div", "rbac-net");
+      sink.append(slot);
+      if (typeof n.endpoint !== "string" || !n.endpoint.startsWith("https://")) {
+        rbacBody(slot, { state: "error", detail: "the scan gave no https endpoint for this network" }, chain, null, published);
+        continue;
+      }
+      rbacBody(slot, { state: "loading" }, chain, n.endpoint, published);
+      reads.push(rbacRead(n.endpoint, names).then((res) => rbacBody(slot, res, chain, n.endpoint, published)));
+    }
+    return Promise.all(reads);
+  };
   const owners = data.deploymentOwners;
   sink.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
@@ -1278,8 +1687,10 @@ function renderDeployments(document, $, data) {
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
+    sink = panels.rbac;
+    const rbacDone = renderRbac(data.deploymentRbac);
     show(hashTab() || TABS[0][0]);
-    return;
+    return rbacDone;
   }
   const sub = el("div", "own-sub");
   sub.append("Privileged addresses read from the ");
@@ -1349,7 +1760,10 @@ function renderDeployments(document, $, data) {
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
+  sink = panels.rbac;
+  const rbacDone = renderRbac(data.deploymentRbac);
   show(hashTab() || TABS[0][0]);
+  return rbacDone;
 }
 let data = null;
 async function load() {
@@ -1366,7 +1780,7 @@ async function load() {
   $("meta").textContent =
     `${data.org} · scanned ${data.generatedAt.replace("T", " ").replace("Z", " UTC")}` +
     (isFinite(ago) ? ` (${ago}h ago)` : "");
-  renderDeployments(document, $, data);
+  renderDeployments(document, $, data, { fetch: (url, init) => fetch(url, init), now: () => Date.now() });
 }
 load();
 </script>
