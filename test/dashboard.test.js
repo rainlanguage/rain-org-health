@@ -9576,6 +9576,51 @@ Deno.test("deployments: a current index lists holders and changes per contract, 
   );
 });
 
+Deno.test("deployments: contracts order by kind then address, changes by block then log", async () => {
+  const f = fakeSubgraph();
+  const low = "0x1111111111111111111111111111111111111111";
+  const high = "0xffffffffffffffffffffffffffffffffffffffff";
+  const role = (c, kind) => ({
+    id: c + ROLE_IDS.DEPOSIT.slice(2),
+    role: ROLE_IDS.DEPOSIT,
+    admin: RBAC_ZERO,
+    contract: { id: c, kind, firstIndexedBlock: "1" },
+  });
+  // Neither the read order nor the address order is the kind order.
+  f.rows.roles = [
+    role(high, "AUTHORIZER"),
+    role(low, "GOVERNANCE_TIMELOCK"),
+    role(RBAC_AUTH, "AUTHORIZER"),
+  ];
+  f.rows.roleHolders = [];
+  const g = (id, block, log) => ({
+    id,
+    account: "0x" + id,
+    granted: true,
+    sender: "0x5a",
+    blockNumber: String(block),
+    blockTimestamp: "1",
+    transactionHash: "0xt",
+    logIndex: String(log),
+    role: { id: RBAC_AUTH + ROLE_IDS.DEPOSIT.slice(2) },
+  });
+  // A later block wins over a higher log index.
+  f.rows.roleGrants = [g("a1", 10, 9), g("a2", 12, 3), g("a3", 12, 7)];
+  const p = await rbacPanelLive(f);
+  const heads = collect(p, "rbac-contract").map((h) => textOf(h));
+  assert(
+    heads.length === 3 && heads[0].includes(RBAC_AUTH) &&
+      heads[1].includes(high) && heads[2].includes(low),
+    "authorisers by address, then the timelock: " + heads.join(" | "),
+  );
+  const rows = collect(p, "rbac-chg").map((r) => textOf(r));
+  assert(
+    rows.length === 3 && rows[0].includes("0xa3") && rows[1].includes("0xa2") &&
+      rows[2].includes("0xa1"),
+    "newest block first, then newest log: " + rows.join(" | "),
+  );
+});
+
 Deno.test("deployments: every entity read is pinned to the indexed block, holders to held", async () => {
   const f = fakeSubgraph();
   await rbacPanelLive(f);
@@ -9626,7 +9671,7 @@ Deno.test("deployments: every index state is stated, and no data never reads as 
   const cases = [
     [
       { meta: { error: "subgraph name/version error" } },
-      "nothing is published at st0x-rbac-mainnet/prod",
+      "No subgraph — nothing is published at st0x-rbac-mainnet/prod",
       "down",
       false,
     ],
@@ -9680,7 +9725,7 @@ Deno.test("deployments: every index state is stated, and no data never reads as 
     [{ now: (RBAC_TS + 7199) * 1000 }, "120m old", "roll", true],
     [
       { meta: meta({ number: "900", timestamp: null }, false) },
-      "complete only up to block 900",
+      "of unknown age. History below is complete only up to block 900",
       "roll",
       true,
     ],
