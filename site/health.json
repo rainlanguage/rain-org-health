@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-13T10:28:06Z",
+  "generatedAt": "2026-10-13T16:04:34Z",
   "auditGraph": {
     "nodes": [
       {
@@ -333,7 +333,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 32,
+        "openAuditIssues": 31,
         "lastMutation": {
           "timestamp": "2026-10-11T19:05:23Z",
           "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
@@ -2488,11 +2488,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 14,
+        "granted": 15,
         "missing": 0,
-        "unknown": 1,
+        "unknown": 0,
         "total": 15,
-        "state": "partial",
+        "state": "live",
         "safeKept": []
       },
       {
@@ -2855,7 +2855,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -4764,7 +4764,7 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 32,
+      "openAuditIssues": 31,
       "lastMutation": {
         "timestamp": "2026-10-11T19:05:23Z",
         "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
@@ -6059,7 +6059,7 @@
       "sourceLocAddedSinceAudit": 1280,
       "sourceLocRemovedSinceAudit": 807,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 1130,
+      "commitsSinceAudit": 1142,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1381,
       "commentLocRemovedSinceAudit": 426,
