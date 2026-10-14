@@ -79,11 +79,11 @@
                   color: var(--crit); border: 1px solid var(--crit); border-radius: 5px; padding: 1px 5px; }
   .own-row.rbac-off { background: var(--debt-bg); }
   .rbac-pair { display: inline-flex; align-items: baseline; gap: 5px; }
-  .viol-role.rbac-revoke { color: var(--crit); }
+  .viol-role.rbac-unexpected { color: var(--crit); }
   .viol-role.rbac-grant { color: var(--debt); }
   .rbac-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
               border: 1px solid; border-radius: 5px; padding: 1px 5px; white-space: nowrap; }
-  .rbac-tag-revoke { color: var(--crit); }
+  .rbac-tag-unexpected { color: var(--crit); }
   .rbac-tag-grant { color: var(--debt); }
   .own-sub.rbac-ideal-gap, .own-note.rbac-ideal-gap, .own-note.rbac-ideal-off { color: var(--crit); }
   /* Governance timelock operations. A pending one is a change to production
@@ -1797,7 +1797,7 @@ function renderDeployments(document, $, data, io) {
   };
   const OFF_TAGS = {
     grant: ["to grant", "ideal-roles.json expects this holding; it is not held."],
-    revoke: ["to revoke", "ideal-roles.json forbids this holding; it is held."],
+    unexpected: ["not expected", "ideal-roles.json does not expect this holding; it is held."],
   };
   const offTag = (side) => {
     const tag = el("span", `rbac-tag rbac-tag-${side}`, OFF_TAGS[side][0]);
@@ -2144,23 +2144,20 @@ function renderDeployments(document, $, data, io) {
         const kat = `${at}.contracts[${i}]`;
         if (!k || typeof k !== "object") return bad(kat, "is not an object");
         if (!isHex(k.address, 40)) return bad(kat, "has no address");
-        const want = { address: k.address.toLowerCase(), name: named(k.name) };
-        for (const side of ["expected", "forbidden"]) {
-          if (!Array.isArray(k[side])) return bad(kat, `has no ${side} list`);
-          want[side] = [];
-          for (const [j, p] of k[side].entries()) {
-            const pat = `${kat}.${side}[${j}]`;
-            if (!p || typeof p !== "object") return bad(pat, "is not an object");
-            if (!isHex(p.role, 64)) return bad(pat, "has no bytes32 role");
-            if (!isHex(p.grantee, 40)) return bad(pat, "has no grantee address");
-            want[side].push({
-              role: p.role.toLowerCase(),
-              roleName: named(p.roleName),
-              grantee: p.grantee.toLowerCase(),
-            });
-          }
+        if (!Array.isArray(k.expected)) return bad(kat, "has no expected list");
+        const expected = [];
+        for (const [j, p] of k.expected.entries()) {
+          const pat = `${kat}.expected[${j}]`;
+          if (!p || typeof p !== "object") return bad(pat, "is not an object");
+          if (!isHex(p.role, 64)) return bad(pat, "has no bytes32 role");
+          if (!isHex(p.grantee, 40)) return bad(pat, "has no grantee address");
+          expected.push({
+            role: p.role.toLowerCase(),
+            roleName: named(p.roleName),
+            grantee: p.grantee.toLowerCase(),
+          });
         }
-        contracts.push(want);
+        contracts.push({ address: k.address.toLowerCase(), name: named(k.name), expected });
       }
       byNetwork.set(c.network, { chainId: id, contracts });
     }
@@ -2185,18 +2182,9 @@ function renderDeployments(document, $, data, io) {
   const pairKey = (contract, role, account) => `${contract}|${role}|${account}`;
   // A declared contract with no role row in the index is unchecked: the index may not cover it.
   const idealDiff = (contracts, want) => {
-    const byAddress = new Map();
-    const held = new Set();
-    for (const c of contracts) {
-      byAddress.set(c.address, c);
-      for (const role of c.roles) {
-        for (const h of role.holders) {
-          held.add(pairKey(c.address, role.roleId, h.account));
-        }
-      }
-    }
+    const byAddress = new Map(contracts.map((c) => [c.address, c]));
     const grant = [];
-    const revoke = new Set();
+    const unexpected = new Set();
     const unindexed = [];
     for (const w of want.contracts) {
       const at = byAddress.get(w.address);
@@ -2204,15 +2192,20 @@ function renderDeployments(document, $, data, io) {
         unindexed.push(w);
         continue;
       }
+      const expected = new Set(w.expected.map((p) => pairKey(w.address, p.role, p.grantee)));
+      const held = new Set();
+      for (const role of at.roles) {
+        for (const h of role.holders) {
+          const key = pairKey(at.address, role.roleId, h.account);
+          held.add(key);
+          if (!expected.has(key)) unexpected.add(key);
+        }
+      }
       for (const p of w.expected) {
         if (!held.has(pairKey(w.address, p.role, p.grantee))) grant.push({ ...p, at });
       }
-      for (const p of w.forbidden) {
-        const key = pairKey(w.address, p.role, p.grantee);
-        if (held.has(key)) revoke.add(key);
-      }
     }
-    return { state: "checked", grant, revoke, unindexed };
+    return { state: "checked", grant, unexpected, unindexed };
   };
   const idealCheck = (n, ideal) => {
     if (!ideal) return { state: "loading" };
@@ -2223,8 +2216,8 @@ function renderDeployments(document, $, data, io) {
     if (!Array.isArray(n.res.contracts)) return { state: "unread" };
     return idealDiff(n.res.contracts, want);
   };
-  const revoking = (check, contract, roleId, account) =>
-    check.state === "checked" && check.revoke.has(pairKey(contract, roleId, account));
+  const notExpected = (check, contract, roleId, account) =>
+    check.state === "checked" && check.unexpected.has(pairKey(contract, roleId, account));
   const idealLine = (check) => {
     const line = (cls, text) => el("div", `own-note rbac-ideal${cls ? " " + cls : ""}`, `Ideal roles: ${text}`);
     switch (check.state) {
@@ -2241,9 +2234,9 @@ function renderDeployments(document, $, data, io) {
     }
     const off = [];
     if (check.grant.length) off.push(`${check.grant.length} to grant`);
-    if (check.revoke.size) off.push(`${check.revoke.size} to revoke`);
+    if (check.unexpected.size) off.push(`${check.unexpected.size} not expected`);
     const partial = check.unindexed.length ? ", on the contracts the index holds" : "";
-    let text = off.length ? `${off.join(", ")}.` : `every expected role held, no forbidden one${partial}.`;
+    let text = off.length ? `${off.join(", ")}.` : `held exactly as expected${partial}.`;
     if (check.unindexed.length) {
       const names = check.unindexed.map((w) => w.name || w.address).join(", ");
       text += ` Not checked: ${names} — the index holds no role events for ${check.unindexed.length === 1 ? "it" : "them"}.`;
@@ -2289,8 +2282,8 @@ function renderDeployments(document, $, data, io) {
           const line = el("div", "grt-addr");
           if (typeof h.account === "string") line.append(whoNode(h.account, chain, pins));
           line.append(el("span", "own-verify-src", `since block ${h.grantedAtBlock ?? "?"} · ${utc(h.grantedAtTimestamp)}`));
-          if (revoking(check, c.address, role.roleId, h.account)) {
-            line.append(offTag("revoke"));
+          if (notExpected(check, c.address, role.roleId, h.account)) {
+            line.append(offTag("unexpected"));
             off = true;
           }
           ac.append(line);
@@ -2390,7 +2383,7 @@ function renderDeployments(document, $, data, io) {
             if (typeof h.account !== "string") continue;
             const [g, one] = on(h.account, i, c);
             one.roles.push(role);
-            if (revoking(n.check, c.address, role.roleId, h.account)) g.off = true;
+            if (notExpected(n.check, c.address, role.roleId, h.account)) g.off = true;
           }
         }
       }
@@ -2474,7 +2467,7 @@ function renderDeployments(document, $, data, io) {
         const what = el("div", "bcn-detail");
         let count = 0;
         let grant = 0;
-        let revoke = 0;
+        let unexpected = 0;
         for (const on of h.contracts) {
           const c = on.contract;
           const line = el("div", "grt-addr");
@@ -2483,9 +2476,9 @@ function renderDeployments(document, $, data, io) {
           const roles = el("div", "grt-addr rbac-held-roles");
           for (const role of on.roles) {
             const label = roleLabel(role.name, role.roleId);
-            if (revoking(n.check, c.address, role.roleId, g.address)) {
-              roles.append(offPair("revoke", label));
-              revoke++;
+            if (notExpected(n.check, c.address, role.roleId, g.address)) {
+              roles.append(offPair("unexpected", label));
+              unexpected++;
             } else {
               roles.append(el("span", "viol-role", label));
             }
@@ -2498,8 +2491,8 @@ function renderDeployments(document, $, data, io) {
         const chips = el("div", "own-prov");
         chips.append(el("span", `own-chip own-chip-${count ? "yes" : "dim"}`, `${count} held`));
         if (grant) chips.append(el("span", "own-chip own-chip-roll", `${grant} to grant`));
-        if (revoke) chips.append(el("span", "own-chip own-chip-no", `${revoke} to revoke`));
-        const row = el("div", grant || revoke ? "own-row rbac-off" : "own-row");
+        if (unexpected) chips.append(el("span", "own-chip own-chip-no", `${unexpected} not expected`));
+        const row = el("div", grant || unexpected ? "own-row rbac-off" : "own-row");
         row.append(where, what, chips);
         table.append(row);
       }
@@ -2532,7 +2525,7 @@ function renderDeployments(document, $, data, io) {
     const heldSub = el("div", "own-sub");
     heldSub.append(
       "What each address holds now: the current holders in the same live read of each network's index as Role " +
-        "changes. Addresses with a role to grant or revoke first, then unrecognised holders, then pinned addresses that hold a role, then pinned addresses that hold none.",
+        "changes. Addresses with a role to grant or one not expected first, then unrecognised holders, then pinned addresses that hold a role, then pinned addresses that hold none.",
     );
     heldBox.append(heldSub);
     const nets = Array.isArray(r.networks) ? r.networks : [];
@@ -2593,7 +2586,7 @@ function renderDeployments(document, $, data, io) {
       note.append(
         "Checked against ",
         link("", `${repoName}'s ideal-roles.json`, `https://github.com/${r.org}/${r.repo}/blob/main/ideal-roles.json`),
-        ": a role it expects that is not held is marked to grant, and one it forbids that is held, to revoke.",
+        ": a role it expects that is not held is marked to grant, and a held role it does not expect, not expected.",
       );
       const indexed = new Set(nets.map((n) => n && n.chain));
       const stray = [...ideal.byNetwork]
