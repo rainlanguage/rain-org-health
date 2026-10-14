@@ -12283,6 +12283,13 @@ Deno.test("deployments: only contracts ideal-roles.json declares are checked, an
       }),
     "the undeclared timelock's holder is not marked: " + JSON.stringify(tl),
   );
+  const held = heldGroups(
+    await heldPanelLive(f.io, rbacData([rbacNet()])),
+  ).map((x) => x.hex);
+  assert(
+    held.join() === [IDEAL_KEEP, IDEAL_DROP, IDEAL_NEW, IDEAL_OTHER].join(),
+    "a holder whose only discrepancy is a warning is listed first: " + held,
+  );
   const g = idealSubgraph();
   const auth = g.ideal.chains["1"].contracts[0];
   auth.forbidden = [idealPair(ROLE_IDS.DEPOSIT, IDEAL_KEEP, "DEPOSIT"), 7];
