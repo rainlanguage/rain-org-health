@@ -6762,12 +6762,12 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
   assert(
-    btns.length === 3,
-    "three sub-tabs: " + btns.map((b) => b.textContent).join(","),
+    btns.length === 4,
+    "four sub-tabs: " + btns.map((b) => b.textContent).join(","),
   );
   assert(
-    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac",
-    "tabs in order safe,contracts,rbac: " +
+    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac,held",
+    "tabs in order safe,contracts,rbac,held: " +
       btns.map((b) => b.dataset.tab).join(","),
   );
   // Exactly one active, and it is the first — a page that opens with none
@@ -6779,7 +6779,7 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   );
 
   const panels = collect(box, "tabpanel");
-  assert(panels.length === 3, "three panels");
+  assert(panels.length === 4, "four panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
   assert(
     !byTab.safe.classList.contains("tab-hidden"),
@@ -6792,6 +6792,10 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   assert(
     byTab.rbac.classList.contains("tab-hidden"),
     "rbac panel hidden on load",
+  );
+  assert(
+    byTab.held.classList.contains("tab-hidden"),
+    "held panel hidden on load",
   );
 });
 
@@ -10831,7 +10835,8 @@ const rbacNet = (over = {}) => ({
 });
 
 // A stand-in subgraph: answers `_meta` and the three paged entity reads the
-// way graph-node does (rows past the `id_gt` cursor, `first` honoured),
+// way graph-node does (rows past the `id_gt` cursor, `first` and `held: true`
+// honoured),
 // recording every request it was sent.
 function fakeSubgraph(over = {}) {
   const rid = (c, r) => c + r.slice(2);
@@ -10956,6 +10961,7 @@ function fakeSubgraph(over = {}) {
       }
       const page = f.rows[entity]
         .filter((r) => r.id > cursor)
+        .filter((r) => !q.includes("held: true") || r.held !== false)
         .sort((a, b) => (a.id < b.id ? -1 : 1))
         .slice(0, first);
       return reply({ data: { page } });
@@ -11689,6 +11695,361 @@ Deno.test("deployments: pinned names land as text", async () => {
   );
   assert(textOf(p).includes(XSS_IMG), "payload rendered as text");
   assert(tags(p, "img").length === 0, "no element created from it");
+});
+
+// ---- deployments.html: roles held now, per address ----
+
+async function heldPanelLive(io, data) {
+  const { box, done } = deploymentsRender(data, io);
+  await done;
+  return collect(box, "tabpanel").find((p) => p.dataset.tab === "held");
+}
+const heldGroups = (p) =>
+  collect(p, "rbac-held").map((g) => ({
+    ...whoOf(collect(g, "rbac-contract")[0])[0],
+    rows: collect(g, "own-row").map((r) => ({
+      net: collect(r, "own-role")[0].textContent,
+      who: whoOf(r),
+      roles: collect(r, "viol-role").map((x) => x.textContent),
+      text: textOf(r),
+    })),
+    none: collect(g, "rbac-held-none").map((n) => n.textContent)[0] ?? null,
+  }));
+const heldNets = (p) =>
+  collect(collect(p, "rbac-held-nets")[0], "own-row").map((r) => ({
+    net: collect(r, "own-role")[0].textContent,
+    chip: collect(r, "own-chip")[0].textContent,
+    detail: collect(r, "own-note")[0].textContent,
+  }));
+
+Deno.test("deployments: roles held groups current holders by address, then network and contract", async () => {
+  const f = fakeSubgraph();
+  const p = await heldPanelLive(
+    f.io,
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
+  const groups = heldGroups(p);
+  assert(
+    groups.map((g) => g.hex).join(",") ===
+      ["0xbb", "0xaa", RBAC_TL, RBAC_AUTH].join(","),
+    "unrecognised holder, pinned holder, then pinned addresses holding nothing: " +
+      groups.map((g) => g.hex).join(","),
+  );
+  const [bb, aa, tl, auth] = groups;
+  assert(
+    bb.unknown && bb.name === null && bb.rows.length === 1,
+    "unpinned holder listed, marked: " + JSON.stringify(bb),
+  );
+  assert(
+    aa.name === "GRANTEE_SERVICE_AA" && !aa.unknown && aa.none === null,
+    "pinned holder named by its pin: " + JSON.stringify(aa),
+  );
+  assert(aa.rows.length === 1, "one network row");
+  const row = aa.rows[0];
+  assert(row.net === "ethereum (mainnet)", "network named: " + row.net);
+  assert(
+    row.who[0].hex === "0xaa" && row.who[0].name === "GRANTEE_SERVICE_AA" &&
+      row.who[1].hex === RBAC_AUTH &&
+      row.who[1].name === "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM" &&
+      row.who[1].href === "https://etherscan.io/address/" + RBAC_AUTH,
+    "holder and contract labelled for the chain: " + JSON.stringify(row.who),
+  );
+  assert(row.text.includes("Authoriser"), "contract kind: " + row.text);
+  assert(row.roles.join(",") === "DEPOSIT", "role named: " + row.roles);
+  assert(
+    tl.name === "STOX_GOVERNANCE_TIMELOCK_ETHEREUM" &&
+      tl.none === "Holds no role on any network." && tl.rows.length === 0,
+    "pinned address holding nothing says so: " + JSON.stringify(tl),
+  );
+  assert(
+    auth.title ===
+      "ethereum: LibProdDeployV4.STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM\n" +
+        "ethereum: LibAuthoriserInvariants.ALIAS_OF_IT\nbase: LibX.SOMETHING_ON_BASE",
+    "every chain's pins in the tooltip: " + auth.title,
+  );
+  assert(
+    f.seen.filter((s) => s.init.body.includes("roleHolders(")).length === 1,
+    "both tabs render from one holder read",
+  );
+});
+
+Deno.test("deployments: address(0) as a holder is named, not marked unrecognised", async () => {
+  const f = fakeSubgraph();
+  const zero = "0x" + "0".repeat(40);
+  f.rows.roleHolders.push({
+    id: "h0",
+    account: zero,
+    grantedAtBlock: "11",
+    grantedAtTimestamp: "1791883011",
+    role: { id: RBAC_TL + ROLE_IDS.DEPOSIT.slice(2) },
+  });
+  const p = await heldPanelLive(
+    f.io,
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
+  const groups = heldGroups(p);
+  assert(
+    groups.map((g) => g.hex).join(",") ===
+      ["0xbb", zero, "0xaa", RBAC_TL, RBAC_AUTH].join(","),
+    "address(0) ranks with named holders, not unrecognised ones: " +
+      groups.map((g) => g.hex).join(","),
+  );
+  const z = groups[1];
+  assert(
+    z.name === "address(0)" && !z.unknown && z.rows.length === 1,
+    "group header named: " + JSON.stringify(z),
+  );
+  assert(
+    z.rows[0].who[0].name === "address(0)" && !z.rows[0].who[0].unknown,
+    "network row named: " + JSON.stringify(z.rows[0].who),
+  );
+});
+Deno.test("deployments: roles held is current state — a revoke ends a holding, a re-grant restores it", async () => {
+  const f = fakeSubgraph();
+  const deposit = { id: RBAC_AUTH + ROLE_IDS.DEPOSIT.slice(2) };
+  const ev = (id, account, granted, block) => ({
+    id,
+    account,
+    granted,
+    sender: "0x5a",
+    blockNumber: String(block),
+    blockTimestamp: String(1791883000 + block),
+    transactionHash: "0xt" + id,
+    logIndex: "0",
+    role: deposit,
+  });
+  f.rows.roleGrants.push(
+    ev("r1", "0xcc", true, 20),
+    ev("r2", "0xcc", false, 21),
+    ev("r3", "0xdd", true, 20),
+    ev("r4", "0xdd", false, 21),
+    ev("r5", "0xdd", true, 22),
+  );
+  f.rows.roleHolders.push(
+    {
+      id: "hc",
+      account: "0xcc",
+      held: false,
+      grantedAtBlock: "20",
+      grantedAtTimestamp: "1791883020",
+      role: deposit,
+    },
+    {
+      id: "hd",
+      account: "0xdd",
+      held: true,
+      grantedAtBlock: "22",
+      grantedAtTimestamp: "1791883022",
+      role: deposit,
+    },
+  );
+  const p = await heldPanelLive(
+    f.io,
+    rbacData([rbacNet()], {
+      addressNames: {
+        ethereum: {
+          "0xcc": [pinned("REVOKED_CC", "LibA")],
+          "0xdd": [pinned("REGRANTED_DD", "LibA")],
+        },
+      },
+    }),
+  );
+  const groups = heldGroups(p);
+  const cc = groups.find((g) => g.hex === "0xcc");
+  const dd = groups.find((g) => g.hex === "0xdd");
+  assert(
+    cc && cc.rows.length === 0 && cc.none === "Holds no role on any network.",
+    "granted then revoked is not held: " + JSON.stringify(cc),
+  );
+  assert(
+    dd && dd.rows.length === 1 && dd.rows[0].roles.join(",") === "DEPOSIT",
+    "revoked then granted again is held: " + JSON.stringify(dd),
+  );
+});
+
+Deno.test("deployments: roles held names an address per chain, one group across networks", async () => {
+  const eth = fakeSubgraph();
+  const base = fakeSubgraph();
+  base.rows.roleHolders[1].account = "0xAA";
+  const io = {
+    now: eth.io.now,
+    fetch: (url, init) =>
+      url.includes("base") ? base.io.fetch(url, init) : eth.io.fetch(url, init),
+  };
+  const p = await heldPanelLive(
+    io,
+    rbacData(
+      [
+        rbacNet({
+          network: "base",
+          chain: "base",
+          endpoint: "https://base/gn",
+        }),
+        rbacNet(),
+      ],
+      { addressNames: RBAC_PINS },
+    ),
+  );
+  const aa = heldGroups(p).filter((g) => g.hex === "0xaa");
+  assert(aa.length === 1, "one group whatever the case: " + aa.length);
+  const [onBase, onEth] = aa[0].rows;
+  assert(
+    onBase.net === "base" && onEth.net === "ethereum (mainnet)",
+    "a row per network, in network order",
+  );
+  assert(
+    onBase.who[0].unknown && onBase.who[0].hex === "0xaa" &&
+      onBase.who[0].href === "https://basescan.org/address/0xaa",
+    "unpinned on base, so unrecognised there: " + JSON.stringify(onBase.who),
+  );
+  assert(
+    onBase.who[1].name === "SOMETHING_ON_BASE" &&
+      onEth.who[1].name === "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM",
+    "the contract named by each chain's own pin",
+  );
+  assert(
+    onEth.who[0].name === "GRANTEE_SERVICE_AA" && !onEth.who[0].unknown,
+    "named where it is pinned",
+  );
+});
+
+Deno.test("deployments: roles held never claims nothing held on a network it could not read", async () => {
+  const f = fakeSubgraph();
+  const io = {
+    now: f.io.now,
+    fetch: (url, init) =>
+      url.includes("down")
+        ? Promise.reject(new TypeError("Failed to fetch"))
+        : f.io.fetch(url, init),
+  };
+  const data = rbacData(
+    [
+      rbacNet({ network: "base", chain: "base", endpoint: "https://down/gn" }),
+      rbacNet(),
+    ],
+    { addressNames: RBAC_PINS },
+  );
+  const { box, done } = deploymentsRender(data, io);
+  const live = collect(box, "tabpanel").find((x) => x.dataset.tab === "held");
+  assert(
+    textOf(live).includes("Reading the indexes") &&
+      collect(live, "rbac-held").length === 0,
+    "nothing claimed before a read lands: " + textOf(live),
+  );
+  assert(
+    heldNets(live).every((n) => n.chip === "reading"),
+    "every network reading",
+  );
+  await done;
+  assert(
+    JSON.stringify(heldNets(live).map((n) => [n.net, n.chip])) ===
+      JSON.stringify([["base", "not read"], ["ethereum (mainnet)", "current"]]),
+    "each network's state: " + JSON.stringify(heldNets(live)),
+  );
+  const tl = heldGroups(live).find((g) => g.hex === RBAC_TL);
+  assert(
+    tl.none === "Holds no role on the networks read; base not read.",
+    "the unread network is named: " + tl.none,
+  );
+  const dead = await heldPanelLive(
+    NO_NETWORK,
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
+  assert(
+    collect(dead, "rbac-held").length === 0 &&
+      textOf(dead).includes("No index could be read"),
+    "no group at all when no index was read: " + textOf(dead),
+  );
+});
+
+Deno.test("deployments: roles held states each index's position", async () => {
+  const cases = [
+    [
+      { now: (RBAC_TS + 7200) * 1000 },
+      "syncing",
+      "holdings as of block 900, 2h old",
+    ],
+    [
+      {
+        meta: {
+          data: {
+            _meta: {
+              block: { number: 900, timestamp: RBAC_TS },
+              hasIndexingErrors: true,
+            },
+          },
+        },
+      },
+      "indexing errors",
+      "holdings as of block 900, where the index stopped",
+    ],
+    [{}, "current", "indexed to block 900"],
+  ];
+  for (const [over, chip, detail] of cases) {
+    const p = await heldPanelLive(
+      fakeSubgraph(over).io,
+      rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+    );
+    const [n] = heldNets(p);
+    assert(n.chip === chip, chip + ": " + JSON.stringify(n));
+    assert(n.detail.startsWith(detail), chip + ": " + n.detail);
+    assert(heldGroups(p).length === 4, chip + ": holdings still shown");
+  }
+});
+
+Deno.test("deployments: roles held without a pin table lists holders unmarked", async () => {
+  const p = await heldPanelLive(fakeSubgraph().io, rbacData([rbacNet()]));
+  const groups = heldGroups(p);
+  assert(
+    groups.map((g) => g.hex).join(",") === "0xaa,0xbb",
+    "holders only: " + groups.map((g) => g.hex).join(","),
+  );
+  assert(collect(p, "rbac-unknown").length === 0, "nothing marked");
+  assert(
+    textOf(p).includes("no address-name table"),
+    "the missing names are stated",
+  );
+});
+
+Deno.test("deployments: roles held says when the scan carries no subgraph", async () => {
+  const f = fakeSubgraph();
+  let p = await heldPanelLive(f.io, grantsData());
+  assert(
+    textOf(p).includes(
+      "Roles held unavailable — this scan carries no RBAC subgraph location.",
+    ),
+    "absent: " + textOf(p),
+  );
+  p = await heldPanelLive(
+    f.io,
+    rbacData(undefined, {
+      unavailable: "could not read subgraph/networks.json",
+    }),
+  );
+  assert(
+    textOf(p).includes("the scan could not read subgraph/networks.json"),
+    "reason named: " + textOf(p),
+  );
+  p = await heldPanelLive(f.io, rbacData([]));
+  assert(textOf(p).includes("declares no networks"), "no networks stated");
+});
+
+Deno.test("deployments: roles-held strings land as text", async () => {
+  const f = fakeSubgraph();
+  f.rows.roleHolders[0].account = XSS_IMG;
+  f.rows.roles[1].contract.kind = XSS_SCRIPT;
+  const data = rbacData([rbacNet()], {
+    addressNames: { ethereum: { "0xaa": [pinned(XSS_SVG, XSS_ATTR)] } },
+  });
+  data.deploymentRbac.roleNames[ROLE_IDS.DEPOSIT] = XSS_ATTR;
+  const p = await heldPanelLive(f.io, data);
+  const text = textOf(p);
+  for (const x of [XSS_IMG, XSS_SCRIPT, XSS_SVG, XSS_ATTR]) {
+    assert(text.includes(x), "payload rendered as text: " + x);
+  }
+  for (const t of ["img", "script", "svg"]) {
+    assert(tags(p, t).length === 0, "no " + t + " element created");
+  }
 });
 
 // ---- deployments.html: governance timelock operations ----
