@@ -10113,6 +10113,26 @@ Deno.test("Deployments is the first nav tab on every page", () => {
   }
 });
 
+Deno.test("the site root redirects to Deployments", () => {
+  const src = Deno.readTextFileSync(
+    new URL("../site/index.html", import.meta.url),
+  );
+  assert(
+    /<meta http-equiv="refresh" content="0; url=deployments\.html" \/>/.test(
+      src,
+    ),
+    "the root refresh target is deployments.html",
+  );
+  assert(
+    /<link rel="canonical" href="deployments\.html" \/>/.test(src),
+    "the root canonical link is deployments.html",
+  );
+  assert(
+    /<a href="deployments\.html">Deployments<\/a>/.test(src),
+    "the root fallback link targets Deployments",
+  );
+});
+
 // ---- deployments.html: governed vault ownership ----
 
 const VAULT_OWNERS = {
