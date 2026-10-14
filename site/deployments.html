@@ -73,6 +73,8 @@
                font-weight: 650; color: var(--ink); overflow-wrap: anywhere; }
   .rbac-who .rbac-name + .own-addr { font-size: 11px; color: var(--ink-3); }
   .rbac-names-gap { color: var(--crit); }
+  .rbac-held-nets { margin-bottom: 18px; }
+  .rbac-held-roles { font-size: 13px; margin-bottom: 4px; }
   .rbac-unknown { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
                   color: var(--crit); border: 1px solid var(--crit); border-radius: 5px; padding: 1px 5px; }
   /* Governance timelock operations. A pending one is a change to production
@@ -346,6 +348,7 @@ function renderDeployments(document, $, data, io) {
     ["safe", "Safe & ownership"],
     ["contracts", "Contracts & tokens"],
     ["rbac", "Role changes"],
+    ["held", "Roles held"],
   ];
   const subnav = el("div", "subnav");
   const panels = {};
@@ -387,7 +390,7 @@ function renderDeployments(document, $, data, io) {
     });
     subnav.append(b);
   }
-  box.append(subnav, panels.safe, panels.contracts, panels.rbac);
+  box.append(subnav, panels.safe, panels.contracts, panels.rbac, panels.held);
 
   // Where the section renderers append. Reassigned between groups rather than
   // threaded through every renderer as an argument, so a section moves tab by
@@ -1771,23 +1774,28 @@ function renderDeployments(document, $, data, io) {
   // link. `pins` is the scan's address → names table for the chain, best name
   // first; every name is in the tooltip. `null` means the scan carried no
   // table, so nothing can be called unrecognised and the hex shows as before.
+  const pinHits = (pins, address) => {
+    const key = address.toLowerCase();
+    return Object.prototype.hasOwnProperty.call(pins, key) && Array.isArray(pins[key])
+      ? pins[key].filter((h) => h && typeof h.name === "string" && h.name)
+      : [];
+  };
+  const pinLabel = (h) => (typeof h.contract === "string" && h.contract ? `${h.contract}.${h.name}` : h.name);
+  const unknownMark = (why) => {
+    const unknown = el("span", "rbac-unknown", "unrecognised");
+    unknown.title = why;
+    return unknown;
+  };
   const whoNode = (address, chain, pins) => {
     const box = el("span", "rbac-who");
     if (pins) {
-      const key = address.toLowerCase();
-      const hits = Object.prototype.hasOwnProperty.call(pins, key) && Array.isArray(pins[key])
-        ? pins[key].filter((h) => h && typeof h.name === "string" && h.name)
-        : [];
+      const hits = pinHits(pins, address);
       if (hits.length) {
         const name = el("span", "rbac-name", hits[0].name);
-        name.title = hits
-          .map((h) => (typeof h.contract === "string" && h.contract ? `${h.contract}.${h.name}` : h.name))
-          .join("\n");
+        name.title = hits.map(pinLabel).join("\n");
         box.append(name);
       } else {
-        const unknown = el("span", "rbac-unknown", "unrecognised");
-        unknown.title = "No address constant in the deploy repo pins this address on this chain.";
-        box.append(unknown);
+        box.append(unknownMark("No address constant in the deploy repo pins this address on this chain."));
       }
     }
     box.append(addrNode("own-addr", address, chain));
@@ -2081,6 +2089,7 @@ function renderDeployments(document, $, data, io) {
     }
     slot.append(sec);
   };
+  const kindLabel = (kind) => RBAC_KINDS[kind] || String(kind);
   // One network's banner and, where the read is whole, its contracts.
   const rbacBody = (slot, n, chain, endpoint, published, pins) => {
     slot.replaceChildren(rbacBanner(n, endpoint, published));
@@ -2092,7 +2101,7 @@ function renderDeployments(document, $, data, io) {
     }
     for (const c of n.contracts) {
       const ch = el("div", "own-grouphead rbac-contract");
-      ch.append(`${RBAC_KINDS[c.kind] || String(c.kind)} `);
+      ch.append(`${kindLabel(c.kind)} `);
       if (typeof c.address === "string") ch.append(whoNode(c.address, chain, pins));
       slot.append(ch);
       if (typeof c.firstIndexedBlock === "number") {
@@ -2158,18 +2167,142 @@ function renderDeployments(document, $, data, io) {
       slot.append(hist);
     }
   };
-  // Builds the tab and starts one live read per network. Returns a promise
-  // that settles once every network has rendered its answer.
+  const rbacHeld =(nets, chains, pinsOf) => {
+    const groups = new Map();
+    const group = (address) => {
+      const key = address.toLowerCase();
+      if (!groups.has(key)) groups.set(key, { address: key, name: null, titles: [], known: false, held: [] });
+      return groups.get(key);
+    };
+    for (const chain of chains) {
+      const pins = pinsOf(chain);
+      for (const a of Object.keys(pins)) {
+        const hits = pinHits(pins, a);
+        if (!hits.length) continue;
+        const g = group(a);
+        g.known = true;
+        g.name = g.name || hits[0].name;
+        g.titles.push(...hits.map((h) => `${chain}: ${pinLabel(h)}`));
+      }
+    }
+    nets.forEach((n, i) => {
+      if (!n.res || !Array.isArray(n.res.contracts)) return;
+      for (const c of n.res.contracts) {
+        for (const role of c.roles) {
+          for (const h of role.holders) {
+            if (typeof h.account !== "string") continue;
+            const g = group(h.account);
+            let at = g.held.find((x) => x.net === i);
+            if (!at) g.held.push((at = { net: i, contracts: [] }));
+            let on = at.contracts.find((x) => x.contract === c);
+            if (!on) at.contracts.push((on = { contract: c, roles: [] }));
+            on.roles.push(role);
+          }
+        }
+      }
+    });
+    const rank = (g) => (!g.held.length ? 2 : g.known ? 1 : 0);
+    return [...groups.values()].sort(
+      (a, b) => rank(a) - rank(b) || (a.name || "").localeCompare(b.name || "") || a.address.localeCompare(b.address),
+    );
+  };
+  const heldState = (res) => {
+    if (!res || res.state === "loading") return ["dim", "reading", "reading the index…"];
+    if (!Array.isArray(res.contracts)) return ["no", "not read", "no holdings shown for it; Role changes says why"];
+    const at = `block ${res.indexedBlock}`;
+    if (res.state === "synced") return ["yes", "current", `indexed to ${at}`];
+    if (res.state === "syncing") {
+      const age = typeof res.ageSeconds === "number" ? ago(res.ageSeconds) : "of unknown age";
+      return ["roll", "syncing", `holdings as of ${at}, ${age}; later changes are not shown`];
+    }
+    return ["no", "indexing errors", `holdings as of ${at}, where the index stopped`];
+  };
+  const renderHeld = (slot, nets, chains, pinsOf, named) => {
+    const status = el("div", "own-table rbac-held-nets");
+    for (const n of nets) {
+      const [cls, label, detail] = heldState(n.res);
+      const row = el("div", "own-row");
+      row.append(el("div", "own-role", n.title), el("div", "own-note", detail), el("span", `own-chip own-chip-${cls}`, label));
+      status.append(row);
+    }
+    slot.replaceChildren(status);
+    const whole = nets.filter((n) => n.res && Array.isArray(n.res.contracts));
+    if (!whole.length) {
+      const reading = nets.some((n) => !n.res || n.res.state === "loading");
+      slot.append(
+        el(
+          "div",
+          "rbac-empty",
+          reading ? "Reading the indexes…" : "No index could be read. No holdings are shown, which is not the same as none held.",
+        ),
+      );
+      return;
+    }
+    const unread = nets.filter((n) => !whole.includes(n)).map((n) => n.title);
+    for (const g of rbacHeld(nets, chains, pinsOf)) {
+      const grp = el("div", "own-group rbac-held");
+      const head = el("div", "own-grouphead rbac-contract");
+      const who = el("span", "rbac-who");
+      if (g.name) {
+        const name = el("span", "rbac-name", g.name);
+        name.title = g.titles.join("\n");
+        who.append(name);
+      } else if (named) {
+        who.append(unknownMark("No address constant in the deploy repo pins this address on any chain."));
+      }
+      who.append(el("span", "own-addr", g.address));
+      head.append(who);
+      grp.append(head);
+      if (!g.held.length) {
+        grp.append(
+          el(
+            "div",
+            "own-groupnote rbac-held-none",
+            unread.length ? `Holds no role on the networks read; ${unread.join(", ")} not read.` : "Holds no role on any network.",
+          ),
+        );
+        slot.append(grp);
+        continue;
+      }
+      const table = el("div", "own-table");
+      for (const h of g.held) {
+        const n = nets[h.net];
+        const where = el("div", "own-rc");
+        where.append(el("div", "own-role", n.title), whoNode(g.address, n.chain, n.pins));
+        const what = el("div", "bcn-detail");
+        let count = 0;
+        for (const on of h.contracts) {
+          const c = on.contract;
+          const line = el("div", "grt-addr");
+          line.append(`${kindLabel(c.kind)} `);
+          if (typeof c.address === "string") line.append(whoNode(c.address, n.chain, n.pins));
+          const roles = el("div", "grt-addr rbac-held-roles");
+          for (const role of on.roles) roles.append(el("span", "viol-role", roleLabel(role.name, role.roleId)));
+          what.append(line, roles);
+          count += on.roles.length;
+        }
+        const row = el("div", "own-row");
+        row.append(where, what, el("span", "own-chip own-chip-yes", `${count} held`));
+        table.append(row);
+      }
+      grp.append(table);
+      slot.append(grp);
+    }
+  };
+  // Builds the Role changes and Roles held tabs and starts one live read per
+  // network, which both render from. Returns a promise that settles once
+  // every network has rendered its answer.
   const renderRbac = (r) => {
+    const heldBox = panels.held;
     sink.append(el("h2", null, "Role changes — every grant and revoke, per network"));
-    if (!r || typeof r !== "object") {
-      sink.append(el("div", "rbac-empty", "Role history unavailable — this scan carries no RBAC subgraph location."));
+    heldBox.append(el("h2", null, "Roles held — current roles, per address"));
+    const off = (why) => {
+      sink.append(el("div", "rbac-empty", `Role history unavailable — ${why}.`));
+      heldBox.append(el("div", "rbac-empty", `Roles held unavailable — ${why}.`));
       return Promise.resolve();
-    }
-    if (typeof r.unavailable === "string") {
-      sink.append(el("div", "rbac-empty", `Role history unavailable — the scan ${r.unavailable}.`));
-      return Promise.resolve();
-    }
+    };
+    if (!r || typeof r !== "object") return off("this scan carries no RBAC subgraph location");
+    if (typeof r.unavailable === "string") return off(`the scan ${r.unavailable}`);
     const sub = el("div", "own-sub");
     sub.append("Read live from ");
     sub.append(link("", `${r.org}/${r.repo}`, `https://github.com/${r.org}/${r.repo}/tree/main/subgraph`));
@@ -2178,9 +2311,16 @@ function renderDeployments(document, $, data, io) {
         `the deploy repo spells out the hash's preimage, and shown as the raw id otherwise.`,
     );
     sink.append(sub);
+    const heldSub = el("div", "own-sub");
+    heldSub.append(
+      "What each address holds now: the current holders in the same live read of each network's index as Role " +
+        "changes. Unrecognised holders first, then pinned addresses that hold a role, then pinned addresses that hold none.",
+    );
+    heldBox.append(heldSub);
     const nets = Array.isArray(r.networks) ? r.networks : [];
     if (nets.length === 0) {
       sink.append(el("div", "rbac-empty", "The subgraph declares no networks."));
+      heldBox.append(el("div", "rbac-empty", "The subgraph declares no networks."));
       return Promise.resolve();
     }
     const names = r.roleNames && typeof r.roleNames === "object" ? r.roleNames : {};
@@ -2193,20 +2333,19 @@ function renderDeployments(document, $, data, io) {
       const t = Object.prototype.hasOwnProperty.call(pinTable, chain) ? pinTable[chain] : null;
       return t && typeof t === "object" ? t : {};
     };
-    if (!pinTable) {
-      sink.append(el("div", "own-sub", "Addresses are shown unnamed — this scan carries no address-name table."));
-    } else {
-      sink.append(
+    const namesNotes = () => {
+      if (!pinTable) return [el("div", "own-sub", "Addresses are shown unnamed — this scan carries no address-name table.")];
+      const notes = [
         el(
           "div",
           "own-sub",
           "Addresses are named by the deploy repo's address constants pinned for that chain (hover a name for " +
             "every constant that pins it). An address no constant pins is marked unrecognised.",
         ),
-      );
+      ];
       const unread = Array.isArray(r.addressNamesUnread) ? r.addressNamesUnread.filter((p) => typeof p === "string") : [];
       if (unread.length) {
-        sink.append(
+        notes.push(
           el(
             "div",
             "own-sub rbac-names-gap",
@@ -2214,7 +2353,17 @@ function renderDeployments(document, $, data, io) {
           ),
         );
       }
-    }
+      return notes;
+    };
+    sink.append(...namesNotes());
+    heldBox.append(...namesNotes());
+    const heldSlot = el("div", "rbac-held-body");
+    heldBox.append(heldSlot);
+    const heldNets = [];
+    const chains = pinTable
+      ? [...new Set([...nets.map((n) => n && n.chain), ...Object.keys(pinTable)])].filter((c) => typeof c === "string")
+      : [];
+    const showHeld = () => renderHeld(heldSlot, heldNets, chains, pinsFor, pinTable !== null);
     const reads = [];
     for (const n of nets) {
       if (!n || typeof n !== "object") continue;
@@ -2225,13 +2374,23 @@ function renderDeployments(document, $, data, io) {
       sink.append(el("h3", "tok-h3", title));
       const slot = el("div", "rbac-net");
       sink.append(slot);
+      const held = { title, chain, pins, res: { state: "loading" } };
+      heldNets.push(held);
       if (typeof n.endpoint !== "string" || !n.endpoint.startsWith("https://")) {
-        rbacBody(slot, { state: "error", detail: "the scan gave no https endpoint for this network" }, chain, null, published, pins);
+        held.res = { state: "error", detail: "the scan gave no https endpoint for this network" };
+        rbacBody(slot, held.res, chain, null, published, pins);
         continue;
       }
-      rbacBody(slot, { state: "loading" }, chain, n.endpoint, published, pins);
-      reads.push(rbacRead(n.endpoint, names).then((res) => rbacBody(slot, res, chain, n.endpoint, published, pins)));
+      rbacBody(slot, held.res, chain, n.endpoint, published, pins);
+      reads.push(
+        rbacRead(n.endpoint, names).then((res) => {
+          rbacBody(slot, res, chain, n.endpoint, published, pins);
+          held.res = res;
+          showHeld();
+        }),
+      );
     }
+    showHeld();
     return Promise.all(reads);
   };
   const owners = data.deploymentOwners;
