@@ -77,6 +77,15 @@
   .rbac-held-roles { font-size: 13px; margin-bottom: 4px; }
   .rbac-unknown { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
                   color: var(--crit); border: 1px solid var(--crit); border-radius: 5px; padding: 1px 5px; }
+  .own-row.rbac-off { background: var(--debt-bg); }
+  .rbac-pair { display: inline-flex; align-items: baseline; gap: 5px; }
+  .viol-role.rbac-unexpected { color: var(--crit); }
+  .viol-role.rbac-grant { color: var(--debt); }
+  .rbac-tag { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
+              border: 1px solid; border-radius: 5px; padding: 1px 5px; white-space: nowrap; }
+  .rbac-tag-unexpected { color: var(--crit); }
+  .rbac-tag-grant { color: var(--debt); }
+  .own-sub.rbac-ideal-gap, .own-note.rbac-ideal-gap, .own-note.rbac-ideal-off { color: var(--crit); }
   /* Governance timelock operations. A pending one is a change to production
      that happens unless someone cancels it, so it is a boxed card in the
      rollout amber; one whose call lands on a contract the timelock governs
@@ -1786,6 +1795,20 @@ function renderDeployments(document, $, data, io) {
     unknown.title = why;
     return unknown;
   };
+  const OFF_TAGS = {
+    grant: ["to grant", "ideal-roles.json expects this holding; it is not held."],
+    unexpected: ["not expected", "ideal-roles.json does not expect this holding; it is held."],
+  };
+  const offTag = (side) => {
+    const tag = el("span", `rbac-tag rbac-tag-${side}`, OFF_TAGS[side][0]);
+    tag.title = OFF_TAGS[side][1];
+    return tag;
+  };
+  const offPair = (side, role) => {
+    const pair = el("span", "rbac-pair");
+    pair.append(el("span", `viol-role rbac-${side}`, role), offTag(side));
+    return pair;
+  };
   const ZERO_ADDRESS = "0x" + "0".repeat(40);
   const ZERO_TITLE =
     "address(0). On an OpenZeppelin TimelockController, EXECUTOR_ROLE held by address(0) lets anyone execute.";
@@ -2097,9 +2120,134 @@ function renderDeployments(document, $, data, io) {
     slot.append(sec);
   };
   const kindLabel = (kind) => RBAC_KINDS[kind] || String(kind);
+  const IDEAL_VERSION = 1;
+  const isHex = (v, digits) => typeof v === "string" && v.length === 2 + digits && /^0x[0-9a-fA-F]+$/.test(v);
+  const named = (v) => (typeof v === "string" && v ? v : null);
+  // One malformed entry fails the whole file: a pair dropped from it would read as matching.
+  const idealParse = (body) => {
+    if (!body || typeof body !== "object" || Array.isArray(body)) return { unavailable: "it is not a JSON object" };
+    if (body.version !== IDEAL_VERSION) {
+      return { unavailable: `it is version ${JSON.stringify(body.version)}; this page reads version ${IDEAL_VERSION}` };
+    }
+    const chains = body.chains;
+    if (!chains || typeof chains !== "object" || Array.isArray(chains)) return { unavailable: "it has no chains object" };
+    const byNetwork = new Map();
+    const bad = (at, what) => ({ unavailable: `${at} ${what}` });
+    for (const [id, c] of Object.entries(chains)) {
+      const at = `chains[${JSON.stringify(id)}]`;
+      if (!c || typeof c !== "object") return bad(at, "is not an object");
+      if (!named(c.network)) return bad(at, "names no network");
+      if (byNetwork.has(c.network)) return bad(at, `repeats network ${c.network}`);
+      if (!Array.isArray(c.contracts)) return bad(at, "has no contracts list");
+      const contracts = [];
+      for (const [i, k] of c.contracts.entries()) {
+        const kat = `${at}.contracts[${i}]`;
+        if (!k || typeof k !== "object") return bad(kat, "is not an object");
+        if (!isHex(k.address, 40)) return bad(kat, "has no address");
+        if (!Array.isArray(k.expected)) return bad(kat, "has no expected list");
+        const expected = [];
+        for (const [j, p] of k.expected.entries()) {
+          const pat = `${kat}.expected[${j}]`;
+          if (!p || typeof p !== "object") return bad(pat, "is not an object");
+          if (!isHex(p.role, 64)) return bad(pat, "has no bytes32 role");
+          if (!isHex(p.grantee, 40)) return bad(pat, "has no grantee address");
+          expected.push({
+            role: p.role.toLowerCase(),
+            roleName: named(p.roleName),
+            grantee: p.grantee.toLowerCase(),
+          });
+        }
+        contracts.push({ address: k.address.toLowerCase(), name: named(k.name), expected });
+      }
+      byNetwork.set(c.network, { chainId: id, contracts });
+    }
+    return { byNetwork };
+  };
+  const idealRead = async (url) => {
+    let r;
+    try {
+      r = await io.fetch(url, { cache: "no-store" });
+    } catch {
+      return { unavailable: "no answer" };
+    }
+    if (r.ok === false) return { unavailable: `HTTP ${r.status}` };
+    let body;
+    try {
+      body = await r.json();
+    } catch {
+      return { unavailable: "it is not JSON" };
+    }
+    return idealParse(body);
+  };
+  const pairKey = (contract, role, account) => `${contract}|${role}|${account}`;
+  // A declared contract with no role row in the index is unchecked: the index may not cover it.
+  const idealDiff = (contracts, want) => {
+    const byAddress = new Map(contracts.map((c) => [c.address, c]));
+    const expected = new Set(want.contracts.flatMap((w) => w.expected.map((p) => pairKey(w.address, p.role, p.grantee))));
+    const held = new Set();
+    const unexpected = new Set();
+    for (const c of contracts) {
+      for (const role of c.roles) {
+        for (const h of role.holders) {
+          const key = pairKey(c.address, role.roleId, h.account);
+          held.add(key);
+          if (!expected.has(key)) unexpected.add(key);
+        }
+      }
+    }
+    const grant = [];
+    const unindexed = [];
+    for (const w of want.contracts) {
+      const at = byAddress.get(w.address);
+      if (!at) {
+        unindexed.push(w);
+        continue;
+      }
+      for (const p of w.expected) {
+        if (!held.has(pairKey(w.address, p.role, p.grantee))) grant.push({ ...p, at });
+      }
+    }
+    return { state: "checked", grant, unexpected, unindexed };
+  };
+  const idealCheck = (n, ideal) => {
+    if (!ideal) return { state: "loading" };
+    if (!ideal.byNetwork) return { state: "unavailable" };
+    const want = typeof n.chain === "string" ? ideal.byNetwork.get(n.chain) : undefined;
+    if (!want) return { state: "undeclared" };
+    if (!n.res || n.res.state === "loading") return { state: "reading" };
+    if (!Array.isArray(n.res.contracts)) return { state: "unread" };
+    return idealDiff(n.res.contracts, want);
+  };
+  const notExpected = (check, contract, roleId, account) =>
+    check.state === "checked" && check.unexpected.has(pairKey(contract, roleId, account));
+  const idealLine = (check) => {
+    const line = (cls, text) => el("div", `own-note rbac-ideal${cls ? " " + cls : ""}`, `Ideal roles: ${text}`);
+    switch (check.state) {
+      case "loading":
+        return line("", "reading ideal-roles.json…");
+      case "reading":
+        return line("", "waiting for the index…");
+      case "unavailable":
+        return line("", "not checked — ideal-roles.json could not be read.");
+      case "undeclared":
+        return line("rbac-ideal-gap", "not checked — ideal-roles.json declares nothing for this network.");
+      case "unread":
+        return line("", "not checked — the index was not read.");
+    }
+    const off = [];
+    if (check.grant.length) off.push(`${check.grant.length} to grant`);
+    if (check.unexpected.size) off.push(`${check.unexpected.size} not expected`);
+    const partial = check.unindexed.length ? ", on the contracts the index holds" : "";
+    let text = off.length ? `${off.join(", ")}.` : `held exactly as expected${partial}.`;
+    if (check.unindexed.length) {
+      const names = check.unindexed.map((w) => w.name || w.address).join(", ");
+      text += ` Not checked: ${names} — the index holds no role events for ${check.unindexed.length === 1 ? "it" : "them"}.`;
+    }
+    return line(off.length ? "rbac-ideal-off" : check.unindexed.length ? "rbac-ideal-gap" : "", text);
+  };
   // One network's banner and, where the read is whole, its contracts.
-  const rbacBody = (slot, n, chain, endpoint, published, pins) => {
-    slot.replaceChildren(rbacBanner(n, endpoint, published));
+  const rbacBody = (slot, n, chain, endpoint, published, pins, check) => {
+    slot.replaceChildren(rbacBanner(n, endpoint, published), idealLine(check));
     if (n.timelock) tlSection(slot, n.timelock, chain, pins);
     if (!Array.isArray(n.contracts)) return;
     if (n.contracts.length === 0) {
@@ -2115,9 +2263,16 @@ function renderDeployments(document, $, data, io) {
         slot.append(el("div", "own-groupnote", `indexed from block ${c.firstIndexedBlock}`));
       }
       // Current holders, one row per role.
+      const grants = check.state === "checked" ? check.grant.filter((p) => p.at === c) : [];
+      const rows = [...c.roles];
+      for (const p of grants) {
+        if (!rows.some((role) => role.roleId === p.role)) {
+          rows.push({ roleId: p.role, name: p.roleName, adminId: null, holders: [] });
+        }
+      }
       const held = el("div", "own-table");
-      for (const role of c.roles) {
-        const row = el("div", "own-row");
+      for (const role of rows) {
+        let off = false;
         const rc = el("div", "own-rc");
         rc.append(el("div", "own-role", roleLabel(role.name, role.roleId)));
         if (role.name && role.roleId) rc.append(el("div", "grt-roleid", role.roleId));
@@ -2129,10 +2284,22 @@ function renderDeployments(document, $, data, io) {
           const line = el("div", "grt-addr");
           if (typeof h.account === "string") line.append(whoNode(h.account, chain, pins));
           line.append(el("span", "own-verify-src", `since block ${h.grantedAtBlock ?? "?"} · ${utc(h.grantedAtTimestamp)}`));
+          if (notExpected(check, c.address, role.roleId, h.account)) {
+            line.append(offTag("unexpected"));
+            off = true;
+          }
           ac.append(line);
         }
         const count = role.holders.length;
         if (count === 0) ac.append(el("span", "own-addr own-missing", "no current holder"));
+        for (const p of grants) {
+          if (p.role !== role.roleId) continue;
+          const line = el("div", "grt-addr");
+          line.append(whoNode(p.grantee, chain, pins), offTag("grant"));
+          ac.append(line);
+          off = true;
+        }
+        const row = el("div", off ? "own-row rbac-off" : "own-row");
         row.append(rc, ac, el("span", `own-chip own-chip-${count ? "yes" : "dim"}`, `${count} held`));
         held.append(row);
       }
@@ -2185,10 +2352,19 @@ function renderDeployments(document, $, data, io) {
           name: zero ? "address(0)" : null,
           titles: zero ? [ZERO_TITLE] : [],
           known: zero,
+          off: false,
           held: [],
         });
       }
       return groups.get(key);
+    };
+    const on = (address, i, c) => {
+      const g = group(address);
+      let at = g.held.find((x) => x.net === i);
+      if (!at) g.held.push((at = { net: i, contracts: [] }));
+      let one = at.contracts.find((x) => x.contract === c);
+      if (!one) at.contracts.push((one = { contract: c, roles: [], grant: [] }));
+      return [g, one];
     };
     for (const chain of chains) {
       const pins = pinsOf(chain);
@@ -2207,17 +2383,20 @@ function renderDeployments(document, $, data, io) {
         for (const role of c.roles) {
           for (const h of role.holders) {
             if (typeof h.account !== "string") continue;
-            const g = group(h.account);
-            let at = g.held.find((x) => x.net === i);
-            if (!at) g.held.push((at = { net: i, contracts: [] }));
-            let on = at.contracts.find((x) => x.contract === c);
-            if (!on) at.contracts.push((on = { contract: c, roles: [] }));
-            on.roles.push(role);
+            const [g, one] = on(h.account, i, c);
+            one.roles.push(role);
+            if (notExpected(n.check, c.address, role.roleId, h.account)) g.off = true;
           }
         }
       }
+      if (n.check.state !== "checked") return;
+      for (const p of n.check.grant) {
+        const [g, one] = on(p.grantee, i, p.at);
+        one.grant.push(p);
+        g.off = true;
+      }
     });
-    const rank = (g) => (!g.held.length ? 2 : g.known ? 1 : 0);
+    const rank = (g) => (g.off ? 0 : !g.held.length ? 3 : g.known ? 2 : 1);
     return [...groups.values()].sort(
       (a, b) => rank(a) - rank(b) || (a.name || "").localeCompare(b.name || "") || a.address.localeCompare(b.address),
     );
@@ -2238,7 +2417,9 @@ function renderDeployments(document, $, data, io) {
     for (const n of nets) {
       const [cls, label, detail] = heldState(n.res);
       const row = el("div", "own-row");
-      row.append(el("div", "own-role", n.title), el("div", "own-note", detail), el("span", `own-chip own-chip-${cls}`, label));
+      const about = el("div");
+      about.append(el("div", "own-note", detail), idealLine(n.check));
+      row.append(el("div", "own-role", n.title), about, el("span", `own-chip own-chip-${cls}`, label));
       status.append(row);
     }
     slot.replaceChildren(status);
@@ -2287,18 +2468,34 @@ function renderDeployments(document, $, data, io) {
         where.append(el("div", "own-role", n.title), whoNode(g.address, n.chain, n.pins));
         const what = el("div", "bcn-detail");
         let count = 0;
+        let grant = 0;
+        let unexpected = 0;
         for (const on of h.contracts) {
           const c = on.contract;
           const line = el("div", "grt-addr");
           line.append(`${kindLabel(c.kind)} `);
           if (typeof c.address === "string") line.append(whoNode(c.address, n.chain, n.pins));
           const roles = el("div", "grt-addr rbac-held-roles");
-          for (const role of on.roles) roles.append(el("span", "viol-role", roleLabel(role.name, role.roleId)));
+          for (const role of on.roles) {
+            const label = roleLabel(role.name, role.roleId);
+            if (notExpected(n.check, c.address, role.roleId, g.address)) {
+              roles.append(offPair("unexpected", label));
+              unexpected++;
+            } else {
+              roles.append(el("span", "viol-role", label));
+            }
+          }
+          for (const p of on.grant) roles.append(offPair("grant", roleLabel(p.roleName, p.role)));
           what.append(line, roles);
           count += on.roles.length;
+          grant += on.grant.length;
         }
-        const row = el("div", "own-row");
-        row.append(where, what, el("span", "own-chip own-chip-yes", `${count} held`));
+        const chips = el("div", "own-prov");
+        chips.append(el("span", `own-chip own-chip-${count ? "yes" : "dim"}`, `${count} held`));
+        if (grant) chips.append(el("span", "own-chip own-chip-roll", `${grant} to grant`));
+        if (unexpected) chips.append(el("span", "own-chip own-chip-no", `${unexpected} not expected`));
+        const row = el("div", grant || unexpected ? "own-row rbac-off" : "own-row");
+        row.append(where, what, chips);
         table.append(row);
       }
       grp.append(table);
@@ -2330,7 +2527,7 @@ function renderDeployments(document, $, data, io) {
     const heldSub = el("div", "own-sub");
     heldSub.append(
       "What each address holds now: the current holders in the same live read of each network's index as Role " +
-        "changes. Unrecognised holders first, then pinned addresses that hold a role, then pinned addresses that hold none.",
+        "changes. Addresses with a role to grant or one not expected first, then unrecognised holders, then pinned addresses that hold a role, then pinned addresses that hold none.",
     );
     heldBox.append(heldSub);
     const nets = Array.isArray(r.networks) ? r.networks : [];
@@ -2373,6 +2570,43 @@ function renderDeployments(document, $, data, io) {
     };
     sink.append(...namesNotes());
     heldBox.append(...namesNotes());
+    const repoName = `${r.org}/${r.repo}`;
+    let ideal = null;
+    const idealNotes = () => {
+      if (!ideal) return [el("div", "own-sub", `Reading ${repoName}'s ideal-roles.json…`)];
+      if (!ideal.byNetwork) {
+        return [
+          el(
+            "div",
+            "own-sub rbac-ideal-gap",
+            `Discrepancies unknown — ${repoName}'s ideal-roles.json could not be read: ${ideal.unavailable}. ` +
+              "None is marked, which is not the same as none.",
+          ),
+        ];
+      }
+      const note = el("div", "own-sub");
+      note.append(
+        "Checked against ",
+        link("", `${repoName}'s ideal-roles.json`, `https://github.com/${r.org}/${r.repo}/blob/main/ideal-roles.json`),
+        ": a role it expects that is not held is marked to grant, and a held role it does not expect, not expected.",
+      );
+      const indexed = new Set(nets.map((n) => n && n.chain));
+      const stray = [...ideal.byNetwork]
+        .filter(([network]) => !indexed.has(network))
+        .map(([network, want]) => `${network} (chain ${want.chainId})`);
+      if (!stray.length) return [note];
+      return [
+        note,
+        el("div", "own-sub rbac-ideal-gap", `Not checked: ideal-roles.json declares ${stray.join(", ")}, which the subgraph does not index.`),
+      ];
+    };
+    const idealBoxes = [el("div"), el("div")];
+    sink.append(idealBoxes[0]);
+    heldBox.append(idealBoxes[1]);
+    const showIdeal = () => {
+      for (const box of idealBoxes) box.replaceChildren(...idealNotes());
+    };
+    showIdeal();
     const heldSlot = el("div", "rbac-held-body");
     heldBox.append(heldSlot);
     const heldNets = [];
@@ -2380,33 +2614,50 @@ function renderDeployments(document, $, data, io) {
       ? [...new Set([...nets.map((n) => n && n.chain), ...Object.keys(pinTable)])].filter((c) => typeof c === "string")
       : [];
     const showHeld = () => renderHeld(heldSlot, heldNets, chains, pinsFor, pinTable !== null);
+    const draw = (net) => {
+      net.check = idealCheck(net, ideal);
+      rbacBody(net.slot, net.res, net.chain, net.endpoint, net.published, net.pins, net.check);
+    };
     const reads = [];
     for (const n of nets) {
       if (!n || typeof n !== "object") continue;
       const chain = typeof n.chain === "string" ? n.chain : null;
       const title = chain && chain !== n.network ? `${chain} (${n.network})` : String(n.network);
-      const published = `${r.subgraph}-${n.network}/${r.tag}`;
-      const pins = pinsFor(chain);
       sink.append(el("h3", "tok-h3", title));
-      const slot = el("div", "rbac-net");
-      sink.append(slot);
-      const held = { title, chain, pins, res: { state: "loading" } };
-      heldNets.push(held);
-      if (typeof n.endpoint !== "string" || !n.endpoint.startsWith("https://")) {
-        held.res = { state: "error", detail: "the scan gave no https endpoint for this network" };
-        rbacBody(slot, held.res, chain, null, published, pins);
+      const net = {
+        title,
+        chain,
+        pins: pinsFor(chain),
+        slot: el("div", "rbac-net"),
+        endpoint: typeof n.endpoint === "string" && n.endpoint.startsWith("https://") ? n.endpoint : null,
+        published: `${r.subgraph}-${n.network}/${r.tag}`,
+        res: { state: "loading" },
+      };
+      sink.append(net.slot);
+      heldNets.push(net);
+      if (!net.endpoint) {
+        net.res = { state: "error", detail: "the scan gave no https endpoint for this network" };
+        draw(net);
         continue;
       }
-      rbacBody(slot, held.res, chain, n.endpoint, published, pins);
+      draw(net);
       reads.push(
-        rbacRead(n.endpoint, names).then((res) => {
-          rbacBody(slot, res, chain, n.endpoint, published, pins);
-          held.res = res;
+        rbacRead(net.endpoint, names).then((res) => {
+          net.res = res;
+          draw(net);
           showHeld();
         }),
       );
     }
     showHeld();
+    reads.push(
+      idealRead(`https://raw.githubusercontent.com/${r.org}/${r.repo}/main/ideal-roles.json`).then((v) => {
+        ideal = v;
+        showIdeal();
+        for (const net of heldNets) draw(net);
+        showHeld();
+      }),
+    );
     return Promise.all(reads);
   };
   const owners = data.deploymentOwners;
