@@ -10049,13 +10049,13 @@ Deno.test("the bottleneck highlight and its fallback survive parsing with the re
 // the others'. One expectation, checked against every page that renders the nav:
 // the same five tabs in the same order, and the page's own tab — exactly one tab —
 // carrying the active styling. index.html is not in the set: it is a bare redirect
-// to pipeline.html and renders no nav.
+// to deployments.html and renders no nav.
 const NAV_TABS = [
+  ["deployments.html", "Deployments"],
   ["pipeline.html", "Pipeline"],
   ["audit.html", "Audit"],
   ["metrics.html", "Metrics"],
   ["repositories.html", "Repositories"],
-  ["deployments.html", "Deployments"],
 ];
 
 Deno.test("every page renders the same five nav tabs in the same order, its own tab active", () => {
@@ -10088,6 +10088,49 @@ Deno.test("every page renders the same five nav tabs in the same order, its own 
       }]`,
     );
   }
+});
+
+Deno.test("Deployments is the first nav tab on every page", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const checked = [];
+  for (const entry of Deno.readDirSync(dir)) {
+    if (
+      !entry.isFile || !entry.name.endsWith(".html") ||
+      entry.name === "index.html"
+    ) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    const nav = src.match(/<nav class="nav">([\s\S]*?)<\/nav>/);
+    assert(nav, `${entry.name}: has a <nav class="nav"> block`);
+    const first = nav[1].match(/<a href="([^"]+)"[^>]*>([^<]+)<\/a>/);
+    assert(
+      first && first[1] === "deployments.html" && first[2] === "Deployments",
+      `${entry.name}: first nav tab is Deployments, got ${first && first[2]}`,
+    );
+    checked.push(entry.name);
+  }
+  for (const [page] of NAV_TABS) {
+    assert(checked.includes(page), `${page} was checked`);
+  }
+});
+
+Deno.test("the site root redirects to Deployments", () => {
+  const src = Deno.readTextFileSync(
+    new URL("../site/index.html", import.meta.url),
+  );
+  assert(
+    /<meta http-equiv="refresh" content="0; url=deployments\.html" \/>/.test(
+      src,
+    ),
+    "the root refresh target is deployments.html",
+  );
+  assert(
+    /<link rel="canonical" href="deployments\.html" \/>/.test(src),
+    "the root canonical link is deployments.html",
+  );
+  assert(
+    /<a href="deployments\.html">Deployments<\/a>/.test(src),
+    "the root fallback link targets Deployments",
+  );
 });
 
 // ---- deployments.html: governed vault ownership ----
