@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-14T20:46:58Z",
+  "generatedAt": "2026-10-14T23:58:39Z",
   "auditGraph": {
     "nodes": [
       {
@@ -65,7 +65,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.metadata",
@@ -129,7 +129,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.metadata",
@@ -261,7 +261,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.metadata",
@@ -342,12 +342,12 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 26,
+        "openAuditIssues": 25,
         "lastMutation": {
-          "timestamp": "2026-10-11T19:05:23Z",
-          "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
+          "timestamp": "2026-10-14T20:36:25Z",
+          "commit": "3921acaacc2375d904a5684b62b6e413d6826b61",
           "skillVersion": "0.35.0",
-          "scope": "Issue #350 (PR #434): add and sub round once toward zero. The cancelling branches of LibDecimalFloatImplementation.add: the far step (B wholly below A's unit steps A one unit toward zero), the near bump (B shedding digits is taken one unit up), the cancelling flag, and the overflow check that discounts it. Each probe ran the PR source. Before = main 8b6a8ed's tests on the PR source, forge test --mc \"Add|Sub|RoundOnce|MainEquivalence|Agree|ExoticFloat|ExactDecimal|Minus\" less the 36 main tests that assert the old away-from-zero cancelling rule and are red against the new one (145 tests). After = the same match at 8d60e7a (186 tests). Mutants: M01/M02 far step never/also same-sign; M03 far step ignores sign; M04 far step away from zero; M05/M06 near bump never/also same-sign; M07 near bump without shed digits; M08 near bump ignores sign; M09 near bump reversed; M10 cancelling inverted; M11 overflow check drops the cancelling term; M12 overflow flagged on cancelling. Main's tests kill 9 and miss M01, M03 and M05 (the one-step-toward-zero cases themselves); the PR's tests kill all 12, M01/M03 through testAddRoundOnce, testAddCancelBelowUnitRoundOnce and testSubRoundOnce, M05 through testSubMatchesRuleCancelling against the exact LibTestExactDecimal rule. Bound helpers moved with the rule: the pow tight N term and the monotone spreads use addPartsWideUp so they are never smaller; the pow d term stays truncated, so the computed bound stays at most the derived one."
+          "scope": "PR #712 (#649, #611): one encoding of the packLossy overflow threshold. NEVER_PAST_EXPONENT, LibDecimalFloat.isPastEveryFloat (uint256 and signed overloads), packLossy's lift path, the div and pow10 NEVER_PAST_EXPONENT gates, pow's carry path (packRoundedSignificant), revertIfPastLargestFloat, both LibParseDecimalFloat call sites and the past-int256 floorExponent branch. Suite per probe: forge test --match-contract 'Pack|Parse|Pow|Div' at 256 fuzz runs, seed 0x712; the Rust differential suite was not in the probe command. Before = main c554370's test tree on the PR source (316 tests), after = the PR's tests (322 tests). 27 mutants: M01/M02 NEVER_PAST_EXPONENT one higher/lower; M03/M04 fast exit strict/true; M05 any-nonzero arm at 66; M06 zero past at high excess; M07/M08 floor arm >= and 2^223+2; M09/M10 product arm > and 2^223+1; M11 excess off by one; M12 signed overload drops abs; M13 packLossy past check off; M14 lift one digit short; M15 div gate +1; M16 pow10 gate at int32.max+17; M16b pow10 gate at int32.max+27; M17 pow carry always falls back; M18/M19 carry excess guard 26/66; M20 revertIfPastLargestFloat negated; M21 parser inline drops abs; M22/M23 parser past checks off; M24 floor branch drops wrap check; M25 floorExponent -78; M26 wrap check <=. Before 24/27 killed (M03 survives: its boundary is only reachable by a direct isPastEveryFloat call, which no caller makes; M16, M19 equivalent). After 25/27 killed: M03 by the PR's testIsPastEveryFloatExactEdges; M02/M24 also by testIsPastEveryFloatExactEdges / testParsePastInt256FloorExponentPastInt256; main's killers include testPackLossyOverflowThresholdEdges, testPackLossyCeilingTruncationBand, testPackLossyLiftFirstEquivalenceExtremes, testParseOverflowThresholdExcesses, testParseOverflowThresholdPointPositions, testParseNearOverflowThreshold, testParseRuleLiteralShapeFuzz, testParseZeroHugeExponent, testDivAtTheOverflowThreshold, testPow10Thresholds, testPow10NearThresholds, testPowCarryShedsTheUnrounded, testPowRoundedAtTheHeadroomBound. Survivors: M16 is inside the pow10 gate band audit/known-false-positives.md already proves equivalent (up to int32.max+26; M16b at int32.max+27 is killed, so the band edge is pinned); M19 is equivalent (any carry guard bound from 27 up, or none: at excess 28+ a 41 digit rounded value and its unrounded source are both past) and is recorded with proof. No tests added. Adversarial pass: SPEC.md's isPastEveryFloat and packLossy claims re-derived (not past implies nothing was shed, so the lift is from the initial pair; floor arm m > floor((t-1)/10^x) is m*10^x >= t; parser floor branch exact because the threshold is a multiple of 10^floorExponent at or below int32.max); test oracles (LibExactFloat.overflows, reference.rs) are independent big-integer compares; no candidates."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -378,7 +378,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.sol.codegen",
@@ -512,7 +512,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.metadata",
@@ -638,7 +638,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.45",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           }
         ]
       },
@@ -785,7 +785,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.math.float.deploy",
@@ -839,7 +839,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "raindex.interface",
@@ -867,7 +867,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rainlang.interface",
@@ -912,7 +912,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.metadata",
@@ -1065,7 +1065,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.22",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -1166,7 +1166,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           },
           {
             "repo": "rain.vats",
@@ -1394,7 +1394,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.45",
-            "latest": "0.3.5"
+            "latest": "0.3.6"
           }
         ]
       }
@@ -1454,7 +1454,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rain.dia",
@@ -1503,7 +1503,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rain.erc4626.words",
@@ -1601,7 +1601,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rain.flare",
@@ -1643,7 +1643,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.45",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rain.lib.memkv",
@@ -1699,7 +1699,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1776,7 +1776,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rain.pyth",
@@ -1860,7 +1860,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.45",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rain.vats",
@@ -1958,7 +1958,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "raindex",
@@ -2028,7 +2028,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "raindex.governance",
@@ -2042,7 +2042,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "raindex.interface",
@@ -2098,7 +2098,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "rainlang",
@@ -2273,7 +2273,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.22",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "st0x.deploy",
@@ -2315,7 +2315,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.3.5"
+        "latest": "0.3.6"
       },
       {
         "from": "st0x.oracle",
@@ -2498,18 +2498,18 @@
     "repo": "st0x.deploy",
     "source": "src/lib/LibAuthoriserInvariants.sol",
     "function": "expectedGrants(address,address)",
-    "pinnedCount": 15,
-    "declaredCount": 15,
+    "pinnedCount": 13,
+    "declaredCount": 13,
     "chains": [
       {
         "network": "base",
         "authoriser": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
         "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
         "rpcHost": "mainnet.base.org",
-        "granted": 15,
+        "granted": 13,
         "missing": 0,
         "unknown": 0,
-        "total": 15,
+        "total": 13,
         "state": "live",
         "safeKept": []
       },
@@ -2518,10 +2518,10 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 15,
+        "granted": 13,
         "missing": 0,
         "unknown": 0,
-        "total": 15,
+        "total": 13,
         "state": "live",
         "safeKept": []
       },
@@ -2530,10 +2530,10 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "rpc.hyperliquid.xyz/evm",
-        "granted": 15,
+        "granted": 13,
         "missing": 0,
         "unknown": 0,
-        "total": 15,
+        "total": 13,
         "state": "live",
         "safeKept": []
       },
@@ -2542,10 +2542,10 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "rpc.mainnet.chain.robinhood.com",
-        "granted": 15,
+        "granted": 13,
         "missing": 0,
         "unknown": 0,
-        "total": 15,
+        "total": 13,
         "state": "live",
         "safeKept": []
       },
@@ -2554,10 +2554,10 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "bsc-dataseed.bnbchain.org",
-        "granted": 15,
+        "granted": 13,
         "missing": 0,
         "unknown": 0,
-        "total": 15,
+        "total": 13,
         "state": "live",
         "safeKept": []
       }
@@ -2953,80 +2953,6 @@
         "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
         "roles": [
           {
-            "role": "DEPOSIT",
-            "roleId": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821",
-            "admin": false,
-            "chains": [
-              {
-                "network": "base",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "ethereum",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "hyperevm",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "robinhood",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "bsc",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              }
-            ]
-          },
-          {
-            "role": "WITHDRAW",
-            "roleId": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869",
-            "admin": false,
-            "chains": [
-              {
-                "network": "base",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "ethereum",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "hyperevm",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "robinhood",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              },
-              {
-                "network": "bsc",
-                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
-                "safeHolds": null
-              }
-            ]
-          },
-          {
             "role": "CERTIFY",
             "roleId": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391",
             "admin": false,
@@ -3250,9 +3176,6 @@
       }
     ],
     "roleNames": {
-      "0x0000000000000000000000000000000000000000000000000000000000000000": "DEFAULT_ADMIN_ROLE",
-      "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821": "DEPOSIT",
-      "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869": "WITHDRAW",
       "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02": "DEPOSIT_ADMIN",
       "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3": "WITHDRAW_ADMIN",
       "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b": "CERTIFY_ADMIN",
@@ -3260,6 +3183,8 @@
       "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d": "CONFISCATE_RECEIPT_ADMIN",
       "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2": "SCHEDULE_CORPORATE_ACTION_ADMIN",
       "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373": "CANCEL_CORPORATE_ACTION_ADMIN",
+      "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821": "DEPOSIT",
+      "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869": "WITHDRAW",
       "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391": "CERTIFY",
       "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed": "CONFISCATE_SHARES",
       "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3": "CONFISCATE_RECEIPT",
@@ -3320,13 +3245,6 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE",
             "contract": "LibProdDeployCurrent",
             "path": "src/generated/LibProdDeployCurrent.sol"
-          }
-        ],
-        "0x1c66d6708914c40239d54919320b4c48cae3d1a9": [
-          {
-            "name": "GRANTEE_SERVICE_1C66",
-            "contract": "LibAuthoriserInvariants",
-            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -4774,13 +4692,6 @@
             "path": "src/generated/LibProdDeployV4.sol"
           }
         ],
-        "0x1c66d6708914c40239d54919320b4c48cae3d1a9": [
-          {
-            "name": "GRANTEE_SERVICE_1C66",
-            "contract": "LibAuthoriserInvariants",
-            "path": "src/lib/LibAuthoriserInvariants.sol"
-          }
-        ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
           {
             "name": "GRANTEE_SERVICE_3D0C",
@@ -6217,13 +6128,6 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE_HYPEREVM",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          }
-        ],
-        "0x1c66d6708914c40239d54919320b4c48cae3d1a9": [
-          {
-            "name": "GRANTEE_SERVICE_1C66",
-            "contract": "LibAuthoriserInvariants",
-            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -7671,13 +7575,6 @@
             "path": "src/generated/LibProdDeployV4.sol"
           }
         ],
-        "0x1c66d6708914c40239d54919320b4c48cae3d1a9": [
-          {
-            "name": "GRANTEE_SERVICE_1C66",
-            "contract": "LibAuthoriserInvariants",
-            "path": "src/lib/LibAuthoriserInvariants.sol"
-          }
-        ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
           {
             "name": "GRANTEE_SERVICE_3D0C",
@@ -9121,13 +9018,6 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE_BSC",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          }
-        ],
-        "0x1c66d6708914c40239d54919320b4c48cae3d1a9": [
-          {
-            "name": "GRANTEE_SERVICE_1C66",
-            "contract": "LibAuthoriserInvariants",
-            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -12077,12 +11967,12 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 26,
+      "openAuditIssues": 25,
       "lastMutation": {
-        "timestamp": "2026-10-11T19:05:23Z",
-        "commit": "8b6a8ed6533ca21827c2b6b0cae66d35ea0aff79",
+        "timestamp": "2026-10-14T20:36:25Z",
+        "commit": "3921acaacc2375d904a5684b62b6e413d6826b61",
         "skillVersion": "0.35.0",
-        "scope": "Issue #350 (PR #434): add and sub round once toward zero. The cancelling branches of LibDecimalFloatImplementation.add: the far step (B wholly below A's unit steps A one unit toward zero), the near bump (B shedding digits is taken one unit up), the cancelling flag, and the overflow check that discounts it. Each probe ran the PR source. Before = main 8b6a8ed's tests on the PR source, forge test --mc \"Add|Sub|RoundOnce|MainEquivalence|Agree|ExoticFloat|ExactDecimal|Minus\" less the 36 main tests that assert the old away-from-zero cancelling rule and are red against the new one (145 tests). After = the same match at 8d60e7a (186 tests). Mutants: M01/M02 far step never/also same-sign; M03 far step ignores sign; M04 far step away from zero; M05/M06 near bump never/also same-sign; M07 near bump without shed digits; M08 near bump ignores sign; M09 near bump reversed; M10 cancelling inverted; M11 overflow check drops the cancelling term; M12 overflow flagged on cancelling. Main's tests kill 9 and miss M01, M03 and M05 (the one-step-toward-zero cases themselves); the PR's tests kill all 12, M01/M03 through testAddRoundOnce, testAddCancelBelowUnitRoundOnce and testSubRoundOnce, M05 through testSubMatchesRuleCancelling against the exact LibTestExactDecimal rule. Bound helpers moved with the rule: the pow tight N term and the monotone spreads use addPartsWideUp so they are never smaller; the pow d term stays truncated, so the computed bound stays at most the derived one."
+        "scope": "PR #712 (#649, #611): one encoding of the packLossy overflow threshold. NEVER_PAST_EXPONENT, LibDecimalFloat.isPastEveryFloat (uint256 and signed overloads), packLossy's lift path, the div and pow10 NEVER_PAST_EXPONENT gates, pow's carry path (packRoundedSignificant), revertIfPastLargestFloat, both LibParseDecimalFloat call sites and the past-int256 floorExponent branch. Suite per probe: forge test --match-contract 'Pack|Parse|Pow|Div' at 256 fuzz runs, seed 0x712; the Rust differential suite was not in the probe command. Before = main c554370's test tree on the PR source (316 tests), after = the PR's tests (322 tests). 27 mutants: M01/M02 NEVER_PAST_EXPONENT one higher/lower; M03/M04 fast exit strict/true; M05 any-nonzero arm at 66; M06 zero past at high excess; M07/M08 floor arm >= and 2^223+2; M09/M10 product arm > and 2^223+1; M11 excess off by one; M12 signed overload drops abs; M13 packLossy past check off; M14 lift one digit short; M15 div gate +1; M16 pow10 gate at int32.max+17; M16b pow10 gate at int32.max+27; M17 pow carry always falls back; M18/M19 carry excess guard 26/66; M20 revertIfPastLargestFloat negated; M21 parser inline drops abs; M22/M23 parser past checks off; M24 floor branch drops wrap check; M25 floorExponent -78; M26 wrap check <=. Before 24/27 killed (M03 survives: its boundary is only reachable by a direct isPastEveryFloat call, which no caller makes; M16, M19 equivalent). After 25/27 killed: M03 by the PR's testIsPastEveryFloatExactEdges; M02/M24 also by testIsPastEveryFloatExactEdges / testParsePastInt256FloorExponentPastInt256; main's killers include testPackLossyOverflowThresholdEdges, testPackLossyCeilingTruncationBand, testPackLossyLiftFirstEquivalenceExtremes, testParseOverflowThresholdExcesses, testParseOverflowThresholdPointPositions, testParseNearOverflowThreshold, testParseRuleLiteralShapeFuzz, testParseZeroHugeExponent, testDivAtTheOverflowThreshold, testPow10Thresholds, testPow10NearThresholds, testPowCarryShedsTheUnrounded, testPowRoundedAtTheHeadroomBound. Survivors: M16 is inside the pow10 gate band audit/known-false-positives.md already proves equivalent (up to int32.max+26; M16b at int32.max+27 is killed, so the band edge is pinned); M19 is equivalent (any carry guard bound from 27 up, or none: at excess 28+ a 41 digit rounded value and its unrounded source are both past) and is recorded with proof. No tests added. Adversarial pass: SPEC.md's isPastEveryFloat and packLossy claims re-derived (not past implies nothing was shed, so the lift is from the initial pair; floor arm m > floor((t-1)/10^x) is m*10^x >= t; parser floor branch exact because the threshold is a multiple of 10^floorExponent at or below int32.max); test oracles (LibExactFloat.overflows, reference.rs) are independent big-integer compares; no candidates."
       }
     },
     {
@@ -13826,19 +13716,19 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "sol-v0.3.5",
-      "latestTagIso": "2026-10-14T18:40:55Z",
+      "latestTag": "sol-v0.3.6",
+      "latestTagIso": "2026-10-14T21:01:25Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 0,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 0,
       "filesChangedSinceAudit": 13,
-      "commitsSinceAudit": 1325,
+      "commitsSinceAudit": 1335,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 1733,
+      "commentLocAddedSinceAudit": 1745,
       "commentLocRemovedSinceAudit": 509,
-      "codeLocAddedSinceAudit": 1920,
+      "codeLocAddedSinceAudit": 1909,
       "codeLocRemovedSinceAudit": 1441,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
@@ -13947,8 +13837,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 104,
-      "commitsSinceAudit": 790,
+      "filesChangedSinceAudit": 107,
+      "commitsSinceAudit": 801,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -14817,7 +14707,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 150,
+      "testFiles": 152,
       "sourcesUnparsed": 1,
       "untested": []
     },
