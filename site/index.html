@@ -4,18 +4,9 @@
 <meta charset="utf-8" />
 <meta name="viewport" content="width=device-width, initial-scale=1" />
 <title>rain org health</title>
-<!--
-  There is no overview page: its tiles restated counts the other pages already
-  show, and its audit alarm duplicated the one on audit.html. Dropping it cannot
-  drop index.html, because GitHub Pages serves that as the site root — so the
-  root forwards to Pipeline, the board that is actually watched.
-
-  A redirect rather than moving that page here: pipeline.html keeps working for
-  anything already linking to it, and every page stays where its tests bind it
-  by filename.
--->
-<meta http-equiv="refresh" content="0; url=pipeline.html" />
-<link rel="canonical" href="pipeline.html" />
+<!-- GitHub Pages serves this as the site root, so it forwards to the first tab. -->
+<meta http-equiv="refresh" content="0; url=deployments.html" />
+<link rel="canonical" href="deployments.html" />
 <style>
   :root { color-scheme: light dark; }
   body {
@@ -33,7 +24,7 @@
 </head>
 <body>
 <div class="wrap">
-  <p>Redirecting to <a href="pipeline.html">Pipeline</a>…</p>
+  <p>Redirecting to <a href="deployments.html">Deployments</a>…</p>
 </div>
 </body>
 </html>

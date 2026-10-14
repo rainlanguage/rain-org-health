@@ -69,9 +69,9 @@
           text = ''
             site="''${1:-site}"
             out="''${2:-dashboard.png}"
-            # index.html is a redirect to pipeline.html, so rendering it would capture
+            # index.html is a redirect to deployments.html, so rendering it would capture
             # the stub; default to the page it forwards to.
-            page="''${3:-pipeline.html}"
+            page="''${3:-deployments.html}"
             port="''${PORT:-8799}"
             export FONTCONFIG_FILE=${pkgs.makeFontsConf { fontDirectories = [ pkgs.dejavu_fonts ]; }}
             python3 -m http.server "$port" --directory "$site" >/dev/null 2>&1 &
