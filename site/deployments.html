@@ -1786,9 +1786,16 @@ function renderDeployments(document, $, data, io) {
     unknown.title = why;
     return unknown;
   };
+  const ZERO_ADDRESS = "0x" + "0".repeat(40);
+  const ZERO_TITLE =
+    "address(0). On an OpenZeppelin TimelockController, EXECUTOR_ROLE held by address(0) lets anyone execute.";
   const whoNode = (address, chain, pins) => {
     const box = el("span", "rbac-who");
-    if (pins) {
+    if (address.toLowerCase() === ZERO_ADDRESS) {
+      const name = el("span", "rbac-name", "address(0)");
+      name.title = ZERO_TITLE;
+      box.append(name);
+    } else if (pins) {
       const hits = pinHits(pins, address);
       if (hits.length) {
         const name = el("span", "rbac-name", hits[0].name);
@@ -2171,7 +2178,16 @@ function renderDeployments(document, $, data, io) {
     const groups = new Map();
     const group = (address) => {
       const key = address.toLowerCase();
-      if (!groups.has(key)) groups.set(key, { address: key, name: null, titles: [], known: false, held: [] });
+      if (!groups.has(key)) {
+        const zero = key === ZERO_ADDRESS;
+        groups.set(key, {
+          address: key,
+          name: zero ? "address(0)" : null,
+          titles: zero ? [ZERO_TITLE] : [],
+          known: zero,
+          held: [],
+        });
+      }
       return groups.get(key);
     };
     for (const chain of chains) {

@@ -11773,6 +11773,37 @@ Deno.test("deployments: roles held groups current holders by address, then netwo
   );
 });
 
+Deno.test("deployments: address(0) as a holder is named, not marked unrecognised", async () => {
+  const f = fakeSubgraph();
+  const zero = "0x" + "0".repeat(40);
+  f.rows.roleHolders.push({
+    id: "h0",
+    account: zero,
+    grantedAtBlock: "11",
+    grantedAtTimestamp: "1791883011",
+    role: { id: RBAC_TL + ROLE_IDS.DEPOSIT.slice(2) },
+  });
+  const p = await heldPanelLive(
+    f.io,
+    rbacData([rbacNet()], { addressNames: RBAC_PINS }),
+  );
+  const groups = heldGroups(p);
+  assert(
+    groups.map((g) => g.hex).join(",") ===
+      ["0xbb", zero, "0xaa", RBAC_TL, RBAC_AUTH].join(","),
+    "address(0) ranks with named holders, not unrecognised ones: " +
+      groups.map((g) => g.hex).join(","),
+  );
+  const z = groups[1];
+  assert(
+    z.name === "address(0)" && !z.unknown && z.rows.length === 1,
+    "group header named: " + JSON.stringify(z),
+  );
+  assert(
+    z.rows[0].who[0].name === "address(0)" && !z.rows[0].who[0].unknown,
+    "network row named: " + JSON.stringify(z.rows[0].who),
+  );
+});
 Deno.test("deployments: roles held is current state — a revoke ends a holding, a re-grant restores it", async () => {
   const f = fakeSubgraph();
   const deposit = { id: RBAC_AUTH + ROLE_IDS.DEPOSIT.slice(2) };
