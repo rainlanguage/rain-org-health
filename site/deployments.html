@@ -2167,7 +2167,7 @@ function renderDeployments(document, $, data, io) {
       slot.append(hist);
     }
   };
-  const rbacHeld =(nets, chains, pinsOf) => {
+  const rbacHeld = (nets, chains, pinsOf) => {
     const groups = new Map();
     const group = (address) => {
       const key = address.toLowerCase();
