@@ -12073,7 +12073,7 @@ Deno.test("deployments: roles-held strings land as text", async () => {
 
 const IDEAL_KEEP = "0x" + "11".repeat(20);
 const IDEAL_DROP = "0x" + "22".repeat(20);
-const IDEAL_NEW = "0x" + "33".repeat(20);
+const IDEAL_NEW = "0x" + "3c".repeat(20);
 const IDEAL_OTHER = "0x" + "0a".repeat(20);
 const IDEAL_EU = "0x" + "44".repeat(20);
 const IDEAL_URL =
@@ -12456,6 +12456,8 @@ Deno.test("deployments: ideal roles wait for both reads, and never check an inde
     idealLines(panel()).join() === "Ideal roles: reading ideal-roles.json…",
     idealLines(panel()),
   );
+  const reading = "Reading S01-Issuer/st0x.deploy's ideal-roles.json…";
+  assert(textOf(panel()).includes(reading), "the read is said to be under way");
   await new Promise((r) => setTimeout(r, 0));
   assert(
     idealLines(panel()).join() === "Ideal roles: waiting for the index…",
@@ -12467,6 +12469,7 @@ Deno.test("deployments: ideal roles wait for both reads, and never check an inde
     idealLines(panel()).join() === "Ideal roles: 2 to grant, 1 to revoke.",
     idealLines(panel()),
   );
+  assert(!textOf(panel()).includes(reading), "and no longer once it lands");
   let release;
   const late = new Promise((r) => (release = r));
   const lateIo = {
