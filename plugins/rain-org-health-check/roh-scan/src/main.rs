@@ -2769,7 +2769,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 doc["addressNames"] = map;
                 doc["addressNamesUnread"] = serde_json::Value::from(unread);
             }
-            doc["retiring"] = owners::build_retiring(&deploy_sources, &chains);
             doc
         };
 
