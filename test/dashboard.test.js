@@ -12069,6 +12069,424 @@ Deno.test("deployments: roles-held strings land as text", async () => {
   }
 });
 
+// ---- deployments.html: holdings against st0x.deploy's ideal-roles.json ----
+
+const IDEAL_KEEP = "0x" + "11".repeat(20);
+const IDEAL_DROP = "0x" + "22".repeat(20);
+const IDEAL_NEW = "0x" + "33".repeat(20);
+const IDEAL_OTHER = "0x" + "0a".repeat(20);
+const IDEAL_EU = "0x" + "44".repeat(20);
+const IDEAL_URL =
+  "https://raw.githubusercontent.com/S01-Issuer/st0x.deploy/main/ideal-roles.json";
+const idealPair = (role, grantee, roleName = null) => ({
+  role,
+  roleName,
+  grantee,
+  granteeName: "GRANTEE",
+});
+function idealFixture() {
+  return {
+    version: 1,
+    chains: {
+      "1": {
+        network: "ethereum",
+        contracts: [
+          {
+            address: RBAC_AUTH,
+            name: "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM",
+            kind: "AUTHORIZER",
+            expected: [
+              idealPair(ROLE_IDS.DEPOSIT, IDEAL_KEEP, "DEPOSIT"),
+              idealPair(ROLE_IDS.WITHDRAW, IDEAL_NEW, "WITHDRAW"),
+              idealPair(RBAC_HASH, IDEAL_KEEP),
+            ],
+            forbidden: [
+              idealPair(ROLE_IDS.DEPOSIT, IDEAL_DROP, "DEPOSIT"),
+              idealPair(ROLE_IDS.DEPOSIT, IDEAL_NEW, "DEPOSIT"),
+            ],
+          },
+          {
+            address: RBAC_TL,
+            name: "STOX_GOVERNANCE_TIMELOCK_ETHEREUM",
+            kind: "GOVERNANCE_TIMELOCK",
+            expected: [],
+            forbidden: [idealPair(ROLE_IDS.DEPOSIT, IDEAL_DROP, "DEPOSIT")],
+          },
+        ],
+      },
+    },
+  };
+}
+// The authoriser's DEPOSIT is held by KEEP (expected) and DROP (forbidden);
+// the timelock's by OTHER, which the ideal says nothing about.
+function idealSubgraph(over = {}) {
+  const f = fakeSubgraph({ ideal: idealFixture(), ...over });
+  const holder = (id, account, c) => ({
+    id,
+    account,
+    grantedAtBlock: "10",
+    grantedAtTimestamp: "1791883010",
+    role: { id: c + ROLE_IDS.DEPOSIT.slice(2) },
+  });
+  f.rows.roleHolders = [
+    holder("h1", IDEAL_KEEP, RBAC_AUTH),
+    holder("h2", IDEAL_DROP, RBAC_AUTH),
+    holder("h3", IDEAL_OTHER, RBAC_TL),
+  ];
+  return f;
+}
+const offTags = (node) => collect(node, "rbac-tag").map((t) => t.textContent);
+const roleRows = (p) =>
+  collect(p, "own-row")
+    .filter((r) => !r.className.includes("rbac-chg"))
+    .map((r) => ({
+      role: collect(r, "own-role")[0].textContent,
+      off: r.className.split(" ").includes("rbac-off"),
+      lines: collect(r, "grt-addr").map((l) =>
+        [whoOf(l)[0].hex, ...offTags(l)].join(" ")
+      ),
+      chip: collect(r, "own-chip")[0].textContent,
+    }));
+const idealLines = (p) => collect(p, "rbac-ideal").map((l) => l.textContent);
+
+Deno.test("deployments: role changes mark an expected holding not held to grant, a forbidden one held to revoke", async () => {
+  const p = await rbacPanelLive(idealSubgraph());
+  assert(
+    JSON.stringify(idealLines(p)) ===
+      JSON.stringify(["Ideal roles: 2 to grant, 1 to revoke."]),
+    "the network's count: " + idealLines(p),
+  );
+  assert(
+    collect(p, "rbac-ideal")[0].className.includes("rbac-ideal-off"),
+    "a discrepancy reads as one",
+  );
+  const rows = roleRows(p);
+  const want = [
+    {
+      role: "DEPOSIT",
+      off: true,
+      lines: [`${IDEAL_KEEP}`, `${IDEAL_DROP} to revoke`],
+      chip: "2 held",
+    },
+    {
+      role: RBAC_HASH,
+      off: true,
+      lines: [`${IDEAL_KEEP} to grant`],
+      chip: "0 held",
+    },
+    {
+      role: "WITHDRAW",
+      off: true,
+      lines: [`${IDEAL_NEW} to grant`],
+      chip: "0 held",
+    },
+    { role: "DEPOSIT", off: false, lines: [`${IDEAL_OTHER}`], chip: "1 held" },
+  ];
+  assert(
+    JSON.stringify(rows) === JSON.stringify(want),
+    "authoriser rows then the timelock's, keyed by contract: " +
+      JSON.stringify(rows),
+  );
+  assert(
+    !textOf(p).includes(`${IDEAL_NEW} to revoke`),
+    "a forbidden pair not held is not marked",
+  );
+});
+
+Deno.test("deployments: roles held lists every discrepancy first, a grantee to grant even where it holds nothing", async () => {
+  const p = await heldPanelLive(idealSubgraph().io, rbacData([rbacNet()]));
+  const groups = heldGroups(p);
+  assert(
+    groups.map((g) => g.hex).join(",") ===
+      [IDEAL_KEEP, IDEAL_DROP, IDEAL_NEW, IDEAL_OTHER].join(","),
+    "addresses off the ideal first: " + groups.map((g) => g.hex).join(","),
+  );
+  const row = (g) => {
+    const r = collect(collect(p, "rbac-held")[g], "own-row")[0];
+    return {
+      off: r.className.split(" ").includes("rbac-off"),
+      pairs: collect(r, "rbac-pair").map((x) =>
+        collect(x, "viol-role")[0].textContent + ":" + offTags(x).join()
+      ),
+      roles: collect(r, "viol-role").map((x) => x.textContent),
+      chips: collect(r, "own-chip").map((c) => c.textContent),
+    };
+  };
+  const want = [
+    {
+      off: true,
+      pairs: [RBAC_HASH + ":to grant"],
+      roles: ["DEPOSIT", RBAC_HASH],
+      chips: ["1 held", "1 to grant"],
+    },
+    {
+      off: true,
+      pairs: ["DEPOSIT:to revoke"],
+      roles: ["DEPOSIT"],
+      chips: ["1 held", "1 to revoke"],
+    },
+    {
+      off: true,
+      pairs: ["WITHDRAW:to grant"],
+      roles: ["WITHDRAW"],
+      chips: ["0 held", "1 to grant"],
+    },
+    { off: false, pairs: [], roles: ["DEPOSIT"], chips: ["1 held"] },
+  ];
+  for (const [i, w] of want.entries()) {
+    assert(
+      JSON.stringify(row(i)) === JSON.stringify(w),
+      groups[i].hex + ": " + JSON.stringify(row(i)),
+    );
+  }
+  assert(
+    collect(collect(p, "rbac-held-nets")[0], "rbac-ideal")[0].textContent ===
+      "Ideal roles: 2 to grant, 1 to revoke.",
+    "each index's row carries its count",
+  );
+});
+
+Deno.test("deployments: ideal-roles.json is read once, from the deploy repo's main", async () => {
+  const f = idealSubgraph();
+  const { box, done } = deploymentsRender(
+    rbacData([rbacNet(), rbacNet({ network: "base", chain: "base" })]),
+    f.io,
+  );
+  await done;
+  assert(
+    f.idealSeen.length === 1 && f.idealSeen[0].url === IDEAL_URL,
+    "one read: " + JSON.stringify(f.idealSeen),
+  );
+  for (const tab of ["rbac", "held"]) {
+    const p = collect(box, "tabpanel").find((x) => x.dataset.tab === tab);
+    const a = tags(p, "a").find((x) => x.textContent.includes("ideal-roles"));
+    assert(
+      a &&
+        a.href ===
+          "https://github.com/S01-Issuer/st0x.deploy/blob/main/ideal-roles.json",
+      tab + ": the source is linked",
+    );
+  }
+});
+
+Deno.test("deployments: an unreadable ideal-roles.json marks nothing and says no discrepancy is not none", async () => {
+  const bad = (edit) => {
+    const v = idealFixture();
+    edit(v, v.chains["1"].contracts[0]);
+    return v;
+  };
+  const cases = [
+    [null, "HTTP 404"],
+    [new TypeError("Failed to fetch"), "no answer"],
+    ["404: Not Found", "it is not JSON"],
+    [[], "it is not a JSON object"],
+    [bad((v) => (v.version = 2)), "it is version 2; this page reads version 1"],
+    [bad((v) => (v.chains = [])), "it has no chains object"],
+    [bad((v) => (v.chains["1"] = 7)), 'chains["1"] is not an object'],
+    [bad((v) => delete v.chains["1"].network), 'chains["1"] names no network'],
+    [
+      bad((v) => (v.chains["2"] = { ...v.chains["1"] })),
+      'chains["2"] repeats network ethereum',
+    ],
+    [
+      bad((v) => (v.chains["1"].contracts = {})),
+      'chains["1"] has no contracts list',
+    ],
+    [
+      bad((v) => v.chains["1"].contracts.push(null)),
+      'chains["1"].contracts[2] is not an object',
+    ],
+    [
+      bad((_, c) => (c.address = "0x1234")),
+      'chains["1"].contracts[0] has no address',
+    ],
+    [
+      bad((_, c) => delete c.forbidden),
+      'chains["1"].contracts[0] has no forbidden list',
+    ],
+    [
+      bad((_, c) => (c.expected[1] = "x")),
+      'chains["1"].contracts[0].expected[1] is not an object',
+    ],
+    [
+      bad((_, c) => (c.forbidden[0].role = ROLE_IDS.DEPOSIT.slice(0, 65))),
+      'chains["1"].contracts[0].forbidden[0] has no bytes32 role',
+    ],
+    [
+      bad((_, c) => (c.forbidden[0].role = "0x" + "zz".repeat(32))),
+      'chains["1"].contracts[0].forbidden[0] has no bytes32 role',
+    ],
+    [
+      bad((_, c) => (c.expected[0].grantee = IDEAL_KEEP + "00")),
+      'chains["1"].contracts[0].expected[0] has no grantee address',
+    ],
+  ];
+  for (const [ideal, why] of cases) {
+    const f = idealSubgraph({ ideal });
+    const { box, done } = deploymentsRender(rbacData([rbacNet()]), f.io);
+    await done;
+    for (const tab of ["rbac", "held"]) {
+      const p = collect(box, "tabpanel").find((x) => x.dataset.tab === tab);
+      const note = collect(p, "rbac-ideal-gap").map((n) => n.textContent);
+      assert(
+        note.length === 1 &&
+          note[0] ===
+            `Discrepancies unknown — S01-Issuer/st0x.deploy's ideal-roles.json could not be read: ${why}. ` +
+              "None is marked, which is not the same as none.",
+        tab + " " + why + ": " + note,
+      );
+      assert(
+        idealLines(p).join() ===
+          "Ideal roles: not checked — ideal-roles.json could not be read.",
+        tab + " " + why + ": " + idealLines(p),
+      );
+      assert(
+        offTags(p).length === 0 && collect(p, "rbac-off").length === 0,
+        tab + " " + why + ": nothing marked",
+      );
+    }
+  }
+});
+
+Deno.test("deployments: ideal roles are matched per chain name, and addresses in any case", async () => {
+  const f = idealSubgraph();
+  f.ideal.chains["1"].contracts[0].address = RBAC_AUTH.toUpperCase().replace(
+    "0X",
+    "0x",
+  );
+  f.ideal.chains["1"].contracts[0].forbidden[0].grantee = IDEAL_DROP
+    .toUpperCase().replace("0X", "0x");
+  f.ideal.chains["1"].contracts[0].forbidden[0].role = ROLE_IDS.DEPOSIT
+    .toUpperCase().replace("0X", "0x");
+  let p = await rbacPanelLive(f);
+  assert(
+    idealLines(p).join() === "Ideal roles: 2 to grant, 1 to revoke.",
+    "upper-case hex still matches: " + idealLines(p),
+  );
+  const g = idealSubgraph();
+  g.ideal.chains["1"].network = "mainnet";
+  p = await rbacPanelLive(g);
+  assert(
+    idealLines(p).join() ===
+      "Ideal roles: not checked — ideal-roles.json declares nothing for this network.",
+    "the subgraph's network name is not the chain: " + idealLines(p),
+  );
+  assert(
+    collect(p, "rbac-ideal")[0].className.includes("rbac-ideal-gap"),
+    "an undeclared network reads as a gap",
+  );
+  assert(
+    collect(p, "rbac-ideal-gap").some((n) =>
+      n.textContent ===
+        "Not checked: ideal-roles.json declares mainnet (chain 1), which the subgraph does not index."
+    ),
+    "the stray declaration is named",
+  );
+  assert(offTags(p).length === 0, "nothing marked");
+});
+
+Deno.test("deployments: a declared contract the index holds no role for is named unchecked, not marked to grant", async () => {
+  const f = idealSubgraph();
+  const auth = f.ideal.chains["1"].contracts[0];
+  auth.expected = [auth.expected[0]];
+  auth.forbidden = [auth.forbidden[1]];
+  f.ideal.chains["1"].contracts.push({
+    address: IDEAL_EU,
+    name: "STOX_EU_AUTHORISER",
+    kind: "AUTHORIZER",
+    expected: [idealPair(ROLE_IDS.DEPOSIT, IDEAL_NEW, "DEPOSIT")],
+    forbidden: [],
+  });
+  const p = await rbacPanelLive(f);
+  assert(
+    idealLines(p).join() ===
+      "Ideal roles: every expected role held, no forbidden one, on the contracts the index holds. " +
+        "Not checked: STOX_EU_AUTHORISER — the index holds no role events for it.",
+    idealLines(p),
+  );
+  assert(
+    collect(p, "rbac-ideal")[0].className.includes("rbac-ideal-gap"),
+    "a partial check reads as a gap",
+  );
+  assert(offTags(p).length === 0, "the unindexed grantee is not marked");
+  f.ideal.chains["1"].contracts.pop();
+  const q = await rbacPanelLive(f);
+  assert(
+    idealLines(q).join() ===
+      "Ideal roles: every expected role held, no forbidden one.",
+    idealLines(q),
+  );
+  assert(
+    collect(q, "rbac-ideal")[0].className === "own-note rbac-ideal",
+    "a whole match is not flagged",
+  );
+});
+
+Deno.test("deployments: ideal roles wait for both reads, and never check an index that was not read", async () => {
+  const f = idealSubgraph();
+  let open;
+  const gate = new Promise((r) => (open = r));
+  const io = {
+    now: f.io.now,
+    fetch: (url, init) =>
+      url === IDEAL_URL
+        ? f.io.fetch(url, init)
+        : gate.then(() => f.io.fetch(url, init)),
+  };
+  const { box, done } = deploymentsRender(rbacData([rbacNet()]), io);
+  const panel = () =>
+    collect(box, "tabpanel").find((x) => x.dataset.tab === "rbac");
+  assert(
+    idealLines(panel()).join() === "Ideal roles: reading ideal-roles.json…",
+    idealLines(panel()),
+  );
+  await new Promise((r) => setTimeout(r, 0));
+  assert(
+    idealLines(panel()).join() === "Ideal roles: waiting for the index…",
+    idealLines(panel()),
+  );
+  open();
+  await done;
+  assert(
+    idealLines(panel()).join() === "Ideal roles: 2 to grant, 1 to revoke.",
+    idealLines(panel()),
+  );
+  const dead = await rbacPanelLive(idealSubgraph({ meta: null }));
+  assert(
+    idealLines(dead).join() === "Ideal roles: not checked — the index was not read.",
+    idealLines(dead),
+  );
+  assert(offTags(dead).length === 0, "an unread index marks nothing");
+});
+
+Deno.test("deployments: ideal-roles.json strings land as text", async () => {
+  const f = idealSubgraph();
+  const auth = f.ideal.chains["1"].contracts[0];
+  auth.expected[1].roleName = XSS_IMG;
+  f.ideal.chains["1"].contracts.push({
+    address: IDEAL_EU,
+    name: XSS_SCRIPT,
+    expected: [],
+    forbidden: [],
+  });
+  f.ideal.chains["8453"] = {
+    network: XSS_SVG,
+    contracts: [],
+  };
+  for (const tab of ["rbac", "held"]) {
+    const { box, done } = deploymentsRender(rbacData([rbacNet()]), f.io);
+    await done;
+    const p = collect(box, "tabpanel").find((x) => x.dataset.tab === tab);
+    const text = textOf(p);
+    for (const x of [XSS_IMG, XSS_SCRIPT, XSS_SVG]) {
+      assert(text.includes(x), tab + ": payload rendered as text: " + x);
+    }
+    for (const t of ["img", "script", "svg"]) {
+      assert(tags(p, t).length === 0, tab + ": no " + t + " element created");
+    }
+  }
+});
+
 // ---- deployments.html: governance timelock operations ----
 
 // A subgraph version that indexes `TimelockOperation`.

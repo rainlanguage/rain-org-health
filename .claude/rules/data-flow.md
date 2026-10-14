@@ -18,7 +18,7 @@ another repo's tooling. Every data source is owned + emitted by its
 | producer-run metrics             | `issue-pr-cron` → `metrics/runs.jsonl`                                       | runtime fetch of its raw URL |
 | pipeline / FSM-conformance state | `issue-pr-cron`'s `pr-review-report human-queue --json` → `human-queue.json` | runtime fetch of its raw URL |
 | st0x role changes (RBAC)         | st0x.deploy's RBAC subgraph on Ormi (`roh-scan` only emits its location)     | runtime GraphQL POST         |
-| st0x ideal role holdings         | st0x.deploy → `ideal-roles.json`                                            | runtime fetch of its raw URL |
+| st0x ideal role holdings         | st0x.deploy → `ideal-roles.json`                                             | runtime fetch of its raw URL |
 
 Do not regress this:
 
