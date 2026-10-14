@@ -2182,18 +2182,16 @@ function renderDeployments(document, $, data, io) {
     }
     return idealParse(body);
   };
-  const pairKey = (contract, role, account) => `${contract}|${role}|${account}`.toLowerCase();
-  const same = (a, b) => typeof a === "string" && typeof b === "string" && a.toLowerCase() === b.toLowerCase();
+  const pairKey = (contract, role, account) => `${contract}|${role}|${account}`;
   // A declared contract with no role row in the index is unchecked: the index may not cover it.
   const idealDiff = (contracts, want) => {
     const byAddress = new Map();
     const held = new Set();
     for (const c of contracts) {
-      if (typeof c.address !== "string") continue;
-      byAddress.set(c.address.toLowerCase(), c);
+      byAddress.set(c.address, c);
       for (const role of c.roles) {
         for (const h of role.holders) {
-          if (typeof h.account === "string") held.add(pairKey(c.address, role.roleId, h.account));
+          held.add(pairKey(c.address, role.roleId, h.account));
         }
       }
     }
@@ -2273,7 +2271,7 @@ function renderDeployments(document, $, data, io) {
       const grants = check.state === "checked" ? check.grant.filter((p) => p.at === c) : [];
       const rows = [...c.roles];
       for (const p of grants) {
-        if (!rows.some((role) => same(role.roleId, p.role))) {
+        if (!rows.some((role) => role.roleId === p.role)) {
           rows.push({ roleId: p.role, name: p.roleName, adminId: null, holders: [] });
         }
       }
@@ -2300,7 +2298,7 @@ function renderDeployments(document, $, data, io) {
         const count = role.holders.length;
         if (count === 0) ac.append(el("span", "own-addr own-missing", "no current holder"));
         for (const p of grants) {
-          if (!same(p.role, role.roleId)) continue;
+          if (p.role !== role.roleId) continue;
           const line = el("div", "grt-addr");
           line.append(whoNode(p.grantee, chain, pins), offTag("grant"));
           ac.append(line);
