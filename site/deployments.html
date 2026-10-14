@@ -2183,23 +2183,25 @@ function renderDeployments(document, $, data, io) {
   // A declared contract with no role row in the index is unchecked: the index may not cover it.
   const idealDiff = (contracts, want) => {
     const byAddress = new Map(contracts.map((c) => [c.address, c]));
-    const grant = [];
+    const expected = new Set(want.contracts.flatMap((w) => w.expected.map((p) => pairKey(w.address, p.role, p.grantee))));
+    const held = new Set();
     const unexpected = new Set();
+    for (const c of contracts) {
+      for (const role of c.roles) {
+        for (const h of role.holders) {
+          const key = pairKey(c.address, role.roleId, h.account);
+          held.add(key);
+          if (!expected.has(key)) unexpected.add(key);
+        }
+      }
+    }
+    const grant = [];
     const unindexed = [];
     for (const w of want.contracts) {
       const at = byAddress.get(w.address);
       if (!at) {
         unindexed.push(w);
         continue;
-      }
-      const expected = new Set(w.expected.map((p) => pairKey(w.address, p.role, p.grantee)));
-      const held = new Set();
-      for (const role of at.roles) {
-        for (const h of role.holders) {
-          const key = pairKey(at.address, role.roleId, h.account);
-          held.add(key);
-          if (!expected.has(key)) unexpected.add(key);
-        }
       }
       for (const p of w.expected) {
         if (!held.has(pairKey(w.address, p.role, p.grantee))) grant.push({ ...p, at });

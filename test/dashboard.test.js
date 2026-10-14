@@ -12264,12 +12264,12 @@ Deno.test("deployments: roles held lists every discrepancy first, a grantee to g
   );
 });
 
-Deno.test("deployments: only contracts ideal-roles.json declares are checked, and a forbidden list in it changes nothing", async () => {
+Deno.test("deployments: a contract ideal-roles.json does not declare expects nothing, and a forbidden list in it changes nothing", async () => {
   const f = idealSubgraph();
   f.ideal.chains["1"].contracts.pop();
   const p = await rbacPanelLive(f);
   assert(
-    idealLines(p).join() === "Ideal roles: 2 to grant, 1 not expected.",
+    idealLines(p).join() === "Ideal roles: 2 to grant, 3 not expected.",
     idealLines(p),
   );
   const tl = roleRows(p)[3];
@@ -12277,17 +12277,18 @@ Deno.test("deployments: only contracts ideal-roles.json declares are checked, an
     JSON.stringify(tl) ===
       JSON.stringify({
         role: "DEPOSIT",
-        off: false,
-        lines: [`${IDEAL_OTHER}`, `${IDEAL_KEEP}`],
+        off: true,
+        lines: [`${IDEAL_OTHER} not expected`, `${IDEAL_KEEP} not expected`],
         chip: "2 held",
       }),
-    "the undeclared timelock's holder is not marked: " + JSON.stringify(tl),
+    "every holder on the undeclared timelock is not expected: " +
+      JSON.stringify(tl),
   );
   const held = heldGroups(
     await heldPanelLive(f.io, rbacData([rbacNet()])),
   ).map((x) => x.hex);
   assert(
-    held.join() === [IDEAL_KEEP, IDEAL_DROP, IDEAL_NEW, IDEAL_OTHER].join(),
+    held.join() === [IDEAL_OTHER, IDEAL_KEEP, IDEAL_DROP, IDEAL_NEW].join(),
     "a holder whose only discrepancy is a warning is listed first: " + held,
   );
   const g = idealSubgraph();
