@@ -75,6 +75,11 @@
   .rbac-names-gap { color: var(--crit); }
   .rbac-held-nets { margin-bottom: 18px; }
   .rbac-held-roles { font-size: 13px; margin-bottom: 4px; }
+  .own-row.rbac-retire-row { background: var(--debt-bg); }
+  .viol-role.rbac-retire-role { color: var(--debt); }
+  .rbac-retire { color: var(--debt); font-size: 12.5px; line-height: 1.5; }
+  .rbac-retire::before { content: "⚠ "; font-weight: 700; }
+  .rbac-retire-gap { color: var(--crit); }
   .rbac-unknown { font-size: 10px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
                   color: var(--crit); border: 1px solid var(--crit); border-radius: 5px; padding: 1px 5px; }
   /* Governance timelock operations. A pending one is a change to production
@@ -1786,6 +1791,8 @@ function renderDeployments(document, $, data, io) {
     unknown.title = why;
     return unknown;
   };
+  const retireNote = (roles, by) =>
+    el("div", "rbac-retire", `${roles.join(", ")} must be revoked here — ${by} declares ${roles.length === 1 ? "it" : "them"} retired.`);
   const ZERO_ADDRESS = "0x" + "0".repeat(40);
   const ZERO_TITLE =
     "address(0). On an OpenZeppelin TimelockController, EXECUTOR_ROLE held by address(0) lets anyone execute.";
@@ -2098,7 +2105,7 @@ function renderDeployments(document, $, data, io) {
   };
   const kindLabel = (kind) => RBAC_KINDS[kind] || String(kind);
   // One network's banner and, where the read is whole, its contracts.
-  const rbacBody = (slot, n, chain, endpoint, published, pins) => {
+  const rbacBody = (slot, n, chain, endpoint, published, pins, retire) => {
     slot.replaceChildren(rbacBanner(n, endpoint, published));
     if (n.timelock) tlSection(slot, n.timelock, chain, pins);
     if (!Array.isArray(n.contracts)) return;
@@ -2130,6 +2137,9 @@ function renderDeployments(document, $, data, io) {
           if (typeof h.account === "string") line.append(whoNode(h.account, chain, pins));
           line.append(el("span", "own-verify-src", `since block ${h.grantedAtBlock ?? "?"} · ${utc(h.grantedAtTimestamp)}`));
           ac.append(line);
+          if (retire.held(c.address, role.roleId, h.account)) {
+            ac.append(retireNote([roleLabel(role.name, role.roleId)], retire.by));
+          }
         }
         const count = role.holders.length;
         if (count === 0) ac.append(el("span", "own-addr own-missing", "no current holder"));
@@ -2287,17 +2297,28 @@ function renderDeployments(document, $, data, io) {
         where.append(el("div", "own-role", n.title), whoNode(g.address, n.chain, n.pins));
         const what = el("div", "bcn-detail");
         let count = 0;
+        let retiring = false;
         for (const on of h.contracts) {
           const c = on.contract;
           const line = el("div", "grt-addr");
           line.append(`${kindLabel(c.kind)} `);
           if (typeof c.address === "string") line.append(whoNode(c.address, n.chain, n.pins));
           const roles = el("div", "grt-addr rbac-held-roles");
-          for (const role of on.roles) roles.append(el("span", "viol-role", roleLabel(role.name, role.roleId)));
+          const retired = [];
+          for (const role of on.roles) {
+            const label = roleLabel(role.name, role.roleId);
+            const out = n.retire.held(c.address, role.roleId, g.address);
+            roles.append(el("span", out ? "viol-role rbac-retire-role" : "viol-role", label));
+            if (out) retired.push(label);
+          }
           what.append(line, roles);
+          if (retired.length) {
+            what.append(retireNote(retired, n.retire.by));
+            retiring = true;
+          }
           count += on.roles.length;
         }
-        const row = el("div", "own-row");
+        const row = el("div", retiring ? "own-row rbac-retire-row" : "own-row");
         row.append(where, what, el("span", "own-chip own-chip-yes", `${count} held`));
         table.append(row);
       }
@@ -2373,6 +2394,49 @@ function renderDeployments(document, $, data, io) {
     };
     sink.append(...namesNotes());
     heldBox.append(...namesNotes());
+    const retiring = r.retiring && typeof r.retiring === "object" ? r.retiring : null;
+    const retireTable =
+      retiring && typeof retiring.unavailable !== "string" && retiring.holdings && typeof retiring.holdings === "object"
+        ? retiring.holdings
+        : null;
+    const retireFn = retiring && typeof retiring.function === "string" ? retiring.function : "retiring declaration";
+    const retireBy = `${r.repo}'s ${retireFn}`;
+    const same = (a, b) => typeof a === "string" && typeof b === "string" && a.toLowerCase() === b.toLowerCase();
+    const retireFor = (chain) => {
+      const own = retireTable && typeof chain === "string" && Object.prototype.hasOwnProperty.call(retireTable, chain);
+      const rows = own && Array.isArray(retireTable[chain]) ? retireTable[chain] : [];
+      return {
+        by: retireBy,
+        held: (contract, roleId, account) =>
+          rows.some((x) => x && same(x.contract, contract) && same(x.roleId, roleId) && same(x.account, account)),
+      };
+    };
+    const retireNotes = () => {
+      if (!retiring) {
+        return [el("div", "own-sub rbac-retire-gap", "No holding is checked for revocation — this scan carries no list of holdings to revoke.")];
+      }
+      if (!retireTable) {
+        const why = typeof retiring.unavailable === "string" ? retiring.unavailable : "it lists no holdings";
+        return [
+          el(
+            "div",
+            "own-sub rbac-retire-gap",
+            `Holdings to revoke unknown — the scan could not read ${retireBy}: ${why}. None is marked, which is not the same as none held.`,
+          ),
+        ];
+      }
+      const note = el("div", "own-sub");
+      note.append(`A holding ${r.repo}'s `);
+      note.append(
+        typeof retiring.source === "string"
+          ? link("", retireFn, `https://github.com/${r.org}/${r.repo}/blob/main/${retiring.source}`)
+          : retireFn,
+      );
+      note.append(" declares must be revoked is marked ⚠ on each network where it is still held.");
+      return [note];
+    };
+    sink.append(...retireNotes());
+    heldBox.append(...retireNotes());
     const heldSlot = el("div", "rbac-held-body");
     heldBox.append(heldSlot);
     const heldNets = [];
@@ -2390,17 +2454,18 @@ function renderDeployments(document, $, data, io) {
       sink.append(el("h3", "tok-h3", title));
       const slot = el("div", "rbac-net");
       sink.append(slot);
-      const held = { title, chain, pins, res: { state: "loading" } };
+      const retire = retireFor(chain);
+      const held = { title, chain, pins, retire, res: { state: "loading" } };
       heldNets.push(held);
       if (typeof n.endpoint !== "string" || !n.endpoint.startsWith("https://")) {
         held.res = { state: "error", detail: "the scan gave no https endpoint for this network" };
-        rbacBody(slot, held.res, chain, null, published, pins);
+        rbacBody(slot, held.res, chain, null, published, pins, retire);
         continue;
       }
-      rbacBody(slot, held.res, chain, n.endpoint, published, pins);
+      rbacBody(slot, held.res, chain, n.endpoint, published, pins, retire);
       reads.push(
         rbacRead(n.endpoint, names).then((res) => {
-          rbacBody(slot, res, chain, n.endpoint, published, pins);
+          rbacBody(slot, res, chain, n.endpoint, published, pins, retire);
           held.res = res;
           showHeld();
         }),
