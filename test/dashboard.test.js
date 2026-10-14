@@ -12209,7 +12209,9 @@ Deno.test("deployments: roles held lists every discrepancy first, a grantee to g
         collect(x, "viol-role")[0].textContent + ":" + offTags(x).join()
       ),
       roles: collect(r, "viol-role").map((x) => x.textContent),
-      chips: collect(r, "own-chip").map((c) => c.textContent),
+      chips: collect(r, "own-chip").map((c) =>
+        c.className.replace("own-chip own-chip-", "") + " " + c.textContent
+      ),
     };
   };
   const want = [
@@ -12217,21 +12219,21 @@ Deno.test("deployments: roles held lists every discrepancy first, a grantee to g
       off: true,
       pairs: [RBAC_HASH + ":to grant"],
       roles: ["DEPOSIT", RBAC_HASH],
-      chips: ["1 held", "1 to grant"],
+      chips: ["yes 1 held", "roll 1 to grant"],
     },
     {
       off: true,
       pairs: ["DEPOSIT:to revoke"],
       roles: ["DEPOSIT"],
-      chips: ["1 held", "1 to revoke"],
+      chips: ["yes 1 held", "no 1 to revoke"],
     },
     {
       off: true,
       pairs: ["WITHDRAW:to grant"],
       roles: ["WITHDRAW"],
-      chips: ["0 held", "1 to grant"],
+      chips: ["dim 0 held", "roll 1 to grant"],
     },
-    { off: false, pairs: [], roles: ["DEPOSIT"], chips: ["1 held"] },
+    { off: false, pairs: [], roles: ["DEPOSIT"], chips: ["yes 1 held"] },
   ];
   for (const [i, w] of want.entries()) {
     assert(
@@ -12348,24 +12350,38 @@ Deno.test("deployments: an unreadable ideal-roles.json marks nothing and says no
   }
 });
 
-Deno.test("deployments: ideal roles are matched per chain name, and addresses in any case", async () => {
+Deno.test("deployments: ideal roles are matched per chain name, and hex in any case is read lower-case", async () => {
   const f = idealSubgraph();
-  f.ideal.chains["1"].contracts[0].address = RBAC_AUTH.toUpperCase().replace(
-    "0X",
-    "0x",
-  );
-  f.ideal.chains["1"].contracts[0].forbidden[0].grantee = IDEAL_DROP
-    .toUpperCase().replace("0X", "0x");
-  f.ideal.chains["1"].contracts[0].forbidden[0].role = ROLE_IDS.DEPOSIT
-    .toUpperCase().replace("0X", "0x");
-  let p = await rbacPanelLive(f);
+  const up = (h) => "0x" + h.slice(2).toUpperCase();
+  const auth = f.ideal.chains["1"].contracts[0];
+  auth.address = up(RBAC_AUTH);
+  auth.forbidden[0].grantee = up(IDEAL_DROP);
+  auth.forbidden[0].role = up(ROLE_IDS.DEPOSIT);
+  auth.expected[1].grantee = up(IDEAL_NEW);
+  auth.expected[2].role = up(RBAC_HASH);
+  const { box, done } = deploymentsRender(rbacData([rbacNet()]), f.io);
+  await done;
+  const tab = (t) => collect(box, "tabpanel").find((x) => x.dataset.tab === t);
   assert(
-    idealLines(p).join() === "Ideal roles: 2 to grant, 1 to revoke.",
-    "upper-case hex still matches: " + idealLines(p),
+    idealLines(tab("rbac")).join() === "Ideal roles: 2 to grant, 1 to revoke.",
+    "upper-case hex still matches: " + idealLines(tab("rbac")),
+  );
+  const withdraw = roleRows(tab("rbac")).find((r) => r.role === "WITHDRAW");
+  assert(
+    withdraw && withdraw.lines.join() === `${IDEAL_NEW} to grant`,
+    "the grantee is shown lower-case: " + JSON.stringify(withdraw),
+  );
+  const keep = collect(tab("held"), "rbac-held")[0];
+  assert(
+    collect(keep, "rbac-pair").map((x) =>
+      collect(x, "viol-role")[0].textContent
+    )
+      .join() === RBAC_HASH,
+    "an unnamed role is shown lower-case",
   );
   const g = idealSubgraph();
   g.ideal.chains["1"].network = "mainnet";
-  p = await rbacPanelLive(g);
+  const p = await rbacPanelLive(g);
   assert(
     idealLines(p).join() ===
       "Ideal roles: not checked — ideal-roles.json declares nothing for this network.",
@@ -12451,9 +12467,35 @@ Deno.test("deployments: ideal roles wait for both reads, and never check an inde
     idealLines(panel()).join() === "Ideal roles: 2 to grant, 1 to revoke.",
     idealLines(panel()),
   );
+  let release;
+  const late = new Promise((r) => (release = r));
+  const lateIo = {
+    now: f.io.now,
+    fetch: (url, init) =>
+      url === IDEAL_URL
+        ? late.then(() => f.io.fetch(url, init))
+        : f.io.fetch(url, init),
+  };
+  const second = deploymentsRender(rbacData([rbacNet()]), lateIo);
+  const tab = (t) =>
+    collect(second.box, "tabpanel").find((x) => x.dataset.tab === t);
+  for (let i = 0; i < 20; i++) await new Promise((r) => setTimeout(r, 0));
+  assert(
+    roleRows(tab("rbac")).length === 3 &&
+      idealLines(tab("rbac")).join() ===
+        "Ideal roles: reading ideal-roles.json…",
+    "the index lands first: " + idealLines(tab("rbac")),
+  );
+  assert(offTags(tab("held")).length === 0, "nothing marked before the ideal");
+  release();
+  await second.done;
+  for (const t of ["rbac", "held"]) {
+    assert(offTags(tab(t)).length === 3, t + ": marked once the ideal lands");
+  }
   const dead = await rbacPanelLive(idealSubgraph({ meta: null }));
   assert(
-    idealLines(dead).join() === "Ideal roles: not checked — the index was not read.",
+    idealLines(dead).join() ===
+      "Ideal roles: not checked — the index was not read.",
     idealLines(dead),
   );
   assert(offTags(dead).length === 0, "an unread index marks nothing");
