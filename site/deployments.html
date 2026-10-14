@@ -85,7 +85,7 @@
               border: 1px solid; border-radius: 5px; padding: 1px 5px; white-space: nowrap; }
   .rbac-tag-revoke { color: var(--crit); }
   .rbac-tag-grant { color: var(--debt); }
-  .rbac-ideal-off { color: var(--crit); }
+  .rbac-ideal-gap, .rbac-ideal-off { color: var(--crit); }
   /* Governance timelock operations. A pending one is a change to production
      that happens unless someone cancels it, so it is a boxed card in the
      rollout amber; one whose call lands on a contract the timelock governs
@@ -2123,9 +2123,7 @@ function renderDeployments(document, $, data, io) {
   const IDEAL_VERSION = 1;
   const isHex = (v, digits) => typeof v === "string" && v.length === 2 + digits && /^0x[0-9a-fA-F]+$/.test(v);
   const named = (v) => (typeof v === "string" && v ? v : null);
-  // The deploy repo's ideal-roles.json, keyed by network: { byNetwork } or
-  // { unavailable }. One malformed entry fails the whole file, because a pair
-  // dropped from it would read as matching.
+  // One malformed entry fails the whole file: a pair dropped from it would read as matching.
   const idealParse = (body) => {
     if (!body || typeof body !== "object" || Array.isArray(body)) return { unavailable: "it is not a JSON object" };
     if (body.version !== IDEAL_VERSION) {
@@ -2146,7 +2144,7 @@ function renderDeployments(document, $, data, io) {
         const kat = `${at}.contracts[${i}]`;
         if (!k || typeof k !== "object") return bad(kat, "is not an object");
         if (!isHex(k.address, 40)) return bad(kat, "has no address");
-        const want = { address: k.address.toLowerCase(), name: named(k.name), kind: named(k.kind) };
+        const want = { address: k.address.toLowerCase(), name: named(k.name) };
         for (const side of ["expected", "forbidden"]) {
           if (!Array.isArray(k[side])) return bad(kat, `has no ${side} list`);
           want[side] = [];
@@ -2186,9 +2184,7 @@ function renderDeployments(document, $, data, io) {
   };
   const pairKey = (contract, role, account) => `${contract}|${role}|${account}`.toLowerCase();
   const same = (a, b) => typeof a === "string" && typeof b === "string" && a.toLowerCase() === b.toLowerCase();
-  // One network's whole read against its ideal entry. A declared contract the
-  // index holds no role row for is unchecked, not "everything to grant": the
-  // index may not cover it.
+  // A declared contract with no role row in the index is unchecked: the index may not cover it.
   const idealDiff = (contracts, want) => {
     const byAddress = new Map();
     const held = new Set();
@@ -2225,7 +2221,8 @@ function renderDeployments(document, $, data, io) {
     if (!ideal.byNetwork) return { state: "unavailable" };
     const want = typeof n.chain === "string" ? ideal.byNetwork.get(n.chain) : undefined;
     if (!want) return { state: "undeclared" };
-    if (!n.res || !Array.isArray(n.res.contracts)) return { state: "unread" };
+    if (!n.res || n.res.state === "loading") return { state: "reading" };
+    if (!Array.isArray(n.res.contracts)) return { state: "unread" };
     return idealDiff(n.res.contracts, want);
   };
   const revoking = (check, contract, roleId, account) =>
@@ -2235,22 +2232,25 @@ function renderDeployments(document, $, data, io) {
     switch (check.state) {
       case "loading":
         return line("", "reading ideal-roles.json…");
+      case "reading":
+        return line("", "waiting for the index…");
       case "unavailable":
         return line("", "not checked — ideal-roles.json could not be read.");
       case "undeclared":
-        return line("rbac-names-gap", "not checked — ideal-roles.json declares nothing for this network.");
+        return line("rbac-ideal-gap", "not checked — ideal-roles.json declares nothing for this network.");
       case "unread":
         return line("", "not checked — the index was not read.");
     }
     const off = [];
     if (check.grant.length) off.push(`${check.grant.length} to grant`);
     if (check.revoke.size) off.push(`${check.revoke.size} to revoke`);
-    let text = off.length ? `${off.join(", ")}.` : "every expected role held, no forbidden one.";
+    const partial = check.unindexed.length ? ", on the contracts the index holds" : "";
+    let text = off.length ? `${off.join(", ")}.` : `every expected role held, no forbidden one${partial}.`;
     if (check.unindexed.length) {
       const names = check.unindexed.map((w) => w.name || w.address).join(", ");
       text += ` Not checked: ${names} — the index holds no role events for ${check.unindexed.length === 1 ? "it" : "them"}.`;
     }
-    return line(off.length ? "rbac-ideal-off" : check.unindexed.length ? "rbac-names-gap" : "", text);
+    return line(off.length ? "rbac-ideal-off" : check.unindexed.length ? "rbac-ideal-gap" : "", text);
   };
   // One network's banner and, where the read is whole, its contracts.
   const rbacBody = (slot, n, chain, endpoint, published, pins, check) => {
@@ -2269,8 +2269,7 @@ function renderDeployments(document, $, data, io) {
       if (typeof c.firstIndexedBlock === "number") {
         slot.append(el("div", "own-groupnote", `indexed from block ${c.firstIndexedBlock}`));
       }
-      // Current holders, one row per role, then the roles only a grant
-      // still to make would put here.
+      // Current holders, one row per role.
       const grants = check.state === "checked" ? check.grant.filter((p) => p.at === c) : [];
       const rows = [...c.roles];
       for (const p of grants) {
@@ -2586,7 +2585,7 @@ function renderDeployments(document, $, data, io) {
         return [
           el(
             "div",
-            "own-sub rbac-names-gap",
+            "own-sub rbac-ideal-gap",
             `Discrepancies unknown — ${repoName}'s ideal-roles.json could not be read: ${ideal.unavailable}. ` +
               "None is marked, which is not the same as none.",
           ),
@@ -2605,7 +2604,7 @@ function renderDeployments(document, $, data, io) {
       if (!stray.length) return [note];
       return [
         note,
-        el("div", "own-sub rbac-names-gap", `Not checked: ideal-roles.json declares ${stray.join(", ")}, which the subgraph does not index.`),
+        el("div", "own-sub rbac-ideal-gap", `Not checked: ideal-roles.json declares ${stray.join(", ")}, which the subgraph does not index.`),
       ];
     };
     const idealBoxes = [el("div"), el("div")];

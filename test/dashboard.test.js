@@ -10925,11 +10925,28 @@ function fakeSubgraph(over = {}) {
     status: 200,
     now: (RBAC_TS + 12) * 1000,
     seen: [],
+    // ideal-roles.json: an object is served as JSON, a string as a body that
+    // is not JSON, an Error as a failed fetch, null as a 404.
+    ideal: null,
+    idealSeen: [],
     ...over,
   };
   f.io = {
     now: () => f.now,
     fetch: (url, init) => {
+      if (url.endsWith("/ideal-roles.json")) {
+        f.idealSeen.push({ url, init });
+        if (f.ideal instanceof Error) return Promise.reject(f.ideal);
+        const ok = f.ideal !== null;
+        return Promise.resolve({
+          ok,
+          status: ok ? 200 : 404,
+          json: () =>
+            ok && typeof f.ideal === "object"
+              ? Promise.resolve(f.ideal)
+              : Promise.reject(new SyntaxError("not JSON")),
+        });
+      }
       f.seen.push({ url, init });
       const q = JSON.parse(init.body).query;
       // `status` is the HTTP status of every answer (fetch resolves on any).
