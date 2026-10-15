@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-15T04:46:39Z",
+  "generatedAt": "2026-10-15T10:02:39Z",
   "auditGraph": {
     "nodes": [
       {
@@ -342,7 +342,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 25,
+        "openAuditIssues": 26,
         "lastMutation": {
           "timestamp": "2026-10-14T20:36:25Z",
           "commit": "3921acaacc2375d904a5684b62b6e413d6826b61",
@@ -1048,6 +1048,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
+          "rain.extrospection.deploy",
           "rain.factory",
           "rain.factory.deploy",
           "rain.math.fixedpoint",
@@ -1058,24 +1059,9 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.extrospection",
-            "pinned": "0.1.1",
-            "latest": "0.1.14"
-          },
-          {
             "repo": "rain.math.float",
-            "pinned": "0.2.22",
+            "pinned": "0.3.3",
             "latest": "0.3.6"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.2.4",
-            "latest": "0.2.5"
           }
         ]
       },
@@ -1148,6 +1134,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
+          "rain.extrospection.deploy",
           "rain.factory",
           "rain.factory.deploy",
           "rain.math.fixedpoint",
@@ -2250,9 +2237,16 @@
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection",
-        "stale": true,
-        "pinned": "0.1.1",
+        "stale": false,
+        "pinned": "0.1.14",
         "latest": "0.1.14"
+      },
+      {
+        "from": "st0x.deploy",
+        "to": "rain.extrospection.deploy",
+        "stale": false,
+        "pinned": "0.1.0",
+        "latest": "0.1.0"
       },
       {
         "from": "st0x.deploy",
@@ -2272,7 +2266,7 @@
         "from": "st0x.deploy",
         "to": "rain.math.float",
         "stale": true,
-        "pinned": "0.2.22",
+        "pinned": "0.3.3",
         "latest": "0.3.6"
       },
       {
@@ -2285,15 +2279,15 @@
       {
         "from": "st0x.deploy",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
-        "pinned": "0.1.1",
+        "stale": false,
+        "pinned": "0.1.4",
         "latest": "0.1.4"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.2.4",
+        "stale": false,
+        "pinned": "0.2.5",
         "latest": "0.2.5"
       },
       {
@@ -2620,7 +2614,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2657,7 +2651,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2805,7 +2799,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -11967,7 +11961,7 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 25,
+      "openAuditIssues": 26,
       "lastMutation": {
         "timestamp": "2026-10-14T20:36:25Z",
         "commit": "3921acaacc2375d904a5684b62b6e413d6826b61",
@@ -13838,7 +13832,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 107,
-      "commitsSinceAudit": 801,
+      "commitsSinceAudit": 819,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
