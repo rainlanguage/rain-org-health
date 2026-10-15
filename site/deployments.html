@@ -2686,7 +2686,7 @@ function renderDeployments(document, $, data, io) {
     const sub = el("div", "own-sub");
     sub.append("Every migration in ");
     if (repo && str(v.path)) {
-      sub.append(link("", `${repo}'s ${v.path}`, `https://github.com/${repo}/blob/main/${v.path}`));
+      sub.append(link("", `${repo}'s ${v.path}`, `https://github.com/${repo}/blob/HEAD/${v.path}`));
     } else {
       sub.append("the deploy repo's migrations file");
     }
@@ -2702,7 +2702,7 @@ function renderDeployments(document, $, data, io) {
     };
     const scriptNode = (script, cls) => {
       const name = script.replace(/^.*\//, "");
-      return repo ? link(cls, name, `https://github.com/${repo}/blob/main/${script}`) : el("span", cls, name);
+      return repo ? link(cls, name, `https://github.com/${repo}/blob/HEAD/${script}`) : el("span", cls, name);
     };
     for (const n of v.networks) {
       if (!n || typeof n !== "object") continue;

@@ -6896,7 +6896,7 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   const file = tags(collect(panel, "own-sub")[0], "a");
   assert(
     file.length === 1 && file[0].textContent === "acme/deploy's migrations.json" &&
-      file[0].href === "https://github.com/acme/deploy/blob/main/migrations.json",
+      file[0].href === "https://github.com/acme/deploy/blob/HEAD/migrations.json",
     "the source file is named and linked",
   );
   const heads = collect(panel, "tok-h3").map((h) => h.textContent);
@@ -6915,7 +6915,7 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   );
   assert(
     collect(rows[0], "own-role")[0].href ===
-      "https://github.com/acme/deploy/blob/main/script/history.s.sol",
+      "https://github.com/acme/deploy/blob/HEAD/script/history.s.sol",
     "script links to its source: " + collect(rows[0], "own-role")[0].href,
   );
   assert(
@@ -7021,7 +7021,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
   assert(
     wait.length === 2 && wait[0].textContent === "one.s.sol" &&
       wait[0].href ===
-        "https://github.com/acme/deploy/blob/main/script/one.s.sol",
+        "https://github.com/acme/deploy/blob/HEAD/script/one.s.sol",
     "a listed prerequisite is named by its script and linked",
   );
   assert(
