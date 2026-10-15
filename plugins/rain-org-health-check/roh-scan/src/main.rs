@@ -313,6 +313,7 @@ impl Chain {
 struct Session {
     chain: Chain,
     cursor: usize,
+    post: fn(&str, &str) -> Option<Vec<u8>>,
 }
 
 /// Rotates the endpoint each new session starts at, so different verdicts spread
@@ -329,38 +330,36 @@ fn rpc_session(chain: Chain) -> Session {
     Session {
         chain,
         cursor: RPC_CURSOR.fetch_add(1, Ordering::Relaxed),
+        post: curl_post,
     }
 }
 
-/// POST a JSON-RPC `payload` to Base, trying `BASE_RPCS` from `session` and
-/// falling through on failure. Returns the first successful body. A revert is
-/// HTTP 200 with an `error` body, so it returns from the first endpoint reached.
-/// `None` only if every endpoint fails.
+fn curl_post(rpc: &str, payload: &str) -> Option<Vec<u8>> {
+    let o = Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "-X",
+            "POST",
+            rpc,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            payload,
+        ])
+        .output()
+        .ok()?;
+    o.status.success().then_some(o.stdout)
+}
+
+/// POST a JSON-RPC `payload` to `session`'s chain, from its cursor, until an
+/// endpoint answers (`rpc::is_answer`). `None` if none does.
 fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
     let rpcs = session.chain.rpcs();
-    for i in 0..rpcs.len() {
-        let rpc = rpcs[(session.cursor + i) % rpcs.len()];
-        if let Ok(o) = Command::new("curl")
-            .args([
-                "-fsS",
-                "-m",
-                "25",
-                "-X",
-                "POST",
-                rpc,
-                "-H",
-                "content-type: application/json",
-                "-d",
-                payload,
-            ])
-            .output()
-        {
-            if o.status.success() {
-                return Some(o.stdout);
-            }
-        }
-    }
-    None
+    (0..rpcs.len())
+        .map(|i| rpcs[(session.cursor + i) % rpcs.len()])
+        .find_map(|rpc| (session.post)(rpc, payload).filter(|b| rpc::is_answer(b)))
 }
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
@@ -370,7 +369,7 @@ fn eth_call_payload(to: &str, data: &str) -> String {
     )
 }
 
-/// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
+/// A read-only `eth_call` within `session` — the `result` hex, or `None`
 /// on failure. The scan must survive an RPC hiccup, so callers degrade gracefully.
 fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
     curl_json(session, &eth_call_payload(to, data)).and_then(|b| rpc::result_hex(&b))
@@ -385,11 +384,7 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
 /// endpoints it runs against. Chunked, an unlucky chunk costs its own slots.
 ///
 /// 10, because `mainnet.base.org` caps a batch at exactly 10 and refuses an
-/// 11th with HTTP **200** carrying a single error object. `curl -fsS` treats
-/// 200 as success, so `curl_json` returns that body and never falls through to
-/// the endpoints that would have answered — the rejection is not a failover, it
-/// is the whole chunk lost. Measured against all nine configured endpoints; it
-/// is `BASE_RPCS[0]`, so roughly one scan in five began there.
+/// 11th with HTTP **200** carrying a single error object.
 ///
 /// Re-measured when HyperEVM, Robinhood Chain and BSC were added: each
 /// first-choice endpoint accepts 10 and 20 and refuses 50 —
@@ -3477,6 +3472,134 @@ mod tests {
                 "no endpoint set for pinned network {n}"
             );
         }
+    }
+
+    // ---- endpoint fallthrough ----
+
+    const ONE_RPC_REFUSAL: &str = r#"{"jsonrpc":"2.0","error":{"code":-32001,"message":"You've reached the usage limit for your current plan. To continue with higher limits and uninterrupted access, please upgrade here: https://www.1rpc.io/#pricing"},"id":null}"#;
+
+    thread_local! {
+        static ASKED: std::cell::RefCell<Vec<String>> = const { std::cell::RefCell::new(Vec::new()) };
+    }
+
+    fn asked(rpc: &str) {
+        ASKED.with(|a| a.borrow_mut().push(rpc.to_string()));
+    }
+
+    fn take_asked() -> Vec<String> {
+        ASKED.with(|a| a.take())
+    }
+
+    fn batch_answer(payload: &str) -> Option<Vec<u8>> {
+        let calls: Vec<serde_json::Value> = serde_json::from_str(payload).ok()?;
+        let replies: Vec<_> = calls
+            .iter()
+            .map(|c| json!({"jsonrpc": "2.0", "id": c["id"], "result": format!("0x{:02x}", c["id"].as_u64().unwrap())}))
+            .collect();
+        serde_json::to_vec(&replies).ok()
+    }
+
+    /// The endpoints as curl found them on 2026-10-15: drpc fails a batch over
+    /// three at HTTP 500, 1rpc.io refuses everything at HTTP 200.
+    fn as_measured(rpc: &str, payload: &str) -> Option<Vec<u8>> {
+        asked(rpc);
+        if rpc.contains("drpc.org") {
+            return None;
+        }
+        if rpc.contains("1rpc.io") {
+            return Some(ONE_RPC_REFUSAL.as_bytes().to_vec());
+        }
+        batch_answer(payload)
+    }
+
+    fn all_refuse(rpc: &str, _payload: &str) -> Option<Vec<u8>> {
+        asked(rpc);
+        Some(ONE_RPC_REFUSAL.as_bytes().to_vec())
+    }
+
+    fn all_revert(rpc: &str, _payload: &str) -> Option<Vec<u8>> {
+        asked(rpc);
+        Some(
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":3,"message":"execution reverted"}}"#
+                .to_vec(),
+        )
+    }
+
+    fn session_at(chain: Chain, host: &str, post: fn(&str, &str) -> Option<Vec<u8>>) -> Session {
+        let cursor = chain.rpcs().iter().position(|r| r.contains(host)).unwrap();
+        Session {
+            chain,
+            cursor,
+            post,
+        }
+    }
+
+    fn calls(n: usize) -> Vec<(String, String)> {
+        (0..n)
+            .map(|_| {
+                (
+                    "0xc89F95eC7e626CFBef37a1F502A69BaF2022F8A8".to_string(),
+                    rpc::owner_calldata(),
+                )
+            })
+            .collect()
+    }
+
+    #[test]
+    fn a_refusal_under_http_200_falls_through_to_the_next_endpoint() {
+        for (chain, answerer) in [
+            (Chain::Ethereum, "https://rpc.mevblocker.io"),
+            (Chain::Bsc, "https://bsc-dataseed1.binance.org"),
+        ] {
+            take_asked();
+            let got = eth_call_batch(session_at(chain, "1rpc.io", as_measured), &calls(3));
+            assert_eq!(
+                got,
+                vec![
+                    Some("0x00".into()),
+                    Some("0x01".into()),
+                    Some("0x02".into())
+                ],
+                "{chain:?}"
+            );
+            let walked = take_asked();
+            assert!(walked[0].contains("1rpc.io"), "{chain:?} {walked:?}");
+            assert_eq!(
+                walked.last().map(String::as_str),
+                Some(answerer),
+                "{chain:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn every_endpoint_refusing_leaves_the_read_unknown() {
+        for chain in [Chain::Base, Chain::Ethereum, Chain::Bsc] {
+            let s = session_at(chain, "1rpc.io", all_refuse);
+            take_asked();
+            assert_eq!(eth_call_batch(s, &calls(2)), vec![None, None], "{chain:?}");
+            let mut walked = take_asked();
+            assert_eq!(walked.len(), chain.rpcs().len(), "{chain:?}");
+            walked.rotate_right(s.cursor);
+            assert_eq!(walked, chain.rpcs(), "{chain:?}");
+            assert_eq!(eth_call(s, "0x00", "0x"), None, "{chain:?}");
+            assert_eq!(
+                supports_interface(s, "0x00", [0x01, 0xff, 0xc9, 0xa7]),
+                rpc::CallClass::Unknown,
+                "{chain:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn a_revert_is_an_answer_from_the_first_endpoint() {
+        let s = session_at(Chain::Base, "mainnet.base.org", all_revert);
+        take_asked();
+        assert_eq!(
+            supports_interface(s, "0x00", [0x01, 0xff, 0xc9, 0xa7]),
+            rpc::CallClass::Reverted
+        );
+        assert_eq!(take_asked(), vec!["https://mainnet.base.org".to_string()]);
     }
 
     /// The names are the deploy repo's lowercased constant suffixes. A prettier
