@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-15T15:06:14Z",
+  "generatedAt": "2026-10-15T19:13:33Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2512,11 +2512,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 12,
+        "granted": 13,
         "missing": 0,
-        "unknown": 1,
+        "unknown": 0,
         "total": 13,
-        "state": "partial",
+        "state": "live",
         "safeKept": []
       },
       {
@@ -2960,7 +2960,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -10609,12 +10609,12 @@
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
           "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
           "ownerLabel": "timelock",
-          "implementation": null,
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
