@@ -1,50 +1,18 @@
-//! Reads st0x.deploy's owner / privileged-address constants so the Deployments
-//! page can enumerate who controls production. Pure parsing + assembly live here
-//! and are unit-tested; the network fetch (`gh_file`) is in main.rs.
-//!
-//! The addresses are the volatile fact and come from the repo (so the dashboard
-//! tracks the source of truth); the role labels, grouping, and "what it controls"
-//! notes are the stable curation and live here. Each address is read from the
-//! file that declares it as a LITERAL — never from an aliasing re-export — so
-//! parsing never has to resolve `= OtherLib.CONST;`.
-//!
-//! `build_owners` covers the named pins — the Safes, the signers, the authoriser
-//! clones. `build_grants` covers the `(role, grantee)` map: who holds DEPOSIT /
-//! WITHDRAW / CERTIFY on those authorisers, and on which chains it is live. The
-//! second is derived END TO END — grantees, roles and chains all read out of the
-//! deploy repo — because the thing it reports on is a set that grows, and a
-//! curated list of hot keys is only ever as complete as somebody's memory.
+//! The Deployments page's owners and role-grant views, assembled from the
+//! deploy repo's `privileged-addresses.json` and `ideal-roles.json`. Pure
+//! assembly lives here and is unit-tested; the fetches are in main.rs.
 
-use regex::Regex;
+use crate::idealroles::IdealChain;
+use crate::privileged::PrivilegedAddresses;
 use serde_json::json;
 
-/// Extract `[visibility] constant NAME = <value>;` and return the 20-byte hex
-/// literal exactly as written (EIP-55 checksum preserved). Handles both the
-/// `address(0x…)`-wrapped and bare `0x…` forms. Returns `None` for an aliased RHS
-/// (`= OtherLib.CONST;`) or a missing constant.
-///
-/// The `\b…\b` around the name stops a prefix match: `STOX_TOKEN_OWNER_SAFE` does
-/// not match inside `STOX_TOKEN_OWNER_SAFE_ETHEREUM` (no word boundary before the
-/// `_`). The trailing non-hex char stops a 40-of-64 match against a `bytes32`.
 pub fn parse_address_constant(src: &str, name: &str) -> Option<String> {
     let pattern = format!(
         r"\b{}\b\s*=\s*(?:address\(\s*)?(0x[0-9a-fA-F]{{40}})[^0-9a-fA-F]",
         regex::escape(name),
     );
-    let re = Regex::new(&pattern).ok()?;
-    re.captures(src)
-        .and_then(|c| c.get(1))
-        .map(|m| m.as_str().to_string())
-}
-
-/// Extract a `uint256 [visibility] constant NAME = <n>;` integer. Used for the
-/// Safe signature threshold.
-pub fn parse_uint_constant(src: &str, name: &str) -> Option<u64> {
-    let pattern = format!(r"\b{}\b\s*=\s*(\d+)", regex::escape(name));
-    let re = Regex::new(&pattern).ok()?;
-    re.captures(src)
-        .and_then(|c| c.get(1))
-        .and_then(|m| m.as_str().parse().ok())
+    let re = regex::Regex::new(&pattern).ok()?;
+    re.captures(src).and_then(|c| c.get(1)).map(|m| m.as_str().to_string())
 }
 
 /// On-chain readback of a Safe, for the declared-vs-actual provenance view. Each
@@ -77,16 +45,6 @@ fn entry(
     })
 }
 
-/// An address constant that resolved to the zero address — a pin declared but
-/// not yet hydrated. Distinct from `None` (the constant is absent entirely).
-///
-/// This is a fact about the SOURCE, not the chain. With no address there is
-/// nothing to look up, so an unhydrated pin cannot imply the contract is
-/// undeployed — it frequently is deployed, and the pin is simply behind.
-fn is_unhydrated(pin: Option<&String>) -> bool {
-    pin.is_some_and(|a| a.trim_start_matches("0x").chars().all(|c| c == '0'))
-}
-
 /// Whether an authoriser pin is the one production vaults actually delegate to.
 ///
 /// The two Base clones swap roles over the course of the V4 migration, so
@@ -109,239 +67,6 @@ pub fn authoriser_status(
     }
 }
 
-/// The st0x.deploy library sources the owners document is assembled from.
-/// Grouped so adding a source is a field, not another positional argument in a
-/// list where `&str`s are already indistinguishable at the call site.
-pub struct OwnerSources<'a> {
-    /// `src/lib/LibSafeInvariants.sol` — the Safes, signers, threshold.
-    pub safe_lib: &'a str,
-    /// `src/lib/LibAuthoriserInvariants.sol` — authoriser + grantees.
-    pub auth_lib: &'a str,
-    /// `src/generated/LibProdDeployV4.sol` — deploy EOA, V4 clones.
-    pub v4_lib: &'a str,
-    /// `src/lib/LibProdDeployV2BaseOverrides.sol` — bricked V2 beacons.
-    pub overrides: &'a str,
-}
-
-/// Assemble the `deploymentOwners` document from the st0x.deploy library
-/// sources. Returns `None` when the anchor (the Base token-owner Safe) can't be
-/// resolved — i.e. the repo was unreachable or the constant moved — so the page
-/// shows an honest "unavailable" state instead of a table of nulls.
-///
-/// `live_authoriser` is the `authorizer()` a production vault actually returns;
-/// `None` when that read failed, which leaves every clone's status `unknown`
-/// rather than falling back to a literal.
-pub fn build_owners(
-    org: &str,
-    repo: &str,
-    src: &OwnerSources,
-    onchain: Option<&OnChainSafe>,
-    live_authoriser: Option<&str>,
-) -> Option<serde_json::Value> {
-    let (safe_lib, auth_lib, v4_lib, overrides) =
-        (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
-    let addr = parse_address_constant;
-
-    // Anchor: without the Base Safe there is nothing meaningful to show.
-    let base_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?;
-    let eth_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
-    let threshold = parse_uint_constant(safe_lib, "STOX_TOKEN_OWNER_SAFE_THRESHOLD").unwrap_or(3);
-
-    // The live owner set (lowercased — getOwners returns unchecksummed) for the
-    // declared-vs-actual comparison, or None when the RPC didn't answer.
-    let onchain_owners: Option<Vec<String>> = onchain
-        .and_then(|o| o.owners.as_ref())
-        .map(|v| v.iter().map(|a| a.to_lowercase()).collect());
-
-    // Read the declared roster from the constants (walk _1, _2, … until an index
-    // is undefined, so the count tracks the actual Safe), and record for each
-    // whether it is present in the live getOwners() set.
-    let mut signers: Vec<serde_json::Value> = Vec::new();
-    let mut declared_lower: Vec<String> = Vec::new();
-    for i in 1..=64 {
-        let Some(a) = addr(safe_lib, &format!("STOX_TOKEN_OWNER_SAFE_OWNER_{i}")) else {
-            break;
-        };
-        let al = a.to_lowercase();
-        let on_chain = match &onchain_owners {
-            None => "unverified",
-            Some(set) if set.contains(&al) => "match",
-            Some(_) => "missing",
-        };
-        declared_lower.push(al);
-        signers.push(json!({
-            "role": format!("Signer {i}"), "address": a, "network": "",
-            "status": "active", "note": "", "onChain": on_chain,
-        }));
-    }
-    let signer_count = signers.len();
-
-    // Any live owner NOT in the declared set is unexpected — surface the drift
-    // rather than hide it.
-    if let Some(set) = &onchain_owners {
-        for oc in set.iter().filter(|oc| !declared_lower.contains(oc)) {
-            signers.push(json!({
-                "role": "Unexpected on-chain owner", "address": oc, "network": "base",
-                "status": "extra", "onChain": "extra",
-                "note": "present in the live Safe getOwners() but not in the declared constants",
-            }));
-        }
-    }
-
-    // Provenance verdict for the roster + threshold: the declared set matches the
-    // live set iff they are the same size and every declared owner is on-chain.
-    let verification = onchain.map(|o| {
-        let signer_match = onchain_owners
-            .as_ref()
-            .map(|set| set.len() == signer_count && declared_lower.iter().all(|d| set.contains(d)));
-        let threshold_match = o.threshold.map(|t| t == threshold);
-        // The verdict needs BOTH calls: a threshold mismatch — or a threshold RPC
-        // that didn't answer — must not read as verified. So `reachable` means both
-        // answered, and `match` requires the roster AND the threshold to agree.
-        let reachable = signer_match.is_some() && threshold_match.is_some();
-        json!({
-            "reachable": reachable,
-            "network": o.network,
-            "safe": o.safe,
-            "rpcHost": o.rpc_host,
-            "onChainCount": o.owners.as_ref().map(|v| v.len()),
-            "match": signer_match
-                .zip(threshold_match)
-                .map(|(owners, thr)| owners && thr),
-            "threshold": {
-                "declared": threshold,
-                "onChain": o.threshold,
-                "match": threshold_match,
-            },
-        })
-    });
-
-    let safe = json!({
-        "id": "safe",
-        "title": "Upgrade authority — token-owner Safe",
-        "note": format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role."),
-        "entries": [
-            entry("Base Safe", Some(base_safe), "base", "active", "beacon owner + authoriser admin"),
-            entry("Ethereum Safe", eth_safe, "ethereum", "active", "same policy, per-chain address"),
-        ],
-    });
-
-    let signers_group = json!({
-        "id": "signers",
-        "title": format!("Safe signers ({threshold}-of-{signer_count})"),
-        "note": "Declared in the st0x.deploy constants and checked against the live Safe getOwners() on Base.",
-        "verification": verification,
-        "entries": signers,
-    });
-
-    // Which clone is live is READ FROM THE CHAIN, not asserted here: the two
-    // Base clones trade places during the V4 migration, and a hardcoded
-    // active/pending pair goes stale the moment the swap lands — while the
-    // token rows on the same page keep reporting the truth from `authorizer()`.
-    let v3_clone = addr(auth_lib, "STOX_PROD_AUTHORISER");
-    let v4_clone = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
-    let v4_clone_ethereum = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM");
-    let live_note = match live_authoriser {
-        Some(_) => "Which clone is live is read from a production vault's authorizer() on Base.",
-        None => "The live authorizer() read failed, so no clone is marked active — status unknown, not assumed.",
-    };
-    let authoriser = json!({
-        "id": "authoriser",
-        "title": "Operational access — authoriser",
-        "note": format!("Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. {live_note}"),
-        "entries": [
-            entry("V3-era authoriser clone", v3_clone.clone(), "base",
-                authoriser_status(v3_clone.as_ref(), live_authoriser, "migrated"),
-                "the pre-V4 authorizer() target"),
-            entry("Authoriser implementation", addr(auth_lib, "STOX_PROD_AUTHORISER_IMPL"), "base", "active", "implementation behind the clone"),
-            entry("V4 authoriser clone", v4_clone.clone(), "base",
-                authoriser_status(v4_clone.as_ref(), live_authoriser, "pending"),
-                "the V4 upgrade rewires every vault onto this"),
-            // Ethereum's clone is a nonce-based CloneFactory deploy, so its
-            // address cannot be known ahead of the broadcast. The row is
-            // rendered either way: an absent chain reads as "we do not deploy
-            // there", which is the opposite of what an unhydrated pin means.
-            entry("V4 authoriser clone", v4_clone_ethereum.clone(), "ethereum",
-                if v4_clone_ethereum.is_none() { "unknown" }
-                else if is_unhydrated(v4_clone_ethereum.as_ref()) { "pending" }
-                else { "active" },
-                if is_unhydrated(v4_clone_ethereum.as_ref()) { "pin not yet hydrated — this says nothing about whether the clone exists" }
-                else { "the Ethereum bootstrap's authoriser clone" }),
-            // The grantees that hold roles ON these authorisers are NOT listed
-            // here. They used to be — one hand-written row naming one service
-            // constant — and that row could only ever describe the grantee
-            // somebody remembered to type. They are derived from the pinned
-            // grant map instead; see `build_grants`.
-        ],
-    });
-
-    let historical = json!({
-        "id": "historical",
-        "title": "Historical & bricked",
-        "note": "Defined in the constants but not live control of production.",
-        "entries": [
-            entry("Deploy-time initial owner", addr(v4_lib, "BEACON_INITIAL_OWNER"), "", "migrated", "held the beacons at deploy; ownership since migrated to the Safe"),
-            entry("V2 receipt beacon owner", addr(overrides, "RECEIPT_BEACON_OWNER"), "base", "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
-            entry("V2 vault beacon owner", addr(overrides, "VAULT_BEACON_OWNER"), "base", "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
-        ],
-    });
-
-    Some(json!({
-        "repo": repo,
-        "org": org,
-        "threshold": threshold,
-        "signerCount": signer_count,
-        "groups": [safe, signers_group, authoriser, historical],
-    }))
-}
-
-// ---------------------------------------------------------------------------
-// Authoriser role grants (#143)
-//
-// Who can UPGRADE production is the Safe, and the page already carried it. Who
-// can MOVE VALUE is a different set — service EOAs holding DEPOSIT / WITHDRAW /
-// CERTIFY on the authoriser — and it was absent.
-//
-// It is DERIVED, never transcribed. `LibAuthoriserInvariants.expectedGrants` is
-// the one place the `(role, grantee)` pairs live: the same map the on-chain
-// assertions iterate. So this reads that map and reports exactly what it says.
-// A grantee added there appears here, and one removed disappears, with no change
-// to this file — which is the only version of the feature worth having, because
-// the whole hazard is a hot key nobody remembered to add to a list.
-// ---------------------------------------------------------------------------
-
-/// One `(role, grantee)` pair exactly as the pinned map writes it: the role NAME
-/// from `keccak256("…")`, and the grantee IDENTIFIER — either a constant name or
-/// the function's own per-chain Safe parameter.
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct GrantPin {
-    pub role: String,
-    pub grantee: String,
-}
-
-/// The pinned grant map, parsed out of the Safe-parametric `expectedGrants`.
-#[derive(Debug, PartialEq, Eq, Clone)]
-pub struct GrantMap {
-    /// The Safe parameter's name. A grantee slot filled by it is THAT chain's
-    /// token-owner Safe, not a constant — which is how one map describes every
-    /// chain.
-    pub safe_param: String,
-    /// The admin-holder parameter's name, when the map takes one. A grantee slot
-    /// filled by it is THAT chain's admin holder — the Safe before the
-    /// governance-timelock migration and the timelock after it — so the one map
-    /// expresses both states and the chain says which is live.
-    ///
-    /// `None` for a map that takes only the Safe, which is every map written
-    /// before the migration was in prospect.
-    pub admin_param: Option<String>,
-    /// Source order, which is the order the map is read in and the order the
-    /// page lists grantees in.
-    pub grants: Vec<GrantPin>,
-    /// The length the source declares (`new RoleGrant[](13)`). Kept so a map
-    /// whose entries did not all parse reports a shortfall instead of quietly
-    /// looking smaller than it is.
-    pub declared: Option<usize>,
-}
 
 /// A role that ADMINS another role rather than performing an action.
 ///
@@ -353,130 +78,6 @@ pub fn is_admin_role(role: &str) -> bool {
     role.ends_with("_ADMIN")
 }
 
-///
-/// Returning all of them rather than the first match, because a first match is
-/// only the right one when a single overload can match. Solidity lets a library
-/// delegate between overloads of one name, and a delegating body is a match
-/// with nothing in it, so a caller that has to pick needs the whole set.
-/// @return The matching overloads.
-fn overload_bodies<'a>(src: &'a str, name: &str, sig_contains: &str) -> Vec<(&'a str, &'a str)> {
-    let mut out = Vec::new();
-    let mut from = 0usize;
-    let needle = format!("function {name}");
-    while let Some(rel) = src[from..].find(&needle) {
-        let at = rel + from;
-        // The name has to END here. `find` is a prefix match, so looking for
-        // `expectedGrants` also finds `expectedGrantsForSomethingElse` — a
-        // different function whose params and body look just as parseable. The
-        // caller picks the body with the most pairs, so a prefix-named
-        // function with more of them would be reported as this one's map.
-        let after = at + needle.len();
-        let is_name_end = src[after..]
-            .chars()
-            .next()
-            .is_none_or(|c| !(c.is_alphanumeric() || c == '_'));
-        if !is_name_end {
-            from = after;
-            continue;
-        }
-        let Some(open_paren) = src[at..].find('(').map(|i| i + at) else {
-            break;
-        };
-        let Some(close_paren) = src[open_paren..].find(')').map(|i| i + open_paren) else {
-            break;
-        };
-        let params = &src[open_paren + 1..close_paren];
-        let Some(open) = src[close_paren..].find('{').map(|i| i + close_paren) else {
-            break;
-        };
-        let mut depth = 0usize;
-        let mut end = None;
-        for (i, c) in src[open..].char_indices() {
-            match c {
-                '{' => depth += 1,
-                '}' => {
-                    depth -= 1;
-                    if depth == 0 {
-                        end = Some(open + i);
-                        break;
-                    }
-                }
-                _ => {}
-            }
-        }
-        let Some(end) = end else { break };
-        if params.contains(sig_contains) {
-            out.push((params, &src[open + 1..end]));
-        }
-        from = end;
-    }
-    out
-}
-
-/// Parse the Safe-parametric `expectedGrants(address …)` map.
-///
-/// The no-arg overload just delegates to this one with Base's Safe, so the
-/// parametric body is where every `(role, grantee)` pair actually is — and its
-/// Safe parameter is what makes the same map describe every chain.
-pub fn parse_expected_grants(src: &str) -> Option<GrantMap> {
-    // The overload carrying the pairs, not merely the first one taking an
-    // address. The one-address overload delegates to the two-address one —
-    // `grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);` — so stopping
-    // at the first match reads a body with no `RoleGrant` in it, and an empty
-    // map is indistinguishable from an unparseable one: `deploymentGrants`
-    // serialises as `null` and the page shows no grant at all. Whichever
-    // overload holds the most pairs is the map; a delegating one holds none.
-    let (params, body) = overload_bodies(src, "expectedGrants", "address")
-        .into_iter()
-        .max_by_key(|(_, body)| role_grant_pairs(body).len())
-        .filter(|(_, body)| !role_grant_pairs(body).is_empty())?;
-    let address_params: Vec<String> =
-        Regex::new(r"address\s+(?:memory\s+|calldata\s+)?([A-Za-z_][A-Za-z0-9_]*)")
-            .ok()?
-            .captures_iter(params)
-            .filter_map(|c| c.get(1).map(|m| m.as_str().to_string()))
-            .collect();
-    let safe_param = address_params.first().cloned()?;
-    // Positional, because that is what the signature gives: the Safe fills the
-    // operational slots and the second address is the admin holder. Naming it
-    // here instead would be a second place for the convention to live.
-    let admin_param = address_params.get(1).cloned();
-    let declared = Regex::new(r"new\s+RoleGrant\[\]\s*\(\s*(\d+)\s*\)")
-        .ok()
-        .and_then(|re| re.captures(body))
-        .and_then(|c| c.get(1))
-        .and_then(|m| m.as_str().parse().ok());
-    let grants = role_grant_pairs(body);
-    if grants.is_empty() {
-        return None;
-    }
-    Some(GrantMap {
-        safe_param,
-        admin_param,
-        grants,
-        declared,
-    })
-}
-
-/// Every `RoleGrant(keccak256("ROLE"), grantee)` in `body`, in source order.
-///
-/// Split out of `parse_expected_grants` so the overload search can ask how many
-/// pairs a body holds before committing to it. A body with none is a delegating
-/// overload rather than a map.
-/// @return The pairs.
-fn role_grant_pairs(body: &str) -> Vec<GrantPin> {
-    let Ok(pair) = Regex::new(
-        r#"RoleGrant\(\s*keccak256\(\s*"([A-Za-z0-9_]+)"\s*\)\s*,\s*([A-Za-z_][A-Za-z0-9_.]*)\s*\)"#,
-    ) else {
-        return Vec::new();
-    };
-    pair.captures_iter(body)
-        .map(|c| GrantPin {
-            role: c[1].to_string(),
-            grantee: c[2].to_string(),
-        })
-        .collect()
-}
 
 /// The chain a bare (unsuffixed) per-chain pin belongs to: the deploy repo
 /// writes the home chain's pin as `NAME` and every other chain's as
@@ -491,6 +92,7 @@ pub const REFERENCE_NETWORK: &str = "base";
 /// pinned in the source but not yet reachable from here still appears — with its
 /// pins and an unread status — because a chain that vanishes reads as "we do not
 /// deploy there", which is the opposite of "its rollout has not reached us yet".
+#[derive(Clone)]
 pub struct ChainPin {
     pub network: String,
     pub authoriser: Option<String>,
@@ -505,61 +107,6 @@ pub struct ChainPin {
     /// one it has.
     pub admin_holder: Option<String>,
     pub rpc_host: Option<String>,
-}
-
-/// Read the chains from the generated deploy lib's authoriser-clone pins:
-/// `STOX_PROD_AUTHORISER_V4_CLONE` is the home chain (Base) and each
-/// `…_<CHAIN>` suffix is another, paired with that chain's
-/// `STOX_TOKEN_OWNER_SAFE[_<CHAIN>]`. Derived for the same reason the grantees
-/// are: the rollout this page reports on is adding chains, and a hand-listed
-/// pair of chains would stop being the truth the moment one lands.
-///
-/// An unhydrated (all-zero) authoriser pin yields `None` — there is nothing to
-/// ask a chain about — while the chain itself still appears.
-pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str, timelock_lib: &str) -> Vec<ChainPin> {
-    // The `[^0-9a-fA-F]` tail is what keeps a bytes32 `…_CODEHASH` out: 64 hex
-    // chars cannot end after 40.
-    let Ok(re) = Regex::new(
-        r"\bSTOX_PROD_AUTHORISER_V4_CLONE(_[A-Z0-9_]+)?\s*=\s*(?:address\(\s*)?(0x[0-9a-fA-F]{40})[^0-9a-fA-F]",
-    ) else {
-        return Vec::new();
-    };
-    let mut out: Vec<ChainPin> = Vec::new();
-    for c in re.captures_iter(v4_lib) {
-        let suffix = c.get(1).map(|m| m.as_str().to_string());
-        let network = match &suffix {
-            None => REFERENCE_NETWORK.to_string(),
-            Some(s) => s.trim_start_matches('_').to_lowercase(),
-        };
-        if out.iter().any(|p| p.network == network) {
-            continue;
-        }
-        let authoriser = Some(c[2].to_string()).filter(|a| !is_unhydrated(Some(a)));
-        let safe_const = match &suffix {
-            None => "STOX_TOKEN_OWNER_SAFE".to_string(),
-            Some(s) => format!("STOX_TOKEN_OWNER_SAFE{s}"),
-        };
-        // Same suffix convention as the Safe and the authoriser clone, so a
-        // chain added to one is a chain added to all three without an edit here.
-        let timelock_const = match &suffix {
-            None => "STOX_GOVERNANCE_TIMELOCK".to_string(),
-            Some(s) => format!("STOX_GOVERNANCE_TIMELOCK{s}"),
-        };
-        out.push(ChainPin {
-            network,
-            authoriser,
-            // Unhydrated-filtered like the timelock beside it. A Safe declared
-            // `address(0)` — the placeholder state `is_unhydrated` exists to
-            // model — would otherwise match any vault whose `owner()` answers
-            // the zero address, labelling a renounced or bricked vault as "on
-            // the Safe, not moved yet". That is the dangerous direction.
-            safe: parse_address_constant(safe_lib, &safe_const).filter(|a| !is_unhydrated(Some(a))),
-            admin_holder: parse_address_constant(timelock_lib, &timelock_const)
-                .filter(|a| !is_unhydrated(Some(a))),
-            rpc_host: None,
-        });
-    }
-    out
 }
 
 /// Asks one chain for every vault's `owner()`, answering one slot per vault in
@@ -584,8 +131,8 @@ pub enum VaultOwner {
     Other,
     /// This chain pins no timelock, so there is nothing to recognise a moved
     /// vault by. Held apart from `Other` because they are different claims: a
-    /// chain that has an authoriser clone but no `STOX_GOVERNANCE_TIMELOCK`
-    /// constant yet is mid-rollout, and calling that the same red as an owner
+    /// chain that publishes an authoriser but no timelock yet is mid-rollout,
+    /// and calling that the same red as an owner
     /// nobody pinned would report the rollout as a fault — the distinction the
     /// grant rows already make, for the same reason.
     Unpinned,
@@ -737,175 +284,265 @@ fn chain_state(granted: usize, missing: usize, unknown: usize) -> &'static str {
     }
 }
 
-/// Assemble the authoriser role-grant document: every `(role, grantee)` pair the
-/// deploy repo pins, grouped by grantee, checked per chain.
+
+/// The owners document when `privileged-addresses.json` could not be read.
+pub fn owners_unavailable(org: &str, repo: &str, why: &str) -> serde_json::Value {
+    json!({ "org": org, "repo": repo, "unavailable": why })
+}
+
+/// `live_authorisers` is `(network, authorizer())` of each chain's first
+/// receipt vault; `None` where that read failed. `name_of(address)` is the
+/// deploy repo's own name for an address on the reference chain.
+pub fn build_owners(
+    org: &str,
+    repo: &str,
+    facts: &PrivilegedAddresses,
+    onchain: Option<&OnChainSafe>,
+    live_authorisers: &[(String, Option<String>)],
+    name_of: &dyn Fn(&str) -> Option<String>,
+) -> serde_json::Value {
+    let threshold = facts.threshold;
+    let onchain_owners: Option<Vec<String>> = onchain
+        .and_then(|o| o.owners.as_ref())
+        .map(|v| v.iter().map(|a| a.to_lowercase()).collect());
+
+    let mut signers: Vec<serde_json::Value> = Vec::new();
+    let declared_lower: Vec<String> = facts.owners.iter().map(|a| a.to_lowercase()).collect();
+    for (i, (a, al)) in facts.owners.iter().zip(&declared_lower).enumerate() {
+        let on_chain = match &onchain_owners {
+            None => "unverified",
+            Some(set) if set.contains(al) => "match",
+            Some(_) => "missing",
+        };
+        signers.push(json!({
+            "role": name_of(a).unwrap_or_else(|| format!("Signer {}", i + 1)),
+            "address": a, "network": "", "status": "active", "note": "", "onChain": on_chain,
+        }));
+    }
+    let signer_count = signers.len();
+    if let Some(set) = &onchain_owners {
+        for oc in set.iter().filter(|oc| !declared_lower.contains(oc)) {
+            signers.push(json!({
+                "role": "Unexpected on-chain owner", "address": oc,
+                "network": onchain.map(|o| o.network.as_str()).unwrap_or(""),
+                "status": "extra", "onChain": "extra",
+                "note": "present in the live Safe getOwners() but not in privileged-addresses.json",
+            }));
+        }
+    }
+
+    // Both calls must answer: a threshold mismatch or an unanswered threshold
+    // read must not read as verified.
+    let verification = onchain.map(|o| {
+        let signer_match = onchain_owners
+            .as_ref()
+            .map(|set| set.len() == signer_count && declared_lower.iter().all(|d| set.contains(d)));
+        let threshold_match = o.threshold.map(|t| t == threshold);
+        json!({
+            "reachable": signer_match.is_some() && threshold_match.is_some(),
+            "network": o.network,
+            "safe": o.safe,
+            "rpcHost": o.rpc_host,
+            "onChainCount": o.owners.as_ref().map(|v| v.len()),
+            "match": signer_match.zip(threshold_match).map(|(owners, thr)| owners && thr),
+            "threshold": { "declared": threshold, "onChain": o.threshold, "match": threshold_match },
+        })
+    });
+
+    let safe = json!({
+        "id": "safe",
+        "title": "Upgrade authority — token-owner Safe",
+        "note": format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Owner of the production beacons and holder of the authoriser admin roles until the governance timelock takes them."),
+        "entries": facts.chains.iter()
+            .map(|c| entry("Token-owner Safe", c.safe.clone(), &c.network, "active", "beacon owner + authoriser admin"))
+            .collect::<Vec<_>>(),
+    });
+
+    let verify_network = onchain.map(|o| o.network.as_str()).unwrap_or(REFERENCE_NETWORK);
+    let signers_group = json!({
+        "id": "signers",
+        "title": format!("Safe signers ({threshold}-of-{signer_count})"),
+        "note": format!("Declared in privileged-addresses.json and checked against the live Safe getOwners() on {verify_network}."),
+        "verification": verification,
+        "entries": signers,
+    });
+
+    let live_of = |network: &str| {
+        live_authorisers
+            .iter()
+            .find(|(n, _)| n == network)
+            .and_then(|(_, l)| l.as_deref())
+    };
+    let mut auth_entries: Vec<serde_json::Value> = facts
+        .chains
+        .iter()
+        .map(|c| {
+            entry(
+                "Authoriser",
+                c.authoriser.clone(),
+                &c.network,
+                authoriser_status(c.authoriser.as_ref(), live_of(&c.network), "pending"),
+                "the authorizer() production receipt vaults should point at",
+            )
+        })
+        .collect();
+    auth_entries.push(entry(
+        "Authoriser implementation",
+        facts.authoriser_implementation.clone(),
+        "",
+        "active",
+        "implementation behind the clones",
+    ));
+    let authoriser = json!({
+        "id": "authoriser",
+        "title": "Operational access — authoriser",
+        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to its chain's authoriser. Whether it is live is read from that chain's first receipt vault's authorizer(); an unread chain is unknown, not assumed.",
+        "entries": auth_entries,
+    });
+
+    let historical = json!({
+        "id": "historical",
+        "title": "Historical & bricked",
+        "note": "Published in privileged-addresses.json but not live control of production.",
+        "entries": [
+            entry("Deploy-time initial owner", facts.beacon_owner_initial.clone(), "", "migrated", "held the beacons at deploy; ownership since migrated to the Safe"),
+            entry("V2 receipt beacon owner", facts.beacon_owner_v2_receipt.clone(), REFERENCE_NETWORK, "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
+            entry("V2 vault beacon owner", facts.beacon_owner_v2_vault.clone(), REFERENCE_NETWORK, "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
+        ],
+    });
+
+    json!({
+        "repo": repo,
+        "org": org,
+        "threshold": threshold,
+        "signerCount": signer_count,
+        "groups": [safe, signers_group, authoriser, historical],
+    })
+}
+
+/// Every chain `privileged-addresses.json` publishes, with no RPC endpoint set.
+pub fn chain_pins(facts: &PrivilegedAddresses) -> Vec<ChainPin> {
+    facts
+        .chains
+        .iter()
+        .map(|c| ChainPin {
+            network: c.network.clone(),
+            authoriser: c.authoriser.clone(),
+            safe: c.safe.clone(),
+            admin_holder: c.timelock.clone(),
+            rpc_host: None,
+        })
+        .collect()
+}
+
+/// The authoriser role-grant document: every `(role, grantee)` pair
+/// `ideal-roles.json` expects on each chain's authoriser, grouped by grantee,
+/// checked per chain.
 ///
-/// `check(network, authoriser, role, grantee_address)` is the on-chain
-/// `hasRole` probe, injected so the assembly is testable without a network.
-/// It is only called where there IS something to ask — a chain with an
-/// authoriser pin, an endpoint, and a grantee whose address resolved.
-///
-/// `None` when the map cannot be read, so the page shows nothing rather than an
-/// empty table that would read as "no key holds these roles".
+/// `check(network, authoriser, role_id, grantee)` is the `hasRole` probe.
+/// `role_names` maps a role id to its name; `name_of(network, address)` names
+/// an address.
 pub fn build_grants(
     org: &str,
     repo: &str,
-    src: &OwnerSources,
+    ideal: &[IdealChain],
     chains: &[ChainPin],
+    role_names: &[(String, String)],
+    name_of: &dyn Fn(&str, &str) -> Option<String>,
     check: &dyn Fn(&str, &str, &str, &str) -> GrantOnChain,
-) -> Option<serde_json::Value> {
-    let map = parse_expected_grants(src.auth_lib)?;
-    // Grantee identifiers in first-appearance order — the order the map is
-    // written in, so the page's order is the source's order.
-    let mut idents: Vec<&str> = Vec::new();
-    for g in &map.grants {
-        if !idents.contains(&g.grantee.as_str()) {
-            idents.push(&g.grantee);
-        }
+) -> serde_json::Value {
+    let eq = |a: &Option<String>, b: &str| a.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(b));
+    struct Role {
+        id: String,
+        name: Option<String>,
+        chains: Vec<serde_json::Value>,
     }
-    // Per-chain tallies, accumulated as the rows are built so the banner counts
-    // the rows the page actually shows rather than a separately-derived figure.
+    struct Grantee {
+        kind: &'static str,
+        address: Option<String>,
+        ident: Option<String>,
+        roles: Vec<Role>,
+    }
+    let mut grantees: Vec<Grantee> = Vec::new();
     let mut tally: Vec<(usize, usize, usize)> = vec![(0, 0, 0); chains.len()];
-    // The admin roles the Safe was found still holding, per chain, deduped by
-    // role. Kept OUT of the tally above on purpose: that tally counts the
-    // (role, grantee) pairs the map declares, which is what the section's own
-    // sub-text promises the denominator is, and folding a second kind of
-    // expectation into it would make `15 of 15` mean something the page never
-    // says. Deduped because the page lists a role once however many grantees
-    // declare it — a count derived separately from the rows it describes is the
-    // thing this section refuses everywhere else.
     let mut safe_kept: Vec<Vec<String>> = vec![Vec::new(); chains.len()];
+    let mut expected_count = 0usize;
 
-    let mut grantees: Vec<serde_json::Value> = Vec::new();
-    for ident in &idents {
-        let is_safe = *ident == map.safe_param;
-        // The admin-holder slot is per chain like the Safe, not one address
-        // everywhere. It is a PARAMETER of the map, so `resolve_ident` cannot
-        // find it — there is no constant of that name to read — and without
-        // this its rows would carry no address and every `_ADMIN` role would
-        // report `unknown` on every chain.
-        let is_admin_holder = map.admin_param.as_deref() == Some(*ident);
-        // A constant grantee is one address on every chain; the Safe and
-        // admin-holder slots are that chain's own. All are read from the source,
-        // none is typed here.
-        let fixed = if is_safe || is_admin_holder {
-            None
-        } else {
-            resolve_ident(src, ident)
+    for (i, chain) in chains.iter().enumerate() {
+        let Some(expected) = chain
+            .authoriser
+            .as_deref()
+            .and_then(|auth| ideal.iter().find(|c| c.network == chain.network)?.contract(auth))
+            .map(|k| &k.expected)
+        else {
+            continue;
         };
-        let roles: Vec<&str> = {
-            let mut seen: Vec<&str> = Vec::new();
-            for g in map.grants.iter().filter(|g| g.grantee == **ident) {
-                if !seen.contains(&g.role.as_str()) {
-                    seen.push(&g.role);
-                }
-            }
-            seen
-        };
-        let mut role_rows: Vec<serde_json::Value> = Vec::new();
-        for role in &roles {
-            let mut per_chain: Vec<serde_json::Value> = Vec::new();
-            for (i, chain) in chains.iter().enumerate() {
-                let address = if is_safe {
-                    chain.safe.clone()
-                } else if is_admin_holder {
-                    chain.admin_holder.clone()
-                } else {
-                    fixed.clone()
-                };
-                let status = match (&chain.authoriser, &chain.rpc_host, &address) {
-                    (Some(auth), Some(_), Some(a)) => check(&chain.network, auth, role, a),
-                    _ => GrantOnChain::Unknown,
-                };
-                match status {
-                    GrantOnChain::Granted => tally[i].0 += 1,
-                    GrantOnChain::NotGranted => tally[i].1 += 1,
-                    GrantOnChain::Unknown => tally[i].2 += 1,
-                }
-                // For every admin row whose declared holder is not the Safe, ask
-                // whether the SAFE holds it — whatever the declared holder's own
-                // status came back as.
-                //
-                // Asked on a MISSING row it explains the gap: the declared map
-                // names the timelock, so a pre-migration chain reports every
-                // `_ADMIN` as missing and the page's answer to "who can grant
-                // and revoke" becomes nobody, anywhere, while the Safe holds all
-                // seven.
-                //
-                // Asked on a GRANTED row it catches the case the positive check
-                // structurally cannot see. A migration has two halves: the
-                // timelock is granted the role, and the Safe renounces it. If
-                // the grant lands and the renounce does not, every positive
-                // expectation is met and the Safe can still grant and revoke at
-                // will — the timelock is advisory. Restricting the probe to
-                // missing rows made that state render as "all expectations met".
-                //
-                // Still never asked about the Safe itself: that would be the
-                // same question twice.
-                let safe_holds = match (
-                    is_admin_role(role),
-                    is_safe,
-                    &chain.authoriser,
-                    &chain.rpc_host,
-                    &chain.safe,
-                ) {
-                    (true, false, Some(auth), Some(_), Some(safe)) => {
-                        match check(&chain.network, auth, role, safe) {
-                            GrantOnChain::Granted => Some(true),
-                            GrantOnChain::NotGranted => Some(false),
-                            GrantOnChain::Unknown => None,
-                        }
-                    }
-                    _ => None,
-                };
-                // A role the Safe was found still holding, recorded once per
-                // chain. `Some(false)` is the migrated end state and `None` is
-                // either an unreadable call or a chain with no Safe pinned at
-                // all — neither is a finding, and treating "there is no Safe"
-                // as an unmet expectation about a Safe would invent one.
-                if safe_holds == Some(true) && !safe_kept[i].iter().any(|r| r == role) {
-                    safe_kept[i].push((*role).to_string());
-                }
-                per_chain.push(json!({
-                    "network": chain.network,
-                    "address": address,
-                    "status": status.token(),
-                    "safeHolds": safe_holds,
-                }));
-            }
-            role_rows.push(json!({
-                "role": role,
-                // The id the chain actually stores and that a `grantRole` /
-                // `renounceRole` calldata carries. Published so a reviewer can
-                // match a bundle's 32 bytes to a named role without hashing it
-                // themselves.
-                "roleId": crate::rpc::role_id_hex(role),
-                "admin": is_admin_role(role),
-                "chains": per_chain,
-            }));
-        }
-        grantees.push(json!({
-            // The constant's own name, verbatim — it greps straight back to the
-            // line in the deploy repo that put this key on the page.
-            "ident": ident,
-            // Three kinds, not two. The admin holder is the governance
-            // timelock — the slowest, coldest principal in the system — and
-            // falling into the `constant` branch had the page describe it as a
-            // hot single signer, on the rows that say who can grant and
-            // revoke. That is the inversion of what the migration is for, and
-            // it reads as credible because the per-chain addresses are right.
-            "kind": if is_safe {
+        for e in expected {
+            expected_count += 1;
+            let kind = if eq(&chain.safe, &e.grantee) {
                 "safe"
-            } else if is_admin_holder {
+            } else if eq(&chain.admin_holder, &e.grantee) {
                 "admin-holder"
             } else {
                 "constant"
-            },
-            // null for the Safe: its address is per chain, and each row carries
-            // the one it was checked against.
-            "address": fixed,
-            "roles": role_rows,
-        }));
+            };
+            let fixed = (kind == "constant").then(|| e.grantee.clone());
+            let gi = match grantees.iter().position(|g| g.kind == kind && g.address == fixed) {
+                Some(gi) => gi,
+                None => {
+                    grantees.push(Grantee {
+                        kind,
+                        address: fixed,
+                        ident: name_of(&chain.network, &e.grantee),
+                        roles: Vec::new(),
+                    });
+                    grantees.len() - 1
+                }
+            };
+            let name = e.role_name.clone().or_else(|| {
+                role_names.iter().find(|(id, _)| id.eq_ignore_ascii_case(&e.role)).map(|(_, n)| n.clone())
+            });
+            let g = &mut grantees[gi];
+            let ri = match g.roles.iter().position(|r| r.id == e.role) {
+                Some(ri) => ri,
+                None => {
+                    g.roles.push(Role { id: e.role.clone(), name: name.clone(), chains: Vec::new() });
+                    g.roles.len() - 1
+                }
+            };
+            let status = match (&chain.authoriser, &chain.rpc_host) {
+                (Some(auth), Some(_)) => check(&chain.network, auth, &e.role, &e.grantee),
+                _ => GrantOnChain::Unknown,
+            };
+            match status {
+                GrantOnChain::Granted => tally[i].0 += 1,
+                GrantOnChain::NotGranted => tally[i].1 += 1,
+                GrantOnChain::Unknown => tally[i].2 += 1,
+            }
+            // An admin role expected on someone other than the Safe: does the
+            // Safe still hold it? Catches a grant that landed without its renounce.
+            let admin = name.as_deref().is_some_and(is_admin_role);
+            let safe_holds = match (admin, kind, &chain.authoriser, &chain.rpc_host, &chain.safe) {
+                (true, k, Some(auth), Some(_), Some(safe)) if k != "safe" => {
+                    match check(&chain.network, auth, &e.role, safe) {
+                        GrantOnChain::Granted => Some(true),
+                        GrantOnChain::NotGranted => Some(false),
+                        GrantOnChain::Unknown => None,
+                    }
+                }
+                _ => None,
+            };
+            let label = name.clone().unwrap_or_else(|| e.role.clone());
+            if safe_holds == Some(true) && !safe_kept[i].contains(&label) {
+                safe_kept[i].push(label);
+            }
+            g.roles[ri].chains.push(json!({
+                "network": chain.network,
+                "address": e.grantee,
+                "status": status.token(),
+                "safeHolds": safe_holds,
+            }));
+        }
     }
 
     let chain_docs: Vec<serde_json::Value> = chains
@@ -922,593 +559,285 @@ pub fn build_grants(
                 "missing": missing,
                 "unknown": unknown,
                 "total": granted + missing + unknown,
-                // `state` stays a verdict on the DECLARED grants. A chain whose
-                // Safe kept a role is reported by `safeKept`, which the page
-                // reads alongside this rather than instead of it — otherwise
-                // "nothing granted" would stop meaning the provisioning has not
-                // run the moment a renounce happened to be satisfied.
                 "state": chain_state(*granted, *missing, *unknown),
                 "safeKept": kept,
             })
         })
         .collect();
 
-    Some(json!({
+    json!({
         "org": org,
         "repo": repo,
-        "source": "src/lib/LibAuthoriserInvariants.sol",
-        // The overload actually read, not a fixed string. The page uses this as
-        // the link text into the deploy repo, and the map now comes from
-        // whichever overload holds the pairs — on a dashboard whose premise is
-        // "this is read, not written down", naming the wrong one is the one
-        // claim it cannot afford to get wrong.
-        "function": if map.admin_param.is_some() {
-            "expectedGrants(address,address)"
-        } else {
-            "expectedGrants(address)"
-        },
-        "pinnedCount": map.grants.len(),
-        "declaredCount": map.declared,
+        "source": crate::idealroles::PATH,
+        "pinnedCount": expected_count,
         "chains": chain_docs,
-        "grantees": grantees,
-    }))
+        "grantees": grantees.into_iter().map(|g| json!({
+            "ident": g.ident,
+            "kind": g.kind,
+            "address": g.address,
+            "roles": g.roles.into_iter().map(|r| json!({
+                "role": r.name.clone().unwrap_or_else(|| r.id.clone()),
+                "roleId": r.id,
+                "admin": r.name.as_deref().is_some_and(is_admin_role),
+                "chains": r.chains,
+            })).collect::<Vec<_>>(),
+        })).collect::<Vec<_>>(),
+    })
 }
 
-/// Resolve a grantee identifier to its address literal across the deploy repo's
-/// libraries, following at most one re-export hop (`X = OtherLib.Y;`). A grantee
-/// declared in one lib and aliased into the grant map's lib still resolves, so
-/// where the constant lives is not a thing this page depends on.
-fn resolve_ident(src: &OwnerSources, ident: &str) -> Option<String> {
-    let sources = [src.auth_lib, src.safe_lib, src.v4_lib, src.overrides];
-    if let Some(a) = sources
-        .iter()
-        .find_map(|s| parse_address_constant(s, ident))
-    {
-        return Some(a);
-    }
-    let alias = Regex::new(&format!(
-        r"\b{}\b\s*=\s*(?:[A-Za-z_][A-Za-z0-9_]*\.)?([A-Za-z_][A-Za-z0-9_]*)\s*;",
-        regex::escape(ident)
-    ))
-    .ok()?;
-    let target = sources
-        .iter()
-        .find_map(|s| alias.captures(s).and_then(|c| c.get(1)))
-        .map(|m| m.as_str().to_string())?;
-    sources
-        .iter()
-        .find_map(|s| parse_address_constant(s, &target))
+/// The grants document when `ideal-roles.json` could not be read.
+pub fn grants_unavailable(org: &str, repo: &str, why: &str) -> serde_json::Value {
+    json!({ "org": org, "repo": repo, "source": crate::idealroles::PATH, "unavailable": why })
 }
 
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::idealroles::{Contract, Expected};
+    use crate::privileged::tests::{doc, A, B};
 
-    // Representative fragments in the three RHS forms the real repo uses.
-    const SAFE_LIB: &str = r#"
-        library LibSafeInvariants {
-            address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;
-            uint256 internal constant STOX_TOKEN_OWNER_SAFE_THRESHOLD = 3;
-            address internal constant STOX_TOKEN_OWNER_SAFE_ETHEREUM = 0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_1 = 0x4746095B1Ea1A84446d34448f44e74D3d51f92F2;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x8D5901d8aE48101B59400235ad8614A2e0510466;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_4 = 0xC1C89b7f5448F447d59f920456A9610f6b2544bC;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_5 = 0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_6 = 0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2;
-            address internal constant SAFE_MODULES_SENTINEL = address(0x1);
-        }
-    "#;
-    const AUTH_LIB: &str = r#"
-        address internal constant STOX_PROD_AUTHORISER = 0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456;
-        address internal constant STOX_PROD_AUTHORISER_IMPL = 0x2B4A510c3619d5E888095BFE9f95902D32dA5556;
-        address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
-        bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);
-    "#;
-    const V4_LIB: &str = r#"
-        address constant BEACON_INITIAL_OWNER = address(0x8E4bdeec7CEB9570D440676345dA1dCe10329f5b);
-        address constant STOX_PROD_AUTHORISER_V4_CLONE = address(0x315b16faa6eE413faBCa877d3851B3818369f0cD);
-    "#;
-    const OVERRIDES: &str = r#"
-        address constant RECEIPT_BEACON_OWNER = address(0xbAB0E6b7B5dDA86FB8ba81c00aEA0Ceb8b73686b);
-        address constant VAULT_BEACON_OWNER = address(0xc95dB340A7a100881626475d41BFf70857Aa920D);
-    "#;
+    const BASE_AUTH: &str = "0x315b16faa6eE413faBCa877d3851B3818369f0cD";
+    const SERVICE: &str = "0x1c66d6708914c40239d54919320b4c48cae3d1a9";
 
-    #[test]
-    fn parses_bare_hex_form() {
-        assert_eq!(
-            parse_address_constant(SAFE_LIB, "STOX_TOKEN_OWNER_SAFE"),
-            Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string())
-        );
+    fn facts() -> PrivilegedAddresses {
+        crate::privileged::parse(&doc().to_string()).unwrap()
+    }
+
+    fn no_names(_: &str) -> Option<String> {
+        None
+    }
+
+    fn group<'a>(v: &'a serde_json::Value, id: &str) -> &'a serde_json::Value {
+        v["groups"].as_array().unwrap().iter().find(|g| g["id"] == id).unwrap()
     }
 
     #[test]
-    fn parses_address_wrapped_form() {
-        assert_eq!(
-            parse_address_constant(V4_LIB, "BEACON_INITIAL_OWNER"),
-            Some("0x8E4bdeec7CEB9570D440676345dA1dCe10329f5b".to_string())
-        );
+    fn owners_come_from_the_file_in_its_order() {
+        let names = |a: &str| (a == B).then(|| "STOX_TOKEN_OWNER_SAFE_OWNER_TDM".to_string());
+        let live = vec![("base".to_string(), Some(A.to_string())), ("ethereum".to_string(), Some(A.to_string()))];
+        let v = build_owners("o", "r", &facts(), None, &live, &names);
+        assert_eq!((v["threshold"].as_u64(), v["signerCount"].as_u64()), (Some(2), Some(2)));
+        let s = group(&v, "signers");
+        assert_eq!(s["title"], "Safe signers (2-of-2)");
+        assert_eq!(s["entries"][0]["role"], "Signer 1");
+        assert_eq!(s["entries"][0]["address"], A);
+        assert_eq!(s["entries"][1]["role"], "STOX_TOKEN_OWNER_SAFE_OWNER_TDM");
+        assert_eq!(s["entries"][1]["onChain"], "unverified");
+        assert!(s["verification"].is_null());
+        let safes = &group(&v, "safe")["entries"];
+        assert_eq!((safes[0]["network"].as_str(), safes[0]["address"].as_str()), (Some("ethereum"), Some(B)));
+        assert_eq!((safes[1]["network"].as_str(), safes[1]["address"].as_str()), (Some("base"), Some(A)));
+        let auth = &group(&v, "authoriser")["entries"];
+        assert_eq!((auth[0]["network"].as_str(), auth[0]["status"].as_str()), (Some("ethereum"), Some("pending")));
+        assert_eq!((auth[1]["network"].as_str(), auth[1]["status"].as_str()), (Some("base"), Some("active")));
+        assert_eq!(auth[2]["role"], "Authoriser implementation");
+        assert_eq!(auth[2]["address"], A);
+        let hist = &group(&v, "historical")["entries"];
+        assert_eq!(hist[0]["address"], A);
+        assert_eq!(hist[1]["address"], B);
+        assert!(hist[2]["address"].is_null());
     }
 
     #[test]
-    fn checksum_casing_is_preserved_verbatim() {
-        // The address is emitted for explorer links + eyeballing, so its EIP-55
-        // casing must survive parsing unchanged.
-        let a = parse_address_constant(AUTH_LIB, "STOX_PROD_AUTHORISER").unwrap();
-        assert_eq!(a, "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456");
+    fn an_unread_authoriser_is_unknown() {
+        let live = vec![("base".to_string(), None)];
+        let v = build_owners("o", "r", &facts(), None, &live, &no_names);
+        let auth = &group(&v, "authoriser")["entries"];
+        assert_eq!(auth[0]["status"], "unknown");
+        assert_eq!(auth[1]["status"], "unknown");
     }
-
-    #[test]
-    fn prefix_name_does_not_match_a_longer_sibling() {
-        // STOX_TOKEN_OWNER_SAFE must return the Safe, NOT the _ETHEREUM / _OWNER_n
-        // / _THRESHOLD value that shares its prefix.
-        assert_eq!(
-            parse_address_constant(SAFE_LIB, "STOX_TOKEN_OWNER_SAFE"),
-            Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string())
-        );
-        // And the sibling resolves to its own distinct value.
-        assert_eq!(
-            parse_address_constant(SAFE_LIB, "STOX_TOKEN_OWNER_SAFE_ETHEREUM"),
-            Some("0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329".to_string())
-        );
-    }
-
-    #[test]
-    fn missing_constant_is_none() {
-        assert_eq!(parse_address_constant(SAFE_LIB, "NOPE_NOT_HERE"), None);
-    }
-
-    #[test]
-    fn threshold_parses_as_uint() {
-        assert_eq!(
-            parse_uint_constant(SAFE_LIB, "STOX_TOKEN_OWNER_SAFE_THRESHOLD"),
-            Some(3)
-        );
-    }
-
-    #[test]
-    fn build_owners_assembles_all_groups() {
-        let v = build_owners(
-            "S01-Issuer",
-            "st0x.deploy",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .expect("anchor resolves");
-        assert_eq!(v["repo"], "st0x.deploy");
-        assert_eq!(v["threshold"], 3);
-        assert_eq!(v["signerCount"], 6);
-        let groups = v["groups"].as_array().unwrap();
-        let ids: Vec<&str> = groups.iter().map(|g| g["id"].as_str().unwrap()).collect();
-        assert_eq!(ids, ["safe", "signers", "authoriser", "historical"]);
-        // Base Safe address surfaced in the safe group.
-        assert_eq!(
-            groups[0]["entries"][0]["address"],
-            "0xe70d821f3462a074e63b42d0AaC6523faAe1d611"
-        );
-        // All six signers.
-        assert_eq!(groups[1]["entries"].as_array().unwrap().len(), 6);
-        // Bricked V2 owners carry the bricked status.
-        assert_eq!(groups[3]["entries"][1]["status"], "bricked");
-        // Without a live authorizer() reading no clone claims to be active.
-        let auth = groups[2]["entries"].as_array().unwrap();
-        let v4 = auth
-            .iter()
-            .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "base")
-            .unwrap();
-        assert_eq!(v4["status"], "unknown");
-    }
-
-    /// The whole point of reading `authorizer()`: whichever clone the vaults
-    /// actually delegate to is the active one, and the other is labelled by
-    /// which side of the swap it sits on. A hardcoded pair gets this backwards
-    /// the moment the migration lands.
-    #[test]
-    fn authoriser_status_follows_the_live_reading() {
-        let v3 = Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456".to_string());
-        let v4 = Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".to_string());
-        // Pre-swap: vaults still point at the V3-era clone.
-        assert_eq!(
-            authoriser_status(
-                v3.as_ref(),
-                Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456"),
-                "migrated"
-            ),
-            "active"
-        );
-        assert_eq!(
-            authoriser_status(
-                v4.as_ref(),
-                Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456"),
-                "pending"
-            ),
-            "pending"
-        );
-        // Post-swap: the same two pins swap roles with no code change.
-        assert_eq!(
-            authoriser_status(
-                v3.as_ref(),
-                Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD"),
-                "migrated"
-            ),
-            "migrated"
-        );
-        assert_eq!(
-            authoriser_status(
-                v4.as_ref(),
-                Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD"),
-                "active"
-            ),
-            "active"
-        );
-    }
-
-    /// Checksum casing differs between the Solidity constant and an RPC reply,
-    /// and a case-sensitive compare would report the live clone as superseded.
-    #[test]
-    fn authoriser_status_ignores_address_casing() {
-        let pin = Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".to_string());
-        assert_eq!(
-            authoriser_status(
-                pin.as_ref(),
-                Some("0x315b16faa6ee413fabca877d3851b3818369f0cd"),
-                "pending"
-            ),
-            "active"
-        );
-    }
-
-    /// A failed RPC must never let a stale literal stand in for a live answer.
-    #[test]
-    fn authoriser_status_is_unknown_without_a_live_reading() {
-        let pin = Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD".to_string());
-        assert_eq!(authoriser_status(pin.as_ref(), None, "pending"), "unknown");
-        assert_eq!(
-            authoriser_status(None, Some("0x315b16"), "pending"),
-            "unknown"
-        );
-    }
-
-    /// Ethereum's clone is nonce-deployed, so its pin sits at address(0) until
-    /// the bootstrap runs. That is "declared, not deployed" — not "no such
-    /// chain", which is what omitting the row would say.
-    #[test]
-    fn ethereum_authoriser_row_is_rendered_before_the_clone_exists() {
-        let v4_zero = format!("{V4_LIB}\n    address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x0000000000000000000000000000000000000000);\n");
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: &v4_zero,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .unwrap();
-        let auth = v["groups"][2]["entries"].as_array().unwrap();
-        let eth = auth
-            .iter()
-            .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "ethereum")
-            .expect("the ethereum row must exist even unhydrated");
-        assert_eq!(eth["status"], "pending");
-        let note = eth["note"].as_str().unwrap();
-        assert!(
-            note.contains("not yet hydrated"),
-            "an unhydrated pin must say so: {note}"
-        );
-        // The scan reads the PIN. With no address it has nothing to look up, so
-        // it must not report on the clone's existence either way — the Ethereum
-        // clone was live for some time before this pin caught up.
-        assert!(
-            !note.contains("not yet deployed"),
-            "must not claim anything about deployment: {note}"
-        );
-    }
-
-    #[test]
-    fn build_owners_is_none_without_the_anchor() {
-        // Repo unreachable / anchor constant moved → no owners doc at all.
-        assert_eq!(
-            build_owners(
-                "o",
-                "r",
-                &OwnerSources {
-                    safe_lib: "",
-                    auth_lib: AUTH_LIB,
-                    v4_lib: V4_LIB,
-                    overrides: OVERRIDES
-                },
-                None,
-                None
-            ),
-            None
-        );
-    }
-
-    #[test]
-    fn unresolved_entry_becomes_null_not_dropped() {
-        // The Ethereum Safe missing from the source surfaces as a null address in
-        // its row rather than vanishing.
-        let safe_no_eth = "address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;";
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: safe_no_eth,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .unwrap();
-        let eth = &v["groups"][0]["entries"][1];
-        assert_eq!(eth["role"], "Ethereum Safe");
-        assert!(eth["address"].is_null());
-    }
-
-    #[test]
-    fn signer_count_is_read_from_the_constants_not_a_fixed_six() {
-        // Three signer constants -> three signers read: proves the roster size
-        // comes from the source, not a hardcoded 6. Threshold absent -> 3.
-        let three = "
-            address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_1 = 0x1111111111111111111111111111111111111111;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0x2222222222222222222222222222222222222222;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x3333333333333333333333333333333333333333;
-        ";
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: three,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .unwrap();
-        assert_eq!(v["signerCount"], 3);
-        assert_eq!(v["groups"][1]["entries"].as_array().unwrap().len(), 3);
-        assert_eq!(v["groups"][1]["title"], "Safe signers (3-of-3)");
-    }
-
-    // ---- declared-vs-actual verification ----
 
     fn onchain(owners: Option<Vec<&str>>, threshold: Option<u64>) -> OnChainSafe {
         OnChainSafe {
             network: "base".into(),
-            safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into(),
-            rpc_host: "mainnet.base.org".into(),
-            owners: owners.map(|v| v.into_iter().map(str::to_string).collect()),
+            safe: A.into(),
+            rpc_host: "h".into(),
+            owners: owners.map(|v| v.into_iter().map(String::from).collect()),
             threshold,
         }
     }
 
-    // The SAFE_LIB roster, lowercased as getOwners returns it.
-    const LIVE_ROSTER: [&str; 6] = [
-        "0x4746095b1ea1a84446d34448f44e74d3d51f92f2",
-        "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d",
-        "0x8d5901d8ae48101b59400235ad8614a2e0510466",
-        "0xc1c89b7f5448f447d59f920456a9610f6b2544bc",
-        "0xab92b327c97a6e7461cbd76e2a789e5e106ff87e",
-        "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2",
-    ];
-
     #[test]
-    fn onchain_match_marks_every_signer_verified() {
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["match"], true);
-        assert_eq!(sg["verification"]["reachable"], true);
-        assert_eq!(sg["verification"]["threshold"]["match"], true);
-        let entries = sg["entries"].as_array().unwrap();
-        assert_eq!(entries.len(), 6);
-        assert!(entries.iter().all(|e| e["onChain"] == "match"));
+    fn the_live_safe_verifies_roster_and_threshold() {
+        let f = facts();
+        let ok = build_owners("o", "r", &f, Some(&onchain(Some(vec![&B.to_uppercase().replace("0X", "0x"), A]), Some(2))), &[], &no_names);
+        let s = group(&ok, "signers");
+        assert_eq!(s["verification"]["match"], true);
+        assert_eq!(s["verification"]["reachable"], true);
+        assert_eq!(s["entries"][1]["onChain"], "match");
+
+        let drift = build_owners("o", "r", &f, Some(&onchain(Some(vec![A, "0x00000000000000000000000000000000000000c3"]), Some(2))), &[], &no_names);
+        let s = group(&drift, "signers");
+        assert_eq!(s["verification"]["match"], false);
+        assert_eq!(s["entries"][1]["onChain"], "missing");
+        assert_eq!(s["entries"][2]["status"], "extra");
+        assert_eq!(s["entries"][2]["network"], "base");
+
+        let thr = build_owners("o", "r", &f, Some(&onchain(Some(vec![A, B]), Some(1))), &[], &no_names);
+        assert_eq!(group(&thr, "signers")["verification"]["match"], false);
+        assert_eq!(group(&thr, "signers")["verification"]["threshold"]["match"], false);
+
+        let half = build_owners("o", "r", &f, Some(&onchain(Some(vec![A, B]), None)), &[], &no_names);
+        assert_eq!(group(&half, "signers")["verification"]["reachable"], false);
+        assert!(group(&half, "signers")["verification"]["match"].is_null());
+        let none = build_owners("o", "r", &f, Some(&onchain(None, Some(2))), &[], &no_names);
+        assert_eq!(group(&none, "signers")["verification"]["reachable"], false);
+        assert_eq!(group(&none, "signers")["entries"][0]["onChain"], "unverified");
     }
 
     #[test]
-    fn onchain_drift_flags_missing_and_extra_owners() {
-        // Live set drops signer 6 and adds an owner not in the constants; on-chain
-        // threshold (2) also differs from the declared 3.
-        let mut live: Vec<&str> = LIVE_ROSTER[..5].to_vec();
-        live.push("0xdeadbeef00000000000000000000000000000001");
-        let oc = onchain(Some(live), Some(2));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["match"], false);
-        assert_eq!(sg["verification"]["threshold"]["match"], false);
-        let entries = sg["entries"].as_array().unwrap();
-        let s6 = entries.iter().find(|e| e["role"] == "Signer 6").unwrap();
-        assert_eq!(s6["onChain"], "missing", "declared but absent on-chain");
-        let extra = entries.iter().find(|e| e["status"] == "extra").unwrap();
+    fn chain_pins_carry_each_chains_own_addresses() {
+        let pins = chain_pins(&facts());
+        assert_eq!(pins.len(), 2);
+        assert_eq!(pins[1].network, "base");
+        assert_eq!((pins[1].safe.as_deref(), pins[1].admin_holder.as_deref(), pins[1].authoriser.as_deref()), (Some(A), Some(B), Some(A)));
+        assert_eq!(pins[0].admin_holder, None);
+        assert!(pins.iter().all(|p| p.rpc_host.is_none()));
+    }
+
+    fn role(name: &str) -> String {
+        crate::rpc::role_id_hex(name)
+    }
+
+    fn ideal_for(chains: &[ChainPin], pairs: &[(&str, &str)]) -> Vec<IdealChain> {
+        chains
+            .iter()
+            .map(|c| IdealChain {
+                network: c.network.clone(),
+                contracts: vec![Contract {
+                    address: c.authoriser.clone().unwrap().to_lowercase(),
+                    expected: pairs
+                        .iter()
+                        .map(|(r, g)| {
+                            let grantee = match *g {
+                                "safe" => c.safe.clone().unwrap(),
+                                "timelock" => c.admin_holder.clone().unwrap(),
+                                other => other.to_string(),
+                            };
+                            Expected { role: role(r), role_name: None, grantee: grantee.to_lowercase() }
+                        })
+                        .collect(),
+                }],
+            })
+            .collect()
+    }
+
+    fn names() -> Vec<(String, String)> {
+        ["DEPOSIT", "DEPOSIT_ADMIN", "CERTIFY"].iter().map(|n| (role(n), n.to_string())).collect()
+    }
+
+    fn named(_: &str, a: &str) -> Option<String> {
+        a.eq_ignore_ascii_case(SERVICE).then(|| "GRANTEE_SERVICE_1C66".into())
+    }
+
+    fn grants(chains: &[ChainPin], pairs: &[(&str, &str)], check: &dyn Fn(&str, &str, &str, &str) -> GrantOnChain) -> serde_json::Value {
+        build_grants("o", "r", &ideal_for(chains, pairs), chains, &names(), &named, check)
+    }
+
+    fn all_granted(_n: &str, _a: &str, _r: &str, _g: &str) -> GrantOnChain {
+        GrantOnChain::Granted
+    }
+
+    #[test]
+    fn grants_are_grouped_by_grantee_kind_with_each_chains_address() {
+        let chains = two_chains();
+        let v = grants(&chains, &[("DEPOSIT", SERVICE), ("DEPOSIT_ADMIN", "timelock"), ("CERTIFY", "safe"), ("CERTIFY", SERVICE)], &all_granted);
+        assert_eq!(v["source"], "ideal-roles.json");
+        assert_eq!(v["pinnedCount"], 8);
+        let g = v["grantees"].as_array().unwrap();
+        assert_eq!(g.len(), 3);
+        assert_eq!((g[0]["kind"].as_str(), g[0]["ident"].as_str(), g[0]["address"].as_str()), (Some("constant"), Some("GRANTEE_SERVICE_1C66"), Some(SERVICE)));
+        assert_eq!(g[0]["roles"].as_array().unwrap().iter().map(|r| r["role"].as_str().unwrap()).collect::<Vec<_>>(), vec!["DEPOSIT", "CERTIFY"]);
+        assert_eq!(g[1]["kind"], "admin-holder");
+        assert!(g[1]["address"].is_null());
+        assert_eq!(g[1]["roles"][0]["admin"], true);
+        assert_eq!(g[1]["roles"][0]["roleId"], role("DEPOSIT_ADMIN"));
+        let tl = &g[1]["roles"][0]["chains"];
+        assert_eq!(tl[0]["address"], chains[0].admin_holder.clone().unwrap().to_lowercase());
+        assert_eq!(tl[1]["address"], chains[1].admin_holder.clone().unwrap().to_lowercase());
+        assert_eq!(g[2]["kind"], "safe");
+        assert_eq!(g[2]["roles"][0]["admin"], false);
+        assert_eq!(v["chains"][0]["state"], "live");
+        assert_eq!(v["chains"][0]["total"], 4);
+    }
+
+    #[test]
+    fn an_unnamed_role_shows_its_id_and_is_not_admin() {
+        let chains = two_chains();
+        let v = grants(&chains, &[("WITHDRAW_ADMIN", SERVICE)], &all_granted);
+        let r = &v["grantees"][0]["roles"][0];
+        assert_eq!(r["role"], role("WITHDRAW_ADMIN"));
+        assert_eq!(r["admin"], false);
+    }
+
+    #[test]
+    fn a_safe_that_kept_an_admin_role_is_reported() {
+        let mut chains = two_chains();
+        let safe0 = chains[0].safe.clone().unwrap();
+        let check = move |_n: &str, _a: &str, _r: &str, g: &str| {
+            if g.eq_ignore_ascii_case(&safe0) { GrantOnChain::Granted } else { GrantOnChain::NotGranted }
+        };
+        let v = grants(&chains, &[("DEPOSIT_ADMIN", "timelock"), ("DEPOSIT", SERVICE)], &check);
+        assert_eq!(v["chains"][0]["safeKept"], json!(["DEPOSIT_ADMIN"]));
+        assert_eq!(v["chains"][1]["safeKept"], json!([]));
+        assert_eq!(v["grantees"][0]["roles"][0]["chains"][0]["safeHolds"], true);
+        assert_eq!(v["grantees"][0]["roles"][0]["chains"][1]["safeHolds"], false);
+        assert!(v["grantees"][1]["roles"][0]["chains"][0]["safeHolds"].is_null());
+        assert_eq!(v["chains"][1]["state"], "unprovisioned");
+
+        chains[1].rpc_host = None;
+        let v = grants(&chains, &[("DEPOSIT_ADMIN", "timelock")], &check);
+        assert_eq!(v["chains"][1]["state"], "unknown");
+        assert!(v["grantees"][0]["roles"][0]["chains"][1]["safeHolds"].is_null());
+    }
+
+    #[test]
+    fn the_probe_is_asked_the_role_id_on_that_chains_authoriser() {
+        let chains = two_chains();
+        let seen = std::cell::RefCell::new(Vec::new());
+        let check = |n: &str, a: &str, r: &str, g: &str| {
+            seen.borrow_mut().push((n.to_string(), a.to_string(), r.to_string(), g.to_string()));
+            GrantOnChain::Granted
+        };
+        grants(&chains, &[("CERTIFY", SERVICE)], &check);
         assert_eq!(
-            extra["address"],
-            "0xdeadbeef00000000000000000000000000000001"
-        );
-        assert_eq!(extra["onChain"], "extra");
-    }
-
-    #[test]
-    fn unreachable_rpc_leaves_signers_unverified() {
-        let oc = onchain(None, None); // RPC failed
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["reachable"], false);
-        assert!(sg["verification"]["match"].is_null());
-        let entries = sg["entries"].as_array().unwrap();
-        assert!(entries.iter().all(|e| e["onChain"] == "unverified"));
-        assert_eq!(entries.len(), 6, "still shows the declared roster");
-    }
-
-    #[test]
-    fn no_onchain_omits_verification() {
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .unwrap();
-        assert!(v["groups"][1]["verification"].is_null());
-    }
-
-    #[test]
-    fn threshold_mismatch_alone_fails_the_verdict() {
-        // Roster fully matches but the on-chain threshold differs: the overall
-        // verdict must be false — never a green "verified" — even though every
-        // signer row is a match.
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(4));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["reachable"], true);
-        assert_eq!(
-            sg["verification"]["match"], false,
-            "threshold drift fails the verdict"
-        );
-        assert_eq!(sg["verification"]["threshold"]["match"], false);
-        let entries = sg["entries"].as_array().unwrap();
-        assert!(
-            entries.iter().all(|e| e["onChain"] == "match"),
-            "roster itself is fine"
+            seen.into_inner(),
+            vec![
+                ("base".into(), BASE_AUTH.into(), role("CERTIFY"), SERVICE.into()),
+                ("ethereum".into(), chains[1].authoriser.clone().unwrap(), role("CERTIFY"), SERVICE.into()),
+            ]
         );
     }
 
     #[test]
-    fn partial_rpc_is_not_reachable() {
-        // Owners answered but the threshold call didn't: not reachable and no
-        // verdict, so the page shows "incomplete" rather than a green banner.
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), None);
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(
-            sg["verification"]["reachable"], false,
-            "one call missing => not reachable"
-        );
-        assert!(sg["verification"]["match"].is_null());
-        assert!(sg["verification"]["threshold"]["onChain"].is_null());
+    fn a_chain_absent_from_ideal_roles_has_nothing_expected() {
+        let chains = two_chains();
+        let ideal = ideal_for(&chains[..1], &[("DEPOSIT", SERVICE)]);
+        let v = build_grants("o", "r", &ideal, &chains, &names(), &named, &all_granted);
+        assert_eq!(v["chains"][1]["total"], 0);
+        assert_eq!(v["chains"][1]["state"], "unknown");
+        assert_eq!(v["grantees"][0]["roles"][0]["chains"].as_array().unwrap().len(), 1);
+        let mut no_auth = chains.clone();
+        no_auth[0].authoriser = None;
+        let v = build_grants("o", "r", &ideal, &no_auth, &names(), &named, &all_granted);
+        assert_eq!(v["pinnedCount"], 0);
     }
 
-    // ---- authoriser role grants (#143) ----
+    #[test]
+    fn an_explicit_role_name_wins() {
+        let chains = two_chains();
+        let mut ideal = ideal_for(&chains, &[("DEPOSIT", SERVICE)]);
+        ideal[0].contracts[0].expected[0].role_name = Some("CUSTOM_ADMIN".into());
+        let v = build_grants("o", "r", &ideal, &chains, &names(), &named, &all_granted);
+        assert_eq!(v["grantees"][0]["roles"][0]["role"], "CUSTOM_ADMIN");
+        assert_eq!(v["grantees"][0]["roles"][0]["admin"], true);
+    }
 
-    /// The shape the real `LibAuthoriserInvariants` carries: a Safe-parametric
-    /// map with `_ADMIN` roles on the chain's Safe, action roles on a service
-    /// constant, and the same action roles held directly by the Safe.
-    const GRANT_LIB: &str = r#"
-        library LibAuthoriserInvariants {
-            address internal constant GRANTEE_TOKEN_OWNER_SAFE = LibSafeInvariants.STOX_TOKEN_OWNER_SAFE;
-            address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
-            bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);
-
-            function expectedGrants() internal pure returns (RoleGrant[] memory grants) {
-                grants = expectedGrants(GRANTEE_TOKEN_OWNER_SAFE);
-            }
-
-            function expectedGrants(address tokenOwnerSafe) internal pure returns (RoleGrant[] memory grants) {
-                grants = new RoleGrant[](7);
-                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), tokenOwnerSafe);
-                grants[1] = RoleGrant(keccak256("WITHDRAW_ADMIN"), tokenOwnerSafe);
-                grants[2] = RoleGrant(keccak256("DEPOSIT"), GRANTEE_SERVICE_1C66);
-                grants[3] = RoleGrant(keccak256("WITHDRAW"), GRANTEE_SERVICE_1C66);
-                grants[4] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_1C66);
-                grants[5] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
-                grants[6] = RoleGrant(keccak256("WITHDRAW"), tokenOwnerSafe);
-            }
-        }
-    "#;
-
-    const V4_CHAINS: &str = r#"
-        address constant STOX_PROD_AUTHORISER_V4_CLONE = address(0x315b16faa6eE413faBCa877d3851B3818369f0cD);
-        bytes32 constant STOX_PROD_AUTHORISER_V4_CLONE_CODEHASH = 0x9d1c1a4b2f8f0e7d6c5b4a39281706f5e4d3c2b1a09f8e7d6c5b4a3928170615;
-        address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x66566cc91dEAf818859bD4b09B7903ac48998157);
-    "#;
-
-    fn grant_sources<'a>(auth: &'a str) -> OwnerSources<'a> {
-        OwnerSources {
-            safe_lib: SAFE_LIB,
-            auth_lib: auth,
-            v4_lib: V4_LIB,
-            overrides: OVERRIDES,
-        }
+    #[test]
+    fn unavailable_documents_say_why() {
+        assert_eq!(owners_unavailable("o", "r", "HTTP 404")["unavailable"], "HTTP 404");
+        let g = grants_unavailable("o", "r", "it is not JSON");
+        assert_eq!((g["unavailable"].as_str(), g["source"].as_str()), (Some("it is not JSON"), Some("ideal-roles.json")));
     }
 
     /// Two chains with everything pinned, so a test only has to vary the probe.
@@ -1530,166 +859,6 @@ mod tests {
             },
         ]
     }
-
-    fn all_granted(_n: &str, _a: &str, _r: &str, _g: &str) -> GrantOnChain {
-        GrantOnChain::Granted
-    }
-
-    /// Find a grantee doc by the constant name it was derived from.
-    fn grantee<'a>(v: &'a serde_json::Value, ident: &str) -> Option<&'a serde_json::Value> {
-        v["grantees"]
-            .as_array()?
-            .iter()
-            .find(|g| g["ident"] == ident)
-    }
-
-    /// The status of one grantee's role on one chain.
-    fn status(v: &serde_json::Value, ident: &str, role: &str, network: &str) -> String {
-        grantee(v, ident)
-            .and_then(|g| g["roles"].as_array())
-            .and_then(|rs| rs.iter().find(|r| r["role"] == role))
-            .and_then(|r| r["chains"].as_array())
-            .and_then(|cs| cs.iter().find(|c| c["network"] == network))
-            .and_then(|c| c["status"].as_str())
-            .unwrap_or("<absent>")
-            .to_string()
-    }
-
-    /// The owners view must carry no hand-written grantee row. It used to: one
-    /// entry naming one service constant, which could only ever describe the key
-    /// somebody typed. Grantees come from the map now, and a row typed back in
-    /// here would be a second list to forget to update.
-    #[test]
-    fn the_authoriser_group_carries_no_hand_written_grantee_row() {
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .unwrap();
-        let auth = v["groups"][2]["entries"].as_array().unwrap();
-        assert!(
-            !auth
-                .iter()
-                .any(|e| e["address"] == "0x1c66D6708914C40239D54919320b4C48cAE3D1A9"),
-            "a grantee address must not be pinned by hand in the owners groups"
-        );
-        assert!(
-            auth.iter().all(|e| e["role"] != "Service grantee"),
-            "the hand-written grantee row is gone"
-        );
-    }
-
-    #[test]
-    fn parses_the_pinned_grant_map_in_source_order() {
-        let m = parse_expected_grants(GRANT_LIB).expect("the parametric overload parses");
-        assert_eq!(m.safe_param, "tokenOwnerSafe");
-        assert_eq!(m.declared, Some(7));
-        assert_eq!(m.grants.len(), 7);
-        assert_eq!(
-            m.grants[2],
-            GrantPin {
-                role: "DEPOSIT".into(),
-                grantee: "GRANTEE_SERVICE_1C66".into()
-            }
-        );
-        // The no-arg overload delegates; parsing IT would yield one bogus pair.
-        assert!(m
-            .grants
-            .iter()
-            .all(|g| g.role != "GRANTEE_TOKEN_OWNER_SAFE"));
-    }
-
-    /// The deploy repo's shape once the governance-timelock migration is in
-    /// prospect: the pairs move to a two-address overload and the one-address
-    /// one DELEGATES to it, collapsing the parameters.
-    const GRANT_LIB_ADMIN_HOLDER: &str = r#"
-        library LibAuthoriserInvariants {
-            address internal constant GRANTEE_TOKEN_OWNER_SAFE = LibSafeInvariants.STOX_TOKEN_OWNER_SAFE;
-            address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
-
-            function expectedGrants() internal pure returns (RoleGrant[] memory grants) {
-                grants = expectedGrants(GRANTEE_TOKEN_OWNER_SAFE);
-            }
-
-            function expectedGrants(address tokenOwnerSafe) internal pure returns (RoleGrant[] memory grants) {
-                grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);
-            }
-
-            function expectedGrants(address tokenOwnerSafe, address adminHolder)
-                internal
-                pure
-                returns (RoleGrant[] memory grants)
-            {
-                grants = new RoleGrant[](4);
-                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), adminHolder);
-                grants[1] = RoleGrant(keccak256("WITHDRAW_ADMIN"), adminHolder);
-                grants[2] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
-                grants[3] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_1C66);
-            }
-        }
-    "#;
-
-    /// One admin role declared to TWO grantees, neither of them the Safe. The
-    /// page lists a kept role once, so the scan has to report it once.
-    const GRANT_LIB_TWO_ADMIN_GRANTEES: &str = r#"
-        library LibAuthoriserInvariants {
-            address internal constant GRANTEE_TOKEN_OWNER_SAFE = LibSafeInvariants.STOX_TOKEN_OWNER_SAFE;
-            address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
-
-            function expectedGrants() internal pure returns (RoleGrant[] memory grants) {
-                grants = expectedGrants(GRANTEE_TOKEN_OWNER_SAFE);
-            }
-
-            function expectedGrants(address tokenOwnerSafe) internal pure returns (RoleGrant[] memory grants) {
-                grants = expectedGrants(tokenOwnerSafe, tokenOwnerSafe);
-            }
-
-            function expectedGrants(address tokenOwnerSafe, address adminHolder)
-                internal
-                pure
-                returns (RoleGrant[] memory grants)
-            {
-                grants = new RoleGrant[](3);
-                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), adminHolder);
-                grants[1] = RoleGrant(keccak256("DEPOSIT_ADMIN"), GRANTEE_SERVICE_1C66);
-                grants[2] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
-            }
-        }
-    "#;
-
-    /// The map MUST come from the overload that holds the pairs, not the first
-    /// one taking an address.
-    ///
-    /// The one-address overload delegates, so its body has no `RoleGrant` in
-    /// it. Taking the first match yields an empty map, `parse_expected_grants`
-    /// returns `None`, and `deploymentGrants` serialises as `null` — which is
-    /// how the live page came to show no grant at all while the deploy repo
-    /// declared fifteen.
-    #[test]
-    fn parses_the_overload_that_holds_the_pairs_not_the_first() {
-        let m = parse_expected_grants(GRANT_LIB_ADMIN_HOLDER)
-            .expect("the overload carrying the pairs parses");
-        assert_eq!(m.safe_param, "tokenOwnerSafe");
-        assert_eq!(m.admin_param.as_deref(), Some("adminHolder"));
-        assert_eq!(m.declared, Some(4));
-        assert_eq!(m.grants.len(), 4, "the delegating overload holds none");
-        assert_eq!(
-            m.grants[0],
-            GrantPin {
-                role: "DEPOSIT_ADMIN".into(),
-                grantee: "adminHolder".into()
-            }
-        );
-    }
-
     /// A vault's owner MUST be labelled against THAT chain's pins.
     ///
     /// Base's timelock is not Ethereum's, so a single expected owner would
@@ -1754,7 +923,7 @@ mod tests {
     ///
     /// Chains arrive one at a time, and one can carry an authoriser clone —
     /// which is what puts it in this list — before it carries a
-    /// `STOX_GOVERNANCE_TIMELOCK` constant. There is then nothing to recognise
+    /// timelock in privileged-addresses.json. There is then nothing to recognise
     /// a moved vault by, so every vault not on the Safe would read `other`:
     /// red, for a rollout that has not reached the chain yet. The grant rows
     /// make the same distinction for the same reason.
@@ -1813,651 +982,5 @@ mod tests {
         assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(1));
         assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(1));
         assert_eq!(chains[0]["vaults"][1]["owner"], serde_json::Value::Null);
-    }
-
-    /// A function whose name merely STARTS WITH the one asked for MUST NOT be
-    /// mistaken for it.
-    ///
-    /// `find("function expectedGrants")` is a prefix match, so
-    /// `expectedGrantsForSomethingElse` matches too. Taking the first match hid
-    /// that — a prefix-named function declared later could never win — but
-    /// selecting the overload with the most pairs lets it, and the page would
-    /// then report another function's map as the authoriser's.
-    #[test]
-    fn a_prefix_named_function_is_not_the_one_asked_for() {
-        let src = r#"
-        library L {
-            function expectedGrants(address tokenOwnerSafe, address adminHolder)
-                internal pure returns (RoleGrant[] memory grants)
-            {
-                grants = new RoleGrant[](2);
-                grants[0] = RoleGrant(keccak256("DEPOSIT_ADMIN"), adminHolder);
-                grants[1] = RoleGrant(keccak256("DEPOSIT"), tokenOwnerSafe);
-            }
-
-            function expectedGrantsForSomeOtherThing(address a, address b)
-                internal pure returns (RoleGrant[] memory grants)
-            {
-                grants = new RoleGrant[](3);
-                grants[0] = RoleGrant(keccak256("WRONG_ONE"), a);
-                grants[1] = RoleGrant(keccak256("WRONG_TWO"), b);
-                grants[2] = RoleGrant(keccak256("WRONG_THREE"), a);
-            }
-        }
-        "#;
-        let m = parse_expected_grants(src).expect("parses");
-        assert!(
-            !m.grants.iter().any(|g| g.role.starts_with("WRONG")),
-            "picked the prefix-named function: {:?}",
-            m.grants.iter().map(|g| g.role.clone()).collect::<Vec<_>>()
-        );
-        assert_eq!(m.grants.len(), 2, "the two real pairs");
-    }
-
-    /// A map taking only the Safe MUST still parse, with no admin parameter.
-    #[test]
-    fn a_safe_only_map_has_no_admin_param() {
-        let m = parse_expected_grants(GRANT_LIB).expect("the one-address map parses");
-        assert_eq!(m.admin_param, None);
-    }
-
-    /// An `_ADMIN` row MUST carry the chain's own admin holder.
-    ///
-    /// `adminHolder` is a PARAMETER, so there is no constant of that name for
-    /// `resolve_ident` to find. Unbound, every `_ADMIN` row reports `unknown`
-    /// on every chain with no address to chase, which is indistinguishable from
-    /// an unreachable node.
-    #[test]
-    fn an_admin_row_carries_the_chains_admin_holder() {
-        let out = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
-            &two_chains(),
-            &all_granted,
-        )
-        .expect("builds");
-        let row = out["grantees"]
-            .as_array()
-            .expect("grantees")
-            .iter()
-            .find(|g| g["ident"] == "adminHolder")
-            .expect("the admin holder is a grantee row")["roles"]
-            .as_array()
-            .expect("roles")
-            .iter()
-            .find(|r| r["role"] == "DEPOSIT_ADMIN")
-            .expect("DEPOSIT_ADMIN")
-            .clone();
-        assert_eq!(row["admin"], serde_json::json!(true));
-        let chains = row["chains"].as_array().expect("chains");
-        assert_eq!(
-            chains[0]["address"],
-            serde_json::json!("0x48ba1371A78E6cC54157c63721756ab444510DB3"),
-            "base's timelock, not ethereum's"
-        );
-        assert_eq!(
-            chains[1]["address"],
-            serde_json::json!("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B"),
-            "ethereum's timelock — the address the migration bundle grants to"
-        );
-    }
-
-    /// The check the issue names: a service EOA added to `expectedGrants()`
-    /// reaches the page with NO change to this repo. The fixture below differs
-    /// from `GRANT_LIB` only by the lines a future PR would add to the deploy
-    /// repo — if this passes, the grantee list is derived, not transcribed.
-    #[test]
-    fn a_third_service_eoa_appears_with_no_dashboard_change() {
-        let before = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB),
-            &two_chains(),
-            &all_granted,
-        )
-        .expect("map parses");
-        assert!(
-            grantee(&before, "GRANTEE_SERVICE_3D0C").is_none(),
-            "not in the map yet"
-        );
-        let after_lib = GRANT_LIB
-            .replace(
-                "bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);",
-                "address internal constant GRANTEE_SERVICE_3D0C = 0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE;\n\
-                 bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);",
-            )
-            .replace(
-                "grants = new RoleGrant[](7);",
-                "grants = new RoleGrant[](9);",
-            )
-            .replace(
-                r#"grants[6] = RoleGrant(keccak256("WITHDRAW"), tokenOwnerSafe);"#,
-                "grants[6] = RoleGrant(keccak256(\"WITHDRAW\"), tokenOwnerSafe);\n\
-                 grants[7] = RoleGrant(keccak256(\"DEPOSIT\"), GRANTEE_SERVICE_3D0C);\n\
-                 grants[8] = RoleGrant(keccak256(\"CERTIFY\"), GRANTEE_SERVICE_3D0C);",
-            );
-        let after = build_grants(
-            "o",
-            "r",
-            &grant_sources(&after_lib),
-            &two_chains(),
-            &all_granted,
-        )
-        .expect("map parses");
-        let g = grantee(&after, "GRANTEE_SERVICE_3D0C").expect("the new EOA is listed");
-        assert_eq!(g["address"], "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE");
-        assert_eq!(g["kind"], "constant");
-        let roles: Vec<&str> = g["roles"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|r| r["role"].as_str().unwrap())
-            .collect();
-        assert_eq!(roles, ["DEPOSIT", "CERTIFY"], "its roles, not a fixed trio");
-        assert_eq!(
-            status(&after, "GRANTEE_SERVICE_3D0C", "DEPOSIT", "base"),
-            "granted"
-        );
-        assert_eq!(after["pinnedCount"], 9);
-        // …and revoking one removes it, which is the same property read backwards.
-        let revoked = GRANT_LIB.replace(
-            r#"grants[4] = RoleGrant(keccak256("CERTIFY"), GRANTEE_SERVICE_1C66);"#,
-            "",
-        );
-        let after_revoke = build_grants(
-            "o",
-            "r",
-            &grant_sources(&revoked),
-            &two_chains(),
-            &all_granted,
-        )
-        .unwrap();
-        assert_eq!(
-            status(&after_revoke, "GRANTEE_SERVICE_1C66", "CERTIFY", "base"),
-            "<absent>",
-            "a pair dropped from the map is gone from the page"
-        );
-        assert_eq!(
-            status(&after_revoke, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"),
-            "granted",
-            "its other roles are untouched"
-        );
-    }
-
-    #[test]
-    fn the_safe_slot_resolves_to_each_chains_own_safe() {
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB),
-            &two_chains(),
-            &all_granted,
-        )
-        .unwrap();
-        let safe = grantee(&v, "tokenOwnerSafe").expect("the Safe grantee is listed");
-        assert_eq!(safe["kind"], "safe");
-        assert!(
-            safe["address"].is_null(),
-            "one address would be wrong on one of the chains"
-        );
-        let deposit = safe["roles"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|r| r["role"] == "DEPOSIT")
-            .unwrap();
-        let by_net = |n: &str| {
-            deposit["chains"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .find(|c| c["network"] == n)
-                .unwrap()["address"]
-                .as_str()
-                .unwrap()
-                .to_string()
-        };
-        assert_eq!(by_net("base"), "0xe70d821f3462a074e63b42d0AaC6523faAe1d611");
-        assert_eq!(
-            by_net("ethereum"),
-            "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329"
-        );
-    }
-
-    /// The Safe holds `_ADMIN` roles AND the action roles, so admin-vs-action is
-    /// a property of the ROLE, not a partition of the principals. Splitting the
-    /// page on it at the top level would have to file the Safe twice or lie.
-    #[test]
-    fn admin_and_action_split_by_role_name_and_the_safe_is_in_both() {
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB),
-            &two_chains(),
-            &all_granted,
-        )
-        .unwrap();
-        let safe = grantee(&v, "tokenOwnerSafe").unwrap();
-        let flags: Vec<(&str, bool)> = safe["roles"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .map(|r| (r["role"].as_str().unwrap(), r["admin"].as_bool().unwrap()))
-            .collect();
-        assert_eq!(
-            flags,
-            [
-                ("DEPOSIT_ADMIN", true),
-                ("WITHDRAW_ADMIN", true),
-                ("DEPOSIT", false),
-                ("WITHDRAW", false)
-            ]
-        );
-        let svc = grantee(&v, "GRANTEE_SERVICE_1C66").unwrap();
-        assert!(
-            svc["roles"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .all(|r| r["admin"] == false),
-            "a service EOA holds no admin role"
-        );
-        assert!(is_admin_role("CANCEL_CORPORATE_ACTION_ADMIN"));
-        assert!(!is_admin_role("CERTIFY"));
-    }
-
-    /// A migration grants the admin role to the timelock AND has the Safe
-    /// renounce it. If the grant lands and the renounce does not, every declared
-    /// holder holds what it should while the Safe can still grant and revoke at
-    /// will — the timelock is advisory. Probing the Safe only on MISSING rows
-    /// could not observe that state, and the chain reported itself fully met.
-    #[test]
-    fn a_safe_that_kept_an_admin_role_is_seen_even_where_the_timelock_has_it() {
-        // The map that sends the admin roles to a holder that is NOT the Safe —
-        // the only shape in which the question can arise at all.
-        let mut one_chain = two_chains();
-        one_chain.truncate(1);
-        // Everyone asked holds everything: the timelock got its grant, the Safe
-        // never gave its own up.
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
-            &one_chain,
-            &all_granted,
-        )
-        .unwrap();
-
-        assert_eq!(
-            status(&v, "adminHolder", "DEPOSIT_ADMIN", "base"),
-            "granted",
-            "the declared holder's own expectation is met"
-        );
-        let held = grantee(&v, "adminHolder")
-            .and_then(|g| g["roles"].as_array())
-            .and_then(|rs| rs.iter().find(|r| r["role"] == "DEPOSIT_ADMIN"))
-            .and_then(|r| r["chains"].as_array())
-            .and_then(|cs| cs.iter().find(|c| c["network"] == "base"))
-            .map(|c| c["safeHolds"].clone())
-            .unwrap();
-        assert_eq!(
-            held,
-            serde_json::json!(true),
-            "the Safe is asked about a GRANTED admin row, not only a missing one"
-        );
-
-        // The kept roles are reported as their own field. The declared-grant
-        // tally is untouched by them: `total` still counts the (role, grantee)
-        // pairs the map declares, which is what the page says it counts.
-        let chain = v["chains"].as_array().unwrap()[0].clone();
-        assert_eq!(
-            chain["safeKept"],
-            serde_json::json!(["DEPOSIT_ADMIN", "WITHDRAW_ADMIN"]),
-            "got {chain}"
-        );
-        assert_eq!(chain["granted"], serde_json::json!(4), "got {chain}");
-        assert_eq!(chain["missing"], serde_json::json!(0), "got {chain}");
-        assert_eq!(chain["total"], serde_json::json!(4), "got {chain}");
-    }
-
-    /// The kept list is DEDUPED by role. It drives the page's row, and the row
-    /// names a role once however many grantees declare it — a count derived
-    /// separately from the rows it describes is what this section refuses.
-    #[test]
-    fn a_role_two_grantees_declare_is_kept_once() {
-        let mut one_chain = two_chains();
-        one_chain.truncate(1);
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB_TWO_ADMIN_GRANTEES),
-            &one_chain,
-            &all_granted,
-        )
-        .unwrap();
-        let chain = v["chains"].as_array().unwrap()[0].clone();
-        assert_eq!(
-            chain["safeKept"],
-            serde_json::json!(["DEPOSIT_ADMIN"]),
-            "one entry though two grantees declare it, got {chain}"
-        );
-    }
-
-    /// A chain with no Safe pinned has no Safe to hold anything. Reporting that
-    /// as a kept role, or as an expectation that could not be read, would
-    /// invent a finding about an address the pins say does not exist.
-    #[test]
-    fn a_chain_with_no_safe_pinned_keeps_nothing() {
-        let mut one_chain = two_chains();
-        one_chain.truncate(1);
-        one_chain[0].safe = None;
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
-            &one_chain,
-            &all_granted,
-        )
-        .unwrap();
-        let chain = v["chains"].as_array().unwrap()[0].clone();
-        assert_eq!(
-            chain["safeKept"],
-            serde_json::json!([]),
-            "no Safe, nothing kept, got {chain}"
-        );
-        // The denominator is still the four declared grants. Counting the
-        // renounce would add one per admin role here — about a Safe the pins
-        // say does not exist.
-        assert_eq!(chain["total"], serde_json::json!(4), "got {chain}");
-        assert_eq!(
-            chain["unknown"],
-            serde_json::json!(1),
-            "exactly the Safe's OWN declared grant is unreadable — the two \
-             admin rows resolve to the admin holder and read fine, got {chain}"
-        );
-        assert_eq!(chain["granted"], serde_json::json!(3), "got {chain}");
-    }
-
-    /// A fresh chain where nothing has been granted to anyone is still
-    /// `unprovisioned`. Counting the Safe's non-holding as a met expectation
-    /// would push `granted` above zero and relabel it a rollout in progress.
-    #[test]
-    fn a_chain_with_nothing_granted_is_still_unprovisioned() {
-        let none_granted = |_n: &str, _a: &str, _r: &str, _g: &str| GrantOnChain::NotGranted;
-        let mut one_chain = two_chains();
-        one_chain.truncate(1);
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
-            &one_chain,
-            &none_granted,
-        )
-        .unwrap();
-        let chain = v["chains"].as_array().unwrap()[0].clone();
-        assert_eq!(chain["granted"], serde_json::json!(0), "got {chain}");
-        assert_eq!(
-            chain["state"], "unprovisioned",
-            "nothing granted anywhere is not a partial rollout, got {chain}"
-        );
-        assert_eq!(chain["safeKept"], serde_json::json!([]), "got {chain}");
-    }
-
-    /// The migrated end state reports nothing. Without this the change above
-    /// could be written to list every admin role as kept.
-    #[test]
-    fn a_safe_that_released_the_role_keeps_nothing() {
-        // Every declared grant holds. The Safe is denied only the ADMIN roles —
-        // denying it everything would strip the non-admin grants the map really
-        // does send to the Safe, and the missing count would then be measuring
-        // the fixture rather than the renounce.
-        let safe = two_chains()[0].safe.clone().unwrap();
-        let released_admin = move |_n: &str, _a: &str, r: &str, g: &str| {
-            if g.eq_ignore_ascii_case(&safe) && is_admin_role(r) {
-                GrantOnChain::NotGranted
-            } else {
-                GrantOnChain::Granted
-            }
-        };
-        let mut one_chain = two_chains();
-        one_chain.truncate(1);
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB_ADMIN_HOLDER),
-            &one_chain,
-            &released_admin,
-        )
-        .unwrap();
-        let chain = v["chains"].as_array().unwrap()[0].clone();
-        assert_eq!(
-            chain["safeKept"],
-            serde_json::json!([]),
-            "nothing is reported when the Safe released it, got {chain}"
-        );
-        assert_eq!(chain["missing"], serde_json::json!(0), "got {chain}");
-        assert_eq!(chain["granted"], serde_json::json!(4), "got {chain}");
-        assert_eq!(chain["total"], serde_json::json!(4), "got {chain}");
-        assert_eq!(chain["state"], "live", "got {chain}");
-    }
-
-    /// Per-chain status is the point of the section: the same key is granted on
-    /// one chain and not the other, and that reads as a rollout, not a fault.
-    #[test]
-    fn per_chain_status_reports_a_rollout_in_progress() {
-        let base_only = |network: &str, _a: &str, _r: &str, _g: &str| {
-            if network == "base" {
-                GrantOnChain::Granted
-            } else {
-                GrantOnChain::NotGranted
-            }
-        };
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB),
-            &two_chains(),
-            &base_only,
-        )
-        .unwrap();
-        assert_eq!(
-            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"),
-            "granted"
-        );
-        assert_eq!(
-            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "ethereum"),
-            "missing"
-        );
-        let chains = v["chains"].as_array().unwrap();
-        let base = chains.iter().find(|c| c["network"] == "base").unwrap();
-        let eth = chains.iter().find(|c| c["network"] == "ethereum").unwrap();
-        assert_eq!(base["state"], "live");
-        assert_eq!(base["granted"], 7);
-        assert_eq!(base["total"], 7);
-        assert_eq!(
-            eth["state"], "unprovisioned",
-            "a chain whose bundle has not run is a rollout state, not a drift verdict"
-        );
-        assert_eq!(eth["granted"], 0);
-        assert_eq!(eth["missing"], 7);
-    }
-
-    /// A failed probe is never a revoked grant. The two are opposite readings of
-    /// the same pixel, and only one of them is a reason to page somebody.
-    #[test]
-    fn an_unreadable_chain_is_unknown_not_missing() {
-        let mut chains = two_chains();
-        chains[1].rpc_host = None; // no endpoint for this chain yet
-        let v = build_grants("o", "r", &grant_sources(GRANT_LIB), &chains, &all_granted).unwrap();
-        assert_eq!(
-            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "ethereum"),
-            "unknown"
-        );
-        let eth = v["chains"]
-            .as_array()
-            .unwrap()
-            .iter()
-            .find(|c| c["network"] == "ethereum")
-            .unwrap();
-        assert_eq!(eth["state"], "unknown");
-        assert_eq!(eth["missing"], 0, "unread is not absent");
-        assert!(eth["rpcHost"].is_null(), "and the reason is on the record");
-
-        // Same again for a chain with no authoriser pin to ask.
-        let mut unpinned = two_chains();
-        unpinned[1].authoriser = None;
-        let v2 =
-            build_grants("o", "r", &grant_sources(GRANT_LIB), &unpinned, &all_granted).unwrap();
-        assert_eq!(
-            status(&v2, "GRANTEE_SERVICE_1C66", "CERTIFY", "ethereum"),
-            "unknown"
-        );
-        let failing = |_n: &str, _a: &str, _r: &str, _g: &str| GrantOnChain::Unknown;
-        let v3 =
-            build_grants("o", "r", &grant_sources(GRANT_LIB), &two_chains(), &failing).unwrap();
-        assert_eq!(
-            status(&v3, "GRANTEE_SERVICE_1C66", "CERTIFY", "base"),
-            "unknown"
-        );
-        assert_eq!(v3["chains"][0]["state"], "unknown");
-    }
-
-    #[test]
-    fn chains_are_read_from_the_clone_pins_not_a_fixed_pair() {
-        let pins = parse_chain_pins(V4_CHAINS, SAFE_LIB, "");
-        let nets: Vec<&str> = pins.iter().map(|p| p.network.as_str()).collect();
-        assert_eq!(
-            nets,
-            ["base", "ethereum"],
-            "no codehash pin leaks in as a chain"
-        );
-        assert_eq!(
-            pins[0].authoriser.as_deref(),
-            Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD")
-        );
-        assert_eq!(
-            pins[0].safe.as_deref(),
-            Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611")
-        );
-        assert_eq!(
-            pins[1].safe.as_deref(),
-            Some("0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329"),
-            "each chain takes its own Safe constant"
-        );
-        // A chain the deploy repo adds shows up on its own.
-        let grown = format!(
-            "{V4_CHAINS}\n address constant STOX_PROD_AUTHORISER_V4_CLONE_HYPEREVM = address(0x00000000219ab540356cBB839Cbe05303d7705Fa);\n"
-        );
-        let grown_pins = parse_chain_pins(&grown, SAFE_LIB, "");
-        assert_eq!(grown_pins.len(), 3);
-        assert_eq!(grown_pins[2].network, "hyperevm");
-        assert!(
-            grown_pins[2].safe.is_none(),
-            "its Safe constant is not there yet, which is a gap to show, not a row to drop"
-        );
-    }
-
-    /// An unhydrated clone pin gives nothing to query. The chain still appears —
-    /// dropping it would read as "we do not deploy there".
-    #[test]
-    fn an_unhydrated_clone_pin_leaves_the_chain_unqueried() {
-        let zeroed = V4_CHAINS.replace(
-            "address(0x66566cc91dEAf818859bD4b09B7903ac48998157)",
-            "address(0x0000000000000000000000000000000000000000)",
-        );
-        let pins = parse_chain_pins(&zeroed, SAFE_LIB, "");
-        assert_eq!(pins.len(), 2, "the chain is still listed");
-        assert_eq!(pins[1].network, "ethereum");
-        assert!(pins[1].authoriser.is_none(), "nothing to ask");
-    }
-
-    #[test]
-    fn an_unparsable_map_yields_no_document() {
-        assert!(
-            build_grants(
-                "o",
-                "r",
-                &grant_sources("library L {}"),
-                &two_chains(),
-                &all_granted
-            )
-            .is_none(),
-            "an empty table would read as 'no key holds these roles'"
-        );
-    }
-
-    /// A grantee re-exported from another library still resolves, so which lib
-    /// declares a constant is not something this page depends on.
-    #[test]
-    fn an_aliased_grantee_constant_resolves_through_the_re_export() {
-        let aliased = GRANT_LIB.replace(
-            "address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;",
-            "address internal constant GRANTEE_SERVICE_1C66 = LibElsewhere.SERVICE_KEY;",
-        );
-        let mut src = grant_sources(&aliased);
-        let elsewhere =
-            "address internal constant SERVICE_KEY = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;";
-        src.overrides = elsewhere;
-        let v = build_grants("o", "r", &src, &two_chains(), &all_granted).unwrap();
-        assert_eq!(
-            grantee(&v, "GRANTEE_SERVICE_1C66").unwrap()["address"],
-            "0x1c66D6708914C40239D54919320b4C48cAE3D1A9"
-        );
-    }
-
-    /// A grantee whose constant cannot be resolved is shown with a null address
-    /// and an unread status — never silently dropped, and never asked about
-    /// under some other address.
-    #[test]
-    fn an_unresolvable_grantee_is_listed_without_an_address() {
-        let dangling = GRANT_LIB.replace(
-            "address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;",
-            "",
-        );
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(&dangling),
-            &two_chains(),
-            &all_granted,
-        )
-        .unwrap();
-        let g = grantee(&v, "GRANTEE_SERVICE_1C66").expect("still listed");
-        assert!(g["address"].is_null());
-        assert_eq!(
-            status(&v, "GRANTEE_SERVICE_1C66", "DEPOSIT", "base"),
-            "unknown"
-        );
-    }
-
-    /// The map's declared length travels with it, so a body that parsed short
-    /// can be called out rather than reading as a smaller map.
-    #[test]
-    fn a_short_parse_is_visible_against_the_declared_length() {
-        let v = build_grants(
-            "o",
-            "r",
-            &grant_sources(GRANT_LIB),
-            &two_chains(),
-            &all_granted,
-        )
-        .unwrap();
-        assert_eq!(v["pinnedCount"], 7);
-        assert_eq!(v["declaredCount"], 7);
-        let dropped = GRANT_LIB.replace(
-            r#"grants[3] = RoleGrant(keccak256("WITHDRAW"), GRANTEE_SERVICE_1C66);"#,
-            "grants[3] = someOtherThing();",
-        );
-        let v2 = build_grants(
-            "o",
-            "r",
-            &grant_sources(&dropped),
-            &two_chains(),
-            &all_granted,
-        )
-        .unwrap();
-        assert_eq!(v2["pinnedCount"], 6);
-        assert_eq!(v2["declaredCount"], 7, "the shortfall is reportable");
     }
 }

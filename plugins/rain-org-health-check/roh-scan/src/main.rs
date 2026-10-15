@@ -2565,142 +2565,133 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             }
         };
 
-        // st0x.deploy's owner / privileged-address constants (#88), for the
-        // Deployments page's "known owners" view. A one-off targeted read — the
-        // pins live in a handful of libraries in one repo, not per-repo — so it is
-        // fetched here rather than in the per-repo scan. `null` if unreachable.
-        // The deploy libraries both the owners view and the role-grant view read
-        // from, fetched once. `deployment_grants` below consumes the same four.
         let (deploy_org, deploy_repo) = ("S01-Issuer", "st0x.deploy");
-        let safe = gh_file(deploy_org, deploy_repo, "src/lib/LibSafeInvariants.sol");
-        let auth = gh_file(
-            deploy_org,
-            deploy_repo,
-            "src/lib/LibAuthoriserInvariants.sol",
-        );
-        let v4 = gh_file(deploy_org, deploy_repo, "src/generated/LibProdDeployV4.sol");
-        // Fetched once for every section that reads it. `gh_file` is a `gh`
-        // subprocess with no cache and this file is ~126KB, so a fetch per
-        // section is a quarter of a megabyte of identical transfer.
-        let governed_tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
-        // The per-chain governance timelock, which the admin-holder slot of
-        // `expectedGrants` resolves to. Read from the repo for the same reason
-        // every other pin is: the chain list grows.
-        let timelock = gh_file(deploy_org, deploy_repo, "src/lib/LibTimelockInvariants.sol");
-        let overrides = gh_file(
-            deploy_org,
-            deploy_repo,
-            "src/lib/LibProdDeployV2BaseOverrides.sol",
-        );
-        let deploy_sources = owners::OwnerSources {
-            safe_lib: &safe,
-            auth_lib: &auth,
-            v4_lib: &v4,
-            overrides: &overrides,
+        let published = |path: &str| match gh_raw_file(&gh, deploy_org, deploy_repo, path) {
+            FetchOutcome::Found(body) => Ok(body),
+            FetchOutcome::NotFound => Err("HTTP 404".to_string()),
+            FetchOutcome::Failed => Err("no answer".to_string()),
         };
-
-        let deployment_owners = {
-            let (org, repo) = (deploy_org, deploy_repo);
-            // Read the live Base Safe (getOwners + getThreshold) so the page can
-            // show declared-constant vs on-chain provenance. Best-effort: on any
-            // RPC failure the fields stay None and the section falls back to
-            // constants-only.
-            let onchain =
-                owners::parse_address_constant(&safe, "STOX_TOKEN_OWNER_SAFE").map(|safe_addr| {
-                    let s = rpc_session(Chain::Base);
-                    let owners_live = eth_call(s, &safe_addr, &rpc::get_owners_calldata())
-                        .and_then(|hex| rpc::decode_owners(&hex));
-                    let threshold_live = eth_call(s, &safe_addr, &rpc::get_threshold_calldata())
-                        .and_then(|hex| rpc::decode_uint(&hex));
-                    owners::OnChainSafe {
-                        network: "base".into(),
-                        safe: safe_addr,
-                        rpc_host: Chain::Base.rpc_host().into(),
-                        owners: owners_live,
-                        threshold: threshold_live,
-                    }
-                });
-            // Which authoriser clone is LIVE, read from a production receipt
-            // vault rather than asserted from a constant. The two Base clones
-            // trade places during the V4 migration, so a hardcoded
-            // active/pending pair silently contradicts the token rows further
-            // down this same page, which read `authorizer()` per token.
-            let live_authoriser = {
-                deployhealth::parse_receipt_vault_list(&governed_tok_lib)
-                    .addresses
-                    .first()
-                    .and_then(|vault| {
-                        eth_call(rpc_session(Chain::Base), vault, &rpc::authorizer_calldata())
+        let facts = published(privileged::PATH).and_then(|b| privileged::parse(&b));
+        let ideal = published(idealroles::PATH).and_then(|b| idealroles::parse(&b));
+        let sources: Option<Vec<(String, String)>> = match gh_tree_paths(&gh, deploy_org, deploy_repo) {
+            TreeListing::Found { paths, truncated: false } => Some(
+                paths
+                    .into_iter()
+                    .filter(|p| p.starts_with("src/") && p.ends_with(".sol"))
+                    .map(|p| {
+                        let body = gh_file(deploy_org, deploy_repo, &p);
+                        (p, body)
                     })
-                    .and_then(|hex| rpc::decode_address(&hex))
-            };
-            owners::build_owners(
-                org,
-                repo,
-                &deploy_sources,
-                onchain.as_ref(),
-                live_authoriser.as_deref(),
-            )
-            .unwrap_or(serde_json::Value::Null)
+                    .collect(),
+            ),
+            _ => None,
         };
+        let source_bodies: Vec<&str> = sources.iter().flatten().map(|(_, b)| b.as_str()).collect();
+        let timelock = gh_file(deploy_org, deploy_repo, "src/lib/LibTimelockInvariants.sol");
+        let governed_tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
 
-        // Who holds the ACTION roles (#143). The Safe above is the cold key that
-        // can upgrade; these are the hot keys that move value daily, and the page
-        // carried the first without the second.
-        //
-        // Every `(role, grantee)` pair comes out of the deploy repo's own
-        // `expectedGrants()` map — the same map the on-chain assertions iterate —
-        // and each is then asked of the chain with `hasRole`. Nothing about a
-        // grantee is typed here, so a key added to that map appears on the page
-        // by itself. That is the entire point: the hazard being reported on is a
-        // hot key nobody remembered to write down.
-        // Derived once and shared by the two sections below. `gh_file` is a `gh`
-        // subprocess with no cache, and `LibTokenInvariants.sol` is ~126KB, so
-        // fetching it per section is real transfer for an identical answer. The
-        // chains are shared for the same reason, and because two sections
-        // reading the same pins cannot then disagree about which chains exist.
-        let mut chains = owners::parse_chain_pins(&v4, &safe, &timelock);
+        let mut chains = facts.as_ref().map(owners::chain_pins).unwrap_or_default();
         for c in chains.iter_mut() {
             c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
         }
-        // Per chain, not one shared list: each network has its own
-        // `productionTokens<Chain>` table with entirely different addresses.
-        let vaults_for = |network: &str| {
-            deployhealth::parse_receipt_vaults_for(&governed_tok_lib, network).addresses
+        let chain_names: Vec<String> = chains.iter().map(|c| c.network.clone()).collect();
+        let address_names = sources
+            .as_ref()
+            .filter(|_| !chain_names.is_empty())
+            .map(|s| addrnames::build_address_names(s, &chain_names));
+        let name_on = |network: &str, address: &str| -> Option<String> {
+            address_names.as_ref()?.0[network][address.to_lowercase()][0]["name"]
+                .as_str()
+                .map(String::from)
+        };
+        let vaults_for = |network: &str| -> Vec<String> {
+            facts
+                .as_ref()
+                .ok()
+                .and_then(|f| f.chain(network))
+                .map(|c| c.receipt_vaults.iter().map(|v| v.to_lowercase()).collect())
+                .unwrap_or_default()
         };
 
-        let deployment_grants = {
-            // One session per chain, so every `hasRole` for a chain hits the same
-            // endpoint and the map cannot be answered by two nodes disagreeing.
-            let sessions: Vec<(String, Session)> = chains
-                .iter()
-                .filter_map(|c| {
-                    Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
-                })
-                .collect();
-            let check = |network: &str, authoriser: &str, role: &str, grantee: &str| {
-                let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
-                    return owners::GrantOnChain::Unknown;
+        let deployment_owners = match &facts {
+            Err(why) => owners::owners_unavailable(deploy_org, deploy_repo, why),
+            Ok(f) => {
+                let onchain = f
+                    .chain(owners::REFERENCE_NETWORK)
+                    .and_then(|c| c.safe.clone())
+                    .zip(Chain::from_network(owners::REFERENCE_NETWORK))
+                    .map(|(safe_addr, chain)| {
+                        let s = rpc_session(chain);
+                        let owners_live = eth_call(s, &safe_addr, &rpc::get_owners_calldata())
+                            .and_then(|hex| rpc::decode_owners(&hex));
+                        let threshold_live = eth_call(s, &safe_addr, &rpc::get_threshold_calldata())
+                            .and_then(|hex| rpc::decode_uint(&hex));
+                        owners::OnChainSafe {
+                            network: owners::REFERENCE_NETWORK.into(),
+                            safe: safe_addr,
+                            rpc_host: chain.rpc_host().into(),
+                            owners: owners_live,
+                            threshold: threshold_live,
+                        }
+                    });
+                let live_authorisers: Vec<(String, Option<String>)> = f
+                    .chains
+                    .iter()
+                    .map(|c| {
+                        let live = Chain::from_network(&c.network)
+                            .zip(c.receipt_vaults.first())
+                            .and_then(|(ch, vault)| {
+                                eth_call(rpc_session(ch), vault, &rpc::authorizer_calldata())
+                            })
+                            .and_then(|hex| rpc::decode_address(&hex));
+                        (c.network.clone(), live)
+                    })
+                    .collect();
+                owners::build_owners(
+                    deploy_org,
+                    deploy_repo,
+                    f,
+                    onchain.as_ref(),
+                    &live_authorisers,
+                    &|a| name_on(owners::REFERENCE_NETWORK, a),
+                )
+            }
+        };
+
+        let role_names = rbac::role_names(&source_bodies);
+        let deployment_grants = match &ideal {
+            Err(why) => owners::grants_unavailable(deploy_org, deploy_repo, why),
+            Ok(ideal) => {
+                // One session per chain, so every `hasRole` for a chain hits one endpoint.
+                let sessions: Vec<(String, Session)> = chains
+                    .iter()
+                    .filter_map(|c| {
+                        Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
+                    })
+                    .collect();
+                let check = |network: &str, authoriser: &str, role: &str, grantee: &str| {
+                    let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
+                        return owners::GrantOnChain::Unknown;
+                    };
+                    let Some(data) = role
+                        .parse::<alloy_primitives::B256>()
+                        .ok()
+                        .and_then(|id| rpc::has_role_calldata(id.0, grantee))
+                    else {
+                        return owners::GrantOnChain::Unknown;
+                    };
+                    match curl_json(*session, &eth_call_payload(authoriser, &data)) {
+                        Some(body) => match rpc::classify_bool(&body) {
+                            rpc::CallClass::True => owners::GrantOnChain::Granted,
+                            rpc::CallClass::False => owners::GrantOnChain::NotGranted,
+                            // A revert says nothing about the grant.
+                            _ => owners::GrantOnChain::Unknown,
+                        },
+                        None => owners::GrantOnChain::Unknown,
+                    }
                 };
-                // An address that will not parse is not asked about as address(0)
-                // — that would come back `false` and read as a revoked grant.
-                let Some(data) = rpc::has_role_calldata(rpc::role_id(role), grantee) else {
-                    return owners::GrantOnChain::Unknown;
-                };
-                match curl_json(*session, &eth_call_payload(authoriser, &data)) {
-                    Some(body) => match rpc::classify_bool(&body) {
-                        rpc::CallClass::True => owners::GrantOnChain::Granted,
-                        rpc::CallClass::False => owners::GrantOnChain::NotGranted,
-                        // A revert is not a `false`: an authoriser that does not
-                        // answer `hasRole` at all has told us nothing about the
-                        // grant, and saying "not granted" would invent an answer.
-                        _ => owners::GrantOnChain::Unknown,
-                    },
-                    None => owners::GrantOnChain::Unknown,
-                }
-            };
-            owners::build_grants(deploy_org, deploy_repo, &deploy_sources, &chains, &check)
-                .unwrap_or(serde_json::Value::Null)
+                owners::build_grants(deploy_org, deploy_repo, ideal, &chains, &role_names, &name_on, &check)
+            }
         };
 
         // Where the deploy repo's RBAC subgraph is published per network, and
@@ -2713,63 +2704,16 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 ".github/workflows/deploy-subgraph.yaml",
             );
             let networks_json = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
-            let orchestrator =
-                gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
-            let authorizer = gh_file(
-                deploy_org,
-                deploy_repo,
-                "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
-            );
-            let names = rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer]);
             let mut doc = rbac::build_rbac(
                 deploy_org,
                 deploy_repo,
                 rbac::parse_deploy_workflow(&workflow).as_ref(),
                 rbac::parse_networks(&networks_json).as_deref(),
-                &names,
+                &role_names,
             );
-            // Who each address on the tab is: every `address` constant in the
-            // deploy repo's libraries, per chain. Every `.sol` the two
-            // directories list is read, so a new library or pin is named
-            // without a change here. Bodies this scan already fetched are
-            // reused rather than fetched again.
-            let fetched: [(&str, &str); 6] = [
-                ("src/lib/LibSafeInvariants.sol", &safe),
-                ("src/lib/LibAuthoriserInvariants.sol", &auth),
-                ("src/generated/LibProdDeployV4.sol", &v4),
-                ("src/lib/LibTokenInvariants.sol", &governed_tok_lib),
-                ("src/lib/LibTimelockInvariants.sol", &timelock),
-                ("src/lib/LibProdDeployV2BaseOverrides.sol", &overrides),
-            ];
-            let mut sources: Vec<(String, String)> = Vec::new();
-            let mut listed_all = true;
-            for dir in ["src/lib", "src/generated"] {
-                let Some(listing) = gh_stdout(&[
-                    "api",
-                    &format!("repos/{deploy_org}/{deploy_repo}/contents/{dir}"),
-                    "--jq",
-                    ".[] | select(.type == \"file\") | .name",
-                ]) else {
-                    listed_all = false;
-                    continue;
-                };
-                for name in listing.lines().map(str::trim) {
-                    if !name.ends_with(".sol") {
-                        continue;
-                    }
-                    let path = format!("{dir}/{name}");
-                    let body = match fetched.iter().find(|(p, _)| *p == path) {
-                        Some((_, b)) => b.to_string(),
-                        None => gh_file(deploy_org, deploy_repo, &path),
-                    };
-                    sources.push((path, body));
-                }
-            }
-            let chain_names: Vec<String> = chains.iter().map(|c| c.network.clone()).collect();
-            if listed_all && !chain_names.is_empty() {
-                let (map, unread) = addrnames::build_address_names(&sources, &chain_names);
-                doc["addressNames"] = map;
-                doc["addressNamesUnread"] = serde_json::Value::from(unread);
+            if let Some((map, unread)) = &address_names {
+                doc["addressNames"] = map.clone();
+                doc["addressNamesUnread"] = serde_json::Value::from(unread.clone());
             }
             doc
         };
