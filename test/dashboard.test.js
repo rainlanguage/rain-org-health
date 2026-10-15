@@ -6001,17 +6001,35 @@ Deno.test("deployments: no owner data shows an empty state and no groups", () =>
   assert(collect(box, "own-group").length === 0, "no owner groups rendered");
 });
 
-Deno.test("deployments: verified signers show constant + on-chain provenance side by side", () => {
+Deno.test("deployments: an unreadable privileged-addresses.json says why and links the file", () => {
+  const box = deploymentsBox({
+    deploymentOwners: { org: "S01-Issuer", repo: "st0x.deploy", unavailable: "HTTP 404" },
+  });
+  const empty = collect(box, "empty");
+  assert(empty.length === 1, "one empty state");
+  assert(
+    textOf(empty[0]) === "Owner data unavailable — privileged-addresses.json could not be read: HTTP 404.",
+    "names the file and the reason: " + textOf(empty[0]),
+  );
+  const [a] = tags(empty[0], "a");
+  assert(
+    a && a.href === "https://github.com/S01-Issuer/st0x.deploy/blob/main/privileged-addresses.json",
+    "links the file on the deploy repo's main: " + (a && a.href),
+  );
+  assert(collect(box, "own-group").length === 0, "no owner groups rendered");
+});
+
+Deno.test("deployments: verified signers show declared + on-chain provenance side by side", () => {
   const box = deploymentsBox(OWNERS);
   assert(
     collect(box, "own-verify-ok").length === 1,
     "an on-chain-verified banner",
   );
-  // each of the six signers renders BOTH a 'constant ✓' and an 'on-chain ✓' chip
+  // each of the six signers renders BOTH a 'declared ✓' and an 'on-chain ✓' chip
   const labels = collect(box, "own-chip").map((c) => c.textContent);
   assert(
-    labels.filter((l) => l === "constant ✓").length === 6,
-    "six constant ✓ chips",
+    labels.filter((l) => l === "declared ✓").length === 6,
+    "six declared ✓ chips",
   );
   assert(
     labels.filter((l) => l === "on-chain ✓").length === 6,
@@ -6076,18 +6094,28 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
     labels.filter((l) => l === "on-chain ✗").length === 1,
     "one on-chain ✗ (missing signer)",
   );
-  // the on-chain-only owner reads constant ✗ (its on-chain source is still ✓)
+  // the on-chain-only owner reads declared ✗ (its on-chain source is still ✓)
   assert(
-    labels.filter((l) => l === "constant ✗").length === 1,
-    "one constant ✗ (unexpected owner)",
+    labels.filter((l) => l === "declared ✗").length === 1,
+    "one declared ✗ (unexpected owner)",
   );
   assert(
     collect(box, "own-extra").length === 1,
     "the unexpected owner is its own flagged row",
   );
+  const rowChips = (row) => collect(row, "own-chip").map((c) => c.textContent);
+  assert(
+    rowChips(collect(box, "own-extra")[0]).join() === "declared ✗,on-chain ✓",
+    "the unexpected owner is on-chain only: " + rowChips(collect(box, "own-extra")[0]),
+  );
+  const absent = collect(box, "own-row").find((r) => rowChips(r).includes("on-chain ✗"));
+  assert(
+    rowChips(absent).join() === "declared ✓,on-chain ✗",
+    "the absent signer is declared only: " + rowChips(absent),
+  );
   const banner = collect(box, "own-verify-drift")[0];
   assert(
-    textOf(banner).includes("3 (constant) · 2 (on-chain)"),
+    textOf(banner).includes("3 (declared) · 2 (on-chain)"),
     "threshold mismatch shown: " + textOf(banner),
   );
 });
@@ -6138,10 +6166,8 @@ function grantsData(over = {}) {
     deploymentGrants: {
       org: "S01-Issuer",
       repo: "st0x.deploy",
-      source: "src/lib/LibAuthoriserInvariants.sol",
-      function: "expectedGrants(address)",
+      source: "ideal-roles.json",
       pinnedCount: 5,
-      declaredCount: 5,
       chains: [
         {
           network: "base",
@@ -6393,12 +6419,9 @@ Deno.test("deployments: a partly-live chain names the unread grants apart from t
   );
 });
 
-// The grant map is parsed independently of the owner constants, and it is the
-// half of this page that says who can move value — so it must survive the
-// owners read failing rather than disappearing with it.
-Deno.test("deployments: the grants section renders even when the owner constants could not be read", () => {
+Deno.test("deployments: the grants section renders even when privileged-addresses.json could not be read", () => {
   const d = grantsData();
-  d.deploymentOwners = null;
+  d.deploymentOwners = { org: "S01-Issuer", repo: "st0x.deploy", unavailable: "HTTP 404" };
   const box = deploymentsBox(d);
   assert(collect(box, "empty").length === 1, "owners report themselves absent");
   assert(
@@ -6530,15 +6553,77 @@ Deno.test("deployments: an unread chain says why, and never reads as revoked", (
   );
 });
 
-Deno.test("deployments: a grant map that parsed short says so before any count is read", () => {
-  const box = deploymentsBox(grantsData({ declaredCount: 9 }));
-  const drift = collect(box, "own-verify-drift");
-  assert(drift.length === 1, "a short parse is drift, not a rollout");
-  const msg = drift[0].textContent || "";
+Deno.test("deployments: the grants section links the ideal-roles.json it reads", () => {
+  const box = deploymentsBox(grantsData());
+  const sub = collect(box, "own-sub").find((s) => textOf(s).startsWith("Every (role, grantee) pair"));
+  assert(sub, "the grants subtitle renders");
+  const [a] = tags(sub, "a");
   assert(
-    msg.includes("9 grants declared") && msg.includes("5 parsed") &&
-      msg.includes("INCOMPLETE"),
-    "it names both numbers: " + msg,
+    a && a.textContent === "ideal-roles.json" &&
+      a.href === "https://github.com/S01-Issuer/st0x.deploy/blob/main/ideal-roles.json",
+    "it links the deploy repo's ideal-roles.json on main: " + (a && a.href),
+  );
+});
+
+Deno.test("deployments: an unreadable ideal-roles.json says why instead of rendering no grants", () => {
+  const box = deploymentsBox({
+    ...OWNERS,
+    deploymentGrants: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      source: "ideal-roles.json",
+      unavailable: "no answer",
+    },
+  });
+  const sub = collect(box, "own-sub").find((s) => textOf(s).startsWith("Role grants unavailable"));
+  assert(
+    sub && textOf(sub) === "Role grants unavailable — ideal-roles.json could not be read: no answer.",
+    "names the file and the reason: " + (sub && textOf(sub)),
+  );
+  assert(grantSections(box).length === 0, "no role tables");
+});
+
+Deno.test("deployments: a grantee the deploy repo does not name reads as its address or its slot", () => {
+  const unnamed = "0x" + "ab".repeat(32);
+  const box = deploymentsBox(grantsData({
+    grantees: [
+      {
+        ident: null,
+        kind: "constant",
+        address: SERVICE_EOA,
+        roles: [{
+          role: unnamed,
+          roleId: unnamed,
+          admin: false,
+          chains: [{ network: "base", address: SERVICE_EOA, status: "granted" }],
+        }],
+      },
+      {
+        ident: null,
+        kind: "safe",
+        address: null,
+        roles: [safeRole("DEPOSIT", false)],
+      },
+      {
+        ident: null,
+        kind: "admin-holder",
+        address: null,
+        roles: [safeRole("DEPOSIT_ADMIN", true)],
+      },
+    ],
+  }));
+  const roles = collect(box, "own-role").map((r) => r.textContent);
+  assert(roles.includes(SERVICE_EOA), "an unnamed service key reads as its address: " + roles.join(","));
+  assert(roles.includes("Token-owner Safe"), "an unnamed Safe reads as the Safe slot");
+  assert(roles.includes("Governance timelock"), "an unnamed timelock reads as the timelock slot");
+  assert(!roles.some((r) => r == null || r === "null"), "no grantee renders as null");
+  assert(
+    collect(box, "grt-role").some((r) => r.textContent === unnamed),
+    "an unnamed role shows its id as its name",
+  );
+  assert(
+    !collect(box, "grt-roleid").some((r) => r.textContent === unnamed),
+    "and does not repeat the id beside it",
   );
 });
 
@@ -6566,7 +6651,7 @@ Deno.test("deployments: with no grant data the section is absent and the rest of
 Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak checks", () => {
   const data = {
     deploymentOwners: null, // health must render even without owners
-    deploymentHealth: {
+    deploymentHealth: [{
       org: "S01-Issuer",
       repo: "st0x.deploy",
       version: "0.1.1",
@@ -6600,7 +6685,7 @@ Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak ch
           erc165: "nonconformant",
         },
       ],
-    },
+    }],
   };
   const box = deploymentsBox(data);
   const chips = collect(box, "own-chip").map((c) => c.textContent);
@@ -6637,6 +6722,55 @@ Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak ch
   );
 });
 
+Deno.test("deployments: every pointer suite gets its own health block", () => {
+  const suite = (version, status) => ({
+    org: "S01-Issuer",
+    repo: "st0x.deploy",
+    version,
+    network: "base",
+    rpcHost: "mainnet.base.org",
+    total: 1,
+    healthy: status === "healthy" ? 1 : 0,
+    contracts: [{
+      name: "StoxReceipt",
+      address: "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
+      status,
+      codeMatch: status === "healthy",
+      hashMatch: status === "healthy",
+      erc165: "conformant",
+    }],
+  });
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentHealth: [suite("0.1.1", "healthy"), suite("0.1.30", "mismatch"), suite("candidate", "healthy")],
+  });
+  const heads = tags(box, "h2").map((h) => h.textContent).filter((t) => t.includes("suite"));
+  assert(
+    JSON.stringify(heads) ===
+      JSON.stringify(["0.1.1 suite — base health", "0.1.30 suite — base health", "candidate suite — base health"]),
+    "one heading per suite, in scan order: " + heads.join(" | "),
+  );
+  assert(collect(box, "own-verify-ok").length === 2, "two healthy suites");
+  assert(collect(box, "own-verify-drift").length === 1, "one unhealthy suite");
+});
+
+Deno.test("deployments: suite health says so when the scan could not list the suites", () => {
+  const text = (h) =>
+    collect(deploymentsBox({ deploymentOwners: null, deploymentHealth: h }), "own-sub")
+      .map((n) => n.textContent ?? textOf(n))
+      .filter((t) => t.startsWith("Suite health"));
+  assert(
+    JSON.stringify(text(null)) ===
+      JSON.stringify(["Suite health unavailable — the scan could not list the deploy repo's source tree."]),
+    "an unread tree is unavailable: " + text(null),
+  );
+  assert(
+    JSON.stringify(text([])) ===
+      JSON.stringify(["Suite health unavailable — the scan found no pointer suites in the deploy repo's source tree."]),
+    "a tree with no suites says so: " + text([]),
+  );
+});
+
 Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and flag behind-target", () => {
   const TARGET = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
   const data = {
@@ -6648,7 +6782,6 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
       network: "base",
       rpcHost: "mainnet.base.org",
       safeOwner: "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-      targetVersion: "0.1.1",
       total: 2,
       healthy: 0,
       beacons: [
@@ -6658,10 +6791,9 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
           owner: "0xe70d821f3462a074e63b42d0aac6523faae1d611",
           ownerLabel: "safe",
           implementation: "0xe7573879d73455dc92cb4087fa8177594387cbcd",
-          implVersion: "V1",
-          targetImpl: TARGET,
-          targetVersion: "0.1.1",
-          atTarget: false,
+          implVersion: "v1",
+          pinnedImpl: TARGET,
+          atPinned: false,
           status: "behind",
         },
         {
@@ -6670,10 +6802,9 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
           owner: "0x8e4bdeec7ceb9570d440676345da1dce10329f5b",
           ownerLabel: "legacy",
           implementation: TARGET,
-          implVersion: "0.1.1",
-          targetImpl: TARGET,
-          targetVersion: "0.1.1",
-          atTarget: true,
+          implVersion: "pinned",
+          pinnedImpl: TARGET,
+          atPinned: true,
           status: "drift",
         },
       ],
@@ -6684,15 +6815,22 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
   // owners labelled by identity, not a bare tick
   assert(chips.includes("Safe"), "owner labelled Safe");
   assert(chips.includes("legacy EOA"), "owner labelled legacy EOA");
-  // the behind beacon shows NOW (V1) and the should-be TARGET (0.1.1), each with an address
-  assert(chips.includes("V1"), "now impl labelled V1: " + chips.join(","));
-  assert(collect(box, "own-chip-target").length >= 1, "a target-impl chip");
+  // the behind beacon shows NOW (v1) and the pinned impl, each with an address
+  assert(chips.includes("v1"), "now impl labelled v1: " + chips.join(","));
+  assert(
+    collect(box, "own-chip-target").map((c) => c.textContent).join() === "pinned",
+    "one pinned-impl chip, on the behind beacon",
+  );
   const addrs = collect(box, "own-addr").map((a) => a.textContent);
   assert(
     addrs.includes(TARGET),
-    "the target impl address is shown for checking a proposed upgrade",
+    "the pinned impl address is shown for checking a proposed upgrade",
   );
-  assert(chips.includes("0.1.1 ✓"), "the at-target beacon confirms 0.1.1");
+  assert(chips.includes("pinned ✓"), "the at-pinned beacon confirms it");
+  assert(
+    collect(box, "own-chip-yes").some((c) => c.textContent === "pinned ✓"),
+    "the at-pinned chip reads as ok",
+  );
   // statuses
   assert(chips.includes("behind"), "a behind status");
   assert(chips.includes("drift"), "a drift status (legacy owner)");
@@ -6714,7 +6852,6 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
       network: "ethereum",
       rpcHost: "ethereum-rpc.publicnode.com",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
       total: 1,
       healthy: 1,
       beacons: [
@@ -6724,10 +6861,9 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
           owner: TIMELOCK,
           ownerLabel: "timelock",
           implementation: TARGET,
-          implVersion: "0.1.1",
-          targetImpl: TARGET,
-          targetVersion: "0.1.1",
-          atTarget: true,
+          implVersion: "pinned",
+          pinnedImpl: TARGET,
+          atPinned: true,
           status: "healthy",
         },
       ],
@@ -6755,6 +6891,59 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
   assert(
     addrs.some((a) => a.toLowerCase() === TIMELOCK.toLowerCase()),
     "the timelock address is shown so the reader can check which one it is",
+  );
+});
+
+Deno.test("deployments: a beacon with no pin or no live implementation reads unknown, never pinned", () => {
+  const SAFE = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
+  const PINNED = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const box = deploymentsBox({
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      safeOwner: SAFE,
+      total: 2,
+      healthy: 0,
+      beacons: [
+        {
+          name: "Orchestrator beacon",
+          address: "0x1111111111111111111111111111111111111111",
+          owner: SAFE,
+          ownerLabel: "safe",
+          implementation: "0xe7573879d73455dc92cb4087fa8177594387cbcd",
+          implVersion: "v1",
+          pinnedImpl: null,
+          atPinned: null,
+          status: "unknown",
+        },
+        {
+          name: "Receipt beacon",
+          address: "0x2222222222222222222222222222222222222222",
+          owner: SAFE,
+          ownerLabel: "safe",
+          implementation: null,
+          implVersion: "unknown",
+          pinnedImpl: PINNED,
+          atPinned: null,
+          status: "unknown",
+        },
+      ],
+    },
+  });
+  const lines = collect(box, "bcn-line").map((l) => [l.children[0].textContent, l.children[1]]);
+  assert(!lines.some(([k]) => k === "impl"), "an unknown pin state is never shown as pinned");
+  const now = lines.filter(([k]) => k === "now").map(([, c]) => `${c.textContent}:${c.className}`);
+  assert(
+    now.join() === "v1:own-chip own-chip-dim,unknown:own-chip own-chip-dim",
+    "each live implementation reads in the unknown colour: " + now,
+  );
+  const targets = lines.filter(([k]) => k === "target");
+  assert(targets.length === 1, "only the pinned slot names a target: " + targets.length);
+  assert(
+    collect(box, "own-addr").some((a) => a.textContent === PINNED),
+    "the target is the pinned implementation",
   );
 });
 
@@ -6846,7 +7035,6 @@ Deno.test("deployments: a closed tab's content is still in the document", () => 
       network: "ethereum",
       rpcHost: "h",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
       total: 1,
       healthy: 1,
       beacons: [{
@@ -6855,10 +7043,9 @@ Deno.test("deployments: a closed tab's content is still in the document", () => 
         owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
         ownerLabel: "timelock",
         implementation: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        implVersion: "0.1.1",
-        targetImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        targetVersion: "0.1.1",
-        atTarget: true,
+        implVersion: "pinned",
+        pinnedImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+        atPinned: true,
         status: "healthy",
       }],
     },
@@ -6929,7 +7116,7 @@ Deno.test("deployments: the health and tokens sections link their own chain too"
   const health = deploymentsBox({
     deploymentOwners: null,
     deploymentBeacons: null,
-    deploymentHealth: {
+    deploymentHealth: [{
       org: "S01-Issuer",
       repo: "st0x.deploy",
       version: "0.1.1",
@@ -6945,7 +7132,7 @@ Deno.test("deployments: the health and tokens sections link their own chain too"
         hashMatch: true,
         erc165: "conformant",
       }],
-    },
+    }],
   });
   const hh = collect(health, "own-addr").map((a) => a.href).filter(Boolean);
   assert(
@@ -6970,8 +7157,8 @@ Deno.test("deployments: the health and tokens sections link their own chain too"
       total: 1,
       ok: 1,
       wrappedCount: 1,
-      atAuthoriserTarget: 1,
-      authoriser: { current: "0xc1", target: "0xt1", targetDeployed: true },
+      atPinnedAuthoriser: 1,
+      authoriser: { pinned: "0xt1", pinnedDeployed: true },
       tokens: [{
         symbol: "wtNVDA",
         name: "Wrapped NVIDIA Corporation ST0x",
@@ -7010,7 +7197,6 @@ Deno.test("deployments: an address on an unknown chain is plain text, not a Base
       network: "someNewChain",
       rpcHost: "rpc.example.invalid",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
       total: 1,
       healthy: 1,
       beacons: [{
@@ -7019,10 +7205,9 @@ Deno.test("deployments: an address on an unknown chain is plain text, not a Base
         owner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
         ownerLabel: "safe",
         implementation: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        implVersion: "0.1.1",
-        targetImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        targetVersion: "0.1.1",
-        atTarget: true,
+        implVersion: "pinned",
+        pinnedImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
+        atPinned: true,
         status: "healthy",
       }],
     },
@@ -7052,7 +7237,6 @@ Deno.test("deployments: per-chain sections link their OWN chain's explorer", () 
       network: "ethereum",
       rpcHost: "ethereum-rpc.publicnode.com",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
       total: 1,
       healthy: 1,
       beacons: [{
@@ -7061,10 +7245,9 @@ Deno.test("deployments: per-chain sections link their OWN chain's explorer", () 
         owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
         ownerLabel: "timelock",
         implementation: TARGET,
-        implVersion: "0.1.1",
-        targetImpl: TARGET,
-        targetVersion: "0.1.1",
-        atTarget: true,
+        implVersion: "pinned",
+        pinnedImpl: TARGET,
+        atPinned: true,
         status: "healthy",
       }],
     },
@@ -7086,8 +7269,8 @@ Deno.test("deployments: per-chain sections link their OWN chain's explorer", () 
 Deno.test("deployments: tokens check registry identity + asset wiring, flag mismatch/wiring", () => {
   const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
   const WRONG = "0xbeef000000000000000000000000000000000002";
-  const CUR = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"; // current prod authoriser
-  const TGT = "0x315b16faa6ee413fabca877d3851b3818369f0cd"; // V4-clone target
+  const CUR = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"; // an authoriser that is not the pinned one
+  const TGT = "0x315b16faa6ee413fabca877d3851b3818369f0cd"; // the pinned authoriser
   const data = {
     deploymentOwners: null,
     deploymentHealth: null,
@@ -7100,10 +7283,10 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       total: 3,
       ok: 1,
       wrappedCount: 3,
-      atAuthoriserTarget: 1,
-      authoriser: { current: CUR, target: TGT, targetDeployed: true },
+      atPinnedAuthoriser: 1,
+      authoriser: { pinned: TGT, pinnedDeployed: true },
       tokens: [
-        // fully wired AND already at the V4-clone authoriser target
+        // fully wired AND already at the pinned authoriser
         {
           symbol: "wtNVDA",
           name: "Wrapped NVIDIA Corporation ST0x",
@@ -7122,12 +7305,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           legacyDeployed: true,
           receiptDeployed: true,
           authoriser: TGT,
-          authoriserLabel: "target",
-          authoriserTarget: TGT,
-          atAuthoriserTarget: true,
+          authoriserLabel: "pinned",
+          authoriserPinned: TGT,
+          atPinnedAuthoriser: true,
           inMigrationSet: true,
         },
-        // asset() points at the wrong underlying → wiring; authoriser still at current
+        // asset() points at the wrong underlying → wiring; authoriser not the pinned one
         {
           symbol: "wtAMZN",
           name: "Wrapped Amazon ST0x",
@@ -7146,12 +7329,12 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           legacyDeployed: true,
           receiptDeployed: true,
           authoriser: CUR,
-          authoriserLabel: "current",
-          authoriserTarget: TGT,
-          atAuthoriserTarget: false,
+          authoriserLabel: "foreign",
+          authoriserPinned: TGT,
+          atPinnedAuthoriser: false,
           inMigrationSet: true,
         },
-        // on-chain symbol disagrees with the registry → mismatch; authoriser at current
+        // on-chain symbol disagrees with the registry → mismatch; authoriser not the pinned one
         {
           symbol: "wtTSLA",
           name: "Wrapped Tesla ST0x",
@@ -7170,9 +7353,9 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           legacyDeployed: true,
           receiptDeployed: true,
           authoriser: CUR,
-          authoriserLabel: "current",
-          authoriserTarget: TGT,
-          atAuthoriserTarget: false,
+          authoriserLabel: "foreign",
+          authoriserPinned: TGT,
+          atPinnedAuthoriser: false,
           inMigrationSet: true,
         },
         // NOTE: USDC is deliberately NOT here. The main list is the intersection
@@ -7186,7 +7369,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       // not the bundle.
       reconcile: {
         source: "S01-Issuer/st0x.deploy",
-        function: "LibTokenInvariants.productionReceiptVaults()",
+        list: "privileged-addresses.json chains.8453.receiptVaults",
         governedCount: 4,
         registryTokenCount: 4,
         extraVaults: [
@@ -7196,9 +7379,9 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
             symbol: "tIBHG",
             deployed: true,
             authoriser: CUR,
-            authoriserLabel: "current",
-            authoriserTarget: TGT,
-            atAuthoriserTarget: false,
+            authoriserLabel: "foreign",
+            authoriserPinned: TGT,
+            atPinnedAuthoriser: false,
           },
         ],
         missingFromMigration: [
@@ -7239,23 +7422,27 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     collect(box, "own-table")[0].children.length === 3,
     "the main token table holds only the three governed tokens",
   );
-  // Authoriser provenance: the migrated vault shows the V4 clone confirmed; the
-  // two pre-migration vaults show the current authoriser NOW + the V4-clone target
+  // Authoriser provenance: the vault at the pinned authoriser confirms it; the
+  // others show the foreign authoriser NOW + the pinned one
   // (address linked), so the setAuthorizer bundle can be checked per vault.
   assert(
-    chips.includes("V4 clone ✓"),
-    "the migrated vault confirms the V4 clone",
+    chips.includes("pinned ✓"),
+    "the vault at the pinned authoriser confirms it",
   );
   assert(
-    chips.filter((c) => c === "current prod authoriser").length === 3,
-    "two registry vaults + the extra governed vault show the current prod authoriser",
+    collect(box, "own-chip-yes").some((c) => c.textContent === "pinned ✓"),
+    "the at-pinned authoriser chip reads as ok",
   );
   assert(
-    chips.filter((c) => c === "V4 clone").length === 3,
-    "three → target lines point at the V4 clone (two registry + the extra vault)",
+    chips.filter((c) => c === "foreign").length === 3,
+    "two registry vaults + the extra governed vault show a foreign authoriser",
   );
-  assert(addrs.includes(TGT), "the V4-clone target address is linked");
-  assert(addrs.includes(CUR), "the current authoriser address is linked");
+  assert(
+    chips.filter((c) => c === "pinned").length === 3,
+    "three → target lines point at the pinned authoriser (two registry + the extra vault)",
+  );
+  assert(addrs.includes(TGT), "the pinned authoriser address is linked");
+  assert(addrs.includes(CUR), "the foreign authoriser address is linked");
   // a mismatched identity field shows the on-chain value NOW next to the registry value
   assert(
     chips.includes("on-chain"),
@@ -7270,13 +7457,17 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     chips.filter((c) => c === "unwrapped").length === 1,
     "one expected-unwrapped target chip (the wiring token)",
   );
-  // section-level migration banner states the target + progress
+  // section-level banner states the pinned authoriser + progress
   const banners = collect(box, "own-verify").map((b) => textOf(b));
   assert(
     banners.some((m) =>
-      m.includes("Authoriser migration") && m.includes("1 of 3")
+      m.includes("1 of 3 receipt vaults at the pinned authoriser (deployed)")
     ),
-    "the authoriser migration banner states progress + target",
+    "the authoriser banner states progress against the pinned authoriser",
+  );
+  assert(
+    collect(box, "own-verify-src").some((s) => s.textContent === `pinned ${TGT}`),
+    "the authoriser banner names the pinned authoriser",
   );
   // not-all-ok summaries: wired + authoriser + cross-check(governed) + cross-check(missing)
   assert(
@@ -9226,7 +9417,6 @@ Deno.test("deployments: every chain in the beacon list gets its own section", ()
     network,
     rpcHost: `${network}-rpc`,
     safeOwner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-    targetVersion: "0.1.1",
     total: 1,
     healthy: 1,
     beacons: [{
@@ -9234,7 +9424,8 @@ Deno.test("deployments: every chain in the beacon list gets its own section", ()
       address: "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
       status: "healthy",
       ownerLabel: "safe",
-      implLabel: "target",
+      implVersion: "pinned",
+      atPinned: true,
     }],
   });
   const box = deploymentsBox({
@@ -9260,7 +9451,6 @@ Deno.test("deployments: a single beacon block still renders", () => {
       network: "base",
       rpcHost: "mainnet.base.org",
       safeOwner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-      targetVersion: "0.1.1",
       total: 1,
       healthy: 1,
       beacons: [{
@@ -9283,7 +9473,7 @@ Deno.test("deployments: a chain the scan could not read says so, it does not van
       network: "ethereum",
       rpcHost: "ethereum-rpc.publicnode.com",
       unavailable: true,
-      reason: "the scan could not read the st0x.deploy beacon constants",
+      reason: "the scan has no RPC endpoint for this network",
     }],
   });
   const t = textOf(box);
@@ -9296,8 +9486,23 @@ Deno.test("deployments: a chain the scan could not read says so, it does not van
     "must distinguish broken from absent: " + t,
   );
   assert(
-    t.includes("could not read"),
+    t.includes("no RPC endpoint"),
     "the reason identifies the failure: " + t,
+  );
+});
+
+Deno.test("deployments: unreadable beacon pins name the file, not an unknown chain", () => {
+  const box = deploymentsBox({
+    deploymentBeacons: [{
+      unavailable: true,
+      reason: "privileged-addresses.json could not be read: HTTP 404",
+    }],
+  });
+  const heads = tags(box, "h2").map((h) => h.textContent).filter((h) => h.startsWith("Beacons"));
+  assert(JSON.stringify(heads) === JSON.stringify(["Beacons"]), "one chainless heading: " + heads);
+  assert(
+    textOf(box).includes("Beacon data unavailable — privileged-addresses.json could not be read: HTTP 404."),
+    "the reason is the file's: " + textOf(box),
   );
 });
 
@@ -9312,7 +9517,8 @@ Deno.test("deployments: an empty token set still shows the reconcile breakdown",
         governedCount: 2,
         registryTokenCount: 23,
         source: "S01-Issuer/st0x.deploy",
-        function: "LibTokenInvariants.productionReceiptVaults()",
+        list: "privileged-addresses.json chains.8453.receiptVaults",
+        unavailable: null,
         extraVaults: [{
           address: "0xfeed000000000000000000000000000000000001",
         }],
@@ -9335,54 +9541,6 @@ Deno.test("deployments: an empty token set still shows the reconcile breakdown",
   );
 });
 
-Deno.test("deployments: a governed set short of its declared entries says so", () => {
-  const box = deploymentsBox({
-    deploymentTokens: {
-      org: "ST0x-Technology",
-      repo: "st0x.registry",
-      network: "base",
-      tokens: [],
-      reconcile: {
-        governedCount: 20,
-        governedDeclared: 22,
-        registryTokenCount: 23,
-        source: "S01-Issuer/st0x.deploy",
-        function: "LibTokenInvariants.productionReceiptVaults()",
-        extraVaults: [],
-        missingFromMigration: [],
-      },
-    },
-  });
-  const t = textOf(box);
-  assert(t.includes("INCOMPLETE"), "a short list must be named as short: " + t);
-  assert(t.includes("22"), "the declared count must appear: " + t);
-});
-
-Deno.test("deployments: a fully resolved governed set claims no shortfall", () => {
-  const box = deploymentsBox({
-    deploymentTokens: {
-      org: "ST0x-Technology",
-      repo: "st0x.registry",
-      network: "base",
-      tokens: [],
-      reconcile: {
-        governedCount: 22,
-        governedDeclared: 22,
-        registryTokenCount: 23,
-        source: "S01-Issuer/st0x.deploy",
-        function: "LibTokenInvariants.productionReceiptVaults()",
-        extraVaults: [],
-        missingFromMigration: [],
-      },
-    },
-  });
-  const t = textOf(box);
-  assert(
-    !t.includes("INCOMPLETE"),
-    "declared === resolved is not a shortfall: " + t,
-  );
-});
-
 Deno.test("deployments: an empty token set reports why, it does not vanish", () => {
   const box = deploymentsBox({
     deploymentTokens: {
@@ -9393,7 +9551,8 @@ Deno.test("deployments: an empty token set reports why, it does not vanish", () 
       reconcile: {
         governedCount: 0,
         registryTokenCount: 23,
-        function: "LibTokenInvariants.productionReceiptVaults()",
+        list: "privileged-addresses.json",
+        unavailable: "HTTP 404",
         extraVaults: [],
         missingFromMigration: [],
       },
@@ -9413,8 +9572,71 @@ Deno.test("deployments: an empty token set reports why, it does not vanish", () 
     "the registry count shows the other side: " + t,
   );
   assert(
-    t.includes("unavailable, not empty"),
-    "must distinguish broken from genuinely empty: " + t,
+    t.includes("privileged-addresses.json could not be read: HTTP 404 — the section is unavailable, not empty."),
+    "must distinguish broken from genuinely empty, and say why: " + t,
+  );
+});
+
+Deno.test("deployments: an empty pinned vault list is not reported as unreadable", () => {
+  const box = deploymentsBox({
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      tokens: [],
+      reconcile: {
+        governedCount: 0,
+        registryTokenCount: 23,
+        list: "privileged-addresses.json chains.8453.receiptVaults",
+        unavailable: null,
+        extraVaults: [],
+        missingFromMigration: [],
+      },
+    },
+  });
+  const sub = collect(box, "own-sub").map((n) => n.textContent ?? textOf(n)).find((s) => s.startsWith("No registry token"));
+  assert(
+    sub ===
+      "No registry token resolved to a governed receipt vault: 0 governed vault(s) in privileged-addresses.json chains.8453.receiptVaults, 23 registry token(s).",
+    "states the counts and the list, nothing more: " + sub,
+  );
+});
+
+const tokensWithAuthoriser = (authoriser) => ({
+  deploymentTokens: {
+    org: "ST0x-Technology",
+    repo: "st0x.registry",
+    network: "base",
+    rpcHost: "mainnet.base.org",
+    total: 0,
+    ok: 0,
+    wrappedCount: 0,
+    atPinnedAuthoriser: 0,
+    authoriser,
+    tokens: [],
+    reconcile: {
+      governedCount: 0,
+      registryTokenCount: 0,
+      list: "privileged-addresses.json",
+      unavailable: null,
+      extraVaults: [],
+      missingFromMigration: [],
+    },
+  },
+});
+
+Deno.test("deployments: with no pinned authoriser the tokens section claims no authoriser progress", () => {
+  const box = deploymentsBox(tokensWithAuthoriser({ pinned: null, pinnedDeployed: null }));
+  assert(!textOf(box).includes("Authoriser —"), "no authoriser banner: " + textOf(box));
+});
+
+Deno.test("deployments: an unread pinned-authoriser deploy state reads unknown, not NOT deployed", () => {
+  const PINNED = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+  const box = deploymentsBox(tokensWithAuthoriser({ pinned: PINNED, pinnedDeployed: null }));
+  const banner = collect(box, "own-verify-msg").map((m) => m.textContent).find((m) => m.startsWith("Authoriser —"));
+  assert(
+    banner === "Authoriser — 0 of 0 receipt vaults at the pinned authoriser (deploy state unknown); a setAuthorizer bundle rewires the rest.",
+    "unknown deploy state: " + banner,
   );
 });
 
