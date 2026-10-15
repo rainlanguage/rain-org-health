@@ -335,8 +335,8 @@ function renderDeployments(document, $, data, io) {
           "span",
           "own-verify-thr",
           t.onChain == null
-            ? `threshold ${t.declared} (constant)`
-            : `threshold ${t.declared} (constant) · ${t.onChain} (on-chain)${t.match ? " ✓" : " ✗"}`,
+            ? `threshold ${t.declared} (declared)`
+            : `threshold ${t.declared} (declared) · ${t.onChain} (on-chain)${t.match ? " ✓" : " ✗"}`,
         ),
       );
     }
@@ -407,7 +407,23 @@ function renderDeployments(document, $, data, io) {
   let sink = panels.safe;
   // On-chain health of a pinned suite: each contract deployed at its pinned
   // address with the live runtime code AND keccak codehash both matching.
-  const renderHealth = (health) => {
+  const renderHealth = (suites) => {
+    if (suites === null || (Array.isArray(suites) && suites.length === 0)) {
+      sink.append(el("h2", null, "Suite health"));
+      sink.append(
+        el(
+          "div",
+          "own-sub",
+          suites === null
+            ? "Suite health unavailable — the scan could not list the deploy repo's source tree."
+            : "Suite health unavailable — the scan found no pointer suites in the deploy repo's source tree.",
+        ),
+      );
+      return;
+    }
+    for (const health of Array.isArray(suites) ? suites : []) renderSuite(health);
+  };
+  const renderSuite = (health) => {
     if (!health || !Array.isArray(health.contracts) || health.contracts.length === 0) return;
     sink.append(el("h2", null, `${health.version} suite — ${health.network} health`));
     const hsub = el("div", "own-sub");
@@ -465,7 +481,7 @@ function renderDeployments(document, $, data, io) {
     // silently would drop the whole section, and a missing section reads as
     // "this chain has no production beacons" rather than "this broke".
     if (b.unavailable || !Array.isArray(b.beacons) || b.beacons.length === 0) {
-      sink.append(el("h2", null, `Beacons — ${b.network ?? "unknown chain"}`));
+      sink.append(el("h2", null, b.network ? `Beacons — ${b.network}` : "Beacons"));
       sink.append(
         el(
           "div",
@@ -480,7 +496,7 @@ function renderDeployments(document, $, data, io) {
       el(
         "div",
         "own-sub",
-        `Each production beacon should be held by the token-owner Safe or that chain's governance timelock, and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
+        `Each production beacon should be held by the token-owner Safe or that chain's governance timelock, and pointing at the implementation privileged-addresses.json pins — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
       ),
     );
     const allHealthy = b.healthy === b.total;
@@ -489,7 +505,7 @@ function renderDeployments(document, $, data, io) {
       el(
         "span",
         "own-verify-msg",
-        `${b.healthy} of ${b.total} beacons governed & at ${b.targetVersion} on ${b.network}.`,
+        `${b.healthy} of ${b.total} beacons governed & at their pinned implementation on ${b.network}.`,
       ),
     );
     // Both pins, because `timelock` is what separates healthy from drift here.
@@ -538,14 +554,13 @@ function renderDeployments(document, $, data, io) {
       detail.append(detailLine("owner", own[0], own[1], bc.owner));
       // impl: what it points at NOW, and — when it isn't already there — what it
       // SHOULD point at, so a proposed upgradeTo(...) can be checked against both.
-      if (bc.atTarget === true) {
-        detail.append(detailLine("impl", `${bc.implVersion} ✓`, "yes", bc.implementation));
+      if (bc.atPinned === true) {
+        detail.append(detailLine("impl", "pinned ✓", "yes", bc.implementation));
       } else {
-        const nowLabel = bc.atTarget === false ? bc.implVersion : "unknown";
-        const nowCls = bc.atTarget === false ? "no" : "dim";
-        detail.append(detailLine("now", nowLabel, nowCls, bc.implementation));
-        if (bc.targetImpl) {
-          detail.append(detailLine("target", bc.targetVersion, "target", bc.targetImpl));
+        const nowCls = bc.atPinned === false ? "no" : "dim";
+        detail.append(detailLine("now", bc.implVersion || "unknown", nowCls, bc.implementation));
+        if (bc.pinnedImpl) {
+          detail.append(detailLine("target", "pinned", "target", bc.pinnedImpl));
         }
       }
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
@@ -572,17 +587,16 @@ function renderDeployments(document, $, data, io) {
     if (noTokens) {
       sink.append(el("h2", null, `Tokens — ${t.network}`));
       const rc = t.reconcile || {};
-      // Zero governed vaults and a non-empty-but-disjoint governed set are
-      // different failures: the first is an unreadable list, the second a real
-      // reconciliation gap whose breakdown is the thing worth reading.
-      const cause = (rc.governedCount ?? 0) === 0
-        ? "A governed count of 0 means that list could not be read — the section is unavailable, not empty."
-        : "The two sets are disjoint — the cross-check below names every vault and token on each side.";
+      const cause = typeof rc.unavailable === "string"
+        ? ` ${rc.list ?? "privileged-addresses.json"} could not be read: ${rc.unavailable} — the section is unavailable, not empty.`
+        : (rc.governedCount ?? 0) > 0
+        ? " The two sets are disjoint — the cross-check below names every vault and token on each side."
+        : "";
       sink.append(
         el(
           "div",
           "own-sub",
-          `No registry token resolved to a governed receipt vault: ${rc.governedCount ?? "?"} governed vault(s) from ${rc.function ?? "the migration set"}, ${rc.registryTokenCount ?? "?"} registry token(s). ${cause}`,
+          `No registry token resolved to a governed receipt vault: ${rc.governedCount ?? "?"} governed vault(s) in ${rc.list ?? "privileged-addresses.json"}, ${rc.registryTokenCount ?? "?"} registry token(s).${cause}`,
         ),
       );
     } else {
@@ -603,26 +617,26 @@ function renderDeployments(document, $, data, io) {
       sink.append(tb);
     }
     const explorerLink = (addr) => addrNode("own-addr", addr, t.network);
-    // The setAuthorizer migration target, stated once: what a pending Safe bundle
-    // rewires every receipt vault's authorizer() to, and how many are already there.
+    // The pinned authoriser, stated once: what every receipt vault's
+    // authorizer() should be, and how many are already there.
     const auth = t.authoriser;
-    if (auth && auth.target) {
-      const allAt = t.atAuthoriserTarget === t.wrappedCount;
+    if (auth && auth.pinned) {
+      const allAt = t.atPinnedAuthoriser === t.wrappedCount;
       const ab = el("div", `own-verify ${allAt ? "own-verify-ok" : "own-verify-drift"}`);
       const dep =
-        auth.targetDeployed === true
+        auth.pinnedDeployed === true
           ? "deployed"
-          : auth.targetDeployed === false
+          : auth.pinnedDeployed === false
             ? "NOT deployed"
             : "deploy state unknown";
       ab.append(
         el(
           "span",
           "own-verify-msg",
-          `Authoriser migration — ${t.atAuthoriserTarget} of ${t.wrappedCount} receipt vaults at the V4-clone target (${dep}); a setAuthorizer bundle rewires the rest.`,
+          `Authoriser — ${t.atPinnedAuthoriser} of ${t.wrappedCount} receipt vaults at the pinned authoriser (${dep}); a setAuthorizer bundle rewires the rest.`,
         ),
       );
-      ab.append(el("span", "own-verify-src", `target ${auth.target}`));
+      ab.append(el("span", "own-verify-src", `pinned ${auth.pinned}`));
       sink.append(ab);
     }
     const okChip = (label, v) => {
@@ -633,26 +647,25 @@ function renderDeployments(document, $, data, io) {
     // The resolved-authoriser chip: what authorizer() actually is right now.
     const authChip = (lbl) => {
       const m = {
-        target: ["V4 clone ✓", "yes"],
-        current: ["current prod authoriser", "no"],
+        pinned: ["pinned ✓", "yes"],
         none: ["unset", "no"],
         foreign: ["foreign", "no"],
       }[lbl] || ["—", "dim"];
       return el("span", `own-chip own-chip-${m[1]}`, m[0]);
     };
-    // The authoriser rows (now + → target) shared by registry tokens and the extra
-    // governed vaults: what authorizer() is NOW, and the target it should become.
+    // The authoriser rows (now + → pinned) shared by registry tokens and the extra
+    // governed vaults: what authorizer() is NOW, and the pinned one it should become.
     const authRows = (detail, o) => {
       const anl = el("div", "bcn-line");
       anl.append(el("span", "bcn-key", "authoriser"));
       anl.append(authChip(o.authoriserLabel));
       if (o.authoriser) anl.append(explorerLink(o.authoriser));
       detail.append(anl);
-      if (o.atAuthoriserTarget === false && o.authoriserTarget) {
+      if (o.atPinnedAuthoriser === false && o.authoriserPinned) {
         const atl = el("div", "bcn-line");
         atl.append(el("span", "bcn-key", "target"));
-        atl.append(el("span", "own-chip own-chip-target", "V4 clone"));
-        atl.append(explorerLink(o.authoriserTarget));
+        atl.append(el("span", "own-chip own-chip-target", "pinned"));
+        atl.append(explorerLink(o.authoriserPinned));
         detail.append(atl);
       }
     };
@@ -662,20 +675,6 @@ function renderDeployments(document, $, data, io) {
     // migration misses.
     const renderReconcile = (rec) => {
       if (!rec) return;
-      // A short governed list reads exactly like a smaller-but-valid one, so a
-      // partial parse is stated outright rather than left to be inferred from
-      // counts that look plausible.
-      const declared = rec.governedDeclared;
-      if (typeof declared === "number" && declared > (rec.governedCount ?? 0)) {
-        sink.append(el("h3", "tok-h3", "Migration set parse"));
-        sink.append(
-          el(
-            "div",
-            "own-verify own-verify-drift",
-            `${declared} governed vault entries declared in ${rec.function ?? "the migration set"}, ${rec.governedCount ?? 0} resolved to an address — the governed set is INCOMPLETE, so every cross-check below is drawn from a partial list.`,
-          ),
-        );
-      }
       const extra = Array.isArray(rec.extraVaults) ? rec.extraVaults : [];
       const missing = Array.isArray(rec.missingFromMigration) ? rec.missingFromMigration : [];
       if (!extra.length && !missing.length) return;
@@ -684,7 +683,7 @@ function renderDeployments(document, $, data, io) {
         el(
           "div",
           "own-sub",
-          `${rec.source} · ${rec.function} — the authoritative vault set the setAuthorizer bundle operates on.`,
+          `${rec.source} · ${rec.list} — the authoritative vault set the setAuthorizer bundle operates on.`,
         ),
       );
       const rb = el("div", "own-verify own-verify-drift");
@@ -821,9 +820,6 @@ function renderDeployments(document, $, data, io) {
           dl.append(explorerLink(addr));
           detail.append(dl);
         }
-        // authoriser: what authorizer() on the receipt vault resolves to NOW, and
-        // — when it isn't yet the V4-clone target — the target the setAuthorizer
-        // bundle sets, so the proposed transaction can be checked per vault.
         authRows(detail, tk);
       }
       // registry→migration membership, shown on EVERY registry entry so the
@@ -867,9 +863,8 @@ function renderDeployments(document, $, data, io) {
   // than splitting the page; a top-level split would have to file the Safe under
   // both headings or misfile it under one.
   //
-  // Every row is derived from the scan's read of the deploy repo's grant map.
-  // Nothing about a grantee is written down on this page, so a signer added to
-  // that map arrives here on the next scan.
+  // Every row is derived from the deploy repo's ideal-roles.json, so a grantee
+  // added there arrives here on the next scan.
   // Governed-vault ownership, which the governance migration moves one
   // `transferOwnership` per vault. Counts first, because the question asked of
   // this section is "how far has the handover got on this chain", and a reader
@@ -912,7 +907,7 @@ function renderDeployments(document, $, data, io) {
       `owner() read per vault on each chain and labelled against THAT chain's pins. ` +
         `Three of the four labels are easy to confuse, so: "other" means the call ` +
         `answered with an owner that is neither pin; "unpinned" means the chain has no ` +
-        `timelock constant yet, so there is nothing to recognise a move by and the ` +
+        `timelock pinned yet, so there is nothing to recognise a move by and the ` +
         `rollout simply has not reached it; "unknown" means the vault could not be ` +
         `asked at all, never that we know it has not moved.`,
     );
@@ -992,36 +987,31 @@ function renderDeployments(document, $, data, io) {
   };
 
   const renderGrants = (g) => {
+    if (g && typeof g.unavailable === "string") {
+      sink.append(el("h2", null, "Authoriser role grants — who can move value"));
+      const u = el("div", "own-sub");
+      u.append("Role grants unavailable — ");
+      u.append(
+        link("", g.source, `https://github.com/${g.org}/${g.repo}/blob/main/${g.source}`),
+      );
+      u.append(` could not be read: ${g.unavailable}.`);
+      sink.append(u);
+      return;
+    }
     if (!g || !Array.isArray(g.grantees) || g.grantees.length === 0) return;
     sink.append(el("h2", null, "Authoriser role grants — who can move value"));
     const gsub = el("div", "own-sub");
-    gsub.append("Every (role, grantee) pair pinned in ");
+    gsub.append("Every (role, grantee) pair ");
     gsub.append(
-      link(
-        "",
-        `${g.function}`,
-        `https://github.com/${g.org}/${g.repo}/blob/main/${g.source}`,
-      ),
+      link("", g.source, `https://github.com/${g.org}/${g.repo}/blob/main/${g.source}`),
     );
     gsub.append(
-      ` — the same map the on-chain invariants assert — read back per chain with hasRole(). ` +
-        `The list is DERIVED from that map: a signer added there appears here, and one removed disappears, ` +
+      ` expects on each chain's authoriser, read back per chain with hasRole(). ` +
+        `A grantee added there appears here, and one removed disappears, ` +
         `with no change to this page. It shows current production only — a revoked grantee is not kept as history, ` +
         `because a key on this screen reads as a key that can still act.`,
     );
     sink.append(gsub);
-    const pinned = g.pinnedCount ?? 0;
-    // A map that parsed short would otherwise read as a smaller map, and every
-    // count under it would be quietly measured against the wrong denominator.
-    if (typeof g.declaredCount === "number" && g.declaredCount > pinned) {
-      sink.append(
-        el(
-          "div",
-          "own-verify own-verify-drift",
-          `${g.declaredCount} grants declared in ${g.function}, ${pinned} parsed — the pinned map read here is INCOMPLETE, so every count below is drawn from a partial list.`,
-        ),
-      );
-    }
     // The expectations this chain does not meet, listed.
     //
     // A count ("7 not provisioned") tells a reader how many without telling
@@ -1229,9 +1219,21 @@ function renderDeployments(document, $, data, io) {
       for (const [gr, roles] of rows) {
         const row = el("div", "own-row");
         const rc = el("div", "own-rc");
-        // The constant's own name, so a row greps straight back to the line in
-        // the deploy repo that put this key on the page.
-        rc.append(el("div", "own-role", gr.ident));
+        // The deploy repo's own name for the address, so a row greps straight
+        // back to the constant that names it.
+        rc.append(
+          el(
+            "div",
+            "own-role",
+            gr.ident ||
+              gr.address ||
+              (gr.kind === "safe"
+                ? "Token-owner Safe"
+                : gr.kind === "admin-holder"
+                ? "Governance timelock"
+                : "(unnamed grantee)"),
+          ),
+        );
         rc.append(
           el(
             "div",
@@ -1240,7 +1242,7 @@ function renderDeployments(document, $, data, io) {
               ? "the chain's token-owner Safe — cold multisig, holds these directly"
               : gr.kind === "admin-holder"
               ? "the chain's governance timelock — every proposal waits out its delay before it can execute"
-              : "service key pinned in the grant map — hot single signer",
+              : "service key ideal-roles.json names — hot single signer",
           ),
         );
         const addrs = addressesOf(gr);
@@ -1267,9 +1269,8 @@ function renderDeployments(document, $, data, io) {
           // The id the chain stores, which is what a bundle's calldata carries:
           // a reviewer reading a `grantRole` word needs the name beside the 32
           // bytes, and hashing the name by hand to get there is the step this
-          // removes. Absent on older scan output, so the column is conditional
-          // rather than rendering an empty slot.
-          if (r.roleId) line.append(el("span", "grt-roleid", r.roleId));
+          // removes. An unnamed role already shows its id as its name.
+          if (r.roleId && r.roleId !== r.role) line.append(el("span", "grt-roleid", r.roleId));
           for (const c of r.chains || []) {
             total += 1;
             if (c.status === "granted") live += 1;
@@ -2663,12 +2664,23 @@ function renderDeployments(document, $, data, io) {
   const owners = data.deploymentOwners;
   sink.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
-    sink.append(
-      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
-    );
-    // The grant map is parsed independently of the owner constants, so it can
-    // still be readable when they are not — and it is the half of this page
-    // that says who can move value.
+    const empty = el("div", "empty");
+    if (owners && typeof owners.unavailable === "string") {
+      empty.append("Owner data unavailable — ");
+      empty.append(
+        link(
+          "",
+          "privileged-addresses.json",
+          `https://github.com/${owners.org}/${owners.repo}/blob/main/privileged-addresses.json`,
+        ),
+      );
+      empty.append(` could not be read: ${owners.unavailable}.`);
+    } else {
+      empty.append("Owner data unavailable — the scan produced no owner groups.");
+    }
+    sink.append(empty);
+    // The grants come from ideal-roles.json, so they can still be readable
+    // when the owners are not.
     renderVaultOwners(data.deploymentVaultOwners);
     sink = panels.contracts;
     renderGrants(data.deploymentGrants);
@@ -2681,12 +2693,16 @@ function renderDeployments(document, $, data, io) {
     return rbacDone;
   }
   const sub = el("div", "own-sub");
-  sub.append("Privileged addresses read from the ");
+  sub.append("Privileged addresses read from ");
   sub.append(
-    link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
+    link(
+      "",
+      `${owners.org}/${owners.repo} privileged-addresses.json`,
+      `https://github.com/${owners.org}/${owners.repo}/blob/main/privileged-addresses.json`,
+    ),
   );
   sub.append(
-    ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
+    ` — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
   );
   sink.append(sub);
   for (const g of owners.groups) {
@@ -2709,17 +2725,17 @@ function renderDeployments(document, $, data, io) {
       }
       if (e.network) ac.append(el("span", "own-net", e.network));
       // Where a row was checked on-chain, show its two provenances side by side as
-      // independent ✓/✗ per source — the declared constant and the getOwners()
+      // independent ✓/✗ per source — privileged-addresses.json and the getOwners()
       // result; otherwise a plain status pill.
       let tail;
       if (e.onChain) {
         const oc = e.onChain;
         tail = el("div", "own-prov");
-        // constant source: present unless this owner was only seen on-chain.
+        // declared source: present unless this owner was only seen on-chain.
         tail.append(
           oc === "extra"
-            ? el("span", "own-chip own-chip-no", "constant ✗")
-            : el("span", "own-chip own-chip-yes", "constant ✓"),
+            ? el("span", "own-chip own-chip-no", "declared ✗")
+            : el("span", "own-chip own-chip-yes", "declared ✓"),
         );
         // on-chain source: present for match/extra, absent for missing, unknown
         // when the RPC didn't answer.

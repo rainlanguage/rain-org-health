@@ -31,13 +31,19 @@ pub struct IdealChain {
 
 impl IdealChain {
     pub fn contract(&self, address: &str) -> Option<&Contract> {
-        self.contracts.iter().find(|c| c.address.eq_ignore_ascii_case(address))
+        self.contracts
+            .iter()
+            .find(|c| c.address.eq_ignore_ascii_case(address))
     }
 }
 
 fn hex(v: &Value, digits: usize) -> Option<String> {
     v.as_str()
-        .filter(|s| s.len() == 2 + digits && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit()))
+        .filter(|s| {
+            s.len() == 2 + digits
+                && s.starts_with("0x")
+                && s[2..].chars().all(|c| c.is_ascii_hexdigit())
+        })
         .map(str::to_lowercase)
 }
 
@@ -47,7 +53,10 @@ pub fn parse(body: &str) -> Result<Vec<IdealChain>, String> {
         return Err("it is not a JSON object".into());
     }
     if v["version"].as_u64() != Some(VERSION) {
-        return Err(format!("it is version {}; this scan reads version {VERSION}", v["version"]));
+        return Err(format!(
+            "it is version {}; this scan reads version {VERSION}",
+            v["version"]
+        ));
     }
     let chains = v["chains"].as_object().ok_or("it has no chains object")?;
     let mut out: Vec<IdealChain> = Vec::new();
@@ -61,21 +70,39 @@ pub fn parse(body: &str) -> Result<Vec<IdealChain>, String> {
             return Err(format!("{at} repeats network {network}"));
         }
         let mut contracts = Vec::new();
-        for (i, k) in c["contracts"].as_array().ok_or_else(|| format!("{at} has no contracts list"))?.iter().enumerate() {
+        for (i, k) in c["contracts"]
+            .as_array()
+            .ok_or_else(|| format!("{at} has no contracts list"))?
+            .iter()
+            .enumerate()
+        {
             let kat = format!("{at}.contracts[{i}]");
             let address = hex(&k["address"], 40).ok_or_else(|| format!("{kat} has no address"))?;
             let mut expected = Vec::new();
-            for (j, p) in k["expected"].as_array().ok_or_else(|| format!("{kat} has no expected list"))?.iter().enumerate() {
+            for (j, p) in k["expected"]
+                .as_array()
+                .ok_or_else(|| format!("{kat} has no expected list"))?
+                .iter()
+                .enumerate()
+            {
                 let pat = format!("{kat}.expected[{j}]");
                 expected.push(Expected {
-                    role: hex(&p["role"], 64).ok_or_else(|| format!("{pat} has no bytes32 role"))?,
-                    role_name: p["roleName"].as_str().filter(|s| !s.is_empty()).map(String::from),
-                    grantee: hex(&p["grantee"], 40).ok_or_else(|| format!("{pat} has no grantee address"))?,
+                    role: hex(&p["role"], 64)
+                        .ok_or_else(|| format!("{pat} has no bytes32 role"))?,
+                    role_name: p["roleName"]
+                        .as_str()
+                        .filter(|s| !s.is_empty())
+                        .map(String::from),
+                    grantee: hex(&p["grantee"], 40)
+                        .ok_or_else(|| format!("{pat} has no grantee address"))?,
                 });
             }
             contracts.push(Contract { address, expected });
         }
-        out.push(IdealChain { network: network.to_string(), contracts });
+        out.push(IdealChain {
+            network: network.to_string(),
+            contracts,
+        });
     }
     Ok(out)
 }
@@ -108,16 +135,28 @@ mod tests {
         let chains = parse(&doc().to_string()).unwrap();
         assert_eq!(chains.len(), 1);
         assert_eq!(chains[0].network, "base");
-        let k = chains[0].contract("0x00000000000000000000000000000000000000AA").unwrap();
+        let k = chains[0]
+            .contract("0x00000000000000000000000000000000000000AA")
+            .unwrap();
         assert_eq!(k.address, "0x00000000000000000000000000000000000000aa");
         assert_eq!(
             k.expected,
             vec![
-                Expected { role: ROLE.into(), role_name: Some("DEPOSIT".into()), grantee: "0x00000000000000000000000000000000000000bb".into() },
-                Expected { role: ROLE.into(), role_name: None, grantee: "0x00000000000000000000000000000000000000cc".into() },
+                Expected {
+                    role: ROLE.into(),
+                    role_name: Some("DEPOSIT".into()),
+                    grantee: "0x00000000000000000000000000000000000000bb".into()
+                },
+                Expected {
+                    role: ROLE.into(),
+                    role_name: None,
+                    grantee: "0x00000000000000000000000000000000000000cc".into()
+                },
             ]
         );
-        assert!(chains[0].contract("0x00000000000000000000000000000000000000ab").is_none());
+        assert!(chains[0]
+            .contract("0x00000000000000000000000000000000000000ab")
+            .is_none());
     }
 
     #[test]
@@ -126,19 +165,42 @@ mod tests {
         assert_eq!(parse("[]").unwrap_err(), "it is not a JSON object");
         rejects(|d| d["version"] = json!(2), "it is version 2");
         rejects(|d| d["chains"] = json!([]), "it has no chains object");
-        rejects(|d| d["chains"]["8453"]["network"] = json!(""), "chains[\"8453\"] names no network");
-        rejects(|d| d["chains"]["1"] = d["chains"]["8453"].clone(), "repeats network base");
-        rejects(|d| d["chains"]["8453"]["contracts"] = json!({}), "has no contracts list");
-        rejects(|d| d["chains"]["8453"]["contracts"][0]["address"] = json!("0x12"), "contracts[0] has no address");
-        rejects(|d| d["chains"]["8453"]["contracts"][0]["expected"] = json!(null), "contracts[0] has no expected list");
-        rejects(|d| d["chains"]["8453"]["contracts"][0]["expected"][1]["role"] = json!("0x01"), "expected[1] has no bytes32 role");
-        rejects(|d| d["chains"]["8453"]["contracts"][0]["expected"][0]["grantee"] = json!(ROLE), "expected[0] has no grantee address");
+        rejects(
+            |d| d["chains"]["8453"]["network"] = json!(""),
+            "chains[\"8453\"] names no network",
+        );
+        rejects(
+            |d| d["chains"]["1"] = d["chains"]["8453"].clone(),
+            "repeats network base",
+        );
+        rejects(
+            |d| d["chains"]["8453"]["contracts"] = json!({}),
+            "has no contracts list",
+        );
+        rejects(
+            |d| d["chains"]["8453"]["contracts"][0]["address"] = json!("0x12"),
+            "contracts[0] has no address",
+        );
+        rejects(
+            |d| d["chains"]["8453"]["contracts"][0]["expected"] = json!(null),
+            "contracts[0] has no expected list",
+        );
+        rejects(
+            |d| d["chains"]["8453"]["contracts"][0]["expected"][1]["role"] = json!("0x01"),
+            "expected[1] has no bytes32 role",
+        );
+        rejects(
+            |d| d["chains"]["8453"]["contracts"][0]["expected"][0]["grantee"] = json!(ROLE),
+            "expected[0] has no grantee address",
+        );
     }
 
     #[test]
     fn parses_the_published_file() {
         let chains = parse(include_str!("../tests/fixtures/ideal-roles.json")).unwrap();
-        assert!(chains.iter().any(|c| c.network == crate::owners::REFERENCE_NETWORK));
+        assert!(chains
+            .iter()
+            .any(|c| c.network == crate::owners::REFERENCE_NETWORK));
         assert!(chains.iter().all(|c| !c.contracts.is_empty()));
     }
 }

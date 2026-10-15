@@ -290,7 +290,7 @@ impl Chain {
         }
     }
 
-    /// The chain a network NAME read out of the deploy repo's pins refers to.
+    /// The chain a `network` name in privileged-addresses.json refers to.
     /// `None` for a chain the deploy repo pins but this scanner has no endpoint
     /// set for — a new chain therefore reports as unread rather than as absent,
     /// and adding it here is the only thing needed to start reading it.
@@ -298,9 +298,6 @@ impl Chain {
         match network {
             "base" => Some(Chain::Base),
             "ethereum" => Some(Chain::Ethereum),
-            // The names are the lowercased constant suffixes the deploy repo
-            // uses (`STOX_TOKEN_OWNER_SAFE_HYPEREVM` -> `hyperevm`), so these
-            // must match `parse_chain_pins`' derivation, not a prettier label.
             "hyperevm" => Some(Chain::HyperEvm),
             "robinhood" => Some(Chain::Robinhood),
             "bsc" => Some(Chain::Bsc),
@@ -2573,19 +2570,23 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         };
         let facts = published(privileged::PATH).and_then(|b| privileged::parse(&b));
         let ideal = published(idealroles::PATH).and_then(|b| idealroles::parse(&b));
-        let sources: Option<Vec<(String, String)>> = match gh_tree_paths(&gh, deploy_org, deploy_repo) {
-            TreeListing::Found { paths, truncated: false } => Some(
-                paths
-                    .into_iter()
-                    .filter(|p| p.starts_with("src/") && p.ends_with(".sol"))
-                    .map(|p| {
-                        let body = gh_file(deploy_org, deploy_repo, &p);
-                        (p, body)
-                    })
-                    .collect(),
-            ),
-            _ => None,
-        };
+        let sources: Option<Vec<(String, String)>> =
+            match gh_tree_paths(&gh, deploy_org, deploy_repo) {
+                TreeListing::Found {
+                    paths,
+                    truncated: false,
+                } => Some(
+                    paths
+                        .into_iter()
+                        .filter(|p| p.starts_with("src/") && p.ends_with(".sol"))
+                        .map(|p| {
+                            let body = gh_file(deploy_org, deploy_repo, &p);
+                            (p, body)
+                        })
+                        .collect(),
+                ),
+                _ => None,
+            };
         let source_bodies: Vec<&str> = sources.iter().flatten().map(|(_, b)| b.as_str()).collect();
 
         let mut chains = facts.as_ref().map(owners::chain_pins).unwrap_or_default();
@@ -2622,8 +2623,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         let s = rpc_session(chain);
                         let owners_live = eth_call(s, &safe_addr, &rpc::get_owners_calldata())
                             .and_then(|hex| rpc::decode_owners(&hex));
-                        let threshold_live = eth_call(s, &safe_addr, &rpc::get_threshold_calldata())
-                            .and_then(|hex| rpc::decode_uint(&hex));
+                        let threshold_live =
+                            eth_call(s, &safe_addr, &rpc::get_threshold_calldata())
+                                .and_then(|hex| rpc::decode_uint(&hex));
                         owners::OnChainSafe {
                             network: owners::REFERENCE_NETWORK.into(),
                             safe: safe_addr,
@@ -2664,7 +2666,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 let sessions: Vec<(String, Session)> = chains
                     .iter()
                     .filter_map(|c| {
-                        Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
+                        Chain::from_network(&c.network)
+                            .map(|ch| (c.network.clone(), rpc_session(ch)))
                     })
                     .collect();
                 let check = |network: &str, authoriser: &str, role: &str, grantee: &str| {
@@ -2688,7 +2691,15 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         None => owners::GrantOnChain::Unknown,
                     }
                 };
-                owners::build_grants(deploy_org, deploy_repo, ideal, &chains, &role_names, &name_on, &check)
+                owners::build_grants(
+                    deploy_org,
+                    deploy_repo,
+                    ideal,
+                    &chains,
+                    &role_names,
+                    &name_on,
+                    &check,
+                )
             }
         };
 
@@ -2769,7 +2780,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 ),
                                 None => "unknown",
                             };
-                            deployhealth::contract_health(&cname, addr, runtime, hash, onchain, erc165)
+                            deployhealth::contract_health(
+                                &cname, addr, runtime, hash, onchain, erc165,
+                            )
                         })
                         .collect();
                     deployhealth::build_health(

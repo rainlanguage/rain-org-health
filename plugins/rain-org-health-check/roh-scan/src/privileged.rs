@@ -63,7 +63,9 @@ impl PrivilegedAddresses {
 fn address(v: &Value, at: &str) -> Result<Option<String>, String> {
     let s = v
         .as_str()
-        .filter(|s| s.len() == 42 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit()))
+        .filter(|s| {
+            s.len() == 42 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit())
+        })
         .ok_or_else(|| format!("{at} is not an address"))?;
     Ok(Some(s.to_string()).filter(|s| !s[2..].chars().all(|c| c == '0')))
 }
@@ -73,7 +75,8 @@ fn nonzero(v: &Value, at: &str) -> Result<String, String> {
 }
 
 fn object<'a>(v: &'a Value, at: &str) -> Result<&'a Map<String, Value>, String> {
-    v.as_object().ok_or_else(|| format!("{at} is not an object"))
+    v.as_object()
+        .ok_or_else(|| format!("{at} is not an object"))
 }
 
 fn array<'a>(v: &'a Value, at: &str) -> Result<&'a Vec<Value>, String> {
@@ -95,7 +98,11 @@ fn chain(id: &str, v: &Value) -> Result<Chain, String> {
     let f = |k: &str| address(&c[k], &format!("{at}.{k}"));
     let raw_beacons = array(&c["beacons"], &format!("{at}.beacons"))?;
     if raw_beacons.len() != BEACON_SLOTS.len() {
-        return Err(format!("{at}.beacons has {} entries, not {}", raw_beacons.len(), BEACON_SLOTS.len()));
+        return Err(format!(
+            "{at}.beacons has {} entries, not {}",
+            raw_beacons.len(),
+            BEACON_SLOTS.len()
+        ));
     }
     let beacons = raw_beacons
         .iter()
@@ -106,7 +113,10 @@ fn chain(id: &str, v: &Value) -> Result<Chain, String> {
             Ok(Beacon {
                 beacon: address(&b["beacon"], &format!("{bat}.beacon"))?,
                 implementation: address(&b["implementation"], &format!("{bat}.implementation"))?,
-                v1_implementation: address(&b["v1Implementation"], &format!("{bat}.v1Implementation"))?,
+                v1_implementation: address(
+                    &b["v1Implementation"],
+                    &format!("{bat}.v1Implementation"),
+                )?,
             })
         })
         .collect::<Result<_, String>>()?;
@@ -163,13 +173,19 @@ pub fn parse(body: &str) -> Result<PrivilegedAddresses, String> {
     chains.sort_by_key(|c| c.chain_id);
     for (i, c) in chains.iter().enumerate() {
         if chains[..i].iter().any(|p| p.network == c.network) {
-            return Err(format!("chains[\"{}\"] repeats network {}", c.chain_id, c.network));
+            return Err(format!(
+                "chains[\"{}\"] repeats network {}",
+                c.chain_id, c.network
+            ));
         }
     }
     Ok(PrivilegedAddresses {
         threshold,
         owners,
-        authoriser_implementation: address(&v["authoriserImplementation"], "authoriserImplementation")?,
+        authoriser_implementation: address(
+            &v["authoriserImplementation"],
+            "authoriserImplementation",
+        )?,
         beacon_owner_initial: bo("initial")?,
         beacon_owner_v2_receipt: bo("v2BaseReceipt")?,
         beacon_owner_v2_vault: bo("v2BaseVault")?,
@@ -226,18 +242,36 @@ pub mod tests {
         assert_eq!(p.beacon_owner_initial.as_deref(), Some(A));
         assert_eq!(p.beacon_owner_v2_receipt.as_deref(), Some(B));
         assert_eq!(p.beacon_owner_v2_vault, None);
-        assert_eq!(p.chains.iter().map(|c| c.chain_id).collect::<Vec<_>>(), vec![1, 8453]);
+        assert_eq!(
+            p.chains.iter().map(|c| c.chain_id).collect::<Vec<_>>(),
+            vec![1, 8453]
+        );
         let base = p.chain("base").unwrap();
         assert_eq!(
-            (base.safe.as_deref(), base.timelock.as_deref(), base.authoriser.as_deref(), base.beacon_set_deployer.as_deref()),
+            (
+                base.safe.as_deref(),
+                base.timelock.as_deref(),
+                base.authoriser.as_deref(),
+                base.beacon_set_deployer.as_deref()
+            ),
             (Some(A), Some(B), Some(A), None)
         );
         assert_eq!(base.receipt_vaults, vec![A, B]);
         assert_eq!(base.beacons.len(), 4);
-        assert_eq!(base.beacons[0], Beacon { beacon: None, implementation: Some(A.into()), v1_implementation: None });
+        assert_eq!(
+            base.beacons[0],
+            Beacon {
+                beacon: None,
+                implementation: Some(A.into()),
+                v1_implementation: None
+            }
+        );
         assert_eq!(base.beacons[2].v1_implementation.as_deref(), Some(B));
         let eth = p.chain("ethereum").unwrap();
-        assert_eq!((eth.timelock.as_deref(), eth.beacon_set_deployer.as_deref()), (None, Some(A)));
+        assert_eq!(
+            (eth.timelock.as_deref(), eth.beacon_set_deployer.as_deref()),
+            (None, Some(A))
+        );
         assert!(p.chain("bsc").is_none());
     }
 
@@ -246,7 +280,10 @@ pub mod tests {
         let mut d = doc();
         d["chains"]["1"]["safe"] = json!("0xAbCdEf0000000000000000000000000000000001");
         let p = parse(&d.to_string()).unwrap();
-        assert_eq!(p.chain("ethereum").unwrap().safe.as_deref(), Some("0xAbCdEf0000000000000000000000000000000001"));
+        assert_eq!(
+            p.chain("ethereum").unwrap().safe.as_deref(),
+            Some("0xAbCdEf0000000000000000000000000000000001")
+        );
     }
 
     #[test]
@@ -254,38 +291,130 @@ pub mod tests {
         assert_eq!(parse("nope").unwrap_err(), "it is not JSON");
         assert!(parse("[]").unwrap_err().contains("not an object"));
         rejects(|d| d["version"] = json!(2), "version 2");
-        rejects(|d| d.as_object_mut().unwrap().remove("version").map(|_| ()).unwrap(), "version null");
-        rejects(|d| d["safePolicy"]["owners"] = json!([]), "safePolicy.owners is empty");
-        rejects(|d| d["safePolicy"]["owners"][1] = json!(Z), "safePolicy.owners[1] is address(0)");
-        rejects(|d| d["safePolicy"]["owners"][0] = json!("0x12"), "safePolicy.owners[0] is not an address");
-        rejects(|d| d["safePolicy"]["threshold"] = json!(0), "threshold is not between 1 and 2");
-        rejects(|d| d["safePolicy"]["threshold"] = json!(3), "threshold is not between 1 and 2");
-        rejects(|d| d["safePolicy"] = json!(null), "safePolicy is not an object");
-        rejects(|d| d["beaconOwners"]["initial"] = json!(7), "beaconOwners.initial is not an address");
-        rejects(|d| d["authoriserImplementation"] = json!("0xzz00000000000000000000000000000000000000"), "authoriserImplementation is not an address");
+        rejects(
+            |d| {
+                d.as_object_mut()
+                    .unwrap()
+                    .remove("version")
+                    .map(|_| ())
+                    .unwrap()
+            },
+            "version null",
+        );
+        rejects(
+            |d| d["safePolicy"]["owners"] = json!([]),
+            "safePolicy.owners is empty",
+        );
+        rejects(
+            |d| d["safePolicy"]["owners"][1] = json!(Z),
+            "safePolicy.owners[1] is address(0)",
+        );
+        rejects(
+            |d| d["safePolicy"]["owners"][0] = json!("0x12"),
+            "safePolicy.owners[0] is not an address",
+        );
+        rejects(
+            |d| d["safePolicy"]["threshold"] = json!(0),
+            "threshold is not between 1 and 2",
+        );
+        rejects(
+            |d| d["safePolicy"]["threshold"] = json!(3),
+            "threshold is not between 1 and 2",
+        );
+        rejects(
+            |d| d["safePolicy"] = json!(null),
+            "safePolicy is not an object",
+        );
+        rejects(
+            |d| d["beaconOwners"]["initial"] = json!(7),
+            "beaconOwners.initial is not an address",
+        );
+        rejects(
+            |d| d["authoriserImplementation"] = json!("0xzz00000000000000000000000000000000000000"),
+            "authoriserImplementation is not an address",
+        );
         rejects(|d| d["chains"] = json!({}), "chains is empty");
-        rejects(|d| d["chains"]["0x1"] = d["chains"]["1"].clone(), "chains[\"0x1\"] is not a decimal chain id");
-        rejects(|d| d["chains"][""] = d["chains"]["1"].clone(), "is not a decimal chain id");
-        rejects(|d| d["chains"]["10"] = d["chains"]["1"].clone(), "chains[\"10\"] repeats network ethereum");
-        rejects(|d| d["chains"]["1"]["network"] = json!(""), "chains[\"1\"] names no network");
-        rejects(|d| d["chains"]["1"]["safe"] = json!(null), "chains[\"1\"].safe is not an address");
-        rejects(|d| d["chains"]["1"]["timelock"] = json!(1), "chains[\"1\"].timelock is not an address");
-        rejects(|d| d["chains"]["1"]["authoriser"] = json!(""), "chains[\"1\"].authoriser is not an address");
-        rejects(|d| d["chains"]["1"]["beaconSetDeployer"] = json!(""), "chains[\"1\"].beaconSetDeployer is not an address");
-        rejects(|d| d["chains"]["1"]["beacons"].as_array_mut().unwrap().truncate(3), "beacons has 3 entries, not 4");
-        rejects(|d| d["chains"]["1"]["beacons"][0] = json!(A), "chains[\"1\"].beacons[0] is not an object");
-        rejects(|d| d["chains"]["1"]["beacons"][3]["beacon"] = json!(1), "beacons[3].beacon is not an address");
-        rejects(|d| d["chains"]["1"]["beacons"][3]["implementation"] = json!(1), "beacons[3].implementation is not an address");
-        rejects(|d| d["chains"]["1"]["beacons"][3]["v1Implementation"] = json!(1), "beacons[3].v1Implementation is not an address");
-        rejects(|d| d["chains"]["1"]["receiptVaults"] = json!(A), "chains[\"1\"].receiptVaults is not a list");
-        rejects(|d| d["chains"]["1"]["receiptVaults"][0] = json!(Z), "chains[\"1\"].receiptVaults[0] is address(0)");
-        rejects(|d| d["chains"]["1"] = json!([]), "chains[\"1\"] is not an object");
+        rejects(
+            |d| d["chains"]["0x1"] = d["chains"]["1"].clone(),
+            "chains[\"0x1\"] is not a decimal chain id",
+        );
+        rejects(
+            |d| d["chains"][""] = d["chains"]["1"].clone(),
+            "is not a decimal chain id",
+        );
+        rejects(
+            |d| d["chains"]["10"] = d["chains"]["1"].clone(),
+            "chains[\"10\"] repeats network ethereum",
+        );
+        rejects(
+            |d| d["chains"]["1"]["network"] = json!(""),
+            "chains[\"1\"] names no network",
+        );
+        rejects(
+            |d| d["chains"]["1"]["safe"] = json!(null),
+            "chains[\"1\"].safe is not an address",
+        );
+        rejects(
+            |d| d["chains"]["1"]["timelock"] = json!(1),
+            "chains[\"1\"].timelock is not an address",
+        );
+        rejects(
+            |d| d["chains"]["1"]["authoriser"] = json!(""),
+            "chains[\"1\"].authoriser is not an address",
+        );
+        rejects(
+            |d| d["chains"]["1"]["beaconSetDeployer"] = json!(""),
+            "chains[\"1\"].beaconSetDeployer is not an address",
+        );
+        rejects(
+            |d| {
+                d["chains"]["1"]["beacons"]
+                    .as_array_mut()
+                    .unwrap()
+                    .truncate(3)
+            },
+            "beacons has 3 entries, not 4",
+        );
+        rejects(
+            |d| d["chains"]["1"]["beacons"][0] = json!(A),
+            "chains[\"1\"].beacons[0] is not an object",
+        );
+        rejects(
+            |d| d["chains"]["1"]["beacons"][3]["beacon"] = json!(1),
+            "beacons[3].beacon is not an address",
+        );
+        rejects(
+            |d| d["chains"]["1"]["beacons"][3]["implementation"] = json!(1),
+            "beacons[3].implementation is not an address",
+        );
+        rejects(
+            |d| d["chains"]["1"]["beacons"][3]["v1Implementation"] = json!(1),
+            "beacons[3].v1Implementation is not an address",
+        );
+        rejects(
+            |d| d["chains"]["1"]["receiptVaults"] = json!(A),
+            "chains[\"1\"].receiptVaults is not a list",
+        );
+        rejects(
+            |d| d["chains"]["1"]["receiptVaults"][0] = json!(Z),
+            "chains[\"1\"].receiptVaults[0] is address(0)",
+        );
+        rejects(
+            |d| d["chains"]["1"] = json!([]),
+            "chains[\"1\"] is not an object",
+        );
     }
 
     #[test]
     fn the_two_getter_slots_name_their_getters() {
-        assert_eq!(beacon_getter_calldata(0), Some(crate::rpc::receipt_beacon_calldata()));
-        assert_eq!(beacon_getter_calldata(1), Some(crate::rpc::receipt_vault_beacon_calldata()));
+        assert_eq!(
+            beacon_getter_calldata(0),
+            Some(crate::rpc::receipt_beacon_calldata())
+        );
+        assert_eq!(
+            beacon_getter_calldata(1),
+            Some(crate::rpc::receipt_vault_beacon_calldata())
+        );
         assert_eq!(beacon_getter_calldata(2), None);
         assert_eq!(beacon_getter_calldata(3), None);
     }

@@ -58,7 +58,6 @@ pub fn authoriser_status(
     }
 }
 
-
 /// A role that ADMINS another role rather than performing an action.
 ///
 /// The hierarchy is the source's own: every action role is admin'd by its
@@ -68,7 +67,6 @@ pub fn authoriser_status(
 pub fn is_admin_role(role: &str) -> bool {
     role.ends_with("_ADMIN")
 }
-
 
 /// The chain a bare (unsuffixed) per-chain pin belongs to: the deploy repo
 /// writes the home chain's pin as `NAME` and every other chain's as
@@ -275,7 +273,6 @@ fn chain_state(granted: usize, missing: usize, unknown: usize) -> &'static str {
     }
 }
 
-
 /// The owners document when `privileged-addresses.json` could not be read.
 pub fn owners_unavailable(org: &str, repo: &str, why: &str) -> serde_json::Value {
     json!({ "org": org, "repo": repo, "unavailable": why })
@@ -349,7 +346,9 @@ pub fn build_owners(
             .collect::<Vec<_>>(),
     });
 
-    let verify_network = onchain.map(|o| o.network.as_str()).unwrap_or(REFERENCE_NETWORK);
+    let verify_network = onchain
+        .map(|o| o.network.as_str())
+        .unwrap_or(REFERENCE_NETWORK);
     let signers_group = json!({
         "id": "signers",
         "title": format!("Safe signers ({threshold}-of-{signer_count})"),
@@ -463,7 +462,12 @@ pub fn build_grants(
         let Some(expected) = chain
             .authoriser
             .as_deref()
-            .and_then(|auth| ideal.iter().find(|c| c.network == chain.network)?.contract(auth))
+            .and_then(|auth| {
+                ideal
+                    .iter()
+                    .find(|c| c.network == chain.network)?
+                    .contract(auth)
+            })
             .map(|k| &k.expected)
         else {
             continue;
@@ -478,7 +482,10 @@ pub fn build_grants(
                 "constant"
             };
             let fixed = (kind == "constant").then(|| e.grantee.clone());
-            let gi = match grantees.iter().position(|g| g.kind == kind && g.address == fixed) {
+            let gi = match grantees
+                .iter()
+                .position(|g| g.kind == kind && g.address == fixed)
+            {
                 Some(gi) => gi,
                 None => {
                     grantees.push(Grantee {
@@ -491,13 +498,20 @@ pub fn build_grants(
                 }
             };
             let name = e.role_name.clone().or_else(|| {
-                role_names.iter().find(|(id, _)| id.eq_ignore_ascii_case(&e.role)).map(|(_, n)| n.clone())
+                role_names
+                    .iter()
+                    .find(|(id, _)| id.eq_ignore_ascii_case(&e.role))
+                    .map(|(_, n)| n.clone())
             });
             let g = &mut grantees[gi];
             let ri = match g.roles.iter().position(|r| r.id == e.role) {
                 Some(ri) => ri,
                 None => {
-                    g.roles.push(Role { id: e.role.clone(), name: name.clone(), chains: Vec::new() });
+                    g.roles.push(Role {
+                        id: e.role.clone(),
+                        name: name.clone(),
+                        chains: Vec::new(),
+                    });
                     g.roles.len() - 1
                 }
             };
@@ -599,15 +613,26 @@ mod tests {
     }
 
     fn group<'a>(v: &'a serde_json::Value, id: &str) -> &'a serde_json::Value {
-        v["groups"].as_array().unwrap().iter().find(|g| g["id"] == id).unwrap()
+        v["groups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|g| g["id"] == id)
+            .unwrap()
     }
 
     #[test]
     fn owners_come_from_the_file_in_its_order() {
         let names = |a: &str| (a == B).then(|| "STOX_TOKEN_OWNER_SAFE_OWNER_TDM".to_string());
-        let live = vec![("base".to_string(), Some(A.to_string())), ("ethereum".to_string(), Some(A.to_string()))];
+        let live = vec![
+            ("base".to_string(), Some(A.to_string())),
+            ("ethereum".to_string(), Some(A.to_string())),
+        ];
         let v = build_owners("o", "r", &facts(), None, &live, &names);
-        assert_eq!((v["threshold"].as_u64(), v["signerCount"].as_u64()), (Some(2), Some(2)));
+        assert_eq!(
+            (v["threshold"].as_u64(), v["signerCount"].as_u64()),
+            (Some(2), Some(2))
+        );
         let s = group(&v, "signers");
         assert_eq!(s["title"], "Safe signers (2-of-2)");
         assert_eq!(s["entries"][0]["role"], "Signer 1");
@@ -616,11 +641,23 @@ mod tests {
         assert_eq!(s["entries"][1]["onChain"], "unverified");
         assert!(s["verification"].is_null());
         let safes = &group(&v, "safe")["entries"];
-        assert_eq!((safes[0]["network"].as_str(), safes[0]["address"].as_str()), (Some("ethereum"), Some(B)));
-        assert_eq!((safes[1]["network"].as_str(), safes[1]["address"].as_str()), (Some("base"), Some(A)));
+        assert_eq!(
+            (safes[0]["network"].as_str(), safes[0]["address"].as_str()),
+            (Some("ethereum"), Some(B))
+        );
+        assert_eq!(
+            (safes[1]["network"].as_str(), safes[1]["address"].as_str()),
+            (Some("base"), Some(A))
+        );
         let auth = &group(&v, "authoriser")["entries"];
-        assert_eq!((auth[0]["network"].as_str(), auth[0]["status"].as_str()), (Some("ethereum"), Some("pending")));
-        assert_eq!((auth[1]["network"].as_str(), auth[1]["status"].as_str()), (Some("base"), Some("active")));
+        assert_eq!(
+            (auth[0]["network"].as_str(), auth[0]["status"].as_str()),
+            (Some("ethereum"), Some("pending"))
+        );
+        assert_eq!(
+            (auth[1]["network"].as_str(), auth[1]["status"].as_str()),
+            (Some("base"), Some("active"))
+        );
         assert_eq!(auth[2]["role"], "Authoriser implementation");
         assert_eq!(auth[2]["address"], A);
         let hist = &group(&v, "historical")["entries"];
@@ -651,29 +688,69 @@ mod tests {
     #[test]
     fn the_live_safe_verifies_roster_and_threshold() {
         let f = facts();
-        let ok = build_owners("o", "r", &f, Some(&onchain(Some(vec![&B.to_uppercase().replace("0X", "0x"), A]), Some(2))), &[], &no_names);
+        let ok = build_owners(
+            "o",
+            "r",
+            &f,
+            Some(&onchain(
+                Some(vec![&B.to_uppercase().replace("0X", "0x"), A]),
+                Some(2),
+            )),
+            &[],
+            &no_names,
+        );
         let s = group(&ok, "signers");
         assert_eq!(s["verification"]["match"], true);
         assert_eq!(s["verification"]["reachable"], true);
         assert_eq!(s["entries"][1]["onChain"], "match");
 
-        let drift = build_owners("o", "r", &f, Some(&onchain(Some(vec![A, "0x00000000000000000000000000000000000000c3"]), Some(2))), &[], &no_names);
+        let drift = build_owners(
+            "o",
+            "r",
+            &f,
+            Some(&onchain(
+                Some(vec![A, "0x00000000000000000000000000000000000000c3"]),
+                Some(2),
+            )),
+            &[],
+            &no_names,
+        );
         let s = group(&drift, "signers");
         assert_eq!(s["verification"]["match"], false);
         assert_eq!(s["entries"][1]["onChain"], "missing");
         assert_eq!(s["entries"][2]["status"], "extra");
         assert_eq!(s["entries"][2]["network"], "base");
 
-        let thr = build_owners("o", "r", &f, Some(&onchain(Some(vec![A, B]), Some(1))), &[], &no_names);
+        let thr = build_owners(
+            "o",
+            "r",
+            &f,
+            Some(&onchain(Some(vec![A, B]), Some(1))),
+            &[],
+            &no_names,
+        );
         assert_eq!(group(&thr, "signers")["verification"]["match"], false);
-        assert_eq!(group(&thr, "signers")["verification"]["threshold"]["match"], false);
+        assert_eq!(
+            group(&thr, "signers")["verification"]["threshold"]["match"],
+            false
+        );
 
-        let half = build_owners("o", "r", &f, Some(&onchain(Some(vec![A, B]), None)), &[], &no_names);
+        let half = build_owners(
+            "o",
+            "r",
+            &f,
+            Some(&onchain(Some(vec![A, B]), None)),
+            &[],
+            &no_names,
+        );
         assert_eq!(group(&half, "signers")["verification"]["reachable"], false);
         assert!(group(&half, "signers")["verification"]["match"].is_null());
         let none = build_owners("o", "r", &f, Some(&onchain(None, Some(2))), &[], &no_names);
         assert_eq!(group(&none, "signers")["verification"]["reachable"], false);
-        assert_eq!(group(&none, "signers")["entries"][0]["onChain"], "unverified");
+        assert_eq!(
+            group(&none, "signers")["entries"][0]["onChain"],
+            "unverified"
+        );
     }
 
     #[test]
@@ -681,7 +758,14 @@ mod tests {
         let pins = chain_pins(&facts());
         assert_eq!(pins.len(), 2);
         assert_eq!(pins[1].network, "base");
-        assert_eq!((pins[1].safe.as_deref(), pins[1].admin_holder.as_deref(), pins[1].authoriser.as_deref()), (Some(A), Some(B), Some(A)));
+        assert_eq!(
+            (
+                pins[1].safe.as_deref(),
+                pins[1].admin_holder.as_deref(),
+                pins[1].authoriser.as_deref()
+            ),
+            (Some(A), Some(B), Some(A))
+        );
         assert_eq!(pins[0].admin_holder, None);
         assert!(pins.iter().all(|p| p.rpc_host.is_none()));
     }
@@ -705,7 +789,11 @@ mod tests {
                                 "timelock" => c.admin_holder.clone().unwrap(),
                                 other => other.to_string(),
                             };
-                            Expected { role: role(r), role_name: None, grantee: grantee.to_lowercase() }
+                            Expected {
+                                role: role(r),
+                                role_name: None,
+                                grantee: grantee.to_lowercase(),
+                            }
                         })
                         .collect(),
                 }],
@@ -714,15 +802,31 @@ mod tests {
     }
 
     fn names() -> Vec<(String, String)> {
-        ["DEPOSIT", "DEPOSIT_ADMIN", "CERTIFY"].iter().map(|n| (role(n), n.to_string())).collect()
+        ["DEPOSIT", "DEPOSIT_ADMIN", "CERTIFY"]
+            .iter()
+            .map(|n| (role(n), n.to_string()))
+            .collect()
     }
 
     fn named(_: &str, a: &str) -> Option<String> {
-        a.eq_ignore_ascii_case(SERVICE).then(|| "GRANTEE_SERVICE_1C66".into())
+        a.eq_ignore_ascii_case(SERVICE)
+            .then(|| "GRANTEE_SERVICE_1C66".into())
     }
 
-    fn grants(chains: &[ChainPin], pairs: &[(&str, &str)], check: &dyn Fn(&str, &str, &str, &str) -> GrantOnChain) -> serde_json::Value {
-        build_grants("o", "r", &ideal_for(chains, pairs), chains, &names(), &named, check)
+    fn grants(
+        chains: &[ChainPin],
+        pairs: &[(&str, &str)],
+        check: &dyn Fn(&str, &str, &str, &str) -> GrantOnChain,
+    ) -> serde_json::Value {
+        build_grants(
+            "o",
+            "r",
+            &ideal_for(chains, pairs),
+            chains,
+            &names(),
+            &named,
+            check,
+        )
     }
 
     fn all_granted(_n: &str, _a: &str, _r: &str, _g: &str) -> GrantOnChain {
@@ -732,20 +836,54 @@ mod tests {
     #[test]
     fn grants_are_grouped_by_grantee_kind_with_each_chains_address() {
         let chains = two_chains();
-        let v = grants(&chains, &[("DEPOSIT", SERVICE), ("DEPOSIT_ADMIN", "timelock"), ("CERTIFY", "safe"), ("CERTIFY", SERVICE)], &all_granted);
+        let v = grants(
+            &chains,
+            &[
+                ("DEPOSIT", SERVICE),
+                ("DEPOSIT_ADMIN", "timelock"),
+                ("CERTIFY", "safe"),
+                ("CERTIFY", SERVICE),
+            ],
+            &all_granted,
+        );
         assert_eq!(v["source"], "ideal-roles.json");
         assert_eq!(v["pinnedCount"], 8);
         let g = v["grantees"].as_array().unwrap();
         assert_eq!(g.len(), 3);
-        assert_eq!((g[0]["kind"].as_str(), g[0]["ident"].as_str(), g[0]["address"].as_str()), (Some("constant"), Some("GRANTEE_SERVICE_1C66"), Some(SERVICE)));
-        assert_eq!(g[0]["roles"].as_array().unwrap().iter().map(|r| r["role"].as_str().unwrap()).collect::<Vec<_>>(), vec!["DEPOSIT", "CERTIFY"]);
+        assert_eq!(
+            (
+                g[0]["kind"].as_str(),
+                g[0]["ident"].as_str(),
+                g[0]["address"].as_str()
+            ),
+            (
+                Some("constant"),
+                Some("GRANTEE_SERVICE_1C66"),
+                Some(SERVICE)
+            )
+        );
+        assert_eq!(
+            g[0]["roles"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|r| r["role"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            vec!["DEPOSIT", "CERTIFY"]
+        );
         assert_eq!(g[1]["kind"], "admin-holder");
         assert!(g[1]["address"].is_null());
         assert_eq!(g[1]["roles"][0]["admin"], true);
         assert_eq!(g[1]["roles"][0]["roleId"], role("DEPOSIT_ADMIN"));
         let tl = &g[1]["roles"][0]["chains"];
-        assert_eq!(tl[0]["address"], chains[0].admin_holder.clone().unwrap().to_lowercase());
-        assert_eq!(tl[1]["address"], chains[1].admin_holder.clone().unwrap().to_lowercase());
+        assert_eq!(
+            tl[0]["address"],
+            chains[0].admin_holder.clone().unwrap().to_lowercase()
+        );
+        assert_eq!(
+            tl[1]["address"],
+            chains[1].admin_holder.clone().unwrap().to_lowercase()
+        );
         assert_eq!(g[2]["kind"], "safe");
         assert_eq!(g[2]["roles"][0]["admin"], false);
         assert_eq!(v["chains"][0]["state"], "live");
@@ -766,13 +904,24 @@ mod tests {
         let mut chains = two_chains();
         let safe0 = chains[0].safe.clone().unwrap();
         let check = move |_n: &str, _a: &str, _r: &str, g: &str| {
-            if g.eq_ignore_ascii_case(&safe0) { GrantOnChain::Granted } else { GrantOnChain::NotGranted }
+            if g.eq_ignore_ascii_case(&safe0) {
+                GrantOnChain::Granted
+            } else {
+                GrantOnChain::NotGranted
+            }
         };
-        let v = grants(&chains, &[("DEPOSIT_ADMIN", "timelock"), ("DEPOSIT", SERVICE)], &check);
+        let v = grants(
+            &chains,
+            &[("DEPOSIT_ADMIN", "timelock"), ("DEPOSIT", SERVICE)],
+            &check,
+        );
         assert_eq!(v["chains"][0]["safeKept"], json!(["DEPOSIT_ADMIN"]));
         assert_eq!(v["chains"][1]["safeKept"], json!([]));
         assert_eq!(v["grantees"][0]["roles"][0]["chains"][0]["safeHolds"], true);
-        assert_eq!(v["grantees"][0]["roles"][0]["chains"][1]["safeHolds"], false);
+        assert_eq!(
+            v["grantees"][0]["roles"][0]["chains"][1]["safeHolds"],
+            false
+        );
         assert!(v["grantees"][1]["roles"][0]["chains"][0]["safeHolds"].is_null());
         assert_eq!(v["chains"][1]["state"], "unprovisioned");
 
@@ -787,15 +936,26 @@ mod tests {
         let chains = two_chains();
         let seen = std::cell::RefCell::new(Vec::new());
         let check = |n: &str, a: &str, r: &str, g: &str| {
-            seen.borrow_mut().push((n.to_string(), a.to_string(), r.to_string(), g.to_string()));
+            seen.borrow_mut()
+                .push((n.to_string(), a.to_string(), r.to_string(), g.to_string()));
             GrantOnChain::Granted
         };
         grants(&chains, &[("CERTIFY", SERVICE)], &check);
         assert_eq!(
             seen.into_inner(),
             vec![
-                ("base".into(), BASE_AUTH.into(), role("CERTIFY"), SERVICE.into()),
-                ("ethereum".into(), chains[1].authoriser.clone().unwrap(), role("CERTIFY"), SERVICE.into()),
+                (
+                    "base".into(),
+                    BASE_AUTH.into(),
+                    role("CERTIFY"),
+                    SERVICE.into()
+                ),
+                (
+                    "ethereum".into(),
+                    chains[1].authoriser.clone().unwrap(),
+                    role("CERTIFY"),
+                    SERVICE.into()
+                ),
             ]
         );
     }
@@ -807,7 +967,13 @@ mod tests {
         let v = build_grants("o", "r", &ideal, &chains, &names(), &named, &all_granted);
         assert_eq!(v["chains"][1]["total"], 0);
         assert_eq!(v["chains"][1]["state"], "unknown");
-        assert_eq!(v["grantees"][0]["roles"][0]["chains"].as_array().unwrap().len(), 1);
+        assert_eq!(
+            v["grantees"][0]["roles"][0]["chains"]
+                .as_array()
+                .unwrap()
+                .len(),
+            1
+        );
         let mut no_auth = chains.clone();
         no_auth[0].authoriser = None;
         let v = build_grants("o", "r", &ideal, &no_auth, &names(), &named, &all_granted);
@@ -826,9 +992,15 @@ mod tests {
 
     #[test]
     fn unavailable_documents_say_why() {
-        assert_eq!(owners_unavailable("o", "r", "HTTP 404")["unavailable"], "HTTP 404");
+        assert_eq!(
+            owners_unavailable("o", "r", "HTTP 404")["unavailable"],
+            "HTTP 404"
+        );
         let g = grants_unavailable("o", "r", "it is not JSON");
-        assert_eq!((g["unavailable"].as_str(), g["source"].as_str()), (Some("it is not JSON"), Some("ideal-roles.json")));
+        assert_eq!(
+            (g["unavailable"].as_str(), g["source"].as_str()),
+            (Some("it is not JSON"), Some("ideal-roles.json"))
+        );
     }
 
     /// Two chains with everything pinned, so a test only has to vary the probe.

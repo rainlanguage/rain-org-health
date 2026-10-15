@@ -61,10 +61,12 @@ pub fn pointer_suites(sources: &[(String, String)]) -> Vec<(String, Vec<(String,
 
 /// A pointer file's `DEPLOYED_ADDRESS` literal.
 pub fn deployed_address(src: &str) -> Option<String> {
-    crate::addrnames::parse_pins(src)?.into_iter().find_map(|p| match p.value {
-        crate::addrnames::PinValue::Literal(a) if p.name == "DEPLOYED_ADDRESS" => Some(a),
-        _ => None,
-    })
+    crate::addrnames::parse_pins(src)?
+        .into_iter()
+        .find_map(|p| match p.value {
+            crate::addrnames::PinValue::Literal(a) if p.name == "DEPLOYED_ADDRESS" => Some(a),
+            _ => None,
+        })
 }
 
 /// ERC-165 conformance from the two required probes: `supportsInterface(0x01ffc9a7)`
@@ -195,7 +197,10 @@ pub fn beacon_health(
         Some(l) if is(v1_impl, l) => "v1",
         Some(_) => "unknown",
     };
-    let at_pinned = live_impl.as_deref().zip(pinned_impl).map(|(l, p)| l.eq_ignore_ascii_case(p));
+    let at_pinned = live_impl
+        .as_deref()
+        .zip(pinned_impl)
+        .map(|(l, p)| l.eq_ignore_ascii_case(p));
     let status = if live_owner.is_none() || at_pinned.is_none() {
         "unknown"
     } else if !governed {
@@ -293,14 +298,20 @@ pub struct TokenSpec<'a> {
 
 /// A live authoriser against the pinned one → (`label`, `atPinned`). `label`:
 /// `pinned`, `none` (address(0)), `foreign`, or `unknown` (unread).
-pub fn resolve_authoriser(live: Option<&str>, pinned: Option<&str>) -> (&'static str, Option<bool>) {
+pub fn resolve_authoriser(
+    live: Option<&str>,
+    pinned: Option<&str>,
+) -> (&'static str, Option<bool>) {
     let label = match live {
         None => "unknown",
         Some(a) if pinned.is_some_and(|p| a.eq_ignore_ascii_case(p)) => "pinned",
         Some(a) if a.trim_start_matches("0x").chars().all(|c| c == '0') => "none",
         Some(_) => "foreign",
     };
-    (label, live.zip(pinned).map(|(a, p)| a.eq_ignore_ascii_case(p)))
+    (
+        label,
+        live.zip(pinned).map(|(a, p)| a.eq_ignore_ascii_case(p)),
+    )
 }
 
 /// A pinned receipt vault no registry token names, with its live identity and authoriser.
@@ -638,44 +649,98 @@ mod tests {
 
     #[test]
     fn a_governed_beacon_at_the_pinned_impl_is_healthy() {
-        let b = bh(Some(&SAFE.to_uppercase().replace("0X", "0x")), Some(&PINNED.to_uppercase().replace("0X", "0x")));
-        assert_eq!((b["ownerLabel"].as_str(), b["implVersion"].as_str()), (Some("safe"), Some("pinned")));
-        assert_eq!((b["atPinned"].as_bool(), b["status"].as_str()), (Some(true), Some("healthy")));
+        let b = bh(
+            Some(&SAFE.to_uppercase().replace("0X", "0x")),
+            Some(&PINNED.to_uppercase().replace("0X", "0x")),
+        );
+        assert_eq!(
+            (b["ownerLabel"].as_str(), b["implVersion"].as_str()),
+            (Some("safe"), Some("pinned"))
+        );
+        assert_eq!(
+            (b["atPinned"].as_bool(), b["status"].as_str()),
+            (Some(true), Some("healthy"))
+        );
         assert_eq!(b["pinnedImpl"], PINNED);
         let t = bh(Some(TIMELOCK), Some(PINNED));
-        assert_eq!((t["ownerLabel"].as_str(), t["status"].as_str()), (Some("timelock"), Some("healthy")));
+        assert_eq!(
+            (t["ownerLabel"].as_str(), t["status"].as_str()),
+            (Some("timelock"), Some("healthy"))
+        );
     }
 
     #[test]
     fn a_governed_beacon_off_the_pinned_impl_is_behind() {
         let v1 = bh(Some(SAFE), Some(V1));
-        assert_eq!((v1["implVersion"].as_str(), v1["atPinned"].as_bool()), (Some("v1"), Some(false)));
+        assert_eq!(
+            (v1["implVersion"].as_str(), v1["atPinned"].as_bool()),
+            (Some("v1"), Some(false))
+        );
         assert_eq!(v1["status"], "behind");
-        let other = bh(Some(TIMELOCK), Some("0x00000000000000000000000000000000000000ff"));
-        assert_eq!((other["implVersion"].as_str(), other["status"].as_str()), (Some("unknown"), Some("behind")));
+        let other = bh(
+            Some(TIMELOCK),
+            Some("0x00000000000000000000000000000000000000ff"),
+        );
+        assert_eq!(
+            (other["implVersion"].as_str(), other["status"].as_str()),
+            (Some("unknown"), Some("behind"))
+        );
     }
 
     #[test]
     fn an_ungoverned_owner_is_drift() {
         let l = bh(Some(LEGACY), Some(PINNED));
-        assert_eq!((l["ownerLabel"].as_str(), l["status"].as_str()), (Some("legacy"), Some("drift")));
-        let f = bh(Some("0x00000000000000000000000000000000000000ff"), Some(PINNED));
-        assert_eq!((f["ownerLabel"].as_str(), f["status"].as_str()), (Some("foreign"), Some("drift")));
+        assert_eq!(
+            (l["ownerLabel"].as_str(), l["status"].as_str()),
+            (Some("legacy"), Some("drift"))
+        );
+        let f = bh(
+            Some("0x00000000000000000000000000000000000000ff"),
+            Some(PINNED),
+        );
+        assert_eq!(
+            (f["ownerLabel"].as_str(), f["status"].as_str()),
+            (Some("foreign"), Some("drift"))
+        );
     }
 
     #[test]
     fn owner_precedence_is_safe_then_legacy_then_timelock() {
-        assert_eq!(pins(Some(SAFE), Some(LEGACY), Some(SAFE), Some(SAFE), Some(PINNED))["ownerLabel"], "safe");
-        let l = pins(Some(SAFE), Some(LEGACY), Some(LEGACY), Some(LEGACY), Some(PINNED));
-        assert_eq!((l["ownerLabel"].as_str(), l["status"].as_str()), (Some("legacy"), Some("drift")));
+        assert_eq!(
+            pins(
+                Some(SAFE),
+                Some(LEGACY),
+                Some(SAFE),
+                Some(SAFE),
+                Some(PINNED)
+            )["ownerLabel"],
+            "safe"
+        );
+        let l = pins(
+            Some(SAFE),
+            Some(LEGACY),
+            Some(LEGACY),
+            Some(LEGACY),
+            Some(PINNED),
+        );
+        assert_eq!(
+            (l["ownerLabel"].as_str(), l["status"].as_str()),
+            (Some("legacy"), Some("drift"))
+        );
     }
 
     #[test]
     fn an_absent_pin_matches_nothing() {
         let t = pins(Some(SAFE), Some(LEGACY), None, Some(TIMELOCK), Some(PINNED));
-        assert_eq!((t["ownerLabel"].as_str(), t["status"].as_str()), (Some("foreign"), Some("drift")));
+        assert_eq!(
+            (t["ownerLabel"].as_str(), t["status"].as_str()),
+            (Some("foreign"), Some("drift"))
+        );
         let z = pins(None, None, None, Some(ZERO), Some(PINNED));
-        assert_eq!((z["ownerLabel"].as_str(), z["status"].as_str()), (Some("foreign"), Some("drift")));
+        assert_eq!(
+            (z["ownerLabel"].as_str(), z["status"].as_str()),
+            (Some("foreign"), Some("drift"))
+        );
     }
 
     #[test]
@@ -685,8 +750,24 @@ mod tests {
         }
         assert_eq!(bh(None, Some(PINNED))["ownerLabel"], "unknown");
         assert_eq!(bh(Some(SAFE), None)["implVersion"], "unknown");
-        let unpinned = beacon_health("b", None, Some(SAFE), None, None, None, Some(V1), Some(SAFE.into()), Some(V1.into()));
-        assert_eq!((unpinned["status"].as_str(), unpinned["implVersion"].as_str()), (Some("unknown"), Some("v1")));
+        let unpinned = beacon_health(
+            "b",
+            None,
+            Some(SAFE),
+            None,
+            None,
+            None,
+            Some(V1),
+            Some(SAFE.into()),
+            Some(V1.into()),
+        );
+        assert_eq!(
+            (
+                unpinned["status"].as_str(),
+                unpinned["implVersion"].as_str()
+            ),
+            (Some("unknown"), Some("v1"))
+        );
         assert!(unpinned["atPinned"].is_null());
     }
 
@@ -701,10 +782,19 @@ mod tests {
             None,
             vec![bh(Some(SAFE), Some(V1)), bh(Some(TIMELOCK), Some(PINNED))],
         );
-        assert_eq!((v["total"].as_u64(), v["healthy"].as_u64()), (Some(2), Some(1)));
+        assert_eq!(
+            (v["total"].as_u64(), v["healthy"].as_u64()),
+            (Some(2), Some(1))
+        );
         assert_eq!(v["beacons"][0]["status"], "behind");
-        assert_eq!((v["safeOwner"].as_str(), v["timelockOwner"].is_null()), (Some(SAFE), true));
-        assert_eq!((v["network"].as_str(), v["rpcHost"].as_str()), (Some("base"), Some("host")));
+        assert_eq!(
+            (v["safeOwner"].as_str(), v["timelockOwner"].is_null()),
+            (Some(SAFE), true)
+        );
+        assert_eq!(
+            (v["network"].as_str(), v["rpcHost"].as_str()),
+            (Some("base"), Some("host"))
+        );
     }
 
     fn tl(
@@ -874,19 +964,49 @@ mod tests {
         let mut s = spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271"));
         s.auth_pinned = Some(AUTH);
         let with = |a: Option<&str>| {
-            let mut l = tl(Some("N"), Some("wtNVDA"), Some(18), Some("0x7271"), Some(true));
+            let mut l = tl(
+                Some("N"),
+                Some("wtNVDA"),
+                Some(18),
+                Some("0x7271"),
+                Some(true),
+            );
             l.authoriser = a.map(str::to_string);
             token_health(&s, &l)
         };
         let t = with(Some(&AUTH.to_uppercase().replace("0X", "0x")));
-        assert_eq!((t["authoriserLabel"].as_str(), t["atPinnedAuthoriser"].as_bool()), (Some("pinned"), Some(true)));
-        assert_eq!((t["authoriserPinned"].as_str(), t["status"].as_str()), (Some(AUTH), Some("ok")));
+        assert_eq!(
+            (
+                t["authoriserLabel"].as_str(),
+                t["atPinnedAuthoriser"].as_bool()
+            ),
+            (Some("pinned"), Some(true))
+        );
+        assert_eq!(
+            (t["authoriserPinned"].as_str(), t["status"].as_str()),
+            (Some(AUTH), Some("ok"))
+        );
         let f = with(Some("0xdead000000000000000000000000000000000001"));
-        assert_eq!((f["authoriserLabel"].as_str(), f["atPinnedAuthoriser"].as_bool()), (Some("foreign"), Some(false)));
+        assert_eq!(
+            (
+                f["authoriserLabel"].as_str(),
+                f["atPinnedAuthoriser"].as_bool()
+            ),
+            (Some("foreign"), Some(false))
+        );
         assert_eq!(f["status"], "ok");
         assert_eq!(with(None)["authoriserLabel"], "unknown");
-        let plain = token_health(&spec("USDC", "U", 6, "0x1", None), &tl(Some("U"), Some("USDC"), Some(6), None, None));
-        assert_eq!((plain["authoriserLabel"].as_str(), plain["atPinnedAuthoriser"].is_null()), (Some("n/a"), true));
+        let plain = token_health(
+            &spec("USDC", "U", 6, "0x1", None),
+            &tl(Some("U"), Some("USDC"), Some(6), None, None),
+        );
+        assert_eq!(
+            (
+                plain["authoriserLabel"].as_str(),
+                plain["atPinnedAuthoriser"].is_null()
+            ),
+            (Some("n/a"), true)
+        );
     }
 
     #[test]
@@ -968,16 +1088,34 @@ mod tests {
         let off = token_health(&s, &l);
         l.authoriser = Some(AUTH.into());
         let on = token_health(&s, &l);
-        let v = build_tokens("o", "r", "base", "host", json!(null), json!(null), vec![on, off]).unwrap();
-        assert_eq!((v["wrappedCount"].as_u64(), v["atPinnedAuthoriser"].as_u64()), (Some(2), Some(1)));
+        let v = build_tokens(
+            "o",
+            "r",
+            "base",
+            "host",
+            json!(null),
+            json!(null),
+            vec![on, off],
+        )
+        .unwrap();
+        assert_eq!(
+            (v["wrappedCount"].as_u64(), v["atPinnedAuthoriser"].as_u64()),
+            (Some(2), Some(1))
+        );
     }
 
     #[test]
     fn resolve_authoriser_labels_pinned_none_foreign_unknown() {
         let pinned = Some(AUTH);
         assert_eq!(resolve_authoriser(pinned, pinned), ("pinned", Some(true)));
-        assert_eq!(resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), pinned), ("none", Some(false)));
-        assert_eq!(resolve_authoriser(Some("0x0000000000000000000000000000000000000001"), pinned), ("foreign", Some(false)));
+        assert_eq!(
+            resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), pinned),
+            ("none", Some(false))
+        );
+        assert_eq!(
+            resolve_authoriser(Some("0x0000000000000000000000000000000000000001"), pinned),
+            ("foreign", Some(false))
+        );
         assert_eq!(resolve_authoriser(None, pinned), ("unknown", None));
         assert_eq!(resolve_authoriser(pinned, None), ("foreign", None));
     }
@@ -992,8 +1130,17 @@ mod tests {
             Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"),
             Some(AUTH),
         );
-        assert_eq!((v["symbol"].as_str(), v["deployed"].as_bool()), (Some("wtIBHG"), Some(true)));
-        assert_eq!((v["authoriserLabel"].as_str(), v["atPinnedAuthoriser"].as_bool()), (Some("foreign"), Some(false)));
+        assert_eq!(
+            (v["symbol"].as_str(), v["deployed"].as_bool()),
+            (Some("wtIBHG"), Some(true))
+        );
+        assert_eq!(
+            (
+                v["authoriserLabel"].as_str(),
+                v["atPinnedAuthoriser"].as_bool()
+            ),
+            (Some("foreign"), Some(false))
+        );
         assert_eq!(v["authoriserPinned"], AUTH);
     }
 
@@ -1017,12 +1164,18 @@ mod tests {
         assert_eq!(
             got,
             vec![
-                ("0.1.1".to_string(), vec!["StoxReceipt".to_string(), "StoxReceiptVault".to_string()]),
+                (
+                    "0.1.1".to_string(),
+                    vec!["StoxReceipt".to_string(), "StoxReceiptVault".to_string()]
+                ),
                 ("0.1.30".to_string(), vec!["ST0xOrchestrator".to_string()]),
                 ("candidate".to_string(), vec!["StoxReceipt".to_string()]),
             ]
         );
-        assert_eq!(pointer_suites(&sources)[0].1[0].1, "// src/generated/0_1_1/StoxReceipt.pointers.sol");
+        assert_eq!(
+            pointer_suites(&sources)[0].1[0].1,
+            "// src/generated/0_1_1/StoxReceipt.pointers.sol"
+        );
     }
 
     #[test]
@@ -1031,8 +1184,16 @@ mod tests {
             address constant OTHER = address(0x1111111111111111111111111111111111111111);
             address constant DEPLOYED_ADDRESS = address(0xAbCdEf0000000000000000000000000000000001);
         "#;
-        assert_eq!(deployed_address(src).as_deref(), Some("0xAbCdEf0000000000000000000000000000000001"));
-        assert_eq!(deployed_address("address constant X = address(0x1111111111111111111111111111111111111111);"), None);
+        assert_eq!(
+            deployed_address(src).as_deref(),
+            Some("0xAbCdEf0000000000000000000000000000000001")
+        );
+        assert_eq!(
+            deployed_address(
+                "address constant X = address(0x1111111111111111111111111111111111111111);"
+            ),
+            None
+        );
         assert_eq!(deployed_address("not solidity {"), None);
     }
 }
