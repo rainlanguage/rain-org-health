@@ -63,6 +63,8 @@
   .vault-empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
   /* Its own class for the same reason as `.vault-empty`. */
   .rbac-empty { color: var(--ink-3); padding: 12px 4px; line-height: 1.6; }
+  /* Its own class for the same reason as `.vault-empty`. */
+  .issues-empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
   .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
   .rbac-hist { margin-top: 10px; }
   /* An address on the Role changes tab reads as the deploy repo's name for it,
@@ -358,6 +360,7 @@ function renderDeployments(document, $, data, io) {
     ["contracts", "Contracts & tokens"],
     ["rbac", "Role changes"],
     ["held", "Roles held"],
+    ["issues", "Known issues"],
   ];
   const subnav = el("div", "subnav");
   const panels = {};
@@ -399,7 +402,7 @@ function renderDeployments(document, $, data, io) {
     });
     subnav.append(b);
   }
-  box.append(subnav, panels.safe, panels.contracts, panels.rbac, panels.held);
+  box.append(subnav, ...TABS.map(([id]) => panels[id]));
 
   // Where the section renderers append. Reassigned between groups rather than
   // threaded through every renderer as an argument, so a section moves tab by
@@ -2661,35 +2664,10 @@ function renderDeployments(document, $, data, io) {
     return Promise.all(reads);
   };
   const owners = data.deploymentOwners;
-  sink.append(el("h2", null, "Known owners"));
-  if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
-    sink.append(
-      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
-    );
-    // The grant map is parsed independently of the owner constants, so it can
-    // still be readable when they are not — and it is the half of this page
-    // that says who can move value.
-    renderVaultOwners(data.deploymentVaultOwners);
-    sink = panels.contracts;
-    renderGrants(data.deploymentGrants);
-    renderHealth(data.deploymentHealth);
-    renderBeacons(data.deploymentBeacons);
-    renderTokens(data.deploymentTokens);
-    sink = panels.rbac;
-    const rbacDone = renderRbac(data.deploymentRbac);
-    show(hashTab() || TABS[0][0]);
-    return rbacDone;
-  }
-  const sub = el("div", "own-sub");
-  sub.append("Privileged addresses read from the ");
-  sub.append(
-    link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
-  );
-  sub.append(
-    ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
-  );
-  sink.append(sub);
-  for (const g of owners.groups) {
+  const ownersRead = !!owners && Array.isArray(owners.groups) && owners.groups.length > 0;
+  // Retired facts render on the Known issues tab, never beside the live roster.
+  const isKnownIssue = (g) => g.id === "historical";
+  const ownerGroup = (g) => {
     const grp = el("div", "own-group");
     grp.append(el("div", "own-grouphead", g.title));
     if (g.note) grp.append(el("div", "own-groupnote", g.note));
@@ -2737,11 +2715,32 @@ function renderDeployments(document, $, data, io) {
       table.append(row);
     }
     grp.append(table);
-    sink.append(grp);
+    return grp;
+  };
+  sink.append(el("h2", null, "Known owners"));
+  if (!ownersRead) {
+    sink.append(
+      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
+    );
+  } else {
+    const sub = el("div", "own-sub");
+    sub.append("Privileged addresses read from the ");
+    sub.append(
+      link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
+    );
+    sub.append(
+      ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
+    );
+    sink.append(sub);
+    for (const g of owners.groups) {
+      if (!isKnownIssue(g)) sink.append(ownerGroup(g));
+    }
   }
   // Safe tab: who holds production, and whether it is still the Safe or has
   // moved to the governance timelock. Contracts tab: everything the Safe
-  // governs rather than the Safe itself.
+  // governs rather than the Safe itself. The grant map is parsed independently
+  // of the owner constants, so it can still be readable when they are not —
+  // and it is the half of this page that says who can move value.
   renderVaultOwners(data.deploymentVaultOwners);
   sink = panels.contracts;
   renderGrants(data.deploymentGrants);
@@ -2750,6 +2749,25 @@ function renderDeployments(document, $, data, io) {
   renderTokens(data.deploymentTokens);
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
+  // Unread owner data is reported as unread here too: an empty tab reads as a clean bill.
+  sink = panels.issues;
+  sink.append(el("h2", null, "Known issues"));
+  sink.append(
+    el(
+      "div",
+      "own-sub",
+      "Conditions the org knows about and has decided to live with or has not yet fixed — what each is, which contracts and chains it affects, and why it stands.",
+    ),
+  );
+  if (!ownersRead) {
+    sink.append(
+      el("div", "issues-empty", "Known issues unavailable — the scan could not read the st0x.deploy constants."),
+    );
+  } else {
+    const issues = owners.groups.filter(isKnownIssue);
+    if (issues.length === 0) sink.append(el("div", "issues-empty", "No known issues recorded."));
+    for (const g of issues) sink.append(ownerGroup(g));
+  }
   show(hashTab() || TABS[0][0]);
   return rbacDone;
 }
