@@ -2778,24 +2778,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             deploy_repo,
             &gh_file(deploy_org, deploy_repo, migrations::PATH),
             &|network| Chain::from_network(network).map(|ch| ch.rpc_host().to_string()),
-            &|net, records| {
-                let Some(chain) = Chain::from_network(&net.name) else {
-                    return vec![None; records.len()];
-                };
-                let Some(calls) = records
-                    .iter()
-                    .map(|r| {
-                        rpc::applied_calldata(&r.writer, &r.namespace, &r.id)
-                            .map(|data| (net.registry.clone(), data))
-                    })
-                    .collect::<Option<Vec<_>>>()
-                else {
-                    return vec![None; records.len()];
-                };
-                eth_call_batch(rpc_session(chain), &calls)
-                    .into_iter()
-                    .map(|hex| hex.as_deref().and_then(rpc::decode_uint))
-                    .collect()
+            &|net, records| match Chain::from_network(&net.name) {
+                Some(chain) => migrations::read_applied(net, records, &|calls| {
+                    eth_call_batch(rpc_session(chain), calls)
+                }),
+                None => vec![None; records.len()],
             },
         );
 

@@ -1,5 +1,6 @@
 //! The deploy repo's migrations joined with each registry's `applied`; the page has no RPC.
 
+use crate::rpc;
 use alloy_primitives::{Address, FixedBytes};
 use serde_json::{json, Map, Value};
 
@@ -176,6 +177,26 @@ fn parse(src: &str) -> Result<Manifest, String> {
 
 /// One slot per record; `None` where the read did not answer.
 pub type ReadApplied<'a> = &'a dyn Fn(&Network, &[Record]) -> Vec<Option<u64>>;
+
+/// `(to, calldata)` pairs in, each raw result out.
+pub type EthCalls<'a> = &'a dyn Fn(&[(String, String)]) -> Vec<Option<String>>;
+
+pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Option<u64>> {
+    let Some(calls) = records
+        .iter()
+        .map(|r| {
+            rpc::applied_calldata(&r.writer, &r.namespace, &r.id)
+                .map(|data| (net.registry.clone(), data))
+        })
+        .collect::<Option<Vec<_>>>()
+    else {
+        return vec![None; records.len()];
+    };
+    call(&calls)
+        .into_iter()
+        .map(|hex| hex.as_deref().and_then(rpc::decode_uint))
+        .collect()
+}
 
 /// Registry 0 for a migration the file says ran is a missing record, not one that has not run.
 fn state(applied: Option<u64>, executed_at: u64) -> &'static str {
@@ -392,13 +413,16 @@ mod tests {
         })
     }
 
+    /// `(network, writer, namespace, id, appliedAt)`.
+    type Entry = (&'static str, &'static str, &'static str, &'static str, u64);
+
     struct Registry {
-        table: Vec<(&'static str, &'static str, &'static str, u64)>,
+        table: Vec<Entry>,
         asked: RefCell<Vec<(String, Vec<Record>)>>,
     }
 
     impl Registry {
-        fn new(table: Vec<(&'static str, &'static str, &'static str, u64)>) -> Self {
+        fn new(table: Vec<Entry>) -> Self {
             Registry {
                 table,
                 asked: RefCell::new(Vec::new()),
@@ -415,12 +439,13 @@ mod tests {
                     Some(
                         self.table
                             .iter()
-                            .find(|(n, w, i, _)| {
+                            .find(|(n, w, ns, i, _)| {
                                 *n == net.name
                                     && w.eq_ignore_ascii_case(&r.writer)
+                                    && ns.eq_ignore_ascii_case(&r.namespace)
                                     && i.eq_ignore_ascii_case(&r.id)
                             })
-                            .map_or(0, |(_, _, _, t)| *t),
+                            .map_or(0, |(_, _, _, _, t)| *t),
                     )
                 })
                 .collect()
@@ -492,7 +517,7 @@ mod tests {
 
     #[test]
     fn applied_carries_the_registry_time_and_the_chain_writer() {
-        let reg = Registry::new(vec![("sevenchain", SAFE_X, ID_2, 1_791_457_413)]);
+        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_B, ID_2, 1_791_457_413)]);
         let doc = render(&fixture().to_string(), &reg);
         let two = row(&doc, "sevenchain", "script/two.s.sol");
         assert_eq!(two["state"], "applied");
@@ -508,12 +533,117 @@ mod tests {
 
     #[test]
     fn a_record_under_another_writer_does_not_count() {
-        let reg = Registry::new(vec![("sevenchain", SAFE_Y, ID_2, 5)]);
+        let reg = Registry::new(vec![("sevenchain", SAFE_Y, NS_B, ID_2, 5)]);
         let doc = render(&fixture().to_string(), &reg);
         assert_eq!(
             row(&doc, "sevenchain", "script/two.s.sol")["state"],
             "notApplied"
         );
+    }
+
+    #[test]
+    fn the_same_id_in_another_namespace_is_its_own_record() {
+        let mut f = fixture();
+        f["migrations"][2]["id"] = Value::from(ID_1);
+        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_A, ID_1, 1_700_000_900)]);
+        let doc = render(&f.to_string(), &reg);
+        assert_eq!(
+            row(&doc, "sevenchain", "script/one.s.sol")["state"],
+            "applied"
+        );
+        assert_eq!(
+            row(&doc, "sevenchain", "script/two.s.sol")["state"],
+            "notApplied"
+        );
+    }
+
+    #[test]
+    fn a_prerequisite_under_another_writer_is_its_own_record() {
+        let mut f = fixture();
+        f["migrations"][3]["chains"]["7"]["prerequisites"] = json!([pre(SAFE_Y, NS_B, ID_2)]);
+        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_B, ID_2, 1_700_000_900)]);
+        let doc = render(&f.to_string(), &reg);
+        assert_eq!(
+            row(&doc, "sevenchain", "script/two.s.sol")["state"],
+            "applied"
+        );
+        let w = &row(&doc, "sevenchain", "script/three.s.sol")["waitsOn"][0];
+        assert_eq!(w["writer"], SAFE_Y);
+        assert_eq!(w["state"], "notApplied");
+    }
+
+    #[test]
+    fn applied_is_asked_of_the_registry_and_decoded() {
+        let net = Network {
+            chain_id: 7,
+            name: "sevenchain".to_string(),
+            registry: REGISTRY.to_string(),
+        };
+        let records = vec![
+            Record {
+                writer: SAFE_X.to_string(),
+                namespace: NS_A.to_string(),
+                id: ID_1.to_string(),
+            },
+            Record {
+                writer: SAFE_Y.to_string(),
+                namespace: NS_B.to_string(),
+                id: ID_2.to_string(),
+            },
+            Record {
+                writer: SAFE_Y.to_string(),
+                namespace: NS_B.to_string(),
+                id: ID_3.to_string(),
+            },
+        ];
+        let sent = RefCell::new(Vec::new());
+        let got = read_applied(&net, &records, &|calls| {
+            sent.borrow_mut().extend_from_slice(calls);
+            vec![
+                Some(format!("0x{:064x}", 1_791_457_413u64)),
+                None,
+                Some("0x01".to_string()),
+            ]
+        });
+        assert_eq!(got, vec![Some(1_791_457_413), None, None]);
+        let want: Vec<(String, String)> = records
+            .iter()
+            .map(|r| {
+                (
+                    REGISTRY.to_string(),
+                    rpc::applied_calldata(&r.writer, &r.namespace, &r.id).unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(*sent.borrow(), want);
+    }
+
+    #[test]
+    fn a_record_that_cannot_be_encoded_asks_nothing() {
+        let net = Network {
+            chain_id: 7,
+            name: "sevenchain".to_string(),
+            registry: REGISTRY.to_string(),
+        };
+        let records = vec![
+            Record {
+                writer: SAFE_X.to_string(),
+                namespace: NS_A.to_string(),
+                id: ID_1.to_string(),
+            },
+            Record {
+                writer: "safe".to_string(),
+                namespace: NS_A.to_string(),
+                id: ID_2.to_string(),
+            },
+        ];
+        let called = RefCell::new(false);
+        let got = read_applied(&net, &records, &|_| {
+            *called.borrow_mut() = true;
+            vec![Some(format!("0x{:064x}", 1u64)); 2]
+        });
+        assert_eq!(got, vec![None, None]);
+        assert!(!*called.borrow());
     }
 
     #[test]
@@ -523,7 +653,7 @@ mod tests {
         assert_eq!(one["state"], "notRecorded");
         assert_eq!(one["executedAt"], 1_700_000_500u64);
         assert_eq!(one["appliedAt"], Value::Null);
-        let reg = Registry::new(vec![("sevenchain", SAFE_X, ID_1, 1_700_000_500)]);
+        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_A, ID_1, 1_700_000_500)]);
         let doc = render(&fixture().to_string(), &reg);
         let one = row(&doc, "sevenchain", "script/one.s.sol");
         assert_eq!(one["state"], "applied");
@@ -576,7 +706,7 @@ mod tests {
         assert_eq!(w["writer"], SAFE_X);
         assert_eq!(w["state"], "notRecorded");
         assert_eq!(w["executedAt"], 1_700_000_500u64);
-        let reg = Registry::new(vec![("sevenchain", SAFE_X, ID_1, 1_700_000_900)]);
+        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_A, ID_1, 1_700_000_900)]);
         let doc = render(&fixture().to_string(), &reg);
         let w = &row(&doc, "sevenchain", "script/three.s.sol")["waitsOn"][0];
         assert_eq!(w["state"], "applied");
