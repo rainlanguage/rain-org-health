@@ -1,10 +1,4 @@
-//! The deploy repo's migrations and, per network, whether each has run, for
-//! the Deployments page's Migrations tab.
-//!
-//! Every migration, id, namespace, writer and prerequisite comes from the
-//! deploy repo's `migrations.json`. Run state is the `MigrationRegistry`'s
-//! `applied(writer, namespace, id)` on each network, read here because the page
-//! has no RPC.
+//! The deploy repo's migrations joined with each registry's `applied`; the page has no RPC.
 
 use alloy_primitives::{Address, FixedBytes};
 use serde_json::{json, Map, Value};
@@ -12,7 +6,6 @@ use serde_json::{json, Map, Value};
 pub const PATH: &str = "migrations.json";
 const SCHEMA_VERSION: u64 = 1;
 
-/// One `(writer, namespace, id)` line entry in a registry.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Record {
     pub writer: String,
@@ -45,7 +38,6 @@ struct ChainEntry {
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Migration {
     script: String,
-    /// `(namespace, id)`; `None` for a migration that writes no record.
     key: Option<(String, String)>,
     chains: Vec<(u64, ChainEntry)>,
 }
@@ -59,9 +51,9 @@ impl Migration {
     }
 
     fn is(&self, namespace: &str, id: &str) -> bool {
-        self.key.as_ref().is_some_and(|(n, i)| {
-            n.eq_ignore_ascii_case(namespace) && i.eq_ignore_ascii_case(id)
-        })
+        self.key
+            .as_ref()
+            .is_some_and(|(n, i)| n.eq_ignore_ascii_case(namespace) && i.eq_ignore_ascii_case(id))
     }
 }
 
@@ -108,8 +100,7 @@ fn chain_id(key: &str, at: &str) -> Result<u64, String> {
         .map_err(|_| format!("{at} is keyed {key:?}, not a chain id"))
 }
 
-/// Schema v1, read strictly: a file this scan cannot read in full is reported
-/// unreadable rather than shown in part.
+/// Strict: a file read only in part is unavailable, never shown in part.
 fn parse(src: &str) -> Result<Manifest, String> {
     let root: Value = serde_json::from_str(src).map_err(|e| format!("not JSON ({e})"))?;
     match root.get("version").and_then(Value::as_u64) {
@@ -135,7 +126,10 @@ fn parse(src: &str) -> Result<Manifest, String> {
         let at = format!("migrations.{i}");
         let script = string(m, "script", &at)?;
         let chains_in = object(m, "chains", &at)?;
-        let key = match (field(m, "namespace", &at)?.is_null(), field(m, "id", &at)?.is_null()) {
+        let key = match (
+            field(m, "namespace", &at)?.is_null(),
+            field(m, "id", &at)?.is_null(),
+        ) {
             (true, true) if chains_in.is_empty() => None,
             (true, true) => return Err(format!("{at} has no id but lists chains")),
             (false, false) => Some((word(m, "namespace", &at)?, word(m, "id", &at)?)),
@@ -180,13 +174,10 @@ fn parse(src: &str) -> Result<Manifest, String> {
     })
 }
 
-/// Asks one network's registry `applied` for each record: one slot per record,
-/// `None` where the read did not answer.
+/// One slot per record; `None` where the read did not answer.
 pub type ReadApplied<'a> = &'a dyn Fn(&Network, &[Record]) -> Vec<Option<u64>>;
 
-/// The state a registry answer and the file's `executedAt` add up to. A zero
-/// from the registry for a migration the file says executed is a missing
-/// record, not a migration that has not run.
+/// Registry 0 for a migration the file says ran is a missing record, not one that has not run.
 fn state(applied: Option<u64>, executed_at: u64) -> &'static str {
     match applied {
         None => "unknown",
@@ -315,9 +306,6 @@ fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: Rea
     })
 }
 
-/// The Migrations tab's data: every migration in `src` (the deploy repo's
-/// `migrations.json`, empty when it could not be fetched), per network, with
-/// its registry state. An unreadable file yields only `unavailable` and why.
 pub fn build(
     org: &str,
     repo: &str,
@@ -368,9 +356,7 @@ mod tests {
         json!({"executedAt": executed_at, "prerequisites": prerequisites, "writer": writer})
     }
 
-    /// Schema v1 as the producer writes it (keys sorted, chain ids as string
-    /// keys): history migration 1 onto genesis, 2 in another namespace onto
-    /// genesis, 3 onto 1, and one migration with no record.
+    /// Keys sorted and chain ids as string keys, as the producer writes them.
     fn fixture() -> Value {
         json!({
             "genesis": GENESIS,
@@ -406,8 +392,6 @@ mod tests {
         })
     }
 
-    /// A registry answering from `table` (`writer`, `id`, `appliedAt`), every
-    /// record not in it as zero; it records what each network was asked.
     struct Registry {
         table: Vec<(&'static str, &'static str, &'static str, u64)>,
         asked: RefCell<Vec<(String, Vec<Record>)>>,
@@ -479,7 +463,10 @@ mod tests {
         assert!(doc.get("unavailable").is_none());
         let nets = doc["networks"].as_array().unwrap();
         // Numeric chain-id order, not the file's string-sorted "10" < "7".
-        let ids: Vec<u64> = nets.iter().map(|n| n["chainId"].as_u64().unwrap()).collect();
+        let ids: Vec<u64> = nets
+            .iter()
+            .map(|n| n["chainId"].as_u64().unwrap())
+            .collect();
         assert_eq!(ids, vec![7, 10]);
         for n in nets {
             assert_eq!(n["registry"], REGISTRY);
@@ -523,7 +510,10 @@ mod tests {
     fn a_record_under_another_writer_does_not_count() {
         let reg = Registry::new(vec![("sevenchain", SAFE_Y, ID_2, 5)]);
         let doc = render(&fixture().to_string(), &reg);
-        assert_eq!(row(&doc, "sevenchain", "script/two.s.sol")["state"], "notApplied");
+        assert_eq!(
+            row(&doc, "sevenchain", "script/two.s.sol")["state"],
+            "notApplied"
+        );
     }
 
     #[test]
@@ -622,8 +612,14 @@ mod tests {
             assert_eq!(net(&doc, n)["unread"], 3);
             assert_eq!(row(&doc, n, "script/two.s.sol")["state"], "unknown");
             assert_eq!(row(&doc, n, "script/one.s.sol")["state"], "unknown");
-            assert_eq!(row(&doc, n, "script/three.s.sol")["waitsOn"][0]["state"], "unknown");
-            assert_eq!(row(&doc, n, "script/unrecorded.s.sol")["state"], "notRecorded");
+            assert_eq!(
+                row(&doc, n, "script/three.s.sol")["waitsOn"][0]["state"],
+                "unknown"
+            );
+            assert_eq!(
+                row(&doc, n, "script/unrecorded.s.sol")["state"],
+                "notRecorded"
+            );
         }
     }
 
@@ -657,7 +653,10 @@ mod tests {
     fn an_unfetched_file_is_unavailable() {
         for src in ["", "  \n"] {
             let doc = render(src, &Registry::new(vec![]));
-            assert_eq!(doc["unavailable"], "migrations.json: the scan could not fetch it");
+            assert_eq!(
+                doc["unavailable"],
+                "migrations.json: the scan could not fetch it"
+            );
             assert!(doc.get("networks").is_none());
             assert_eq!(doc["org"], "acme");
         }
@@ -665,31 +664,96 @@ mod tests {
 
     #[test]
     fn a_file_off_schema_is_unavailable_with_where() {
-        let cases: Vec<(Box<dyn Fn(&mut Value)>, &str)> = vec![
-            (Box::new(|f| f["version"] = Value::from(2)), "not schema version 1"),
-            (Box::new(|f| { f.as_object_mut().unwrap().remove("version"); }), "not schema version 1"),
-            (Box::new(|f| f["genesis"] = Value::from("0x12")), "root.genesis is not 32 bytes of hex"),
-            (Box::new(|f| { f.as_object_mut().unwrap().remove("genesis"); }), "root has no genesis"),
-            (Box::new(|f| f["networks"] = json!([])), "root.networks is not an object"),
-            (Box::new(|f| f["networks"]["x"] = json!({"network": "x", "registry": REGISTRY})), "networks.x is keyed \"x\", not a chain id"),
-            (Box::new(|f| f["networks"]["7"]["registry"] = Value::from("nope")), "networks.7.registry is not an address"),
-            (Box::new(|f| f["networks"]["7"]["network"] = Value::from(7)), "networks.7.network is not a string"),
-            (Box::new(|f| f["migrations"] = json!({})), "root.migrations is not an array"),
-            (Box::new(|f| f["migrations"][0]["script"] = Value::Null), "migrations.0.script is not a string"),
-            (Box::new(|f| f["migrations"][0]["id"] = Value::Null), "migrations.0 has one of namespace and id null"),
-            (Box::new(|f| f["migrations"][1]["chains"]["7"] = entry(SAFE_X, 0, vec![])), "migrations.1 has no id but lists chains"),
-            (Box::new(|f| f["migrations"][2]["namespace"] = Value::from("0x1")), "migrations.2.namespace is not 32 bytes of hex"),
-            (Box::new(|f| f["migrations"][2]["chains"]["7"]["writer"] = Value::from("0x1")), "migrations.2.chains.7.writer is not an address"),
-            (Box::new(|f| f["migrations"][2]["chains"]["7"]["executedAt"] = Value::from(-1)), "migrations.2.chains.7.executedAt is not a timestamp"),
-            (Box::new(|f| f["migrations"][2]["chains"]["7"]["prerequisites"] = json!({})), "migrations.2.chains.7.prerequisites is not an array"),
-            (Box::new(|f| f["migrations"][2]["chains"]["7"]["prerequisites"][0]["id"] = Value::Null), "migrations.2.chains.7.prerequisites.0.id is not a string"),
-            (Box::new(|f| f["migrations"][3]["chains"]["x"] = entry(SAFE_X, 0, vec![])), "migrations.3.chains.x is keyed \"x\", not a chain id"),
+        type Mutate = Box<dyn Fn(&mut Value)>;
+        let cases: Vec<(Mutate, &str)> = vec![
+            (
+                Box::new(|f| f["version"] = Value::from(2)),
+                "not schema version 1",
+            ),
+            (
+                Box::new(|f| {
+                    f.as_object_mut().unwrap().remove("version");
+                }),
+                "not schema version 1",
+            ),
+            (
+                Box::new(|f| f["genesis"] = Value::from("0x12")),
+                "root.genesis is not 32 bytes of hex",
+            ),
+            (
+                Box::new(|f| {
+                    f.as_object_mut().unwrap().remove("genesis");
+                }),
+                "root has no genesis",
+            ),
+            (
+                Box::new(|f| f["networks"] = json!([])),
+                "root.networks is not an object",
+            ),
+            (
+                Box::new(|f| f["networks"]["x"] = json!({"network": "x", "registry": REGISTRY})),
+                "networks.x is keyed \"x\", not a chain id",
+            ),
+            (
+                Box::new(|f| f["networks"]["7"]["registry"] = Value::from("nope")),
+                "networks.7.registry is not an address",
+            ),
+            (
+                Box::new(|f| f["networks"]["7"]["network"] = Value::from(7)),
+                "networks.7.network is not a string",
+            ),
+            (
+                Box::new(|f| f["migrations"] = json!({})),
+                "root.migrations is not an array",
+            ),
+            (
+                Box::new(|f| f["migrations"][0]["script"] = Value::Null),
+                "migrations.0.script is not a string",
+            ),
+            (
+                Box::new(|f| f["migrations"][0]["id"] = Value::Null),
+                "migrations.0 has one of namespace and id null",
+            ),
+            (
+                Box::new(|f| f["migrations"][1]["chains"]["7"] = entry(SAFE_X, 0, vec![])),
+                "migrations.1 has no id but lists chains",
+            ),
+            (
+                Box::new(|f| f["migrations"][2]["namespace"] = Value::from("0x1")),
+                "migrations.2.namespace is not 32 bytes of hex",
+            ),
+            (
+                Box::new(|f| f["migrations"][2]["chains"]["7"]["writer"] = Value::from("0x1")),
+                "migrations.2.chains.7.writer is not an address",
+            ),
+            (
+                Box::new(|f| f["migrations"][2]["chains"]["7"]["executedAt"] = Value::from(-1)),
+                "migrations.2.chains.7.executedAt is not a timestamp",
+            ),
+            (
+                Box::new(|f| f["migrations"][2]["chains"]["7"]["prerequisites"] = json!({})),
+                "migrations.2.chains.7.prerequisites is not an array",
+            ),
+            (
+                Box::new(|f| {
+                    f["migrations"][2]["chains"]["7"]["prerequisites"][0]["id"] = Value::Null
+                }),
+                "migrations.2.chains.7.prerequisites.0.id is not a string",
+            ),
+            (
+                Box::new(|f| f["migrations"][3]["chains"]["x"] = entry(SAFE_X, 0, vec![])),
+                "migrations.3.chains.x is keyed \"x\", not a chain id",
+            ),
         ];
         for (mutate, why) in cases {
             let mut f = fixture();
             mutate(&mut f);
             let doc = render(&f.to_string(), &Registry::new(vec![]));
-            assert_eq!(doc["unavailable"], format!("migrations.json: {why}"), "{why}");
+            assert_eq!(
+                doc["unavailable"],
+                format!("migrations.json: {why}"),
+                "{why}"
+            );
             assert!(doc.get("networks").is_none(), "{why}");
         }
         let doc = render("{", &Registry::new(vec![]));

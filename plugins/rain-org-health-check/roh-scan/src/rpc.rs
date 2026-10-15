@@ -405,8 +405,14 @@ mod tests {
             )
         );
         assert_eq!(applied_calldata("safe", &ns, &id), None);
-        assert_eq!(applied_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11", &id), None);
-        assert_eq!(applied_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, "0x22"), None);
+        assert_eq!(
+            applied_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11", &id),
+            None
+        );
+        assert_eq!(
+            applied_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, "0x22"),
+            None
+        );
     }
 
     #[test]
