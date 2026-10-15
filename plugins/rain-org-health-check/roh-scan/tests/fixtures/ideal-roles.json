@@ -1,0 +1,850 @@
+{
+  "chains": {
+    "1": {
+      "contracts": [
+        {
+          "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            }
+          ]
+        },
+        {
+          "address": "0x8Fc06579571A105C5a699FA11d95b9c73747f8eb",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0xfc0b9a47b723baf66339577301d13949cab2da29c3baeaa9cfc1f36c513e8f89"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x921a3c774c4abecc1bddc4f7beb397fdb2cde7806021d9571086abb74cd023e7"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            }
+          ]
+        },
+        {
+          "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3"
+            }
+          ]
+        },
+        {
+          "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          "expected": [
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x0000000000000000000000000000000000000000",
+              "role": "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+            }
+          ]
+        }
+      ],
+      "network": "ethereum"
+    },
+    "4663": {
+      "contracts": [
+        {
+          "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            }
+          ]
+        },
+        {
+          "address": "0x8Fc06579571A105C5a699FA11d95b9c73747f8eb",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0xfc0b9a47b723baf66339577301d13949cab2da29c3baeaa9cfc1f36c513e8f89"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x921a3c774c4abecc1bddc4f7beb397fdb2cde7806021d9571086abb74cd023e7"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            }
+          ]
+        },
+        {
+          "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3"
+            }
+          ]
+        },
+        {
+          "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          "expected": [
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x0000000000000000000000000000000000000000",
+              "role": "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+            }
+          ]
+        }
+      ],
+      "network": "robinhood"
+    },
+    "56": {
+      "contracts": [
+        {
+          "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            }
+          ]
+        },
+        {
+          "address": "0x8Fc06579571A105C5a699FA11d95b9c73747f8eb",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0xfc0b9a47b723baf66339577301d13949cab2da29c3baeaa9cfc1f36c513e8f89"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x921a3c774c4abecc1bddc4f7beb397fdb2cde7806021d9571086abb74cd023e7"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            }
+          ]
+        },
+        {
+          "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3"
+            }
+          ]
+        },
+        {
+          "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          "expected": [
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x0000000000000000000000000000000000000000",
+              "role": "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+            }
+          ]
+        }
+      ],
+      "network": "bsc"
+    },
+    "8453": {
+      "contracts": [
+        {
+          "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+          "expected": [
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            }
+          ]
+        },
+        {
+          "address": "0xDB9152e46c1D140DB6a6f814461f21c571F3275e",
+          "expected": [
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0xfc0b9a47b723baf66339577301d13949cab2da29c3baeaa9cfc1f36c513e8f89"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x921a3c774c4abecc1bddc4f7beb397fdb2cde7806021d9571086abb74cd023e7"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            }
+          ]
+        },
+        {
+          "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+          "expected": [
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+              "role": "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3"
+            }
+          ]
+        },
+        {
+          "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+          "expected": [
+            {
+              "grantee": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+              "role": "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1"
+            },
+            {
+              "grantee": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+              "role": "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783"
+            },
+            {
+              "grantee": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x0000000000000000000000000000000000000000",
+              "role": "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+            }
+          ]
+        }
+      ],
+      "network": "base"
+    },
+    "999": {
+      "contracts": [
+        {
+          "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            }
+          ]
+        },
+        {
+          "address": "0x8Fc06579571A105C5a699FA11d95b9c73747f8eb",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0xfc0b9a47b723baf66339577301d13949cab2da29c3baeaa9cfc1f36c513e8f89"
+            },
+            {
+              "grantee": "0x0958d9E94D9D4139280947ACd86D4a50F13bfA8C",
+              "role": "0x921a3c774c4abecc1bddc4f7beb397fdb2cde7806021d9571086abb74cd023e7"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391"
+            }
+          ]
+        },
+        {
+          "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+          "expected": [
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba"
+            },
+            {
+              "grantee": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+              "role": "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3"
+            }
+          ]
+        },
+        {
+          "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          "expected": [
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1"
+            },
+            {
+              "grantee": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+              "role": "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783"
+            },
+            {
+              "grantee": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              "role": "0x0000000000000000000000000000000000000000000000000000000000000000"
+            },
+            {
+              "grantee": "0x0000000000000000000000000000000000000000",
+              "role": "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63"
+            }
+          ]
+        }
+      ],
+      "network": "hyperevm"
+    }
+  },
+  "version": 1
+}
