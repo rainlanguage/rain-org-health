@@ -6893,6 +6893,12 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
     textOf(panel).includes("Migrations — run or not, per network"),
     "migrations heading on the migrations tab",
   );
+  const file = tags(collect(panel, "own-sub")[0], "a");
+  assert(
+    file.length === 1 && file[0].textContent === "acme/deploy's migrations.json" &&
+      file[0].href === "https://github.com/acme/deploy/blob/main/migrations.json",
+    "the source file is named and linked",
+  );
   const heads = collect(panel, "tok-h3").map((h) => h.textContent);
   assert(
     heads.join("|") ===
@@ -6990,6 +6996,15 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
               appliedAt: 1791457413,
               executedAt: null,
             },
+            {
+              writer: ETH_SAFE,
+              namespace: MIG_NS,
+              id: MIG_ID_1,
+              script: "script/history.s.sol",
+              state: "notRecorded",
+              appliedAt: null,
+              executedAt: 1791056759,
+            },
           ],
         }),
       ],
@@ -7004,13 +7019,13 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
   );
   const wait = collect(rows[1], "mig-wait");
   assert(
-    wait.length === 1 && wait[0].textContent === "one.s.sol" &&
+    wait.length === 2 && wait[0].textContent === "one.s.sol" &&
       wait[0].href ===
         "https://github.com/acme/deploy/blob/main/script/one.s.sol",
     "a listed prerequisite is named by its script and linked",
   );
   assert(
-    migChips(rows[1]).join() === "not applied,applied,not applied",
+    migChips(rows[1]).join() === "not applied,applied,not recorded,not applied",
     "each prerequisite carries its own chip, the row's last: " +
       migChips(rows[1]).join(),
   );
@@ -7018,6 +7033,29 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
     textOf(rows[1]).includes(MIG_ID_2) &&
       textOf(rows[1]).includes("2026-10-08 11:03 UTC"),
     "an unlisted prerequisite is named by its id, with its applied time",
+  );
+  assert(
+    textOf(rows[1]).includes("ran 2026-10-03 19:45 UTC"),
+    "an unrecorded prerequisite says when it ran: " + textOf(rows[1]),
+  );
+});
+
+Deno.test("deployments: a migration entry with no script is skipped and the rest render", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      migrations: [null, migRow({ script: null }), migRow({ script: "" }), migRow()],
+    }),
+  ]));
+  const panel = migPanel(box);
+  const rows = migRows(panel);
+  assert(
+    rows.length === 1 && collect(rows[0], "own-role")[0].textContent === "one.s.sol",
+    "only the entry with a script is a row: " + rows.length,
+  );
+  assert(
+    collect(panel, "tok-h3")[0].textContent ===
+      "ethereum — 0 applied, 1 not applied, 0 not recorded, 0 unknown",
+    "heading counts only the rendered rows",
   );
 });
 
