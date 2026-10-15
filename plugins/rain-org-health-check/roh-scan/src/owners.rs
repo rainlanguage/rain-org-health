@@ -6,15 +6,6 @@ use crate::idealroles::IdealChain;
 use crate::privileged::PrivilegedAddresses;
 use serde_json::json;
 
-pub fn parse_address_constant(src: &str, name: &str) -> Option<String> {
-    let pattern = format!(
-        r"\b{}\b\s*=\s*(?:address\(\s*)?(0x[0-9a-fA-F]{{40}})[^0-9a-fA-F]",
-        regex::escape(name),
-    );
-    let re = regex::Regex::new(&pattern).ok()?;
-    re.captures(src).and_then(|c| c.get(1)).map(|m| m.as_str().to_string())
-}
-
 /// On-chain readback of a Safe, for the declared-vs-actual provenance view. Each
 /// field is `None` when its RPC call failed, so the dashboard can show "on-chain
 /// unavailable" without dropping the declared constants.

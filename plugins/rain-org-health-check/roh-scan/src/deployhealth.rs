@@ -36,188 +36,35 @@ pub fn parse_bytes32_constant(src: &str, name: &str) -> Option<String> {
         .map(|m| m.as_str().to_lowercase())
 }
 
-/// Parse `LibTokenInvariants.productionReceiptVaults()` → the ordered list of
-/// receipt-vault addresses it assigns (lowercased), resolving each
-/// `vaults[i] = NAME;` to its `address ... constant NAME = address(0x…);`. This is
-/// the AUTHORITATIVE set the setAuthorizer migration operates on, cross-checked
-/// against the registry so a governed vault missing from the registry is surfaced.
-/// The brace-depth-matched body of a named function, so assignments after a
-/// nested block (`unchecked { … }`, a loop, a conditional) stay in scope.
-/// `None` when the function is absent or its braces are unbalanced.
-fn function_body<'a>(src: &'a str, name: &str) -> Option<&'a str> {
-    let re = Regex::new(&format!(
-        r"(?s)function\s+{}\s*\([^)]*\)[^{{]*\{{",
-        regex::escape(name)
-    ))
-    .ok()?;
-    let open = re.find(src).map(|m| m.end())?;
-    let mut depth = 1usize;
-    for (i, c) in src[open..].char_indices() {
-        match c {
-            '{' => depth += 1,
-            '}' => {
-                depth -= 1;
-                if depth == 0 {
-                    return Some(&src[open..open + i]);
-                }
-            }
-            _ => {}
+/// The pointer files directly under `src/generated/<dir>/`, grouped per dir and
+/// sorted: `(suite, [(contract, body)])`, the suite being the dir with `_` read as `.`.
+pub fn pointer_suites(sources: &[(String, String)]) -> Vec<(String, Vec<(String, &str)>)> {
+    let mut files: Vec<(String, String, &str)> = sources
+        .iter()
+        .filter_map(|(path, body)| {
+            let (dir, file) = path.strip_prefix("src/generated/")?.split_once('/')?;
+            let name = file.strip_suffix(".sol").filter(|n| !n.contains('/'))?;
+            let contract = name.strip_suffix(".pointers").unwrap_or(name);
+            Some((dir.replace('_', "."), contract.to_string(), body.as_str()))
+        })
+        .collect();
+    files.sort();
+    let mut suites: Vec<(String, Vec<(String, &str)>)> = Vec::new();
+    for (suite, contract, body) in files {
+        match suites.last_mut() {
+            Some((s, fs)) if *s == suite => fs.push((contract, body)),
+            _ => suites.push((suite, vec![(contract, body)])),
         }
     }
-    None
+    suites
 }
 
-/// The receipt vaults the setAuthorizer bundle governs.
-///
-/// Read from `productionTokensBase()` — the token table is the source of truth,
-/// and `productionReceiptVaults()` is now derived from it by a loop, so there
-/// are no per-vault assignments left to scrape there. An earlier revision did
-/// list `vaults[N] = CONST;` directly; that shape is still accepted, so a repo
-/// on either one parses rather than silently yielding nothing.
-///
-/// An empty result is meaningful, not a shrug: it means neither shape matched,
-/// and the reconcile doc surfaces it as `governedCount 0` rather than letting
-/// the section vanish.
-///
-/// A PARTIAL result is meaningful for the same reason and is harder to see: a
-/// list short by two entries looks exactly like a governed set that is genuinely
-/// two smaller. `declared` carries how many entries the matched shape listed, so
-/// the caller can report the shortfall instead of shipping a truncated set as
-/// though it were whole.
-pub struct GovernedVaults {
-    /// The receipt vault addresses that resolved, lowercased, in source order.
-    pub addresses: Vec<String>,
-    /// How many entries the matched shape listed, resolvable or not.
-    pub declared: usize,
-}
-
-/// The `productionTokens<Chain>()` function each network's table lives in.
-///
-/// Keyed by the network names `parse_chain_pins` yields, so a chain is asked
-/// about ITS OWN vaults. Reading one table and asking every chain about it is
-/// not a smaller version of this — it is asking four chains about addresses
-/// that have no code on them, which answers nothing and reports nothing.
-pub fn vault_table_for(network: &str) -> Option<&'static str> {
-    match network {
-        "base" => Some("productionTokensBase"),
-        "ethereum" => Some("productionTokensEthereum"),
-        "hyperevm" => Some("productionTokensHyperEvm"),
-        "robinhood" => Some("productionTokensRobinhood"),
-        "bsc" => Some("productionTokensBsc"),
+/// A pointer file's `DEPLOYED_ADDRESS` literal.
+pub fn deployed_address(src: &str) -> Option<String> {
+    crate::addrnames::parse_pins(src)?.into_iter().find_map(|p| match p.value {
+        crate::addrnames::PinValue::Literal(a) if p.name == "DEPLOYED_ADDRESS" => Some(a),
         _ => None,
-    }
-}
-
-/// The receipt vaults one network's table lists.
-///
-/// Two spellings, because the tables use both: Base names constants that are
-/// declared elsewhere in the file, and the other four write `address(0x…)`
-/// inline. A parser that handles only the first returns an EMPTY list for four
-/// of five chains — not an error, just nothing, which reads as a chain with no
-/// governed vaults.
-/// @param src The token-invariants library source.
-/// @param network The network whose table to read.
-/// @return That network's receipt vaults, lowercased, and how many its table
-/// declared.
-pub fn parse_receipt_vaults_for(src: &str, network: &str) -> GovernedVaults {
-    let empty = GovernedVaults {
-        addresses: Vec::new(),
-        declared: 0,
-    };
-    let (Some(table), Ok(const_re), Ok(instance_re)) = (
-        vault_table_for(network),
-        Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
-        // The receipt VAULT is struct field three, so capture group two — the
-        // leading string literal is not captured. Each field is either a bare
-        // identifier or an `address(0x…)` wrapper.
-        Regex::new(
-            r#"tokens\[\d+\]\s*=\s*TokenInstance\(\s*"[^"]*"\s*,\s*(?:address\()?([A-Za-z0-9_]+)\)?\s*,\s*(?:address\()?([A-Za-z0-9_]+)\)?\s*,\s*(?:address\()?([A-Za-z0-9_]+)\)?\s*\)"#,
-        ),
-    ) else {
-        return empty;
-    };
-    let consts: std::collections::HashMap<String, String> = const_re
-        .captures_iter(src)
-        .map(|c| (c[1].to_string(), c[2].to_lowercase()))
-        .collect();
-    let Some(body) = function_body(src, table) else {
-        return empty;
-    };
-    let entries: Vec<_> = instance_re.captures_iter(body).collect();
-    GovernedVaults {
-        addresses: entries
-            .iter()
-            .filter_map(|c| {
-                let field = &c[2];
-                // An inline literal is already the address; a bare identifier
-                // has to resolve to a declared constant.
-                if field.starts_with("0x") || field.starts_with("0X") {
-                    Some(field.to_lowercase())
-                } else {
-                    consts.get(field).cloned()
-                }
-            })
-            .collect(),
-        declared: entries.len(),
-    }
-}
-
-pub fn parse_receipt_vault_list(src: &str) -> GovernedVaults {
-    let (Ok(const_re), Ok(assign_re), Ok(instance_re)) = (
-        Regex::new(r"constant\s+(\w+)\s*=\s*address\((0x[0-9a-fA-F]{40})\)"),
-        Regex::new(r"vaults\[\d+\]\s*=\s*(\w+)\s*;"),
-        // tokens[N] = TokenInstance("SYM", receipt, receiptVault, wrappedVault);
-        // The governed address is the receipt VAULT — struct field three — but
-        // the leading string literal is NOT captured, so it is capture group
-        // TWO. Off by one here yields the wrapped vault: real addresses, right
-        // count, entirely the wrong set, and every reconcile row would read as
-        // a mismatch.
-        Regex::new(
-            r#"tokens\[\d+\]\s*=\s*TokenInstance\(\s*"[^"]*"\s*,\s*(\w+)\s*,\s*(\w+)\s*,\s*(\w+)\s*\)"#,
-        ),
-    ) else {
-        return GovernedVaults {
-            addresses: Vec::new(),
-            declared: 0,
-        };
-    };
-    let consts: std::collections::HashMap<String, String> = const_re
-        .captures_iter(src)
-        .map(|c| (c[1].to_string(), c[2].to_lowercase()))
-        .collect();
-
-    // The token table wins whenever it lists any entry at all — including the
-    // case where NONE of them resolve. Falling through to the legacy shape then
-    // would answer a question nobody asked (this repo is plainly on the table
-    // shape) and would bury the drift under a stale-but-parsable list.
-    if let Some(body) = function_body(src, "productionTokensBase") {
-        let entries: Vec<_> = instance_re.captures_iter(body).collect();
-        if !entries.is_empty() {
-            return GovernedVaults {
-                addresses: entries
-                    .iter()
-                    .filter_map(|c| consts.get(&c[2]).cloned())
-                    .collect(),
-                declared: entries.len(),
-            };
-        }
-    }
-    match function_body(src, "productionReceiptVaults") {
-        Some(body) => {
-            let entries: Vec<_> = assign_re.captures_iter(body).collect();
-            GovernedVaults {
-                addresses: entries
-                    .iter()
-                    .filter_map(|c| consts.get(&c[1]).cloned())
-                    .collect(),
-                declared: entries.len(),
-            }
-        }
-        None => GovernedVaults {
-            addresses: Vec::new(),
-            declared: 0,
-        },
-    }
+    })
 }
 
 /// ERC-165 conformance from the two required probes: `supportsInterface(0x01ffc9a7)`
@@ -315,112 +162,45 @@ pub fn build_health(
     }))
 }
 
-/// Whether a pin is an address rather than the all-zero placeholder a chain
-/// carries before its deploy has landed.
-///
-/// Matching against a placeholder would label a contract whose `owner()` or
-/// `implementation()` answers the zero address — renounced, bricked, or pointing
-/// at nothing — as held by the Safe or the timelock, or as at its target, and so
-/// `healthy`. That is the dangerous direction.
-///
-/// The prefix is stripped case-insensitively and an empty pin counts as
-/// unhydrated, so this does not depend on `parse_address_constant`'s regex
-/// continuing to emit a lowercase `0x` and exactly 40 hex digits. It does today,
-/// which is why `address(0)` arrives as `None` rather than as zeroes — but a
-/// guard that holds only because of a regex in another module is one edit from
-/// not holding.
-pub fn hydrated_pin(pin: &str) -> bool {
-    let p = pin
-        .strip_prefix("0x")
-        .or_else(|| pin.strip_prefix("0X"))
-        .unwrap_or(pin);
-    !p.is_empty() && !p.chars().all(|c| c == '0')
-}
-
-/// Health of one production beacon, resolving BOTH what its `owner()` and
-/// `implementation()` actually ARE — not just whether they match a constant:
-/// - owner is labelled `safe` (the token-owner Safe), `timelock` (the chain's
-///   governance timelock, where the migration hands the beacons), `legacy` (the
-///   pre-migration deploy EOA), `foreign` (anything else), or `unknown`.
-/// - impl is resolved to a version: the `target_version` when it equals the
-///   target impl, `V1` when it's the pre-Zoltu impl, else `unknown`.
-/// - status: `healthy` when held by a GOVERNING owner (Safe or timelock) AND at
-///   the target version; `behind` when governed but the impl isn't the target
-///   (e.g. still V1); `drift` when the owner governs nothing — the deploy EOA or
-///   an unrecognised address; `unknown` when a live read failed.
-///
-/// The timelock is a governing owner, not drift. Handing a beacon to the
-/// governance timelock is the intended end state — it is what the
-/// `20260729-migrate-governance-to-timelock` bundle does — so labelling it
-/// `foreign` would report the completed migration as a fault, which is the
-/// opposite of what this check exists to say. `legacy` stays drift: the deploy
-/// EOA is a hot key that was never meant to retain a production beacon.
+/// Health of one production beacon from its live `owner()` and `implementation()`.
+/// Owner: `safe`, `legacy`, `timelock`, `foreign` or `unknown`. Impl: `pinned`,
+/// `v1` or `unknown`. Status: `healthy` when Safe- or timelock-held and at the
+/// pinned impl, `behind` when governed but elsewhere, `drift` when not governed,
+/// `unknown` when a read or the pin is missing.
 #[allow(clippy::too_many_arguments)]
 pub fn beacon_health(
     name: &str,
     address: Option<String>,
-    safe_owner: &str,
-    legacy_owner: &str,
+    safe_owner: Option<&str>,
+    legacy_owner: Option<&str>,
     timelock_owner: Option<&str>,
-    target_impl: Option<&str>,
+    pinned_impl: Option<&str>,
     v1_impl: Option<&str>,
-    target_version: &str,
     live_owner: Option<String>,
     live_impl: Option<String>,
 ) -> serde_json::Value {
-    // An all-zero pin is the placeholder a chain carries before its deploy has
-    // landed, not an address. Matching against it would label a beacon whose
-    // `owner()` answers the zero address — renounced, or bricked — as held by
-    // the Safe or the timelock, and therefore `healthy`. That is the dangerous
-    // direction, so an unhydrated pin matches nothing. Enforced here rather
-    // than at the two call sites, which would be two places to forget.
-    let hydrated = |pin: &str| hydrated_pin(pin);
-    // `legacy` is matched BEFORE `timelock`. If a chain's timelock pin ever
-    // resolved to the deploy EOA, timelock-first would label a beacon still held
-    // by that hot key `timelock` -> governed -> healthy, hiding the one case this
-    // section exists to catch. Legacy-first instead reports a genuinely migrated
-    // beacon as drift: a false alarm rather than a false all-clear, which is the
-    // direction to fail in.
+    let is = |pin: Option<&str>, a: &str| pin.is_some_and(|p| a.eq_ignore_ascii_case(p));
+    // Legacy before timelock: a timelock pin equal to the deploy EOA must read as drift.
     let owner_label = match live_owner.as_deref() {
         None => "unknown",
-        Some(o) if hydrated(safe_owner) && o.eq_ignore_ascii_case(safe_owner) => "safe",
-        Some(o) if hydrated(legacy_owner) && o.eq_ignore_ascii_case(legacy_owner) => "legacy",
-        Some(o) if timelock_owner.is_some_and(|t| hydrated(t) && o.eq_ignore_ascii_case(t)) => {
-            "timelock"
-        }
+        Some(o) if is(safe_owner, o) => "safe",
+        Some(o) if is(legacy_owner, o) => "legacy",
+        Some(o) if is(timelock_owner, o) => "timelock",
         Some(_) => "foreign",
     };
-    // Both governing owners are acceptable holders: a chain the bundle has not
-    // reached yet is Safe-held, one it has reached is timelock-held, and neither
-    // is a fault. Collapsing them would make the migration itself look like
-    // drift on the chains where it has succeeded.
     let governed = owner_label == "safe" || owner_label == "timelock";
-    // The impl pins get the same `hydrated` guard as the owner pins. A generated
-    // pointer file whose `DEPLOYED_ADDRESS` is still the all-zero placeholder —
-    // a form the constant regex DOES match — together with a beacon whose
-    // `implementation()` answers the zero address would otherwise read
-    // `atTarget: true` and, on a governed owner, `healthy`: a beacon pointing at
-    // nothing, reported as correct.
-    let target_pin = target_impl.filter(|t| hydrated(t));
-    let v1_pin = v1_impl.filter(|v| hydrated(v));
     let impl_version = match live_impl.as_deref() {
         None => "unknown",
-        Some(l) if target_pin.is_some_and(|t| l.eq_ignore_ascii_case(t)) => target_version,
-        Some(l) if v1_pin.is_some_and(|v| l.eq_ignore_ascii_case(v)) => "V1",
+        Some(l) if is(pinned_impl, l) => "pinned",
+        Some(l) if is(v1_impl, l) => "v1",
         Some(_) => "unknown",
     };
-    // `atTarget` is only determinable when BOTH the live impl and the target are
-    // known — otherwise `null`, so a missing target can't masquerade as "behind".
-    let at_target = match (live_impl.as_deref(), target_pin) {
-        (Some(l), Some(t)) => Some(l.eq_ignore_ascii_case(t)),
-        _ => None,
-    };
-    // Without a readable target we can't assert "behind"; stay `unknown`.
-    let status = if live_owner.is_none() || live_impl.is_none() || target_pin.is_none() {
+    let at_pinned = live_impl.as_deref().zip(pinned_impl).map(|(l, p)| l.eq_ignore_ascii_case(p));
+    let status = if live_owner.is_none() || at_pinned.is_none() {
         "unknown"
     } else if !governed {
         "drift"
-    } else if at_target != Some(true) {
+    } else if at_pinned != Some(true) {
         "behind"
     } else {
         "healthy"
@@ -430,56 +210,36 @@ pub fn beacon_health(
         "address": address,
         "owner": live_owner,
         "ownerLabel": owner_label,
-        // What it points at NOW, and what it SHOULD point at (the target-version
-        // impl) — so a proposed upgradeTo(...) can be checked against both.
         "implementation": live_impl,
         "implVersion": impl_version,
-        "targetImpl": target_pin,
-        "targetVersion": target_version,
-        "atTarget": at_target,
+        "pinnedImpl": pinned_impl,
+        "atPinned": at_pinned,
         "status": status,
     })
 }
 
-/// Assemble the `deploymentBeacons` document (sorted by name; `None` if empty).
-// Eight, as with `beacon_health` above: this is a flat JSON assembler and the
-// two pins are differently typed (`&str` vs `Option<&str>`), so the transposition
-// the lint guards against cannot compile here.
-#[allow(clippy::too_many_arguments)]
+/// Assemble one chain's `deploymentBeacons` entry, beacons in slot order.
 pub fn build_beacons(
     org: &str,
     repo: &str,
     network: &str,
     rpc_host: &str,
-    safe_owner: &str,
+    safe_owner: Option<&str>,
     timelock_owner: Option<&str>,
-    target_version: &str,
-    mut beacons: Vec<serde_json::Value>,
-) -> Option<serde_json::Value> {
-    if beacons.is_empty() {
-        return None;
-    }
-    beacons.sort_by(|a, b| a["name"].as_str().cmp(&b["name"].as_str()));
-    let total = beacons.len();
+    beacons: Vec<serde_json::Value>,
+) -> serde_json::Value {
     let healthy = beacons.iter().filter(|b| b["status"] == "healthy").count();
-    Some(json!({
+    json!({
         "org": org,
         "repo": repo,
         "network": network,
         "rpcHost": rpc_host,
-        // Both pins, and only when hydrated. `timelock` now decides
-        // healthy-vs-drift, so a reader shown a `timelock` chip with no address
-        // to compare it against cannot tell this chain's timelock from another
-        // chain's — the cross-chain slip the vault-owners section names. An
-        // unhydrated pin is emitted as null rather than printed as `0x0000…`,
-        // which would read as a real expected holder.
-        "safeOwner": Some(safe_owner).filter(|s| hydrated_pin(s)),
-        "timelockOwner": timelock_owner.filter(|t| hydrated_pin(t)),
-        "targetVersion": target_version,
-        "total": total,
+        "safeOwner": safe_owner,
+        "timelockOwner": timelock_owner,
+        "total": beacons.len(),
         "healthy": healthy,
         "beacons": beacons,
-    }))
+    })
 }
 
 /// A chain whose beacon set could not be read at all.
@@ -524,54 +284,35 @@ pub struct TokenSpec<'a> {
     pub unwrapped: Option<&'a str>,
     pub legacy: Option<&'a str>,
     pub receipt: Option<&'a str>,
-    /// The current prod authoriser a receipt vault should point at today.
-    pub auth_current: Option<&'a str>,
-    /// The V4-clone authoriser the pending `setAuthorizer` bundle rewires to.
-    pub auth_target: Option<&'a str>,
-    /// Whether this token's receipt vault is in the migration's governed set
-    /// (`productionReceiptVaults`): `Some(true/false)` for a wrapped token,
-    /// `None` for a plain token that has no vault to govern.
+    /// The chain's authoriser as privileged-addresses.json pins it.
+    pub auth_pinned: Option<&'a str>,
+    /// Whether this token's receipt vault is in the chain's pinned `receiptVaults`:
+    /// `Some(true/false)` for a wrapped token, `None` for a plain token.
     pub in_migration: Option<bool>,
 }
 
-/// Resolve a live authoriser address against the current prod authoriser and the
-/// V4-clone target → (`label`, `atTarget`). `label`: `target` (already migrated),
-/// `current` (the pre-migration authoriser), `none` (address(0)), `foreign`
-/// (something else), or `unknown` (unread).
-pub fn resolve_authoriser(
-    live: Option<&str>,
-    current: Option<&str>,
-    target: Option<&str>,
-) -> (&'static str, Option<bool>) {
-    let zero = "0x0000000000000000000000000000000000000000";
+/// A live authoriser against the pinned one → (`label`, `atPinned`). `label`:
+/// `pinned`, `none` (address(0)), `foreign`, or `unknown` (unread).
+pub fn resolve_authoriser(live: Option<&str>, pinned: Option<&str>) -> (&'static str, Option<bool>) {
     let label = match live {
         None => "unknown",
-        Some(a) if target.is_some_and(|t| a.eq_ignore_ascii_case(t)) => "target",
-        Some(a) if current.is_some_and(|c| a.eq_ignore_ascii_case(c)) => "current",
-        Some(a) if a.eq_ignore_ascii_case(zero) => "none",
+        Some(a) if pinned.is_some_and(|p| a.eq_ignore_ascii_case(p)) => "pinned",
+        Some(a) if a.trim_start_matches("0x").chars().all(|c| c == '0') => "none",
         Some(_) => "foreign",
     };
-    let at_target = match (live, target) {
-        (Some(a), Some(t)) => Some(a.eq_ignore_ascii_case(t)),
-        _ => None,
-    };
-    (label, at_target)
+    (label, live.zip(pinned).map(|(a, p)| a.eq_ignore_ascii_case(p)))
 }
 
-/// A governed receipt vault that is in the migration set
-/// (`productionReceiptVaults`) but NOT matched to any registry token — surfaced
-/// with its on-chain identity and authoriser now-vs-target so the setAuthorizer
-/// bundle can be reviewed in full even for vaults the registry doesn't list.
+/// A pinned receipt vault no registry token names, with its live identity and authoriser.
 pub fn extra_vault(
     address: &str,
     name: Option<String>,
     symbol: Option<String>,
     deployed: Option<bool>,
     live_authoriser: Option<&str>,
-    auth_current: Option<&str>,
-    auth_target: Option<&str>,
+    auth_pinned: Option<&str>,
 ) -> serde_json::Value {
-    let (label, at_target) = resolve_authoriser(live_authoriser, auth_current, auth_target);
+    let (label, at_pinned) = resolve_authoriser(live_authoriser, auth_pinned);
     json!({
         "address": address,
         "name": name,
@@ -579,8 +320,8 @@ pub fn extra_vault(
         "deployed": deployed,
         "authoriser": live_authoriser,
         "authoriserLabel": label,
-        "authoriserTarget": auth_target,
-        "atAuthoriserTarget": at_target,
+        "authoriserPinned": auth_pinned,
+        "atPinnedAuthoriser": at_pinned,
     })
 }
 
@@ -593,11 +334,8 @@ pub fn extra_vault(
 /// applicable checks confirmed; `mismatch` = an identity field differs; `wiring` =
 /// `asset()` or a declared linked address is wrong; `unknown` = a core read failed.
 ///
-/// The authoriser (read from the receipt vault) is resolved to WHO it is — the
-/// `current` prod authoriser, the V4-clone `target`, `none`, or `foreign` — and
-/// reported NOW vs. target so a proposed `setAuthorizer` migration can be checked.
-/// It does NOT affect `status`: sitting at the current authoriser pre-migration is
-/// correct, not an error.
+/// The receipt vault's live authoriser is resolved against the pinned one; it
+/// does not affect `status`.
 pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
     let TokenSpec {
         symbol,
@@ -607,8 +345,7 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         unwrapped,
         legacy,
         receipt,
-        auth_current,
-        auth_target,
+        auth_pinned,
         in_migration,
     } = *spec;
     let name_ok = live.name.as_deref().map(|n| n == name);
@@ -655,8 +392,8 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
 
     // Authoriser (receipt-vault only): resolve who it actually is, and whether it
     // already sits at the V4-clone target the pending setAuthorizer bundle sets.
-    let (authoriser_label, at_auth_target) = if wrapped {
-        resolve_authoriser(live.authoriser.as_deref(), auth_current, auth_target)
+    let (authoriser_label, at_pinned_authoriser) = if wrapped {
+        resolve_authoriser(live.authoriser.as_deref(), auth_pinned)
     } else {
         ("n/a", None)
     };
@@ -683,22 +420,16 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         "unwrappedDeployed": live.unwrapped_deployed,
         "legacyDeployed": live.legacy_deployed,
         "receiptDeployed": live.receipt_deployed,
-        // Authoriser provenance — for reviewing the setAuthorizer migration: what
-        // it is NOW (resolved to current / target / none / foreign) vs. the target.
         "authoriser": live.authoriser,
         "authoriserLabel": authoriser_label,
-        "authoriserTarget": auth_target,
-        "atAuthoriserTarget": at_auth_target,
-        // Registry→migration cross-check: is this token's receipt vault in the
-        // migration's governed set? A wrapped token with `false` won't be migrated.
+        "authoriserPinned": auth_pinned,
+        "atPinnedAuthoriser": at_pinned_authoriser,
         "inMigrationSet": in_migration,
     })
 }
 
 /// Assemble the `deploymentTokens` document (sorted by symbol; `None` if empty).
-/// `authoriser` is the section-level authoriser summary (current + target
-/// addresses and whether the target is deployed), so the page can state the
-/// migration target once and count how many vaults already sit at it.
+/// `authoriser` is the pinned authoriser and whether it is deployed.
 pub fn build_tokens(
     org: &str,
     repo: &str,
@@ -718,12 +449,10 @@ pub fn build_tokens(
     tokens.sort_by(|a, b| a["symbol"].as_str().cmp(&b["symbol"].as_str()));
     let total = tokens.len();
     let ok = tokens.iter().filter(|t| t["status"] == "ok").count();
-    // How many wrapped tokens already sit at the authoriser target vs. total
-    // wrapped — so the page can show migration progress.
     let wrapped = tokens.iter().filter(|t| t["wrapped"] == true).count();
-    let at_target = tokens
+    let at_pinned = tokens
         .iter()
-        .filter(|t| t["atAuthoriserTarget"] == true)
+        .filter(|t| t["atPinnedAuthoriser"] == true)
         .count();
     Some(json!({
         "org": org,
@@ -734,10 +463,7 @@ pub fn build_tokens(
         "ok": ok,
         "authoriser": authoriser,
         "wrappedCount": wrapped,
-        "atAuthoriserTarget": at_target,
-        // Cross-check of the registry against the migration's authoritative vault
-        // set (productionReceiptVaults): extra governed vaults not in the registry,
-        // and registry vaults not governed by the migration.
+        "atPinnedAuthoriser": at_pinned,
         "reconcile": reconcile,
         "tokens": tokens,
     }))
@@ -882,299 +608,103 @@ mod tests {
     const SAFE: &str = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
     const LEGACY: &str = "0x8e4bdeec7ceb9570d440676345da1dce10329f5b";
     const TIMELOCK: &str = "0x48ba1371a78e6cc54157c63721756ab444510db3";
-    const TARGET: &str = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286"; // 0.1.1 impl
-    const V1: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd"; // pre-Zoltu impl
+    const PINNED: &str = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+    const V1: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd";
+    const ZERO: &str = "0x0000000000000000000000000000000000000000";
 
-    fn bh(owner: Option<&str>, imp: Option<&str>) -> serde_json::Value {
+    fn pins(
+        safe: Option<&str>,
+        legacy: Option<&str>,
+        timelock: Option<&str>,
+        owner: Option<&str>,
+        imp: Option<&str>,
+    ) -> serde_json::Value {
         beacon_health(
             "Receipt beacon",
             Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(TIMELOCK),
-            Some(TARGET),
+            safe,
+            legacy,
+            timelock,
+            Some(PINNED),
             Some(V1),
-            "0.1.1",
             owner.map(str::to_string),
             imp.map(str::to_string),
         )
     }
 
-    #[test]
-    fn beacon_healthy_only_when_safe_owned_and_at_target() {
-        // live reads are checksummed; the compare is case-insensitive.
-        let b = bh(
-            Some("0xE70d821f3462a074e63b42d0AaC6523faAe1d611"),
-            Some(TARGET),
-        );
-        assert_eq!(b["status"], "healthy");
-        assert_eq!(b["ownerLabel"], "safe");
-        assert_eq!(b["implVersion"], "0.1.1");
-        assert_eq!(b["atTarget"], true);
+    fn bh(owner: Option<&str>, imp: Option<&str>) -> serde_json::Value {
+        pins(Some(SAFE), Some(LEGACY), Some(TIMELOCK), owner, imp)
     }
 
     #[test]
-    fn beacon_behind_when_safe_owned_but_still_on_v1() {
-        let b = bh(Some(SAFE), Some(V1));
-        assert_eq!(b["status"], "behind");
-        assert_eq!(b["ownerLabel"], "safe");
-        assert_eq!(b["implVersion"], "V1");
-        assert_eq!(b["atTarget"], false);
-        // both the current (V1) and the should-be (target) impl are surfaced.
-        assert_eq!(b["implementation"], V1);
-        assert_eq!(b["targetImpl"], TARGET);
+    fn a_governed_beacon_at_the_pinned_impl_is_healthy() {
+        let b = bh(Some(&SAFE.to_uppercase().replace("0X", "0x")), Some(&PINNED.to_uppercase().replace("0X", "0x")));
+        assert_eq!((b["ownerLabel"].as_str(), b["implVersion"].as_str()), (Some("safe"), Some("pinned")));
+        assert_eq!((b["atPinned"].as_bool(), b["status"].as_str()), (Some(true), Some("healthy")));
+        assert_eq!(b["pinnedImpl"], PINNED);
+        let t = bh(Some(TIMELOCK), Some(PINNED));
+        assert_eq!((t["ownerLabel"].as_str(), t["status"].as_str()), (Some("timelock"), Some("healthy")));
     }
 
     #[test]
-    fn beacon_labels_legacy_and_foreign_owners_and_drifts() {
-        let legacy = bh(Some(LEGACY), Some(TARGET));
-        assert_eq!(legacy["ownerLabel"], "legacy");
-        assert_eq!(legacy["status"], "drift");
-        let foreign = bh(
-            Some("0xdead000000000000000000000000000000000001"),
-            Some(TARGET),
-        );
-        assert_eq!(foreign["ownerLabel"], "foreign");
-        assert_eq!(foreign["status"], "drift");
+    fn a_governed_beacon_off_the_pinned_impl_is_behind() {
+        let v1 = bh(Some(SAFE), Some(V1));
+        assert_eq!((v1["implVersion"].as_str(), v1["atPinned"].as_bool()), (Some("v1"), Some(false)));
+        assert_eq!(v1["status"], "behind");
+        let other = bh(Some(TIMELOCK), Some("0x00000000000000000000000000000000000000ff"));
+        assert_eq!((other["implVersion"].as_str(), other["status"].as_str()), (Some("unknown"), Some("behind")));
     }
 
-    /// The governance migration's end state is not a fault. Before the timelock
-    /// arm existed this read `foreign` -> `drift`, so the three Ethereum beacons
-    /// went red the moment the migration succeeded.
     #[test]
-    fn a_timelock_owned_beacon_is_governed_not_drift() {
-        let b = bh(
-            Some("0x48Ba1371A78E6cC54157c63721756ab444510DB3"),
-            Some(TARGET),
-        );
-        assert_eq!(b["ownerLabel"], "timelock");
-        assert_eq!(b["status"], "healthy");
-        assert_eq!(b["owner"], "0x48Ba1371A78E6cC54157c63721756ab444510DB3");
+    fn an_ungoverned_owner_is_drift() {
+        let l = bh(Some(LEGACY), Some(PINNED));
+        assert_eq!((l["ownerLabel"].as_str(), l["status"].as_str()), (Some("legacy"), Some("drift")));
+        let f = bh(Some("0x00000000000000000000000000000000000000ff"), Some(PINNED));
+        assert_eq!((f["ownerLabel"].as_str(), f["status"].as_str()), (Some("foreign"), Some("drift")));
     }
 
-    /// Governed-but-stale must stay distinguishable from ungoverned: a timelock
-    /// beacon serving the old impl is `behind`, the same as a Safe one, not
-    /// `drift` and not `healthy`.
     #[test]
-    fn a_timelock_owned_beacon_on_the_old_impl_is_behind() {
-        let b = bh(Some(TIMELOCK), Some(V1));
-        assert_eq!(b["ownerLabel"], "timelock");
-        assert_eq!(b["status"], "behind");
-        assert_eq!(b["atTarget"], false);
+    fn owner_precedence_is_safe_then_legacy_then_timelock() {
+        assert_eq!(pins(Some(SAFE), Some(LEGACY), Some(SAFE), Some(SAFE), Some(PINNED))["ownerLabel"], "safe");
+        let l = pins(Some(SAFE), Some(LEGACY), Some(LEGACY), Some(LEGACY), Some(PINNED));
+        assert_eq!((l["ownerLabel"].as_str(), l["status"].as_str()), (Some("legacy"), Some("drift")));
     }
 
-    /// With no timelock pinned for the chain there is nothing to recognise, so
-    /// the same address is unrecognised rather than silently governed — a chain
-    /// whose pin has not landed yet must not get a free pass.
     #[test]
-    fn without_a_timelock_pin_that_owner_is_foreign() {
-        let b = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            None,
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(TIMELOCK.into()),
-            Some(TARGET.into()),
-        );
-        assert_eq!(b["ownerLabel"], "foreign");
-        assert_eq!(b["status"], "drift");
+    fn an_absent_pin_matches_nothing() {
+        let t = pins(Some(SAFE), Some(LEGACY), None, Some(TIMELOCK), Some(PINNED));
+        assert_eq!((t["ownerLabel"].as_str(), t["status"].as_str()), (Some("foreign"), Some("drift")));
+        let z = pins(None, None, None, Some(ZERO), Some(PINNED));
+        assert_eq!((z["ownerLabel"].as_str(), z["status"].as_str()), (Some("foreign"), Some("drift")));
     }
 
-    /// An all-zero pin is a placeholder, not an address. A beacon that answers
-    /// the zero address has been renounced or bricked; matching it against an
-    /// unhydrated pin would call that `healthy`, which is the one direction
-    /// this section must never fail in.
     #[test]
-    fn an_unhydrated_pin_never_adopts_a_zero_owner() {
-        const ZERO: &str = "0x0000000000000000000000000000000000000000";
-        // timelock pin not yet hydrated, beacon owner reads zero
-        let tl = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(ZERO),
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(ZERO.into()),
-            Some(TARGET.into()),
-        );
-        assert_eq!(
-            tl["ownerLabel"], "foreign",
-            "a zero owner is not the timelock"
-        );
-        assert_eq!(tl["status"], "drift");
-        // Spelling of the placeholder must not matter: an uppercase prefix or a
-        // prefixless pin is the same non-address, and a guard that only catches
-        // one spelling is a guard that can be slipped.
-        for spelling in [
-            "0X0000000000000000000000000000000000000000",
-            "0000000000000000000000000000000000000000",
-            "",
-        ] {
-            let b = beacon_health(
-                "Receipt beacon",
-                Some("0x86e9".into()),
-                SAFE,
-                LEGACY,
-                Some(spelling),
-                Some(TARGET),
-                Some(V1),
-                "0.1.1",
-                Some(ZERO.into()),
-                Some(TARGET.into()),
-            );
-            assert_eq!(
-                b["ownerLabel"], "foreign",
-                "a zero owner matched placeholder spelling {spelling:?}"
-            );
+    fn a_failed_read_or_missing_impl_pin_is_unknown() {
+        for b in [bh(None, Some(PINNED)), bh(Some(SAFE), None)] {
+            assert_eq!(b["status"], "unknown");
         }
-        // same for the Safe pin, and for the legacy pin
-        for pin in [SAFE, LEGACY] {
-            let b = beacon_health(
-                "Receipt beacon",
-                Some("0x86e9".into()),
-                if pin == SAFE { ZERO } else { SAFE },
-                if pin == LEGACY { ZERO } else { LEGACY },
-                None,
-                Some(TARGET),
-                Some(V1),
-                "0.1.1",
-                Some(ZERO.into()),
-                Some(TARGET.into()),
-            );
-            assert_eq!(b["ownerLabel"], "foreign", "a zero owner matched {pin}");
-            assert_eq!(b["status"], "drift");
-        }
-    }
-
-    /// The Safe pin wins when both pins hold the same address, so a chain that
-    /// has not separated them cannot report its Safe as the timelock.
-    #[test]
-    fn the_safe_label_wins_when_both_pins_are_the_same_address() {
-        let b = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(SAFE),
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(SAFE.into()),
-            Some(TARGET.into()),
-        );
-        assert_eq!(b["ownerLabel"], "safe");
-        assert_eq!(b["status"], "healthy");
-    }
-
-    /// The headline count has to move with the label, or the section reads
-    /// "0 of 3 healthy" on a chain where every beacon is correctly governed.
-    #[test]
-    fn build_beacons_counts_a_timelock_owned_beacon_as_healthy() {
-        let tl_owned = bh(Some(TIMELOCK), Some(TARGET));
-        let safe_owned = bh(Some(SAFE), Some(TARGET));
-        let v = build_beacons(
-            "o",
-            "r",
-            "ethereum",
-            "host",
-            SAFE,
-            Some(TIMELOCK),
-            "0.1.1",
-            vec![tl_owned, safe_owned],
-        )
-        .unwrap();
-        assert_eq!(v["total"], 2);
-        assert_eq!(v["healthy"], 2);
-        // Both pins reach the page: a `timelock` chip the reader cannot compare
-        // against an address is indistinguishable from this chain holding
-        // ANOTHER chain's timelock.
-        assert_eq!(v["safeOwner"], SAFE);
-        assert_eq!(v["timelockOwner"], TIMELOCK);
-    }
-
-    /// An unhydrated pin must reach the page as null, not be printed as
-    /// `0x0000…`, which would read as a real expected holder.
-    #[test]
-    fn build_beacons_emits_no_unhydrated_pin() {
-        const ZERO: &str = "0x0000000000000000000000000000000000000000";
-        let b = bh(Some(SAFE), Some(TARGET));
-        let v =
-            build_beacons("o", "r", "base", "host", ZERO, Some(ZERO), "0.1.1", vec![b]).unwrap();
-        assert!(
-            v["safeOwner"].is_null(),
-            "zero Safe pin emitted as a holder"
-        );
-        assert!(
-            v["timelockOwner"].is_null(),
-            "zero timelock pin emitted as a holder"
-        );
+        assert_eq!(bh(None, Some(PINNED))["ownerLabel"], "unknown");
+        assert_eq!(bh(Some(SAFE), None)["implVersion"], "unknown");
+        let unpinned = beacon_health("b", None, Some(SAFE), None, None, None, Some(V1), Some(SAFE.into()), Some(V1.into()));
+        assert_eq!((unpinned["status"].as_str(), unpinned["implVersion"].as_str()), (Some("unknown"), Some("v1")));
+        assert!(unpinned["atPinned"].is_null());
     }
 
     #[test]
-    fn beacon_unknown_when_a_live_read_fails() {
-        let b = bh(None, None);
-        assert_eq!(b["status"], "unknown");
-        assert_eq!(b["ownerLabel"], "unknown");
-        assert_eq!(b["implVersion"], "unknown");
-    }
-
-    #[test]
-    fn beacon_unknown_when_target_impl_unavailable() {
-        // Owner + impl read fine, but the target pointer couldn't be read — we
-        // can't assert "behind" without it, so stay unknown / atTarget null.
-        let b = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(TIMELOCK),
-            None,
-            Some(V1),
-            "0.1.1",
-            Some(SAFE.into()),
-            Some(V1.into()),
-        );
-        assert_eq!(b["status"], "unknown");
-        assert!(b["atTarget"].is_null());
-    }
-
-    #[test]
-    fn build_beacons_counts_sorts_and_carries_target() {
-        let ok = bh(Some(SAFE), Some(TARGET)); // healthy
-        let behind = beacon_health(
-            "Alpha",
-            Some("0x1".into()),
-            SAFE,
-            LEGACY,
-            Some(TIMELOCK),
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(SAFE.into()),
-            Some(V1.into()),
-        );
+    fn build_beacons_counts_healthy_and_keeps_slot_order() {
         let v = build_beacons(
             "o",
             "r",
             "base",
             "host",
-            SAFE,
-            Some(TIMELOCK),
-            "0.1.1",
-            vec![ok, behind],
-        )
-        .unwrap();
-        assert_eq!(v["total"], 2);
-        assert_eq!(v["healthy"], 1);
-        assert_eq!(v["targetVersion"], "0.1.1");
-        assert_eq!(v["beacons"][0]["name"], "Alpha");
+            Some(SAFE),
+            None,
+            vec![bh(Some(SAFE), Some(V1)), bh(Some(TIMELOCK), Some(PINNED))],
+        );
+        assert_eq!((v["total"].as_u64(), v["healthy"].as_u64()), (Some(2), Some(1)));
+        assert_eq!(v["beacons"][0]["status"], "behind");
+        assert_eq!((v["safeOwner"].as_str(), v["timelockOwner"].is_null()), (Some(SAFE), true));
+        assert_eq!((v["network"].as_str(), v["rpcHost"].as_str()), (Some("base"), Some("host")));
     }
 
     fn tl(
@@ -1196,7 +726,7 @@ mod tests {
         }
     }
 
-    // A minimal wrapped-token spec (no legacy/receipt/authoriser targets).
+    // A minimal wrapped-token spec (no legacy/receipt/authoriser pin).
     fn spec<'a>(
         symbol: &'a str,
         name: &'a str,
@@ -1212,8 +742,7 @@ mod tests {
             unwrapped,
             legacy: None,
             receipt: None,
-            auth_current: None,
-            auth_target: None,
+            auth_pinned: None,
             in_migration: unwrapped.map(|_| true),
         }
     }
@@ -1338,45 +867,26 @@ mod tests {
         assert_eq!(t["status"], "unknown");
     }
 
+    const AUTH: &str = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+
     #[test]
-    fn token_authoriser_resolved_now_vs_target_without_affecting_status() {
-        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
-        let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+    fn token_authoriser_is_resolved_against_the_pin_without_affecting_status() {
         let mut s = spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271"));
-        s.auth_current = Some(cur);
-        s.auth_target = Some(tgt);
-        let base = || {
-            tl(
-                Some("N"),
-                Some("wtNVDA"),
-                Some(18),
-                Some("0x7271"),
-                Some(true),
-            )
+        s.auth_pinned = Some(AUTH);
+        let with = |a: Option<&str>| {
+            let mut l = tl(Some("N"), Some("wtNVDA"), Some(18), Some("0x7271"), Some(true));
+            l.authoriser = a.map(str::to_string);
+            token_health(&s, &l)
         };
-
-        // pre-migration: at the current prod authoriser → labelled `current`, NOT
-        // at target, and the token is still `ok` (this is the correct pre-state).
-        let mut at_current = base();
-        at_current.authoriser = Some(cur.to_string());
-        let t = token_health(&s, &at_current);
-        assert_eq!(t["authoriserLabel"], "current");
-        assert_eq!(t["atAuthoriserTarget"], false);
-        assert_eq!(t["authoriserTarget"], tgt);
-        assert_eq!(t["status"], "ok");
-
-        // migrated: at the V4 clone → `target`, atAuthoriserTarget true.
-        let mut at_target = base();
-        at_target.authoriser = Some(tgt.to_string());
-        let t2 = token_health(&s, &at_target);
-        assert_eq!(t2["authoriserLabel"], "target");
-        assert_eq!(t2["atAuthoriserTarget"], true);
-
-        // an unexpected authoriser → `foreign`; a failed read → `unknown`.
-        let mut foreign = base();
-        foreign.authoriser = Some("0xdead000000000000000000000000000000000001".into());
-        assert_eq!(token_health(&s, &foreign)["authoriserLabel"], "foreign");
-        assert_eq!(token_health(&s, &base())["authoriserLabel"], "unknown");
+        let t = with(Some(&AUTH.to_uppercase().replace("0X", "0x")));
+        assert_eq!((t["authoriserLabel"].as_str(), t["atPinnedAuthoriser"].as_bool()), (Some("pinned"), Some(true)));
+        assert_eq!((t["authoriserPinned"].as_str(), t["status"].as_str()), (Some(AUTH), Some("ok")));
+        let f = with(Some("0xdead000000000000000000000000000000000001"));
+        assert_eq!((f["authoriserLabel"].as_str(), f["atPinnedAuthoriser"].as_bool()), (Some("foreign"), Some(false)));
+        assert_eq!(f["status"], "ok");
+        assert_eq!(with(None)["authoriserLabel"], "unknown");
+        let plain = token_health(&spec("USDC", "U", 6, "0x1", None), &tl(Some("U"), Some("USDC"), Some(6), None, None));
+        assert_eq!((plain["authoriserLabel"].as_str(), plain["atPinnedAuthoriser"].is_null()), (Some("n/a"), true));
     }
 
     #[test]
@@ -1450,305 +960,79 @@ mod tests {
         assert_eq!(v["tokens"][0]["symbol"], "wtA");
     }
 
-    /// The shape st0x.deploy actually ships today: `productionReceiptVaults()`
-    /// derives from the `productionTokensBase()` table in a loop, so there are
-    /// no per-vault assignments to scrape. Scraping the derivation instead of
-    /// the table is what silently emptied the governed set and made the whole
-    /// registry section disappear from the dashboard.
     #[test]
-    fn parse_receipt_vault_list_reads_the_token_table_shape() {
-        let src = r#"
-    address internal constant MSTR_RECEIPT = address(0x1111111111111111111111111111111111111111);
-    address internal constant MSTR_RECEIPT_VAULT = address(0x2222222222222222222222222222222222222222);
-    address internal constant MSTR_WRAPPED_TOKEN_VAULT = address(0x3333333333333333333333333333333333333333);
-    address internal constant TSLA_RECEIPT = address(0x4444444444444444444444444444444444444444);
-    address internal constant TSLA_RECEIPT_VAULT = address(0x5555555555555555555555555555555555555555);
-    address internal constant TSLA_WRAPPED_TOKEN_VAULT = address(0x6666666666666666666666666666666666666666);
-    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
-        tokens = new TokenInstance[](2);
-        tokens[0] = TokenInstance("MSTR", MSTR_RECEIPT, MSTR_RECEIPT_VAULT, MSTR_WRAPPED_TOKEN_VAULT);
-        tokens[1] = TokenInstance("TSLA", TSLA_RECEIPT, TSLA_RECEIPT_VAULT, TSLA_WRAPPED_TOKEN_VAULT);
-    }
-    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
-        TokenInstance[] memory tokens = productionTokensBase();
-        vaults = new address[](tokens.length);
-        for (uint256 i = 0; i < tokens.length; i++) {
-            vaults[i] = tokens[i].receiptVault;
-        }
-    }
-"#;
-        assert_eq!(
-            parse_receipt_vault_list(src).addresses,
-            vec![
-                "0x2222222222222222222222222222222222222222".to_string(),
-                "0x5555555555555555555555555555555555555555".to_string(),
-            ]
-        );
-    }
-
-    /// The governed address is the receipt VAULT — the third struct field.
-    /// Taking the receipt (second) or the wrapped vault (fourth) would yield a
-    /// plausible-looking list of real addresses that simply are not the ones
-    /// the setAuthorizer bundle operates on, so the field index is pinned.
-    #[test]
-    fn parse_receipt_vault_list_takes_the_vault_not_the_receipt_or_wrapper() {
-        let src = r#"
-    address internal constant A_RECEIPT = address(0xaaaa000000000000000000000000000000000001);
-    address internal constant A_RECEIPT_VAULT = address(0xbbbb000000000000000000000000000000000002);
-    address internal constant A_WRAPPED_TOKEN_VAULT = address(0xcccc000000000000000000000000000000000003);
-    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
-        tokens = new TokenInstance[](1);
-        tokens[0] = TokenInstance("A", A_RECEIPT, A_RECEIPT_VAULT, A_WRAPPED_TOKEN_VAULT);
-    }
-"#;
-        let got = parse_receipt_vault_list(src).addresses;
-        assert_eq!(
-            got,
-            vec!["0xbbbb000000000000000000000000000000000002".to_string()]
-        );
-        assert!(
-            !got.iter().any(|a| a.starts_with("0xaaaa")),
-            "took the receipt"
-        );
-        assert!(
-            !got.iter().any(|a| a.starts_with("0xcccc")),
-            "took the wrapped vault"
-        );
-    }
-
-    /// A table entry naming a constant that is not declared resolves to
-    /// nothing, and a silently shorter list is indistinguishable from a
-    /// genuinely smaller governed set. `declared` keeps the shortfall visible.
-    #[test]
-    fn parse_receipt_vault_list_counts_entries_it_could_not_resolve() {
-        let src = r#"
-    address internal constant MSTR_RECEIPT_VAULT = address(0x2222222222222222222222222222222222222222);
-    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
-        tokens = new TokenInstance[](2);
-        tokens[0] = TokenInstance("MSTR", MSTR_RECEIPT, MSTR_RECEIPT_VAULT, MSTR_WRAPPED_TOKEN_VAULT);
-        tokens[1] = TokenInstance("TSLA", TSLA_RECEIPT, TSLA_RECEIPT_VAULT, TSLA_WRAPPED_TOKEN_VAULT);
-    }
-"#;
-        let got = parse_receipt_vault_list(src);
-        assert_eq!(
-            got.addresses,
-            vec!["0x2222222222222222222222222222222222222222".to_string()]
-        );
-        assert_eq!(got.declared, 2, "both table entries must still be counted");
-    }
-
-    /// The legacy shape drops entries the same way, so it reports the same way.
-    #[test]
-    fn parse_receipt_vault_list_counts_unresolved_legacy_assignments() {
-        let src = r#"
-    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
-    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
-        vaults = new address[](3);
-        vaults[0] = NVDA_RECEIPT_VAULT;
-        vaults[1] = RENAMED_RECEIPT_VAULT;
-        vaults[2] = ALSO_RENAMED_RECEIPT_VAULT;
-    }
-"#;
-        let got = parse_receipt_vault_list(src);
-        assert_eq!(got.addresses.len(), 1);
-        assert_eq!(got.declared, 3);
-    }
-
-    /// A table whose entries ALL fail to resolve must report the drift, not
-    /// fall through to a legacy function that a table-shaped repo only still
-    /// carries as a derivation. Falling through would answer with a list that
-    /// looks whole.
-    #[test]
-    fn parse_receipt_vault_list_does_not_fall_back_when_the_table_matched() {
-        let src = r#"
-    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
-    function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
-        tokens = new TokenInstance[](1);
-        tokens[0] = TokenInstance("MSTR", GONE_RECEIPT, GONE_RECEIPT_VAULT, GONE_WRAPPED);
-    }
-    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
-        vaults = new address[](1);
-        vaults[0] = NVDA_RECEIPT_VAULT;
-    }
-"#;
-        let got = parse_receipt_vault_list(src);
-        assert!(
-            got.addresses.is_empty(),
-            "fell through to the legacy shape: {:?}",
-            got.addresses
-        );
-        assert_eq!(
-            got.declared, 1,
-            "the table entry must be reported as declared"
-        );
-    }
-
-    /// Neither shape present ⇒ empty, which the reconcile doc reports as
-    /// governedCount 0. It must not panic or invent addresses from constants
-    /// that no table lists.
-    #[test]
-    fn parse_receipt_vault_list_is_empty_when_no_known_shape_matches() {
-        let src = r#"
-    address internal constant STRAY_RECEIPT_VAULT = address(0xdead00000000000000000000000000000000beef);
-    function somethingElse() internal pure returns (uint256) { return 1; }
-"#;
-        assert!(parse_receipt_vault_list(src).addresses.is_empty());
+    fn build_tokens_counts_vaults_at_the_pinned_authoriser() {
+        let mut s = spec("wtA", "A", 18, "0x1", Some("0xu"));
+        s.auth_pinned = Some(AUTH);
+        let mut l = tl(Some("A"), Some("wtA"), Some(18), Some("0xu"), Some(true));
+        let off = token_health(&s, &l);
+        l.authoriser = Some(AUTH.into());
+        let on = token_health(&s, &l);
+        let v = build_tokens("o", "r", "base", "host", json!(null), json!(null), vec![on, off]).unwrap();
+        assert_eq!((v["wrappedCount"].as_u64(), v["atPinnedAuthoriser"].as_u64()), (Some(2), Some(1)));
     }
 
     #[test]
-    fn parse_receipt_vault_list_resolves_named_constants_in_order() {
-        let src = r#"
-    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
-    address internal constant IBHG_RECEIPT_VAULT = address(0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF);
-    address internal constant UNUSED_RECEIPT_VAULT = address(0xdeaD00000000000000000000000000000000BEEF);
-    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
-        vaults = new address[](2);
-        vaults[0] = NVDA_RECEIPT_VAULT;
-        vaults[1] = IBHG_RECEIPT_VAULT;
-    }
-"#;
-        let got = parse_receipt_vault_list(src).addresses;
-        assert_eq!(
-            got,
-            vec![
-                "0x7271a3c91bb6070ed09333b84a815949d4f16d14".to_string(),
-                "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf".to_string(),
-            ]
-        );
-        // a constant defined but NOT listed in the function is excluded
-        assert!(!got.iter().any(|a| a.contains("dead")));
+    fn resolve_authoriser_labels_pinned_none_foreign_unknown() {
+        let pinned = Some(AUTH);
+        assert_eq!(resolve_authoriser(pinned, pinned), ("pinned", Some(true)));
+        assert_eq!(resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), pinned), ("none", Some(false)));
+        assert_eq!(resolve_authoriser(Some("0x0000000000000000000000000000000000000001"), pinned), ("foreign", Some(false)));
+        assert_eq!(resolve_authoriser(None, pinned), ("unknown", None));
+        assert_eq!(resolve_authoriser(pinned, None), ("foreign", None));
     }
 
     #[test]
-    fn parse_receipt_vault_list_keeps_assignments_after_nested_blocks() {
-        let src = r#"
-    address internal constant NVDA_RECEIPT_VAULT = address(0x7271A3C91Bb6070eD09333B84a815949D4f16d14);
-    address internal constant IBHG_RECEIPT_VAULT = address(0x3c0F093aa1eD511910279b2C8d56eF5c96f1a6cF);
-    function productionReceiptVaults() internal pure returns (address[] memory vaults) {
-        vaults = new address[](2);
-        unchecked {
-            vaults[0] = NVDA_RECEIPT_VAULT;
-        }
-        vaults[1] = IBHG_RECEIPT_VAULT;
-    }
-    function afterwards() internal pure returns (address[] memory vaults) {
-        vaults[0] = NVDA_RECEIPT_VAULT;
-    }
-"#;
-        // an assignment AFTER a nested block's close is still inside the
-        // depth-matched body; one in a later function is not
-        assert_eq!(
-            parse_receipt_vault_list(src).addresses,
-            vec![
-                "0x7271a3c91bb6070ed09333b84a815949d4f16d14".to_string(),
-                "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf".to_string(),
-            ]
-        );
-        // unbalanced braces after the signature ⇒ empty (fail-safe), never a
-        // truncated-but-plausible list
-        assert_eq!(
-            parse_receipt_vault_list(
-                "function productionReceiptVaults() internal { vaults[0] = NVDA_RECEIPT_VAULT;"
-            )
-            .addresses,
-            Vec::<String>::new()
-        );
-    }
-
-    #[test]
-    fn resolve_authoriser_labels_current_target_none_foreign_unknown() {
-        let cur = Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456");
-        let tgt = Some("0x315b16faa6ee413fabca877d3851b3818369f0cd");
-        assert_eq!(resolve_authoriser(cur, cur, tgt), ("current", Some(false)));
-        assert_eq!(resolve_authoriser(tgt, cur, tgt), ("target", Some(true)));
-        assert_eq!(
-            resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), cur, tgt),
-            ("none", Some(false))
-        );
-        assert_eq!(resolve_authoriser(Some("0xdead"), cur, tgt).0, "foreign");
-        assert_eq!(resolve_authoriser(None, cur, tgt), ("unknown", None));
-    }
-
-    #[test]
-    fn extra_vault_carries_identity_and_authoriser_target() {
-        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
-        let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+    fn extra_vault_carries_identity_and_the_pinned_authoriser() {
         let v = extra_vault(
             "0x3c0f",
             Some("Wrapped iShares iBonds ST0x".into()),
             Some("wtIBHG".into()),
             Some(true),
-            Some(cur),
-            Some(cur),
-            Some(tgt),
+            Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"),
+            Some(AUTH),
         );
-        assert_eq!(v["symbol"], "wtIBHG");
-        assert_eq!(v["authoriserLabel"], "current");
-        assert_eq!(v["atAuthoriserTarget"], false);
-        assert_eq!(v["authoriserTarget"], tgt);
+        assert_eq!((v["symbol"].as_str(), v["deployed"].as_bool()), (Some("wtIBHG"), Some(true)));
+        assert_eq!((v["authoriserLabel"].as_str(), v["atPinnedAuthoriser"].as_bool()), (Some("foreign"), Some(false)));
+        assert_eq!(v["authoriserPinned"], AUTH);
     }
-}
 
-#[cfg(test)]
-mod per_chain_tests {
-    use super::*;
-
-    /// Both spellings of a table entry MUST parse.
-    ///
-    /// Base names constants declared elsewhere in the file; the other four
-    /// write `address(0x…)` inline. A parser handling only the first returns an
-    /// EMPTY list for four chains in five — not an error, just nothing, which
-    /// the page then reads as a chain with no governed vaults.
     #[test]
-    fn both_table_spellings_parse() {
+    fn pointer_suites_group_every_generated_dir_and_skip_the_rest() {
+        let s = |p: &str| (p.to_string(), format!("// {p}"));
+        let sources = vec![
+            s("src/generated/candidate/StoxReceipt.pointers.sol"),
+            s("src/generated/0_1_30/ST0xOrchestrator.pointers.sol"),
+            s("src/generated/0_1_1/StoxReceiptVault.sol"),
+            s("src/generated/0_1_1/StoxReceipt.pointers.sol"),
+            s("src/generated/LibProdDeployV4.sol"),
+            s("src/generated/0_1_1/nested/X.sol"),
+            s("src/generated/0_1_1/README.md"),
+            s("src/lib/LibX.sol"),
+        ];
+        let got: Vec<(String, Vec<String>)> = pointer_suites(&sources)
+            .into_iter()
+            .map(|(suite, fs)| (suite, fs.into_iter().map(|(c, _)| c).collect()))
+            .collect();
+        assert_eq!(
+            got,
+            vec![
+                ("0.1.1".to_string(), vec!["StoxReceipt".to_string(), "StoxReceiptVault".to_string()]),
+                ("0.1.30".to_string(), vec!["ST0xOrchestrator".to_string()]),
+                ("candidate".to_string(), vec!["StoxReceipt".to_string()]),
+            ]
+        );
+        assert_eq!(pointer_suites(&sources)[0].1[0].1, "// src/generated/0_1_1/StoxReceipt.pointers.sol");
+    }
+
+    #[test]
+    fn deployed_address_reads_only_the_deployed_address_literal() {
         let src = r#"
-        library L {
-            address constant MSTR_RECEIPT = address(0x1111111111111111111111111111111111111111);
-            address constant MSTR_RECEIPT_VAULT = address(0x2222222222222222222222222222222222222222);
-            address constant MSTR_WRAPPED = address(0x3333333333333333333333333333333333333333);
-
-            function productionTokensBase() internal pure returns (TokenInstance[] memory tokens) {
-                tokens[0] = TokenInstance("MSTR", MSTR_RECEIPT, MSTR_RECEIPT_VAULT, MSTR_WRAPPED);
-            }
-
-            function productionTokensEthereum() internal pure returns (TokenInstance[] memory tokens) {
-                tokens[0] = TokenInstance(
-                    "MSTR",
-                    address(0xA583addaA69142E8588D9ffE3767Dbb0F23fd516),
-                    address(0x8500189061e2206Bc33Bf04DC10fFB1Fe7dED637),
-                    address(0x4404E24629a33b85FC1E2D7beA673Cd283054594)
-                );
-            }
-        }
+            address constant OTHER = address(0x1111111111111111111111111111111111111111);
+            address constant DEPLOYED_ADDRESS = address(0xAbCdEf0000000000000000000000000000000001);
         "#;
-        let base = parse_receipt_vaults_for(src, "base");
-        assert_eq!(base.declared, 1);
-        assert_eq!(
-            base.addresses,
-            vec!["0x2222222222222222222222222222222222222222".to_string()],
-            "the named-constant form resolves to the RECEIPT VAULT, field three"
-        );
-
-        let eth = parse_receipt_vaults_for(src, "ethereum");
-        assert_eq!(eth.declared, 1, "the inline-literal form parses at all");
-        assert_eq!(
-            eth.addresses,
-            vec!["0x8500189061e2206bc33bf04dc10ffb1fe7ded637".to_string()],
-            "and yields field three, not the receipt or the wrapped vault"
-        );
-
-        // Different chains, different addresses. A shared list would ask
-        // Ethereum about Base's vaults, where they have no code.
-        assert_ne!(base.addresses, eth.addresses);
-    }
-
-    /// A network with no table MUST be empty rather than fall back to Base's.
-    #[test]
-    fn an_unknown_network_has_no_table() {
-        assert_eq!(vault_table_for("base"), Some("productionTokensBase"));
-        assert_eq!(vault_table_for("optimism"), None);
-        assert!(parse_receipt_vaults_for("library L {}", "optimism")
-            .addresses
-            .is_empty());
+        assert_eq!(deployed_address(src).as_deref(), Some("0xAbCdEf0000000000000000000000000000000001"));
+        assert_eq!(deployed_address("address constant X = address(0x1111111111111111111111111111111111111111);"), None);
+        assert_eq!(deployed_address("not solidity {"), None);
     }
 }
