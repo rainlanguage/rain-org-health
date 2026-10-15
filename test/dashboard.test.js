@@ -6103,6 +6103,16 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
     collect(box, "own-extra").length === 1,
     "the unexpected owner is its own flagged row",
   );
+  const rowChips = (row) => collect(row, "own-chip").map((c) => c.textContent);
+  assert(
+    rowChips(collect(box, "own-extra")[0]).join() === "declared ✗,on-chain ✓",
+    "the unexpected owner is on-chain only: " + rowChips(collect(box, "own-extra")[0]),
+  );
+  const absent = collect(box, "own-row").find((r) => rowChips(r).includes("on-chain ✗"));
+  assert(
+    rowChips(absent).join() === "declared ✓,on-chain ✗",
+    "the absent signer is declared only: " + rowChips(absent),
+  );
   const banner = collect(box, "own-verify-drift")[0];
   assert(
     textOf(banner).includes("3 (declared) · 2 (on-chain)"),
@@ -6817,6 +6827,10 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
     "the pinned impl address is shown for checking a proposed upgrade",
   );
   assert(chips.includes("pinned ✓"), "the at-pinned beacon confirms it");
+  assert(
+    collect(box, "own-chip-yes").some((c) => c.textContent === "pinned ✓"),
+    "the at-pinned chip reads as ok",
+  );
   // statuses
   assert(chips.includes("behind"), "a behind status");
   assert(chips.includes("drift"), "a drift status (legacy owner)");
@@ -6877,6 +6891,59 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
   assert(
     addrs.some((a) => a.toLowerCase() === TIMELOCK.toLowerCase()),
     "the timelock address is shown so the reader can check which one it is",
+  );
+});
+
+Deno.test("deployments: a beacon with no pin or no live implementation reads unknown, never pinned", () => {
+  const SAFE = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
+  const PINNED = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const box = deploymentsBox({
+    deploymentBeacons: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      safeOwner: SAFE,
+      total: 2,
+      healthy: 0,
+      beacons: [
+        {
+          name: "Orchestrator beacon",
+          address: "0x1111111111111111111111111111111111111111",
+          owner: SAFE,
+          ownerLabel: "safe",
+          implementation: "0xe7573879d73455dc92cb4087fa8177594387cbcd",
+          implVersion: "v1",
+          pinnedImpl: null,
+          atPinned: null,
+          status: "unknown",
+        },
+        {
+          name: "Receipt beacon",
+          address: "0x2222222222222222222222222222222222222222",
+          owner: SAFE,
+          ownerLabel: "safe",
+          implementation: null,
+          implVersion: "unknown",
+          pinnedImpl: PINNED,
+          atPinned: null,
+          status: "unknown",
+        },
+      ],
+    },
+  });
+  const lines = collect(box, "bcn-line").map((l) => [l.children[0].textContent, l.children[1]]);
+  assert(!lines.some(([k]) => k === "impl"), "an unknown pin state is never shown as pinned");
+  const now = lines.filter(([k]) => k === "now").map(([, c]) => `${c.textContent}:${c.className}`);
+  assert(
+    now.join() === "v1:own-chip own-chip-dim,unknown:own-chip own-chip-dim",
+    "each live implementation reads in the unknown colour: " + now,
+  );
+  const targets = lines.filter(([k]) => k === "target");
+  assert(targets.length === 1, "only the pinned slot names a target: " + targets.length);
+  assert(
+    collect(box, "own-addr").some((a) => a.textContent === PINNED),
+    "the target is the pinned implementation",
   );
 });
 
@@ -7363,6 +7430,10 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     "the vault at the pinned authoriser confirms it",
   );
   assert(
+    collect(box, "own-chip-yes").some((c) => c.textContent === "pinned ✓"),
+    "the at-pinned authoriser chip reads as ok",
+  );
+  assert(
     chips.filter((c) => c === "foreign").length === 3,
     "two registry vaults + the extra governed vault show a foreign authoriser",
   );
@@ -7393,6 +7464,10 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       m.includes("1 of 3 receipt vaults at the pinned authoriser (deployed)")
     ),
     "the authoriser banner states progress against the pinned authoriser",
+  );
+  assert(
+    collect(box, "own-verify-src").some((s) => s.textContent === `pinned ${TGT}`),
+    "the authoriser banner names the pinned authoriser",
   );
   // not-all-ok summaries: wired + authoriser + cross-check(governed) + cross-check(missing)
   assert(
@@ -9524,6 +9599,44 @@ Deno.test("deployments: an empty pinned vault list is not reported as unreadable
     sub ===
       "No registry token resolved to a governed receipt vault: 0 governed vault(s) in privileged-addresses.json chains.8453.receiptVaults, 23 registry token(s).",
     "states the counts and the list, nothing more: " + sub,
+  );
+});
+
+const tokensWithAuthoriser = (authoriser) => ({
+  deploymentTokens: {
+    org: "ST0x-Technology",
+    repo: "st0x.registry",
+    network: "base",
+    rpcHost: "mainnet.base.org",
+    total: 0,
+    ok: 0,
+    wrappedCount: 0,
+    atPinnedAuthoriser: 0,
+    authoriser,
+    tokens: [],
+    reconcile: {
+      governedCount: 0,
+      registryTokenCount: 0,
+      list: "privileged-addresses.json",
+      unavailable: null,
+      extraVaults: [],
+      missingFromMigration: [],
+    },
+  },
+});
+
+Deno.test("deployments: with no pinned authoriser the tokens section claims no authoriser progress", () => {
+  const box = deploymentsBox(tokensWithAuthoriser({ pinned: null, pinnedDeployed: null }));
+  assert(!textOf(box).includes("Authoriser —"), "no authoriser banner: " + textOf(box));
+});
+
+Deno.test("deployments: an unread pinned-authoriser deploy state reads unknown, not NOT deployed", () => {
+  const PINNED = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+  const box = deploymentsBox(tokensWithAuthoriser({ pinned: PINNED, pinnedDeployed: null }));
+  const banner = collect(box, "own-verify-msg").map((m) => m.textContent).find((m) => m.startsWith("Authoriser —"));
+  assert(
+    banner === "Authoriser — 0 of 0 receipt vaults at the pinned authoriser (deploy state unknown); a setAuthorizer bundle rewires the rest.",
+    "unknown deploy state: " + banner,
   );
 });
 
