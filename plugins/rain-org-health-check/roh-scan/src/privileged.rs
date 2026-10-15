@@ -314,6 +314,10 @@ pub mod tests {
             "safePolicy.owners[0] is not an address",
         );
         rejects(
+            |d| d["safePolicy"]["owners"][0] = json!(format!("{A}0")),
+            "safePolicy.owners[0] is not an address",
+        );
+        rejects(
             |d| d["safePolicy"]["threshold"] = json!(0),
             "threshold is not between 1 and 2",
         );
@@ -341,6 +345,10 @@ pub mod tests {
         rejects(
             |d| d["chains"][""] = d["chains"]["1"].clone(),
             "is not a decimal chain id",
+        );
+        rejects(
+            |d| d["chains"]["+10"] = d["chains"]["1"].clone(),
+            "chains[\"+10\"] is not a decimal chain id",
         );
         rejects(
             |d| d["chains"]["10"] = d["chains"]["1"].clone(),
@@ -374,6 +382,16 @@ pub mod tests {
                     .truncate(3)
             },
             "beacons has 3 entries, not 4",
+        );
+        rejects(
+            |d| {
+                let extra = d["chains"]["1"]["beacons"][0].clone();
+                d["chains"]["1"]["beacons"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(extra)
+            },
+            "beacons has 5 entries, not 4",
         );
         rejects(
             |d| d["chains"]["1"]["beacons"][0] = json!(A),

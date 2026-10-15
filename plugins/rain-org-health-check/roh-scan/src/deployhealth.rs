@@ -780,11 +780,15 @@ mod tests {
             "host",
             Some(SAFE),
             None,
-            vec![bh(Some(SAFE), Some(V1)), bh(Some(TIMELOCK), Some(PINNED))],
+            vec![
+                bh(Some(SAFE), Some(V1)),
+                bh(Some(TIMELOCK), Some(PINNED)),
+                bh(Some(SAFE), Some(PINNED)),
+            ],
         );
         assert_eq!(
             (v["total"].as_u64(), v["healthy"].as_u64()),
-            (Some(2), Some(1))
+            (Some(3), Some(2))
         );
         assert_eq!(v["beacons"][0]["status"], "behind");
         assert_eq!(

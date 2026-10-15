@@ -118,7 +118,7 @@ mod tests {
         json!({"version": 1, "chains": {"8453": {"network": "base", "contracts": [
             {"address": "0x00000000000000000000000000000000000000Aa", "expected": [
                 {"role": ROLE.to_uppercase().replace("0X", "0x"), "grantee": "0x00000000000000000000000000000000000000Bb", "roleName": "DEPOSIT"},
-                {"role": ROLE, "grantee": "0x00000000000000000000000000000000000000cc"},
+                {"role": ROLE, "grantee": "0x00000000000000000000000000000000000000cc", "roleName": ""},
             ]},
         ]}}})
     }

@@ -675,6 +675,24 @@ mod tests {
         assert_eq!(auth[1]["status"], "unknown");
     }
 
+    #[test]
+    fn each_chains_authoriser_is_judged_by_that_chains_live_read() {
+        let status = |base: &str, eth: &str| {
+            let live = vec![
+                ("base".to_string(), Some(base.to_string())),
+                ("ethereum".to_string(), Some(eth.to_string())),
+            ];
+            let v = build_owners("o", "r", &facts(), None, &live, &no_names);
+            let auth = &group(&v, "authoriser")["entries"];
+            (
+                auth[0]["status"].as_str().unwrap().to_string(),
+                auth[1]["status"].as_str().unwrap().to_string(),
+            )
+        };
+        assert_eq!(status(A, B), ("active".into(), "active".into()));
+        assert_eq!(status(B, A), ("pending".into(), "pending".into()));
+    }
+
     fn onchain(owners: Option<Vec<&str>>, threshold: Option<u64>) -> OnChainSafe {
         OnChainSafe {
             network: "base".into(),
@@ -718,8 +736,28 @@ mod tests {
         let s = group(&drift, "signers");
         assert_eq!(s["verification"]["match"], false);
         assert_eq!(s["entries"][1]["onChain"], "missing");
+        assert_eq!(s["entries"].as_array().unwrap().len(), 3);
         assert_eq!(s["entries"][2]["status"], "extra");
+        assert_eq!(
+            s["entries"][2]["address"],
+            "0x00000000000000000000000000000000000000c3"
+        );
         assert_eq!(s["entries"][2]["network"], "base");
+
+        let superset = build_owners(
+            "o",
+            "r",
+            &f,
+            Some(&onchain(
+                Some(vec![A, B, "0x00000000000000000000000000000000000000c3"]),
+                Some(2),
+            )),
+            &[],
+            &no_names,
+        );
+        let s = group(&superset, "signers");
+        assert_eq!(s["entries"][1]["onChain"], "match");
+        assert_eq!(s["verification"]["match"], false);
 
         let thr = build_owners(
             "o",
@@ -929,6 +967,23 @@ mod tests {
         let v = grants(&chains, &[("DEPOSIT_ADMIN", "timelock")], &check);
         assert_eq!(v["chains"][1]["state"], "unknown");
         assert!(v["grantees"][0]["roles"][0]["chains"][1]["safeHolds"].is_null());
+    }
+
+    #[test]
+    fn an_admin_role_the_safe_is_expected_to_hold_is_not_kept() {
+        let v = grants(&two_chains(), &[("DEPOSIT_ADMIN", "safe")], &all_granted);
+        assert_eq!(v["chains"][0]["safeKept"], json!([]));
+        assert!(v["grantees"][0]["roles"][0]["chains"][0]["safeHolds"].is_null());
+    }
+
+    #[test]
+    fn a_kept_admin_role_is_listed_once_however_many_grantees_expect_it() {
+        let v = grants(
+            &two_chains(),
+            &[("DEPOSIT_ADMIN", "timelock"), ("DEPOSIT_ADMIN", SERVICE)],
+            &all_granted,
+        );
+        assert_eq!(v["chains"][0]["safeKept"], json!(["DEPOSIT_ADMIN"]));
     }
 
     #[test]
