@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T17:29:01Z",
+  "generatedAt": "2026-10-16T21:17:50Z",
   "auditGraph": {
     "nodes": [
       {
@@ -344,10 +344,10 @@
         "lastAudit": null,
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-10-16T15:24:59Z",
-          "commit": "32335b12e8571f91da5b66ad6b93ee3527268b81",
+          "timestamp": "2026-10-16T17:19:37Z",
+          "commit": "635aa0ac904f5d2756bb6924be31007b75d622aa",
           "skillVersion": "0.35.0",
-          "scope": "pr:719 (rain-marvin review 5549549409): every changed code line of test/src/lib/LibDecimalFloat.consumerHazards.t.sol against origin/main, enumerated from the catalog in two passes (224 then 16 on re-survey); suite: that file's 38 tests at --fuzz-seed 0, 5096 runs, forge under env -i with FOUNDRY_FFI=false"
+          "scope": "log10Ratio (rain-marvin review 5550797763 on #725): every comparison, guard, cascade step, 1e25/2^50 split term, series divisor and final multiply of LibDecimalFloatImplementation.log10Ratio, 40 mutants then 4 on re-survey; suite: the log10/pow10 implementation suites and LibDecimalFloat log10/pow/pow10/consumerHazards/precision at --fuzz-seed 0. R01-R04 were probed only with the new tests."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -2512,9 +2512,9 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 12,
+        "granted": 11,
         "missing": 0,
-        "unknown": 1,
+        "unknown": 2,
         "total": 13,
         "state": "partial",
         "safeKept": []
@@ -2613,7 +2613,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": false
               },
               {
@@ -11963,10 +11963,10 @@
       "lastAudit": null,
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-10-16T15:24:59Z",
-        "commit": "32335b12e8571f91da5b66ad6b93ee3527268b81",
+        "timestamp": "2026-10-16T17:19:37Z",
+        "commit": "635aa0ac904f5d2756bb6924be31007b75d622aa",
         "skillVersion": "0.35.0",
-        "scope": "pr:719 (rain-marvin review 5549549409): every changed code line of test/src/lib/LibDecimalFloat.consumerHazards.t.sol against origin/main, enumerated from the catalog in two passes (224 then 16 on re-survey); suite: that file's 38 tests at --fuzz-seed 0, 5096 runs, forge under env -i with FOUNDRY_FFI=false"
+        "scope": "log10Ratio (rain-marvin review 5550797763 on #725): every comparison, guard, cascade step, 1e25/2^50 split term, series divisor and final multiply of LibDecimalFloatImplementation.log10Ratio, 40 mutants then 4 on re-survey; suite: the log10/pow10 implementation suites and LibDecimalFloat log10/pow/pow10/consumerHazards/precision at --fuzz-seed 0. R01-R04 were probed only with the new tests."
       }
     },
     {
@@ -13556,7 +13556,7 @@
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 82,
       "filesChangedSinceAudit": 13,
-      "commitsSinceAudit": 1502,
+      "commitsSinceAudit": 1507,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1829,
       "commentLocRemovedSinceAudit": 522,
@@ -14494,7 +14494,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 98,
+      "testFiles": 99,
       "sourcesUnparsed": 0,
       "untested": []
     },
