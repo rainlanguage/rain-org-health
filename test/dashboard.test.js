@@ -6762,13 +6762,18 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
   assert(
-    btns.length === 4,
-    "four sub-tabs: " + btns.map((b) => b.textContent).join(","),
+    btns.length === 5,
+    "five sub-tabs: " + btns.map((b) => b.textContent).join(","),
   );
   assert(
-    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac,held",
-    "tabs in order safe,contracts,rbac,held: " +
+    btns.map((b) => b.dataset.tab).join(",") ===
+      "safe,contracts,rbac,held,issues",
+    "tabs in order safe,contracts,rbac,held,issues: " +
       btns.map((b) => b.dataset.tab).join(","),
+  );
+  assert(
+    btns[4].textContent === "Known issues",
+    "the last tab is Known issues, got " + btns[4].textContent,
   );
   // Exactly one active, and it is the first — a page that opens with none
   // active looks broken, and one that opens with both looks like no tabs.
@@ -6779,7 +6784,7 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   );
 
   const panels = collect(box, "tabpanel");
-  assert(panels.length === 4, "four panels");
+  assert(panels.length === 5, "five panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
   assert(
     !byTab.safe.classList.contains("tab-hidden"),
@@ -6796,6 +6801,10 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   assert(
     byTab.held.classList.contains("tab-hidden"),
     "held panel hidden on load",
+  );
+  assert(
+    byTab.issues.classList.contains("tab-hidden"),
+    "issues panel hidden on load",
   );
 });
 
@@ -6917,6 +6926,85 @@ Deno.test("deployments: the Safe tab holds the ownership sections, not the contr
     !textOf(panels.contracts).includes("Known owners"),
     "Known owners is not duplicated onto the contracts tab",
   );
+});
+
+const panelsByTab = (box) =>
+  Object.fromEntries(
+    collect(box, "tabpanel").map((p) => [p.dataset.tab, p]),
+  );
+const groupHeads = (root) =>
+  collect(root, "own-grouphead").map((h) => h.textContent);
+
+Deno.test("deployments: the bricked group renders on the Known issues tab and nowhere else", () => {
+  const box = deploymentsBox(OWNERS);
+  const panels = panelsByTab(box);
+  assert(
+    groupHeads(panels.issues).join(",") === "Historical & bricked",
+    "Known issues holds exactly the historical group: " +
+      groupHeads(panels.issues).join(","),
+  );
+  assert(
+    collect(panels.issues, "own-status-bricked").length === 1,
+    "the bricked pill is on the Known issues tab",
+  );
+  assert(
+    textOf(panels.issues).includes("Known issues"),
+    "the tab is headed Known issues",
+  );
+  // The three live groups stay on the Safe tab, and the retired one is not
+  // among them.
+  assert(
+    groupHeads(panels.safe).join(",") ===
+      "Upgrade authority — token-owner Safe,Safe signers (3-of-6),Operational access — authoriser",
+    "Safe tab keeps only the live groups: " + groupHeads(panels.safe).join(","),
+  );
+  assert(
+    collect(panels.safe, "own-status-bricked").length === 0,
+    "no bricked pill on the Safe tab",
+  );
+  const everywhere = groupHeads(box).filter((h) => h === "Historical & bricked");
+  assert(
+    everywhere.length === 1,
+    "the historical group is rendered once, got " + everywhere.length,
+  );
+});
+
+Deno.test("deployments: no retired facts shows the Known issues empty state", () => {
+  const groups = OWNERS.deploymentOwners.groups.filter((g) =>
+    g.id !== "historical"
+  );
+  const box = deploymentsBox({
+    deploymentOwners: { ...OWNERS.deploymentOwners, groups },
+  });
+  const panels = panelsByTab(box);
+  const empty = collect(panels.issues, "issues-empty");
+  assert(empty.length === 1, "one Known issues empty state");
+  assert(
+    empty[0].textContent === "No known issues recorded.",
+    "it says so: " + empty[0].textContent,
+  );
+  assert(
+    collect(panels.issues, "own-group").length === 0,
+    "no group on an empty Known issues tab",
+  );
+  assert(
+    collect(panels.safe, "own-group").length === 3,
+    "the Safe tab is untouched by an empty Known issues tab",
+  );
+});
+
+Deno.test("deployments: unread owner data is unread on Known issues too, never a clean bill", () => {
+  const box = deploymentsBox({ deploymentOwners: null });
+  const panels = panelsByTab(box);
+  const empty = collect(panels.issues, "issues-empty");
+  assert(empty.length === 1, "one Known issues state");
+  assert(
+    /unavailable/.test(empty[0].textContent) &&
+      !/No known issues/.test(empty[0].textContent),
+    "unread reads as unavailable, not as none: " + empty[0].textContent,
+  );
+  // And the owners section's own empty state is still the only `.empty`.
+  assert(collect(box, "empty").length === 1, "the owners empty state alone");
 });
 
 Deno.test("deployments: the health and tokens sections link their own chain too", () => {
