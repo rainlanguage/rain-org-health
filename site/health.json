@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T21:17:50Z",
+  "generatedAt": "2026-10-16T23:40:52Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2613,7 +2613,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": false
               },
               {
@@ -2650,7 +2650,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": false
               },
               {
@@ -2842,7 +2842,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -2879,7 +2879,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
