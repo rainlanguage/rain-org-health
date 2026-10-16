@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-16T07:15:51Z",
+  "generatedAt": "2026-10-16T12:31:37Z",
   "auditGraph": {
     "nodes": [
       {
@@ -65,7 +65,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.metadata",
@@ -129,7 +129,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.metadata",
@@ -261,7 +261,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.metadata",
@@ -342,12 +342,12 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 26,
+        "openAuditIssues": 12,
         "lastMutation": {
-          "timestamp": "2026-10-14T20:36:25Z",
-          "commit": "3921acaacc2375d904a5684b62b6e413d6826b61",
+          "timestamp": "2026-10-15T07:55:00Z",
+          "commit": "c55437099ac618c91722ca2bc381de43cf769f0f",
           "skillVersion": "0.35.0",
-          "scope": "PR #712 (#649, #611): one encoding of the packLossy overflow threshold. NEVER_PAST_EXPONENT, LibDecimalFloat.isPastEveryFloat (uint256 and signed overloads), packLossy's lift path, the div and pow10 NEVER_PAST_EXPONENT gates, pow's carry path (packRoundedSignificant), revertIfPastLargestFloat, both LibParseDecimalFloat call sites and the past-int256 floorExponent branch. Suite per probe: forge test --match-contract 'Pack|Parse|Pow|Div' at 256 fuzz runs, seed 0x712; the Rust differential suite was not in the probe command. Before = main c554370's test tree on the PR source (316 tests), after = the PR's tests (322 tests). 27 mutants: M01/M02 NEVER_PAST_EXPONENT one higher/lower; M03/M04 fast exit strict/true; M05 any-nonzero arm at 66; M06 zero past at high excess; M07/M08 floor arm >= and 2^223+2; M09/M10 product arm > and 2^223+1; M11 excess off by one; M12 signed overload drops abs; M13 packLossy past check off; M14 lift one digit short; M15 div gate +1; M16 pow10 gate at int32.max+17; M16b pow10 gate at int32.max+27; M17 pow carry always falls back; M18/M19 carry excess guard 26/66; M20 revertIfPastLargestFloat negated; M21 parser inline drops abs; M22/M23 parser past checks off; M24 floor branch drops wrap check; M25 floorExponent -78; M26 wrap check <=. Before 24/27 killed (M03 survives: its boundary is only reachable by a direct isPastEveryFloat call, which no caller makes; M16, M19 equivalent). After 25/27 killed: M03 by the PR's testIsPastEveryFloatExactEdges; M02/M24 also by testIsPastEveryFloatExactEdges / testParsePastInt256FloorExponentPastInt256; main's killers include testPackLossyOverflowThresholdEdges, testPackLossyCeilingTruncationBand, testPackLossyLiftFirstEquivalenceExtremes, testParseOverflowThresholdExcesses, testParseOverflowThresholdPointPositions, testParseNearOverflowThreshold, testParseRuleLiteralShapeFuzz, testParseZeroHugeExponent, testDivAtTheOverflowThreshold, testPow10Thresholds, testPow10NearThresholds, testPowCarryShedsTheUnrounded, testPowRoundedAtTheHeadroomBound. Survivors: M16 is inside the pow10 gate band audit/known-false-positives.md already proves equivalent (up to int32.max+26; M16b at int32.max+27 is killed, so the band edge is pinned); M19 is equivalent (any carry guard bound from 27 up, or none: at excess 28+ a 41 digit rounded value and its unrounded source are both past) and is recorded with proof. No tests added. Adversarial pass: SPEC.md's isPastEveryFloat and packLossy claims re-derived (not past implies nothing was shed, so the lift is from the initial pair; floor arm m > floor((t-1)/10^x) is m*10^x >= t; parser floor branch exact because the threshold is a multiple of 10^floorExponent at or below int32.max); test oracles (LibExactFloat.overflows, reference.rs) are independent big-integer compares; no candidates."
+          "scope": "The differential pow oracle's |a| = 10^k branch (crates/tests/src/differential.rs check_pow_with): k b computed before the past-every-Float guard, which tests lead(k b) >= 12 instead of lead(b) >= 12, so the whole-k-b exponent conversion to isize can no longer panic OutOfBounds (CI flake at a = 1e92233721, b = 99999999990). Each probe ran the fixed oracle. Before = main c554370's tests and proptest seeds on it, cargo test -p rain-math-float-tests less the two new tests (235 tests). After = bbb95fc's whole crate (237 tests), with M05/M06 scored against the deterministic differential::oracle tests (23) because the whole crate timed out at 1800s under them. Mutants: M01 guard on b alone (the defect); M02 guard removed; M03 threshold at 1e19; M04 threshold > 12 (equivalent, proof in audit/known-false-positives.md); M05 k b at one digit; M06 k b as k k; M07 past direction inverted; M08 past admits any result. Main's tests kill M05/M06 deterministically (pow_of_a_power_of_ten_is_exact) and M02/M07 only through the differential_pow fuzz; they miss M01, M03 and M08. The PR's differential_pow_power_of_ten_past_isize and oracle_checks::pow_of_a_power_of_ten_past_isize_is_past kill M01, M02, M03, M07 and M08 deterministically. Adversarial pass: the Solidity reverts with the range error of k b's direction and data (a.c, a.e) at every pinned input, agreeing with the corrected oracle; no library finding."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -378,7 +378,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.sol.codegen",
@@ -512,7 +512,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.metadata",
@@ -638,7 +638,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.45",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           }
         ]
       },
@@ -785,7 +785,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.math.float.deploy",
@@ -839,7 +839,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "raindex.interface",
@@ -867,7 +867,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rainlang.interface",
@@ -912,7 +912,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.4",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.metadata",
@@ -1061,7 +1061,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.3.3",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           }
         ]
       },
@@ -1153,7 +1153,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           },
           {
             "repo": "rain.vats",
@@ -1381,7 +1381,7 @@
           {
             "repo": "rain.math.float",
             "pinned": "0.2.45",
-            "latest": "0.3.6"
+            "latest": "0.3.9"
           }
         ]
       }
@@ -1441,7 +1441,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rain.dia",
@@ -1490,7 +1490,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rain.erc4626.words",
@@ -1588,7 +1588,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rain.flare",
@@ -1630,7 +1630,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.45",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rain.lib.memkv",
@@ -1686,7 +1686,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1763,7 +1763,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rain.pyth",
@@ -1847,7 +1847,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.45",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rain.vats",
@@ -1945,7 +1945,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "raindex",
@@ -2015,7 +2015,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "raindex.governance",
@@ -2029,7 +2029,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "raindex.interface",
@@ -2085,7 +2085,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "rainlang",
@@ -2267,7 +2267,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.3.3",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "st0x.deploy",
@@ -2309,7 +2309,7 @@
         "to": "rain.math.float",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.3.6"
+        "latest": "0.3.9"
       },
       {
         "from": "st0x.oracle",
@@ -2512,9 +2512,9 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 10,
+        "granted": 12,
         "missing": 0,
-        "unknown": 3,
+        "unknown": 1,
         "total": 13,
         "state": "partial",
         "safeKept": []
@@ -3004,7 +3004,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -3041,7 +3041,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -11961,12 +11961,12 @@
       "name": "rain.math.float",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 26,
+      "openAuditIssues": 12,
       "lastMutation": {
-        "timestamp": "2026-10-14T20:36:25Z",
-        "commit": "3921acaacc2375d904a5684b62b6e413d6826b61",
+        "timestamp": "2026-10-15T07:55:00Z",
+        "commit": "c55437099ac618c91722ca2bc381de43cf769f0f",
         "skillVersion": "0.35.0",
-        "scope": "PR #712 (#649, #611): one encoding of the packLossy overflow threshold. NEVER_PAST_EXPONENT, LibDecimalFloat.isPastEveryFloat (uint256 and signed overloads), packLossy's lift path, the div and pow10 NEVER_PAST_EXPONENT gates, pow's carry path (packRoundedSignificant), revertIfPastLargestFloat, both LibParseDecimalFloat call sites and the past-int256 floorExponent branch. Suite per probe: forge test --match-contract 'Pack|Parse|Pow|Div' at 256 fuzz runs, seed 0x712; the Rust differential suite was not in the probe command. Before = main c554370's test tree on the PR source (316 tests), after = the PR's tests (322 tests). 27 mutants: M01/M02 NEVER_PAST_EXPONENT one higher/lower; M03/M04 fast exit strict/true; M05 any-nonzero arm at 66; M06 zero past at high excess; M07/M08 floor arm >= and 2^223+2; M09/M10 product arm > and 2^223+1; M11 excess off by one; M12 signed overload drops abs; M13 packLossy past check off; M14 lift one digit short; M15 div gate +1; M16 pow10 gate at int32.max+17; M16b pow10 gate at int32.max+27; M17 pow carry always falls back; M18/M19 carry excess guard 26/66; M20 revertIfPastLargestFloat negated; M21 parser inline drops abs; M22/M23 parser past checks off; M24 floor branch drops wrap check; M25 floorExponent -78; M26 wrap check <=. Before 24/27 killed (M03 survives: its boundary is only reachable by a direct isPastEveryFloat call, which no caller makes; M16, M19 equivalent). After 25/27 killed: M03 by the PR's testIsPastEveryFloatExactEdges; M02/M24 also by testIsPastEveryFloatExactEdges / testParsePastInt256FloorExponentPastInt256; main's killers include testPackLossyOverflowThresholdEdges, testPackLossyCeilingTruncationBand, testPackLossyLiftFirstEquivalenceExtremes, testParseOverflowThresholdExcesses, testParseOverflowThresholdPointPositions, testParseNearOverflowThreshold, testParseRuleLiteralShapeFuzz, testParseZeroHugeExponent, testDivAtTheOverflowThreshold, testPow10Thresholds, testPow10NearThresholds, testPowCarryShedsTheUnrounded, testPowRoundedAtTheHeadroomBound. Survivors: M16 is inside the pow10 gate band audit/known-false-positives.md already proves equivalent (up to int32.max+26; M16b at int32.max+27 is killed, so the band edge is pinned); M19 is equivalent (any carry guard bound from 27 up, or none: at excess 28+ a 41 digit rounded value and its unrounded source are both past) and is recorded with proof. No tests added. Adversarial pass: SPEC.md's isPastEveryFloat and packLossy claims re-derived (not past implies nothing was shed, so the lift is from the initial pair; floor arm m > floor((t-1)/10^x) is m*10^x >= t; parser floor branch exact because the threshold is a multiple of 10^floorExponent at or below int32.max); test oracles (LibExactFloat.overflows, reference.rs) are independent big-integer compares; no candidates."
+        "scope": "The differential pow oracle's |a| = 10^k branch (crates/tests/src/differential.rs check_pow_with): k b computed before the past-every-Float guard, which tests lead(k b) >= 12 instead of lead(b) >= 12, so the whole-k-b exponent conversion to isize can no longer panic OutOfBounds (CI flake at a = 1e92233721, b = 99999999990). Each probe ran the fixed oracle. Before = main c554370's tests and proptest seeds on it, cargo test -p rain-math-float-tests less the two new tests (235 tests). After = bbb95fc's whole crate (237 tests), with M05/M06 scored against the deterministic differential::oracle tests (23) because the whole crate timed out at 1800s under them. Mutants: M01 guard on b alone (the defect); M02 guard removed; M03 threshold at 1e19; M04 threshold > 12 (equivalent, proof in audit/known-false-positives.md); M05 k b at one digit; M06 k b as k k; M07 past direction inverted; M08 past admits any result. Main's tests kill M05/M06 deterministically (pow_of_a_power_of_ten_is_exact) and M02/M07 only through the differential_pow fuzz; they miss M01, M03 and M08. The PR's differential_pow_power_of_ten_past_isize and oracle_checks::pow_of_a_power_of_ten_past_isize_is_past kill M01, M02, M03, M07 and M08 deterministically. Adversarial pass: the Solidity reverts with the range error of k b's direction and data (a.c, a.e) at every pinned input, agreeing with the corrected oracle; no library finding."
       }
     },
     {
@@ -13531,6 +13531,42 @@
       "daysSinceAudit": 271
     },
     {
+      "name": "rain.math.float",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
+          "path": "audit/protofire/rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
+          "lastCommitIso": "2026-07-15T13:13:20Z",
+          "auditDateIso": "2025-12-01T16:49:39Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "1a3a88ad580be0d8ddd50e6084c18b612f56107f",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2025-12-01T16:49:39Z",
+      "latestTag": "sol-v0.3.9",
+      "latestTagIso": "2026-10-16T09:35:17Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 82,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 0,
+      "sourceLocRemovedSinceAudit": 82,
+      "filesChangedSinceAudit": 13,
+      "commitsSinceAudit": 1429,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 1829,
+      "commentLocRemovedSinceAudit": 522,
+      "codeLocAddedSinceAudit": 1917,
+      "codeLocRemovedSinceAudit": 1450,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
+      "daysSinceAudit": 319
+    },
+    {
       "name": "rain.datacontract",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -13691,42 +13727,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/31e2885ae60df9fb869e3fe65107a1da3ce1f96a...main",
       "daysSinceAudit": 59
-    },
-    {
-      "name": "rain.math.float",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
-          "path": "audit/protofire/rain.math.float.1a3a88ad580be0d8ddd50e6084c18b612f56107f.feb-2026.pdf",
-          "lastCommitIso": "2026-07-15T13:13:20Z",
-          "auditDateIso": "2025-12-01T16:49:39Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "1a3a88ad580be0d8ddd50e6084c18b612f56107f",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "sol-v0.3.6",
-      "latestTagIso": "2026-10-14T21:01:25Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 0,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 0,
-      "sourceLocRemovedSinceAudit": 0,
-      "filesChangedSinceAudit": 13,
-      "commitsSinceAudit": 1335,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 1745,
-      "commentLocRemovedSinceAudit": 509,
-      "codeLocAddedSinceAudit": 1909,
-      "codeLocRemovedSinceAudit": 1441,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
-      "daysSinceAudit": 319
     },
     {
       "name": "raindex",
@@ -14494,7 +14494,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 120,
+      "testFiles": 122,
       "sourcesUnparsed": 0,
       "untested": []
     },
