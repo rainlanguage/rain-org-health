@@ -251,7 +251,7 @@ fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: Rea
                     "namespace": null,
                     "id": null,
                     "writer": null,
-                    "state": "notRecorded",
+                    "state": "unregistered",
                     "appliedAt": null,
                     "executedAt": null,
                     "waitsOn": [],
@@ -661,12 +661,12 @@ mod tests {
     }
 
     #[test]
-    fn a_migration_with_no_id_is_not_recorded_and_never_asked() {
+    fn a_migration_with_no_id_is_unregistered_and_never_asked() {
         let reg = Registry::new(vec![]);
         let doc = render(&fixture().to_string(), &reg);
         for n in ["sevenchain", "tenchain"] {
             let r = row(&doc, n, "script/unrecorded.s.sol");
-            assert_eq!(r["state"], "notRecorded");
+            assert_eq!(r["state"], "unregistered");
             assert_eq!(r["id"], Value::Null);
             assert_eq!(r["namespace"], Value::Null);
             assert_eq!(r["writer"], Value::Null);
@@ -748,7 +748,7 @@ mod tests {
             );
             assert_eq!(
                 row(&doc, n, "script/unrecorded.s.sol")["state"],
-                "notRecorded"
+                "unregistered"
             );
         }
     }

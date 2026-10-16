@@ -6868,7 +6868,7 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
           namespace: null,
           id: null,
           writer: null,
-          state: "notRecorded",
+          state: "unregistered",
         }),
         migRow({ script: "script/pending.s.sol", id: MIG_ID_2 }),
       ],
@@ -6902,8 +6902,8 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   const heads = collect(panel, "tok-h3").map((h) => h.textContent);
   assert(
     heads.join("|") ===
-      "ethereum — 0 applied, 1 not applied, 2 not recorded, 0 unknown|" +
-        "base — 1 applied, 0 not applied, 0 not recorded, 0 unknown",
+      "ethereum — 0 applied, 1 not applied, 1 not recorded, 0 unknown, 1 with no registry record|" +
+        "base — 1 applied, 0 not applied, 0 not recorded, 0 unknown, 0 with no registry record",
     "per-network heads count states off the rows: " + heads.join("|"),
   );
   const rows = migRows(panel);
@@ -6924,10 +6924,12 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
     "executed but unrecorded says when it ran: " + textOf(rows[0]),
   );
   assert(
-    migChips(rows[1]).join() === "not recorded" &&
-      textOf(rows[1]).includes("writes no registry record") &&
+    migChips(rows[1]).join() === "no registry record" &&
+      collect(rows[1], "own-chip-no").length === 1 &&
+      rows[1].className.split(" ").includes("mig-unregistered") &&
+      textOf(rows[1]).includes("error — writes no registry record, so it is in no line") &&
       collect(rows[1], "mig-hash").length === 0,
-    "a migration with no id says it writes no record and shows no hash",
+    "a migration with no registry record is an error, not a dim not-recorded",
   );
   assert(
     migChips(rows[2]).join() === "not applied" &&
@@ -7013,9 +7015,9 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
   const rows = migRows(migPanel(box));
   assert(
     textOf(rows[0]).includes("waits on") &&
-      textOf(rows[0]).includes("nothing — first in its line") &&
+      textOf(rows[0]).includes("nothing — it opens its namespace's line in the registry") &&
       migChips(rows[0]).join() === "not applied",
-    "a genesis prerequisite is first in its line, with no chip of its own",
+    "a genesis prerequisite opens its namespace's line, with no chip of its own",
   );
   const wait = collect(rows[1], "mig-wait");
   assert(
@@ -7054,7 +7056,7 @@ Deno.test("deployments: a migration entry with no script is skipped and the rest
   );
   assert(
     collect(panel, "tok-h3")[0].textContent ===
-      "ethereum — 0 applied, 1 not applied, 0 not recorded, 0 unknown",
+      "ethereum — 0 applied, 1 not applied, 0 not recorded, 0 unknown, 0 with no registry record",
     "heading counts only the rendered rows",
   );
 });
@@ -7083,7 +7085,7 @@ Deno.test("deployments: an unread registry reads unknown and says why, never not
   );
   assert(
     collect(panel, "tok-h3")[0].textContent ===
-      "newchain — 0 applied, 0 not applied, 0 not recorded, 1 unknown",
+      "newchain — 0 applied, 0 not applied, 0 not recorded, 1 unknown, 0 with no registry record",
     "heading counts the unknown",
   );
   assert(

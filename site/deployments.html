@@ -69,6 +69,7 @@
   .mig-wait { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
               color: var(--ink-2); overflow-wrap: anywhere; }
   .own-row.mig-notApplied { background: var(--debt-bg); }
+  .own-row.mig-unregistered { box-shadow: inset 3px 0 0 var(--crit); }
   .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
   .rbac-hist { margin-top: 10px; }
   /* An address on the Role changes tab reads as the deploy repo's name for it,
@@ -2671,6 +2672,7 @@ function renderDeployments(document, $, data, io) {
     applied: ["applied", "yes"],
     notApplied: ["not applied", "roll"],
     notRecorded: ["not recorded", "dim"],
+    unregistered: ["no registry record", "no"],
     unknown: ["unknown", "dim"],
   };
   const renderMigrations = (v) => {
@@ -2692,8 +2694,9 @@ function renderDeployments(document, $, data, io) {
     }
     sub.append(
       ", with its state read from each network's MigrationRegistry applied(writer, namespace, id) at scan time. " +
-        '"Not recorded" means it ran without a registry record (the file gives when) or it writes no record, ' +
-        'so the chain cannot say; "unknown" means the registry read did not answer, never that it has not run.',
+        '"Not recorded" means it ran before its record was written (the file gives when). ' +
+        '"No registry record" is an error: the script writes no record, so it is in no line and its run state ' +
+        'cannot be read or ordered. "Unknown" means the registry read did not answer, never that it has not run.',
     );
     sink.append(sub);
     const chip = (state) => {
@@ -2716,7 +2719,8 @@ function renderDeployments(document, $, data, io) {
           "h3",
           "tok-h3",
           `${network} — ${count("applied")} applied, ${count("notApplied")} not applied, ` +
-            `${count("notRecorded")} not recorded, ${count("unknown")} unknown`,
+            `${count("notRecorded")} not recorded, ${count("unknown")} unknown, ` +
+            `${count("unregistered")} with no registry record`,
         ),
       );
       const where = el("div", "own-groupnote");
@@ -2749,14 +2753,14 @@ function renderDeployments(document, $, data, io) {
         } else if (str(m.id)) {
           ac.append(el("div", "own-note", "the migrations file names no writer on this network"));
         } else {
-          ac.append(el("div", "own-note", "writes no registry record, so its run state is not on chain"));
+          ac.append(el("div", "own-note", "error — writes no registry record, so it is in no line; its script must record one"));
         }
         for (const w of Array.isArray(m.waitsOn) ? m.waitsOn : []) {
           if (!w || typeof w !== "object") continue;
           const line = el("div", "bcn-line");
           line.append(el("span", "bcn-key", "waits on"));
           if (w.state === "genesis") {
-            line.append(el("span", "own-note", "nothing — first in its line"));
+            line.append(el("span", "own-note", "nothing — it opens its namespace's line in the registry"));
           } else {
             line.append(
               str(w.script) ? scriptNode(w.script, "mig-wait") : el("span", "mig-hash", str(w.id) || "an unnamed record"),
