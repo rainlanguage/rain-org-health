@@ -2124,7 +2124,8 @@ function renderDeployments(document, $, data, io) {
   const isHex = (v, digits) => typeof v === "string" && v.length === 2 + digits && /^0x[0-9a-fA-F]+$/.test(v);
   const named = (v) => (typeof v === "string" && v ? v : null);
   // One malformed entry fails the whole file: a pair dropped from it would read as matching.
-  const idealParse = (body) => {
+  // A role the file does not name takes the name the scan read from the deploy repo's sources.
+  const idealParse = (body, names = {}) => {
     if (!body || typeof body !== "object" || Array.isArray(body)) return { unavailable: "it is not a JSON object" };
     if (body.version !== IDEAL_VERSION) {
       return { unavailable: `it is version ${JSON.stringify(body.version)}; this page reads version ${IDEAL_VERSION}` };
@@ -2153,7 +2154,7 @@ function renderDeployments(document, $, data, io) {
           if (!isHex(p.grantee, 40)) return bad(pat, "has no grantee address");
           expected.push({
             role: p.role.toLowerCase(),
-            roleName: named(p.roleName),
+            roleName: named(p.roleName) || named(names[p.role.toLowerCase()]),
             grantee: p.grantee.toLowerCase(),
           });
         }
@@ -2163,7 +2164,7 @@ function renderDeployments(document, $, data, io) {
     }
     return { byNetwork };
   };
-  const idealRead = async (url) => {
+  const idealRead = async (url, names) => {
     let r;
     try {
       r = await io.fetch(url, { cache: "no-store" });
@@ -2177,7 +2178,7 @@ function renderDeployments(document, $, data, io) {
     } catch {
       return { unavailable: "it is not JSON" };
     }
-    return idealParse(body);
+    return idealParse(body, names);
   };
   const pairKey = (contract, role, account) => `${contract}|${role}|${account}`;
   // A declared contract with no role row in the index is unchecked: the index may not cover it.
@@ -2651,7 +2652,7 @@ function renderDeployments(document, $, data, io) {
     }
     showHeld();
     reads.push(
-      idealRead(`https://raw.githubusercontent.com/${r.org}/${r.repo}/main/ideal-roles.json`).then((v) => {
+      idealRead(`https://raw.githubusercontent.com/${r.org}/${r.repo}/main/ideal-roles.json`, names).then((v) => {
         ideal = v;
         showIdeal();
         for (const net of heldNets) draw(net);
