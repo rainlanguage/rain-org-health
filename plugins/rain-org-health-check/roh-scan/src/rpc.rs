@@ -196,6 +196,26 @@ pub fn classify_bool(body: &[u8]) -> CallClass {
     }
 }
 
+const EXECUTION_REVERTED: i64 = 3;
+
+/// Whether a reply is the chain's answer rather than the endpoint refusing one
+/// under HTTP 200 (plan cap, rate limit, batch limit). A revert is an answer. A
+/// batch is refused only when none of its elements answers.
+pub fn is_answer(body: &[u8]) -> bool {
+    match serde_json::from_slice::<serde_json::Value>(body) {
+        Ok(serde_json::Value::Array(items)) => items.iter().any(answers),
+        Ok(item) => answers(&item),
+        Err(_) => false,
+    }
+}
+
+fn answers(item: &serde_json::Value) -> bool {
+    match item.get("error") {
+        Some(e) => e.get("code").and_then(serde_json::Value::as_i64) == Some(EXECUTION_REVERTED),
+        None => item.get("result").is_some(),
+    }
+}
+
 /// The `result` hex from a JSON-RPC reply (`None` on an error / malformed body).
 pub fn result_hex(body: &[u8]) -> Option<String> {
     let v: serde_json::Value = serde_json::from_slice(body).ok()?;
@@ -323,6 +343,39 @@ mod tests {
         assert_eq!(classify_bool(f), CallClass::False);
         assert_eq!(classify_bool(rev), CallClass::Reverted);
         assert_eq!(classify_bool(b"not json"), CallClass::Unknown);
+    }
+
+    /// Bodies captured with curl from the configured endpoints on 2026-10-15.
+    #[test]
+    fn a_refusal_is_not_an_answer() {
+        let one_rpc = br#"{"jsonrpc":"2.0","error":{"code":-32001,"message":"You've reached the usage limit for your current plan. To continue with higher limits and uninterrupted access, please upgrade here: https://www.1rpc.io/#pricing"},"id":null}"#;
+        let drpc_rate = br#"[{"id":0,"jsonrpc":"2.0","error":{"message":"You reached Public endpoint rate limit, please upgrade to paid plan","code":15}},{"id":1,"jsonrpc":"2.0","error":{"message":"You reached Public endpoint rate limit, please upgrade to paid plan","code":15}}]"#;
+        let drpc_batch = br#"[{"id":0,"jsonrpc":"2.0","error":{"message":"Batch of more than 3 requests are not allowed on free plan, to use this feature register paid account at drpc.org","code":31}}]"#;
+        for body in [
+            &one_rpc[..],
+            drpc_rate,
+            drpc_batch,
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":-32000,"message":"execution reverted"}}"#,
+            br#"{"jsonrpc":"2.0","id":1}"#,
+            b"[]",
+            b"not json",
+        ] {
+            assert!(!is_answer(body), "{}", String::from_utf8_lossy(body));
+        }
+    }
+
+    #[test]
+    fn a_result_or_a_revert_is_an_answer() {
+        for body in [
+            &br#"{"jsonrpc":"2.0","result":"0x1","id":1}"#[..],
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":3,"message":"execution reverted"}}"#,
+            br#"{"jsonrpc":"2.0","id":1,"error":{"code":3,"message":"execution reverted: 0x","data":"0x"}}"#,
+            br#"[{"jsonrpc":"2.0","id":0,"result":"0x"},{"jsonrpc":"2.0","id":1,"result":"0x"}]"#,
+            br#"[{"jsonrpc":"2.0","id":0,"error":{"code":3,"message":"execution reverted","data":"0x"}}]"#,
+            br#"[{"id":0,"jsonrpc":"2.0","error":{"message":"rate limit","code":15}},{"jsonrpc":"2.0","id":1,"result":"0xbb"}]"#,
+        ] {
+            assert!(is_answer(body), "{}", String::from_utf8_lossy(body));
+        }
     }
 
     /// The role id is `keccak256(<NAME>)` over the name's UTF-8 bytes — the same
