@@ -6762,12 +6762,12 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
   assert(
-    btns.length === 4,
-    "four sub-tabs: " + btns.map((b) => b.textContent).join(","),
+    btns.length === 5,
+    "five sub-tabs: " + btns.map((b) => b.textContent).join(","),
   );
   assert(
-    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac,held",
-    "tabs in order safe,contracts,rbac,held: " +
+    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac,held,migrations",
+    "tabs in order safe,contracts,rbac,held,migrations: " +
       btns.map((b) => b.dataset.tab).join(","),
   );
   // Exactly one active, and it is the first — a page that opens with none
@@ -6779,7 +6779,7 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   );
 
   const panels = collect(box, "tabpanel");
-  assert(panels.length === 4, "four panels");
+  assert(panels.length === 5, "five panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
   assert(
     !byTab.safe.classList.contains("tab-hidden"),
@@ -6797,6 +6797,375 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
     byTab.held.classList.contains("tab-hidden"),
     "held panel hidden on load",
   );
+  assert(
+    byTab.migrations.classList.contains("tab-hidden"),
+    "migrations panel hidden on load",
+  );
+});
+
+// ---- deployments.html: migrations ----
+
+const MIG_GENESIS =
+  "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f";
+const MIG_NS = "0x" + "aa".repeat(32);
+const MIG_ID_1 = "0x" + "01".repeat(32);
+const MIG_ID_2 = "0x" + "02".repeat(32);
+const MIG_REGISTRY = "0xc89F95eC7e626CFBef37a1F502A69BaF2022F8A8";
+
+// The shape `migrations::build` emits.
+function migRow(over) {
+  return {
+    script: "script/one.s.sol",
+    namespace: MIG_NS,
+    id: MIG_ID_1,
+    writer: ETH_SAFE,
+    state: "notApplied",
+    appliedAt: null,
+    executedAt: null,
+    waitsOn: [],
+    ...over,
+  };
+}
+function migNetwork(over) {
+  return {
+    chainId: 1,
+    network: "ethereum",
+    registry: MIG_REGISTRY,
+    rpcHost: "ethereum-rpc.publicnode.com",
+    unread: 0,
+    migrations: [],
+    ...over,
+  };
+}
+function migData(networks) {
+  return {
+    ...OWNERS,
+    deploymentMigrations: {
+      org: "acme",
+      repo: "deploy",
+      path: "migrations.json",
+      genesis: MIG_GENESIS,
+      networks,
+    },
+  };
+}
+const migPanel = (box) =>
+  collect(box, "tabpanel").find((p) => p.dataset.tab === "migrations");
+const migRows = (panel) => collect(panel, "own-row");
+const migChips = (node) => collect(node, "own-chip").map((c) => c.textContent);
+
+Deno.test("deployments: the Migrations tab lists every migration per network with its state", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      migrations: [
+        migRow({
+          script: "script/history.s.sol",
+          state: "notRecorded",
+          executedAt: 1791056759,
+        }),
+        migRow({
+          script: "script/no-record.s.sol",
+          namespace: null,
+          id: null,
+          writer: null,
+          state: "unregistered",
+        }),
+        migRow({ script: "script/pending.s.sol", id: MIG_ID_2 }),
+      ],
+    }),
+    migNetwork({
+      chainId: 8453,
+      network: "base",
+      registry: MIG_REGISTRY,
+      rpcHost: "mainnet.base.org",
+      migrations: [
+        migRow({
+          script: "script/done.s.sol",
+          writer: BASE_SAFE,
+          state: "applied",
+          appliedAt: 1791457413,
+        }),
+      ],
+    }),
+  ]));
+  const panel = migPanel(box);
+  assert(
+    textOf(panel).includes("Migrations — run or not, per network"),
+    "migrations heading on the migrations tab",
+  );
+  const file = tags(collect(panel, "own-sub")[0], "a");
+  assert(
+    file.length === 1 && file[0].textContent === "acme/deploy's migrations.json" &&
+      file[0].href === "https://github.com/acme/deploy/blob/HEAD/migrations.json",
+    "the source file is named and linked",
+  );
+  const heads = collect(panel, "tok-h3").map((h) => h.textContent);
+  assert(
+    heads.join("|") ===
+      "ethereum — 0 applied, 1 not applied, 1 not recorded, 0 unknown, 1 with no registry record|" +
+        "base — 1 applied, 0 not applied, 0 not recorded, 0 unknown, 0 with no registry record",
+    "per-network heads count states off the rows: " + heads.join("|"),
+  );
+  const rows = migRows(panel);
+  assert(rows.length === 4, "one row per migration per network: " + rows.length);
+  assert(
+    rows.map((r) => collect(r, "own-role")[0].textContent).join(",") ===
+      "history.s.sol,no-record.s.sol,pending.s.sol,done.s.sol",
+    "rows in file order, named by script file",
+  );
+  assert(
+    collect(rows[0], "own-role")[0].href ===
+      "https://github.com/acme/deploy/blob/HEAD/script/history.s.sol",
+    "script links to its source: " + collect(rows[0], "own-role")[0].href,
+  );
+  assert(
+    migChips(rows[0]).join() === "not recorded" &&
+      textOf(rows[0]).includes("ran 2026-10-03 19:45 UTC"),
+    "executed but unrecorded says when it ran: " + textOf(rows[0]),
+  );
+  assert(
+    migChips(rows[1]).join() === "no registry record" &&
+      collect(rows[1], "own-chip-no").length === 1 &&
+      rows[1].className.split(" ").includes("mig-unregistered") &&
+      textOf(rows[1]).includes("error — writes no registry record, so it is in no line") &&
+      collect(rows[1], "mig-hash").length === 0,
+    "a migration with no registry record is an error, not a dim not-recorded",
+  );
+  assert(
+    migChips(rows[2]).join() === "not applied" &&
+      rows[2].className.split(" ").includes("mig-notApplied") &&
+      collect(rows[2], "own-chip-roll").length === 1,
+    "not applied is the rollout amber",
+  );
+  assert(
+    collect(rows[2], "mig-hash").map((h) => h.textContent).join("|") ===
+      `id ${MIG_ID_2}|namespace ${MIG_NS}`,
+    "full id and namespace shown",
+  );
+  assert(
+    migChips(rows[3]).join() === "applied" &&
+      collect(rows[3], "own-chip-yes").length === 1 &&
+      textOf(rows[3]).includes("2026-10-08 11:03 UTC"),
+    "applied carries the registry's time: " + textOf(rows[3]),
+  );
+  const writer = collect(rows[3], "own-addr")[0];
+  assert(
+    writer.textContent === BASE_SAFE &&
+      writer.href === "https://basescan.org/address/" + BASE_SAFE,
+    "writer linked on its own chain's explorer",
+  );
+  const where = collect(panel, "own-groupnote").map(textOf);
+  assert(
+    where[1].includes(MIG_REGISTRY) && where[1].includes("via mainnet.base.org"),
+    "registry and endpoint named per network: " + where[1],
+  );
+});
+
+Deno.test("deployments: a migration names what it waits on and that prerequisite's own state", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      migrations: [
+        migRow({
+          waitsOn: [{
+            writer: ETH_SAFE,
+            namespace: MIG_NS,
+            id: MIG_GENESIS,
+            script: null,
+            state: "genesis",
+            appliedAt: null,
+            executedAt: null,
+          }],
+        }),
+        migRow({
+          script: "script/two.s.sol",
+          id: MIG_ID_2,
+          waitsOn: [
+            {
+              writer: ETH_SAFE,
+              namespace: MIG_NS,
+              id: MIG_ID_1,
+              script: "script/one.s.sol",
+              state: "notApplied",
+              appliedAt: null,
+              executedAt: null,
+            },
+            {
+              writer: ETH_SAFE,
+              namespace: MIG_NS,
+              id: MIG_ID_2,
+              script: null,
+              state: "applied",
+              appliedAt: 1791457413,
+              executedAt: null,
+            },
+            {
+              writer: ETH_SAFE,
+              namespace: MIG_NS,
+              id: MIG_ID_1,
+              script: "script/history.s.sol",
+              state: "notRecorded",
+              appliedAt: null,
+              executedAt: 1791056759,
+            },
+          ],
+        }),
+      ],
+    }),
+  ]));
+  const rows = migRows(migPanel(box));
+  assert(
+    textOf(rows[0]).includes("waits on") &&
+      textOf(rows[0]).includes("nothing — it opens its namespace's line in the registry") &&
+      migChips(rows[0]).join() === "not applied",
+    "a genesis prerequisite opens its namespace's line, with no chip of its own",
+  );
+  const wait = collect(rows[1], "mig-wait");
+  assert(
+    wait.length === 2 && wait[0].textContent === "one.s.sol" &&
+      wait[0].href ===
+        "https://github.com/acme/deploy/blob/HEAD/script/one.s.sol",
+    "a listed prerequisite is named by its script and linked",
+  );
+  assert(
+    migChips(rows[1]).join() === "not applied,applied,not recorded,not applied",
+    "each prerequisite carries its own chip, the row's last: " +
+      migChips(rows[1]).join(),
+  );
+  assert(
+    textOf(rows[1]).includes(MIG_ID_2) &&
+      textOf(rows[1]).includes("2026-10-08 11:03 UTC"),
+    "an unlisted prerequisite is named by its id, with its applied time",
+  );
+  assert(
+    textOf(rows[1]).includes("ran 2026-10-03 19:45 UTC"),
+    "an unrecorded prerequisite says when it ran: " + textOf(rows[1]),
+  );
+});
+
+Deno.test("deployments: a migration entry with no script is skipped and the rest render", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      migrations: [null, migRow({ script: null }), migRow({ script: "" }), migRow()],
+    }),
+  ]));
+  const panel = migPanel(box);
+  const rows = migRows(panel);
+  assert(
+    rows.length === 1 && collect(rows[0], "own-role")[0].textContent === "one.s.sol",
+    "only the entry with a script is a row: " + rows.length,
+  );
+  assert(
+    collect(panel, "tok-h3")[0].textContent ===
+      "ethereum — 0 applied, 1 not applied, 0 not recorded, 0 unknown, 0 with no registry record",
+    "heading counts only the rendered rows",
+  );
+});
+
+Deno.test("deployments: an unread registry reads unknown and says why, never not applied", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      network: "newchain",
+      rpcHost: null,
+      unread: 2,
+      migrations: [migRow({ state: "unknown", writer: null })],
+    }),
+  ]));
+  const panel = migPanel(box);
+  const where = textOf(collect(panel, "own-groupnote")[0]);
+  assert(
+    where.includes("no RPC endpoint for this network") &&
+      where.includes("2 registry reads unanswered"),
+    "no endpoint and the unanswered count are stated: " + where,
+  );
+  const row = migRows(panel)[0];
+  assert(migChips(row).join() === "unknown", "unknown chip");
+  assert(
+    textOf(row).includes("names no writer on this network"),
+    "a recorded migration with no writer here says so",
+  );
+  assert(
+    collect(panel, "tok-h3")[0].textContent ===
+      "newchain — 0 applied, 0 not applied, 0 not recorded, 1 unknown, 0 with no registry record",
+    "heading counts the unknown",
+  );
+  assert(
+    collect(row, "own-addr").length === 0,
+    "no address rendered for a missing writer",
+  );
+});
+
+Deno.test("deployments: unreadable migration data is an honest unavailable and the page survives", () => {
+  const cases = [
+    [
+      { org: "acme", repo: "deploy", path: "migrations.json", unavailable: "migrations.json: not schema version 1" },
+      "Migrations unavailable — migrations.json: not schema version 1.",
+    ],
+    [null, "Migrations unavailable — the scan produced no migration data."],
+    [undefined, "Migrations unavailable — the scan produced no migration data."],
+    [{ networks: [] }, "Migrations unavailable — the scan produced no migration data."],
+  ];
+  for (const [v, want] of cases) {
+    const box = deploymentsBox({ ...OWNERS, deploymentMigrations: v });
+    const panel = migPanel(box);
+    const empty = collect(panel, "mig-empty");
+    assert(
+      empty.length === 1 && empty[0].textContent === want,
+      "unavailable states why: " + (empty[0] && empty[0].textContent),
+    );
+    assert(migRows(panel).length === 0, "no rows when unavailable");
+    assert(
+      collect(box, "tabpanel").find((p) => p.dataset.tab === "rbac") &&
+        textOf(box).includes("Known owners"),
+      "the rest of the page still renders",
+    );
+  }
+  const unread = deploymentsBox({ deploymentMigrations: null });
+  assert(
+    collect(migPanel(unread), "mig-empty").length === 1,
+    "unavailable also renders when the owner constants are unread",
+  );
+});
+
+Deno.test("deployments: an unrecognised migration state is named, not coloured as a known one", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({ migrations: [migRow({ state: "pending" })] }),
+  ]));
+  const row = migRows(migPanel(box))[0];
+  assert(
+    migChips(row).join() === "unrecognised state pending" &&
+      collect(row, "own-chip-dim").length === 1,
+    "unknown token shown as unrecognised: " + migChips(row).join(),
+  );
+});
+
+Deno.test("deployments: migration fields render as text, never markup", () => {
+  const payload = '<img src=x onerror="alert(1)">';
+  const box = deploymentsBox(migData([
+    migNetwork({
+      network: payload,
+      migrations: [migRow({
+        script: `script/${payload}`,
+        waitsOn: [{
+          writer: ETH_SAFE,
+          namespace: MIG_NS,
+          id: payload,
+          script: null,
+          state: "notApplied",
+        }],
+      })],
+    }),
+  ]));
+  const panel = migPanel(box);
+  assert(
+    collect(panel, "own-role")[0].textContent === payload,
+    "script lands as text",
+  );
+  assert(
+    collect(panel, "tok-h3")[0].textContent.startsWith(payload + " — "),
+    "network lands as text",
+  );
+  assert(textOf(panel).includes(payload + "not applied"), "unlisted id lands as text");
+  assert(tags(panel, "img").length === 0, "no element built from the payload");
 });
 
 Deno.test("deployments: clicking a sub-tab moves both the panel and the active mark", () => {

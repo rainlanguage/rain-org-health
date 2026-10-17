@@ -18,6 +18,7 @@ mod commentloc;
 mod consumers;
 mod deployhealth;
 mod graph;
+mod migrations;
 mod mutation;
 mod owners;
 mod protofire;
@@ -2779,6 +2780,19 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             doc
         };
 
+        let deployment_migrations = migrations::build(
+            deploy_org,
+            deploy_repo,
+            &gh_file(deploy_org, deploy_repo, migrations::PATH),
+            &|network| Chain::from_network(network).map(|ch| ch.rpc_host().to_string()),
+            &|net, records| match Chain::from_network(&net.name) {
+                Some(chain) => migrations::read_applied(net, records, &|calls| {
+                    eth_call_batch(rpc_session(chain), calls)
+                }),
+                None => vec![None; records.len()],
+            },
+        );
+
         // Ownership of the governed vaults, which the governance migration
         // moves one `transferOwnership` at a time. Nothing else here reads a
         // vault's `owner()` — only production beacons are owner-checked — so a
@@ -3347,6 +3361,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentGrants": deployment_grants,
             "deploymentVaultOwners": deployment_vault_owners,
             "deploymentRbac": deployment_rbac,
+            "deploymentMigrations": deployment_migrations,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentTokens": deployment_tokens,
