@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-18T05:59:56Z",
+  "generatedAt": "2026-10-18T11:14:09Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2512,11 +2512,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 12,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 1,
         "total": 13,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -3041,7 +3041,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
