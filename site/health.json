@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-19T07:52:07Z",
+  "generatedAt": "2026-10-19T15:41:54Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1182,10 +1182,10 @@
         },
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-10-11T18:41:44Z",
-          "commit": "7c369ae0b322cdd5d4e6315de15fc786d1491604",
+          "timestamp": "2026-10-19T11:05:47Z",
+          "commit": "669ebf7fdaaa613e2b76597f621315b7cac81783",
           "skillVersion": "0.35.0",
-          "scope": "PR #272 (#270), the mechanism-on-DeploySuite redesign: src/lib/LibRainDeployMechanism.sol (N), src/lib/LibRainDeployClone.sol (C), src/abstract/RainDeployCloneSuitesBase.sol (S), src/abstract/RainDeployBroadcast.sol broadcastSuite (B), src/abstract/RainDeployVerifyBase.sol deriveDeployment (V), src/abstract/RainDeployVerifySnapshotBase.sol checkFrozenSnapshotsReleased (R), the clone writer and released-lib emission of src/lib/LibRainDeploySnapshot.sol (P)"
+          "scope": "PR #314 (#312), the changed code only: src/concrete/MigrationRegistry.sol (R: delegate check, approvals, writer-keyed head, prerequisite and record checks, writtenBy, events, V3 readers, key checks) and src/lib/LibMigrationRegistry.sol (L: V3 forwarders, onto, write and approval call builders, code-hash checks)"
         },
         "blockedBy": [
           "rain.factory",
@@ -12411,10 +12411,10 @@
       "org": "rainlanguage",
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-10-11T18:41:44Z",
-        "commit": "7c369ae0b322cdd5d4e6315de15fc786d1491604",
+        "timestamp": "2026-10-19T11:05:47Z",
+        "commit": "669ebf7fdaaa613e2b76597f621315b7cac81783",
         "skillVersion": "0.35.0",
-        "scope": "PR #272 (#270), the mechanism-on-DeploySuite redesign: src/lib/LibRainDeployMechanism.sol (N), src/lib/LibRainDeployClone.sol (C), src/abstract/RainDeployCloneSuitesBase.sol (S), src/abstract/RainDeployBroadcast.sol broadcastSuite (B), src/abstract/RainDeployVerifyBase.sol deriveDeployment (V), src/abstract/RainDeployVerifySnapshotBase.sol checkFrozenSnapshotsReleased (R), the clone writer and released-lib emission of src/lib/LibRainDeploySnapshot.sol (P)"
+        "scope": "PR #314 (#312), the changed code only: src/concrete/MigrationRegistry.sol (R: delegate check, approvals, writer-keyed head, prerequisite and record checks, writtenBy, events, V3 readers, key checks) and src/lib/LibMigrationRegistry.sol (L: V3 forwarders, onto, write and approval call builders, code-hash checks)"
       },
       "lastAudit": {
         "auditedAt": "2026-08-15T11:41:01Z",
@@ -13220,16 +13220,16 @@
       "latestTag": "sol-v0.1.18",
       "latestTagIso": "2026-10-13T22:13:54Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 8472,
+      "sourceLocChangedSinceAudit": 9396,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 8405,
+      "sourceLocAddedSinceAudit": 9329,
       "sourceLocRemovedSinceAudit": 67,
-      "filesChangedSinceAudit": 73,
-      "commitsSinceAudit": 763,
+      "filesChangedSinceAudit": 74,
+      "commitsSinceAudit": 795,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 6218,
+      "commentLocAddedSinceAudit": 6954,
       "commentLocRemovedSinceAudit": 11,
-      "codeLocAddedSinceAudit": 4799,
+      "codeLocAddedSinceAudit": 4945,
       "codeLocRemovedSinceAudit": 42,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/1af8ca2a981c2f67844f343e224f4c7b1969de1c...main",
@@ -14342,8 +14342,8 @@
       "name": "rain.deploy",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 8,
-      "testFiles": 146,
+      "externalFunctions": 12,
+      "testFiles": 148,
       "sourcesUnparsed": 1,
       "untested": []
     },
