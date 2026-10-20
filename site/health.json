@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T10:12:45Z",
+  "generatedAt": "2026-10-20T11:45:05Z",
   "auditGraph": {
     "nodes": [
       {
@@ -1156,10 +1156,10 @@
         },
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-10-19T11:05:47Z",
-          "commit": "669ebf7fdaaa613e2b76597f621315b7cac81783",
+          "timestamp": "2026-10-20T08:12:16Z",
+          "commit": "e346fc851613ca3d1910340b4f63098c5bcdd8d1",
           "skillVersion": "0.35.0",
-          "scope": "PR #314 (#312), the changed code only: src/concrete/MigrationRegistry.sol (R: delegate check, approvals, writer-keyed head, prerequisite and record checks, writtenBy, events, V3 readers, key checks) and src/lib/LibMigrationRegistry.sol (L: V3 forwarders, onto, write and approval call builders, code-hash checks)"
+          "scope": "PR #315 (#313) round 12, marvin review on b0d4f53: the empty-roster NoNetworks guard in checkDeployedOnNetworks in src/abstract/RainDeployVerifyChain.sol (E01-E05, offline), and the two fork-only register survivors (F23, F29, with RPC)"
         },
         "blockedBy": [
           "rain.factory"
@@ -1225,7 +1225,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 1,
+        "openAuditIssues": 0,
         "lastMutation": {
           "timestamp": "2026-08-19T12:25:49Z",
           "commit": "67c4893d7d629a525f7d97c5b0751e5eb1181c2e",
@@ -2587,7 +2587,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2697,7 +2697,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": false
               },
               {
@@ -2977,7 +2977,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -10582,12 +10582,12 @@
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
           "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
           "ownerLabel": "timelock",
-          "implementation": null,
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -11192,10 +11192,10 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 122,
+  "totalRepos": 123,
   "reposWithFindings": 41,
   "reposWholeRepoAudited": 12,
-  "reposNeverAudited": 110,
+  "reposNeverAudited": 111,
   "reposExternallyAudited": 26,
   "reposNeverExternallyAudited": 22,
   "summary": {
@@ -12301,6 +12301,13 @@
       "lastMutation": null
     },
     {
+      "name": "st0x.watchtower",
+      "org": "ST0x-Technology",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
       "name": "sushiswap-router",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -12384,10 +12391,10 @@
       "org": "rainlanguage",
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-10-19T11:05:47Z",
-        "commit": "669ebf7fdaaa613e2b76597f621315b7cac81783",
+        "timestamp": "2026-10-20T08:12:16Z",
+        "commit": "e346fc851613ca3d1910340b4f63098c5bcdd8d1",
         "skillVersion": "0.35.0",
-        "scope": "PR #314 (#312), the changed code only: src/concrete/MigrationRegistry.sol (R: delegate check, approvals, writer-keyed head, prerequisite and record checks, writtenBy, events, V3 readers, key checks) and src/lib/LibMigrationRegistry.sol (L: V3 forwarders, onto, write and approval call builders, code-hash checks)"
+        "scope": "PR #315 (#313) round 12, marvin review on b0d4f53: the empty-roster NoNetworks guard in checkDeployedOnNetworks in src/abstract/RainDeployVerifyChain.sol (E01-E05, offline), and the two fork-only register survivors (F23, F29, with RPC)"
       },
       "lastAudit": {
         "auditedAt": "2026-08-15T11:41:01Z",
@@ -12433,7 +12440,7 @@
     {
       "name": "rain.datacontract",
       "org": "rainlanguage",
-      "openAuditIssues": 1,
+      "openAuditIssues": 0,
       "lastMutation": {
         "timestamp": "2026-08-19T12:25:49Z",
         "commit": "67c4893d7d629a525f7d97c5b0751e5eb1181c2e",
@@ -13199,18 +13206,18 @@
       "latestTag": "sol-v0.1.18",
       "latestTagIso": "2026-10-13T22:13:54Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 7227,
+      "sourceLocChangedSinceAudit": 8314,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 5990,
-      "sourceLocRemovedSinceAudit": 1237,
-      "filesChangedSinceAudit": 49,
-      "commitsSinceAudit": 178,
+      "sourceLocAddedSinceAudit": 6856,
+      "sourceLocRemovedSinceAudit": 1458,
+      "filesChangedSinceAudit": 58,
+      "commitsSinceAudit": 226,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 2768,
-      "commentLocRemovedSinceAudit": 893,
-      "codeLocAddedSinceAudit": 2786,
-      "codeLocRemovedSinceAudit": 300,
-      "driftFullyClassified": true,
+      "commentLocAddedSinceAudit": 3228,
+      "commentLocRemovedSinceAudit": 1006,
+      "codeLocAddedSinceAudit": 3152,
+      "codeLocRemovedSinceAudit": 402,
+      "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
       "daysSinceAudit": 13
     },
@@ -13912,7 +13919,7 @@
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 0,
       "filesChangedSinceAudit": 0,
-      "commitsSinceAudit": 16,
+      "commitsSinceAudit": 18,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
@@ -14334,7 +14341,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 12,
-      "testFiles": 148,
+      "testFiles": 160,
       "sourcesUnparsed": 1,
       "untested": []
     },
