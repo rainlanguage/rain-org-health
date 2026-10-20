@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-20T11:45:05Z",
+  "generatedAt": "2026-10-20T17:14:14Z",
   "auditGraph": {
     "nodes": [
       {
@@ -43,7 +43,6 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.float",
-          "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rainlang",
@@ -78,7 +77,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.6",
-            "latest": "0.2.12"
+            "latest": "0.2.13"
           },
           {
             "repo": "rainlang.interface",
@@ -115,7 +114,6 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.float",
-          "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rainlang",
@@ -140,7 +138,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.6",
-            "latest": "0.2.12"
+            "latest": "0.2.13"
           },
           {
             "repo": "rainlang.interface",
@@ -238,7 +236,6 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.float",
-          "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rainlang",
@@ -268,7 +265,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.6",
-            "latest": "0.2.12"
+            "latest": "0.2.13"
           },
           {
             "repo": "rainlang.interface",
@@ -397,7 +394,6 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.float",
-          "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rainlang",
@@ -417,7 +413,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.6",
-            "latest": "0.2.12"
+            "latest": "0.2.13"
           },
           {
             "repo": "rainlang.interface",
@@ -487,7 +483,6 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.float",
-          "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rainlang",
@@ -517,7 +512,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.6",
-            "latest": "0.2.12"
+            "latest": "0.2.13"
           },
           {
             "repo": "rainlang.interface",
@@ -648,7 +643,6 @@
           "rain.flare",
           "rain.math.fixedpoint",
           "rain.math.float",
-          "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rain.vats",
@@ -685,19 +679,9 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.deploy",
-            "pinned": "0.1.7",
-            "latest": "0.1.18"
-          },
-          {
             "repo": "rain.factory",
             "pinned": "0.1.1",
             "latest": "0.1.30"
-          },
-          {
-            "repo": "rain.sol.codegen",
-            "pinned": "0.1.37",
-            "latest": "0.1.39"
           },
           {
             "repo": "rainlang.interface",
@@ -794,7 +778,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.6",
-            "latest": "0.2.12"
+            "latest": "0.2.13"
           },
           {
             "repo": "rainlang.interface",
@@ -873,53 +857,11 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.float",
-          "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.11",
-            "latest": "0.1.18"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.0",
-            "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.2.4",
-            "latest": "0.3.10"
-          },
-          {
-            "repo": "rain.metadata",
-            "pinned": "0.1.7",
-            "latest": "0.1.43"
-          },
-          {
-            "repo": "rain.sol.codegen",
-            "pinned": "0.1.37",
-            "latest": "0.1.39"
-          },
-          {
-            "repo": "rain.string",
-            "pinned": "0.2.0",
-            "latest": "0.3.9"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.1",
-            "latest": "0.1.4"
-          },
-          {
-            "repo": "rainlang.interface",
-            "pinned": "0.2.9",
-            "latest": "0.2.13"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rainlang.deploy",
@@ -971,7 +913,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.6",
-            "latest": "0.2.12"
+            "latest": "0.2.13"
           },
           {
             "repo": "rainlang.interface",
@@ -1154,7 +1096,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 0,
+        "openAuditIssues": 1,
         "lastMutation": {
           "timestamp": "2026-10-20T08:12:16Z",
           "commit": "e346fc851613ca3d1910340b4f63098c5bcdd8d1",
@@ -1442,7 +1384,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.6",
-        "latest": "0.2.12"
+        "latest": "0.2.13"
       },
       {
         "from": "rain.dia",
@@ -1484,7 +1426,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.6",
-        "latest": "0.2.12"
+        "latest": "0.2.13"
       },
       {
         "from": "rain.erc4626.words",
@@ -1582,7 +1524,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.6",
-        "latest": "0.2.12"
+        "latest": "0.2.13"
       },
       {
         "from": "rain.flare",
@@ -1694,7 +1636,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.6",
-        "latest": "0.2.12"
+        "latest": "0.2.13"
       },
       {
         "from": "rain.merkle",
@@ -1757,7 +1699,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.6",
-        "latest": "0.2.12"
+        "latest": "0.2.13"
       },
       {
         "from": "rain.pyth",
@@ -1860,8 +1802,8 @@
       {
         "from": "rain.verify",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.7",
+        "stale": false,
+        "pinned": "0.1.18",
         "latest": "0.1.18"
       },
       {
@@ -1874,8 +1816,8 @@
       {
         "from": "rain.verify",
         "to": "rain.sol.codegen",
-        "stale": true,
-        "pinned": "0.1.37",
+        "stale": false,
+        "pinned": "0.1.39",
         "latest": "0.1.39"
       },
       {
@@ -1974,7 +1916,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.6",
-        "latest": "0.2.12"
+        "latest": "0.2.13"
       },
       {
         "from": "raindex",
@@ -2014,8 +1956,8 @@
       {
         "from": "rainlang",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.11",
+        "stale": false,
+        "pinned": "0.1.18",
         "latest": "0.1.18"
       },
       {
@@ -2028,8 +1970,8 @@
       {
         "from": "rainlang",
         "to": "rain.intorastring",
-        "stale": true,
-        "pinned": "0.1.0",
+        "stale": false,
+        "pinned": "0.1.4",
         "latest": "0.1.4"
       },
       {
@@ -2056,29 +1998,22 @@
       {
         "from": "rainlang",
         "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.2.4",
+        "stale": false,
+        "pinned": "0.3.10",
         "latest": "0.3.10"
       },
       {
         "from": "rainlang",
-        "to": "rain.math.float.deploy",
-        "stale": false,
-        "pinned": "0.1.3",
-        "latest": "0.1.3"
-      },
-      {
-        "from": "rainlang",
         "to": "rain.metadata",
-        "stale": true,
-        "pinned": "0.1.7",
+        "stale": false,
+        "pinned": "0.1.43",
         "latest": "0.1.43"
       },
       {
         "from": "rainlang",
         "to": "rain.sol.codegen",
-        "stale": true,
-        "pinned": "0.1.37",
+        "stale": false,
+        "pinned": "0.1.39",
         "latest": "0.1.39"
       },
       {
@@ -2091,22 +2026,22 @@
       {
         "from": "rainlang",
         "to": "rain.string",
-        "stale": true,
-        "pinned": "0.2.0",
+        "stale": false,
+        "pinned": "0.3.9",
         "latest": "0.3.9"
       },
       {
         "from": "rainlang",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
-        "pinned": "0.1.1",
+        "stale": false,
+        "pinned": "0.1.4",
         "latest": "0.1.4"
       },
       {
         "from": "rainlang",
         "to": "rainlang.interface",
-        "stale": true,
-        "pinned": "0.2.9",
+        "stale": false,
+        "pinned": "0.2.13",
         "latest": "0.2.13"
       },
       {
@@ -2156,7 +2091,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.6",
-        "latest": "0.2.12"
+        "latest": "0.2.13"
       },
       {
         "from": "rainlang.deploy",
@@ -2485,11 +2420,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 12,
+        "granted": 13,
         "missing": 0,
-        "unknown": 1,
+        "unknown": 0,
         "total": 13,
-        "state": "partial",
+        "state": "live",
         "safeKept": []
       },
       {
@@ -2587,7 +2522,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -2735,7 +2670,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2772,7 +2707,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2977,7 +2912,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -10582,12 +10517,12 @@
           "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
           "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
           "ownerLabel": "timelock",
-          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
+          "implementation": null,
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": false,
-          "status": "behind"
+          "atTarget": null,
+          "status": "unknown"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -12389,7 +12324,7 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 0,
+      "openAuditIssues": 1,
       "lastMutation": {
         "timestamp": "2026-10-20T08:12:16Z",
         "commit": "e346fc851613ca3d1910340b4f63098c5bcdd8d1",
@@ -13677,15 +13612,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-03-08T19:12:56Z",
-      "latestTag": "sol-v0.2.12",
-      "latestTagIso": "2026-10-03T12:15:21Z",
+      "latestTag": "sol-v0.2.13",
+      "latestTagIso": "2026-10-20T16:54:10Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 137,
-      "commitsSinceAudit": 309,
+      "commitsSinceAudit": 317,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
