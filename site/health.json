@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T15:21:15Z",
+  "generatedAt": "2026-10-21T18:15:44Z",
   "auditGraph": {
     "nodes": [
       {
@@ -168,7 +168,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.0",
-            "latest": "0.2.1"
+            "latest": "0.2.3"
           }
         ]
       },
@@ -479,7 +479,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.0",
-            "latest": "0.2.1"
+            "latest": "0.2.3"
           }
         ]
       },
@@ -539,7 +539,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.1",
-            "latest": "0.2.1"
+            "latest": "0.2.3"
           },
           {
             "repo": "rainlang.interface",
@@ -740,7 +740,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.1.30",
-            "latest": "0.2.1"
+            "latest": "0.2.3"
           },
           {
             "repo": "rain.factory.deploy",
@@ -835,8 +835,8 @@
         "staleDeps": [
           {
             "repo": "rain.factory",
-            "pinned": "0.1.1",
-            "latest": "0.2.1"
+            "pinned": "0.2.0",
+            "latest": "0.2.3"
           },
           {
             "repo": "rain.math.float",
@@ -845,13 +845,8 @@
           },
           {
             "repo": "rain.vats",
-            "pinned": "0.1.5",
+            "pinned": "0.2.5",
             "latest": "0.2.6"
-          },
-          {
-            "repo": "st0x.deploy",
-            "pinned": "0.1.1",
-            "latest": "0.1.29"
           }
         ]
       },
@@ -870,10 +865,10 @@
         },
         "openAuditIssues": 2,
         "lastMutation": {
-          "timestamp": "2026-10-21T02:18:54Z",
-          "commit": "72a4f335acaa3e39a899fe6ca7f9a6a8f39168e5",
+          "timestamp": "2026-10-21T15:39:59Z",
+          "commit": "5c5891ce7b74022be377619e96849242dd6f3fb1",
           "skillVersion": "0.35.0",
-          "scope": "pr:323, the two survivors of the previous entry (G03 deployStep UnknownDeployMechanism revert, G05 mechanismName UnknownDeployMechanism revert) and the per-member tables that replace both if-chains (G06-G17)"
+          "scope": "UnverifiableSource unindexed per the ruling that rain events index nothing: the event declaration (src/lib/LibRainDeployMechanism.sol) and its emit in LibRainDeployMechanism.deployAndBroadcast"
         },
         "blockedBy": [
           "rain.factory"
@@ -882,7 +877,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.0",
-            "latest": "0.2.1"
+            "latest": "0.2.3"
           }
         ]
       },
@@ -1037,12 +1032,12 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 2,
+        "openAuditIssues": 1,
         "lastMutation": {
-          "timestamp": "2026-10-21T07:59:51Z",
-          "commit": "14479a1ab20d6d06eb59ea3f881326e332692108",
+          "timestamp": "2026-10-21T15:25:54Z",
+          "commit": "40a403369a849237ff36d8009da74bda757972b5",
           "skillVersion": "0.34.0",
-          "scope": "PR #271 after the NewBeaconProxy event, the revert of the Marvin-only restructures and the merge of LibICloneableFactoryV4 into LibICloneableFactoryV5: the merged library, the V5 interface constants, src/generated/BeaconProxy.sol and script/Build.sol. Run offline. D01 was re-probed against plain forge test because the regeneration harness overwrites a mutated generated file; B26 was split into one mutant per copy of the bubble line."
+          "scope": "Issue #268 PR: EIP1167_RUNTIME_CODE_PREFIX, cloneRuntimeCode and cloneRuntimeCodeHash in LibICloneableFactoryV5, new in the scanned commit together with their tests. The functions had no callers before it, so the pre-existing suite could kill none of them by construction."
         },
         "blockedBy": [],
         "staleDeps": []
@@ -1086,7 +1081,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.3"
       },
       {
         "from": "rain.deploy",
@@ -1261,7 +1256,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.3"
       },
       {
         "from": "rain.flare",
@@ -1513,7 +1508,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.0",
-        "latest": "0.2.1"
+        "latest": "0.2.3"
       },
       {
         "from": "rain.vats",
@@ -1576,7 +1571,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.2.1"
+        "latest": "0.2.3"
       },
       {
         "from": "rain.verify",
@@ -1947,7 +1942,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.1.30",
-        "latest": "0.2.1"
+        "latest": "0.2.3"
       },
       {
         "from": "st0x.deploy",
@@ -1995,8 +1990,8 @@
         "from": "st0x.oracle",
         "to": "rain.factory",
         "stale": true,
-        "pinned": "0.1.1",
-        "latest": "0.2.1"
+        "pinned": "0.2.0",
+        "latest": "0.2.3"
       },
       {
         "from": "st0x.oracle",
@@ -2009,14 +2004,14 @@
         "from": "st0x.oracle",
         "to": "rain.vats",
         "stale": true,
-        "pinned": "0.1.5",
+        "pinned": "0.2.5",
         "latest": "0.2.6"
       },
       {
         "from": "st0x.oracle",
         "to": "st0x.deploy",
-        "stale": true,
-        "pinned": "0.1.1",
+        "stale": false,
+        "pinned": "0.1.29",
         "latest": "0.1.29"
       }
     ]
@@ -2206,11 +2201,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 11,
+        "granted": 13,
         "missing": 0,
-        "unknown": 2,
+        "unknown": 0,
         "total": 13,
-        "state": "partial",
+        "state": "live",
         "safeKept": []
       },
       {
@@ -2610,7 +2605,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -2698,7 +2693,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -12105,10 +12100,10 @@
       "org": "rainlanguage",
       "openAuditIssues": 2,
       "lastMutation": {
-        "timestamp": "2026-10-21T02:18:54Z",
-        "commit": "72a4f335acaa3e39a899fe6ca7f9a6a8f39168e5",
+        "timestamp": "2026-10-21T15:39:59Z",
+        "commit": "5c5891ce7b74022be377619e96849242dd6f3fb1",
         "skillVersion": "0.35.0",
-        "scope": "pr:323, the two survivors of the previous entry (G03 deployStep UnknownDeployMechanism revert, G05 mechanismName UnknownDeployMechanism revert) and the per-member tables that replace both if-chains (G06-G17)"
+        "scope": "UnverifiableSource unindexed per the ruling that rain events index nothing: the event declaration (src/lib/LibRainDeployMechanism.sol) and its emit in LibRainDeployMechanism.deployAndBroadcast"
       },
       "lastAudit": {
         "auditedAt": "2026-08-15T11:41:01Z",
@@ -12222,12 +12217,12 @@
     {
       "name": "rain.factory",
       "org": "rainlanguage",
-      "openAuditIssues": 2,
+      "openAuditIssues": 1,
       "lastMutation": {
-        "timestamp": "2026-10-21T07:59:51Z",
-        "commit": "14479a1ab20d6d06eb59ea3f881326e332692108",
+        "timestamp": "2026-10-21T15:25:54Z",
+        "commit": "40a403369a849237ff36d8009da74bda757972b5",
         "skillVersion": "0.34.0",
-        "scope": "PR #271 after the NewBeaconProxy event, the revert of the Marvin-only restructures and the merge of LibICloneableFactoryV4 into LibICloneableFactoryV5: the merged library, the V5 interface constants, src/generated/BeaconProxy.sol and script/Build.sol. Run offline. D01 was re-probed against plain forge test because the regeneration harness overwrites a mutated generated file; B26 was split into one mutant per copy of the bubble line."
+        "scope": "Issue #268 PR: EIP1167_RUNTIME_CODE_PREFIX, cloneRuntimeCode and cloneRuntimeCodeHash in LibICloneableFactoryV5, new in the scanned commit together with their tests. The functions had no callers before it, so the pre-existing suite could kill none of them by construction."
       },
       "lastAudit": {
         "auditedAt": "2026-09-20T04:41:45Z",
@@ -12925,7 +12920,7 @@
       "sourceLocAddedSinceAudit": 7824,
       "sourceLocRemovedSinceAudit": 1487,
       "filesChangedSinceAudit": 61,
-      "commitsSinceAudit": 445,
+      "commitsSinceAudit": 450,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 3967,
       "commentLocRemovedSinceAudit": 1029,
@@ -13013,19 +13008,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.2.1",
-      "latestTagIso": "2026-10-21T10:33:13Z",
+      "latestTag": "sol-v0.2.3",
+      "latestTagIso": "2026-10-21T18:02:24Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 819,
+      "sourceLocChangedSinceAudit": 837,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 447,
+      "sourceLocAddedSinceAudit": 465,
       "sourceLocRemovedSinceAudit": 372,
       "filesChangedSinceAudit": 16,
-      "commitsSinceAudit": 239,
+      "commitsSinceAudit": 253,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 157,
+      "commentLocAddedSinceAudit": 165,
       "commentLocRemovedSinceAudit": 145,
-      "codeLocAddedSinceAudit": 244,
+      "codeLocAddedSinceAudit": 251,
       "codeLocRemovedSinceAudit": 181,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
@@ -13355,15 +13350,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "npm-raindex-v0.0.1-alpha.254-uc-v0.0.1-alpha.257",
-      "latestTagIso": "2026-10-08T12:01:11Z",
+      "latestTag": "npm-raindex-v0.0.1-alpha.255-uc-v0.0.1-alpha.258",
+      "latestTagIso": "2026-10-21T18:14:31Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 55,
-      "commitsSinceAudit": 253,
+      "commitsSinceAudit": 255,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -14109,7 +14104,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 25,
+      "testFiles": 26,
       "sourcesUnparsed": 0,
       "untested": []
     },
