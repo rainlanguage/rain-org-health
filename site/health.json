@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-21T20:14:06Z",
+  "generatedAt": "2026-10-21T23:25:35Z",
   "auditGraph": {
     "nodes": [
       {
@@ -867,7 +867,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 2,
+        "openAuditIssues": 3,
         "lastMutation": {
           "timestamp": "2026-10-21T19:47:50Z",
           "commit": "b076b591532ea21ebf994d6450d3e78ec7287265",
@@ -12096,7 +12096,7 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 2,
+      "openAuditIssues": 3,
       "lastMutation": {
         "timestamp": "2026-10-21T19:47:50Z",
         "commit": "b076b591532ea21ebf994d6450d3e78ec7287265",
@@ -12524,7 +12524,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 412,
+      "fullSourceLoc": 458,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -14228,7 +14228,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 1,
-      "testFiles": 10,
+      "testFiles": 11,
       "sourcesUnparsed": 0,
       "untested": []
     },
