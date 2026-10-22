@@ -10272,6 +10272,11 @@ Deno.test("deployments: expired certification is a warning with its own pill", (
   assert(expired.length === 1, "one expired pill");
   assert(expired[0].textContent === "cert expired", "expired pill text");
   assert(collect(box, "own-cert-current").length === 1, "one current pill");
+  const folded = collect(box, "vault-clean").map(textOf).join("|");
+  assert(
+    !folded.includes("0xaaa") && folded.includes("0xbbb"),
+    "an expired vault on the timelock is not folded as clean, got: " + folded,
+  );
 });
 
 Deno.test("deployments: a failed read is an error banner naming which read", () => {
