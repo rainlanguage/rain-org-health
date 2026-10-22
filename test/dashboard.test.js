@@ -10958,11 +10958,19 @@ function fakeSubgraph(over = {}) {
       contracts: [],
       timelockOperations: [],
       timelockCalls: [],
+      // Read only when the registry probe finds the registry entities.
+      configBindings: [],
+      migrationLines: [],
+      migrationRecords: [],
+      registryDelegates: [],
     },
     // The schema probe's answer: `t: null` is a subgraph version without
     // `TimelockOperation`, which is what the prod tag serves until it moves.
     // `null` here is a failed fetch.
     schema: { data: { t: null } },
+    // The registry probe's answer, the same way: every type null is a version
+    // without the registry entities.
+    regSchema: { data: { t0: null, t1: null, t2: null, t3: null } },
     // entity name -> a raw response body to answer with instead of rows.
     raw: {},
     status: 200,
@@ -11008,20 +11016,34 @@ function fakeSubgraph(over = {}) {
           : reply(f.meta);
       }
       if (q.includes("__type")) {
-        return f.schema === null
+        const s = q.includes("ConfigBinding") ? f.regSchema : f.schema;
+        return s === null
           ? Promise.reject(new TypeError("Failed to fetch"))
-          : reply(f.schema);
+          : reply(s);
       }
       const entity = /page: (\w+)\(/.exec(q)[1];
       if (entity in f.raw) return reply(f.raw[entity]);
       const cursor = /id_gt: "([^"]*)"/.exec(q)[1];
       const first = Number(/first: (\d+)/.exec(q)[1]);
+      // Equality on a string field, or on an entity reference by its id, as
+      // graph-node filters `where: {field: "value"}`.
+      const where = /where: \{([^}]*)\}/.exec(q)[1];
+      const eqs = [...where.matchAll(/(\w+): (?:"([^"]*)"|(true|false))/g)]
+        .filter((m) => m[1] !== "id_gt" && m[1] !== "held")
+        .map((m) => [m[1], m[2] !== undefined ? m[2] : m[3] === "true"]);
+      const eqMatch = (field, want) => {
+        const got = field && typeof field === "object" ? field.id : field;
+        return typeof want === "boolean"
+          ? got === want
+          : typeof got === "string" && got.toLowerCase() === want.toLowerCase();
+      };
       if (!(entity in f.rows)) {
         throw new Error("fake subgraph: unknown entity " + entity);
       }
       const page = f.rows[entity]
         .filter((r) => r.id > cursor)
         .filter((r) => !q.includes("held: true") || r.held !== false)
+        .filter((r) => eqs.every(([k, v]) => eqMatch(r[k], v)))
         .sort((a, b) => (a.id < b.id ? -1 : 1))
         .slice(0, first);
       return reply({ data: { page } });
@@ -11037,7 +11059,7 @@ async function rbacPanelLive(f, data = rbacData([rbacNet()])) {
 }
 // The network banners: the timelock section's own banners are not one.
 const rbacBanners = (p) =>
-  collect(p, "own-verify").filter((b) => !/\btl-/.test(b.className));
+  collect(p, "own-verify").filter((b) => !/\b(tl|reg)-/.test(b.className));
 
 Deno.test("deployments: role changes get their own tab beside the untouched grants view", async () => {
   const f = fakeSubgraph();
@@ -13329,4 +13351,535 @@ Deno.test("deployments: a predecessor still pending before the delay ends keeps 
   assert(w.startsWith("ready in 1d 12h"), w);
   assert(w.includes("delay ends") && !w.includes("executable at"), w);
   assert(w.includes("is not in the index"), w);
+});
+
+// ---- deployments.html: the root authority's registries ----
+
+// A leaf element's own text: `textOf` reads only children.
+const leaf = (n) => n.textContent;
+
+const REG_ROOT = "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c";
+// `cast keccak` of each label.
+const REG_NS =
+  "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4"; // st0x.deploy
+const REG_GENESIS =
+  "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"; // rain.migration-registry.head.genesis
+const REG_US =
+  "0xb046f6b844b680f0dcfc7a139f126e7e13d58023f8d26c15e3229eb4fff8499f"; // st0x.rbac.us.v1
+const REG_EU =
+  "0x560e679773d4bf1a3dee3d913c31185111a3bcc57b6d93366936fc3526985ad5"; // st0x.rbac.eu.v1
+const REG_SAFE = "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329";
+const REG_STRANGER = "0x" + "5f".repeat(20);
+const REG_OTHER = "0x" + "a9".repeat(20);
+const REG_CONFIG = "0xf726114632ef8529734d64a9d028d31f07e91f09";
+const REG_MIGRATION = "0x4b2ca6f3629cddc0eac884443c5da8ba02cd9a1b";
+const REG_SCHEMA = {
+  data: {
+    t0: { name: "ConfigBinding" },
+    t1: { name: "MigrationLine" },
+    t2: { name: "MigrationRecord" },
+    t3: { name: "RegistryDelegate" },
+  },
+};
+const regWord = (n) => "0x" + n.repeat(64 / n.length);
+const REG_M = [regWord("m1"), regWord("m2"), regWord("m3")];
+const REG_LINE = REG_MIGRATION + REG_ROOT.slice(2) + REG_NS.slice(2);
+const regBinding = (id, authority, name, value, ts, over = {}) => ({
+  id,
+  authority,
+  registry: { id: REG_CONFIG },
+  name,
+  value,
+  sender: REG_SAFE,
+  boundAtBlock: "880",
+  boundAtTimestamp: String(ts),
+  registerCount: 1,
+  ...over,
+});
+const regRecord = (id, line, index, migration, appliedOnto, over = {}) => ({
+  id,
+  line: { id: line },
+  index,
+  migration,
+  appliedOnto,
+  appliedAt: String(RBAC_TS - 1000 + index),
+  sender: RBAC_TL,
+  blockNumber: String(850 + index),
+  blockTimestamp: String(RBAC_TS - 1000 + index),
+  transactionHash: "0xr" + index,
+  logIndex: "0",
+  ...over,
+});
+const regDelegate = (id, account, kind, scope, delegate, approved = true) => ({
+  id,
+  account,
+  approved,
+  registry: {
+    id: kind === "CONFIG_REGISTRY" ? REG_CONFIG : REG_MIGRATION,
+    kind,
+  },
+  scope,
+  delegate,
+  approvedAtBlock: "870",
+  approvedAtTimestamp: String(RBAC_TS - 500),
+});
+
+// The root has bound two named configs and one unnamed one, recorded three
+// migrations in order, and approved the Safe, the timelock and a stranger.
+// Rows under another authority / writer / namespace, and a revoked approval,
+// sit beside them and must not show.
+function regFake(over = {}) {
+  const f = fakeSubgraph({ regSchema: REG_SCHEMA, ...over });
+  f.rows.contracts = [
+    { id: REG_SAFE, kind: "TOKEN_OWNER_SAFE", owner: null },
+    { id: RBAC_TL, kind: "GOVERNANCE_TIMELOCK", owner: null },
+    { id: RBAC_AUTH, kind: "AUTHORIZER", owner: null },
+  ];
+  f.rows.configBindings = [
+    regBinding(
+      "0xb1",
+      REG_ROOT,
+      REG_US,
+      "0x" + "01".repeat(32),
+      TL_NOW - (3 * 86400 + 2 * 3600),
+    ),
+    regBinding("0xb2", REG_ROOT, REG_EU, "0xbeef", TL_NOW - 90, {
+      sender: REG_ROOT,
+      registerCount: 4,
+    }),
+    regBinding("0xb3", REG_ROOT, regWord("cc"), "0x", TL_NOW - 7200),
+    regBinding("0xb4", REG_OTHER, REG_US, "0xdead", TL_NOW - 10),
+  ];
+  const otherWriter = REG_MIGRATION + REG_OTHER.slice(2) + REG_NS.slice(2);
+  const otherNs = REG_MIGRATION + REG_ROOT.slice(2) + regWord("ee").slice(2);
+  f.rows.migrationLines = [
+    {
+      id: REG_LINE,
+      writer: REG_ROOT,
+      namespace: REG_NS,
+      registry: { id: REG_MIGRATION },
+      head: REG_M[2],
+      recordCount: 3,
+      headRecord: { id: "0xr3" },
+    },
+    {
+      id: otherWriter,
+      writer: REG_OTHER,
+      namespace: REG_NS,
+      registry: { id: REG_MIGRATION },
+      head: regWord("99"),
+      recordCount: 1,
+      headRecord: { id: "0xr9" },
+    },
+    {
+      id: otherNs,
+      writer: REG_ROOT,
+      namespace: regWord("ee"),
+      registry: { id: REG_MIGRATION },
+      head: regWord("98"),
+      recordCount: 1,
+      headRecord: { id: "0xr8" },
+    },
+  ];
+  // Ids deliberately out of index order: line order is `index`, not `id`.
+  f.rows.migrationRecords = [
+    regRecord("0xr3", REG_LINE, 2, REG_M[2], REG_M[1]),
+    regRecord("0xr1", REG_LINE, 0, REG_M[0], REG_GENESIS, { sender: REG_SAFE }),
+    regRecord("0xr2", REG_LINE, 1, REG_M[1], REG_M[0]),
+    regRecord("0xr9", otherWriter, 0, regWord("99"), REG_GENESIS),
+    regRecord("0xr8", otherNs, 0, regWord("98"), REG_GENESIS),
+  ];
+  f.rows.registryDelegates = [
+    regDelegate("0xd1", REG_ROOT, "MIGRATION_REGISTRY", REG_NS, REG_SAFE),
+    regDelegate("0xd2", REG_ROOT, "MIGRATION_REGISTRY", REG_NS, RBAC_TL),
+    regDelegate("0xd3", REG_ROOT, "CONFIG_REGISTRY", REG_US, REG_STRANGER),
+    regDelegate("0xd4", REG_ROOT, "CONFIG_REGISTRY", REG_EU, REG_OTHER, false),
+    regDelegate("0xd5", REG_OTHER, "CONFIG_REGISTRY", REG_US, REG_STRANGER),
+  ];
+  return f;
+}
+const regSec = (p) => collect(p, "reg-sec");
+const regRows = (p, kind) => collect(p, "reg-" + kind);
+const regQueries = (f) => f.seen.map((s) => JSON.parse(s.init.body).query);
+
+Deno.test("deployments: a subgraph version without the registry entities shows them absent and reads none", async () => {
+  const f = fakeSubgraph();
+  const p = await rbacPanelLive(f);
+  const sec = regSec(p);
+  assert(sec.length === 1, "one registry section, got " + sec.length);
+  const b = collect(sec[0], "reg-absent");
+  assert(b.length === 1, "the absent banner");
+  assert(
+    textOf(b[0]).includes("not indexed by this subgraph version") &&
+      textOf(b[0]).includes("not the same as none"),
+    textOf(b[0]),
+  );
+  const probe = regQueries(f).find((q) => q.includes("ConfigBinding"));
+  for (
+    const t of [
+      "ConfigBinding",
+      "MigrationLine",
+      "MigrationRecord",
+      "RegistryDelegate",
+    ]
+  ) {
+    assert(probe && probe.includes(`__type(name: "${t}")`), "probed " + t);
+  }
+  for (
+    const e of [
+      "configBindings(",
+      "migrationLines(",
+      "migrationRecords(",
+      "registryDelegates(",
+    ]
+  ) {
+    assert(!regQueries(f).some((q) => q.includes(e)), "not read: " + e);
+  }
+  // The roles are still shown under it.
+  assert(roleRows(p).length === 3, "roles kept");
+});
+
+Deno.test("deployments: a schema with only some registry entities is an error, not absent", async () => {
+  const f = regFake({
+    regSchema: {
+      data: {
+        t0: { name: "ConfigBinding" },
+        t1: null,
+        t2: { name: "MigrationRecord" },
+        t3: null,
+      },
+    },
+  });
+  const p = await rbacPanelLive(f);
+  const err = collect(regSec(p)[0], "reg-error");
+  assert(
+    err.length === 1 && collect(p, "reg-absent").length === 0,
+    "error, not absent",
+  );
+  assert(
+    textOf(err[0]).includes(
+      "the schema has ConfigBinding, MigrationRecord but not MigrationLine, RegistryDelegate",
+    ),
+    textOf(err[0]),
+  );
+  // A probe answering something that is not a type is an error too.
+  const g = regFake({
+    regSchema: { data: { t0: { name: "Nope" }, t1: null, t2: null, t3: null } },
+  });
+  const q = await rbacPanelLive(g);
+  assert(
+    textOf(collect(q, "reg-error")[0]).includes("is not a type"),
+    "not a type",
+  );
+  // An unreadable probe is an error too.
+  const h = regFake({ regSchema: null });
+  const r = await rbacPanelLive(h);
+  assert(
+    textOf(collect(r, "reg-error")[0]).includes(
+      "no readable answer to the schema probe",
+    ),
+    "unreadable probe",
+  );
+});
+
+Deno.test("deployments: the root's config bindings show value, age and sender, named ones first", async () => {
+  const f = regFake();
+  const p = await rbacPanelLive(f);
+  const rows = regRows(p, "binding");
+  assert(
+    rows.length === 3,
+    "the root's three, not the other authority's: " + rows.length,
+  );
+  const names = rows.map((r) => collect(r, "own-role")[0].textContent);
+  assert(
+    names.join() ===
+      ["st0x.rbac.eu.v1", "st0x.rbac.us.v1", regWord("cc")].join(),
+    names.join(),
+  );
+  const us = rows[1];
+  assert(
+    collect(us, "grt-roleid")[0].textContent === REG_US,
+    "hash beside the label",
+  );
+  assert(
+    collect(us, "reg-value")[0].textContent === "0x" + "01".repeat(32),
+    "value byte for byte",
+  );
+  assert(
+    collect(us, "reg-age")[0].textContent === "3d 2h ago",
+    collect(us, "reg-age")[0].textContent,
+  );
+  assert(
+    textOf(us).includes("bound by") && textOf(us).includes(REG_SAFE),
+    "sender",
+  );
+  assert(
+    textOf(us).includes("1 register") && !textOf(us).includes("1 registers"),
+    textOf(us),
+  );
+  const eu = rows[0];
+  assert(collect(eu, "reg-age")[0].textContent === "1m 30s ago", textOf(eu));
+  assert(
+    textOf(eu).includes(REG_ROOT) && textOf(eu).includes("4 registers"),
+    textOf(eu),
+  );
+  assert(
+    !textOf(p).includes("0xdead"),
+    "another authority's binding not shown",
+  );
+  // Read at the indexed block, filtered to the root.
+  const q = regQueries(f).find((x) => x.includes("configBindings("));
+  assert(
+    q.includes("block: {number: 900}") &&
+      q.includes(`authority: "${REG_ROOT}"`),
+    q,
+  );
+});
+
+Deno.test("deployments: the st0x.deploy line reads in index order with its head, the chain checked", async () => {
+  const f = regFake();
+  const p = await rbacPanelLive(f);
+  const recs = regRows(p, "record");
+  assert(recs.length === 3, "the root's line only: " + recs.length);
+  const order = recs.map((r) => collect(r, "own-role")[0].textContent);
+  assert(order.join() === "#0,#1,#2", order.join());
+  assert(
+    recs.every((r, i) => textOf(r).includes(REG_M[i])),
+    "each record's migration",
+  );
+  assert(
+    textOf(recs[0]).includes("applied onto") &&
+      textOf(recs[0]).includes("genesis"),
+    textOf(recs[0]),
+  );
+  assert(textOf(recs[2]).includes(REG_M[1]), "applied onto the previous");
+  assert(
+    textOf(recs[0]).includes(REG_SAFE) && textOf(recs[1]).includes(RBAC_TL),
+    "recorded by",
+  );
+  assert(
+    collect(p, "reg-problem").length === 0,
+    "no problem on an intact line",
+  );
+  assert(recs.every((r) => !r.className.includes("rbac-off")), "none marked");
+  const line = collect(p, "reg-line")[0];
+  assert(
+    textOf(line).includes("head") && textOf(line).includes(REG_M[2]) &&
+      textOf(line).includes("3 records, chain intact"),
+    textOf(line),
+  );
+  assert(
+    !textOf(p).includes(regWord("99")) && !textOf(p).includes(regWord("98")),
+    "other lines not shown",
+  );
+  const q = regQueries(f).find((x) => x.includes("migrationLines("));
+  assert(
+    q.includes(`writer: "${REG_ROOT}"`) &&
+      q.includes(`namespace: "${REG_NS}"`) &&
+      q.includes("block: {number: 900}"),
+    q,
+  );
+  const rq = regQueries(f).find((x) => x.includes("migrationRecords("));
+  assert(
+    rq.includes(`line: "${REG_LINE}"`) && rq.includes("block: {number: 900}"),
+    rq,
+  );
+});
+
+Deno.test("deployments: a broken migration chain is named record by record", async () => {
+  // Second record applied onto something else.
+  const f = regFake();
+  f.rows.migrationRecords.find((r) => r.id === "0xr2").appliedOnto = regWord(
+    "77",
+  );
+  const p = await rbacPanelLive(f);
+  const recs = regRows(p, "record");
+  const probs = collect(recs[1], "reg-problem").map(leaf);
+  assert(
+    probs.join() ===
+      `applied onto ${regWord("77")}, not the previous record's migration ${
+        REG_M[0]
+      }`,
+    probs.join(),
+  );
+  assert(recs[1].className.includes("rbac-off"), "row marked");
+  assert(
+    collect(recs[0], "reg-problem").length === 0 &&
+      collect(recs[2], "reg-problem").length === 0,
+    "others clean",
+  );
+  assert(
+    textOf(collect(p, "reg-line")[0]).includes("chain broken"),
+    "line says broken",
+  );
+  // The first record must sit on genesis.
+  const g = regFake();
+  g.rows.migrationRecords.find((r) => r.id === "0xr1").appliedOnto = RBAC_ZERO;
+  const q = await rbacPanelLive(g);
+  assert(
+    collect(regRows(q, "record")[0], "reg-problem").map(leaf).join() ===
+      `applied onto ${RBAC_ZERO}, not genesis`,
+    textOf(regRows(q, "record")[0]),
+  );
+  // A missing record leaves a gap in the indices.
+  const h = regFake();
+  h.rows.migrationRecords = h.rows.migrationRecords.filter((r) =>
+    r.id !== "0xr2"
+  );
+  const r = await rbacPanelLive(h);
+  const last = regRows(r, "record")[1];
+  const lp = collect(last, "reg-problem").map(leaf);
+  assert(lp.includes("at index 2, where 1 was next"), lp.join(" | "));
+  const lineProbs = collect(r, "reg-problem").filter((n) =>
+    n.className.includes("own-note")
+  ).map(leaf);
+  assert(
+    lineProbs.includes("the line counts 3 records; the read holds 2"),
+    lineProbs.join(" | "),
+  );
+  // A head that is not the last record's migration.
+  const k = regFake();
+  k.rows.migrationLines[0].head = REG_M[1];
+  k.rows.migrationLines[0].headRecord = { id: "0xr2" };
+  const s = await rbacPanelLive(k);
+  const hp = collect(s, "reg-problem").map(leaf);
+  assert(
+    hp.includes(`the head ${REG_M[1]} is not the last record's migration`) &&
+      hp.includes("the head record is not the last record"),
+    hp.join(" | "),
+  );
+  assert(textOf(collect(s, "reg-line")[0]).includes("chain broken"), "broken");
+});
+
+Deno.test("deployments: a delegate that is neither the chain's Safe nor its timelock is flagged", async () => {
+  const f = regFake();
+  const p = await rbacPanelLive(f);
+  const rows = regRows(p, "delegate");
+  assert(rows.length === 3, "approved, under the root: " + rows.length);
+  const stray = rows.filter((r) => collect(r, "reg-stray").length);
+  assert(
+    stray.length === 1 && textOf(stray[0]).includes(REG_STRANGER),
+    "only the stranger",
+  );
+  assert(stray[0].className.includes("rbac-off"), "row marked");
+  assert(
+    textOf(stray[0]).includes("CONFIG_REGISTRY name") &&
+      textOf(stray[0]).includes("st0x.rbac.us.v1"),
+    textOf(stray[0]),
+  );
+  const safe = rows.find((r) => textOf(r).includes(REG_SAFE));
+  const tl = rows.find((r) => textOf(r).includes(RBAC_TL));
+  assert(
+    textOf(safe).includes("token-owner Safe") &&
+      !safe.className.includes("rbac-off"),
+    textOf(safe),
+  );
+  assert(
+    textOf(tl).includes("governance timelock") &&
+      !tl.className.includes("rbac-off"),
+    textOf(tl),
+  );
+  assert(
+    textOf(safe).includes("MIGRATION_REGISTRY namespace") &&
+      textOf(safe).includes("st0x.deploy"),
+    textOf(safe),
+  );
+  assert(
+    !rows.some((r) => textOf(r).includes(REG_OTHER)),
+    "no row for the revoked or foreign approval",
+  );
+  const q = regQueries(f).find((x) => x.includes("registryDelegates("));
+  assert(
+    q.includes(`account: "${REG_ROOT}"`) && q.includes("approved: true") &&
+      q.includes("block: {number: 900}"),
+    q,
+  );
+  // The expectation is THIS index's Safe and timelock: an authoriser is not one.
+  const g = regFake();
+  g.rows.registryDelegates[0].delegate = RBAC_AUTH;
+  const r = await rbacPanelLive(g);
+  const auth = regRows(r, "delegate").find((x) =>
+    textOf(x).includes(RBAC_AUTH)
+  );
+  assert(
+    collect(auth, "reg-stray").length === 1,
+    "an authoriser delegate is flagged",
+  );
+});
+
+Deno.test("deployments: an index with no registry rows says so for each part", async () => {
+  const f = regFake();
+  f.rows.configBindings = [];
+  f.rows.migrationLines = [];
+  f.rows.migrationRecords = [];
+  f.rows.registryDelegates = [];
+  f.rows.contracts = [];
+  const p = await rbacPanelLive(f);
+  const t = textOf(regSec(p)[0]);
+  assert(
+    t.includes("The root authority has bound no name on this network."),
+    t,
+  );
+  assert(
+    t.includes(
+      "st0x.deploy line has recorded nothing on this network: its head is genesis.",
+    ),
+    t,
+  );
+  assert(t.includes("has approved no delegate in either registry"), t);
+  assert(t.includes("holds no token-owner Safe or governance timelock"), t);
+  assert(
+    !regQueries(f).some((q) => q.includes("migrationRecords(")),
+    "no line, no record read",
+  );
+});
+
+Deno.test("deployments: a failed registry read shows nothing of it and keeps the roles", async () => {
+  const f = regFake({
+    raw: { registryDelegates: { errors: [{ message: "boom" }] } },
+  });
+  const p = await rbacPanelLive(f);
+  const err = collect(regSec(p)[0], "reg-error");
+  assert(
+    err.length === 1 && textOf(err[0]).includes("registryDelegates: boom"),
+    textOf(regSec(p)[0]),
+  );
+  assert(
+    regRows(p, "binding").length === 0 && regRows(p, "record").length === 0,
+    "nothing shown short",
+  );
+  assert(roleRows(p).length === 3, "roles kept");
+  // A line id that is not hex never reaches the record query.
+  const g = regFake();
+  g.rows.migrationLines[0].id = '0x", writer: "0x';
+  const q = await rbacPanelLive(g);
+  assert(
+    textOf(collect(q, "reg-error")[0]).includes("a line id that is not hex"),
+    textOf(regSec(q)[0]),
+  );
+  assert(
+    !regQueries(g).some((x) => x.includes("migrationRecords(")),
+    "not queried",
+  );
+  // No registry read under an index that could not be read at all.
+  const h = regFake({ meta: null });
+  const r = await rbacPanelLive(h);
+  assert(regSec(r).length === 0, "no section");
+  assert(!regQueries(h).some((x) => x.includes("ConfigBinding")), "not probed");
+});
+
+Deno.test("deployments: registry strings land as text", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].value = XSS_IMG;
+  f.rows.configBindings[1].name = XSS_SCRIPT;
+  f.rows.migrationLines[0].head = XSS_SVG;
+  f.rows.registryDelegates[2].scope = XSS_ATTR;
+  const p = await rbacPanelLive(f);
+  const t = textOf(regSec(p)[0]);
+  for (const x of [XSS_IMG, XSS_SCRIPT, XSS_SVG, XSS_ATTR]) {
+    assert(t.includes(x), "as text: " + x);
+  }
+  for (const tag of MARKUP_TAGS) {
+    assert(tags(p, tag).length === 0, "no " + tag + " element created");
+  }
 });
