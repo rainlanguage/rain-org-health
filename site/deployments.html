@@ -101,6 +101,8 @@
   .tl-data { overflow-wrap: anywhere; word-break: break-all; opacity: 0.8; }
   .tl-pred, .tl-exec { max-width: 100%; overflow-wrap: anywhere; }
   .tl-hist .own-row { opacity: 0.85; }
+  .reg-sec { margin: 6px 0 22px; }
+  .reg-line { margin: 6px 0; }
   @media (max-width: 620px) {
     .tl-op { grid-template-columns: 1fr; }
   }
@@ -1527,6 +1529,7 @@ function renderDeployments(document, $, data, io) {
       out.detail = e instanceof Error ? e.message : String(e);
     }
     out.timelock = await tlRead(url, block, out.contracts, names);
+    out.registries = await regRead(url, block);
     return out;
   };
   // Governance timelock operations: every `schedule` / `scheduleBatch` the
@@ -1763,6 +1766,165 @@ function renderDeployments(document, $, data, io) {
       t.history.sort((a, b) => (b.scheduledAtBlock ?? -1) - (a.scheduledAtBlock ?? -1));
     }
     return { state: "ok", timelocks: out };
+  };
+  // The root authority's registry state: its ConfigRegistry bindings, its
+  // MigrationRegistry line in the `st0x.deploy` namespace, and the delegates it
+  // has approved in either registry, at the same block as the roles. Probed
+  // first, like the timelock: a version without the entities is "absent".
+  // Never throws.
+  const REG_ROOT = "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c";
+  // keccak256("st0x.deploy"): LibStoxMigrations.NAMESPACE.
+  const REG_NAMESPACE = "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4";
+  // keccak256("rain.migration-registry.head.genesis"): what a line's first record is applied onto.
+  const REG_GENESIS = "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f";
+  const REG_LABELS = {
+    "0xb046f6b844b680f0dcfc7a139f126e7e13d58023f8d26c15e3229eb4fff8499f": "st0x.rbac.us.v1",
+    "0x560e679773d4bf1a3dee3d913c31185111a3bcc57b6d93366936fc3526985ad5": "st0x.rbac.eu.v1",
+    [REG_NAMESPACE]: "st0x.deploy",
+    [REG_GENESIS]: "genesis",
+  };
+  const REG_TYPES = ["ConfigBinding", "MigrationLine", "MigrationRecord", "RegistryDelegate"];
+  // The only delegates the root is expected to approve: the chain's own Safe and timelock.
+  const REG_EXPECTED = { TOKEN_OWNER_SAFE: "token-owner Safe", GOVERNANCE_TIMELOCK: "governance timelock" };
+  const low = (v) => (typeof v === "string" ? v.toLowerCase() : "");
+  const regLabel = (v) => (Object.prototype.hasOwnProperty.call(REG_LABELS, low(v)) ? REG_LABELS[low(v)] : null);
+  const regRead = async (url, block) => {
+    const probe = await rbacAsk(url, `{ ${REG_TYPES.map((t, i) => `t${i}: __type(name: "${t}") { name }`).join(" ")} }`);
+    if (probe.missing) return { state: "error", detail: "the subgraph vanished mid-read" };
+    if (probe.unreachable) return { state: "error", detail: "no readable answer to the schema probe" };
+    if (probe.error) return { state: "error", detail: probe.error };
+    const have = [];
+    for (const [i, t] of REG_TYPES.entries()) {
+      const v = probe.data[`t${i}`];
+      if (v === null) continue;
+      if (!v || v.name !== t) return { state: "error", detail: "the schema probe answered with something that is not a type" };
+      have.push(t);
+    }
+    if (have.length === 0) return { state: "absent" };
+    if (have.length < REG_TYPES.length) {
+      const lack = REG_TYPES.filter((t) => !have.includes(t));
+      return { state: "error", detail: `the schema has ${have.join(", ")} but not ${lack.join(", ")}` };
+    }
+    const root = `"${REG_ROOT}"`;
+    let contracts, bindings, lines, delegates, records;
+    try {
+      [contracts, bindings, lines, delegates] = await Promise.all([
+        rbacReadAll(url, "contracts", "", "kind", block),
+        rbacReadAll(
+          url,
+          "configBindings",
+          `, authority: ${root}`,
+          "authority registry { id } name value sender boundAtBlock boundAtTimestamp registerCount",
+          block,
+        ),
+        rbacReadAll(
+          url,
+          "migrationLines",
+          `, writer: ${root}, namespace: "${REG_NAMESPACE}"`,
+          "writer namespace registry { id } head recordCount headRecord { id }",
+          block,
+        ),
+        rbacReadAll(
+          url,
+          "registryDelegates",
+          `, account: ${root}, approved: true`,
+          "account approved registry { id kind } scope delegate approvedAtBlock approvedAtTimestamp",
+          block,
+        ),
+      ]);
+      // A line id goes into the next query, so it must be the hex the schema promises.
+      for (const l of lines) if (!/^0x[0-9a-fA-F]+$/.test(l.id)) throw new Error("migrationLines: a line id that is not hex");
+      records = await Promise.all(
+        lines.map((l) =>
+          rbacReadAll(
+            url,
+            "migrationRecords",
+            `, line: "${l.id}"`,
+            "line { id } index migration appliedOnto appliedAt sender blockNumber blockTimestamp transactionHash logIndex",
+            block,
+          ),
+        ),
+      );
+    } catch (e) {
+      return { state: "error", detail: e instanceof Error ? e.message : String(e) };
+    }
+    const expected = new Map();
+    for (const c of contracts) {
+      if (c && Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind) && low(c.id)) expected.set(low(c.id), c.kind);
+    }
+    const outBindings = bindings.map((b) => ({
+      registry: b.registry && b.registry.id,
+      name: b.name,
+      label: regLabel(b.name),
+      value: b.value,
+      sender: b.sender,
+      boundAtBlock: rbacNum(b.boundAtBlock),
+      boundAtTimestamp: rbacNum(b.boundAtTimestamp),
+      registerCount: rbacNum(b.registerCount),
+    }));
+    const key = (b) => (b.label ? "0" + b.label : "1" + low(b.name));
+    outBindings.sort((a, b) => key(a).localeCompare(key(b)));
+    const outLines = lines.map((l, li) => {
+      const recs = records[li]
+        .map((r) => ({
+          id: r.id,
+          index: rbacNum(r.index),
+          migration: r.migration,
+          appliedOnto: r.appliedOnto,
+          appliedAt: rbacNum(r.appliedAt),
+          sender: r.sender,
+          blockNumber: rbacNum(r.blockNumber),
+          blockTimestamp: rbacNum(r.blockTimestamp),
+          transactionHash: r.transactionHash,
+          problems: [],
+        }))
+        .sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
+      // Each record must sit at its position and be applied onto the record
+      // before it, the first onto genesis: a gap or a wrong link is a line
+      // this read cannot vouch for.
+      recs.forEach((r, i) => {
+        if (r.index !== i) r.problems.push(`at index ${r.index ?? "?"}, where ${i} was next`);
+        const want = i === 0 ? REG_GENESIS : low(recs[i - 1].migration);
+        if (low(r.appliedOnto) !== want) {
+          r.problems.push(
+            i === 0
+              ? `applied onto ${r.appliedOnto}, not genesis`
+              : `applied onto ${r.appliedOnto}, not the previous record's migration ${recs[i - 1].migration}`,
+          );
+        }
+      });
+      const last = recs.length ? recs[recs.length - 1] : null;
+      const problems = [];
+      const count = rbacNum(l.recordCount);
+      if (count !== recs.length) problems.push(`the line counts ${count ?? "?"} records; the read holds ${recs.length}`);
+      if (!last || low(l.head) !== low(last.migration)) {
+        problems.push(`the head ${l.head} is not the last record's migration`);
+      }
+      if (!last || !l.headRecord || l.headRecord.id !== last.id) problems.push("the head record is not the last record");
+      return {
+        registry: l.registry && l.registry.id,
+        head: l.head,
+        records: recs,
+        problems,
+        intact: problems.length === 0 && recs.every((r) => r.problems.length === 0),
+      };
+    });
+    const outDelegates = delegates.map((d) => ({
+      registry: d.registry && d.registry.id,
+      registryKind: d.registry && d.registry.kind,
+      scope: d.scope,
+      scopeLabel: regLabel(d.scope),
+      delegate: d.delegate,
+      approvedAtTimestamp: rbacNum(d.approvedAtTimestamp),
+      expectedAs: expected.get(low(d.delegate)) || null,
+    }));
+    outDelegates.sort(
+      (a, b) =>
+        low(a.registryKind).localeCompare(low(b.registryKind)) ||
+        low(a.scope).localeCompare(low(b.scope)) ||
+        low(a.delegate).localeCompare(low(b.delegate)),
+    );
+    return { state: "ok", bindings: outBindings, lines: outLines, delegates: outDelegates, expectedCount: expected.size };
   };
   const utc = (ts) =>
     typeof ts === "number"
@@ -2119,6 +2281,158 @@ function renderDeployments(document, $, data, io) {
     }
     slot.append(sec);
   };
+  // The registry section of one network: the root's bindings, its st0x.deploy
+  // line, and its delegates, a delegate that is not the chain's Safe or
+  // timelock flagged.
+  const regSection = (slot, r, chain, pins) => {
+    const sec = el("div", "reg-sec");
+    const head = el("div", "own-grouphead");
+    head.append("Registries under the root authority ");
+    head.append(whoNode(REG_ROOT, chain, pins));
+    sec.append(head);
+    slot.append(sec);
+    const banner = (cls, msg) => {
+      const b = el("div", `own-verify own-verify-${cls}`);
+      b.append(el("span", "own-verify-msg", msg));
+      sec.append(b);
+    };
+    if (r.state === "absent") {
+      banner(
+        "roll reg-absent",
+        `Registries not indexed by this subgraph version — it has no ${REG_TYPES.join(", ")} entity, so the root's ` +
+          "config bindings, migration line and delegates cannot be shown. That is not the same as none.",
+      );
+      return;
+    }
+    if (r.state !== "ok") {
+      banner("drift reg-error", `Registries unreadable — ${r.detail || "no detail"}. Nothing is shown, which is not the same as none.`);
+      return;
+    }
+    const nowSecs = Math.floor(io.now() / 1000);
+    const age = (ts) => {
+      if (typeof ts !== "number") return "age unknown";
+      const s = nowSecs - ts;
+      return s < 0 ? "ahead of this browser's clock" : `${span(s)} ago`;
+    };
+    const word = (v) => {
+      const label = regLabel(v);
+      const n = el("span", "viol-role", label || String(v));
+      if (label) n.title = String(v);
+      return n;
+    };
+    const table = (rows) => {
+      const t = el("div", "own-table");
+      for (const row of rows) t.append(row);
+      sec.append(t);
+    };
+
+    sec.append(el("div", "rbac-contract", "Config bindings"));
+    if (r.bindings.length === 0) {
+      sec.append(el("div", "rbac-empty", "The root authority has bound no name on this network."));
+    } else {
+      table(
+        r.bindings.map((b) => {
+          const row = el("div", "own-row reg-binding");
+          const name = el("div", "own-rc");
+          name.append(el("div", "own-role", b.label || String(b.name)));
+          if (b.label) name.append(el("div", "grt-roleid", String(b.name)));
+          const what = el("div", "bcn-detail");
+          what.append(el("div", "own-addr tl-data reg-value", String(b.value)));
+          const by = el("div", "grt-addr");
+          by.append(el("span", "own-verify-src", "bound by"));
+          if (typeof b.sender === "string") by.append(whoNode(b.sender, chain, pins));
+          what.append(by);
+          const when = el("div", "own-rc");
+          when.append(el("div", "own-verify-src reg-age", age(b.boundAtTimestamp)));
+          when.append(el("div", "own-verify-src", `block ${b.boundAtBlock ?? "?"} · ${utc(b.boundAtTimestamp)}`));
+          if (typeof b.registerCount === "number") {
+            when.append(el("div", "own-verify-src", `${b.registerCount} register${b.registerCount === 1 ? "" : "s"}`));
+          }
+          row.append(name, what, when);
+          return row;
+        }),
+      );
+    }
+
+    sec.append(el("div", "rbac-contract", "Migration line st0x.deploy"));
+    if (r.lines.length === 0) {
+      sec.append(el("div", "rbac-empty", "The root authority's st0x.deploy line has recorded nothing on this network: its head is genesis."));
+    }
+    for (const l of r.lines) {
+      const lh = el("div", "grt-addr reg-line");
+      lh.append(el("span", "own-verify-src", "head"));
+      lh.append(word(l.head));
+      lh.append(
+        el(
+          "span",
+          `own-chip own-chip-${l.intact ? "yes" : "no"}`,
+          `${l.records.length} record${l.records.length === 1 ? "" : "s"}${l.intact ? ", chain intact" : ", chain broken"}`,
+        ),
+      );
+      sec.append(lh);
+      for (const p of l.problems) sec.append(el("div", "own-note rbac-ideal-off reg-problem", p));
+      table(
+        l.records.map((rec) => {
+          const row = el("div", `own-row reg-record${rec.problems.length ? " rbac-off" : ""}`);
+          const at = el("div", "own-rc");
+          at.append(el("div", "own-role", `#${rec.index ?? "?"}`));
+          const what = el("div", "bcn-detail");
+          const m = el("div", "grt-addr");
+          m.append(word(rec.migration));
+          what.append(m);
+          const onto = el("div", "grt-addr");
+          onto.append(el("span", "own-verify-src", "applied onto"));
+          onto.append(word(rec.appliedOnto));
+          what.append(onto);
+          for (const p of rec.problems) what.append(el("div", "rbac-unknown reg-problem", p));
+          const by = el("div", "grt-addr");
+          by.append(el("span", "own-verify-src", "recorded by"));
+          if (typeof rec.sender === "string") by.append(whoNode(rec.sender, chain, pins));
+          what.append(by);
+          const when = el("div", "own-rc");
+          when.append(el("div", "own-verify-src", `applied ${utc(rec.appliedAt)}`));
+          when.append(txNode(rec.transactionHash, chain));
+          row.append(at, what, when);
+          return row;
+        }),
+      );
+    }
+
+    sec.append(el("div", "rbac-contract", "Approved delegates"));
+    if (r.expectedCount === 0) {
+      sec.append(
+        el("div", "own-note rbac-ideal-gap", "The index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised."),
+      );
+    }
+    if (r.delegates.length === 0) {
+      sec.append(el("div", "rbac-empty", "The root authority has approved no delegate in either registry on this network."));
+      return;
+    }
+    table(
+      r.delegates.map((d) => {
+        const row = el("div", `own-row reg-delegate${d.expectedAs ? "" : " rbac-off"}`);
+        const who = el("div", "own-rc");
+        if (typeof d.delegate === "string") who.append(whoNode(d.delegate, chain, pins));
+        const what = el("div", "bcn-detail");
+        const scope = el("div", "grt-addr");
+        const kind = d.registryKind === "CONFIG_REGISTRY" ? "name" : d.registryKind === "MIGRATION_REGISTRY" ? "namespace" : "scope";
+        scope.append(el("span", "own-verify-src", `${String(d.registryKind)} ${kind}`));
+        scope.append(word(d.scope));
+        what.append(scope);
+        what.append(el("div", "own-verify-src", `approved ${utc(d.approvedAtTimestamp)}`));
+        const verdict = el("div", "own-rc");
+        if (d.expectedAs) {
+          verdict.append(el("span", "own-chip own-chip-yes", REG_EXPECTED[d.expectedAs]));
+        } else {
+          const tag = el("span", "rbac-tag rbac-tag-unexpected reg-stray", "not Safe or timelock");
+          tag.title = "Neither the chain's TOKEN_OWNER_SAFE nor its GOVERNANCE_TIMELOCK in this index; it can write under the root.";
+          verdict.append(tag);
+        }
+        row.append(who, what, verdict);
+        return row;
+      }),
+    );
+  };
   const kindLabel = (kind) => RBAC_KINDS[kind] || String(kind);
   const IDEAL_VERSION = 1;
   const isHex = (v, digits) => typeof v === "string" && v.length === 2 + digits && /^0x[0-9a-fA-F]+$/.test(v);
@@ -2250,6 +2564,7 @@ function renderDeployments(document, $, data, io) {
   const rbacBody = (slot, n, chain, endpoint, published, pins, check) => {
     slot.replaceChildren(rbacBanner(n, endpoint, published), idealLine(check));
     if (n.timelock) tlSection(slot, n.timelock, chain, pins);
+    if (n.registries) regSection(slot, n.registries, chain, pins);
     if (!Array.isArray(n.contracts)) return;
     if (n.contracts.length === 0) {
       slot.append(el("div", "rbac-empty", "The index holds no role events for any contract."));

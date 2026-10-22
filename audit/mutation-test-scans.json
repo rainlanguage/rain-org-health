@@ -1,0 +1,22 @@
+[
+  {
+    "timestamp": "2026-10-22T10:17:25Z",
+    "commit": "2ea403acc5e73abf531b3c39d4877910855705f6",
+    "testsAfterCommit": "ea8188dbeebe81b426249d8440d1ff4dffa9e32a",
+    "publishedTag": null,
+    "commitsAheadOfTag": null,
+    "scope": "pr: #208 registry section (regRead, regSection) in site/deployments.html",
+    "tool": "adversarial-mutation-test",
+    "skillVersion": "0.35.0",
+    "summary": {
+      "behaviours": 39,
+      "candidates": 0,
+      "confirmed": 0,
+      "testsBefore": 9,
+      "testsAfter": 9,
+      "mutantsKilledBefore": 35,
+      "mutantsKilledAfter": 39,
+      "filed": []
+    }
+  }
+]
