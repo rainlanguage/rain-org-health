@@ -12621,6 +12621,23 @@ Deno.test("deployments: role changes mark an expected holding not held to grant,
   );
 });
 
+Deno.test("deployments: an ideal role the file leaves unnamed takes the scan's name for it", async () => {
+  const ideal = idealFixture();
+  ideal.chains["1"].contracts[0].expected[1].roleName = null;
+  const named = rbacData([rbacNet()]);
+  named.deploymentRbac.roleNames[ROLE_IDS.WITHDRAW] = "WITHDRAW";
+  let rows = roleRows(await rbacPanelLive(idealSubgraph({ ideal }), named));
+  assert(
+    rows.some((r) => r.role === "WITHDRAW" && r.lines.join() === `${IDEAL_NEW} to grant`),
+    "the scan's name labels the to-grant role: " + JSON.stringify(rows),
+  );
+  rows = roleRows(await rbacPanelLive(idealSubgraph({ ideal })));
+  assert(
+    rows.some((r) => r.role === ROLE_IDS.WITHDRAW && r.lines.join() === `${IDEAL_NEW} to grant`),
+    "with no name anywhere the role shows its id: " + JSON.stringify(rows),
+  );
+});
+
 Deno.test("deployments: roles held lists every discrepancy first, a grantee to grant even where it holds nothing", async () => {
   const p = await heldPanelLive(idealSubgraph().io, rbacData([rbacNet()]));
   const groups = heldGroups(p);

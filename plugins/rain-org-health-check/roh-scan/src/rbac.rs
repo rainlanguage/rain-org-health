@@ -123,6 +123,42 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     out
 }
 
+/// Names from the deploy repo's `ideal-roles.json`: each `(role, roleName)` pair
+/// whose name hashes to its role, or is `DEFAULT_ADMIN_ROLE` for `bytes32(0)`. A
+/// pair whose name is not its role's is dropped, never shown.
+pub fn ideal_role_names(json: &str) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    let Ok(doc) = serde_json::from_str::<serde_json::Value>(json) else {
+        return out;
+    };
+    let zero = format!("0x{}", "0".repeat(64));
+    let chains = doc.get("chains").and_then(|c| c.as_object());
+    for chain in chains.into_iter().flat_map(|c| c.values()) {
+        let contracts = chain.get("contracts").and_then(|c| c.as_array());
+        for contract in contracts.into_iter().flatten() {
+            let pairs = contract.get("expected").and_then(|e| e.as_array());
+            for pair in pairs.into_iter().flatten() {
+                let (Some(role), Some(name)) = (
+                    pair.get("role").and_then(|r| r.as_str()),
+                    pair.get("roleName").and_then(|n| n.as_str()),
+                ) else {
+                    continue;
+                };
+                let role = role.to_lowercase();
+                let hashes = if name == "DEFAULT_ADMIN_ROLE" {
+                    role == zero
+                } else {
+                    crate::rpc::role_id_hex(name) == role
+                };
+                if hashes && !out.iter().any(|(i, _)| *i == role) {
+                    out.push((role, name.to_string()));
+                }
+            }
+        }
+    }
+    out
+}
+
 /// The `deploymentRbac` document.
 ///
 /// `source` / `networks` are `None` when the deploy repo's workflow or
@@ -253,6 +289,33 @@ jobs:
         assert_eq!(chain_name("robinhood"), Some("robinhood"));
         assert_eq!(chain_name("bsc"), Some("bsc"));
         assert_eq!(chain_name("arbitrum-one"), None);
+    }
+
+    #[test]
+    fn ideal_role_names_keep_only_names_that_are_their_roles() {
+        let zero = format!("0x{}", "0".repeat(64));
+        let emergency = crate::rpc::role_id_hex("EMERGENCY");
+        let mint = crate::rpc::role_id_hex("MINT");
+        let json = json!({"version": 1, "chains": {"1": {"network": "ethereum", "contracts": [
+            {"address": "0x01", "expected": [
+                {"role": zero, "roleName": "DEFAULT_ADMIN_ROLE", "grantee": "0x02"},
+                {"role": emergency.to_uppercase().replace("0X", "0x"), "roleName": "EMERGENCY", "grantee": "0x02"},
+                {"role": mint, "roleName": "BURN", "grantee": "0x02"},
+                {"role": crate::rpc::role_id_hex("CERTIFY"), "grantee": "0x02"}
+            ]},
+            {"address": "0x03", "expected": [
+                {"role": zero, "roleName": "DEFAULT_ADMIN_ROLE", "grantee": "0x04"}
+            ]}
+        ]}}})
+        .to_string();
+        assert_eq!(
+            ideal_role_names(&json),
+            vec![
+                (zero, "DEFAULT_ADMIN_ROLE".to_string()),
+                (emergency, "EMERGENCY".to_string()),
+            ]
+        );
+        assert!(ideal_role_names("not json").is_empty());
     }
 
     #[test]
