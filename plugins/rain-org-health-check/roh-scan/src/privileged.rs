@@ -185,10 +185,7 @@ mod tests {
             Err(PrivilegedError::UnsupportedVersion(Some(2)))
         );
         assert_eq!(parse(&doc("")), Err(PrivilegedError::NoChains));
-        assert_eq!(
-            parse(r#"{"version": 1}"#),
-            Err(PrivilegedError::NoChains)
-        );
+        assert_eq!(parse(r#"{"version": 1}"#), Err(PrivilegedError::NoChains));
     }
 
     #[test]

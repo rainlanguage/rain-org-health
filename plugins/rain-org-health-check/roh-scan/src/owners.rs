@@ -1717,8 +1717,14 @@ mod tests {
         assert_eq!(
             asked.into_inner(),
             vec![
-                ("base".to_string(), vec!["0xaaa".to_string(), "0xbbb".to_string()]),
-                ("ethereum".to_string(), vec!["0xccc".to_string(), "0xddd".to_string()]),
+                (
+                    "base".to_string(),
+                    vec!["0xaaa".to_string(), "0xbbb".to_string()]
+                ),
+                (
+                    "ethereum".to_string(),
+                    vec!["0xccc".to_string(), "0xddd".to_string()]
+                ),
             ]
         );
     }
@@ -1736,7 +1742,10 @@ mod tests {
         assert_eq!(chains[0]["vaults"][1]["label"], "safe");
         assert_eq!(chains[0]["counts"]["timelock"], 1);
         assert_eq!(chains[0]["counts"]["safe"], 1);
-        assert_eq!(chains[1]["counts"]["other"], 2, "another chain's timelock is other");
+        assert_eq!(
+            chains[1]["counts"]["other"], 2,
+            "another chain's timelock is other"
+        );
         assert_eq!(chains[1]["counts"]["timelock"], 0);
         assert_eq!(chains[0]["safe"], BASE_SAFE);
         assert_eq!(chains[0]["timelock"], BASE_TIMELOCK);
