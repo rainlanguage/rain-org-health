@@ -395,7 +395,8 @@ mod tests {
     fn applied_v3_calldata_encodes_writer_namespace_then_migration() {
         let ns = format!("0x{}", "11".repeat(32));
         let id = format!("0x{}", "22".repeat(32));
-        let cd = applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, &id).unwrap();
+        let cd =
+            applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, &id).unwrap();
         assert_eq!(
             cd,
             format!(
