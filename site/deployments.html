@@ -2697,8 +2697,8 @@ function renderDeployments(document, $, data, io) {
     sub.append(
       ", with its state read from each network's MigrationRegistry appliedV3(writer, namespace, id) at scan time. " +
         'Every migration the file declares for a network is required there: "pending" means its record is not ' +
-        'in that registry yet. "Not recorded" means it ran before its record was written (the file gives when) ' +
-        "and the record is still owed. Both are warnings. " +
+        'in that registry yet. "Not recorded" means the file says it ran (and gives when) but the registry holds no record for it, ' +
+        "so the record is still owed. Both are warnings. " +
         '"No registry record" is an error: the script writes no record, so it is in no line and its run state ' +
         'cannot be read or ordered. "Unknown" means the registry read did not answer, never that it has not run.',
     );
