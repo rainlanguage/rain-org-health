@@ -20,6 +20,7 @@ mod deployhealth;
 mod graph;
 mod mutation;
 mod owners;
+mod privileged;
 mod protofire;
 mod rbac;
 mod rpc;
@@ -2581,6 +2582,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // subprocess with no cache and this file is ~126KB, so a fetch per
         // section is a quarter of a megabyte of identical transfer.
         let governed_tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
+        let privileged = privileged::parse(&gh_file(
+            deploy_org,
+            deploy_repo,
+            privileged::PRIVILEGED_ADDRESSES_PATH,
+        ));
+        let base_vaults: &[String] = privileged
+            .as_ref()
+            .ok()
+            .and_then(|cs| cs.iter().find(|c| c.network == owners::REFERENCE_NETWORK))
+            .map(|c| c.receipt_vaults.as_slice())
+            .unwrap_or_default();
         // The per-chain governance timelock, which the admin-holder slot of
         // `expectedGrants` resolves to. Read from the repo for the same reason
         // every other pin is: the chain list grows.
@@ -2624,8 +2636,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // active/pending pair silently contradicts the token rows further
             // down this same page, which read `authorizer()` per token.
             let live_authoriser = {
-                deployhealth::parse_receipt_vault_list(&governed_tok_lib)
-                    .addresses
+                base_vaults
                     .first()
                     .and_then(|vault| {
                         eth_call(rpc_session(Chain::Base), vault, &rpc::authorizer_calldata())
@@ -2661,11 +2672,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         for c in chains.iter_mut() {
             c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
         }
-        // Per chain, not one shared list: each network has its own
-        // `productionTokens<Chain>` table with entirely different addresses.
-        let vaults_for = |network: &str| {
-            deployhealth::parse_receipt_vaults_for(&governed_tok_lib, network).addresses
-        };
 
         let deployment_grants = {
             // One session per chain, so every `hasRole` for a chain hits the same
@@ -2787,27 +2793,32 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let deployment_vault_owners = {
             // One session per chain, as the grant map does, so every `owner()`
             // for a chain is answered by the same node.
-            let sessions: Vec<(String, Session)> = chains
-                .iter()
-                .filter_map(|c| {
-                    Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
-                })
-                .collect();
-            let read_owners = |network: &str, vs: &[String]| {
-                let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
-                    return vec![None; vs.len()];
+            let read = |network: &str, vs: &[String]| {
+                let Some(chain) = Chain::from_network(network) else {
+                    return vec![owners::VaultRead::default(); vs.len()];
                 };
                 let calls: Vec<(String, String)> = vs
                     .iter()
-                    .map(|v| (v.clone(), rpc::owner_calldata()))
+                    .flat_map(|v| {
+                        [
+                            (v.clone(), rpc::owner_calldata()),
+                            (v.clone(), rpc::is_certification_expired_calldata()),
+                        ]
+                    })
                     .collect();
-                eth_call_batch(*session, &calls)
-                    .into_iter()
-                    .map(|hex| hex.as_deref().and_then(rpc::decode_address))
+                let answers = eth_call_batch(rpc_session(chain), &calls);
+                answers
+                    .chunks(2)
+                    .map(|pair| owners::VaultRead {
+                        owner: pair[0].as_deref().and_then(rpc::decode_address),
+                        certification_expired: pair
+                            .get(1)
+                            .and_then(|h| h.as_deref())
+                            .and_then(rpc::decode_bool),
+                    })
                     .collect()
             };
-            owners::build_vault_owners(&vaults_for, &chains, &read_owners)
-                .unwrap_or(serde_json::Value::Null)
+            owners::build_vault_owners(privileged.as_deref(), &read)
         };
 
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each
@@ -3160,8 +3171,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // setAuthorizer bundle operates on. Read up front so each token can be
             // cross-checked BOTH ways: registry→migration (is this token governed?)
             // and migration→registry (is this governed vault in the registry?).
-            let governed_parse = deployhealth::parse_receipt_vault_list(&governed_tok_lib);
-            let governed = governed_parse.addresses;
+            let governed = base_vaults;
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
             let tokens: Vec<serde_json::Value> = parsed
@@ -3318,12 +3328,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .unwrap_or(0);
             let reconcile = json!({
                 "source": format!("{dorg}/{drepo}"),
-                "function": "LibTokenInvariants.productionReceiptVaults()",
+                "function": format!("{} (base receiptVaults)", privileged::PRIVILEGED_ADDRESSES_PATH),
+                "error": privileged.as_ref().err().map(|e| e.to_string()),
                 "governedCount": governed.len(),
-                // Entries the migration set LISTED. Greater than governedCount means
-                // some entry named a constant that did not resolve, so the governed
-                // set is short rather than genuinely smaller.
-                "governedDeclared": governed_parse.declared,
                 "registryTokenCount": registry_token_count,
                 "extraVaults": extra_vaults,
                 "missingFromMigration": missing_from_migration,

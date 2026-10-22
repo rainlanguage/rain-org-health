@@ -21,6 +21,7 @@ sol! {
     function authorizer() external view returns (address);
     function iReceiptBeacon() external view returns (address);
     function iOffchainAssetReceiptVaultBeacon() external view returns (address);
+    function isCertificationExpired() external view returns (bool);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -106,6 +107,9 @@ pub fn asset_calldata() -> String {
 }
 pub fn authorizer_calldata() -> String {
     to_hex(authorizerCall {}.abi_encode())
+}
+pub fn is_certification_expired_calldata() -> String {
+    to_hex(isCertificationExpiredCall {}.abi_encode())
 }
 
 /// The `bytes32` role id an OpenZeppelin `AccessControl` grant is keyed by:
@@ -238,7 +242,7 @@ pub fn batch_result_hex(body: &[u8], len: usize) -> Vec<Option<String>> {
     out
 }
 
-fn decode_bool(result_hex: &str) -> Option<bool> {
+pub fn decode_bool(result_hex: &str) -> Option<bool> {
     let bytes = result_bytes(result_hex)?;
     supportsInterfaceCall::abi_decode_returns(&bytes, false)
         .ok()
@@ -258,6 +262,11 @@ mod tests {
     fn beacon_getter_selectors_match_their_signatures() {
         assert_eq!(receipt_beacon_calldata(), "0x2c9b7f40");
         assert_eq!(receipt_vault_beacon_calldata(), "0x2f77a1c1");
+    }
+
+    #[test]
+    fn certification_expiry_selector_matches_its_signature() {
+        assert_eq!(is_certification_expired_calldata(), "0xf5647943");
     }
 
     #[test]
