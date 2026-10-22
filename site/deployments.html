@@ -68,7 +68,7 @@
               color: var(--ink-3); overflow-wrap: anywhere; line-height: 1.35; margin-top: 3px; }
   .mig-wait { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
               color: var(--ink-2); overflow-wrap: anywhere; }
-  .own-row.mig-notApplied { background: var(--debt-bg); }
+  .own-row.mig-notApplied, .own-row.mig-notRecorded { background: var(--debt-bg); }
   .own-row.mig-unregistered { box-shadow: inset 3px 0 0 var(--crit); }
   .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
   .rbac-hist { margin-top: 10px; }
@@ -2671,11 +2671,12 @@ function renderDeployments(document, $, data, io) {
   };
   const MIG_STATES = {
     applied: ["applied", "yes"],
-    notApplied: ["not applied", "roll"],
-    notRecorded: ["not recorded", "dim"],
+    notApplied: ["pending", "roll"],
+    notRecorded: ["not recorded", "roll"],
     unregistered: ["no registry record", "no"],
     unknown: ["unknown", "dim"],
   };
+  const MIG_OWED = ["notApplied", "notRecorded"];
   const renderMigrations = (v) => {
     sink.append(el("h2", null, "Migrations — run or not, per network"));
     if (!v || typeof v !== "object" || !Array.isArray(v.networks) || v.networks.length === 0) {
@@ -2694,12 +2695,50 @@ function renderDeployments(document, $, data, io) {
       sub.append("the deploy repo's migrations file");
     }
     sub.append(
-      ", with its state read from each network's MigrationRegistry applied(writer, namespace, id) at scan time. " +
-        '"Not recorded" means it ran before its record was written (the file gives when). ' +
+      ", with its state read from each network's MigrationRegistry appliedV3(writer, namespace, id) at scan time. " +
+        'Every migration the file declares for a network is required there: "pending" means its record is not ' +
+        'in that registry yet. "Not recorded" means it ran before its record was written (the file gives when) ' +
+        "and the record is still owed. Both are warnings. " +
         '"No registry record" is an error: the script writes no record, so it is in no line and its run state ' +
         'cannot be read or ordered. "Unknown" means the registry read did not answer, never that it has not run.',
     );
     sink.append(sub);
+    const nets = v.networks
+      .filter((n) => n && typeof n === "object")
+      .map((n) => ({
+        n,
+        network: str(n.network) || "unnamed network",
+        rows: (Array.isArray(n.migrations) ? n.migrations : []).filter(
+          (m) => m && typeof m === "object" && str(m.script),
+        ),
+      }));
+    const owed = (rows) => rows.filter((m) => MIG_OWED.includes(m.state)).length;
+    const unread = (rows) => rows.filter((m) => m.state === "unknown").length;
+    const banner = (pending, unknown, where) => {
+      const cls = pending > 0 ? "own-verify-roll" : unknown > 0 ? "own-verify-down" : "own-verify-ok";
+      const b = el("div", `own-verify ${cls} mig-banner`);
+      b.append(
+        el(
+          "span",
+          "own-verify-msg",
+          pending > 0
+            ? `${pending} required migration${pending === 1 ? "" : "s"} pending ${where}`
+            : unknown > 0
+            ? `Nothing known pending ${where}, but ${unknown} could not be read`
+            : `Every declared migration is applied ${where}`,
+        ),
+      );
+      if (pending > 0 && unknown > 0) b.append(el("span", "own-verify-src", `${unknown} more could not be read`));
+      return b;
+    };
+    const top = banner(
+      nets.reduce((a, x) => a + owed(x.rows), 0),
+      nets.reduce((a, x) => a + unread(x.rows), 0),
+      "across every network",
+    );
+    const pendingOn = nets.filter((x) => owed(x.rows) > 0).map((x) => `${x.network} ${owed(x.rows)}`);
+    if (pendingOn.length) top.append(el("span", "own-verify-src", pendingOn.join(" · ")));
+    sink.append(top);
     const chip = (state) => {
       const [text, cls] = MIG_STATES[state] || [`unrecognised state ${String(state)}`, "dim"];
       return el("span", `own-chip own-chip-${cls}`, text);
@@ -2708,18 +2747,13 @@ function renderDeployments(document, $, data, io) {
       const name = script.replace(/^.*\//, "");
       return repo ? link(cls, name, `https://github.com/${repo}/blob/HEAD/${script}`) : el("span", cls, name);
     };
-    for (const n of v.networks) {
-      if (!n || typeof n !== "object") continue;
-      const network = str(n.network) || "unnamed network";
-      const rows = (Array.isArray(n.migrations) ? n.migrations : []).filter(
-        (m) => m && typeof m === "object" && str(m.script),
-      );
+    for (const { n, network, rows } of nets) {
       const count = (s) => rows.filter((m) => m.state === s).length;
       sink.append(
         el(
           "h3",
           "tok-h3",
-          `${network} — ${count("applied")} applied, ${count("notApplied")} not applied, ` +
+          `${network} — ${count("applied")} applied, ${count("notApplied")} pending, ` +
             `${count("notRecorded")} not recorded, ${count("unknown")} unknown, ` +
             `${count("unregistered")} with no registry record`,
         ),
@@ -2736,7 +2770,7 @@ function renderDeployments(document, $, data, io) {
       if (typeof n.unread === "number" && n.unread > 0) {
         where.append(` · ${n.unread} registry read${n.unread === 1 ? "" : "s"} unanswered`);
       }
-      sink.append(where);
+      sink.append(where, banner(owed(rows), unread(rows), `on ${network}`));
       const table = el("div", "own-table");
       for (const m of rows) {
         const row = el("div", `own-row mig-${m.state}`);

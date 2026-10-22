@@ -21,7 +21,7 @@ sol! {
     function authorizer() external view returns (address);
     function iReceiptBeacon() external view returns (address);
     function iOffchainAssetReceiptVaultBeacon() external view returns (address);
-    function applied(address writer, bytes32 namespace, bytes32 migration) external view returns (uint256);
+    function appliedV3(address writer, bytes32 namespace, bytes32 migration) external view returns (uint256);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -109,9 +109,9 @@ pub fn authorizer_calldata() -> String {
     to_hex(authorizerCall {}.abi_encode())
 }
 /// `None` unless `writer` is an address and both words are 32-byte hex.
-pub fn applied_calldata(writer: &str, namespace: &str, migration: &str) -> Option<String> {
+pub fn applied_v3_calldata(writer: &str, namespace: &str, migration: &str) -> Option<String> {
     Some(to_hex(
-        appliedCall {
+        appliedV3Call {
             writer: writer.parse().ok()?,
             namespace: namespace.parse().ok()?,
             migration: migration.parse().ok()?,
@@ -390,27 +390,27 @@ mod tests {
         assert_eq!(has_role_calldata(role_id("DEPOSIT"), "0xdeadbeef"), None);
     }
 
-    /// Selector from `cast sig "applied(address,bytes32,bytes32)"`.
+    /// Selector from `cast sig "appliedV3(address,bytes32,bytes32)"`.
     #[test]
-    fn applied_calldata_encodes_writer_namespace_then_migration() {
+    fn applied_v3_calldata_encodes_writer_namespace_then_migration() {
         let ns = format!("0x{}", "11".repeat(32));
         let id = format!("0x{}", "22".repeat(32));
-        let cd = applied_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, &id).unwrap();
+        let cd = applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, &id).unwrap();
         assert_eq!(
             cd,
             format!(
-                "0xc4caf4ff000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}{}",
+                "0x9b984cac000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}{}",
                 "11".repeat(32),
                 "22".repeat(32)
             )
         );
-        assert_eq!(applied_calldata("safe", &ns, &id), None);
+        assert_eq!(applied_v3_calldata("safe", &ns, &id), None);
         assert_eq!(
-            applied_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11", &id),
+            applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11", &id),
             None
         );
         assert_eq!(
-            applied_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, "0x22"),
+            applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, "0x22"),
             None
         );
     }

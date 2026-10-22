@@ -6902,8 +6902,8 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   const heads = collect(panel, "tok-h3").map((h) => h.textContent);
   assert(
     heads.join("|") ===
-      "ethereum — 0 applied, 1 not applied, 1 not recorded, 0 unknown, 1 with no registry record|" +
-        "base — 1 applied, 0 not applied, 0 not recorded, 0 unknown, 0 with no registry record",
+      "ethereum — 0 applied, 1 pending, 1 not recorded, 0 unknown, 1 with no registry record|" +
+        "base — 1 applied, 0 pending, 0 not recorded, 0 unknown, 0 with no registry record",
     "per-network heads count states off the rows: " + heads.join("|"),
   );
   const rows = migRows(panel);
@@ -6932,7 +6932,7 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
     "a migration with no registry record is an error, not a dim not-recorded",
   );
   assert(
-    migChips(rows[2]).join() === "not applied" &&
+    migChips(rows[2]).join() === "pending" &&
       rows[2].className.split(" ").includes("mig-notApplied") &&
       collect(rows[2], "own-chip-roll").length === 1,
     "not applied is the rollout amber",
@@ -6958,6 +6958,84 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   assert(
     where[1].includes(MIG_REGISTRY) && where[1].includes("via mainnet.base.org"),
     "registry and endpoint named per network: " + where[1],
+  );
+});
+
+const migBanners = (panel) =>
+  collect(panel, "mig-banner").map((b) => ({
+    cls: b.className.split(" ").find((c) => c.startsWith("own-verify-")),
+    text: textOf(b),
+  }));
+
+Deno.test("deployments: every declared migration not in its registry is a pending warning, per network and in total", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      migrations: [
+        migRow({ script: "script/a.s.sol" }),
+        migRow({ script: "script/b.s.sol", id: MIG_ID_2, state: "notRecorded", executedAt: 1791056759 }),
+        migRow({ script: "script/c.s.sol", state: "applied", appliedAt: 1791457413 }),
+      ],
+    }),
+    migNetwork({
+      chainId: 8453,
+      network: "base",
+      migrations: [migRow({ script: "script/a.s.sol", writer: BASE_SAFE, state: "applied", appliedAt: 1791457413 })],
+    }),
+    migNetwork({
+      chainId: 56,
+      network: "bsc",
+      migrations: [migRow({ script: "script/a.s.sol", state: "unknown" })],
+    }),
+  ]));
+  const panel = migPanel(box);
+  const b = migBanners(panel);
+  assert(b.length === 4, "one total banner and one per network: " + b.length);
+  assert(
+    b[0].cls === "own-verify-roll" &&
+      b[0].text.startsWith("2 required migrations pending across every network") &&
+      b[0].text.includes("1 more could not be read") &&
+      b[0].text.includes("ethereum 2") && !b[0].text.includes("base"),
+    "total counts pending and not-recorded, names the networks owing them: " + b[0].text,
+  );
+  assert(
+    b[1].cls === "own-verify-roll" && b[1].text === "2 required migrations pending on ethereum",
+    "ethereum warns: " + b[1].text,
+  );
+  assert(
+    b[2].cls === "own-verify-ok" && b[2].text === "Every declared migration is applied on base",
+    "base is clean: " + b[2].text,
+  );
+  assert(
+    b[3].cls === "own-verify-down" && b[3].text === "Nothing known pending on bsc, but 1 could not be read",
+    "an unread network is never reported clean: " + b[3].text,
+  );
+  const rows = migRows(panel);
+  assert(
+    ["mig-notApplied", "mig-notRecorded"].every((c, i) =>
+      rows[i].className.split(" ").includes(c) && collect(rows[i], "own-chip-roll").length === 1
+    ) && migChips(rows[0]).join() === "pending",
+    "pending and not-recorded rows are warning rows",
+  );
+  assert(collect(rows[2], "own-chip-roll").length === 0, "an applied row is not a warning");
+});
+
+Deno.test("deployments: a network with every migration applied reads clean, and one pending reads singular", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({ migrations: [migRow({ state: "applied", appliedAt: 1791457413 })] }),
+    migNetwork({ chainId: 8453, network: "base", migrations: [migRow({ writer: BASE_SAFE })] }),
+  ]));
+  const b = migBanners(migPanel(box));
+  assert(
+    b[0].text === "1 required migration pending across every networkbase 1" &&
+      b[1].cls === "own-verify-ok" && b[2].text === "1 required migration pending on base",
+    "singular wording, clean network ok: " + b.map((x) => x.text).join("|"),
+  );
+  const clean = migBanners(migPanel(deploymentsBox(migData([
+    migNetwork({ migrations: [migRow({ state: "applied", appliedAt: 1791457413 })] }),
+  ]))));
+  assert(
+    clean[0].cls === "own-verify-ok" && clean[0].text === "Every declared migration is applied across every network",
+    "nothing pending anywhere is the clean total: " + clean[0].text,
   );
 });
 
@@ -7016,7 +7094,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
   assert(
     textOf(rows[0]).includes("waits on") &&
       textOf(rows[0]).includes("nothing — it opens its namespace's line in the registry") &&
-      migChips(rows[0]).join() === "not applied",
+      migChips(rows[0]).join() === "pending",
     "a genesis prerequisite opens its namespace's line, with no chip of its own",
   );
   const wait = collect(rows[1], "mig-wait");
@@ -7027,7 +7105,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
     "a listed prerequisite is named by its script and linked",
   );
   assert(
-    migChips(rows[1]).join() === "not applied,applied,not recorded,not applied",
+    migChips(rows[1]).join() === "pending,applied,not recorded,pending",
     "each prerequisite carries its own chip, the row's last: " +
       migChips(rows[1]).join(),
   );
@@ -7056,7 +7134,7 @@ Deno.test("deployments: a migration entry with no script is skipped and the rest
   );
   assert(
     collect(panel, "tok-h3")[0].textContent ===
-      "ethereum — 0 applied, 1 not applied, 0 not recorded, 0 unknown, 0 with no registry record",
+      "ethereum — 0 applied, 1 pending, 0 not recorded, 0 unknown, 0 with no registry record",
     "heading counts only the rendered rows",
   );
 });
@@ -7085,7 +7163,7 @@ Deno.test("deployments: an unread registry reads unknown and says why, never not
   );
   assert(
     collect(panel, "tok-h3")[0].textContent ===
-      "newchain — 0 applied, 0 not applied, 0 not recorded, 1 unknown, 0 with no registry record",
+      "newchain — 0 applied, 0 pending, 0 not recorded, 1 unknown, 0 with no registry record",
     "heading counts the unknown",
   );
   assert(
@@ -7164,7 +7242,7 @@ Deno.test("deployments: migration fields render as text, never markup", () => {
     collect(panel, "tok-h3")[0].textContent.startsWith(payload + " — "),
     "network lands as text",
   );
-  assert(textOf(panel).includes(payload + "not applied"), "unlisted id lands as text");
+  assert(textOf(panel).includes(payload + "pending"), "unlisted id lands as text");
   assert(tags(panel, "img").length === 0, "no element built from the payload");
 });
 

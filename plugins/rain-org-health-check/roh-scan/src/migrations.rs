@@ -1,4 +1,4 @@
-//! The deploy repo's migrations joined with each registry's `applied`; the page has no RPC.
+//! The deploy repo's migrations joined with each registry's `appliedV3`; the page has no RPC.
 
 use crate::rpc;
 use alloy_primitives::{Address, FixedBytes};
@@ -185,7 +185,7 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
     let Some(calls) = records
         .iter()
         .map(|r| {
-            rpc::applied_calldata(&r.writer, &r.namespace, &r.id)
+            rpc::applied_v3_calldata(&r.writer, &r.namespace, &r.id)
                 .map(|data| (net.registry.clone(), data))
         })
         .collect::<Option<Vec<_>>>()
@@ -611,7 +611,7 @@ mod tests {
             .map(|r| {
                 (
                     REGISTRY.to_string(),
-                    rpc::applied_calldata(&r.writer, &r.namespace, &r.id).unwrap(),
+                    rpc::applied_v3_calldata(&r.writer, &r.namespace, &r.id).unwrap(),
                 )
             })
             .collect();
