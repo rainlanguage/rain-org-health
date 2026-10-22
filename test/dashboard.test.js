@@ -13448,6 +13448,9 @@ function regFake(over = {}) {
       registerCount: 4,
     }),
     regBinding("0xb3", REG_ROOT, regWord("cc"), "0x", TL_NOW - 7200),
+    // Unnamed, and its hash sorts below both named ones: still after them.
+    // Bound ahead of the viewer's clock.
+    regBinding("0xb5", REG_ROOT, regWord("11"), "0x01", TL_NOW + 30),
     regBinding("0xb4", REG_OTHER, REG_US, "0xdead", TL_NOW - 10),
   ];
   const otherWriter = REG_MIGRATION + REG_OTHER.slice(2) + REG_NS.slice(2);
@@ -13460,7 +13463,7 @@ function regFake(over = {}) {
       registry: { id: REG_MIGRATION },
       head: REG_M[2],
       recordCount: 3,
-      headRecord: { id: "0xr3" },
+      headRecord: { id: "0xra" },
     },
     {
       id: otherWriter,
@@ -13481,11 +13484,11 @@ function regFake(over = {}) {
       headRecord: { id: "0xr8" },
     },
   ];
-  // Ids deliberately out of index order: line order is `index`, not `id`.
+  // Ids in reverse index order (the fake pages by id): line order is `index`.
   f.rows.migrationRecords = [
-    regRecord("0xr3", REG_LINE, 2, REG_M[2], REG_M[1]),
-    regRecord("0xr1", REG_LINE, 0, REG_M[0], REG_GENESIS, { sender: REG_SAFE }),
-    regRecord("0xr2", REG_LINE, 1, REG_M[1], REG_M[0]),
+    regRecord("0xra", REG_LINE, 2, REG_M[2], REG_M[1]),
+    regRecord("0xrc", REG_LINE, 0, REG_M[0], REG_GENESIS, { sender: REG_SAFE }),
+    regRecord("0xrb", REG_LINE, 1, REG_M[1], REG_M[0]),
     regRecord("0xr9", otherWriter, 0, regWord("99"), REG_GENESIS),
     regRecord("0xr8", otherNs, 0, regWord("98"), REG_GENESIS),
   ];
@@ -13587,14 +13590,20 @@ Deno.test("deployments: the root's config bindings show value, age and sender, n
   const p = await rbacPanelLive(f);
   const rows = regRows(p, "binding");
   assert(
-    rows.length === 3,
-    "the root's three, not the other authority's: " + rows.length,
+    rows.length === 4,
+    "the root's four, not the other authority's: " + rows.length,
   );
   const names = rows.map((r) => collect(r, "own-role")[0].textContent);
   assert(
     names.join() ===
-      ["st0x.rbac.eu.v1", "st0x.rbac.us.v1", regWord("cc")].join(),
+      ["st0x.rbac.eu.v1", "st0x.rbac.us.v1", regWord("11"), regWord("cc")]
+        .join(),
     names.join(),
+  );
+  assert(
+    collect(rows[2], "reg-age")[0].textContent ===
+      "ahead of this browser's clock",
+    textOf(rows[2]),
   );
   const us = rows[1];
   assert(
@@ -13689,7 +13698,7 @@ Deno.test("deployments: the st0x.deploy line reads in index order with its head,
 Deno.test("deployments: a broken migration chain is named record by record", async () => {
   // Second record applied onto something else.
   const f = regFake();
-  f.rows.migrationRecords.find((r) => r.id === "0xr2").appliedOnto = regWord(
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").appliedOnto = regWord(
     "77",
   );
   const p = await rbacPanelLive(f);
@@ -13714,7 +13723,7 @@ Deno.test("deployments: a broken migration chain is named record by record", asy
   );
   // The first record must sit on genesis.
   const g = regFake();
-  g.rows.migrationRecords.find((r) => r.id === "0xr1").appliedOnto = RBAC_ZERO;
+  g.rows.migrationRecords.find((r) => r.id === "0xrc").appliedOnto = RBAC_ZERO;
   const q = await rbacPanelLive(g);
   assert(
     collect(regRows(q, "record")[0], "reg-problem").map(leaf).join() ===
@@ -13724,7 +13733,7 @@ Deno.test("deployments: a broken migration chain is named record by record", asy
   // A missing record leaves a gap in the indices.
   const h = regFake();
   h.rows.migrationRecords = h.rows.migrationRecords.filter((r) =>
-    r.id !== "0xr2"
+    r.id !== "0xrb"
   );
   const r = await rbacPanelLive(h);
   const last = regRows(r, "record")[1];
@@ -13740,7 +13749,7 @@ Deno.test("deployments: a broken migration chain is named record by record", asy
   // A head that is not the last record's migration.
   const k = regFake();
   k.rows.migrationLines[0].head = REG_M[1];
-  k.rows.migrationLines[0].headRecord = { id: "0xr2" };
+  k.rows.migrationLines[0].headRecord = { id: "0xrb" };
   const s = await rbacPanelLive(k);
   const hp = collect(s, "reg-problem").map(leaf);
   assert(
@@ -13756,6 +13765,14 @@ Deno.test("deployments: a delegate that is neither the chain's Safe nor its time
   const p = await rbacPanelLive(f);
   const rows = regRows(p, "delegate");
   assert(rows.length === 3, "approved, under the root: " + rows.length);
+  // By registry kind, then scope, then delegate address.
+  const who = rows.map((r) =>
+    [REG_STRANGER, REG_SAFE, RBAC_TL].find((a) => textOf(r).includes(a))
+  );
+  assert(
+    who.join() === [REG_STRANGER, REG_SAFE, RBAC_TL].join(),
+    who.join(),
+  );
   const stray = rows.filter((r) => collect(r, "reg-stray").length);
   assert(
     stray.length === 1 && textOf(stray[0]).includes(REG_STRANGER),
