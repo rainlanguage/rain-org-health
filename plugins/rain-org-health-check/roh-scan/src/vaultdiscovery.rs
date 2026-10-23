@@ -257,7 +257,11 @@ mod tests {
         };
         assert_eq!(discover(&moved_block), Err(DiscoveryError::Malformed));
 
-        let repeats = |_: &str| Some(page(&full, 5));
+        let calls = RefCell::new(0);
+        let repeats = |_: &str| {
+            *calls.borrow_mut() += 1;
+            (*calls.borrow() <= 2).then(|| page(&full, 5))
+        };
         assert_eq!(discover(&repeats), Err(DiscoveryError::Malformed));
 
         let unordered = |_: &str| Some(page(&[addr(2), addr(1)], 5));
