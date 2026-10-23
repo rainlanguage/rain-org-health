@@ -334,35 +334,43 @@ fn rpc_session(chain: Chain) -> Session {
     }
 }
 
-/// POST a JSON-RPC `payload` to Base, trying `BASE_RPCS` from `session` and
-/// falling through on failure. Returns the first successful body. A revert is
-/// HTTP 200 with an `error` body, so it returns from the first endpoint reached.
-/// `None` only if every endpoint fails.
+/// POST `payload` to one endpoint. `None` when curl fails (transport or HTTP
+/// error); a JSON-RPC error is HTTP 200, so it returns as a body.
+fn curl_post(rpc: &str, payload: &str) -> Option<Vec<u8>> {
+    let o = Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "-X",
+            "POST",
+            rpc,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            payload,
+        ])
+        .output()
+        .ok()?;
+    o.status.success().then_some(o.stdout)
+}
+
+/// The first body `post` gets for `payload`, trying `rpcs` from `cursor` and
+/// falling through on transport failure. `None` only if every endpoint fails.
+fn first_body<F: Fn(&str, &str) -> Option<Vec<u8>>>(
+    rpcs: &[&str],
+    cursor: usize,
+    payload: &str,
+    post: &F,
+) -> Option<Vec<u8>> {
+    (0..rpcs.len()).find_map(|i| post(rpcs[(cursor + i) % rpcs.len()], payload))
+}
+
+/// POST a JSON-RPC `payload` to the session's chain, trying its endpoints from
+/// the session's cursor. A revert is HTTP 200 with an `error` body, so it
+/// returns from the first endpoint reached.
 fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
-    let rpcs = session.chain.rpcs();
-    for i in 0..rpcs.len() {
-        let rpc = rpcs[(session.cursor + i) % rpcs.len()];
-        if let Ok(o) = Command::new("curl")
-            .args([
-                "-fsS",
-                "-m",
-                "25",
-                "-X",
-                "POST",
-                rpc,
-                "-H",
-                "content-type: application/json",
-                "-d",
-                payload,
-            ])
-            .output()
-        {
-            if o.status.success() {
-                return Some(o.stdout);
-            }
-        }
-    }
-    None
+    first_body(session.chain.rpcs(), session.cursor, payload, &curl_post)
 }
 
 /// POST a JSON `body` to one `url`; `None` on any transport or HTTP failure.
@@ -409,11 +417,10 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
 /// endpoints it runs against. Chunked, an unlucky chunk costs its own slots.
 ///
 /// 10, because `mainnet.base.org` caps a batch at exactly 10 and refuses an
-/// 11th with HTTP **200** carrying a single error object. `curl -fsS` treats
-/// 200 as success, so `curl_json` returns that body and never falls through to
-/// the endpoints that would have answered — the rejection is not a failover, it
-/// is the whole chunk lost. Measured against all nine configured endpoints; it
-/// is `BASE_RPCS[0]`, so roughly one scan in five began there.
+/// 11th with HTTP **200** carrying a single error object. `eth_call_batch`
+/// fails over on such a refusal, but every refused chunk costs a round trip
+/// per endpoint tried. Measured against all nine configured endpoints; it is
+/// `BASE_RPCS[0]`, so roughly one scan in five began there.
 ///
 /// Re-measured when HyperEVM, Robinhood Chain and BSC were added: each
 /// first-choice endpoint accepts 10 and 20 and refuses 50 —
@@ -435,11 +442,25 @@ const ETH_CALL_BATCH_CHUNK: usize = 10;
 /// Ids are the request index, and `batch_result_hex` maps them back by id, so a
 /// node that reorders its answers cannot attribute one address's result to
 /// another.
-/// @param session The chain session; all calls share it, so one node answers
-/// the whole batch and two cannot disagree within it.
+///
+/// A chunk an endpoint refuses (HTTP 200 with a non-array body: a rate limit,
+/// a batch cap, no batch support) goes to the next endpoint; a chunk every
+/// endpoint refuses is read call by call.
+/// @param session The chain session; all calls share its starting endpoint.
 /// @param calls The `(to, data)` pairs.
 /// @return One slot per call, in the order given.
 fn eth_call_batch(session: Session, calls: &[(String, String)]) -> Vec<Option<String>> {
+    eth_call_batch_via(session.chain.rpcs(), session.cursor, calls, &curl_post)
+}
+
+/// `eth_call_batch` over an injected `post`, so the failover is testable
+/// without a network.
+fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
+    rpcs: &[&str],
+    cursor: usize,
+    calls: &[(String, String)],
+    post: &F,
+) -> Vec<Option<String>> {
     let mut out: Vec<Option<String>> = Vec::with_capacity(calls.len());
     for chunk in calls.chunks(ETH_CALL_BATCH_CHUNK) {
         let body = chunk
@@ -452,12 +473,18 @@ fn eth_call_batch(session: Session, calls: &[(String, String)]) -> Vec<Option<St
             })
             .collect::<Vec<_>>()
             .join(",");
-        // Ids restart per chunk, and `batch_result_hex` is told this chunk's
-        // length, so a chunk is read entirely within itself. A rejected chunk
-        // costs its own slots and no others.
-        match curl_json(session, &format!("[{body}]")) {
-            Some(b) => out.extend(rpc::batch_result_hex(&b, chunk.len())),
-            None => out.extend(vec![None; chunk.len()]),
+        let payload = format!("[{body}]");
+        // Ids restart per chunk, so a chunk is read entirely within itself.
+        let answered = (0..rpcs.len()).find_map(|i| {
+            post(rpcs[(cursor + i) % rpcs.len()], &payload)
+                .and_then(|b| rpc::batch_result_hex(&b, chunk.len()))
+        });
+        match answered {
+            Some(slots) => out.extend(slots),
+            None => out.extend(chunk.iter().map(|(to, data)| {
+                first_body(rpcs, cursor, &eth_call_payload(to, data), post)
+                    .and_then(|b| rpc::result_hex(&b))
+            })),
         }
     }
     out
@@ -3512,6 +3539,64 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    // ---- batch failover ----
+
+    const REFUSED: &[u8] =
+        br#"{"jsonrpc":"2.0","id":null,"error":{"code":-32005,"message":"rate limited"}}"#;
+
+    fn calls(n: usize) -> Vec<(String, String)> {
+        (0..n)
+            .map(|i| (format!("0x{i:040x}"), "0x8da5cb5b".to_string()))
+            .collect()
+    }
+
+    /// Answers a single call with its own `to`, so a slot's answer proves which
+    /// call it came from.
+    fn single_answer(payload: &str) -> Option<Vec<u8>> {
+        let to = payload.split(r#""to":""#).nth(1)?.split('"').next()?;
+        Some(format!(r#"{{"jsonrpc":"2.0","id":1,"result":"{to}"}}"#).into_bytes())
+    }
+
+    #[test]
+    fn a_batch_every_endpoint_refuses_is_read_call_by_call() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 3);
+        let post = |_: &str, payload: &str| {
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_via(&["a", "b"], 0, &calls, &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+    }
+
+    #[test]
+    fn a_batch_one_endpoint_refuses_goes_to_the_next() {
+        let calls = calls(2);
+        let singles = std::cell::Cell::new(0);
+        let post = |rpc: &str, payload: &str| {
+            if !payload.starts_with('[') {
+                singles.set(singles.get() + 1);
+                return None;
+            }
+            if rpc == "refuses" {
+                return Some(REFUSED.to_vec());
+            }
+            Some(
+                br#"[{"jsonrpc":"2.0","id":1,"result":"0xbb"},{"jsonrpc":"2.0","id":0,"result":"0xaa"}]"#
+                    .to_vec(),
+            )
+        };
+        let got = eth_call_batch_via(&["refuses", "answers"], 0, &calls, &post);
+        assert_eq!(
+            got,
+            vec![Some("0xaa".to_string()), Some("0xbb".to_string())]
+        );
+        assert_eq!(singles.get(), 0);
+    }
 
     // ---- chain endpoint coverage ----
 
