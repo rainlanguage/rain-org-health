@@ -180,6 +180,8 @@
      move by. Amber, like every other rollout state on this site — red here
      would report a chain the rollout has not reached as a fault. */
   .own-status-unpinned { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
+  .own-status-notpinned { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
+  .own-status-notonchain { color: var(--crit); border-color: var(--crit); }
   .own-row.own-other { background: var(--debt-bg); }
   .own-status-unknown, .own-cert-unknown { color: var(--crit); border-color: var(--crit); font-style: italic; }
   .own-cert-current { color: var(--clean); border-color: var(--clean); }
@@ -888,9 +890,19 @@ function renderDeployments(document, $, data, io) {
     const notTimelock = known.filter((x) => x.label !== "timelock" && x.label !== "unknown");
     const expired = known.filter((x) => x.certificationExpired === true);
     const certUnread = known.filter((x) => typeof x.certificationExpired !== "boolean");
+    const notPinned = known.filter((x) => x.pinned === false);
+    const notOnChain = known.filter((x) => x.onChain === false);
     const errors = [];
     if (typeof c.error === "string" && c.error) errors.push(c.error);
     else if (rowsIn.length === 0) errors.push("no receipt vaults listed");
+    if (typeof c.discoveryError === "string" && c.discoveryError) {
+      errors.push(`on-chain vault discovery failed: ${c.discoveryError}`);
+    } else if (typeof c.discoveredCount !== "number") {
+      errors.push("on-chain vault discovery did not run");
+    }
+    if (notOnChain.length > 0) {
+      errors.push(`${notOnChain.length} pinned in privileged-addresses.json but not found on-chain`);
+    }
     if (n("unknown") > 0) errors.push(`${n("unknown")} owner() read(s) failed`);
     if (certUnread.length > 0) {
       errors.push(`${certUnread.length} isCertificationExpired() read(s) failed`);
@@ -905,7 +917,10 @@ function renderDeployments(document, $, data, io) {
     if (expired.length > 0) {
       warnings.push(`${expired.length} with expired certification`);
     }
-    return { rowsIn, known, n, errors, warnings };
+    if (notPinned.length > 0) {
+      warnings.push(`${notPinned.length} on-chain but not pinned in privileged-addresses.json`);
+    }
+    return { rowsIn, known, n, notPinned, notOnChain, errors, warnings };
   };
 
   const renderVaultOwners = (v) => {
@@ -923,7 +938,9 @@ function renderDeployments(document, $, data, io) {
     const sub = el("div", "own-sub");
     sub.append(
       `Every receipt vault in st0x.deploy's ${typeof v.source === "string" ? v.source : "privileged-addresses.json"}, ` +
+        `plus every one its vault deployer's Deployment events record on-chain (via st0x.deploy's subgraph), ` +
         `read live per chain: owner() against THAT chain's timelock, and isCertificationExpired(). ` +
+        `"not pinned" is on-chain but missing from the file; "not on-chain" is in the file but was never deployed by the deployer. ` +
         `"safe" is the chain's token-owner Safe; "other" is an owner that is neither pin; ` +
         `"unpinned" means the chain has no timelock pinned to compare against; ` +
         `"unknown" means the read failed, never that the vault has not moved.`,
@@ -951,14 +968,18 @@ function renderDeployments(document, $, data, io) {
           "h3",
           null,
           `${net} — ${r.n("timelock")} timelock, ${r.n("safe")} safe, ${r.n("other")} other, ` +
-            `${r.n("unpinned")} unpinned, ${r.n("unknown")} unknown of ${r.rowsIn.length}`,
+            `${r.n("unpinned")} unpinned, ${r.n("unknown")} unknown of ${r.rowsIn.length}` +
+            ` — ${r.notPinned.length} not pinned, ${r.notOnChain.length} not on-chain`,
         ),
       );
       // The chain's own pins, so an `other` owner can be told from this chain
       // holding ANOTHER chain's timelock.
-      if (c.safe || c.timelock) {
+      const found = typeof c.discoveredCount === "number"
+        ? ` · ${c.discoveredCount} found on-chain at block ${c.discoveredAtBlock ?? "?"}`
+        : "";
+      if (c.safe || c.timelock || found) {
         const pins = el("div", "own-groupnote");
-        pins.append(`safe ${c.safe || "—"} · timelock ${c.timelock || "—"}`);
+        pins.append(`safe ${c.safe || "—"} · timelock ${c.timelock || "—"}${found}`);
         sink.append(pins);
       }
       if (r.errors.length > 0) sink.append(vaultBanner("error", r.errors.join(" · ")));
@@ -982,10 +1003,14 @@ function renderDeployments(document, $, data, io) {
           ? ["current", "cert current"]
           : ["unknown", "cert unknown"];
         pills.append(el("span", `own-status own-cert-${cert[0]}`, cert[1]));
+        if (x.pinned === false) pills.append(el("span", "own-status own-status-notpinned", "not pinned"));
+        if (x.onChain === false) pills.append(el("span", "own-status own-status-notonchain", "not on-chain"));
         rr.append(pills);
         return rr;
       };
-      const clean = (x) => x.label === "timelock" && x.certificationExpired === false;
+      const clean = (x) =>
+        x.label === "timelock" && x.certificationExpired === false &&
+        x.pinned !== false && x.onChain !== false;
       const flagged = r.known.filter((x) => !clean(x));
       if (flagged.length > 0) {
         const tbl = el("div", "own-table");

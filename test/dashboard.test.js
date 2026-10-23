@@ -10128,12 +10128,91 @@ const vaultChainRow = (network, safe, timelock, vaults) => ({
   safe,
   timelock,
   vaults,
+  discoveredCount: vaults.length,
+  discoveredAtBlock: 1,
 });
 const vrow = (vault, owner, label, certificationExpired) => ({
   vault,
   owner,
   label,
   certificationExpired,
+  pinned: true,
+  onChain: true,
+});
+
+Deno.test("deployments: an on-chain vault missing from the file is a warning with its pill", () => {
+  const box = deploymentsBox(vaultsDoc([
+    vaultChainRow("bsc", ETH_SAFE, ETH_TL, [
+      vrow("0xaaa", ETH_TL, "timelock", false),
+      { ...vrow("0xbbb", ETH_TL, "timelock", false), pinned: false },
+    ]),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes("bsc: 1 on-chain but not pinned in privileged-addresses.json"),
+    "the warning names the chain and count, got: " + t,
+  );
+  assert(collect(box, "own-verify-drift").length >= 1, "warning banner");
+  assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
+  assert(collect(box, "own-verify-error").length === 0, "not an error");
+  const pills = collect(box, "own-status-notpinned");
+  assert(pills.length === 1 && pills[0].textContent === "not pinned", "one not-pinned pill");
+  const folded = collect(box, "vault-clean").map(textOf).join("|");
+  assert(
+    !folded.includes("0xbbb") && folded.includes("0xaaa"),
+    "an unpinned vault is not folded as clean, got: " + folded,
+  );
+  assert(t.includes("1 not pinned, 0 not on-chain"), "counted in the chain heading, got: " + t);
+});
+
+Deno.test("deployments: a pinned vault not found on-chain is an error with its pill", () => {
+  const box = deploymentsBox(vaultsDoc([
+    vaultChainRow("base", BASE_SAFE, BASE_TL, [
+      vrow("0xaaa", BASE_TL, "timelock", false),
+      { ...vrow("0xbbb", BASE_TL, "timelock", false), onChain: false },
+    ]),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes("base: 1 pinned in privileged-addresses.json but not found on-chain"),
+    "the error names the chain and count, got: " + t,
+  );
+  assert(collect(box, "own-verify-error").length >= 1, "error banner");
+  assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
+  const pills = collect(box, "own-status-notonchain");
+  assert(pills.length === 1 && pills[0].textContent === "not on-chain", "one not-on-chain pill");
+  const folded = collect(box, "vault-clean").map(textOf).join("|");
+  assert(!folded.includes("0xbbb"), "a vault not on-chain is not folded as clean");
+});
+
+Deno.test("deployments: a failed or absent discovery is an error, never clean", () => {
+  const rows = [vrow("0xaaa", BASE_TL, "timelock", false)];
+  const failed = {
+    ...vaultChainRow("base", BASE_SAFE, BASE_TL, rows),
+    discoveryError: "the subgraph did not answer",
+  };
+  delete failed.discoveredCount;
+  const absent = { ...vaultChainRow("ethereum", ETH_SAFE, ETH_TL, rows) };
+  delete absent.discoveredCount;
+  const box = deploymentsBox(vaultsDoc([failed, absent]));
+  const t = textOf(box);
+  assert(
+    t.includes("base: on-chain vault discovery failed: the subgraph did not answer"),
+    "the producer's discovery error is shown, got: " + t,
+  );
+  assert(
+    t.includes("ethereum: on-chain vault discovery did not run"),
+    "a chain with no discovery result is an error, got: " + t,
+  );
+  assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
+});
+
+Deno.test("deployments: the chain note says how many vaults were found on-chain and when", () => {
+  const box = deploymentsBox(vaultsDoc([
+    { ...vaultChainRow("bsc", ETH_SAFE, ETH_TL, [vrow("0xaaa", ETH_TL, "timelock", false)]), discoveredCount: 103, discoveredAtBlock: 129276993 },
+  ]));
+  const t = textOf(box);
+  assert(t.includes("103 found on-chain at block 129276993"), "got: " + t);
 });
 
 const VAULTS_TWO_CHAINS = vaultsDoc([

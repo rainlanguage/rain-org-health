@@ -26,6 +26,7 @@ mod rbac;
 mod rpc;
 mod signals;
 mod untested;
+mod vaultdiscovery;
 use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
     anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
@@ -362,6 +363,28 @@ fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
         }
     }
     None
+}
+
+/// POST a JSON `body` to one `url`; `None` on any transport or HTTP failure.
+fn post_json(url: &str, body: &str) -> Option<Vec<u8>> {
+    let o = Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "--retry",
+            "2",
+            "-X",
+            "POST",
+            url,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            body,
+        ])
+        .output()
+        .ok()?;
+    o.status.success().then_some(o.stdout)
 }
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
@@ -2710,13 +2733,15 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // Where the deploy repo's RBAC subgraph is published per network, and
         // the role names its sources spell out. The role history itself is read
         // by the page when it loads; see `rbac`'s module doc.
+        let subgraph_workflow = gh_file(
+            deploy_org,
+            deploy_repo,
+            ".github/workflows/deploy-subgraph.yaml",
+        );
+        let subgraph = rbac::parse_deploy_workflow(&subgraph_workflow);
+        let subgraph_networks =
+            rbac::parse_networks(&gh_file(deploy_org, deploy_repo, "subgraph/networks.json"));
         let deployment_rbac = {
-            let workflow = gh_file(
-                deploy_org,
-                deploy_repo,
-                ".github/workflows/deploy-subgraph.yaml",
-            );
-            let networks_json = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
             let orchestrator =
                 gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
             let authorizer = gh_file(
@@ -2735,8 +2760,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             let mut doc = rbac::build_rbac(
                 deploy_org,
                 deploy_repo,
-                rbac::parse_deploy_workflow(&workflow).as_ref(),
-                rbac::parse_networks(&networks_json).as_deref(),
+                subgraph.as_ref(),
+                subgraph_networks.as_deref(),
                 &names,
             );
             // Who each address on the tab is: every `address` constant in the
@@ -2818,7 +2843,18 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     })
                     .collect()
             };
-            owners::build_vault_owners(privileged.as_deref(), &read)
+            let discover = |network: &str| {
+                use vaultdiscovery::DiscoveryError;
+                let src = subgraph.as_ref().ok_or(DiscoveryError::NoSource)?;
+                let nets = subgraph_networks
+                    .as_deref()
+                    .ok_or(DiscoveryError::NoNetworks)?;
+                let net = vaultdiscovery::subgraph_network(nets, network)
+                    .ok_or_else(|| DiscoveryError::NotIndexed(network.to_string()))?;
+                let url = rbac::endpoint(src, net);
+                vaultdiscovery::discover(&|body| post_json(&url, body))
+            };
+            owners::build_vault_owners(privileged.as_deref(), &discover, &read)
         };
 
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each

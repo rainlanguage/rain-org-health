@@ -16,6 +16,7 @@
 //! curated list of hot keys is only ever as complete as somebody's memory.
 
 use crate::privileged::{PrivilegedChain, PrivilegedError, PRIVILEGED_ADDRESSES_PATH};
+use crate::vaultdiscovery::{Discovered, DiscoveryError};
 use regex::Regex;
 use serde_json::json;
 
@@ -598,14 +599,20 @@ impl VaultOwner {
     }
 }
 
-/// `owner()` and `isCertificationExpired()` of every receipt vault st0x.deploy
-/// publishes in `privileged-addresses.json`, per chain, labelled against that
-/// chain's Safe and timelock.
+/// Asks for one chain's receipt vaults as the chain itself records them.
+pub type DiscoverVaults<'a> = &'a dyn Fn(&str) -> Result<Discovered, DiscoveryError>;
+
+/// `owner()` and `isCertificationExpired()` of every receipt vault on each
+/// chain st0x.deploy publishes in `privileged-addresses.json`: the vaults it
+/// pins plus every one discovered on-chain, labelled against that chain's Safe
+/// and timelock, with each vault marked pinned or not and found on-chain or not.
 ///
-/// Always a document: an unreadable source is `error` with no chains, and a
-/// chain listing no vaults carries its own `error`, so neither reads as clean.
+/// Always a document: an unreadable source is `error` with no chains, a chain
+/// listing no vaults carries its own `error`, and a failed discovery carries
+/// `discoveryError`, so none of them reads as clean.
 pub fn build_vault_owners(
     source: Result<&[PrivilegedChain], &PrivilegedError>,
+    discover: DiscoverVaults,
     read: ReadVaults,
 ) -> serde_json::Value {
     let chains = match source {
@@ -624,9 +631,20 @@ pub fn build_vault_owners(
         let (mut safe, mut timelock, mut other, mut unknown, mut unpinned) =
             (0usize, 0usize, 0usize, 0usize, 0usize);
         let (mut expired, mut cert_unknown) = (0usize, 0usize);
-        let answers = read(&chain.network, &chain.receipt_vaults);
+        let (mut not_pinned, mut not_on_chain) = (0usize, 0usize);
+        let discovered = discover(&chain.network);
+        let mut vaults = chain.receipt_vaults.clone();
+        if let Ok(d) = &discovered {
+            vaults.extend(
+                d.vaults
+                    .iter()
+                    .filter(|v| !chain.receipt_vaults.contains(v))
+                    .cloned(),
+            );
+        }
+        let answers = read(&chain.network, &vaults);
         let mut vault_rows: Vec<serde_json::Value> = Vec::new();
-        for (i, vault) in chain.receipt_vaults.iter().enumerate() {
+        for (i, vault) in vaults.iter().enumerate() {
             // A short answer leaves the tail unread rather than shifting slots.
             let answer = answers.get(i).cloned().unwrap_or_default();
             let label = match &answer.owner {
@@ -648,11 +666,21 @@ pub fn build_vault_owners(
                 Some(false) => {}
                 None => cert_unknown += 1,
             }
+            let pinned = i < chain.receipt_vaults.len();
+            let on_chain = discovered.as_ref().ok().map(|d| d.vaults.contains(vault));
+            if !pinned {
+                not_pinned += 1;
+            }
+            if on_chain == Some(false) {
+                not_on_chain += 1;
+            }
             vault_rows.push(json!({
                 "vault": vault,
                 "owner": answer.owner,
                 "label": label.token(),
                 "certificationExpired": answer.certification_expired,
+                "pinned": pinned,
+                "onChain": on_chain,
             }));
         }
         let mut row = json!({
@@ -669,8 +697,17 @@ pub fn build_vault_owners(
                 "unpinned": unpinned,
                 "certificationExpired": expired,
                 "certificationUnknown": cert_unknown,
+                "notPinned": not_pinned,
+                "notOnChain": not_on_chain,
             },
         });
+        match &discovered {
+            Ok(d) => {
+                row["discoveredCount"] = json!(d.vaults.len());
+                row["discoveredAtBlock"] = json!(d.block);
+            }
+            Err(e) => row["discoveryError"] = json!(e.to_string()),
+        }
         if chain.receipt_vaults.is_empty() {
             row["error"] = json!(format!(
                 "{PRIVILEGED_ADDRESSES_PATH} lists no receipt vaults for {}",
@@ -1706,6 +1743,99 @@ mod tests {
         }
     }
 
+    /// Discovery that finds exactly the pinned set.
+    fn build_pinned(chains: &[PrivilegedChain], read: ReadVaults) -> serde_json::Value {
+        let discover = |network: &str| {
+            Ok(Discovered {
+                vaults: chains
+                    .iter()
+                    .find(|c| c.network == network)
+                    .map(|c| c.receipt_vaults.clone())
+                    .unwrap_or_default(),
+                block: 1,
+            })
+        };
+        build_vault_owners(Ok(chains), &discover, read)
+    }
+
+    fn found(vaults: &[&str]) -> Result<Discovered, DiscoveryError> {
+        Ok(Discovered {
+            vaults: vaults.iter().map(|v| v.to_string()).collect(),
+            block: 42,
+        })
+    }
+
+    #[test]
+    fn a_vault_on_chain_but_not_pinned_is_read_and_marked() {
+        let asked = std::cell::RefCell::new(Vec::new());
+        let read = |network: &str, vs: &[String]| {
+            asked.borrow_mut().push((network.to_string(), vs.to_vec()));
+            vs.iter().map(|_| owned(BASE_SAFE, true)).collect()
+        };
+        let discover = |network: &str| match network {
+            "base" => found(&["0xaaa", "0xbbb", "0xeee"]),
+            _ => found(&["0xccc", "0xddd"]),
+        };
+        let out = build_vault_owners(Ok(&privileged_chains()), &discover, &read);
+        assert_eq!(
+            asked.into_inner()[0].1,
+            ["0xaaa", "0xbbb", "0xeee"].map(String::from)
+        );
+        let base = &out["chains"][0];
+        assert_eq!(base["vaults"][2]["vault"], "0xeee");
+        assert_eq!(base["vaults"][2]["pinned"], false);
+        assert_eq!(base["vaults"][2]["onChain"], true);
+        assert_eq!(base["vaults"][2]["label"], "safe");
+        assert_eq!(base["vaults"][2]["certificationExpired"], true);
+        assert_eq!(base["vaults"][0]["pinned"], true);
+        assert_eq!(base["vaults"][0]["onChain"], true);
+        assert_eq!(base["counts"]["notPinned"], 1);
+        assert_eq!(base["counts"]["notOnChain"], 0);
+        assert_eq!(base["discoveredCount"], 3);
+        assert_eq!(base["discoveredAtBlock"], 42);
+        assert_eq!(out["chains"][1]["counts"]["notPinned"], 0);
+    }
+
+    #[test]
+    fn a_pinned_vault_not_found_on_chain_is_marked() {
+        let read = |_: &str, vs: &[String]| vec![owned(BASE_TIMELOCK, false); vs.len()];
+        let discover = |network: &str| match network {
+            "base" => found(&["0xaaa"]),
+            _ => found(&["0xccc", "0xddd"]),
+        };
+        let out = build_vault_owners(Ok(&privileged_chains()), &discover, &read);
+        let base = &out["chains"][0];
+        assert_eq!(base["vaults"].as_array().map(Vec::len), Some(2));
+        assert_eq!(base["vaults"][1]["vault"], "0xbbb");
+        assert_eq!(base["vaults"][1]["pinned"], true);
+        assert_eq!(base["vaults"][1]["onChain"], false);
+        assert_eq!(base["counts"]["notOnChain"], 1);
+        assert_eq!(base["counts"]["notPinned"], 0);
+    }
+
+    #[test]
+    fn a_failed_discovery_is_an_error_and_on_chain_is_unknown() {
+        let read = |_: &str, vs: &[String]| vec![owned(BASE_TIMELOCK, false); vs.len()];
+        let discover = |network: &str| match network {
+            "base" => Err(DiscoveryError::Unreachable),
+            _ => found(&["0xccc", "0xddd"]),
+        };
+        let out = build_vault_owners(Ok(&privileged_chains()), &discover, &read);
+        let base = &out["chains"][0];
+        assert_eq!(
+            base["discoveryError"],
+            DiscoveryError::Unreachable.to_string()
+        );
+        assert!(base.get("discoveredCount").is_none());
+        assert_eq!(base["vaults"][0]["onChain"], serde_json::Value::Null);
+        assert_eq!(base["counts"]["notOnChain"], 0);
+        assert_eq!(
+            base["counts"]["timelock"], 2,
+            "pinned vaults are still read"
+        );
+        assert!(out["chains"][1].get("discoveryError").is_none());
+    }
+
     #[test]
     fn each_chain_is_asked_about_its_own_vaults() {
         let asked = std::cell::RefCell::new(Vec::new());
@@ -1713,7 +1843,7 @@ mod tests {
             asked.borrow_mut().push((network.to_string(), vs.to_vec()));
             vec![VaultRead::default(); vs.len()]
         };
-        build_vault_owners(Ok(&privileged_chains()), &read);
+        build_pinned(&privileged_chains(), &read);
         assert_eq!(
             asked.into_inner(),
             vec![
@@ -1736,7 +1866,7 @@ mod tests {
             "base" => vec![owned(BASE_TIMELOCK, false), owned(BASE_SAFE, false)],
             _ => vs.iter().map(|_| owned(BASE_TIMELOCK, false)).collect(),
         };
-        let out = build_vault_owners(Ok(&privileged_chains()), &read);
+        let out = build_pinned(&privileged_chains(), &read);
         let chains = out["chains"].as_array().expect("chains");
         assert_eq!(chains[0]["vaults"][0]["label"], "timelock");
         assert_eq!(chains[0]["vaults"][1]["label"], "safe");
@@ -1764,7 +1894,7 @@ mod tests {
             ],
             _ => vec![owned(ETH_TIMELOCK, false), owned(ETH_TIMELOCK, false)],
         };
-        let out = build_vault_owners(Ok(&privileged_chains()), &read);
+        let out = build_pinned(&privileged_chains(), &read);
         let chains = out["chains"].as_array().expect("chains");
         assert_eq!(chains[0]["vaults"][0]["certificationExpired"], true);
         assert_eq!(
@@ -1785,7 +1915,7 @@ mod tests {
                 .map(|_| owned("0x00000000000000000000000000000000deadbeef", false))
                 .collect()
         };
-        let out = build_vault_owners(Ok(&privileged_chains()), &read);
+        let out = build_pinned(&privileged_chains(), &read);
         assert_eq!(out["chains"][0]["counts"]["other"], 2);
         assert_eq!(out["chains"][0]["counts"]["unknown"], 0);
     }
@@ -1799,7 +1929,7 @@ mod tests {
                 .map(|_| owned("0x00000000000000000000000000000000deadbeef", false))
                 .collect()
         };
-        let out = build_vault_owners(Ok(&chains), &read);
+        let out = build_pinned(&chains, &read);
         assert_eq!(out["chains"][0]["counts"]["unpinned"], 2);
         assert_eq!(out["chains"][0]["counts"]["other"], 0);
         assert_eq!(out["chains"][1]["counts"]["other"], 2);
@@ -1808,7 +1938,7 @@ mod tests {
     #[test]
     fn an_unreadable_source_is_an_error_document() {
         let read = |_: &str, vs: &[String]| vec![VaultRead::default(); vs.len()];
-        let out = build_vault_owners(Err(&PrivilegedError::Empty), &read);
+        let out = build_vault_owners(Err(&PrivilegedError::Empty), &|_| unreachable!(), &read);
         assert_eq!(out["error"], PrivilegedError::Empty.to_string());
         assert_eq!(out["chains"], serde_json::json!([]));
     }
@@ -1818,7 +1948,7 @@ mod tests {
         let mut chains = privileged_chains();
         chains[1].receipt_vaults.clear();
         let read = |_: &str, vs: &[String]| vec![owned(BASE_TIMELOCK, false); vs.len()];
-        let out = build_vault_owners(Ok(&chains), &read);
+        let out = build_pinned(&chains, &read);
         assert!(out["chains"][0].get("error").is_none());
         assert!(out["chains"][1]["error"]
             .as_str()
@@ -1829,7 +1959,7 @@ mod tests {
     #[test]
     fn a_short_answer_leaves_the_tail_unread() {
         let read = |_: &str, _: &[String]| vec![owned(BASE_SAFE, false)];
-        let out = build_vault_owners(Ok(&privileged_chains()), &read);
+        let out = build_pinned(&privileged_chains(), &read);
         let base = &out["chains"][0];
         assert_eq!(base["counts"]["safe"], 1);
         assert_eq!(base["counts"]["unknown"], 1);
