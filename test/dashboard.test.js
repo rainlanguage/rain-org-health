@@ -6762,12 +6762,12 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
   assert(
-    btns.length === 5,
-    "five sub-tabs: " + btns.map((b) => b.textContent).join(","),
+    btns.length === 6,
+    "six sub-tabs: " + btns.map((b) => b.textContent).join(","),
   );
   assert(
-    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac,held,migrations",
-    "tabs in order safe,contracts,rbac,held,migrations: " +
+    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac,held,registry,migrations",
+    "tabs in order safe,contracts,rbac,held,registry,migrations: " +
       btns.map((b) => b.dataset.tab).join(","),
   );
   // Exactly one active, and it is the first — a page that opens with none
@@ -6779,7 +6779,7 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   );
 
   const panels = collect(box, "tabpanel");
-  assert(panels.length === 5, "five panels");
+  assert(panels.length === 6, "six panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
   assert(
     !byTab.safe.classList.contains("tab-hidden"),
@@ -11455,6 +11455,9 @@ function fakeSubgraph(over = {}) {
     // `TimelockOperation`, which is what the prod tag serves until it moves.
     // `null` here is a failed fetch.
     schema: { data: { t: null } },
+    // The registry probe's answer, as `schema` is the timelock's: `t: null` is a
+    // version that does not index the registries.
+    registrySchema: { data: { t: null } },
     // entity name -> a raw response body to answer with instead of rows.
     raw: {},
     status: 200,
@@ -11498,6 +11501,11 @@ function fakeSubgraph(over = {}) {
         return f.meta === null
           ? Promise.reject(new TypeError("Failed to fetch"))
           : reply(f.meta);
+      }
+      if (q.includes("__type") && q.includes("ConfigBinding")) {
+        return f.registrySchema === null
+          ? Promise.reject(new TypeError("Failed to fetch"))
+          : reply(f.registrySchema);
       }
       if (q.includes("__type")) {
         return f.schema === null
@@ -13825,4 +13833,177 @@ Deno.test("deployments: a predecessor still pending before the delay ends keeps 
   assert(w.startsWith("ready in 1d 12h"), w);
   assert(w.includes("delay ends") && !w.includes("executable at"), w);
   assert(w.includes("is not in the index"), w);
+});
+
+// ---- deployments.html: root registry ----
+
+// A subgraph version that indexes the registries.
+const REG_SCHEMA = { data: { t: { name: "ConfigBinding" } } };
+const REG_CONFIG = { id: "0x2f1f82c65cce305df3950f8af8fa5ad6d9a815e8", kind: "CONFIG_REGISTRY" };
+const REG_MIGRATION = { id: "0x5a48e719785e11c4643ea4056d0861a6a69e91a0", kind: "MIGRATION_REGISTRY" };
+const REG_ROOT = "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c";
+const REG_SAFE = "0x" + "5a".repeat(20);
+const REG_BEACON = "0x" + "be".repeat(20);
+// `cast keccak "st0x.deploy"`.
+const REG_NS = "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4";
+const REG_NAME = "0x" + "c1".repeat(32);
+const REG_MIG = "0x" + "e1".repeat(32);
+
+function regFake(over = {}) {
+  const f = fakeSubgraph({ registrySchema: REG_SCHEMA, ...over });
+  const delegate = (registry) => ({ registry, account: REG_ROOT, scope: REG_NS, delegate: REG_SAFE });
+  f.rows.registryDelegates = [
+    {
+      id: "d1",
+      ...delegate(REG_MIGRATION),
+      approved: true,
+      approvedAtBlock: "20",
+      approvedAtTimestamp: String(RBAC_TS - 100),
+      revokedAtBlock: null,
+      revokedAtTimestamp: null,
+    },
+    {
+      id: "d2",
+      ...delegate(REG_CONFIG),
+      approved: false,
+      approvedAtBlock: "10",
+      approvedAtTimestamp: String(RBAC_TS - 300),
+      revokedAtBlock: "15",
+      revokedAtTimestamp: String(RBAC_TS - 200),
+    },
+  ];
+  const change = (id, registry, approved, block) => ({
+    id,
+    registryDelegate: delegate(registry),
+    approved,
+    blockNumber: String(block),
+    blockTimestamp: String(RBAC_TS - 1000 + block),
+    transactionHash: "0xtx" + id,
+    transactionFrom: REG_ROOT,
+    logIndex: "0",
+  });
+  f.rows.registryDelegateChanges = [
+    change("c1", REG_CONFIG, true, 10),
+    change("c2", REG_CONFIG, false, 15),
+    change("c3", REG_MIGRATION, true, 20),
+  ];
+  f.rows.configBindings = [
+    {
+      id: "b1",
+      authority: REG_ROOT,
+      name: REG_NAME,
+      value: "0x" + REG_BEACON.slice(2).padStart(64, "0"),
+      sender: REG_SAFE,
+      boundAtBlock: "30",
+      boundAtTimestamp: String(RBAC_TS - 50),
+      registerCount: 2,
+    },
+  ];
+  const write = (id, value, block) => ({
+    id,
+    binding: { authority: REG_ROOT, name: REG_NAME },
+    sender: REG_SAFE,
+    value,
+    blockNumber: String(block),
+    blockTimestamp: String(RBAC_TS - 1000 + block),
+    transactionHash: "0xtx" + id,
+    logIndex: "0",
+  });
+  f.rows.configRegisters = [
+    write("r1", "0xdeadbeef", 25),
+    write("r2", "0x" + REG_BEACON.slice(2).padStart(64, "0"), 30),
+  ];
+  f.rows.migrationRecords = [
+    {
+      id: "m1",
+      line: { writer: REG_SAFE, namespace: REG_NS },
+      index: 0,
+      migration: REG_MIG,
+      appliedAt: String(RBAC_TS - 5000),
+      sender: REG_SAFE,
+      blockNumber: "40",
+      blockTimestamp: String(RBAC_TS - 40),
+      transactionHash: "0xtxm1",
+      logIndex: "0",
+    },
+  ];
+  return f;
+}
+
+const REG_NAMES = { [REG_NS]: "st0x.deploy", [REG_NAME]: "st0x.vault-beacon.v1" };
+
+async function regPanel(f, extra = { registryNames: REG_NAMES }) {
+  const { box, done } = deploymentsRender(rbacData([rbacNet()], extra), f.io);
+  await done;
+  return collect(box, "tabpanel").find((p) => p.dataset.tab === "registry");
+}
+const regGroup = (p, head) => {
+  const kids = collect(p, "rbac-net")[0].children;
+  const at = kids.findIndex((k) => k.className === "own-grouphead" && k.textContent.startsWith(head));
+  assert(at >= 0, "section " + head + " present: " + textOf(p));
+  return kids[at + 1];
+};
+
+Deno.test("root registry: an index that does not read the registries says so and reads nothing", async () => {
+  const f = fakeSubgraph();
+  const p = await regPanel(f);
+  assert(textOf(p).includes("does not read the registries"), textOf(p));
+  const reads = f.seen.map((s) => JSON.parse(s.init.body).query).filter((q) => /page: (registry|config|migration)/.test(q));
+  assert(reads.length === 0, "no registry entity read: " + reads.join(" | "));
+});
+
+Deno.test("root registry: only approvals in force are listed as delegations, labelled from the deploy repo", async () => {
+  const p = await regPanel(regFake());
+  const head = collect(p, "own-grouphead").map((h) => h.textContent);
+  assert(head.includes("Delegations in force — 1"), head.join(" | "));
+  const live = regGroup(p, "Delegations in force");
+  const rows = collect(live, "own-row");
+  assert(rows.length === 1, "one live approval");
+  const t = textOf(rows[0]);
+  assert(t.includes("st0x.deploy") && t.includes(REG_NS), "scope labelled with its hash: " + t);
+  assert(t.includes("MigrationRegistry") && !t.includes("ConfigRegistry"), "the revoked ConfigRegistry approval is not in force: " + t);
+  assert(t.includes(REG_ROOT) && t.includes(REG_SAFE), t);
+});
+
+Deno.test("root registry: delegation changes are newest first with approve and revoke told apart", async () => {
+  const p = await regPanel(regFake());
+  const rows = collect(regGroup(p, "Delegation changes"), "own-row");
+  const chips = rows.map((r) => collect(r, "own-chip")[0].textContent);
+  assert(chips.join(",") === "approved,revoked,approved", chips.join(","));
+  assert(textOf(rows[0]).includes("MigrationRegistry"), "block 20 first");
+  assert(textOf(rows[2]).includes("ConfigRegistry"), "block 10 last");
+});
+
+Deno.test("root registry: config values that hold an address read as it, others as their bytes", async () => {
+  const p = await regPanel(regFake());
+  const binding = textOf(regGroup(p, "Config bindings"));
+  assert(binding.includes("st0x.vault-beacon.v1") && binding.includes(REG_BEACON), binding);
+  assert(binding.includes("2 writes"), binding);
+  assert(binding.includes("bound by"), "a delegate's write names who wrote it: " + binding);
+  const writes = collect(regGroup(p, "Config changes"), "own-row").map(textOf);
+  assert(writes.length === 2, "every write");
+  assert(writes[0].includes(REG_BEACON), "newest write first: " + writes[0]);
+  assert(writes[1].includes("0xdeadbeef"), "a non-address value as its bytes: " + writes[1]);
+});
+
+Deno.test("root registry: an unlabelled hash is shown raw", async () => {
+  const p = await regPanel(regFake(), {});
+  const t = textOf(regGroup(p, "Migration records"));
+  assert(t.includes(REG_MIG) && t.includes(REG_NS), t);
+  assert(!t.includes("st0x.deploy"), t);
+});
+
+Deno.test("root registry: a failed page shows no registry history at all", async () => {
+  const f = regFake({ raw: { configRegisters: { errors: [{ message: "boom" }] } } });
+  const p = await regPanel(f);
+  const t = textOf(p);
+  assert(t.includes("boom"), t);
+  assert(!t.includes("Delegations in force"), "nothing shown short: " + t);
+});
+
+Deno.test("root registry: labels render as text, never markup", async () => {
+  const payload = '<img src=x onerror="alert(1)">';
+  const p = await regPanel(regFake(), { registryNames: { [REG_NS]: payload } });
+  assert(textOf(p).includes(payload), "payload kept as text");
+  assert(tags(p, "img").length === 0, "no img element created");
 });

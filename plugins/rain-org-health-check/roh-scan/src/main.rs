@@ -2829,6 +2829,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     sources.push((path, body));
                 }
             }
+            let bodies: Vec<&str> = sources.iter().map(|(_, b)| b.as_str()).collect();
+            doc["registryNames"] = serde_json::Value::Object(
+                rbac::registry_names(&bodies)
+                    .into_iter()
+                    .map(|(id, label)| (id, serde_json::Value::from(label)))
+                    .collect(),
+            );
             let chain_names: Vec<String> = chains.iter().map(|c| c.network.clone()).collect();
             if listed_all && !chain_names.is_empty() {
                 let (map, unread) = addrnames::build_address_names(&sources, &chain_names);

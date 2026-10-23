@@ -372,6 +372,7 @@ function renderDeployments(document, $, data, io) {
     ["contracts", "Contracts & tokens"],
     ["rbac", "Role changes"],
     ["held", "Roles held"],
+    ["registry", "Root registry"],
     ["migrations", "Migrations"],
   ];
   const subnav = el("div", "subnav");
@@ -1527,6 +1528,34 @@ function renderDeployments(document, $, data, io) {
   // Read one network's index: its position, then every role, current holder
   // and grant/revoke at that position. Never throws; every failure is a state.
   const rbacRead = async (url, names) => {
+    const out = await rbacMeta(url);
+    if (typeof out.indexedBlock !== "number") return out;
+    const block = out.indexedBlock;
+    try {
+      const [roles, holders, grants] = await Promise.all([
+        rbacReadAll(url, "roles", "", "role admin contract { id kind firstIndexedBlock }", block),
+        rbacReadAll(url, "roleHolders", ", held: true", "account grantedAtBlock grantedAtTimestamp role { id }", block),
+        rbacReadAll(
+          url,
+          "roleGrants",
+          "",
+          "account granted sender blockNumber blockTimestamp transactionHash logIndex role { id }",
+          block,
+        ),
+      ]);
+      out.contracts = rbacGroup(roles, holders, grants, names);
+    } catch (e) {
+      // The position is real but the history is not whole, so none of it is
+      // shown: a list missing a page reads as the list.
+      out.state = "error";
+      out.detail = e instanceof Error ? e.message : String(e);
+    }
+    out.timelock = await tlRead(url, block, out.contracts, names);
+    return out;
+  };
+  // One network's index position and state. Never throws: a failure is a
+  // state with no `indexedBlock`.
+  const rbacMeta = async (url) => {
     const m = await rbacAsk(url, "{ _meta { block { number timestamp } hasIndexingErrors } }");
     if (m.missing) return { state: "missing" };
     if (m.unreachable) return { state: "unreachable" };
@@ -1553,26 +1582,6 @@ function renderDeployments(document, $, data, io) {
       : out.ageSeconds !== null && out.ageSeconds <= RBAC_FRESH_SECS
         ? "synced"
         : "syncing";
-    try {
-      const [roles, holders, grants] = await Promise.all([
-        rbacReadAll(url, "roles", "", "role admin contract { id kind firstIndexedBlock }", block),
-        rbacReadAll(url, "roleHolders", ", held: true", "account grantedAtBlock grantedAtTimestamp role { id }", block),
-        rbacReadAll(
-          url,
-          "roleGrants",
-          "",
-          "account granted sender blockNumber blockTimestamp transactionHash logIndex role { id }",
-          block,
-        ),
-      ]);
-      out.contracts = rbacGroup(roles, holders, grants, names);
-    } catch (e) {
-      // The position is real but the history is not whole, so none of it is
-      // shown: a list missing a page reads as the list.
-      out.state = "error";
-      out.detail = e instanceof Error ? e.message : String(e);
-    }
-    out.timelock = await tlRead(url, block, out.contracts, names);
     return out;
   };
   // Governance timelock operations: every `schedule` / `scheduleBatch` the
@@ -2707,6 +2716,278 @@ function renderDeployments(document, $, data, io) {
     );
     return Promise.all(reads);
   };
+  // Root registry: who may write under whom in the ConfigRegistry and the
+  // MigrationRegistry, and every binding and record written, read live from
+  // the same index as Role changes. The registries emit hashes, never their
+  // preimages, so a scope or name is labelled only where the deploy repo
+  // spells its preimage out.
+  const regLabel = (labels, id) =>
+    typeof id === "string" && Object.prototype.hasOwnProperty.call(labels, id.toLowerCase()) && typeof labels[id.toLowerCase()] === "string"
+      ? labels[id.toLowerCase()]
+      : null;
+  const regKind = (k) => (k === "CONFIG_REGISTRY" ? "ConfigRegistry" : k === "MIGRATION_REGISTRY" ? "MigrationRegistry" : `registry (${String(k)})`);
+  // Newest first, as for role changes.
+  const regNewest = (a, b) => (b.blockNumber ?? -1) - (a.blockNumber ?? -1) || (b.logIndex ?? -1) - (a.logIndex ?? -1);
+  // A 32-byte word holding an address reads as that address; any other value
+  // is shown as its bytes.
+  const regValue = (v) => {
+    if (typeof v !== "string" || !/^0x([0-9a-fA-F]{2})*$/.test(v)) return { raw: "unreadable value" };
+    const hex = v.slice(2).toLowerCase();
+    if (hex.length === 64 && hex.startsWith("0".repeat(24))) return { address: "0x" + hex.slice(24) };
+    return { raw: v };
+  };
+  // One network's registry half, at one index position. The entities exist
+  // only from the subgraph version that indexes the registries, so the schema
+  // is asked first. Never throws.
+  const regRead = async (url) => {
+    const out = await rbacMeta(url);
+    if (typeof out.indexedBlock !== "number") return out;
+    const block = out.indexedBlock;
+    const probe = await rbacAsk(url, '{ t: __type(name: "ConfigBinding") { name } }');
+    const fail = (detail) => ({ ...out, state: "error", detail });
+    if (probe.missing) return fail("the subgraph vanished mid-read");
+    if (probe.unreachable) return fail("no readable answer to the schema probe");
+    if (probe.error) return fail(probe.error);
+    if (probe.data.t === null) return { ...out, absent: true };
+    try {
+      const [delegates, changes, bindings, registers, records] = await Promise.all([
+        rbacReadAll(
+          url,
+          "registryDelegates",
+          "",
+          "registry { id kind } account scope delegate approved approvedAtBlock approvedAtTimestamp revokedAtBlock revokedAtTimestamp",
+          block,
+        ),
+        rbacReadAll(
+          url,
+          "registryDelegateChanges",
+          "",
+          "registryDelegate { registry { id kind } account scope delegate } approved blockNumber blockTimestamp transactionHash transactionFrom logIndex",
+          block,
+        ),
+        rbacReadAll(url, "configBindings", "", "authority name value sender boundAtBlock boundAtTimestamp registerCount", block),
+        rbacReadAll(
+          url,
+          "configRegisters",
+          "",
+          "binding { authority name } sender value blockNumber blockTimestamp transactionHash logIndex",
+          block,
+        ),
+        rbacReadAll(
+          url,
+          "migrationRecords",
+          "",
+          "line { writer namespace } index migration appliedAt sender blockNumber blockTimestamp transactionHash logIndex",
+          block,
+        ),
+      ]);
+      const num = (rows, keys) =>
+        rows.map((r) => {
+          const o = { ...r };
+          for (const k of keys) o[k] = rbacNum(r[k]);
+          return o;
+        });
+      out.delegates = num(delegates, ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]);
+      out.changes = num(changes, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      out.bindings = num(bindings, ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
+      out.registers = num(registers, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      out.records = num(records, ["index", "appliedAt", "blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+    } catch (e) {
+      return fail(e instanceof Error ? e.message : String(e));
+    }
+    return out;
+  };
+  const regBody = (slot, n, chain, endpoint, published, pins, labels) => {
+    slot.replaceChildren(rbacBanner(n, endpoint, published));
+    if (n.absent) {
+      slot.append(el("div", "rbac-empty", "This version of the index does not read the registries; nothing is shown for them."));
+      return;
+    }
+    if (!Array.isArray(n.delegates)) return;
+    const scopeNode = (id) => {
+      const box = el("div", "own-rc");
+      const label = regLabel(labels, id);
+      box.append(el("div", "own-role", label || (typeof id === "string" ? id : "(unknown)")));
+      if (label) box.append(el("div", "grt-roleid", id));
+      return box;
+    };
+    const section = (title, rows, empty, draw) => {
+      slot.append(el("div", "own-grouphead", title));
+      if (rows.length === 0) {
+        slot.append(el("div", "rbac-empty", empty));
+        return;
+      }
+      const table = el("div", "own-table");
+      for (const r of rows) table.append(draw(r));
+      slot.append(table);
+    };
+    const line = (key, ...nodes) => {
+      const l = el("div", "bcn-line");
+      l.append(el("span", "bcn-key", key), ...nodes);
+      return l;
+    };
+    const valueNode = (v) => {
+      const d = regValue(v);
+      return d.address ? whoNode(d.address, chain, pins) : el("span", "mig-hash", d.raw);
+    };
+    // Current approvals first: they are who may write right now.
+    const live = n.delegates.filter((d) => d && d.approved === true);
+    section(
+      `Delegations in force — ${live.length}`,
+      live,
+      "No account has approved a delegate in either registry.",
+      (d) => {
+        const row = el("div", "own-row");
+        const ac = el("div", "bcn-detail");
+        ac.append(
+          line("in", el("span", "own-note", regKind(d.registry && d.registry.kind))),
+          line("approver", whoNode(String(d.account), chain, pins)),
+          line("delegate", whoNode(String(d.delegate), chain, pins)),
+        );
+        const tail = el("div", "own-prov");
+        tail.append(el("span", "own-chip own-chip-yes", "approved"));
+        if (typeof d.approvedAtTimestamp === "number") tail.append(el("span", "own-note", utc(d.approvedAtTimestamp)));
+        row.append(scopeNode(d.scope), ac, tail);
+        return row;
+      },
+    );
+    section(
+      `Delegation changes — ${n.changes.length}, newest first`,
+      n.changes,
+      "No delegate has ever been approved or revoked in either registry.",
+      (c) => {
+        const d = c.registryDelegate || {};
+        const row = el("div", "own-row");
+        const ac = el("div", "bcn-detail");
+        ac.append(
+          line("in", el("span", "own-note", regKind(d.registry && d.registry.kind))),
+          line("approver", whoNode(String(d.account), chain, pins)),
+          line("delegate", whoNode(String(d.delegate), chain, pins)),
+        );
+        if (typeof c.transactionFrom === "string" && c.transactionFrom.toLowerCase() !== String(d.account).toLowerCase()) {
+          ac.append(line("sent by", whoNode(c.transactionFrom, chain, pins)));
+        }
+        const tail = el("div", "own-prov");
+        tail.append(
+          el("span", `own-chip own-chip-${c.approved === true ? "yes" : "no"}`, c.approved === true ? "approved" : "revoked"),
+          el("span", "own-note", utc(c.blockTimestamp)),
+          txNode(c.transactionHash, chain),
+        );
+        row.append(scopeNode(d.scope), ac, tail);
+        return row;
+      },
+    );
+    section(
+      `Config bindings — ${n.bindings.length}`,
+      n.bindings,
+      "Nothing is bound in the ConfigRegistry.",
+      (b) => {
+        const row = el("div", "own-row");
+        const ac = el("div", "bcn-detail");
+        ac.append(line("authority", whoNode(String(b.authority), chain, pins)), line("value", valueNode(b.value)));
+        if (typeof b.sender === "string" && b.sender.toLowerCase() !== String(b.authority).toLowerCase()) {
+          ac.append(line("bound by", whoNode(b.sender, chain, pins)));
+        }
+        const tail = el("div", "own-prov");
+        tail.append(el("span", "own-note", utc(b.boundAtTimestamp)));
+        if (typeof b.registerCount === "number" && b.registerCount > 1) {
+          tail.append(el("span", "own-note", `${b.registerCount} writes`));
+        }
+        row.append(scopeNode(b.name), ac, tail);
+        return row;
+      },
+    );
+    section(
+      `Config changes — ${n.registers.length}, newest first`,
+      n.registers,
+      "No value has ever been bound in the ConfigRegistry.",
+      (c) => {
+        const b = c.binding || {};
+        const row = el("div", "own-row");
+        const ac = el("div", "bcn-detail");
+        ac.append(line("authority", whoNode(String(b.authority), chain, pins)), line("value", valueNode(c.value)));
+        if (typeof c.sender === "string" && c.sender.toLowerCase() !== String(b.authority).toLowerCase()) {
+          ac.append(line("bound by", whoNode(c.sender, chain, pins)));
+        }
+        const tail = el("div", "own-prov");
+        tail.append(el("span", "own-note", utc(c.blockTimestamp)), txNode(c.transactionHash, chain));
+        row.append(scopeNode(b.name), ac, tail);
+        return row;
+      },
+    );
+    section(
+      `Migration records — ${n.records.length}, newest first`,
+      n.records,
+      "No migration has been recorded in the MigrationRegistry.",
+      (m) => {
+        const l = m.line || {};
+        const row = el("div", "own-row");
+        const ac = el("div", "bcn-detail");
+        ac.append(
+          line("namespace", el("span", "own-note", regLabel(labels, l.namespace) || String(l.namespace))),
+          line("writer", whoNode(String(l.writer), chain, pins)),
+        );
+        if (typeof m.sender === "string" && m.sender.toLowerCase() !== String(l.writer).toLowerCase()) {
+          ac.append(line("recorded by", whoNode(m.sender, chain, pins)));
+        }
+        const tail = el("div", "own-prov");
+        if (typeof m.index === "number") tail.append(el("span", "own-note", `#${m.index}`));
+        tail.append(el("span", "own-note", `applied ${utc(m.appliedAt)}`), txNode(m.transactionHash, chain));
+        row.append(scopeNode(m.migration), ac, tail);
+        return row;
+      },
+    );
+  };
+  // Builds the Root registry tab and starts one live read per network.
+  // Returns a promise that settles once every network has rendered.
+  const renderRegistry = (r) => {
+    sink.append(el("h2", null, "Root registry — delegations and config changes, per network"));
+    const off = (why) => {
+      sink.append(el("div", "rbac-empty", `Registry history unavailable — ${why}.`));
+      return Promise.resolve();
+    };
+    if (!r || typeof r !== "object") return off("this scan carries no subgraph location");
+    if (typeof r.unavailable === "string") return off(`the scan ${r.unavailable}`);
+    const sub = el("div", "own-sub");
+    sub.append("Read live from ");
+    sub.append(link("", `${r.org}/${r.repo}`, `https://github.com/${r.org}/${r.repo}/tree/main/subgraph`));
+    sub.append(
+      `'s subgraph as this page loads, at its "${r.tag}" tag: every delegate approval in the ConfigRegistry and ` +
+        "MigrationRegistry, every config binding and the writes behind it, and every migration record. Names, " +
+        "scopes and migrations are labelled where the deploy repo spells out the hash's preimage, and shown as the raw hash otherwise.",
+    );
+    sink.append(sub);
+    const nets = Array.isArray(r.networks) ? r.networks : [];
+    if (nets.length === 0) return off("the subgraph declares no networks");
+    const labels = {};
+    for (const src of [r.registryNames, r.roleNames]) {
+      if (!src || typeof src !== "object") continue;
+      for (const [k, v] of Object.entries(src)) {
+        if (typeof v === "string" && !Object.prototype.hasOwnProperty.call(labels, k.toLowerCase())) labels[k.toLowerCase()] = v;
+      }
+    }
+    const pinTable = r.addressNames && typeof r.addressNames === "object" ? r.addressNames : null;
+    const reads = [];
+    for (const n of nets) {
+      if (!n || typeof n !== "object") continue;
+      const chain = typeof n.chain === "string" ? n.chain : null;
+      const title = chain && chain !== n.network ? `${chain} (${n.network})` : String(n.network);
+      sink.append(el("h3", "tok-h3", title));
+      const slot = el("div", "rbac-net");
+      sink.append(slot);
+      const t = pinTable && chain && Object.prototype.hasOwnProperty.call(pinTable, chain) ? pinTable[chain] : null;
+      const pins = pinTable ? (t && typeof t === "object" ? t : {}) : null;
+      const endpoint = typeof n.endpoint === "string" && n.endpoint.startsWith("https://") ? n.endpoint : null;
+      const published = `${r.subgraph}-${n.network}/${r.tag}`;
+      if (!endpoint) {
+        regBody(slot, { state: "error", detail: "the scan gave no https endpoint for this network" }, chain, null, published, pins, labels);
+        continue;
+      }
+      regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
+      reads.push(regRead(endpoint).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)));
+    }
+    return Promise.all(reads);
+  };
   const MIG_STATES = {
     applied: ["applied", "yes"],
     notApplied: ["pending", "roll"],
@@ -2879,8 +3160,10 @@ function renderDeployments(document, $, data, io) {
     renderMigrations(data.deploymentMigrations);
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
+    sink = panels.registry;
+    const registryDone = renderRegistry(data.deploymentRbac);
     show(hashTab() || TABS[0][0]);
-    return rbacDone;
+    return Promise.all([rbacDone, registryDone]);
   }
   const sub = el("div", "own-sub");
   sub.append("Privileged addresses read from the ");
@@ -2954,8 +3237,10 @@ function renderDeployments(document, $, data, io) {
   renderMigrations(data.deploymentMigrations);
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
+  sink = panels.registry;
+  const registryDone = renderRegistry(data.deploymentRbac);
   show(hashTab() || TABS[0][0]);
-  return rbacDone;
+  return Promise.all([rbacDone, registryDone]);
 }
 let data = null;
 async function load() {
