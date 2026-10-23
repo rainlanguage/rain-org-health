@@ -216,16 +216,16 @@ pub fn result_hex(body: &[u8]) -> Option<String> {
 ///
 /// `None` in a slot is that call failing or the node omitting it, never a
 /// stand-in for an empty result. A body that is not a JSON array at all — an
-/// error object, or a node that does not support batching — yields all `None`
-/// rather than a wrong answer.
+/// error object, or a node that does not support batching — is a refused
+/// batch, `None` overall, so the caller can retry it elsewhere.
 /// @param body The response body.
 /// @param len How many calls the batch carried.
-/// @return One slot per call, in request order.
-pub fn batch_result_hex(body: &[u8], len: usize) -> Vec<Option<String>> {
+/// @return One slot per call, in request order; `None` if the batch was refused.
+pub fn batch_result_hex(body: &[u8], len: usize) -> Option<Vec<Option<String>>> {
     let mut out = vec![None; len];
-    let Ok(serde_json::Value::Array(items)) = serde_json::from_slice::<serde_json::Value>(body)
+    let serde_json::Value::Array(items) = serde_json::from_slice::<serde_json::Value>(body).ok()?
     else {
-        return out;
+        return None;
     };
     for item in items {
         let Some(id) = item.get("id").and_then(|i| i.as_u64()) else {
@@ -239,7 +239,7 @@ pub fn batch_result_hex(body: &[u8], len: usize) -> Vec<Option<String>> {
             .and_then(|r| r.as_str())
             .map(str::to_string);
     }
-    out
+    Some(out)
 }
 
 pub fn decode_bool(result_hex: &str) -> Option<bool> {
@@ -441,11 +441,11 @@ mod tests {
         ]"#;
         assert_eq!(
             batch_result_hex(body, 3),
-            vec![
+            Some(vec![
                 Some("0xaa".to_string()),
                 Some("0xbb".to_string()),
                 Some("0xcc".to_string())
-            ]
+            ])
         );
     }
 
@@ -458,7 +458,7 @@ mod tests {
         ]"#;
         assert_eq!(
             batch_result_hex(body, 2),
-            vec![None, Some("0xbb".to_string())]
+            Some(vec![None, Some("0xbb".to_string())])
         );
     }
 
@@ -475,19 +475,17 @@ mod tests {
         ]"#;
         assert_eq!(
             batch_result_hex(body, 2),
-            vec![None, Some("0xbb".to_string())]
+            Some(vec![None, Some("0xbb".to_string())])
         );
     }
 
-    /// A body that is not an array MUST be all `None`.
-    ///
-    /// That is a node refusing the batch or erroring on the whole request. It
-    /// has told us nothing about any call, and inventing results would be worse
-    /// than reporting an unread chain.
+    /// A body that is not an array MUST read as a refused batch, distinct from
+    /// an array whose calls all failed, so the caller retries it elsewhere.
     #[test]
-    fn a_non_array_body_reads_as_nothing_known() {
+    fn a_non_array_body_is_a_refused_batch() {
         let body = br#"{"jsonrpc":"2.0","id":0,"error":{"message":"batch not supported"}}"#;
-        assert_eq!(batch_result_hex(body, 2), vec![None, None]);
+        assert_eq!(batch_result_hex(body, 2), None);
+        assert_eq!(batch_result_hex(b"[]", 2), Some(vec![None, None]));
     }
 }
 
