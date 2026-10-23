@@ -2870,15 +2870,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     })
                     .collect()
             };
-            let discover = |network: &str| {
-                use vaultdiscovery::DiscoveryError;
-                let src = subgraph.as_ref().ok_or(DiscoveryError::NoSource)?;
-                let nets = subgraph_networks
-                    .as_deref()
-                    .ok_or(DiscoveryError::NoNetworks)?;
-                let net = vaultdiscovery::subgraph_network(nets, network)
-                    .ok_or_else(|| DiscoveryError::NotIndexed(network.to_string()))?;
-                let url = rbac::endpoint(src, net);
+            let discover = |chain: &str| {
+                let url = vaultdiscovery::endpoint(
+                    subgraph.as_ref(),
+                    subgraph_networks.as_deref(),
+                    chain,
+                )?;
                 vaultdiscovery::discover(&|body| post_json(&url, body))
             };
             owners::build_vault_owners(privileged.as_deref(), &discover, &read)

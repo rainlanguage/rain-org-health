@@ -60,6 +60,19 @@ pub fn subgraph_network<'a>(networks: &'a [String], chain: &str) -> Option<&'a s
         .find(|n| rbac::chain_name(n) == Some(chain))
 }
 
+/// The subgraph query URL for page chain `chain`.
+pub fn endpoint(
+    src: Option<&rbac::SubgraphSource>,
+    networks: Option<&[String]>,
+    chain: &str,
+) -> Result<String, DiscoveryError> {
+    let src = src.ok_or(DiscoveryError::NoSource)?;
+    let networks = networks.ok_or(DiscoveryError::NoNetworks)?;
+    let network = subgraph_network(networks, chain)
+        .ok_or_else(|| DiscoveryError::NotIndexed(chain.to_string()))?;
+    Ok(rbac::endpoint(src, network))
+}
+
 /// One page of vaults after `after`, at `block` once the first page has fixed it.
 pub fn page_query(after: &str, block: Option<u64>) -> String {
     let at = block.map_or(String::new(), |b| format!("block:{{number:{b}}},"));
@@ -177,8 +190,8 @@ mod tests {
     fn an_unusable_answer_is_an_error_never_an_empty_list() {
         assert_eq!(parse_page(b"<html>"), Err(DiscoveryError::NotJson));
         assert_eq!(
-            parse_page(br#"{"errors":[{"message":"no field `nope`"}]}"#),
-            Err(DiscoveryError::Graphql("no field `nope`".into()))
+            parse_page(br#"{"errors":[{"message":"no field `nope`"},{"message":"bad block"}]}"#),
+            Err(DiscoveryError::Graphql("no field `nope`; bad block".into()))
         );
         assert_eq!(
             parse_page(br#"{"data":{"contracts":[],"_meta":{"block":{"number":1},"hasIndexingErrors":true}}}"#),
@@ -192,10 +205,50 @@ mod tests {
             parse_page(br#"{"data":{"_meta":{"block":{"number":1},"hasIndexingErrors":false}}}"#),
             Err(DiscoveryError::Malformed)
         );
+        for id in [
+            "0x01".to_string(),
+            format!("00{}", "a".repeat(40)),
+            format!("0x{}", "g".repeat(40)),
+        ] {
+            let body = page(std::slice::from_ref(&id), 1);
+            assert_eq!(parse_page(&body), Err(DiscoveryError::Malformed), "{id}");
+        }
+    }
+
+    #[test]
+    fn a_page_query_asks_ascending_ids_after_the_cursor() {
+        let q = |after, block| {
+            serde_json::from_str::<Value>(&page_query(after, block)).unwrap()["query"]
+                .as_str()
+                .unwrap()
+                .to_string()
+        };
         assert_eq!(
-            parse_page(br#"{"data":{"contracts":[{"id":"0x01"}],"_meta":{"block":{"number":1},"hasIndexingErrors":false}}}"#),
-            Err(DiscoveryError::Malformed)
+            q("0x", None),
+            format!("{{contracts(first:{PAGE},orderBy:id,orderDirection:asc,where:{{kind:RECEIPT_VAULT,id_gt:\"0x\"}}){{id}} _meta{{block{{number}} hasIndexingErrors}}}}")
         );
+        assert_eq!(
+            q("0xab", Some(9)),
+            format!("{{contracts(first:{PAGE},orderBy:id,orderDirection:asc,block:{{number:9}},where:{{kind:RECEIPT_VAULT,id_gt:\"0xab\"}}){{id}} _meta(block:{{number:9}},){{block{{number}} hasIndexingErrors}}}}")
+        );
+    }
+
+    #[test]
+    fn a_repeated_id_within_or_across_pages_fails_the_discovery() {
+        let dup = |_: &str| Some(page(&[addr(1), addr(1)], 5));
+        assert_eq!(discover(&dup), Err(DiscoveryError::Malformed));
+
+        let full: Vec<String> = (1..=PAGE).map(addr).collect();
+        let calls = RefCell::new(0);
+        let overlaps = |_: &str| {
+            *calls.borrow_mut() += 1;
+            Some(if *calls.borrow() == 1 {
+                page(&full, 5)
+            } else {
+                page(&[full[PAGE - 1].clone(), addr(PAGE + 1)], 5)
+            })
+        };
+        assert_eq!(discover(&overlaps), Err(DiscoveryError::Malformed));
     }
 
     #[test]
@@ -277,5 +330,30 @@ mod tests {
         assert_eq!(subgraph_network(&nets, "hyperevm"), Some("hyper-evm"));
         assert_eq!(subgraph_network(&nets, "bsc"), Some("bsc"));
         assert_eq!(subgraph_network(&nets, "robinhood"), None);
+    }
+
+    #[test]
+    fn a_chain_is_queried_at_its_networks_endpoint_or_says_what_is_missing() {
+        let src = rbac::SubgraphSource {
+            name: "st0x".into(),
+            query_base: "https://q".into(),
+        };
+        let nets: Vec<String> = ["mainnet", "bsc"].map(String::from).to_vec();
+        assert_eq!(
+            endpoint(Some(&src), Some(&nets), "ethereum"),
+            Ok(rbac::endpoint(&src, "mainnet"))
+        );
+        assert_eq!(
+            endpoint(Some(&src), Some(&nets), "base"),
+            Err(DiscoveryError::NotIndexed("base".into()))
+        );
+        assert_eq!(
+            endpoint(None, Some(&nets), "bsc"),
+            Err(DiscoveryError::NoSource)
+        );
+        assert_eq!(
+            endpoint(Some(&src), None, "bsc"),
+            Err(DiscoveryError::NoNetworks)
+        );
     }
 }
