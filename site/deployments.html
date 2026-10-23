@@ -60,8 +60,6 @@
   /* Its own class, not `.empty`: the owners section's tests count the page's
      empty states, and a second one indistinguishable from theirs would make
      their assertion about that section pass or fail on this one. */
-  .vault-empty { color: var(--ink-3); padding: 24px 4px; line-height: 1.6; }
-  /* Its own class for the same reason as `.vault-empty`. */
   .rbac-empty { color: var(--ink-3); padding: 12px 4px; line-height: 1.6; }
   .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
   .rbac-hist { margin-top: 10px; }
@@ -183,15 +181,22 @@
      would report a chain the rollout has not reached as a fault. */
   .own-status-unpinned { color: var(--debt); border-color: var(--debt-border); background: var(--debt-bg); }
   .own-row.own-other { background: var(--debt-bg); }
+  .own-status-unknown, .own-cert-unknown { color: var(--crit); border-color: var(--crit); font-style: italic; }
+  .own-cert-current { color: var(--clean); border-color: var(--clean); }
+  .own-cert-expired { color: var(--crit); border-color: var(--crit); background: var(--debt-bg); }
+  .vault-clean { margin: 6px 0 14px; font-size: 12.5px; color: var(--ink-3); }
+  .vault-clean > summary { cursor: pointer; padding: 4px 0; }
   .own-verify { display: flex; flex-wrap: wrap; align-items: center; gap: 4px 14px;
                 border: 1px solid var(--border); border-radius: 9px; padding: 9px 12px;
                 margin: 0 0 10px; font-size: 12.5px; line-height: 1.5; }
   .own-verify-ok { background: var(--clean-bg); border-color: var(--clean); }
   .own-verify-drift { background: var(--debt-bg); border-color: var(--crit); }
+  .own-verify-error { background: var(--debt-bg); border-color: var(--crit); border-width: 2px; }
   .own-verify-down { background: var(--surface); color: var(--ink-3); }
   .own-verify-msg { font-weight: 600; color: var(--ink); }
   .own-verify-ok .own-verify-msg::before { content: "✓ "; color: var(--clean); font-weight: 700; }
   .own-verify-drift .own-verify-msg::before { content: "⚠ "; color: var(--crit); font-weight: 700; }
+  .own-verify-error .own-verify-msg::before { content: "✗ "; color: var(--crit); font-weight: 700; }
   .own-verify-thr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-2); }
   .own-verify-src { color: var(--ink-3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
   .own-prov { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end; }
@@ -575,16 +580,20 @@ function renderDeployments(document, $, data, io) {
       // Zero governed vaults and a non-empty-but-disjoint governed set are
       // different failures: the first is an unreadable list, the second a real
       // reconciliation gap whose breakdown is the thing worth reading.
-      const cause = (rc.governedCount ?? 0) === 0
+      const cause = typeof rc.error === "string" && rc.error
+        ? `The governed list could not be read: ${rc.error}.`
+        : (rc.governedCount ?? 0) === 0
         ? "A governed count of 0 means that list could not be read — the section is unavailable, not empty."
         : "The two sets are disjoint — the cross-check below names every vault and token on each side.";
-      sink.append(
+      const nb = el("div", "own-verify own-verify-error");
+      nb.append(
         el(
-          "div",
-          "own-sub",
+          "span",
+          "own-verify-msg",
           `No registry token resolved to a governed receipt vault: ${rc.governedCount ?? "?"} governed vault(s) from ${rc.function ?? "the migration set"}, ${rc.registryTokenCount ?? "?"} registry token(s). ${cause}`,
         ),
       );
+      sink.append(nb);
     } else {
       sink.append(el("h2", null, `Tokens — ${t.network}`));
       const tsub = el("div", "own-sub");
@@ -662,20 +671,6 @@ function renderDeployments(document, $, data, io) {
     // migration misses.
     const renderReconcile = (rec) => {
       if (!rec) return;
-      // A short governed list reads exactly like a smaller-but-valid one, so a
-      // partial parse is stated outright rather than left to be inferred from
-      // counts that look plausible.
-      const declared = rec.governedDeclared;
-      if (typeof declared === "number" && declared > (rec.governedCount ?? 0)) {
-        sink.append(el("h3", "tok-h3", "Migration set parse"));
-        sink.append(
-          el(
-            "div",
-            "own-verify own-verify-drift",
-            `${declared} governed vault entries declared in ${rec.function ?? "the migration set"}, ${rec.governedCount ?? 0} resolved to an address — the governed set is INCOMPLETE, so every cross-check below is drawn from a partial list.`,
-          ),
-        );
-      }
       const extra = Array.isArray(rec.extraVaults) ? rec.extraVaults : [];
       const missing = Array.isArray(rec.missingFromMigration) ? rec.missingFromMigration : [];
       if (!extra.length && !missing.length) return;
@@ -871,123 +866,141 @@ function renderDeployments(document, $, data, io) {
   // Nothing about a grantee is written down on this page, so a signer added to
   // that map arrives here on the next scan.
   // Governed-vault ownership, which the governance migration moves one
-  // `transferOwnership` per vault. Counts first, because the question asked of
-  // this section is "how far has the handover got on this chain", and a reader
-  // should not have to count rows to answer it.
-  // The labels this section knows how to show. An ALLOWLIST, not a denylist:
-  // the filter below used to admit everything except "unknown", so a label
-  // added to the Rust later — a burned ownership, an unreachable marker —
-  // would be counted as an answer, interpolated into a class with no CSS, and
-  // render as the least alarming row on the page. An unrecognised label is
-  // held out and said out loud instead.
-  const VAULT_LABELS = ["safe", "timelock", "other", "unpinned"];
+  // Every receipt vault st0x.deploy publishes, per chain: owner() against that
+  // chain's timelock, and isCertificationExpired(). Problems first; clean
+  // vaults are folded away so a warning is never buried under fifty rows.
+  //
+  // An ALLOWLIST of labels: one added to the Rust later has no CSS here, so it
+  // is counted and named rather than rendered as the quietest row on the page.
+  const VAULT_LABELS = ["safe", "timelock", "other", "unpinned", "unknown"];
+  const vaultBanner = (kind, msg) => {
+    const b = el("div", `own-verify own-verify-${kind}`);
+    b.append(el("span", "own-verify-msg", msg));
+    return b;
+  };
+  // Every field is untrusted: a throw here abandons the rest of the page.
+  const vaultChain = (c) => {
+    const rowsIn = Array.isArray(c.vaults) ? c.vaults : [];
+    const known = rowsIn.filter(
+      (x) => x && typeof x === "object" && VAULT_LABELS.includes(x.label),
+    );
+    const n = (label) => known.filter((x) => x.label === label).length;
+    const notTimelock = known.filter((x) => x.label !== "timelock" && x.label !== "unknown");
+    const expired = known.filter((x) => x.certificationExpired === true);
+    const certUnread = known.filter((x) => typeof x.certificationExpired !== "boolean");
+    const errors = [];
+    if (typeof c.error === "string" && c.error) errors.push(c.error);
+    else if (rowsIn.length === 0) errors.push("no receipt vaults listed");
+    if (n("unknown") > 0) errors.push(`${n("unknown")} owner() read(s) failed`);
+    if (certUnread.length > 0) {
+      errors.push(`${certUnread.length} isCertificationExpired() read(s) failed`);
+    }
+    if (rowsIn.length > known.length) {
+      errors.push(`${rowsIn.length - known.length} with a label this page does not know`);
+    }
+    const warnings = [];
+    if (notTimelock.length > 0) {
+      warnings.push(`${notTimelock.length} of ${rowsIn.length} not owned by the timelock`);
+    }
+    if (expired.length > 0) {
+      warnings.push(`${expired.length} with expired certification`);
+    }
+    return { rowsIn, known, n, errors, warnings };
+  };
 
   const renderVaultOwners = (v) => {
-    // `renderDeployments` is called outside the fetch's try/catch, so a throw
-    // in here does not degrade this section — it abandons the page, and the
-    // sections after it (suite health, beacons, tokens) never render at all.
-    // A reader then sees a page that simply stops, with no error, and the
-    // three sections most likely to be read as "no problems found" are the
-    // three that vanished. So every field this reads is treated as untrusted.
-    sink.append(el("h2", null, "Governed vault ownership — Safe or timelock"));
-    // No data is NOT "nothing is governed". `build_vault_owners` returns
-    // nothing when the vault list OR the chain pins failed to parse, and the
-    // key is absent entirely on a scan from before this section existed. All
-    // of those arrive here as null or an empty list, and rendering them as
-    // silence is the pre-PR blindness this section exists to end — the same
-    // mistake as the grant map, where an unparseable answer and a true empty
-    // were both `null`. So it says so.
-    if (!v || !Array.isArray(v.chains) || v.chains.length === 0) {
-      sink.append(
-        el(
-          "div",
-          "vault-empty",
-          "Vault ownership unavailable — the scan read no governed vaults or no chain pins.",
-        ),
-      );
+    sink.append(el("h2", null, "Receipt vaults — owner and certification"));
+    const chains = v && typeof v === "object" && Array.isArray(v.chains)
+      ? v.chains.filter((c) => c && typeof c === "object")
+      : [];
+    if (!v || typeof v !== "object" || v.error || chains.length === 0) {
+      const why = v && typeof v.error === "string" && v.error
+        ? v.error
+        : "the scan read no receipt vaults";
+      sink.append(vaultBanner("error", `Receipt vaults unavailable — ${why}.`));
       return;
     }
     const sub = el("div", "own-sub");
     sub.append(
-      `owner() read per vault on each chain and labelled against THAT chain's pins. ` +
-        `Three of the four labels are easy to confuse, so: "other" means the call ` +
-        `answered with an owner that is neither pin; "unpinned" means the chain has no ` +
-        `timelock constant yet, so there is nothing to recognise a move by and the ` +
-        `rollout simply has not reached it; "unknown" means the vault could not be ` +
-        `asked at all, never that we know it has not moved.`,
+      `Every receipt vault in st0x.deploy's ${typeof v.source === "string" ? v.source : "privileged-addresses.json"}, ` +
+        `read live per chain: owner() against THAT chain's timelock, and isCertificationExpired(). ` +
+        `"safe" is the chain's token-owner Safe; "other" is an owner that is neither pin; ` +
+        `"unpinned" means the chain has no timelock pinned to compare against; ` +
+        `"unknown" means the read failed, never that the vault has not moved.`,
     );
     sink.append(sub);
-    for (const c of v.chains) {
-      if (!c || typeof c !== "object") continue;
-      const rowsIn = Array.isArray(c.vaults) ? c.vaults : [];
-      // Rows for the vaults this chain answered for. The governed list spans
-      // every chain, so most of it is another chain's and listing all of it
-      // would make each chain look like it holds all 157.
-      const answered = rowsIn.filter(
-        (x) => x && typeof x === "object" && VAULT_LABELS.includes(x.label),
+    const per = chains.map((c) => ({
+      c,
+      net: typeof c.network === "string" && c.network ? c.network : "unnamed chain",
+      r: vaultChain(c),
+    }));
+    const summary = (key) =>
+      per.filter((p) => p.r[key].length > 0).map((p) => `${p.net}: ${p.r[key].join(", ")}`);
+    const errs = summary("errors");
+    const warns = summary("warnings");
+    if (errs.length > 0) sink.append(vaultBanner("error", errs.join(" · ")));
+    if (warns.length > 0) sink.append(vaultBanner("drift", warns.join(" · ")));
+    if (errs.length === 0 && warns.length === 0) {
+      sink.append(
+        vaultBanner("ok", "Every receipt vault is owned by its chain's timelock with current certification."),
       );
-      // Anything the labels above do not cover. Counted and named rather than
-      // dropped into the rows: a label this page cannot colour is not an
-      // answer it can report.
-      const unlabelled = rowsIn.filter(
-        (x) =>
-          !x ||
-          typeof x !== "object" ||
-          (x.label !== "unknown" && !VAULT_LABELS.includes(x.label)),
-      ).length;
-      // An unanswered vault is NOT known to be another chain's. `owner()`
-      // returns nothing both for a vault with no code here and for a read that
-      // failed — a rejected batch chunk, a node that timed out — and those are
-      // opposite facts. So the count is surfaced rather than dropped: without
-      // it, a chain whose reads all failed renders as a chain holding no
-      // governed vaults, which is an RPC outage reported as an empty chain.
-      const unread = rowsIn.filter((x) => x && x.label === "unknown").length;
-      // Counted off the ROWS, not off `counts`. The two are equal by
-      // construction in `build_vault_owners`, so a disagreement is always a
-      // defect in the data — and the heading is the reading mode this section
-      // is designed for, so it must not state a tally the rows below it
-      // contradict. An absent `counts` is then impossible to mistake for a
-      // measured zero, because it is never read.
-      const n = (label) => answered.filter((x) => x.label === label).length;
-      const net = typeof c.network === "string" && c.network ? c.network : "unnamed chain";
-      let head = `${net} — ${n("timelock")} timelock, ${n("safe")} safe, ` +
-        `${n("other")} other, ${n("unpinned")} unpinned of ${answered.length} here`;
-      if (unread > 0) {
-        head += ` · ${unread} unread (another chain's, or a failed read)`;
-      }
-      if (unlabelled > 0) {
-        head += ` · ${unlabelled} with a label this page does not know`;
-      }
-      sink.append(el("h3", null, head));
-      // The chain's own pins, so a red `other` row can be compared against
-      // them. Without these the reader cannot tell a third party from this
-      // chain holding ANOTHER chain's timelock — an ordinary migration slip.
+    }
+    for (const { c, net, r } of per) {
+      sink.append(
+        el(
+          "h3",
+          null,
+          `${net} — ${r.n("timelock")} timelock, ${r.n("safe")} safe, ${r.n("other")} other, ` +
+            `${r.n("unpinned")} unpinned, ${r.n("unknown")} unknown of ${r.rowsIn.length}`,
+        ),
+      );
+      // The chain's own pins, so an `other` owner can be told from this chain
+      // holding ANOTHER chain's timelock.
       if (c.safe || c.timelock) {
         const pins = el("div", "own-groupnote");
         pins.append(`safe ${c.safe || "—"} · timelock ${c.timelock || "—"}`);
         sink.append(pins);
       }
-      if (answered.length === 0) continue;
-      const tbl = el("div", "own-table");
-      for (const row of answered) {
-        const r = el("div", `own-row own-${row.label}`);
-        const id = typeof row.vault === "string" && row.vault ? row.vault : "(unnamed vault)";
-        r.append(el("div", "own-role", id));
+      if (r.errors.length > 0) sink.append(vaultBanner("error", r.errors.join(" · ")));
+      if (r.warnings.length > 0) sink.append(vaultBanner("drift", r.warnings.join(" · ")));
+      const row = (x) => {
+        const rr = el("div", `own-row own-${x.label}`);
+        const id = typeof x.vault === "string" && x.vault ? x.vault : "(unnamed vault)";
+        rr.append(el("div", "own-role", id));
         const ac = el("div", "own-ac");
-        // Linked like every other address on this page. The `other` row is the
-        // one demanding verification and was the only unclickable address
-        // here; an absent owner takes the page's own missing styling so it is
-        // not typographically identical to a present one.
-        if (row.owner) {
-          ac.append(addrNode("own-addr", row.owner, net));
+        if (typeof x.owner === "string" && x.owner) {
+          ac.append(addrNode("own-addr", x.owner, net));
         } else {
           ac.append(el("span", "own-addr own-missing", "—"));
         }
-        r.append(ac);
-        r.append(el("span", `own-status own-status-${row.label}`, row.label));
-        tbl.append(r);
+        rr.append(ac);
+        const pills = el("div", "own-prov");
+        pills.append(el("span", `own-status own-status-${x.label}`, x.label));
+        const cert = x.certificationExpired === true
+          ? ["expired", "cert expired"]
+          : x.certificationExpired === false
+          ? ["current", "cert current"]
+          : ["unknown", "cert unknown"];
+        pills.append(el("span", `own-status own-cert-${cert[0]}`, cert[1]));
+        rr.append(pills);
+        return rr;
+      };
+      const clean = (x) => x.label === "timelock" && x.certificationExpired === false;
+      const flagged = r.known.filter((x) => !clean(x));
+      if (flagged.length > 0) {
+        const tbl = el("div", "own-table");
+        for (const x of flagged) tbl.append(row(x));
+        sink.append(tbl);
       }
-      sink.append(tbl);
+      const ok = r.known.filter(clean);
+      if (ok.length > 0) {
+        const d = el("details", "vault-clean");
+        d.append(el("summary", null, `${ok.length} on the timelock with current certification`));
+        const tbl = el("div", "own-table");
+        for (const x of ok) tbl.append(row(x));
+        d.append(tbl);
+        sink.append(d);
+      }
     }
   };
 

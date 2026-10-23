@@ -6910,7 +6910,7 @@ Deno.test("deployments: the Safe tab holds the ownership sections, not the contr
   const safeText = textOf(panels.safe);
   assert(safeText.includes("Known owners"), "Known owners is on the Safe tab");
   assert(
-    safeText.includes("Governed vault ownership"),
+    safeText.includes("Receipt vaults — owner and certification"),
     "vault ownership is on the Safe tab: " + safeText.slice(0, 200),
   );
   assert(
@@ -9335,54 +9335,6 @@ Deno.test("deployments: an empty token set still shows the reconcile breakdown",
   );
 });
 
-Deno.test("deployments: a governed set short of its declared entries says so", () => {
-  const box = deploymentsBox({
-    deploymentTokens: {
-      org: "ST0x-Technology",
-      repo: "st0x.registry",
-      network: "base",
-      tokens: [],
-      reconcile: {
-        governedCount: 20,
-        governedDeclared: 22,
-        registryTokenCount: 23,
-        source: "S01-Issuer/st0x.deploy",
-        function: "LibTokenInvariants.productionReceiptVaults()",
-        extraVaults: [],
-        missingFromMigration: [],
-      },
-    },
-  });
-  const t = textOf(box);
-  assert(t.includes("INCOMPLETE"), "a short list must be named as short: " + t);
-  assert(t.includes("22"), "the declared count must appear: " + t);
-});
-
-Deno.test("deployments: a fully resolved governed set claims no shortfall", () => {
-  const box = deploymentsBox({
-    deploymentTokens: {
-      org: "ST0x-Technology",
-      repo: "st0x.registry",
-      network: "base",
-      tokens: [],
-      reconcile: {
-        governedCount: 22,
-        governedDeclared: 22,
-        registryTokenCount: 23,
-        source: "S01-Issuer/st0x.deploy",
-        function: "LibTokenInvariants.productionReceiptVaults()",
-        extraVaults: [],
-        missingFromMigration: [],
-      },
-    },
-  });
-  const t = textOf(box);
-  assert(
-    !t.includes("INCOMPLETE"),
-    "declared === resolved is not a shortfall: " + t,
-  );
-});
-
 Deno.test("deployments: an empty token set reports why, it does not vanish", () => {
   const box = deploymentsBox({
     deploymentTokens: {
@@ -9415,6 +9367,36 @@ Deno.test("deployments: an empty token set reports why, it does not vanish", () 
   assert(
     t.includes("unavailable, not empty"),
     "must distinguish broken from genuinely empty: " + t,
+  );
+  assert(
+    collect(box, "own-verify-error").length >= 1,
+    "an empty token set is an error banner",
+  );
+});
+
+Deno.test("deployments: an unreadable governed list names its error in the token section", () => {
+  const box = deploymentsBox({
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      tokens: [],
+      reconcile: {
+        governedCount: 0,
+        registryTokenCount: 23,
+        function: "privileged-addresses.json (base receiptVaults)",
+        error: "privileged-addresses.json could not be fetched",
+        extraVaults: [],
+        missingFromMigration: [],
+      },
+    },
+  });
+  const t = textOf(box);
+  assert(
+    t.includes(
+      "The governed list could not be read: privileged-addresses.json could not be fetched.",
+    ),
+    "the producer's error is the stated cause: " + t,
   );
 });
 
@@ -10133,193 +10115,260 @@ Deno.test("the site root redirects to Deployments", () => {
   );
 });
 
-// ---- deployments.html: governed vault ownership ----
+// ---- deployments.html: receipt vault owner and certification ----
 
-const VAULT_OWNERS = {
-  deploymentVaultOwners: {
-    total: 3,
-    chains: [
-      {
-        network: "ethereum",
-        safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-        timelock: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-        counts: { safe: 0, timelock: 1, other: 0, unknown: 2 },
-        vaults: [
-          {
-            vault: "0xaaa",
-            owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            label: "timelock",
-          },
-          { vault: "0xbbb", owner: null, label: "unknown" },
-          { vault: "0xccc", owner: null, label: "unknown" },
-        ],
-      },
-    ],
-  },
-};
+const BASE_TL = "0x48ba1371A78E6cC54157c63721756ab444510DB3";
+const ETH_TL = "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B";
 
-Deno.test("deployments: the vault-owner heading counts what the chain holds, not the governed total", () => {
-  const box = deploymentsBox(VAULT_OWNERS);
-  const text = textOf(box);
-  // One vault answered on this chain, two are other chains'. Counting against
-  // `total` would read as a chain missing vaults it never had.
-  assert(
-    text.includes("of 1 here"),
-    "counted against what the chain answered for, got: " + text,
-  );
-  assert(
-    !text.includes("of 3"),
-    "must not count against the governed total, got: " + text,
-  );
+const vaultsDoc = (chains) => ({
+  deploymentVaultOwners: { source: "privileged-addresses.json", chains },
+});
+const vaultChainRow = (network, safe, timelock, vaults) => ({
+  network,
+  safe,
+  timelock,
+  vaults,
+});
+const vrow = (vault, owner, label, certificationExpired) => ({
+  vault,
+  owner,
+  label,
+  certificationExpired,
 });
 
-Deno.test("deployments: an unanswered vault is not listed as this chain's", () => {
-  const box = deploymentsBox(VAULT_OWNERS);
-  const rows = collect(box, "own-role").filter((r) =>
-    String(r.textContent || "").startsWith("0x")
-  );
-  const listed = rows.map((r) => r.textContent);
-  assert(
-    listed.includes("0xaaa"),
-    "the answered vault is listed, got: " + listed.join(","),
-  );
-  assert(
-    !listed.includes("0xbbb") && !listed.includes("0xccc"),
-    "a vault with no code here belongs to another chain, got: " +
-      listed.join(","),
-  );
-});
+const VAULTS_TWO_CHAINS = vaultsDoc([
+  vaultChainRow("base", BASE_SAFE, BASE_TL, [
+    vrow("0xaaa", BASE_TL, "timelock", false),
+    vrow("0xbbb", BASE_SAFE, "safe", false),
+    vrow("0xccc", null, "unknown", null),
+  ]),
+  vaultChainRow("ethereum", ETH_SAFE, ETH_TL, [
+    vrow("0xeee", "0x00000000000000000000000000000000deadbeef", "other", true),
+    vrow("0xfff", ETH_TL, "timelock", false),
+  ]),
+]);
 
-Deno.test("deployments: a moved vault gets the timelock pill", () => {
-  const box = deploymentsBox(VAULT_OWNERS);
-  assert(
-    collect(box, "own-status-timelock").length === 1,
-    "one timelock pill",
-  );
-});
+const ALL_CLEAN = vaultsDoc([
+  vaultChainRow("base", BASE_SAFE, BASE_TL, [
+    vrow("0xaaa", BASE_TL, "timelock", false),
+    vrow("0xbbb", BASE_TL, "timelock", false),
+  ]),
+]);
 
-Deno.test("deployments: no vault-owner data says unavailable, never silence", () => {
-  // `null`, a missing key and an empty chain list all mean the scan read
-  // nothing — `build_vault_owners` returns nothing when the vault list OR the
-  // chain pins failed to parse. Silence would read as "the page does not cover
-  // this", which is the blindness this section exists to end and exactly how
-  // the grant map went unnoticed.
+Deno.test("deployments: no vault-owner data is an error banner, never silence", () => {
   for (
     const d of [
       { deploymentVaultOwners: null },
       {},
-      { deploymentVaultOwners: { total: 0, chains: [] } },
+      vaultsDoc([]),
+      vaultsDoc([null]),
     ]
   ) {
-    const t = textOf(deploymentsBox(d));
+    const box = deploymentsBox(d);
+    const t = textOf(box);
     assert(
-      t.includes("Vault ownership unavailable"),
+      t.includes("Receipt vaults unavailable"),
       "says unavailable, got: " + t,
+    );
+    assert(
+      collect(box, "own-verify-error").length >= 1,
+      "rendered as an error banner for " + JSON.stringify(d),
     );
   }
 });
 
-// Fixtures carrying a `safe` and an `other` row, on two chains. Without these
-// a mutation painting every pill green — a vault still on the Safe shown as
-// migrated, which is the regression this section exists to catch — passes the
-// whole suite.
-const VAULTS_TWO_CHAINS = {
-  deploymentVaultOwners: {
-    total: 4,
-    chains: [
-      {
-        network: "base",
-        safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-        timelock: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-        counts: { safe: 1, timelock: 1, other: 0, unknown: 2, unpinned: 0 },
-        vaults: [
-          {
-            vault: "0xaaa",
-            owner: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-            label: "timelock",
-          },
-          {
-            vault: "0xbbb",
-            owner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            label: "safe",
-          },
-          { vault: "0xccc", owner: null, label: "unknown" },
-          { vault: "0xddd", owner: null, label: "unknown" },
-        ],
-      },
-      {
-        network: "ethereum",
-        safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-        timelock: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-        counts: { safe: 0, timelock: 0, other: 1, unknown: 3, unpinned: 0 },
-        vaults: [
-          {
-            vault: "0xeee",
-            owner: "0x00000000000000000000000000000000deadbeef",
-            label: "other",
-          },
-          { vault: "0xfff", owner: null, label: "unknown" },
-          { vault: "0xggg", owner: null, label: "unknown" },
-          { vault: "0xhhh", owner: null, label: "unknown" },
-        ],
-      },
-    ],
-  },
-};
-
-Deno.test("deployments: each row gets the pill its own label names", () => {
-  const box = deploymentsBox(VAULTS_TWO_CHAINS);
-  // One of each, not three of whichever colour a bug picked.
-  assert(collect(box, "own-status-timelock").length === 1, "one timelock pill");
-  assert(collect(box, "own-status-safe").length === 1, "one safe pill");
-  assert(collect(box, "own-status-other").length === 1, "one other pill");
-  // And the pill TEXT tracks the class, so a constant label is caught too.
-  const pills = collect(box, "own-status").map((p) => p.textContent).sort();
+Deno.test("deployments: an unreadable vault source names its error", () => {
+  const box = deploymentsBox({
+    deploymentVaultOwners: {
+      source: "privileged-addresses.json",
+      error: "privileged-addresses.json is not valid JSON",
+      chains: [],
+    },
+  });
+  const t = textOf(box);
   assert(
-    pills.join(",") === "other,safe,timelock",
-    "pill text matches the labels, got: " + pills.join(","),
+    t.includes(
+      "Receipt vaults unavailable — privileged-addresses.json is not valid JSON",
+    ),
+    "the producer's error is shown, got: " + t,
   );
+});
+
+Deno.test("deployments: a chain listing no vaults is an error, not a clean chain", () => {
+  const box = deploymentsBox(vaultsDoc([
+    {
+      ...vaultChainRow("bsc", ETH_SAFE, ETH_TL, []),
+      error: "privileged-addresses.json lists no receipt vaults for bsc",
+    },
+    vaultChainRow("hyperevm", ETH_SAFE, ETH_TL, []),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes(
+      "bsc: privileged-addresses.json lists no receipt vaults for bsc",
+    ),
+    "the chain's own error is shown, got: " + t,
+  );
+  assert(
+    t.includes("hyperevm: no receipt vaults listed"),
+    "an empty list without an error is still an error, got: " + t,
+  );
+  assert(
+    !t.includes("Every receipt vault is owned"),
+    "an empty chain is never the ok banner",
+  );
+});
+
+Deno.test("deployments: a fully clean set gets the ok banner and folds its rows", () => {
+  const box = deploymentsBox(ALL_CLEAN);
+  const t = textOf(box);
+  assert(
+    collect(box, "own-verify-ok").length === 1 &&
+      t.includes("Every receipt vault is owned by its chain's timelock"),
+    "ok banner, got: " + t,
+  );
+  assert(collect(box, "own-verify-error").length === 0, "no error banner");
+  assert(collect(box, "own-verify-drift").length === 0, "no warning banner");
+  const folded = collect(box, "vault-clean");
+  assert(folded.length === 1, "clean rows are folded into one details");
+  assert(
+    textOf(folded[0]).includes("2 on the timelock with current certification"),
+    "the fold counts its rows, got: " + textOf(folded[0]),
+  );
+});
+
+Deno.test("deployments: a vault off the timelock is a warning banner", () => {
+  const box = deploymentsBox(vaultsDoc([
+    vaultChainRow("base", BASE_SAFE, BASE_TL, [
+      vrow("0xaaa", BASE_SAFE, "safe", false),
+      vrow("0xbbb", BASE_TL, "timelock", false),
+    ]),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes("base: 1 of 2 not owned by the timelock"),
+    "the warning names the chain and count, got: " + t,
+  );
+  assert(collect(box, "own-verify-drift").length >= 1, "warning banner");
+  assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
+  assert(collect(box, "own-verify-error").length === 0, "not an error");
+});
+
+Deno.test("deployments: expired certification is a warning with its own pill", () => {
+  const box = deploymentsBox(vaultsDoc([
+    vaultChainRow("hyperevm", ETH_SAFE, ETH_TL, [
+      vrow("0xaaa", ETH_TL, "timelock", true),
+      vrow("0xbbb", ETH_TL, "timelock", false),
+    ]),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes("hyperevm: 1 with expired certification"),
+    "expiry is a warning, got: " + t,
+  );
+  assert(collect(box, "own-verify-drift").length >= 1, "warning banner");
+  assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
+  const expired = collect(box, "own-cert-expired");
+  assert(expired.length === 1, "one expired pill");
+  assert(expired[0].textContent === "cert expired", "expired pill text");
+  assert(collect(box, "own-cert-current").length === 1, "one current pill");
+  const folded = collect(box, "vault-clean").map(textOf).join("|");
+  assert(
+    !folded.includes("0xaaa") && folded.includes("0xbbb"),
+    "an expired vault on the timelock is not folded as clean, got: " + folded,
+  );
+});
+
+Deno.test("deployments: a failed read is an error banner naming which read", () => {
+  const box = deploymentsBox(vaultsDoc([
+    vaultChainRow("robinhood", ETH_SAFE, ETH_TL, [
+      vrow("0xaaa", null, "unknown", null),
+      vrow("0xbbb", ETH_TL, "timelock", null),
+    ]),
+  ]));
+  const t = textOf(box);
+  assert(
+    t.includes(
+      "robinhood: 1 owner() read(s) failed, 2 isCertificationExpired() read(s) failed",
+    ),
+    "both failed reads are counted, got: " + t,
+  );
+  assert(collect(box, "own-verify-error").length >= 1, "error banner");
+  assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
+  assert(collect(box, "own-cert-unknown").length === 2, "unknown cert pills");
 });
 
 Deno.test("deployments: every chain is rendered, named, with its own counts", () => {
   const text = textOf(deploymentsBox(VAULTS_TWO_CHAINS));
-  // Both chains, not just the first.
-  assert(text.includes("base —"), "base is named, got: " + text);
-  assert(text.includes("ethereum —"), "ethereum is named, got: " + text);
-  // Counted per chain, from that chain's own rows.
   assert(
-    text.includes("1 timelock, 1 safe, 0 other, 0 unpinned of 2 here"),
+    text.includes(
+      "base — 1 timelock, 1 safe, 0 other, 0 unpinned, 1 unknown of 3",
+    ),
     "base's tally, got: " + text,
   );
   assert(
-    text.includes("0 timelock, 0 safe, 1 other, 0 unpinned of 1 here"),
+    text.includes(
+      "ethereum — 1 timelock, 0 safe, 1 other, 0 unpinned, 0 unknown of 2",
+    ),
     "ethereum's tally, got: " + text,
   );
+});
+
+Deno.test("deployments: an unread vault is listed, it is this chain's", () => {
+  const box = deploymentsBox(VAULTS_TWO_CHAINS);
+  const listed = collect(box, "own-role")
+    .map((r) => String(r.textContent || ""))
+    .filter((s) => s.startsWith("0x"));
+  for (const v of ["0xaaa", "0xbbb", "0xccc", "0xeee", "0xfff"]) {
+    assert(listed.includes(v), v + " is listed, got: " + listed.join(","));
+  }
   assert(
-    text.includes("2 unread") && text.includes("3 unread"),
-    "both unread counts",
+    collect(box, "own-status-unknown").length === 1,
+    "the unread vault carries the unknown pill",
   );
+});
+
+Deno.test("deployments: each row gets the pill its own label names", () => {
+  const box = deploymentsBox(VAULTS_TWO_CHAINS);
+  assert(
+    collect(box, "own-status-timelock").length === 2,
+    "two timelock pills",
+  );
+  assert(collect(box, "own-status-safe").length === 1, "one safe pill");
+  assert(collect(box, "own-status-other").length === 1, "one other pill");
+  assert(collect(box, "own-status-unknown").length === 1, "one unknown pill");
+  const owner = ["timelock", "safe", "other", "unknown", "unpinned"];
+  const pills = collect(box, "own-status")
+    .map((p) => p.textContent)
+    .filter((t) => owner.includes(t))
+    .sort();
+  assert(
+    pills.join(",") === "other,safe,timelock,timelock,unknown",
+    "pill text matches the labels, got: " + pills.join(","),
+  );
+});
+
+Deno.test("deployments: problem rows are shown and clean rows folded", () => {
+  const box = deploymentsBox(VAULTS_TWO_CHAINS);
+  const folded = collect(box, "vault-clean");
+  const foldedText = folded.map(textOf).join("|");
+  assert(folded.length === 2, "one fold per chain with clean rows");
+  assert(
+    foldedText.includes("0xaaa") && foldedText.includes("0xfff"),
+    "clean rows are in the folds, got: " + foldedText,
+  );
+  for (const v of ["0xbbb", "0xccc", "0xeee"]) {
+    assert(!foldedText.includes(v), v + " is a problem row, not folded");
+  }
 });
 
 Deno.test("deployments: a red other row carries the pins to compare it against", () => {
   const text = textOf(deploymentsBox(VAULTS_TWO_CHAINS));
-  // Without the chain's own pins, an `other` owner cannot be told from this
-  // chain holding ANOTHER chain's timelock — an ordinary migration slip.
-  assert(
-    text.includes("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B"),
-    "ethereum's timelock pin is shown, got: " + text,
-  );
-  assert(
-    text.includes("0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329"),
-    "ethereum's safe pin is shown",
-  );
+  assert(text.includes(ETH_TL), "ethereum's timelock pin is shown");
+  assert(text.includes(ETH_SAFE), "ethereum's safe pin is shown");
 });
 
 Deno.test("deployments: one malformed chain does not abandon the page", () => {
-  // `renderDeployments` is called outside the fetch's try/catch, so a throw in
-  // here does not degrade this section — it stops the page, and the sections
-  // after it never render. They are the ones most likely to be read as "no
-  // problems found".
   for (
     const chains of [
       [null],
@@ -10328,40 +10377,26 @@ Deno.test("deployments: one malformed chain does not abandon the page", () => {
       [{ network: "base", vaults: [{ label: "safe" }] }],
     ]
   ) {
-    const box = deploymentsBox({
-      deploymentVaultOwners: { total: 1, chains },
-    });
+    const box = deploymentsBox(vaultsDoc(chains));
     assert(
-      textOf(box).includes("Governed vault ownership"),
+      textOf(box).includes("Receipt vaults — owner and certification"),
       "the section still renders for " + JSON.stringify(chains),
     );
   }
 });
 
 Deno.test("deployments: a label this page cannot colour is held out and counted", () => {
-  const box = deploymentsBox({
-    deploymentVaultOwners: {
-      total: 1,
-      chains: [
-        {
-          network: "base",
-          safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-          timelock: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-          counts: {},
-          vaults: [
-            {
-              vault: "0xaaa",
-              owner: "0x00000000000000000000000000000000deadbeef",
-              label: "renounced",
-            },
-          ],
-        },
-      ],
-    },
-  });
+  const box = deploymentsBox(vaultsDoc([
+    vaultChainRow("base", BASE_SAFE, BASE_TL, [
+      vrow(
+        "0xaaa",
+        "0x00000000000000000000000000000000deadbeef",
+        "renounced",
+        false,
+      ),
+    ]),
+  ]));
   const text = textOf(box);
-  // An unrecognised label has no CSS, so rendering it as a row would make the
-  // loudest state the quietest one on the page.
   assert(
     collect(box, "own-status-renounced").length === 0,
     "an unknown label is not rendered as a pill",
@@ -10370,98 +10405,29 @@ Deno.test("deployments: a label this page cannot colour is held out and counted"
     text.includes("1 with a label this page does not know"),
     "it is counted and named instead, got: " + text,
   );
+  assert(collect(box, "own-verify-error").length >= 1, "as an error");
 });
 
 Deno.test("deployments: an unpinned vault is listed with its own pill, not hidden", () => {
-  const box = deploymentsBox({
-    deploymentVaultOwners: {
-      total: 1,
-      chains: [
-        {
-          network: "bsc",
-          safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-          timelock: null,
-          counts: { safe: 0, timelock: 0, other: 0, unknown: 0, unpinned: 1 },
-          vaults: [
-            {
-              vault: "0xddd",
-              owner: "0x00000000000000000000000000000000deadbeef",
-              label: "unpinned",
-            },
-          ],
-        },
-      ],
-    },
-  });
-  // `unpinned` is an ANSWER, so the row is shown; only `unknown` is withheld.
+  const box = deploymentsBox(vaultsDoc([
+    vaultChainRow("bsc", ETH_SAFE, null, [
+      vrow(
+        "0xddd",
+        "0x00000000000000000000000000000000deadbeef",
+        "unpinned",
+        false,
+      ),
+    ]),
+  ]));
   assert(
     collect(box, "own-status-unpinned").length === 1,
     "the unpinned pill is rendered",
   );
   const text = textOf(box);
+  assert(text.includes("1 unpinned, 0 unknown of 1"), "counted, got: " + text);
   assert(
-    text.includes("1 unpinned of 1 here"),
-    "counted in the heading, got: " + text,
-  );
-  // The label a reader meets must be one the page explains.
-  assert(
-    text.includes('"unpinned" means the chain has no'),
+    text.includes('"unpinned" means the chain has no timelock pinned'),
     "the section explains unpinned, got: " + text,
-  );
-});
-
-Deno.test("deployments: a chain whose reads all failed says unread, not empty", () => {
-  // Every vault unanswered. Without the unread count this renders as a chain
-  // holding no governed vaults — an RPC outage reported as an empty chain.
-  const box = deploymentsBox({
-    deploymentVaultOwners: {
-      total: 2,
-      chains: [
-        {
-          network: "hyperevm",
-          safe: "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-          timelock: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          counts: { safe: 0, timelock: 0, other: 0, unknown: 2, unpinned: 0 },
-          vaults: [
-            { vault: "0xaaa", owner: null, label: "unknown" },
-            { vault: "0xbbb", owner: null, label: "unknown" },
-          ],
-        },
-      ],
-    },
-  });
-  const text = textOf(box);
-  assert(text.includes("2 unread"), "the unread count is shown, got: " + text);
-  assert(
-    text.includes("failed read"),
-    "and says it may be a failed read, not just another chain's, got: " + text,
-  );
-});
-
-Deno.test("deployments: a fully answered chain shows no unread clause", () => {
-  const box = deploymentsBox({
-    deploymentVaultOwners: {
-      total: 1,
-      chains: [
-        {
-          network: "base",
-          safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-          timelock: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-          counts: { safe: 1, timelock: 0, other: 0, unknown: 0, unpinned: 0 },
-          vaults: [
-            {
-              vault: "0xaaa",
-              owner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-              label: "safe",
-            },
-          ],
-        },
-      ],
-    },
-  });
-  assert(
-    !textOf(box).includes("unread"),
-    "no unread clause when nothing is unread",
   );
 });
 
@@ -12259,12 +12225,16 @@ Deno.test("deployments: an ideal role the file leaves unnamed takes the scan's n
   named.deploymentRbac.roleNames[ROLE_IDS.WITHDRAW] = "WITHDRAW";
   let rows = roleRows(await rbacPanelLive(idealSubgraph({ ideal }), named));
   assert(
-    rows.some((r) => r.role === "WITHDRAW" && r.lines.join() === `${IDEAL_NEW} to grant`),
+    rows.some((r) =>
+      r.role === "WITHDRAW" && r.lines.join() === `${IDEAL_NEW} to grant`
+    ),
     "the scan's name labels the to-grant role: " + JSON.stringify(rows),
   );
   rows = roleRows(await rbacPanelLive(idealSubgraph({ ideal })));
   assert(
-    rows.some((r) => r.role === ROLE_IDS.WITHDRAW && r.lines.join() === `${IDEAL_NEW} to grant`),
+    rows.some((r) =>
+      r.role === ROLE_IDS.WITHDRAW && r.lines.join() === `${IDEAL_NEW} to grant`
+    ),
     "with no name anywhere the role shows its id: " + JSON.stringify(rows),
   );
 });
