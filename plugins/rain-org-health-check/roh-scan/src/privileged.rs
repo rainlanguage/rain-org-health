@@ -163,9 +163,9 @@ mod tests {
 
     #[test]
     fn a_zero_pin_is_absent_not_an_owner() {
-        let body = doc(&format!(
-            r#""999": {{"network": "hyperevm", "safe": "0x0000000000000000000000000000000000000000", "timelock": "0x0000000000000000000000000000000000000000", "receiptVaults": []}}"#
-        ));
+        let body = doc(
+            r#""999": {"network": "hyperevm", "safe": "0x0000000000000000000000000000000000000000", "timelock": "0x0000000000000000000000000000000000000000", "receiptVaults": []}"#,
+        );
         let got = parse(&body).expect("parses");
         assert_eq!(got[0].safe, None);
         assert_eq!(got[0].timelock, None);
