@@ -133,7 +133,8 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
 /// @return `(0x-hash, label)` pairs, deduplicated, first appearance wins.
 pub fn registry_names(sources: &[&str]) -> Vec<(String, String)> {
     let mut out: Vec<(String, String)> = Vec::new();
-    let Ok(hashed) = Regex::new(r#"keccak256\(\s*"([a-z][a-z0-9]*(?:[.-][a-z0-9]+)*\.[a-z0-9.-]+)"\s*\)"#)
+    let Ok(hashed) =
+        Regex::new(r#"keccak256\(\s*"([a-z][a-z0-9]*(?:[.-][a-z0-9]+)*\.[a-z0-9.-]+)"\s*\)"#)
     else {
         return out;
     };
@@ -402,7 +403,10 @@ jobs:
         assert_eq!(
             registry_names(&[src]),
             vec![
-                (crate::rpc::role_id_hex("st0x.deploy"), "st0x.deploy".to_string()),
+                (
+                    crate::rpc::role_id_hex("st0x.deploy"),
+                    "st0x.deploy".to_string()
+                ),
                 (
                     crate::rpc::role_id_hex("st0x.vault-beacon.v1"),
                     "st0x.vault-beacon.v1".to_string()
