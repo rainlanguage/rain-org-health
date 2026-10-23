@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-22T15:23:17Z",
+  "generatedAt": "2026-10-23T04:58:00Z",
   "auditGraph": {
     "nodes": [
       {
@@ -23,7 +23,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 1,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
@@ -36,7 +36,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 6,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -53,7 +53,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.20",
-            "latest": "0.1.21"
+            "latest": "0.1.22"
           },
           {
             "repo": "rainlang",
@@ -83,7 +83,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 11,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -112,7 +112,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 15,
         "lastMutation": {
           "timestamp": "2026-08-18T14:11:41Z",
           "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
@@ -141,7 +141,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.20",
-            "latest": "0.1.21"
+            "latest": "0.1.22"
           }
         ]
       },
@@ -153,7 +153,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 1,
         "lastMutation": {
           "timestamp": "2026-09-20T10:34:00Z",
           "commit": "5c165a880ac105d6c038cee096500f76849a2190",
@@ -165,13 +165,7 @@
           "rain.extrospection",
           "rain.factory"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.20",
-            "latest": "0.1.21"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.flare",
@@ -181,7 +175,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 14,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -246,7 +240,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 1,
         "lastMutation": null,
         "blockedBy": [],
         "staleDeps": []
@@ -284,13 +278,7 @@
           "rain.factory",
           "rain.math.float"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.20",
-            "latest": "0.1.21"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.merkle.deploy",
@@ -354,13 +342,7 @@
           "rain.factory",
           "rain.metadata"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.20",
-            "latest": "0.1.21"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.pyth",
@@ -463,7 +445,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.20",
-            "latest": "0.1.21"
+            "latest": "0.1.22"
           }
         ]
       },
@@ -476,10 +458,17 @@
         "depsKnown": true,
         "lastAudit": null,
         "openAuditIssues": 0,
-        "lastMutation": null,
+        "lastMutation": {
+          "timestamp": "2026-10-20T23:24:35Z",
+          "commit": "3a71cfd91f596e401637d1cde873317aa4f62697",
+          "skillVersion": "0.35.0",
+          "scope": "pr:345 Marvin review 5592932211 follow-up: OffchainAssetReceiptVault.initialize initializer version (reported survivor initializer -> reinitializer(2)); ConfigRegistryOffchainAssetReceiptVault.initialize vault beacon and receipt beacon owner() calls mutated to fall through to address(0) when owner() is missing"
+        },
         "blockedBy": [
+          "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.factory.deploy",
           "rain.math.fixedpoint",
           "rain.math.float"
         ],
@@ -499,6 +488,7 @@
           "rain.deploy",
           "rain.extrospection",
           "rain.factory",
+          "rain.factory.deploy",
           "rain.flare",
           "rain.math.fixedpoint",
           "rain.math.float",
@@ -509,7 +499,13 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.vats",
+            "pinned": "0.2.7",
+            "latest": "0.2.9"
+          }
+        ]
       },
       {
         "repo": "rain.verify",
@@ -530,7 +526,12 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.20",
-            "latest": "0.1.21"
+            "latest": "0.1.22"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.4",
+            "latest": "0.2.5"
           }
         ]
       },
@@ -593,12 +594,17 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.20",
-            "latest": "0.1.21"
+            "latest": "0.1.22"
           },
           {
             "repo": "rain.math.float.deploy",
             "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.7"
+          },
+          {
+            "repo": "rain.metadata.deploy",
+            "pinned": "0.1.1",
+            "latest": "0.1.3"
           },
           {
             "repo": "rain.tofu.erc20-decimals.deploy",
@@ -620,7 +626,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 2,
         "lastMutation": null,
         "blockedBy": [
           "rain.math.float",
@@ -653,7 +659,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 3,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -665,7 +671,18 @@
           "rain.tofu.erc20-decimals",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.21",
+            "latest": "0.1.22"
+          },
+          {
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.6",
+            "latest": "0.1.7"
+          }
+        ]
       },
       {
         "repo": "rainlang.deploy",
@@ -693,12 +710,12 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.20",
-            "latest": "0.1.21"
+            "latest": "0.1.22"
           },
           {
             "repo": "rain.math.float.deploy",
             "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.7"
           },
           {
             "repo": "rain.tofu.erc20-decimals.deploy",
@@ -746,7 +763,7 @@
         "audit": "stale",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 0,
+        "openAuditIssues": 2,
         "lastMutation": {
           "timestamp": "2026-10-09T16:05:00Z",
           "commit": "c3f2d1e83eaaefa90ade88e32e886e929204d862",
@@ -767,23 +784,23 @@
         "staleDeps": [
           {
             "repo": "rain.deploy",
-            "pinned": "0.1.18",
-            "latest": "0.1.21"
+            "pinned": "0.1.21",
+            "latest": "0.1.22"
           },
           {
             "repo": "rain.factory",
-            "pinned": "0.1.30",
-            "latest": "0.2.4"
+            "pinned": "0.2.4",
+            "latest": "0.2.5"
           },
           {
             "repo": "rain.factory.deploy",
-            "pinned": "0.1.15",
-            "latest": "0.2.1"
+            "pinned": "0.2.1",
+            "latest": "0.2.2"
           },
           {
             "repo": "rain.vats",
-            "pinned": "0.2.5",
-            "latest": "0.2.7"
+            "pinned": "0.2.7",
+            "latest": "0.2.9"
           }
         ]
       },
@@ -867,9 +884,19 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.factory",
+            "pinned": "0.2.4",
+            "latest": "0.2.5"
+          },
+          {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.3.10"
+          },
+          {
+            "repo": "rain.vats",
+            "pinned": "0.2.7",
+            "latest": "0.2.9"
           }
         ]
       },
@@ -886,7 +913,7 @@
           "skillVersion": "0.35.0",
           "stale": true
         },
-        "openAuditIssues": 0,
+        "openAuditIssues": 3,
         "lastMutation": {
           "timestamp": "2026-10-21T19:47:50Z",
           "commit": "b076b591532ea21ebf994d6450d3e78ec7287265",
@@ -1097,8 +1124,8 @@
         "from": "rain.deploy",
         "to": "rain.factory",
         "stale": false,
-        "pinned": "0.2.4",
-        "latest": "0.2.4"
+        "pinned": "0.2.5",
+        "latest": "0.2.5"
       },
       {
         "from": "rain.deploy",
@@ -1119,7 +1146,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "latest": "0.1.22"
       },
       {
         "from": "rain.dia",
@@ -1238,7 +1265,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "latest": "0.1.22"
       },
       {
         "from": "rain.extrospection.deploy",
@@ -1257,9 +1284,9 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "stale": false,
+        "pinned": "0.1.22",
+        "latest": "0.1.22"
       },
       {
         "from": "rain.factory.deploy",
@@ -1272,8 +1299,8 @@
         "from": "rain.factory.deploy",
         "to": "rain.factory",
         "stale": false,
-        "pinned": "0.2.4",
-        "latest": "0.2.4"
+        "pinned": "0.2.5",
+        "latest": "0.2.5"
       },
       {
         "from": "rain.flare",
@@ -1376,9 +1403,9 @@
       {
         "from": "rain.math.float.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "stale": false,
+        "pinned": "0.1.22",
+        "latest": "0.1.22"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1425,9 +1452,9 @@
       {
         "from": "rain.metadata.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "stale": false,
+        "pinned": "0.1.22",
+        "latest": "0.1.22"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1497,7 +1524,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "latest": "0.1.22"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1515,6 +1542,13 @@
       },
       {
         "from": "rain.vats",
+        "to": "rain.deploy",
+        "stale": false,
+        "pinned": "0.1.22",
+        "latest": "0.1.22"
+      },
+      {
+        "from": "rain.vats",
         "to": "rain.extrospection",
         "stale": false,
         "pinned": "0.1.14",
@@ -1524,8 +1558,15 @@
         "from": "rain.vats",
         "to": "rain.factory",
         "stale": false,
-        "pinned": "0.2.4",
-        "latest": "0.2.4"
+        "pinned": "0.2.5",
+        "latest": "0.2.5"
+      },
+      {
+        "from": "rain.vats",
+        "to": "rain.factory.deploy",
+        "stale": false,
+        "pinned": "0.2.2",
+        "latest": "0.2.2"
       },
       {
         "from": "rain.vats",
@@ -1572,23 +1613,23 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.vats",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.7",
-        "latest": "0.2.7"
+        "latest": "0.2.9"
       },
       {
         "from": "rain.verify",
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "latest": "0.1.22"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.4"
+        "latest": "0.2.5"
       },
       {
         "from": "rain.verify",
@@ -1623,7 +1664,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "latest": "0.1.22"
       },
       {
         "from": "raindex",
@@ -1644,7 +1685,7 @@
         "to": "rain.math.float.deploy",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.7"
       },
       {
         "from": "raindex",
@@ -1656,9 +1697,9 @@
       {
         "from": "raindex",
         "to": "rain.metadata.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.1",
-        "latest": "0.1.1"
+        "latest": "0.1.3"
       },
       {
         "from": "raindex",
@@ -1740,9 +1781,9 @@
       {
         "from": "rainlang",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.21",
-        "latest": "0.1.21"
+        "latest": "0.1.22"
       },
       {
         "from": "rainlang",
@@ -1789,9 +1830,9 @@
       {
         "from": "rainlang",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.6",
-        "latest": "0.1.6"
+        "latest": "0.1.7"
       },
       {
         "from": "rainlang",
@@ -1840,7 +1881,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.20",
-        "latest": "0.1.21"
+        "latest": "0.1.22"
       },
       {
         "from": "rainlang.deploy",
@@ -1854,7 +1895,7 @@
         "to": "rain.math.float.deploy",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.7"
       },
       {
         "from": "rainlang.deploy",
@@ -1937,8 +1978,8 @@
         "from": "st0x.deploy",
         "to": "rain.deploy",
         "stale": true,
-        "pinned": "0.1.18",
-        "latest": "0.1.21"
+        "pinned": "0.1.21",
+        "latest": "0.1.22"
       },
       {
         "from": "st0x.deploy",
@@ -1958,15 +1999,15 @@
         "from": "st0x.deploy",
         "to": "rain.factory",
         "stale": true,
-        "pinned": "0.1.30",
-        "latest": "0.2.4"
+        "pinned": "0.2.4",
+        "latest": "0.2.5"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.factory.deploy",
         "stale": true,
-        "pinned": "0.1.15",
-        "latest": "0.2.1"
+        "pinned": "0.2.1",
+        "latest": "0.2.2"
       },
       {
         "from": "st0x.deploy",
@@ -1993,8 +2034,8 @@
         "from": "st0x.deploy",
         "to": "rain.vats",
         "stale": true,
-        "pinned": "0.2.5",
-        "latest": "0.2.7"
+        "pinned": "0.2.7",
+        "latest": "0.2.9"
       },
       {
         "from": "st0x.deploy",
@@ -2006,9 +2047,9 @@
       {
         "from": "st0x.oracle",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.4",
-        "latest": "0.2.4"
+        "latest": "0.2.5"
       },
       {
         "from": "st0x.oracle",
@@ -2020,9 +2061,9 @@
       {
         "from": "st0x.oracle",
         "to": "rain.vats",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.7",
-        "latest": "0.2.7"
+        "latest": "0.2.9"
       },
       {
         "from": "st0x.oracle",
@@ -2037,12 +2078,12 @@
     "repo": "st0x.deploy",
     "org": "S01-Issuer",
     "threshold": 3,
-    "signerCount": 6,
+    "signerCount": 5,
     "groups": [
       {
         "id": "safe",
         "title": "Upgrade authority — token-owner Safe",
-        "note": "3-of-6 Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role.",
+        "note": "3-of-5 Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role.",
         "entries": [
           {
             "role": "Base Safe",
@@ -2062,7 +2103,7 @@
       },
       {
         "id": "signers",
-        "title": "Safe signers (3-of-6)",
+        "title": "Safe signers (3-of-5)",
         "note": "Declared in the st0x.deploy constants and checked against the live Safe getOwners() on Base.",
         "verification": {
           "reachable": true,
@@ -2070,7 +2111,7 @@
           "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
           "rpcHost": "mainnet.base.org",
           "onChainCount": 6,
-          "match": true,
+          "match": false,
           "threshold": {
             "declared": 3,
             "onChain": 3,
@@ -2119,12 +2160,12 @@
             "onChain": "match"
           },
           {
-            "role": "Signer 6",
-            "address": "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2",
-            "network": "",
-            "status": "active",
-            "note": "",
-            "onChain": "match"
+            "role": "Unexpected on-chain owner",
+            "address": "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2",
+            "network": "base",
+            "status": "extra",
+            "onChain": "extra",
+            "note": "present in the live Safe getOwners() but not in the declared constants"
           }
         ]
       },
@@ -2218,11 +2259,11 @@
         "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 11,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 2,
         "total": 13,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -2393,8 +2434,8 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
-                "safeHolds": false
+                "status": "unknown",
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2622,7 +2663,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -3166,7 +3207,7 @@
         ],
         "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2": [
           {
-            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_6",
+            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_TDM",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
           }
@@ -4329,6 +4370,27 @@
         "0x378a04202d25659763a02da5fe77c0a35e64ce1d": [
           {
             "name": "MC_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xc53b863791d8e1de96ca547cf8f3c740e770fae1": [
+          {
+            "name": "DIS_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x40584fbad768ff46f299cf50cae5b3d437e213fa": [
+          {
+            "name": "DIS_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
+          {
+            "name": "DIS_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -4611,7 +4673,7 @@
         ],
         "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2": [
           {
-            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_6",
+            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_TDM",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
           }
@@ -5774,6 +5836,27 @@
         "0x378a04202d25659763a02da5fe77c0a35e64ce1d": [
           {
             "name": "MC_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xc53b863791d8e1de96ca547cf8f3c740e770fae1": [
+          {
+            "name": "DIS_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x40584fbad768ff46f299cf50cae5b3d437e213fa": [
+          {
+            "name": "DIS_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
+          {
+            "name": "DIS_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -6049,7 +6132,7 @@
         ],
         "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2": [
           {
-            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_6",
+            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_TDM",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
           }
@@ -7212,6 +7295,27 @@
         "0x378a04202d25659763a02da5fe77c0a35e64ce1d": [
           {
             "name": "MC_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xc53b863791d8e1de96ca547cf8f3c740e770fae1": [
+          {
+            "name": "DIS_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x40584fbad768ff46f299cf50cae5b3d437e213fa": [
+          {
+            "name": "DIS_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
+          {
+            "name": "DIS_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -7494,7 +7598,7 @@
         ],
         "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2": [
           {
-            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_6",
+            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_TDM",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
           }
@@ -8657,6 +8761,27 @@
         "0x378a04202d25659763a02da5fe77c0a35e64ce1d": [
           {
             "name": "MC_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xc53b863791d8e1de96ca547cf8f3c740e770fae1": [
+          {
+            "name": "DIS_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x40584fbad768ff46f299cf50cae5b3d437e213fa": [
+          {
+            "name": "DIS_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
+          {
+            "name": "DIS_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -8939,7 +9064,7 @@
         ],
         "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2": [
           {
-            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_6",
+            "name": "STOX_TOKEN_OWNER_SAFE_OWNER_TDM",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
           }
@@ -10102,6 +10227,27 @@
         "0x378a04202d25659763a02da5fe77c0a35e64ce1d": [
           {
             "name": "MC_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xc53b863791d8e1de96ca547cf8f3c740e770fae1": [
+          {
+            "name": "DIS_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x40584fbad768ff46f299cf50cae5b3d437e213fa": [
+          {
+            "name": "DIS_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
+          {
+            "name": "DIS_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -11381,7 +11527,7 @@
       "name": "flow",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 1,
       "lastMutation": null
     },
     {
@@ -11542,7 +11688,7 @@
       "name": "rain.dia",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 6,
       "lastMutation": null
     },
     {
@@ -11563,7 +11709,7 @@
       "name": "rain.erc4626.words",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 11,
       "lastMutation": null
     },
     {
@@ -11577,7 +11723,7 @@
       "name": "rain.extrospection",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 15,
       "lastMutation": {
         "timestamp": "2026-08-18T14:11:41Z",
         "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
@@ -11596,7 +11742,7 @@
       "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 1,
       "lastMutation": {
         "timestamp": "2026-09-20T10:34:00Z",
         "commit": "5c165a880ac105d6c038cee096500f76849a2190",
@@ -11608,7 +11754,7 @@
       "name": "rain.flare",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 14,
       "lastMutation": null
     },
     {
@@ -11653,7 +11799,7 @@
       "name": "rain.math.fixedpoint",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 1,
       "lastMutation": null
     },
     {
@@ -11776,7 +11922,12 @@
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
-      "lastMutation": null
+      "lastMutation": {
+        "timestamp": "2026-10-20T23:24:35Z",
+        "commit": "3a71cfd91f596e401637d1cde873317aa4f62697",
+        "skillVersion": "0.35.0",
+        "scope": "pr:345 Marvin review 5592932211 follow-up: OffchainAssetReceiptVault.initialize initializer version (reported survivor initializer -> reinitializer(2)); ConfigRegistryOffchainAssetReceiptVault.initialize vault beacon and receipt beacon owner() calls mutated to fall through to address(0) when owner() is missing"
+      }
     },
     {
       "name": "rain.vats.flare",
@@ -11850,7 +12001,7 @@
       "name": "raindex.governance",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 2,
       "lastMutation": null
     },
     {
@@ -11864,14 +12015,14 @@
       "name": "rainix",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 5,
       "lastMutation": null
     },
     {
       "name": "rainlang",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 3,
       "lastMutation": null
     },
     {
@@ -11976,7 +12127,7 @@
       "name": "st0x.deploy",
       "org": "S01-Issuer",
       "lastAudit": null,
-      "openAuditIssues": 0,
+      "openAuditIssues": 2,
       "lastMutation": {
         "timestamp": "2026-10-09T16:05:00Z",
         "commit": "c3f2d1e83eaaefa90ade88e32e886e929204d862",
@@ -12115,7 +12266,7 @@
     {
       "name": "rain.deploy",
       "org": "rainlanguage",
-      "openAuditIssues": 0,
+      "openAuditIssues": 3,
       "lastMutation": {
         "timestamp": "2026-10-21T19:47:50Z",
         "commit": "b076b591532ea21ebf994d6450d3e78ec7287265",
@@ -12456,7 +12607,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 848,
+      "fullSourceLoc": 902,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -12514,7 +12665,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1165,
+      "fullSourceLoc": 1197,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -12543,7 +12694,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 504,
+      "fullSourceLoc": 536,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -12951,7 +13102,7 @@
       "codeLocRemovedSinceAudit": 115,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 163
+      "daysSinceAudit": 164
     },
     {
       "name": "rain.factory",
@@ -12983,23 +13134,23 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.2.4",
-      "latestTagIso": "2026-10-21T18:16:13Z",
+      "latestTag": "sol-v0.2.5",
+      "latestTagIso": "2026-10-22T16:04:02Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 837,
+      "sourceLocChangedSinceAudit": 1076,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 465,
+      "sourceLocAddedSinceAudit": 704,
       "sourceLocRemovedSinceAudit": 372,
-      "filesChangedSinceAudit": 16,
-      "commitsSinceAudit": 255,
+      "filesChangedSinceAudit": 20,
+      "commitsSinceAudit": 261,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 165,
+      "commentLocAddedSinceAudit": 257,
       "commentLocRemovedSinceAudit": 145,
-      "codeLocAddedSinceAudit": 251,
+      "codeLocAddedSinceAudit": 378,
       "codeLocRemovedSinceAudit": 181,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
-      "daysSinceAudit": 102
+      "daysSinceAudit": 103
     },
     {
       "name": "rain.vats",
@@ -13031,23 +13182,23 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:18:51Z",
-      "latestTag": "sol-v0.2.7",
-      "latestTagIso": "2026-10-21T18:57:29Z",
+      "latestTag": "sol-v0.2.9",
+      "latestTagIso": "2026-10-22T20:41:18Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 287,
+      "sourceLocChangedSinceAudit": 732,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 136,
-      "sourceLocRemovedSinceAudit": 151,
-      "filesChangedSinceAudit": 22,
-      "commitsSinceAudit": 80,
+      "sourceLocAddedSinceAudit": 448,
+      "sourceLocRemovedSinceAudit": 284,
+      "filesChangedSinceAudit": 24,
+      "commitsSinceAudit": 119,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 69,
-      "commentLocRemovedSinceAudit": 37,
-      "codeLocAddedSinceAudit": 67,
-      "codeLocRemovedSinceAudit": 103,
-      "driftFullyClassified": true,
+      "commentLocAddedSinceAudit": 98,
+      "commentLocRemovedSinceAudit": 63,
+      "codeLocAddedSinceAudit": 342,
+      "codeLocRemovedSinceAudit": 196,
+      "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 155
+      "daysSinceAudit": 156
     },
     {
       "name": "rain.lib.leakybucket",
@@ -13083,7 +13234,7 @@
       "codeLocRemovedSinceAudit": 70,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.leakybucket/compare/06baa59b15b0b4ad51189288e3137eee677db37d...main",
-      "daysSinceAudit": 30
+      "daysSinceAudit": 31
     },
     {
       "name": "rain.tofu.erc20-decimals",
@@ -13119,7 +13270,7 @@
       "codeLocRemovedSinceAudit": 53,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/03406b6ad8d33a802c6eb58ae4dac3f0ea9aed38...main",
-      "daysSinceAudit": 254
+      "daysSinceAudit": 255
     },
     {
       "name": "rain.metadata",
@@ -13155,7 +13306,7 @@
       "codeLocRemovedSinceAudit": 29,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
-      "daysSinceAudit": 266
+      "daysSinceAudit": 267
     },
     {
       "name": "rain.merkle.deploy",
@@ -13191,7 +13342,7 @@
       "codeLocRemovedSinceAudit": 67,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
-      "daysSinceAudit": 277
+      "daysSinceAudit": 278
     },
     {
       "name": "rain.math.float",
@@ -13227,7 +13378,7 @@
       "codeLocRemovedSinceAudit": 1450,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
-      "daysSinceAudit": 325
+      "daysSinceAudit": 326
     },
     {
       "name": "rainlang.interface",
@@ -13263,7 +13414,7 @@
       "codeLocRemovedSinceAudit": 11,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang.interface/compare/f83d8e0e2ea529acb9b76f622ff73464c65a3ba8...main",
-      "daysSinceAudit": 235
+      "daysSinceAudit": 236
     },
     {
       "name": "rain.math.fixedpoint",
@@ -13299,7 +13450,7 @@
       "codeLocRemovedSinceAudit": 9,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/1752e9fbd635901ac7eb177699681ed97290e12e...main",
-      "daysSinceAudit": 325
+      "daysSinceAudit": 326
     },
     {
       "name": "rain.deploy",
@@ -13325,15 +13476,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-10-07T16:17:36Z",
-      "latestTag": "sol-v0.1.21",
-      "latestTagIso": "2026-10-22T11:03:28Z",
+      "latestTag": "sol-v0.1.22",
+      "latestTagIso": "2026-10-22T16:58:09Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 88,
-      "commitsSinceAudit": 570,
+      "filesChangedSinceAudit": 91,
+      "commitsSinceAudit": 575,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -13341,7 +13492,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
-      "daysSinceAudit": 15
+      "daysSinceAudit": 16
     },
     {
       "name": "raindex",
@@ -13383,7 +13534,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/raindex/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 129
+      "daysSinceAudit": 130
     },
     {
       "name": "rainlang",
@@ -13419,7 +13570,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1...main",
-      "daysSinceAudit": 228
+      "daysSinceAudit": 229
     },
     {
       "name": "st0x.deploy",
@@ -13432,13 +13583,19 @@
           "path": "audit/protofire/st0x.deploy.v0.1.1.may-2026.pdf",
           "lastCommitIso": "2026-07-16T12:46:26Z",
           "auditDateIso": "2026-05-20T14:39:06Z"
+        },
+        {
+          "filename": "st0x.deploy.v6.0.aug-2026.pdf",
+          "path": "audit/protofire/st0x.deploy.v6.0.aug-2026.pdf",
+          "lastCommitIso": "2026-08-27T14:30:59Z",
+          "auditDateIso": "2026-08-27T14:30:59Z"
         }
       ],
-      "referencePdfIndex": 0,
-      "auditedRef": "v0.1.1",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-05-20T14:39:06Z",
+      "referencePdfIndex": 1,
+      "auditedRef": null,
+      "anchorKind": "unanchored",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-08-27T14:30:59Z",
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
@@ -13446,16 +13603,16 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 107,
-      "commitsSinceAudit": 827,
+      "filesChangedSinceAudit": 85,
+      "commitsSinceAudit": 374,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
       "codeLocAddedSinceAudit": null,
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
-      "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/v0.1.1...main",
-      "daysSinceAudit": 155
+      "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
+      "daysSinceAudit": 57
     },
     {
       "name": "rain.lib.typecast",
@@ -13491,7 +13648,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
-      "daysSinceAudit": 277
+      "daysSinceAudit": 278
     },
     {
       "name": "rain.math.saturating",
@@ -13527,7 +13684,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
-      "daysSinceAudit": 325
+      "daysSinceAudit": 326
     },
     {
       "name": "rain.intorastring",
@@ -13563,7 +13720,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
-      "daysSinceAudit": 260
+      "daysSinceAudit": 261
     },
     {
       "name": "rain.math.binary",
@@ -13599,7 +13756,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
-      "daysSinceAudit": 276
+      "daysSinceAudit": 277
     },
     {
       "name": "rain.datacontract",
@@ -13653,7 +13810,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/sol-v0.2.0...main",
-      "daysSinceAudit": 58
+      "daysSinceAudit": 59
     },
     {
       "name": "rain.lib.hash",
@@ -13695,7 +13852,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/092293e9f180a6df6c4fdfae5461870c117c0fb9...main",
-      "daysSinceAudit": 36
+      "daysSinceAudit": 37
     },
     {
       "name": "rain.lib.memkv",
@@ -13737,7 +13894,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/05dd78183e919872924ee061b855e29424bc43b4...main",
-      "daysSinceAudit": 34
+      "daysSinceAudit": 35
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -13773,7 +13930,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.binmaskflag/compare/41d8dfb2edf9695d1344e8d56ddae7c1789690c4...main",
-      "daysSinceAudit": 266
+      "daysSinceAudit": 267
     },
     {
       "name": "rain.sol.codegen",
@@ -13821,7 +13978,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/sol-v0.1.39...main",
-      "daysSinceAudit": 21
+      "daysSinceAudit": 22
     },
     {
       "name": "rain.solmem",
@@ -13863,7 +14020,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.solmem/compare/e75080f460876f4070c4e127c8668d778df93e94...main",
-      "daysSinceAudit": 65
+      "daysSinceAudit": 66
     },
     {
       "name": "rain.string",
@@ -13905,7 +14062,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.string/compare/79b2f4fd3fbd0e21b8e757d94abd361178cefa62...main",
-      "daysSinceAudit": 58
+      "daysSinceAudit": 59
     },
     {
       "name": "rain.verify.interface",
@@ -13941,7 +14098,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
-      "daysSinceAudit": 262
+      "daysSinceAudit": 263
     }
   ],
   "untestedExternals": [
@@ -14121,7 +14278,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 26,
+      "testFiles": 28,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -14129,8 +14286,8 @@
       "name": "rain.factory.deploy",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 6,
-      "testFiles": 8,
+      "externalFunctions": 8,
+      "testFiles": 10,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -14318,8 +14475,8 @@
       "name": "rain.vats",
       "org": "rainlanguage",
       "state": "analyzed",
-      "externalFunctions": 38,
-      "testFiles": 133,
+      "externalFunctions": 23,
+      "testFiles": 141,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -14418,7 +14575,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 152,
+      "testFiles": 160,
       "sourcesUnparsed": 1,
       "untested": []
     },

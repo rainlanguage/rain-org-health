@@ -21,6 +21,7 @@ mod graph;
 mod migrations;
 mod mutation;
 mod owners;
+mod privileged;
 mod protofire;
 mod rbac;
 mod rpc;
@@ -333,35 +334,43 @@ fn rpc_session(chain: Chain) -> Session {
     }
 }
 
-/// POST a JSON-RPC `payload` to Base, trying `BASE_RPCS` from `session` and
-/// falling through on failure. Returns the first successful body. A revert is
-/// HTTP 200 with an `error` body, so it returns from the first endpoint reached.
-/// `None` only if every endpoint fails.
+/// POST `payload` to one endpoint. `None` when curl fails (transport or HTTP
+/// error); a JSON-RPC error is HTTP 200, so it returns as a body.
+fn curl_post(rpc: &str, payload: &str) -> Option<Vec<u8>> {
+    let o = Command::new("curl")
+        .args([
+            "-fsS",
+            "-m",
+            "25",
+            "-X",
+            "POST",
+            rpc,
+            "-H",
+            "content-type: application/json",
+            "-d",
+            payload,
+        ])
+        .output()
+        .ok()?;
+    o.status.success().then_some(o.stdout)
+}
+
+/// The first body `post` gets for `payload`, trying `rpcs` from `cursor` and
+/// falling through on transport failure. `None` only if every endpoint fails.
+fn first_body<F: Fn(&str, &str) -> Option<Vec<u8>>>(
+    rpcs: &[&str],
+    cursor: usize,
+    payload: &str,
+    post: &F,
+) -> Option<Vec<u8>> {
+    (0..rpcs.len()).find_map(|i| post(rpcs[(cursor + i) % rpcs.len()], payload))
+}
+
+/// POST a JSON-RPC `payload` to the session's chain, trying its endpoints from
+/// the session's cursor. A revert is HTTP 200 with an `error` body, so it
+/// returns from the first endpoint reached.
 fn curl_json(session: Session, payload: &str) -> Option<Vec<u8>> {
-    let rpcs = session.chain.rpcs();
-    for i in 0..rpcs.len() {
-        let rpc = rpcs[(session.cursor + i) % rpcs.len()];
-        if let Ok(o) = Command::new("curl")
-            .args([
-                "-fsS",
-                "-m",
-                "25",
-                "-X",
-                "POST",
-                rpc,
-                "-H",
-                "content-type: application/json",
-                "-d",
-                payload,
-            ])
-            .output()
-        {
-            if o.status.success() {
-                return Some(o.stdout);
-            }
-        }
-    }
-    None
+    first_body(session.chain.rpcs(), session.cursor, payload, &curl_post)
 }
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
@@ -386,11 +395,10 @@ fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
 /// endpoints it runs against. Chunked, an unlucky chunk costs its own slots.
 ///
 /// 10, because `mainnet.base.org` caps a batch at exactly 10 and refuses an
-/// 11th with HTTP **200** carrying a single error object. `curl -fsS` treats
-/// 200 as success, so `curl_json` returns that body and never falls through to
-/// the endpoints that would have answered — the rejection is not a failover, it
-/// is the whole chunk lost. Measured against all nine configured endpoints; it
-/// is `BASE_RPCS[0]`, so roughly one scan in five began there.
+/// 11th with HTTP **200** carrying a single error object. `eth_call_batch`
+/// fails over on such a refusal, but every refused chunk costs a round trip
+/// per endpoint tried. Measured against all nine configured endpoints; it is
+/// `BASE_RPCS[0]`, so roughly one scan in five began there.
 ///
 /// Re-measured when HyperEVM, Robinhood Chain and BSC were added: each
 /// first-choice endpoint accepts 10 and 20 and refuses 50 —
@@ -412,11 +420,25 @@ const ETH_CALL_BATCH_CHUNK: usize = 10;
 /// Ids are the request index, and `batch_result_hex` maps them back by id, so a
 /// node that reorders its answers cannot attribute one address's result to
 /// another.
-/// @param session The chain session; all calls share it, so one node answers
-/// the whole batch and two cannot disagree within it.
+///
+/// A chunk an endpoint refuses (HTTP 200 with a non-array body: a rate limit,
+/// a batch cap, no batch support) goes to the next endpoint; a chunk every
+/// endpoint refuses is read call by call.
+/// @param session The chain session; all calls share its starting endpoint.
 /// @param calls The `(to, data)` pairs.
 /// @return One slot per call, in the order given.
 fn eth_call_batch(session: Session, calls: &[(String, String)]) -> Vec<Option<String>> {
+    eth_call_batch_via(session.chain.rpcs(), session.cursor, calls, &curl_post)
+}
+
+/// `eth_call_batch` over an injected `post`, so the failover is testable
+/// without a network.
+fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
+    rpcs: &[&str],
+    cursor: usize,
+    calls: &[(String, String)],
+    post: &F,
+) -> Vec<Option<String>> {
     let mut out: Vec<Option<String>> = Vec::with_capacity(calls.len());
     for chunk in calls.chunks(ETH_CALL_BATCH_CHUNK) {
         let body = chunk
@@ -429,12 +451,18 @@ fn eth_call_batch(session: Session, calls: &[(String, String)]) -> Vec<Option<St
             })
             .collect::<Vec<_>>()
             .join(",");
-        // Ids restart per chunk, and `batch_result_hex` is told this chunk's
-        // length, so a chunk is read entirely within itself. A rejected chunk
-        // costs its own slots and no others.
-        match curl_json(session, &format!("[{body}]")) {
-            Some(b) => out.extend(rpc::batch_result_hex(&b, chunk.len())),
-            None => out.extend(vec![None; chunk.len()]),
+        let payload = format!("[{body}]");
+        // Ids restart per chunk, so a chunk is read entirely within itself.
+        let answered = (0..rpcs.len()).find_map(|i| {
+            post(rpcs[(cursor + i) % rpcs.len()], &payload)
+                .and_then(|b| rpc::batch_result_hex(&b, chunk.len()))
+        });
+        match answered {
+            Some(slots) => out.extend(slots),
+            None => out.extend(chunk.iter().map(|(to, data)| {
+                first_body(rpcs, cursor, &eth_call_payload(to, data), post)
+                    .and_then(|b| rpc::result_hex(&b))
+            })),
         }
     }
     out
@@ -2582,6 +2610,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // subprocess with no cache and this file is ~126KB, so a fetch per
         // section is a quarter of a megabyte of identical transfer.
         let governed_tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
+        let privileged = privileged::parse(&gh_file(
+            deploy_org,
+            deploy_repo,
+            privileged::PRIVILEGED_ADDRESSES_PATH,
+        ));
+        let base_vaults: &[String] = privileged
+            .as_ref()
+            .ok()
+            .and_then(|cs| cs.iter().find(|c| c.network == owners::REFERENCE_NETWORK))
+            .map(|c| c.receipt_vaults.as_slice())
+            .unwrap_or_default();
         // The per-chain governance timelock, which the admin-holder slot of
         // `expectedGrants` resolves to. Read from the repo for the same reason
         // every other pin is: the chain list grows.
@@ -2625,8 +2664,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // active/pending pair silently contradicts the token rows further
             // down this same page, which read `authorizer()` per token.
             let live_authoriser = {
-                deployhealth::parse_receipt_vault_list(&governed_tok_lib)
-                    .addresses
+                base_vaults
                     .first()
                     .and_then(|vault| {
                         eth_call(rpc_session(Chain::Base), vault, &rpc::authorizer_calldata())
@@ -2662,11 +2700,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         for c in chains.iter_mut() {
             c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
         }
-        // Per chain, not one shared list: each network has its own
-        // `productionTokens<Chain>` table with entirely different addresses.
-        let vaults_for = |network: &str| {
-            deployhealth::parse_receipt_vaults_for(&governed_tok_lib, network).addresses
-        };
 
         let deployment_grants = {
             // One session per chain, so every `hasRole` for a chain hits the same
@@ -2801,27 +2834,32 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let deployment_vault_owners = {
             // One session per chain, as the grant map does, so every `owner()`
             // for a chain is answered by the same node.
-            let sessions: Vec<(String, Session)> = chains
-                .iter()
-                .filter_map(|c| {
-                    Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
-                })
-                .collect();
-            let read_owners = |network: &str, vs: &[String]| {
-                let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
-                    return vec![None; vs.len()];
+            let read = |network: &str, vs: &[String]| {
+                let Some(chain) = Chain::from_network(network) else {
+                    return vec![owners::VaultRead::default(); vs.len()];
                 };
                 let calls: Vec<(String, String)> = vs
                     .iter()
-                    .map(|v| (v.clone(), rpc::owner_calldata()))
+                    .flat_map(|v| {
+                        [
+                            (v.clone(), rpc::owner_calldata()),
+                            (v.clone(), rpc::is_certification_expired_calldata()),
+                        ]
+                    })
                     .collect();
-                eth_call_batch(*session, &calls)
-                    .into_iter()
-                    .map(|hex| hex.as_deref().and_then(rpc::decode_address))
+                let answers = eth_call_batch(rpc_session(chain), &calls);
+                answers
+                    .chunks(2)
+                    .map(|pair| owners::VaultRead {
+                        owner: pair[0].as_deref().and_then(rpc::decode_address),
+                        certification_expired: pair
+                            .get(1)
+                            .and_then(|h| h.as_deref())
+                            .and_then(rpc::decode_bool),
+                    })
                     .collect()
             };
-            owners::build_vault_owners(&vaults_for, &chains, &read_owners)
-                .unwrap_or(serde_json::Value::Null)
+            owners::build_vault_owners(privileged.as_deref(), &read)
         };
 
         // On-chain health of the pinned 0.1.1 suite on Base (#84): for each
@@ -3174,8 +3212,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // setAuthorizer bundle operates on. Read up front so each token can be
             // cross-checked BOTH ways: registry→migration (is this token governed?)
             // and migration→registry (is this governed vault in the registry?).
-            let governed_parse = deployhealth::parse_receipt_vault_list(&governed_tok_lib);
-            let governed = governed_parse.addresses;
+            let governed = base_vaults;
             let raw = gh_file(org, repo, "token-lists/base.json");
             let parsed: Option<serde_json::Value> = serde_json::from_str(&raw).ok();
             let tokens: Vec<serde_json::Value> = parsed
@@ -3332,12 +3369,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .unwrap_or(0);
             let reconcile = json!({
                 "source": format!("{dorg}/{drepo}"),
-                "function": "LibTokenInvariants.productionReceiptVaults()",
+                "function": format!("{} (base receiptVaults)", privileged::PRIVILEGED_ADDRESSES_PATH),
+                "error": privileged.as_ref().err().map(|e| e.to_string()),
                 "governedCount": governed.len(),
-                // Entries the migration set LISTED. Greater than governedCount means
-                // some entry named a constant that did not resolve, so the governed
-                // set is short rather than genuinely smaller.
-                "governedDeclared": governed_parse.declared,
                 "registryTokenCount": registry_token_count,
                 "extraVaults": extra_vaults,
                 "missingFromMigration": missing_from_migration,
@@ -3484,6 +3518,64 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    // ---- batch failover ----
+
+    const REFUSED: &[u8] =
+        br#"{"jsonrpc":"2.0","id":null,"error":{"code":-32005,"message":"rate limited"}}"#;
+
+    fn calls(n: usize) -> Vec<(String, String)> {
+        (0..n)
+            .map(|i| (format!("0x{i:040x}"), "0x8da5cb5b".to_string()))
+            .collect()
+    }
+
+    /// Answers a single call with its own `to`, so a slot's answer proves which
+    /// call it came from.
+    fn single_answer(payload: &str) -> Option<Vec<u8>> {
+        let to = payload.split(r#""to":""#).nth(1)?.split('"').next()?;
+        Some(format!(r#"{{"jsonrpc":"2.0","id":1,"result":"{to}"}}"#).into_bytes())
+    }
+
+    #[test]
+    fn a_batch_every_endpoint_refuses_is_read_call_by_call() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 3);
+        let post = |_: &str, payload: &str| {
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_via(&["a", "b"], 0, &calls, &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+    }
+
+    #[test]
+    fn a_batch_one_endpoint_refuses_goes_to_the_next() {
+        let calls = calls(2);
+        let singles = std::cell::Cell::new(0);
+        let post = |rpc: &str, payload: &str| {
+            if !payload.starts_with('[') {
+                singles.set(singles.get() + 1);
+                return None;
+            }
+            if rpc == "refuses" {
+                return Some(REFUSED.to_vec());
+            }
+            Some(
+                br#"[{"jsonrpc":"2.0","id":1,"result":"0xbb"},{"jsonrpc":"2.0","id":0,"result":"0xaa"}]"#
+                    .to_vec(),
+            )
+        };
+        let got = eth_call_batch_via(&["refuses", "answers"], 0, &calls, &post);
+        assert_eq!(
+            got,
+            vec![Some("0xaa".to_string()), Some("0xbb".to_string())]
+        );
+        assert_eq!(singles.get(), 0);
+    }
 
     // ---- chain endpoint coverage ----
 

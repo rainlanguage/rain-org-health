@@ -15,6 +15,7 @@
 //! deploy repo — because the thing it reports on is a set that grows, and a
 //! curated list of hot keys is only ever as complete as somebody's memory.
 
+use crate::privileged::{PrivilegedChain, PrivilegedError, PRIVILEGED_ADDRESSES_PATH};
 use regex::Regex;
 use serde_json::json;
 
@@ -562,35 +563,26 @@ pub fn parse_chain_pins(v4_lib: &str, safe_lib: &str, timelock_lib: &str) -> Vec
     out
 }
 
-/// Asks one chain for every vault's `owner()`, answering one slot per vault in
-/// the order given.
-///
-/// A whole chain at once rather than a vault at a time, because the caller
-/// answers it with ONE JSON-RPC batch; see `build_vault_owners`.
-pub type ReadOwners<'a> = &'a dyn Fn(&str, &[String]) -> Vec<Option<String>>;
+/// What one chain answered about one vault.
+#[derive(Debug, Clone, Default, PartialEq, Eq)]
+pub struct VaultRead {
+    pub owner: Option<String>,
+    pub certification_expired: Option<bool>,
+}
 
-/// Who owns a governed vault, as the chain answered.
-///
-/// The labels are relative to that chain's own pins, so `Timelock` on Ethereum
-/// and `Timelock` on Base are different addresses and both read as moved.
+/// Asks one chain about every vault given, one slot per vault in that order.
+pub type ReadVaults<'a> = &'a dyn Fn(&str, &[String]) -> Vec<VaultRead>;
+
+/// Who owns a receipt vault, as the chain answered, against that chain's pins.
 #[derive(Debug, PartialEq, Eq, Clone, Copy)]
 pub enum VaultOwner {
-    /// The chain's token-owner Safe — the pre-migration holder.
     Safe,
-    /// The chain's governance timelock — the post-migration holder.
     Timelock,
-    /// Neither pin. Not a fault by itself, but it is the one answer nobody
-    /// predicted, so it is never folded into `Unknown`.
+    /// Answered, and neither pin.
     Other,
-    /// This chain pins no timelock, so there is nothing to recognise a moved
-    /// vault by. Held apart from `Other` because they are different claims: a
-    /// chain that has an authoriser clone but no `STOX_GOVERNANCE_TIMELOCK`
-    /// constant yet is mid-rollout, and calling that the same red as an owner
-    /// nobody pinned would report the rollout as a fault — the distinction the
-    /// grant rows already make, for the same reason.
+    /// The chain pins no timelock, so a move cannot be recognised.
     Unpinned,
-    /// No answer: no code at the address on this chain, or the call failed.
-    /// Never a stand-in for "not moved".
+    /// The call failed or answered nothing.
     Unknown,
 }
 
@@ -606,65 +598,42 @@ impl VaultOwner {
     }
 }
 
-/// Ownership of every governed vault, per chain, labelled against that chain's
-/// Safe and timelock.
+/// `owner()` and `isCertificationExpired()` of every receipt vault st0x.deploy
+/// publishes in `privileged-addresses.json`, per chain, labelled against that
+/// chain's Safe and timelock.
 ///
-/// The governance migration moves these by `transferOwnership`, one call per
-/// vault, and nothing else on this page reads a vault's `owner()` — only
-/// production beacons are owner-checked. So a migration that moved sixty-odd
-/// vaults left no trace here: the page would show the pre-migration owner
-/// indefinitely with nothing marking it stale.
-///
-/// `read_owners` takes a whole chain's vaults at once, not one at a time, and
-/// is injected for the reason `build_grants` injects its probe: the labelling
-/// is what can be got wrong, and it is worth testing without a network.
-///
-/// Per chain rather than per vault because the caller answers it with ONE
-/// JSON-RPC batch. A vault is deployed on one chain, so asking every chain
-/// about every vault is mostly asking for an answer that cannot exist — those
-/// land as `Unknown` and are reported as unread, which is honest, but it is a
-/// large number of calls to learn nothing and each one costs a subprocess.
-/// @param vaults The governed vault addresses, lowercased.
-/// @param chains The chains to ask, carrying their own Safe and timelock pins.
-/// @param read_owners Asks one chain for every vault's `owner()`, answering in
-/// the order given, one slot per vault.
-/// @return The per-chain rows and tallies, or `None` with no vaults to report.
+/// Always a document: an unreadable source is `error` with no chains, and a
+/// chain listing no vaults carries its own `error`, so neither reads as clean.
 pub fn build_vault_owners(
-    vaults_for: &dyn Fn(&str) -> Vec<String>,
-    chains: &[ChainPin],
-    read_owners: ReadOwners,
-) -> Option<serde_json::Value> {
-    if chains.is_empty() {
-        return None;
-    }
-    let eq = |a: &Option<String>, b: &str| {
-        a.as_deref()
-            .map(|x| x.eq_ignore_ascii_case(b))
-            .unwrap_or(false)
+    source: Result<&[PrivilegedChain], &PrivilegedError>,
+    read: ReadVaults,
+) -> serde_json::Value {
+    let chains = match source {
+        Ok(c) => c,
+        Err(e) => {
+            return json!({
+                "source": PRIVILEGED_ADDRESSES_PATH,
+                "error": e.to_string(),
+                "chains": [],
+            })
+        }
     };
+    let eq = |a: &Option<String>, b: &str| a.as_deref().is_some_and(|x| x.eq_ignore_ascii_case(b));
     let mut rows: Vec<serde_json::Value> = Vec::new();
     for chain in chains {
-        let mut vault_rows: Vec<serde_json::Value> = Vec::new();
         let (mut safe, mut timelock, mut other, mut unknown, mut unpinned) =
             (0usize, 0usize, 0usize, 0usize, 0usize);
-        // A short answer is not a partial truth: a probe that returned fewer
-        // slots than it was asked about has not said which vaults it covered,
-        // so the tail reads unread rather than borrowing another slot's owner.
-        // This chain's OWN vaults. A vault is deployed on one chain, so a
-        // shared list means four chains in five are asked about addresses with
-        // no code on them — every answer `Unknown`, nothing reported, and the
-        // one chain the migration actually touched never asked about at all.
-        let vaults = vaults_for(&chain.network);
-        let owners = read_owners(&chain.network, &vaults);
-        for (i, vault) in vaults.iter().enumerate() {
-            let owner = owners.get(i).cloned().flatten();
-            let label = match &owner {
+        let (mut expired, mut cert_unknown) = (0usize, 0usize);
+        let answers = read(&chain.network, &chain.receipt_vaults);
+        let mut vault_rows: Vec<serde_json::Value> = Vec::new();
+        for (i, vault) in chain.receipt_vaults.iter().enumerate() {
+            // A short answer leaves the tail unread rather than shifting slots.
+            let answer = answers.get(i).cloned().unwrap_or_default();
+            let label = match &answer.owner {
                 None => VaultOwner::Unknown,
                 Some(o) if eq(&chain.safe, o) => VaultOwner::Safe,
-                Some(o) if eq(&chain.admin_holder, o) => VaultOwner::Timelock,
-                // Nothing pinned to recognise a move by, so this is not an
-                // unexpected owner — it is an unanswerable question.
-                Some(_) if chain.admin_holder.is_none() => VaultOwner::Unpinned,
+                Some(o) if eq(&chain.timelock, o) => VaultOwner::Timelock,
+                Some(_) if chain.timelock.is_none() => VaultOwner::Unpinned,
                 Some(_) => VaultOwner::Other,
             };
             match label {
@@ -674,27 +643,43 @@ pub fn build_vault_owners(
                 VaultOwner::Unpinned => unpinned += 1,
                 VaultOwner::Unknown => unknown += 1,
             }
+            match answer.certification_expired {
+                Some(true) => expired += 1,
+                Some(false) => {}
+                None => cert_unknown += 1,
+            }
             vault_rows.push(json!({
                 "vault": vault,
-                "owner": owner,
+                "owner": answer.owner,
                 "label": label.token(),
+                "certificationExpired": answer.certification_expired,
             }));
         }
-        rows.push(json!({
+        let mut row = json!({
             "network": chain.network,
+            "chainId": chain.chain_id,
             "safe": chain.safe,
-            "timelock": chain.admin_holder,
+            "timelock": chain.timelock,
             "vaults": vault_rows,
-            "counts": json!({
+            "counts": {
                 "safe": safe,
                 "timelock": timelock,
                 "other": other,
                 "unknown": unknown,
                 "unpinned": unpinned,
-            }),
-        }));
+                "certificationExpired": expired,
+                "certificationUnknown": cert_unknown,
+            },
+        });
+        if chain.receipt_vaults.is_empty() {
+            row["error"] = json!(format!(
+                "{PRIVILEGED_ADDRESSES_PATH} lists no receipt vaults for {}",
+                chain.network
+            ));
+        }
+        rows.push(row);
     }
-    Some(json!({ "chains": rows }))
+    json!({ "source": PRIVILEGED_ADDRESSES_PATH, "chains": rows })
 }
 
 /// What the chain said about one pinned `(role, grantee)` pair.
@@ -1690,129 +1675,166 @@ mod tests {
         );
     }
 
-    /// A vault's owner MUST be labelled against THAT chain's pins.
-    ///
-    /// Base's timelock is not Ethereum's, so a single expected owner would
-    /// label one chain's moved vaults as `other` — the one answer that reads as
-    /// "nobody predicted this".
+    const BASE_SAFE: &str = "0xe70d821f3462a074e63b42d0AaC6523faAe1d611";
+    const BASE_TIMELOCK: &str = "0x48ba1371A78E6cC54157c63721756ab444510DB3";
+    const ETH_SAFE: &str = "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329";
+    const ETH_TIMELOCK: &str = "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B";
+
+    fn privileged_chains() -> Vec<PrivilegedChain> {
+        vec![
+            PrivilegedChain {
+                chain_id: 8453,
+                network: "base".into(),
+                safe: Some(BASE_SAFE.into()),
+                timelock: Some(BASE_TIMELOCK.into()),
+                receipt_vaults: vec!["0xaaa".into(), "0xbbb".into()],
+            },
+            PrivilegedChain {
+                chain_id: 1,
+                network: "ethereum".into(),
+                safe: Some(ETH_SAFE.into()),
+                timelock: Some(ETH_TIMELOCK.into()),
+                receipt_vaults: vec!["0xccc".into(), "0xddd".into()],
+            },
+        ]
+    }
+
+    fn owned(owner: &str, expired: bool) -> VaultRead {
+        VaultRead {
+            owner: Some(owner.into()),
+            certification_expired: Some(expired),
+        }
+    }
+
+    #[test]
+    fn each_chain_is_asked_about_its_own_vaults() {
+        let asked = std::cell::RefCell::new(Vec::new());
+        let read = |network: &str, vs: &[String]| {
+            asked.borrow_mut().push((network.to_string(), vs.to_vec()));
+            vec![VaultRead::default(); vs.len()]
+        };
+        build_vault_owners(Ok(&privileged_chains()), &read);
+        assert_eq!(
+            asked.into_inner(),
+            vec![
+                (
+                    "base".to_string(),
+                    vec!["0xaaa".to_string(), "0xbbb".to_string()]
+                ),
+                (
+                    "ethereum".to_string(),
+                    vec!["0xccc".to_string(), "0xddd".to_string()]
+                ),
+            ]
+        );
+    }
+
+    /// Base's timelock is not Ethereum's: labels are against the chain's own pins.
     #[test]
     fn a_vault_owner_is_labelled_against_its_own_chains_pins() {
-        let vaults = vec!["0xaaa".to_string(), "0xbbb".to_string()];
-        // base: still on the Safe. ethereum: moved to the timelock.
-        let read = |network: &str, vs: &[String]| {
-            vs.iter()
-                .map(|v| match (network, v.as_str()) {
-                    ("base", _) => Some("0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string()),
-                    ("ethereum", "0xaaa") => {
-                        Some("0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B".to_string())
-                    }
-                    _ => None,
-                })
-                .collect()
+        let read = |network: &str, vs: &[String]| match network {
+            "base" => vec![owned(BASE_TIMELOCK, false), owned(BASE_SAFE, false)],
+            _ => vs.iter().map(|_| owned(BASE_TIMELOCK, false)).collect(),
         };
-        let same = |_: &str| vaults.clone();
-        let out = build_vault_owners(&same, &two_chains(), &read).expect("builds");
-        // No page-wide `total`: the vault list is per chain now, so one
-        // number across all of them would be the sum of five different sets.
+        let out = build_vault_owners(Ok(&privileged_chains()), &read);
         let chains = out["chains"].as_array().expect("chains");
-        assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(2));
-        assert_eq!(chains[0]["counts"]["timelock"], serde_json::json!(0));
-        // The Safe's own address on ethereum would be `safe`; the timelock's is
-        // `timelock`; a vault with no code answers nothing and is `unknown`.
-        assert_eq!(chains[1]["counts"]["timelock"], serde_json::json!(1));
-        assert_eq!(chains[1]["counts"]["unknown"], serde_json::json!(1));
+        assert_eq!(chains[0]["vaults"][0]["label"], "timelock");
+        assert_eq!(chains[0]["vaults"][1]["label"], "safe");
+        assert_eq!(chains[0]["counts"]["timelock"], 1);
+        assert_eq!(chains[0]["counts"]["safe"], 1);
         assert_eq!(
-            chains[1]["vaults"][0]["label"],
-            serde_json::json!("timelock")
+            chains[1]["counts"]["other"], 2,
+            "another chain's timelock is other"
         );
-        assert_eq!(
-            chains[1]["vaults"][1]["label"],
-            serde_json::json!("unknown")
-        );
+        assert_eq!(chains[1]["counts"]["timelock"], 0);
+        assert_eq!(chains[0]["safe"], BASE_SAFE);
+        assert_eq!(chains[0]["timelock"], BASE_TIMELOCK);
+        assert_eq!(chains[0]["chainId"], 8453);
     }
 
-    /// An owner that is neither pin MUST read `other`, never `unknown`.
-    ///
-    /// They mean opposite things: `unknown` is "we could not ask", `other` is
-    /// "we asked and the answer was nobody we pinned".
+    #[test]
+    fn certification_expiry_is_reported_per_vault_and_counted() {
+        let read = |network: &str, _: &[String]| match network {
+            "base" => vec![
+                owned(BASE_TIMELOCK, true),
+                VaultRead {
+                    owner: Some(BASE_TIMELOCK.into()),
+                    certification_expired: None,
+                },
+            ],
+            _ => vec![owned(ETH_TIMELOCK, false), owned(ETH_TIMELOCK, false)],
+        };
+        let out = build_vault_owners(Ok(&privileged_chains()), &read);
+        let chains = out["chains"].as_array().expect("chains");
+        assert_eq!(chains[0]["vaults"][0]["certificationExpired"], true);
+        assert_eq!(
+            chains[0]["vaults"][1]["certificationExpired"],
+            serde_json::Value::Null
+        );
+        assert_eq!(chains[0]["counts"]["certificationExpired"], 1);
+        assert_eq!(chains[0]["counts"]["certificationUnknown"], 1);
+        assert_eq!(chains[1]["vaults"][0]["certificationExpired"], false);
+        assert_eq!(chains[1]["counts"]["certificationExpired"], 0);
+        assert_eq!(chains[1]["counts"]["certificationUnknown"], 0);
+    }
+
     #[test]
     fn an_unpinned_owner_is_other_not_unknown() {
-        let vaults = vec!["0xaaa".to_string()];
         let read = |_: &str, vs: &[String]| {
             vs.iter()
-                .map(|_| Some("0x00000000000000000000000000000000deadbeef".to_string()))
+                .map(|_| owned("0x00000000000000000000000000000000deadbeef", false))
                 .collect()
         };
-        let same = |_: &str| vaults.clone();
-        let out = build_vault_owners(&same, &two_chains(), &read).expect("builds");
-        let chains = out["chains"].as_array().expect("chains");
-        assert_eq!(chains[0]["counts"]["other"], serde_json::json!(1));
-        assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(0));
+        let out = build_vault_owners(Ok(&privileged_chains()), &read);
+        assert_eq!(out["chains"][0]["counts"]["other"], 2);
+        assert_eq!(out["chains"][0]["counts"]["unknown"], 0);
     }
 
-    /// A chain with no timelock pinned MUST read `unpinned`, not `other`.
-    ///
-    /// Chains arrive one at a time, and one can carry an authoriser clone —
-    /// which is what puts it in this list — before it carries a
-    /// `STOX_GOVERNANCE_TIMELOCK` constant. There is then nothing to recognise
-    /// a moved vault by, so every vault not on the Safe would read `other`:
-    /// red, for a rollout that has not reached the chain yet. The grant rows
-    /// make the same distinction for the same reason.
     #[test]
     fn a_chain_with_no_timelock_pin_is_unpinned_not_other() {
-        let vaults = vec!["0xaaa".to_string()];
-        let mut chains = two_chains();
-        chains[0].admin_holder = None;
-        // An owner that is neither the Safe nor anything pinned.
+        let mut chains = privileged_chains();
+        chains[0].timelock = None;
         let read = |_: &str, vs: &[String]| {
             vs.iter()
-                .map(|_| Some("0x00000000000000000000000000000000deadbeef".to_string()))
+                .map(|_| owned("0x00000000000000000000000000000000deadbeef", false))
                 .collect()
         };
-        let same = |_: &str| vaults.clone();
-        let out = build_vault_owners(&same, &chains, &read).expect("builds");
-        let chains_out = out["chains"].as_array().expect("chains");
-        assert_eq!(chains_out[0]["counts"]["unpinned"], serde_json::json!(1));
-        assert_eq!(
-            chains_out[0]["counts"]["other"],
-            serde_json::json!(0),
-            "a missing pin is not an unexpected owner"
-        );
-        // The chain that DOES pin a timelock still calls it out.
-        assert_eq!(chains_out[1]["counts"]["other"], serde_json::json!(1));
+        let out = build_vault_owners(Ok(&chains), &read);
+        assert_eq!(out["chains"][0]["counts"]["unpinned"], 2);
+        assert_eq!(out["chains"][0]["counts"]["other"], 0);
+        assert_eq!(out["chains"][1]["counts"]["other"], 2);
     }
 
-    /// No vaults MUST be `None` rather than an empty section, so the page does
-    /// not render a table that asserts nothing.
     #[test]
-    fn no_vaults_is_none() {
-        let read = |_: &str, vs: &[String]| vec![None; vs.len()];
-        let none = |_: &str| Vec::new();
-        // No chains is the only "nothing to report"; an empty list for ONE chain
-        // is that chain holding none, which the other chains still answer for.
-        assert!(build_vault_owners(&none, &[], &read).is_none());
+    fn an_unreadable_source_is_an_error_document() {
+        let read = |_: &str, vs: &[String]| vec![VaultRead::default(); vs.len()];
+        let out = build_vault_owners(Err(&PrivilegedError::Empty), &read);
+        assert_eq!(out["error"], PrivilegedError::Empty.to_string());
+        assert_eq!(out["chains"], serde_json::json!([]));
     }
 
-    /// A probe that answers SHORT MUST leave the tail unread.
-    ///
-    /// A batch can come back with fewer results than it was asked for, and it
-    /// does not say which calls it covered. Reading past the end by index, or
-    /// zipping, would hand one vault the owner of another — a plausible
-    /// address belonging to something else, which is worse than a gap.
+    #[test]
+    fn a_chain_listing_no_vaults_carries_an_error() {
+        let mut chains = privileged_chains();
+        chains[1].receipt_vaults.clear();
+        let read = |_: &str, vs: &[String]| vec![owned(BASE_TIMELOCK, false); vs.len()];
+        let out = build_vault_owners(Ok(&chains), &read);
+        assert!(out["chains"][0].get("error").is_none());
+        assert!(out["chains"][1]["error"]
+            .as_str()
+            .is_some_and(|e| e.contains("no receipt vaults for ethereum")));
+    }
+
+    /// A short batch answer must not hand one vault another's owner.
     #[test]
     fn a_short_answer_leaves_the_tail_unread() {
-        let vaults = vec!["0xaaa".to_string(), "0xbbb".to_string()];
-        let read = |_: &str, _: &[String]| {
-            vec![Some(
-                "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".to_string(),
-            )]
-        };
-        let same = |_: &str| vaults.clone();
-        let out = build_vault_owners(&same, &two_chains(), &read).expect("builds");
-        let chains = out["chains"].as_array().expect("chains");
-        assert_eq!(chains[0]["counts"]["safe"], serde_json::json!(1));
-        assert_eq!(chains[0]["counts"]["unknown"], serde_json::json!(1));
-        assert_eq!(chains[0]["vaults"][1]["owner"], serde_json::Value::Null);
+        let read = |_: &str, _: &[String]| vec![owned(BASE_SAFE, false)];
+        let out = build_vault_owners(Ok(&privileged_chains()), &read);
+        let base = &out["chains"][0];
+        assert_eq!(base["counts"]["safe"], 1);
+        assert_eq!(base["counts"]["unknown"], 1);
+        assert_eq!(base["counts"]["certificationUnknown"], 1);
+        assert_eq!(base["vaults"][1]["owner"], serde_json::Value::Null);
     }
 
     /// A function whose name merely STARTS WITH the one asked for MUST NOT be
