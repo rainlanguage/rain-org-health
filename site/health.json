@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T10:12:01Z",
+  "generatedAt": "2026-10-23T11:00:41Z",
   "auditGraph": {
     "nodes": [
       {
@@ -49,18 +49,7 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.20",
-            "latest": "0.1.22"
-          },
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.16",
-            "latest": "0.2.19"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.erc1820",
@@ -96,13 +85,7 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.16",
-            "latest": "0.2.19"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.extrospection",
@@ -182,13 +165,7 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.16",
-            "latest": "0.2.19"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.intorastring",
@@ -277,7 +254,7 @@
       {
         "repo": "rain.merkle.deploy",
         "org": "rainlanguage",
-        "package": "rain-merkle",
+        "package": "rain-merkle-deploy",
         "packageKnown": true,
         "audit": "stale",
         "depsKnown": true,
@@ -295,13 +272,7 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.13",
-            "latest": "0.2.19"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.metadata",
@@ -359,13 +330,7 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.16",
-            "latest": "0.2.19"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.sol.binmaskflag",
@@ -487,7 +452,13 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.flare",
+            "pinned": "0.1.4",
+            "latest": "0.1.5"
+          }
+        ]
       },
       {
         "repo": "rain.verify",
@@ -504,18 +475,7 @@
           "rain.factory",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.20",
-            "latest": "0.1.22"
-          },
-          {
-            "repo": "rain.factory",
-            "pinned": "0.2.4",
-            "latest": "0.2.5"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.verify.interface",
@@ -677,28 +637,7 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.20",
-            "latest": "0.1.22"
-          },
-          {
-            "repo": "rain.math.float.deploy",
-            "pinned": "0.1.5",
-            "latest": "0.1.7"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals.deploy",
-            "pinned": "0.1.0",
-            "latest": "0.1.3"
-          },
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.16",
-            "latest": "0.2.19"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rainlang.interface",
@@ -753,11 +692,6 @@
           "rain.vats"
         ],
         "staleDeps": [
-          {
-            "repo": "rain.extrospection.deploy",
-            "pinned": "0.1.0",
-            "latest": "0.1.1"
-          },
           {
             "repo": "rain.vats",
             "pinned": "0.2.8",
@@ -1105,8 +1039,8 @@
       {
         "from": "rain.dia",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.20",
+        "stale": false,
+        "pinned": "0.1.22",
         "latest": "0.1.22"
       },
       {
@@ -1154,8 +1088,8 @@
       {
         "from": "rain.dia",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.16",
+        "stale": false,
+        "pinned": "0.2.19",
         "latest": "0.2.19"
       },
       {
@@ -1196,8 +1130,8 @@
       {
         "from": "rain.erc4626.words",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.16",
+        "stale": false,
+        "pinned": "0.2.19",
         "latest": "0.2.19"
       },
       {
@@ -1301,8 +1235,8 @@
       {
         "from": "rain.flare",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.16",
+        "stale": false,
+        "pinned": "0.2.19",
         "latest": "0.2.19"
       },
       {
@@ -1377,6 +1311,13 @@
       },
       {
         "from": "rain.merkle.deploy",
+        "to": "rain.deploy",
+        "stale": false,
+        "pinned": "0.1.22",
+        "latest": "0.1.22"
+      },
+      {
+        "from": "rain.merkle.deploy",
         "to": "rain.lib.typecast",
         "stale": false,
         "pinned": "0.1.4",
@@ -1399,8 +1340,8 @@
       {
         "from": "rain.merkle.deploy",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.13",
+        "stale": false,
+        "pinned": "0.2.19",
         "latest": "0.2.19"
       },
       {
@@ -1462,8 +1403,8 @@
       {
         "from": "rain.pyth",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.16",
+        "stale": false,
+        "pinned": "0.2.19",
         "latest": "0.2.19"
       },
       {
@@ -1560,9 +1501,9 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.flare",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.4",
-        "latest": "0.1.4"
+        "latest": "0.1.5"
       },
       {
         "from": "rain.vats.flare",
@@ -1581,23 +1522,16 @@
       {
         "from": "rain.verify",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.20",
+        "stale": false,
+        "pinned": "0.1.22",
         "latest": "0.1.22"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.2.4",
-        "latest": "0.2.5"
-      },
-      {
-        "from": "rain.verify",
-        "to": "rain.sol.codegen",
         "stale": false,
-        "pinned": "0.1.39",
-        "latest": "0.1.39"
+        "pinned": "0.2.5",
+        "latest": "0.2.5"
       },
       {
         "from": "rain.verify",
@@ -1840,8 +1774,8 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.20",
+        "stale": false,
+        "pinned": "0.1.22",
         "latest": "0.1.22"
       },
       {
@@ -1854,8 +1788,8 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.math.float.deploy",
-        "stale": true,
-        "pinned": "0.1.5",
+        "stale": false,
+        "pinned": "0.1.7",
         "latest": "0.1.7"
       },
       {
@@ -1882,15 +1816,15 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.tofu.erc20-decimals.deploy",
-        "stale": true,
-        "pinned": "0.1.0",
+        "stale": false,
+        "pinned": "0.1.3",
         "latest": "0.1.3"
       },
       {
         "from": "rainlang.deploy",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.16",
+        "stale": false,
+        "pinned": "0.2.19",
         "latest": "0.2.19"
       },
       {
@@ -1952,8 +1886,8 @@
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection.deploy",
-        "stale": true,
-        "pinned": "0.1.0",
+        "stale": false,
+        "pinned": "0.1.1",
         "latest": "0.1.1"
       },
       {
@@ -3926,7 +3860,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 141,
-        "discoveredAtBlock": 52980502
+        "discoveredAtBlock": 52981977
       },
       {
         "network": "ethereum",
@@ -4443,7 +4377,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 26254649
+        "discoveredAtBlock": 26254894
       },
       {
         "network": "bsc",
@@ -4653,81 +4587,81 @@
           },
           {
             "vault": "0x516d6c697c40e24de9d17811e642a07a6d70cf07",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x012ec0436407b8ade9a00614e01abf1faab69755",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xe319e212860ef85c4082b3b73641bd25721c88b2",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2c594750dbe8e5b2d8d155b4fcb39fed307a91b9",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x925eb169ed82889a7afe5292d97998acb26b6233",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xfa63f568c4487711124d9f258d3a9167a89797c3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb9c3a133e2425eec6d8a1dad9a0d78308be79a5e",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xd2f6abfb251a3e43df9191486485de0e46a9e6a5",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xd170ed7698508f228bb5a67d0f4548eeea6f15cb",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2aa2258b97f44425769cf1a4e92a3562060a93e8",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -4973,41 +4907,41 @@
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5213,41 +5147,41 @@
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5277,18 +5211,18 @@
           }
         ],
         "counts": {
-          "safe": 41,
-          "timelock": 52,
+          "safe": 32,
+          "timelock": 61,
           "other": 0,
           "unknown": 10,
           "unpinned": 0,
-          "certificationExpired": 42,
+          "certificationExpired": 33,
           "certificationUnknown": 10,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 103,
-        "discoveredAtBlock": 129303828
+        "discoveredAtBlock": 129310398
       },
       {
         "network": "hyperevm",
@@ -5805,7 +5739,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 49301920
+        "discoveredAtBlock": 49304934
       },
       {
         "network": "robinhood",
@@ -6322,7 +6256,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 95862819
+        "discoveredAtBlock": 95891212
       }
     ]
   },
@@ -13859,6 +13793,26 @@
               {
                 "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
                 "state": "notApplied",
@@ -13980,6 +13934,26 @@
             "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "state": "notApplied",
             "appliedAt": null,
@@ -14117,6 +14091,26 @@
               {
                 "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
                 "state": "notApplied",
@@ -14246,6 +14240,26 @@
               {
                 "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
                 "state": "notApplied",
@@ -14367,6 +14381,26 @@
             "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
+            "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "state": "notApplied",
             "appliedAt": null,
@@ -16142,15 +16176,16 @@
   "reposExternallyAudited": 26,
   "reposNeverExternallyAudited": 22,
   "summary": {
-    "per-chain-etherscan-key": 12,
+    "per-chain-etherscan-key": 13,
     "old-nix-installer": 10,
     "old-actions-checkout": 8,
-    "removed-rainix-task": 8,
     "dead-magic-nix-cache": 7,
+    "removed-rainix-task": 7,
     "untested-externals": 4,
     "bespoke-ci": 3,
     "private-key-dev": 3,
     "stale-foundry-lock": 3,
+    "soldeer-unpublished": 1,
     "telegram-secret-drift": 1
   },
   "repos": [
@@ -16162,6 +16197,15 @@
         "old-nix-installer",
         "removed-rainix-task",
         "private-key-dev"
+      ]
+    },
+    {
+      "name": "rain.merkle.deploy",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key",
+        "soldeer-unpublished",
+        "untested-externals"
       ]
     },
     {
@@ -16187,14 +16231,6 @@
       "signals": [
         "dead-magic-nix-cache",
         "old-nix-installer"
-      ]
-    },
-    {
-      "name": "rain.merkle.deploy",
-      "org": "rainlanguage",
-      "signals": [
-        "removed-rainix-task",
-        "untested-externals"
       ]
     },
     {
@@ -17932,7 +17968,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 980,
+      "fullSourceLoc": 1213,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -18048,7 +18084,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1314,
+      "fullSourceLoc": 1300,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -18265,6 +18301,42 @@
       "daysSinceAudit": 156
     },
     {
+      "name": "rain.merkle.deploy",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.merkle.4d89f934342367f5be6ac4e03fd86d3d765dcff7.jan-2026.pdf",
+          "path": "audit/protofire/rain.merkle.4d89f934342367f5be6ac4e03fd86d3d765dcff7.jan-2026.pdf",
+          "lastCommitIso": "2026-07-15T13:13:37Z",
+          "auditDateIso": "2026-01-18T12:03:59Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "4d89f934342367f5be6ac4e03fd86d3d765dcff7",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-01-18T12:03:59Z",
+      "latestTag": "sol-v0.1.0",
+      "latestTagIso": "2026-10-21T13:28:06Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 443,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 320,
+      "sourceLocRemovedSinceAudit": 123,
+      "filesChangedSinceAudit": 15,
+      "commitsSinceAudit": 33,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 86,
+      "commentLocRemovedSinceAudit": 9,
+      "codeLocAddedSinceAudit": 203,
+      "codeLocRemovedSinceAudit": 105,
+      "driftFullyClassified": false,
+      "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
+      "daysSinceAudit": 278
+    },
+    {
       "name": "rain.lib.leakybucket",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -18371,42 +18443,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
       "daysSinceAudit": 267
-    },
-    {
-      "name": "rain.merkle.deploy",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.merkle.4d89f934342367f5be6ac4e03fd86d3d765dcff7.jan-2026.pdf",
-          "path": "audit/protofire/rain.merkle.4d89f934342367f5be6ac4e03fd86d3d765dcff7.jan-2026.pdf",
-          "lastCommitIso": "2026-07-15T13:13:37Z",
-          "auditDateIso": "2026-01-18T12:03:59Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "4d89f934342367f5be6ac4e03fd86d3d765dcff7",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-01-18T12:03:59Z",
-      "latestTag": "sol-v0.1.0",
-      "latestTagIso": "2026-10-21T13:28:06Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 131,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 55,
-      "sourceLocRemovedSinceAudit": 76,
-      "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 26,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 6,
-      "commentLocRemovedSinceAudit": 6,
-      "codeLocAddedSinceAudit": 46,
-      "codeLocRemovedSinceAudit": 67,
-      "driftFullyClassified": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
-      "daysSinceAudit": 278
     },
     {
       "name": "rain.math.float",
@@ -18667,8 +18703,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 88,
-      "commitsSinceAudit": 402,
+      "filesChangedSinceAudit": 89,
+      "commitsSinceAudit": 433,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -19206,7 +19242,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 2,
-      "testFiles": 3,
+      "testFiles": 11,
       "sourcesUnparsed": 0,
       "untested": [
         {
@@ -19558,7 +19594,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 13,
-      "testFiles": 22,
+      "testFiles": 21,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -19639,7 +19675,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 175,
+      "testFiles": 177,
       "sourcesUnparsed": 1,
       "untested": []
     },
