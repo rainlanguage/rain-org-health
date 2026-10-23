@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-23T12:20:38Z",
+  "generatedAt": "2026-10-23T15:09:20Z",
   "auditGraph": {
     "nodes": [
       {
@@ -102,7 +102,9 @@
           "skillVersion": "",
           "scope": "whole-repo"
         },
-        "blockedBy": [],
+        "blockedBy": [
+          "rain.factory"
+        ],
         "staleDeps": []
       },
       {
@@ -120,7 +122,13 @@
           "rain.extrospection",
           "rain.factory"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.14",
+            "latest": "0.1.16"
+          }
+        ]
       },
       {
         "repo": "rain.factory.deploy",
@@ -142,7 +150,13 @@
           "rain.extrospection",
           "rain.factory"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.14",
+            "latest": "0.1.16"
+          }
+        ]
       },
       {
         "repo": "rain.flare",
@@ -400,7 +414,13 @@
           "rain.factory",
           "rain.tofu.erc20-decimals"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.14",
+            "latest": "0.1.16"
+          }
+        ]
       },
       {
         "repo": "rain.vats",
@@ -425,7 +445,13 @@
           "rain.math.fixedpoint",
           "rain.math.float"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.14",
+            "latest": "0.1.16"
+          }
+        ]
       },
       {
         "repo": "rain.vats.flare",
@@ -526,7 +552,13 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "raindex.interface",
+            "pinned": "0.1.8",
+            "latest": "0.1.9"
+          }
+        ]
       },
       {
         "repo": "raindex.governance",
@@ -543,7 +575,13 @@
           "raindex.interface",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "raindex.interface",
+            "pinned": "0.1.8",
+            "latest": "0.1.9"
+          }
+        ]
       },
       {
         "repo": "raindex.interface",
@@ -581,7 +619,13 @@
           "rain.tofu.erc20-decimals",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.14",
+            "latest": "0.1.16"
+          }
+        ]
       },
       {
         "repo": "rainlang.deploy",
@@ -605,7 +649,13 @@
           "rainlang",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.14",
+            "latest": "0.1.16"
+          }
+        ]
       },
       {
         "repo": "rainlang.interface",
@@ -660,6 +710,11 @@
           "rain.vats"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.14",
+            "latest": "0.1.16"
+          },
           {
             "repo": "rain.vats",
             "pinned": "0.2.8",
@@ -747,19 +802,9 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.factory",
-            "pinned": "0.2.4",
-            "latest": "0.2.5"
-          },
-          {
             "repo": "rain.math.float",
             "pinned": "0.1.1",
             "latest": "0.3.10"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.2.7",
-            "latest": "0.2.9"
           }
         ]
       },
@@ -981,7 +1026,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.deploy",
@@ -1051,7 +1096,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.dia",
@@ -1111,6 +1156,13 @@
       },
       {
         "from": "rain.extrospection",
+        "to": "rain.factory",
+        "stale": false,
+        "pinned": "0.2.5",
+        "latest": "0.2.5"
+      },
+      {
+        "from": "rain.extrospection",
         "to": "rain.math.binary",
         "stale": false,
         "pinned": "0.1.4",
@@ -1121,7 +1173,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.extrospection.deploy",
@@ -1133,9 +1185,9 @@
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.14",
-        "latest": "0.1.14"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.factory",
@@ -1154,9 +1206,9 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.14",
-        "latest": "0.1.14"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.factory.deploy",
@@ -1219,7 +1271,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.lib.leakybucket",
@@ -1233,7 +1285,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.math.fixedpoint",
@@ -1254,7 +1306,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.math.float",
@@ -1387,7 +1439,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1399,9 +1451,9 @@
       {
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.14",
-        "latest": "0.1.14"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1420,9 +1472,9 @@
       {
         "from": "rain.vats",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.14",
-        "latest": "0.1.14"
+        "latest": "0.1.16"
       },
       {
         "from": "rain.vats",
@@ -1506,7 +1558,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rain.verify",
@@ -1576,7 +1628,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "raindex",
@@ -1595,9 +1647,9 @@
       {
         "from": "raindex",
         "to": "raindex.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "raindex",
@@ -1623,9 +1675,9 @@
       {
         "from": "raindex.governance",
         "to": "raindex.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.8",
-        "latest": "0.1.8"
+        "latest": "0.1.9"
       },
       {
         "from": "raindex.interface",
@@ -1651,9 +1703,9 @@
       {
         "from": "rainlang",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.14",
-        "latest": "0.1.14"
+        "latest": "0.1.16"
       },
       {
         "from": "rainlang",
@@ -1716,7 +1768,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "rainlang",
@@ -1749,9 +1801,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.14",
-        "latest": "0.1.14"
+        "latest": "0.1.16"
       },
       {
         "from": "rainlang.deploy",
@@ -1835,7 +1887,7 @@
         "to": "rain.solmem",
         "stale": false,
         "pinned": "0.1.28",
-        "latest": "0.1.28"
+        "latest": ""
       },
       {
         "from": "st0x.deploy",
@@ -1847,9 +1899,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.14",
-        "latest": "0.1.14"
+        "latest": "0.1.16"
       },
       {
         "from": "st0x.deploy",
@@ -1910,8 +1962,8 @@
       {
         "from": "st0x.oracle",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.2.4",
+        "stale": false,
+        "pinned": "0.2.5",
         "latest": "0.2.5"
       },
       {
@@ -1924,8 +1976,8 @@
       {
         "from": "st0x.oracle",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.2.7",
+        "stale": false,
+        "pinned": "0.2.9",
         "latest": "0.2.9"
       },
       {
@@ -3489,8 +3541,8 @@
           },
           {
             "vault": "0x9f4854bf247db4f7781120cb17d9057032ff0962",
-            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
-            "label": "other",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
@@ -3505,9 +3557,9 @@
           },
           {
             "vault": "0xa134e0cfa73fd0c7460fe5321d8d035e110e3afb",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -3521,8 +3573,8 @@
           },
           {
             "vault": "0xa4f1f3e56f4d008433b43d3e551a46b4b7910268",
-            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
-            "label": "other",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": true,
             "pinned": false,
             "onChain": true
@@ -3817,18 +3869,18 @@
           }
         ],
         "counts": {
-          "safe": 26,
+          "safe": 25,
           "timelock": 59,
-          "other": 56,
-          "unknown": 0,
+          "other": 54,
+          "unknown": 3,
           "unpinned": 0,
-          "certificationExpired": 53,
-          "certificationUnknown": 0,
+          "certificationExpired": 52,
+          "certificationUnknown": 1,
           "notPinned": 85,
           "notOnChain": 0
         },
         "discoveredCount": 141,
-        "discoveredAtBlock": 52984367
+        "discoveredAtBlock": 52989425
       },
       {
         "network": "ethereum",
@@ -4345,7 +4397,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 26255290
+        "discoveredAtBlock": 26256131
       },
       {
         "network": "bsc",
@@ -4835,81 +4887,81 @@
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5075,122 +5127,122 @@
           },
           {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xc6e584f4341e418962a0dde3f2969b6be58f1920",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           }
         ],
         "counts": {
-          "safe": 41,
-          "timelock": 62,
+          "safe": 20,
+          "timelock": 60,
           "other": 0,
-          "unknown": 0,
+          "unknown": 23,
           "unpinned": 0,
-          "certificationExpired": 42,
-          "certificationUnknown": 0,
+          "certificationExpired": 21,
+          "certificationUnknown": 23,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 103,
-        "discoveredAtBlock": 129321005
+        "discoveredAtBlock": 129343489
       },
       {
         "network": "hyperevm",
@@ -5707,7 +5759,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 49309786
+        "discoveredAtBlock": 49320071
       },
       {
         "network": "robinhood",
@@ -6224,7 +6276,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 95936902
+        "discoveredAtBlock": 96033468
       }
     ]
   },
@@ -6240,9 +6292,9 @@
         "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-base/prod/gn"
       },
       {
-        "network": "mainnet",
-        "chain": "ethereum",
-        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-mainnet/prod/gn"
+        "network": "bsc",
+        "chain": "bsc",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-bsc/prod/gn"
       },
       {
         "network": "hyperevm",
@@ -6250,14 +6302,14 @@
         "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-hyperevm/prod/gn"
       },
       {
+        "network": "mainnet",
+        "chain": "ethereum",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-mainnet/prod/gn"
+      },
+      {
         "network": "robinhood",
         "chain": "robinhood",
         "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-robinhood/prod/gn"
-      },
-      {
-        "network": "bsc",
-        "chain": "bsc",
-        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-bsc/prod/gn"
       }
     ],
     "roleNames": {
@@ -14396,7 +14448,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 10,
-    "healthy": 8,
+    "healthy": 10,
     "contracts": [
       {
         "name": "StoxCorporateActionsFacet",
@@ -14409,10 +14461,10 @@
       {
         "name": "StoxOffchainAssetReceiptVaultAuthorizerV1",
         "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
-        "status": "unknown",
-        "codeMatch": null,
-        "hashMatch": null,
-        "erc165": "absent"
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true,
+        "erc165": "conformant"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultBeaconSetDeployer",
@@ -14449,10 +14501,10 @@
       {
         "name": "StoxUnifiedDeployer",
         "address": "0x81D0ecD58346bf2d484E7774f55EABc1AA3F4bcc",
-        "status": "unknown",
-        "codeMatch": null,
-        "hashMatch": null,
-        "erc165": "absent"
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true,
+        "erc165": "conformant"
       },
       {
         "name": "StoxWrappedTokenVault",
@@ -14507,14 +14559,14 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+          "ownerLabel": "timelock",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -14543,27 +14595,27 @@
       "beacons": [
         {
           "name": "Receipt beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0xace121ae30d754536863a546f41b147be11202db",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Receipt-vault beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -14690,27 +14742,27 @@
       "beacons": [
         {
           "name": "Receipt beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0xace121ae30d754536863a546f41b147be11202db",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Receipt-vault beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -14733,14 +14785,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 37,
+    "ok": 47,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 40,
+    "atAuthoriserTarget": 50,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -14750,13 +14802,13 @@
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-          "name": null,
-          "symbol": null,
-          "deployed": null,
-          "authoriser": null,
-          "authoriserLabel": "unknown",
+          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
+          "symbol": "tIBHG",
+          "deployed": true,
+          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+          "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": null
+          "atAuthoriserTarget": true
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
@@ -14884,26 +14936,26 @@
         "symbol": "wtAMZN",
         "name": "Wrapped Amazon.com Inc ST0x",
         "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Amazon.com Inc ST0x",
+        "liveSymbol": "wtAMZN",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "unwrapped": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "legacy": "0x8d8c315db61f60dcc3c66cdb48ca87fc643e35ea",
         "receipt": "0x3c4895df971e5c1fdca81bf74adb8eee94f24721",
-        "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "unwrappedDeployed": true,
+        "legacyDeployed": true,
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -14988,26 +15040,26 @@
         "symbol": "wtBABA",
         "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
         "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Alibaba Group Holding Limited ADR ST0x",
+        "liveSymbol": "wtBABA",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
         "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
         "legacy": null,
         "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15170,26 +15222,26 @@
         "symbol": "wtDRAM",
         "name": "Wrapped Roundhill Memory ETF ST0x",
         "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Roundhill Memory ETF ST0x",
+        "liveSymbol": "wtDRAM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x96de077262609298cd891e4ab21bd34837de33ab",
         "unwrapped": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
         "legacy": null,
         "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15378,26 +15430,26 @@
         "symbol": "wtLLY",
         "name": "Wrapped Eli Lilly and Company ST0x",
         "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Eli Lilly and Company ST0x",
+        "liveSymbol": "wtLLY",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
         "unwrapped": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
         "legacy": null,
         "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15456,26 +15508,26 @@
         "symbol": "wtMCD",
         "name": "Wrapped McDonald's Corporation ST0x",
         "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped McDonald's Corporation ST0x",
+        "liveSymbol": "wtMCD",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
         "unwrapped": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
         "legacy": null,
         "receipt": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15534,26 +15586,26 @@
         "symbol": "wtMU",
         "name": "Wrapped Micron Technology, Inc. ST0x",
         "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Micron Technology, Inc. ST0x",
+        "liveSymbol": "wtMU",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
         "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
         "legacy": null,
         "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15638,22 +15690,22 @@
         "symbol": "wtPLBY",
         "name": "Wrapped Playboy, Inc. ST0x",
         "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
+        "nameOk": true,
         "symbolOk": true,
-        "decimalsOk": null,
-        "liveName": null,
+        "decimalsOk": true,
+        "liveName": "Wrapped Playboy, Inc. ST0x",
         "liveSymbol": "wtPLBY",
-        "liveDecimals": null,
+        "liveDecimals": 18,
         "assetOk": true,
         "asset": "0xe9bc7ef69f123ca2bca1021d1be30224271a9217",
         "unwrapped": "0xe9bc7eF69f123cA2bcA1021D1BE30224271a9217",
         "legacy": null,
         "receipt": "0x5978B2FA7B3DDA36847eb7D2003EC7AE112258AA",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
+        "receiptDeployed": true,
         "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
         "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -15716,26 +15768,26 @@
         "symbol": "wtQQQM",
         "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
         "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Invesco NASDAQ 100 ETF ST0x",
+        "liveSymbol": "wtQQQM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "unwrapped": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "legacy": null,
         "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15898,26 +15950,26 @@
         "symbol": "wtSPYM",
         "name": "Wrapped SPDR Portfolio S&P 500 ETF ST0x",
         "address": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
-        "status": "unknown",
+        "status": "mismatch",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": false,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped State Street SPDR Portfolio S&P 500 ETF ST0x",
+        "liveSymbol": "wtSPYM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "unwrapped": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "legacy": "0x2289249984f1fa2ce86c4e8867e7eb819ea7df95",
         "receipt": "0x957056dd6e2e594742e36675e8aa5a567163e5bd",
-        "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "unwrappedDeployed": true,
+        "legacyDeployed": true,
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15950,26 +16002,26 @@
         "symbol": "wtTR",
         "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
         "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Tootsie Roll Industries, Inc. ST0x",
+        "liveSymbol": "wtTR",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
         "unwrapped": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
         "legacy": null,
         "receipt": "0xf5e5d2d3b6be819Ff65cB364F4178252C9dbf5B7",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -16028,26 +16080,26 @@
         "symbol": "wtTTWO",
         "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
         "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
+        "liveSymbol": "wtTTWO",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
         "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
         "legacy": null,
         "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -18023,7 +18075,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 3309,
+      "fullSourceLoc": 3314,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -18125,54 +18177,6 @@
       "daysSinceAudit": null
     },
     {
-      "name": "rain.extrospection",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
-          "path": "audit/protofire/rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z",
-          "auditDateIso": "2026-02-10T12:58:40Z"
-        },
-        {
-          "filename": "rain.extrospection.f2c4f5a.feb-2026.pdf",
-          "path": "audit/protofire/rain.extrospection.f2c4f5a.feb-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z",
-          "auditDateIso": "2026-02-06T16:54:18Z"
-        },
-        {
-          "filename": "rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
-          "path": "audit/protofire/rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
-          "lastCommitIso": "2026-05-31T07:55:05Z",
-          "auditDateIso": "2026-05-12T15:16:31Z"
-        }
-      ],
-      "referencePdfIndex": 2,
-      "auditedRef": "v0.1.1",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-05-12T15:16:31Z",
-      "latestTag": "sol-v0.1.14",
-      "latestTagIso": "2026-09-06T08:57:48Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 1167,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 878,
-      "sourceLocRemovedSinceAudit": 289,
-      "filesChangedSinceAudit": 10,
-      "commitsSinceAudit": 181,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 762,
-      "commentLocRemovedSinceAudit": 153,
-      "codeLocAddedSinceAudit": 91,
-      "codeLocRemovedSinceAudit": 115,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 164
-    },
-    {
       "name": "rain.factory",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -18219,6 +18223,54 @@
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
       "daysSinceAudit": 103
+    },
+    {
+      "name": "rain.extrospection",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
+          "path": "audit/protofire/rain.extrospection.ab33ddb-r2.1.feb-2026.pdf",
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-02-10T12:58:40Z"
+        },
+        {
+          "filename": "rain.extrospection.f2c4f5a.feb-2026.pdf",
+          "path": "audit/protofire/rain.extrospection.f2c4f5a.feb-2026.pdf",
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-02-06T16:54:18Z"
+        },
+        {
+          "filename": "rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
+          "path": "audit/protofire/rain.extrospection.v0.1.1-r3.0.may-2026.pdf",
+          "lastCommitIso": "2026-05-31T07:55:05Z",
+          "auditDateIso": "2026-05-12T15:16:31Z"
+        }
+      ],
+      "referencePdfIndex": 2,
+      "auditedRef": "v0.1.1",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-05-12T15:16:31Z",
+      "latestTag": "sol-v0.1.16",
+      "latestTagIso": "2026-10-23T14:39:57Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 1017,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 692,
+      "sourceLocRemovedSinceAudit": 325,
+      "filesChangedSinceAudit": 11,
+      "commitsSinceAudit": 189,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 519,
+      "commentLocRemovedSinceAudit": 178,
+      "codeLocAddedSinceAudit": 141,
+      "codeLocRemovedSinceAudit": 122,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
+      "daysSinceAudit": 164
     },
     {
       "name": "rain.vats",
@@ -18594,7 +18646,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 60,
-      "commitsSinceAudit": 274,
+      "commitsSinceAudit": 278,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18671,8 +18723,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 89,
-      "commitsSinceAudit": 437,
+      "filesChangedSinceAudit": 90,
+      "commitsSinceAudit": 440,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -19328,7 +19380,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 109,
+      "testFiles": 111,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -19643,7 +19695,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 177,
+      "testFiles": 178,
       "sourcesUnparsed": 1,
       "untested": []
     },
