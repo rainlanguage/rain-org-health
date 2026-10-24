@@ -123,6 +123,32 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     out
 }
 
+/// Every registry label the deploy repo spells out, keyed by its hash.
+///
+/// The registries emit `bytes32` names and namespaces, never their preimages.
+/// A label is shown where a source writes `keccak256("label")` for a dotted
+/// lower-case label (`st0x.deploy`, `st0x.vault-beacon.v1`): the convention the
+/// deploy repo's binding names and migration namespaces follow. Upper-case
+/// preimages are roles, which `role_names` covers.
+/// @return `(0x-hash, label)` pairs, deduplicated, first appearance wins.
+pub fn registry_names(sources: &[&str]) -> Vec<(String, String)> {
+    let mut out: Vec<(String, String)> = Vec::new();
+    let Ok(hashed) =
+        Regex::new(r#"keccak256\(\s*"([a-z][a-z0-9]*(?:[.-][a-z0-9]+)*\.[a-z0-9.-]+)"\s*\)"#)
+    else {
+        return out;
+    };
+    for src in sources {
+        for c in hashed.captures_iter(src) {
+            let id = crate::rpc::role_id_hex(&c[1]);
+            if !out.iter().any(|(i, _)| *i == id) {
+                out.push((id, c[1].to_string()));
+            }
+        }
+    }
+    out
+}
+
 /// Names from the deploy repo's `ideal-roles.json`: each `(role, roleName)` pair
 /// whose name hashes to its role, or is `DEFAULT_ADMIN_ROLE` for `bytes32(0)`. A
 /// pair whose name is not its role's is dropped, never shown.
@@ -362,6 +388,40 @@ jobs:
         assert!(d["unavailable"].as_str().unwrap().contains("networks.json"));
         assert_eq!(d["subgraph"], "st0x-rbac");
         assert!(d.get("networks").is_none());
+    }
+
+    #[test]
+    fn registry_names_come_from_dotted_lower_case_hash_preimages() {
+        let src = r#"
+            bytes32 internal constant NAMESPACE = keccak256("st0x.deploy");
+            bytes32 constant B = keccak256( "st0x.vault-beacon.v1" );
+            bytes32 constant R = keccak256("MINT");
+            bytes32 constant T = keccak256("EIP712Domain(string name)");
+            bytes32 constant U = keccak256("undotted");
+            bytes32 constant D = keccak256("st0x.deploy");
+        "#;
+        assert_eq!(
+            registry_names(&[src]),
+            vec![
+                (
+                    crate::rpc::role_id_hex("st0x.deploy"),
+                    "st0x.deploy".to_string()
+                ),
+                (
+                    crate::rpc::role_id_hex("st0x.vault-beacon.v1"),
+                    "st0x.vault-beacon.v1".to_string()
+                ),
+            ]
+        );
+    }
+
+    #[test]
+    fn registry_name_hash_is_the_keccak_of_the_label() {
+        // `cast keccak "st0x.deploy"`: LibStoxMigrations.NAMESPACE.
+        assert_eq!(
+            registry_names(&[r#"keccak256("st0x.deploy")"#])[0].0,
+            "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4"
+        );
     }
 
     #[test]
