@@ -6138,6 +6138,7 @@ function grantsData(over = {}) {
     deploymentGrants: {
       org: "S01-Issuer",
       repo: "st0x.deploy",
+      contract: "authoriser",
       source: "src/lib/LibAuthoriserInvariants.sol",
       function: "expectedGrants(address)",
       pinnedCount: 5,
@@ -6145,7 +6146,7 @@ function grantsData(over = {}) {
       chains: [
         {
           network: "base",
-          authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+          target: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
           safe: BASE_SAFE,
           rpcHost: "mainnet.base.org",
           granted: 5,
@@ -6156,7 +6157,7 @@ function grantsData(over = {}) {
         },
         {
           network: "ethereum",
-          authoriser: "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+          target: "0x66566cc91dEAf818859bD4b09B7903ac48998157",
           safe: ETH_SAFE,
           rpcHost: "ethereum-rpc.publicnode.com",
           granted: 2,
@@ -6485,7 +6486,7 @@ Deno.test("deployments: an unread chain says why, and never reads as revoked", (
   const g = d.deploymentGrants;
   g.chains[1] = {
     network: "hyperevm",
-    authoriser: null,
+    target: null,
     safe: null,
     rpcHost: null,
     granted: 0,
@@ -6560,6 +6561,124 @@ Deno.test("deployments: with no grant data the section is absent and the rest of
   assert(
     collect(empty, "tok-h3").length === 0,
     "an empty grantee list renders no section at all",
+  );
+});
+
+const ORCH_INSTANCE = "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2";
+function orchestratorGrants() {
+  const chain = (network, safe, timelock, emergency) => ({
+    network,
+    target: ORCH_INSTANCE,
+    safe,
+    rpcHost: `${network}.rpc`,
+    granted: emergency === "granted" ? 4 : 3,
+    missing: emergency === "granted" ? 0 : 1,
+    unknown: 0,
+    total: 4,
+    state: emergency === "granted" ? "live" : "partial",
+    safeKept: [],
+  });
+  return {
+    org: "S01-Issuer",
+    repo: "st0x.deploy",
+    contract: "orchestrator",
+    source: "src/lib/LibOrchestratorInvariants.sol",
+    function: "expectedGrants(address,address)",
+    pinnedCount: 4,
+    declaredCount: 4,
+    chains: [
+      chain("base", BASE_SAFE, "0x48ba1371A78E6cC54157c63721756ab444510DB3", "granted"),
+      chain("ethereum", ETH_SAFE, "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B", "missing"),
+    ],
+    grantees: [
+      {
+        ident: "timelock",
+        kind: "admin-holder",
+        address: null,
+        roles: [{
+          role: "DEFAULT_ADMIN_ROLE",
+          roleId: "0x" + "0".repeat(64),
+          admin: true,
+          chains: [
+            { network: "base", address: "0x48ba1371A78E6cC54157c63721756ab444510DB3", status: "granted", safeHolds: false },
+            { network: "ethereum", address: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B", status: "granted", safeHolds: false },
+          ],
+        }],
+      },
+      {
+        ident: "chainSafe",
+        kind: "safe",
+        address: null,
+        roles: [{
+          role: "EMERGENCY",
+          roleId: "0x" + "e".repeat(64),
+          admin: false,
+          chains: [
+            { network: "base", address: BASE_SAFE, status: "granted", safeHolds: null },
+            { network: "ethereum", address: ETH_SAFE, status: "missing", safeHolds: null },
+          ],
+        }],
+      },
+    ],
+  };
+}
+
+Deno.test("deployments: the orchestrator's grants render beside the authoriser's, read on the orchestrator instance", () => {
+  const d = grantsData();
+  d.deploymentOrchestratorGrants = orchestratorGrants();
+  const box = deploymentsBox(d);
+  const heads = tags(box, "h2").map((h) => h.textContent);
+  const auth = heads.findIndex((h) => h.startsWith("Authoriser role grants"));
+  const orch = heads.findIndex((h) => h.startsWith("Orchestrator role grants"));
+  assert(auth >= 0 && orch === auth + 1, "orchestrator section follows the authoriser's: " + heads.join(" | "));
+  const banners = collect(box, "own-verify").map(textOf);
+  const orchBanners = banners.filter((t) => t.includes(`orchestrator ${ORCH_INSTANCE}`));
+  assert(orchBanners.length === 2, "one banner per chain names the instance: " + banners.join(" | "));
+  assert(
+    orchBanners.some((t) => t.startsWith("ethereum — 3 of 4 expectations met; 1 expectation not met")),
+    "ethereum's missing EMERGENCY holder is counted: " + orchBanners.join(" | "),
+  );
+  const viol = collect(box, "viol").map(textOf);
+  assert(
+    viol.some((t) => t.includes("chainSafe") && t.includes(ETH_SAFE) && t.includes("EMERGENCY")),
+    "the violated expectation names the holder, its address and the role: " + viol.join(" | "),
+  );
+  const links = tags(box, "a").map((a) => a.textContent);
+  assert(
+    links.includes("LibOrchestratorInvariants.expectedGrants(address,address)") &&
+      links.includes("LibAuthoriserInvariants.expectedGrants(address)"),
+    "each map is linked by its own library: " + links.filter((l) => l.includes("expectedGrants")).join(" | "),
+  );
+  const sections = grantSections(box);
+  assert(
+    sections.includes("Admin role — who can grant and revoke") &&
+      sections.includes("Action roles — who can mint, burn and recover"),
+    "the orchestrator's sections carry its own headings: " + sections.join(" | "),
+  );
+});
+
+Deno.test("deployments: an orchestrator chain with no instance pinned says so, not 'authoriser'", () => {
+  const d = grantsData();
+  const o = orchestratorGrants();
+  o.chains[1] = { ...o.chains[1], target: null, granted: 0, missing: 0, unknown: 2, total: 2, state: "unknown" };
+  d.deploymentOrchestratorGrants = o;
+  const box = deploymentsBox(d);
+  const down = collect(box, "own-verify-down").map(textOf);
+  assert(
+    down.length === 1 && down[0].includes("no orchestrator pinned for this chain yet"),
+    "the unread orchestrator chain names the missing pin: " + down.join(" | "),
+  );
+});
+
+Deno.test("deployments: with no orchestrator grant data its section is absent", () => {
+  const box = deploymentsBox({ ...grantsData(), deploymentOrchestratorGrants: null });
+  assert(
+    !tags(box, "h2").some((h) => h.textContent.startsWith("Orchestrator role grants")),
+    "no orchestrator section",
+  );
+  assert(
+    tags(box, "h2").some((h) => h.textContent.startsWith("Authoriser role grants")),
+    "the authoriser section still renders",
   );
 });
 
@@ -11002,7 +11121,7 @@ Deno.test("deployments: a chain lists the expectations it does not meet", () => 
   const d = grantsData();
   d.deploymentGrants.chains = [{
     network: "base",
-    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    target: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
     safe: BASE_SAFE,
     rpcHost: "mainnet.base.org",
     granted: 3,
@@ -11070,7 +11189,7 @@ Deno.test("deployments: an unprobed holder is not reported as nobody holding it"
   const d = grantsData();
   d.deploymentGrants.chains = [{
     network: "base",
-    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    target: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
     safe: BASE_SAFE,
     rpcHost: "mainnet.base.org",
     granted: 4,
@@ -11173,7 +11292,7 @@ Deno.test("deployments: a Safe that kept an admin role is a violated expectation
   const d = grantsData();
   d.deploymentGrants.chains = [{
     network: "base",
-    authoriser: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+    target: "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
     safe: BASE_SAFE,
     rpcHost: "mainnet.base.org",
     // The scan counts the renounce as its own expectation, so a chain whose

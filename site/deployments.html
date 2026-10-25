@@ -1037,20 +1037,48 @@ function renderDeployments(document, $, data, io) {
     }
   };
 
+  const GRANT_COPY = {
+    authoriser: {
+      title: "Authoriser role grants — who can move value",
+      read: "the same map the on-chain invariants assert",
+      action: [
+        "Action roles — who can move value",
+        "Deposit / withdraw / certify and anything else the map grants directly. These are the keys used day to day.",
+      ],
+      admin: [
+        "Admin roles — who can grant and revoke",
+        "The <ROLE>_ADMIN half of the same map: the authority to hand the action roles out. Read off the role name, not a list kept here.",
+      ],
+    },
+    orchestrator: {
+      title: "Orchestrator role grants — who can mint, burn and recover",
+      read: "the expected holders on the orchestrator instance",
+      action: [
+        "Action roles — who can mint, burn and recover",
+        "Mint / burn, and the emergency recovery ops kept on a separate key so it can never also mint.",
+      ],
+      admin: [
+        "Admin role — who can grant and revoke",
+        "The role that administers every other orchestrator role.",
+      ],
+    },
+  };
   const renderGrants = (g) => {
     if (!g || !Array.isArray(g.grantees) || g.grantees.length === 0) return;
-    sink.append(el("h2", null, "Authoriser role grants — who can move value"));
+    const contract = g.contract === "orchestrator" ? "orchestrator" : "authoriser";
+    const copy = GRANT_COPY[contract];
+    sink.append(el("h2", null, copy.title));
     const gsub = el("div", "own-sub");
     gsub.append("Every (role, grantee) pair pinned in ");
     gsub.append(
       link(
         "",
-        `${g.function}`,
+        `${String(g.source || "").split("/").pop().replace(/\.sol$/, "")}.${g.function}`,
         `https://github.com/${g.org}/${g.repo}/blob/main/${g.source}`,
       ),
     );
     gsub.append(
-      ` — the same map the on-chain invariants assert — read back per chain with hasRole(). ` +
+      ` — ${copy.read} — read back per chain with hasRole() on the ${contract}. ` +
         `The list is DERIVED from that map: a signer added there appears here, and one removed disappears, ` +
         `with no change to this page. It shows current production only — a revoked grantee is not kept as history, ` +
         `because a key on this screen reads as a key that can still act.`,
@@ -1151,18 +1179,18 @@ function renderDeployments(document, $, data, io) {
         : st === "unprovisioned"
         ? `${c.network} — none of the ${c.total} expectations are met; ${rest}.`
         : `${c.network} — pinned grants could not be read${
-          !c.authoriser
-            ? " (no authoriser pinned for this chain yet)"
+          !c.target
+            ? ` (no ${contract} pinned for this chain yet)`
             : !c.rpcHost
             ? " (no RPC endpoint configured for this chain)"
             : " (the on-chain read did not answer)"
         }; unread, not revoked.`;
       const b = el("div", `own-verify own-verify-${cls}`);
       b.append(el("span", "own-verify-msg", msg));
-      if (c.authoriser) {
+      if (c.target) {
         const src = el("span", "own-verify-src");
-        src.append("authoriser ");
-        src.append(addrNode("own-addr", c.authoriser, c.network));
+        src.append(`${contract} `);
+        src.append(addrNode("own-addr", c.target, c.network));
         b.append(src);
       }
       if (c.rpcHost) b.append(el("span", "own-verify-src", `via ${c.rpcHost}`));
@@ -1346,16 +1374,8 @@ function renderDeployments(document, $, data, io) {
       }
       sink.append(table);
     };
-    section(
-      "Action roles — who can move value",
-      "Deposit / withdraw / certify and anything else the map grants directly. These are the keys used day to day.",
-      false,
-    );
-    section(
-      "Admin roles — who can grant and revoke",
-      "The <ROLE>_ADMIN half of the same map: the authority to hand the action roles out. Read off the role name, not a list kept here.",
-      true,
-    );
+    section(copy.action[0], copy.action[1], false);
+    section(copy.admin[0], copy.admin[1], true);
   };
   // Role changes: every grant and revoke, and who holds each role now, per
   // contract per network, read from the deploy repo's RBAC subgraph WHEN THE
@@ -2872,6 +2892,7 @@ function renderDeployments(document, $, data, io) {
     renderVaultOwners(data.deploymentVaultOwners);
     sink = panels.contracts;
     renderGrants(data.deploymentGrants);
+    renderGrants(data.deploymentOrchestratorGrants);
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
@@ -2947,6 +2968,7 @@ function renderDeployments(document, $, data, io) {
   renderVaultOwners(data.deploymentVaultOwners);
   sink = panels.contracts;
   renderGrants(data.deploymentGrants);
+  renderGrants(data.deploymentOrchestratorGrants);
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
