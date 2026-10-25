@@ -152,7 +152,7 @@ pub fn build_owners(
 
     let (safe_note, signers_group, threshold, signer_count) = match expected {
         Err(e) => (
-            "Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role.".to_string(),
+            "Gnosis Safe, replicated per chain. Holder of every authoriser admin role; production beacons belong to each chain's timelock, never the Safe.".to_string(),
             json!({
                 "id": "signers",
                 "title": "Safe signers",
@@ -220,7 +220,7 @@ pub fn build_owners(
                 })
             });
             (
-                format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role."),
+                format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Holder of every authoriser admin role; production beacons belong to each chain's timelock, never the Safe."),
                 json!({
                     "id": "signers",
                     "title": format!("Safe signers ({threshold}-of-{signer_count})"),
@@ -239,7 +239,7 @@ pub fn build_owners(
         "title": "Upgrade authority — token-owner Safe",
         "note": safe_note,
         "entries": [
-            entry("Base Safe", Some(base_safe), "base", "active", "beacon owner + authoriser admin"),
+            entry("Base Safe", Some(base_safe), "base", "active", "authoriser admin"),
             entry("Ethereum Safe", eth_safe, "ethereum", "active", "same policy, per-chain address"),
         ],
     });
