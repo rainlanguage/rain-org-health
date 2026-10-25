@@ -6711,6 +6711,11 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl and flag a Sa
   // the behind beacon shows NOW (V1) and the should-be TARGET, each with an address
   assert(chips.includes("V1"), "now impl labelled V1: " + chips.join(","));
   assert(collect(box, "own-chip-target").length >= 1, "a target-impl chip");
+  // The behind beacon's should-be impl is labelled as the expectation, not a version.
+  assert(
+    collect(box, "own-chip-target").some((c) => c.textContent === "expected"),
+    "the target impl chip reads expected",
+  );
   const addrs = collect(box, "own-addr").map((a) => a.textContent);
   assert(
     addrs.includes(TARGET),
@@ -7766,6 +7771,10 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   assert(
     chips.includes("expected ✓"),
     "the migrated vault confirms the expected authoriser",
+  );
+  assert(
+    collect(box, "own-chip-yes").some((c) => c.textContent === "expected ✓"),
+    "the confirmed authoriser chip is green",
   );
   assert(
     chips.filter((c) => c === "current prod authoriser").length === 3,
@@ -13941,7 +13950,7 @@ Deno.test("deployments: unavailable expected authorisers are an error banner, no
 Deno.test("deployments: the owners subtitle states the Safe threshold only when it is known", () => {
   const known = textOf(deploymentsBox(OWNERS));
   assert(
-    known.includes("Governed by a 3-of-6 Safe per chain."),
+    known.includes("Governed by a 3-of-6 Safe on Base."),
     "a known threshold is stated: " + known.slice(0, 300),
   );
   const unknown = textOf(
@@ -13951,4 +13960,81 @@ Deno.test("deployments: the owners subtitle states the Safe threshold only when 
   );
   assert(!unknown.includes("Governed by"), "no threshold claim when unknown");
   assert(!unknown.includes("null"), "never prints null: " + unknown.slice(0, 300));
+});
+
+Deno.test("deployments: every expected authoriser target is listed with its own deploy state", () => {
+  const EU = "0xdb9152e46c1d140db6a6f814461f21c571f3275e";
+  const V4 = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
+  const NEW = "0x00000000000000000000000000000000000000aa";
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentBeacons: null,
+    deploymentHealth: null,
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      total: 0,
+      ok: 0,
+      wrappedCount: 2,
+      atAuthoriserTarget: 1,
+      authoriser: {
+        current: "0xc1",
+        source: "expected-state.json",
+        error: null,
+        targets: [
+          { address: V4, deployed: true },
+          { address: EU, deployed: false },
+          { address: NEW, deployed: null },
+        ],
+      },
+      tokens: [],
+    },
+  });
+  const srcs = collect(box, "own-verify-src").map((s) => s.textContent);
+  assert(srcs.includes(`target ${V4} (deployed)`), "V4 deployed: " + srcs.join(" | "));
+  assert(srcs.includes(`target ${EU} (NOT deployed)`), "EU not deployed: " + srcs.join(" | "));
+  assert(
+    srcs.includes(`target ${NEW} (deploy state unknown)`),
+    "unknown deploy state: " + srcs.join(" | "),
+  );
+});
+
+Deno.test("deployments: a file routing no token says so, never a silent authoriser section", () => {
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentBeacons: null,
+    deploymentHealth: null,
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      total: 0,
+      ok: 0,
+      wrappedCount: 0,
+      atAuthoriserTarget: 0,
+      authoriser: { current: null, source: "expected-state.json", error: null, targets: [] },
+      tokens: [],
+    },
+  });
+  const errs = collect(box, "own-verify-error").map((b) => textOf(b));
+  assert(
+    errs.includes("No expected authorisers — expected-state.json lists no base tokens."),
+    "an explicit no-expectation banner: " + errs.join(" | "),
+  );
+  assert(
+    !collect(box, "own-verify").some((b) => textOf(b).includes("Authorisers —")),
+    "no progress banner without a target",
+  );
+});
+
+Deno.test("deployments: an unread on-chain threshold shows the expected one alone", () => {
+  const owners = structuredClone(OWNERS.deploymentOwners);
+  const signers = owners.groups.find((g) => g.verification);
+  signers.verification.threshold = { declared: 3, onChain: null, match: null };
+  const t = textOf(deploymentsBox({ deploymentOwners: owners }));
+  assert(t.includes("threshold 3 (expected)"), "expected-only threshold: " + t.slice(0, 400));
+  assert(!t.includes("(on-chain)"), "no on-chain value claimed");
 });

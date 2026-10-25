@@ -553,6 +553,12 @@ mod tests {
         assert_eq!(malformed(&no_tokens), "tokens");
         let no_owners = three.replace(r#""owners": ["#, r#""ownerz": ["#);
         assert_eq!(malformed(&no_owners), "safe.owners");
+        // An empty roster is named as the roster, not as the threshold it makes impossible.
+        let open = r#""owners": ["#;
+        let start = three.find(open).unwrap() + open.len();
+        let end = start + three[start..].find(']').unwrap();
+        let empty_owners = format!("{}{}", &three[..start], &three[end..]);
+        assert_eq!(malformed(&empty_owners), "safe.owners");
     }
 
     #[test]

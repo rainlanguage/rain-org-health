@@ -641,6 +641,13 @@ function renderDeployments(document, $, data, io) {
         ab.append(el("span", "own-verify-src", `target ${tg.address} (${dep})`));
       }
       sink.append(ab);
+    } else if (auth && Array.isArray(auth.targets)) {
+      // A readable file that routes no token: every vault is unchecked, never on target.
+      const ab = el("div", "own-verify own-verify-error");
+      ab.append(
+        el("span", "own-verify-msg", `No expected authorisers — ${auth.source} lists no ${t.network} tokens.`),
+      );
+      sink.append(ab);
     }
     const okChip = (label, v) => {
       const sym = v === true ? "✓" : v === false ? "✗" : "—";
@@ -2886,7 +2893,7 @@ function renderDeployments(document, $, data, io) {
     link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
   );
   sub.append(
-    ` deploy constants — who controls production.${owners.threshold != null && owners.signerCount != null ? ` Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.` : ""}`,
+    ` deploy constants — who controls production.${owners.threshold != null && owners.signerCount != null ? ` Governed by a ${owners.threshold}-of-${owners.signerCount} Safe on Base.` : ""}`,
   );
   sink.append(sub);
   for (const g of owners.groups) {

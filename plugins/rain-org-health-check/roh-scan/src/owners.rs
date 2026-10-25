@@ -140,8 +140,12 @@ pub fn build_owners(
         (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
-    // Anchor: without the Base Safe there is nothing meaningful to show.
-    let base_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?;
+    // Anchor: without the Base Safe there is nothing meaningful to show. The
+    // file's Safe is the one the signers are verified against, so it names the row.
+    let base_safe = match expected {
+        Ok(exp) => exp.address.clone(),
+        Err(_) => addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?,
+    };
     let eth_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
 
     // The live owner set (lowercased — getOwners returns unchecksummed) for the
@@ -1257,23 +1261,23 @@ mod tests {
     }
 
     #[test]
-    fn build_owners_is_none_without_the_anchor() {
-        // Repo unreachable / anchor constant moved → no owners doc at all.
+    fn build_owners_is_none_without_any_anchor() {
+        // No expectation and the anchor constant unreadable → no owners doc at all.
+        let src = OwnerSources {
+            safe_lib: "",
+            auth_lib: AUTH_LIB,
+            v4_lib: V4_LIB,
+            overrides: OVERRIDES,
+        };
         assert_eq!(
-            build_owners(
-                "o",
-                "r",
-                &OwnerSources {
-                    safe_lib: "",
-                    auth_lib: AUTH_LIB,
-                    v4_lib: V4_LIB,
-                    overrides: OVERRIDES
-                },
-                Ok(&exp_safe()),
-                None,
-                None
-            ),
+            build_owners("o", "r", &src, Err(&ExpectedError::Empty), None, None),
             None
+        );
+        // The file's Safe anchors the view when the constant is gone.
+        let v = build_owners("o", "r", &src, Ok(&exp_safe()), None, None).unwrap();
+        assert_eq!(
+            v["groups"][0]["entries"][0]["address"],
+            exp_safe().address.as_str()
         );
     }
 
@@ -1310,6 +1314,7 @@ mod tests {
         exp.owners
             .push("0x1111111111111111111111111111111111111111".into());
         exp.threshold = 2;
+        exp.address = "0x2222222222222222222222222222222222222222".into();
         let oc = onchain(
             Some(vec![
                 LIVE_ROSTER[0],
@@ -1345,6 +1350,11 @@ mod tests {
             "0x1111111111111111111111111111111111111111"
         );
         assert!(entries.iter().all(|e| e["onChain"] == "match"));
+        // The Base Safe row names the file's Safe, the one the signers are checked on.
+        assert_eq!(
+            v["groups"][0]["entries"][0]["address"],
+            "0x2222222222222222222222222222222222222222"
+        );
     }
 
     /// No expectation: the signers group says why and claims no roster,
@@ -1463,6 +1473,30 @@ mod tests {
         assert_eq!(extra["onChain"], "extra");
     }
 
+    #[test]
+    fn a_live_superset_of_the_expected_roster_is_drift() {
+        // Every expected owner is present, plus one more: still not the expected Safe.
+        let mut live: Vec<&str> = LIVE_ROSTER.to_vec();
+        live.push("0xdeadbeef00000000000000000000000000000001");
+        let oc = onchain(Some(live), Some(3));
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            Ok(&exp_safe()),
+            Some(&oc),
+            None,
+        )
+        .unwrap();
+        let sg = &v["groups"][1];
+        assert_eq!(sg["verification"]["threshold"]["match"], true);
+        assert_eq!(sg["verification"]["match"], false);
+    }
     #[test]
     fn unreachable_rpc_leaves_signers_unverified() {
         let oc = onchain(None, None); // RPC failed
