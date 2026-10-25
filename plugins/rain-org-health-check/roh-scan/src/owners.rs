@@ -2960,6 +2960,7 @@ mod tests {
 
         let unqualified = OwnerSources {
             auth_lib: "library LibSomethingElse {}",
+            safe_lib: &decoy_safe,
             ..orch_sources()
         };
         let v = build_orch(ORCH_LIB, &unqualified, &zero_named(), &all_granted);
