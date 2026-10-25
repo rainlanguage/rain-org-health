@@ -6001,17 +6001,17 @@ Deno.test("deployments: no owner data shows an empty state and no groups", () =>
   assert(collect(box, "own-group").length === 0, "no owner groups rendered");
 });
 
-Deno.test("deployments: verified signers show constant + on-chain provenance side by side", () => {
+Deno.test("deployments: verified signers show expected + on-chain provenance side by side", () => {
   const box = deploymentsBox(OWNERS);
   assert(
     collect(box, "own-verify-ok").length === 1,
     "an on-chain-verified banner",
   );
-  // each of the six signers renders BOTH a 'constant ✓' and an 'on-chain ✓' chip
+  // each of the six signers renders BOTH a 'expected ✓' and an 'on-chain ✓' chip
   const labels = collect(box, "own-chip").map((c) => c.textContent);
   assert(
-    labels.filter((l) => l === "constant ✓").length === 6,
-    "six constant ✓ chips",
+    labels.filter((l) => l === "expected ✓").length === 6,
+    "six expected ✓ chips",
   );
   assert(
     labels.filter((l) => l === "on-chain ✓").length === 6,
@@ -6076,10 +6076,10 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
     labels.filter((l) => l === "on-chain ✗").length === 1,
     "one on-chain ✗ (missing signer)",
   );
-  // the on-chain-only owner reads constant ✗ (its on-chain source is still ✓)
+  // the on-chain-only owner reads expected ✗ (its on-chain source is still ✓)
   assert(
-    labels.filter((l) => l === "constant ✗").length === 1,
-    "one constant ✗ (unexpected owner)",
+    labels.filter((l) => l === "expected ✗").length === 1,
+    "one expected ✗ (unexpected owner)",
   );
   assert(
     collect(box, "own-extra").length === 1,
@@ -6087,7 +6087,7 @@ Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and
   );
   const banner = collect(box, "own-verify-drift")[0];
   assert(
-    textOf(banner).includes("3 (constant) · 2 (on-chain)"),
+    textOf(banner).includes("3 (expected) · 2 (on-chain)"),
     "threshold mismatch shown: " + textOf(banner),
   );
 });
@@ -6637,8 +6637,10 @@ Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak ch
   );
 });
 
-Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and flag behind-target", () => {
+Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl and flag a Safe owner red", () => {
   const TARGET = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const SAFE = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
+  const TIMELOCK = "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b";
   const data = {
     deploymentOwners: null,
     deploymentHealth: null,
@@ -6647,22 +6649,23 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
       repo: "st0x.deploy",
       network: "base",
       rpcHost: "mainnet.base.org",
-      safeOwner: "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-      targetVersion: "0.1.1",
+      safeOwner: SAFE,
+      timelockOwner: TIMELOCK,
+      source: "expected-state.json",
       total: 2,
       healthy: 0,
       beacons: [
         {
           name: "Receipt beacon",
           address: "0x86e93c39B095be0B0054C8488E26466Ee027D79a",
-          owner: "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+          owner: SAFE,
           ownerLabel: "safe",
           implementation: "0xe7573879d73455dc92cb4087fa8177594387cbcd",
           implVersion: "V1",
           targetImpl: TARGET,
-          targetVersion: "0.1.1",
+          targetOwner: TIMELOCK,
           atTarget: false,
-          status: "behind",
+          status: "drift",
         },
         {
           name: "Vault beacon",
@@ -6670,9 +6673,9 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
           owner: "0x8e4bdeec7ceb9570d440676345da1dce10329f5b",
           ownerLabel: "legacy",
           implementation: TARGET,
-          implVersion: "0.1.1",
+          implVersion: "expected",
           targetImpl: TARGET,
-          targetVersion: "0.1.1",
+          targetOwner: TIMELOCK,
           atTarget: true,
           status: "drift",
         },
@@ -6684,7 +6687,28 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
   // owners labelled by identity, not a bare tick
   assert(chips.includes("Safe"), "owner labelled Safe");
   assert(chips.includes("legacy EOA"), "owner labelled legacy EOA");
-  // the behind beacon shows NOW (V1) and the should-be TARGET (0.1.1), each with an address
+  // A Safe-owned beacon is a fault (it bypasses the timelock delay): its owner
+  // chip is red, never the governed green.
+  const red = collect(box, "own-chip-no").map((c) => c.textContent);
+  assert(red.includes("Safe"), "the Safe owner chip is red: " + red.join(","));
+  const green = collect(box, "own-chip-yes").map((c) => c.textContent);
+  assert(!green.includes("Safe"), "the Safe owner chip is not green");
+  // Each wrong-owner beacon names the expected owner so the fix can be checked.
+  const lines = collect(box, "bcn-line");
+  const expectedLines = lines.filter((l) =>
+    collect(l, "bcn-key").some((k) => k.textContent === "expected")
+  );
+  assert(
+    expectedLines.length === 2,
+    "both wrong-owner beacons show an expected-owner line",
+  );
+  assert(
+    expectedLines.every((l) =>
+      collect(l, "own-addr").some((a) => a.textContent === TIMELOCK)
+    ),
+    "the expected-owner line carries the timelock address",
+  );
+  // the behind beacon shows NOW (V1) and the should-be TARGET, each with an address
   assert(chips.includes("V1"), "now impl labelled V1: " + chips.join(","));
   assert(collect(box, "own-chip-target").length >= 1, "a target-impl chip");
   const addrs = collect(box, "own-addr").map((a) => a.textContent);
@@ -6692,14 +6716,58 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl version and f
     addrs.includes(TARGET),
     "the target impl address is shown for checking a proposed upgrade",
   );
-  assert(chips.includes("0.1.1 ✓"), "the at-target beacon confirms 0.1.1");
-  // statuses
-  assert(chips.includes("behind"), "a behind status");
-  assert(chips.includes("drift"), "a drift status (legacy owner)");
+  assert(chips.includes("expected ✓"), "the at-target beacon confirms the expected impl");
+  assert(chips.filter((c) => c === "drift").length === 2, "two drift statuses");
   assert(
     collect(box, "own-verify-drift").length === 1,
     "not-all-healthy beacon banner",
   );
+});
+
+Deno.test("deployments: a timelock-owned beacon shows no expected-owner line", () => {
+  const TARGET = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const TIMELOCK = "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b";
+  const data = {
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      network: "base",
+      timelockOwner: TIMELOCK,
+      source: "expected-state.json",
+      total: 1,
+      healthy: 1,
+      beacons: [
+        {
+          name: "Receipt beacon",
+          owner: TIMELOCK,
+          ownerLabel: "timelock",
+          implementation: TARGET,
+          implVersion: "expected",
+          targetImpl: TARGET,
+          targetOwner: TIMELOCK,
+          atTarget: true,
+          status: "healthy",
+        },
+      ],
+    },
+  };
+  const box = deploymentsBox(data);
+  const keys = collect(box, "bcn-key").map((k) => k.textContent);
+  assert(!keys.includes("expected"), "no expected line: " + keys.join(","));
+});
+
+Deno.test("deployments: an all-chains beacon failure says all chains, not unknown chain", () => {
+  const data = {
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: [
+      { network: null, rpcHost: null, unavailable: true, reason: "expected-state.json: HTTP 404" },
+    ],
+  };
+  const box = deploymentsBox(data);
+  const t = textOf(box);
+  assert(t.includes("Beacons — all chains"), "all-chains heading: " + t);
+  assert(!t.includes("unknown chain"), "never unknown chain: " + t);
 });
 
 Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", () => {
@@ -6714,7 +6782,7 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
       network: "ethereum",
       rpcHost: "ethereum-rpc.publicnode.com",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
+      source: "expected-state.json",
       total: 1,
       healthy: 1,
       beacons: [
@@ -6724,9 +6792,8 @@ Deno.test("deployments: a timelock-owned beacon reads as governed, not drift", (
           owner: TIMELOCK,
           ownerLabel: "timelock",
           implementation: TARGET,
-          implVersion: "0.1.1",
+          implVersion: "expected",
           targetImpl: TARGET,
-          targetVersion: "0.1.1",
           atTarget: true,
           status: "healthy",
         },
@@ -7293,7 +7360,7 @@ Deno.test("deployments: a closed tab's content is still in the document", () => 
       network: "ethereum",
       rpcHost: "h",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
+      source: "expected-state.json",
       total: 1,
       healthy: 1,
       beacons: [{
@@ -7302,9 +7369,8 @@ Deno.test("deployments: a closed tab's content is still in the document", () => 
         owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
         ownerLabel: "timelock",
         implementation: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        implVersion: "0.1.1",
+        implVersion: "expected",
         targetImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        targetVersion: "0.1.1",
         atTarget: true,
         status: "healthy",
       }],
@@ -7418,7 +7484,12 @@ Deno.test("deployments: the health and tokens sections link their own chain too"
       ok: 1,
       wrappedCount: 1,
       atAuthoriserTarget: 1,
-      authoriser: { current: "0xc1", target: "0xt1", targetDeployed: true },
+      authoriser: {
+        current: "0xc1",
+        source: "expected-state.json",
+        error: null,
+        targets: [{ address: "0xt1", deployed: true }],
+      },
       tokens: [{
         symbol: "wtNVDA",
         name: "Wrapped NVIDIA Corporation ST0x",
@@ -7457,20 +7528,19 @@ Deno.test("deployments: an address on an unknown chain is plain text, not a Base
       network: "someNewChain",
       rpcHost: "rpc.example.invalid",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
+      source: "expected-state.json",
       total: 1,
-      healthy: 1,
+      healthy: 0,
       beacons: [{
         name: "Receipt beacon",
         address: A,
         owner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
         ownerLabel: "safe",
         implementation: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        implVersion: "0.1.1",
+        implVersion: "expected",
         targetImpl: "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286",
-        targetVersion: "0.1.1",
         atTarget: true,
-        status: "healthy",
+        status: "drift",
       }],
     },
   });
@@ -7499,7 +7569,7 @@ Deno.test("deployments: per-chain sections link their OWN chain's explorer", () 
       network: "ethereum",
       rpcHost: "ethereum-rpc.publicnode.com",
       safeOwner: "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-      targetVersion: "0.1.1",
+      source: "expected-state.json",
       total: 1,
       healthy: 1,
       beacons: [{
@@ -7508,9 +7578,8 @@ Deno.test("deployments: per-chain sections link their OWN chain's explorer", () 
         owner: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
         ownerLabel: "timelock",
         implementation: TARGET,
-        implVersion: "0.1.1",
+        implVersion: "expected",
         targetImpl: TARGET,
-        targetVersion: "0.1.1",
         atTarget: true,
         status: "healthy",
       }],
@@ -7534,7 +7603,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
   const WRONG = "0xbeef000000000000000000000000000000000002";
   const CUR = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"; // current prod authoriser
-  const TGT = "0x315b16faa6ee413fabca877d3851b3818369f0cd"; // V4-clone target
+  const TGT = "0x315b16faa6ee413fabca877d3851b3818369f0cd"; // expected authoriser
   const data = {
     deploymentOwners: null,
     deploymentHealth: null,
@@ -7548,9 +7617,14 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       ok: 1,
       wrappedCount: 3,
       atAuthoriserTarget: 1,
-      authoriser: { current: CUR, target: TGT, targetDeployed: true },
+      authoriser: {
+        current: CUR,
+        source: "expected-state.json",
+        error: null,
+        targets: [{ address: TGT, deployed: true }],
+      },
       tokens: [
-        // fully wired AND already at the V4-clone authoriser target
+        // fully wired AND already at the expected authoriser
         {
           symbol: "wtNVDA",
           name: "Wrapped NVIDIA Corporation ST0x",
@@ -7686,22 +7760,22 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     collect(box, "own-table")[0].children.length === 3,
     "the main token table holds only the three governed tokens",
   );
-  // Authoriser provenance: the migrated vault shows the V4 clone confirmed; the
-  // two pre-migration vaults show the current authoriser NOW + the V4-clone target
+  // Authoriser provenance: the migrated vault shows the expected authoriser confirmed; the
+  // two pre-migration vaults show the current authoriser NOW + the expected target
   // (address linked), so the setAuthorizer bundle can be checked per vault.
   assert(
-    chips.includes("V4 clone ✓"),
-    "the migrated vault confirms the V4 clone",
+    chips.includes("expected ✓"),
+    "the migrated vault confirms the expected authoriser",
   );
   assert(
     chips.filter((c) => c === "current prod authoriser").length === 3,
     "two registry vaults + the extra governed vault show the current prod authoriser",
   );
   assert(
-    chips.filter((c) => c === "V4 clone").length === 3,
-    "three → target lines point at the V4 clone (two registry + the extra vault)",
+    chips.filter((c) => c === "expected").length === 3,
+    "three → target lines point at the expected authoriser (two registry + the extra vault)",
   );
-  assert(addrs.includes(TGT), "the V4-clone target address is linked");
+  assert(addrs.includes(TGT), "the expected target address is linked");
   assert(addrs.includes(CUR), "the current authoriser address is linked");
   // a mismatched identity field shows the on-chain value NOW next to the registry value
   assert(
@@ -7721,7 +7795,8 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
   const banners = collect(box, "own-verify").map((b) => textOf(b));
   assert(
     banners.some((m) =>
-      m.includes("Authoriser migration") && m.includes("1 of 3")
+      m.includes("Authorisers — 1 of 3") &&
+      m.includes(`target ${TGT} (deployed)`)
     ),
     "the authoriser migration banner states progress + target",
   );
@@ -9673,14 +9748,14 @@ Deno.test("deployments: every chain in the beacon list gets its own section", ()
     network,
     rpcHost: `${network}-rpc`,
     safeOwner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-    targetVersion: "0.1.1",
+    source: "expected-state.json",
     total: 1,
     healthy: 1,
     beacons: [{
       name,
       address: "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
       status: "healthy",
-      ownerLabel: "safe",
+      ownerLabel: "timelock",
       implLabel: "target",
     }],
   });
@@ -9707,7 +9782,7 @@ Deno.test("deployments: a single beacon block still renders", () => {
       network: "base",
       rpcHost: "mainnet.base.org",
       safeOwner: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-      targetVersion: "0.1.1",
+      source: "expected-state.json",
       total: 1,
       healthy: 1,
       beacons: [{
@@ -13825,4 +13900,55 @@ Deno.test("deployments: a predecessor still pending before the delay ends keeps 
   assert(w.startsWith("ready in 1d 12h"), w);
   assert(w.includes("delay ends") && !w.includes("executable at"), w);
   assert(w.includes("is not in the index"), w);
+});
+
+Deno.test("deployments: unavailable expected authorisers are an error banner, not a migration count", () => {
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentBeacons: null,
+    deploymentHealth: null,
+    deploymentTokens: {
+      org: "ST0x-Technology",
+      repo: "st0x.registry",
+      network: "base",
+      rpcHost: "mainnet.base.org",
+      total: 0,
+      ok: 0,
+      wrappedCount: 0,
+      atAuthoriserTarget: 0,
+      authoriser: {
+        current: "0xc1",
+        source: "expected-state.json",
+        error: "expected-state.json: HTTP 404",
+        targets: [],
+      },
+      tokens: [],
+    },
+  });
+  const errs = collect(box, "own-verify-error").map((b) => textOf(b));
+  assert(
+    errs.some((m) =>
+      m.includes("Expected authorisers unavailable — expected-state.json: HTTP 404")
+    ),
+    "the error banner names why: " + errs.join(" | "),
+  );
+  assert(
+    !collect(box, "own-verify").some((b) => textOf(b).includes("Authorisers —")),
+    "no progress banner when the expectation is unavailable",
+  );
+});
+
+Deno.test("deployments: the owners subtitle states the Safe threshold only when it is known", () => {
+  const known = textOf(deploymentsBox(OWNERS));
+  assert(
+    known.includes("Governed by a 3-of-6 Safe per chain."),
+    "a known threshold is stated: " + known.slice(0, 300),
+  );
+  const unknown = textOf(
+    deploymentsBox({
+      deploymentOwners: { ...OWNERS.deploymentOwners, threshold: null, signerCount: null },
+    }),
+  );
+  assert(!unknown.includes("Governed by"), "no threshold claim when unknown");
+  assert(!unknown.includes("null"), "never prints null: " + unknown.slice(0, 300));
 });

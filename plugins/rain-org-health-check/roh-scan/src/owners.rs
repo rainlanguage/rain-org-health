@@ -15,6 +15,7 @@
 //! deploy repo — because the thing it reports on is a set that grows, and a
 //! curated list of hot keys is only ever as complete as somebody's memory.
 
+use crate::expected::{ExpectedError, ExpectedSafe, EXPECTED_STATE_PATH};
 use crate::privileged::{PrivilegedChain, PrivilegedError, PRIVILEGED_ADDRESSES_PATH};
 use crate::vaultdiscovery::{Discovered, DiscoveryError};
 use regex::Regex;
@@ -37,16 +38,6 @@ pub fn parse_address_constant(src: &str, name: &str) -> Option<String> {
     re.captures(src)
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_string())
-}
-
-/// Extract a `uint256 [visibility] constant NAME = <n>;` integer. Used for the
-/// Safe signature threshold.
-pub fn parse_uint_constant(src: &str, name: &str) -> Option<u64> {
-    let pattern = format!(r"\b{}\b\s*=\s*(\d+)", regex::escape(name));
-    let re = Regex::new(&pattern).ok()?;
-    re.captures(src)
-        .and_then(|c| c.get(1))
-        .and_then(|m| m.as_str().parse().ok())
 }
 
 /// On-chain readback of a Safe, for the declared-vs-actual provenance view. Each
@@ -130,6 +121,10 @@ pub struct OwnerSources<'a> {
 /// resolved — i.e. the repo was unreachable or the constant moved — so the page
 /// shows an honest "unavailable" state instead of a table of nulls.
 ///
+/// `expected` is the Base Safe's owners and threshold as st0x.deploy's CI
+/// asserts them (`expected-state.json`). When it could not be read the signers
+/// group says why and carries no roster, threshold or verification.
+///
 /// `live_authoriser` is the `authorizer()` a production vault actually returns;
 /// `None` when that read failed, which leaves every clone's status `unknown`
 /// rather than falling back to a literal.
@@ -137,6 +132,7 @@ pub fn build_owners(
     org: &str,
     repo: &str,
     src: &OwnerSources,
+    expected: Result<&ExpectedSafe, &ExpectedError>,
     onchain: Option<&OnChainSafe>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
@@ -147,93 +143,105 @@ pub fn build_owners(
     // Anchor: without the Base Safe there is nothing meaningful to show.
     let base_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?;
     let eth_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
-    let threshold = parse_uint_constant(safe_lib, "STOX_TOKEN_OWNER_SAFE_THRESHOLD").unwrap_or(3);
 
     // The live owner set (lowercased — getOwners returns unchecksummed) for the
-    // declared-vs-actual comparison, or None when the RPC didn't answer.
+    // expected-vs-actual comparison, or None when the RPC didn't answer.
     let onchain_owners: Option<Vec<String>> = onchain
         .and_then(|o| o.owners.as_ref())
         .map(|v| v.iter().map(|a| a.to_lowercase()).collect());
 
-    // Read the declared roster from the constants (walk _1, _2, … until an index
-    // is undefined, so the count tracks the actual Safe), and record for each
-    // whether it is present in the live getOwners() set.
-    let mut signers: Vec<serde_json::Value> = Vec::new();
-    let mut declared_lower: Vec<String> = Vec::new();
-    for i in 1..=64 {
-        let Some(a) = addr(safe_lib, &format!("STOX_TOKEN_OWNER_SAFE_OWNER_{i}")) else {
-            break;
-        };
-        let al = a.to_lowercase();
-        let on_chain = match &onchain_owners {
-            None => "unverified",
-            Some(set) if set.contains(&al) => "match",
-            Some(_) => "missing",
-        };
-        declared_lower.push(al);
-        signers.push(json!({
-            "role": format!("Signer {i}"), "address": a, "network": "",
-            "status": "active", "note": "", "onChain": on_chain,
-        }));
-    }
-    let signer_count = signers.len();
-
-    // Any live owner NOT in the declared set is unexpected — surface the drift
-    // rather than hide it.
-    if let Some(set) = &onchain_owners {
-        for oc in set.iter().filter(|oc| !declared_lower.contains(oc)) {
-            signers.push(json!({
-                "role": "Unexpected on-chain owner", "address": oc, "network": "base",
-                "status": "extra", "onChain": "extra",
-                "note": "present in the live Safe getOwners() but not in the declared constants",
-            }));
+    let (safe_note, signers_group, threshold, signer_count) = match expected {
+        Err(e) => (
+            "Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role.".to_string(),
+            json!({
+                "id": "signers",
+                "title": "Safe signers",
+                "note": format!("Expected owners unavailable — {e}."),
+                "verification": null,
+                "entries": [],
+            }),
+            None,
+            None,
+        ),
+        Ok(exp) => {
+            let threshold = exp.threshold;
+            let expected_lower: Vec<String> =
+                exp.owners.iter().map(|a| a.to_lowercase()).collect();
+            let mut signers: Vec<serde_json::Value> = exp
+                .owners
+                .iter()
+                .zip(&expected_lower)
+                .enumerate()
+                .map(|(i, (a, al))| {
+                    let on_chain = match &onchain_owners {
+                        None => "unverified",
+                        Some(set) if set.contains(al) => "match",
+                        Some(_) => "missing",
+                    };
+                    json!({
+                        "role": format!("Signer {}", i + 1), "address": a, "network": "",
+                        "status": "active", "note": "", "onChain": on_chain,
+                    })
+                })
+                .collect();
+            let signer_count = signers.len();
+            if let Some(set) = &onchain_owners {
+                for oc in set.iter().filter(|oc| !expected_lower.contains(oc)) {
+                    signers.push(json!({
+                        "role": "Unexpected on-chain owner", "address": oc, "network": "base",
+                        "status": "extra", "onChain": "extra",
+                        "note": format!("present in the live Safe getOwners() but not in {EXPECTED_STATE_PATH}"),
+                    }));
+                }
+            }
+            // The roster matches iff the live set is the expected set: same size,
+            // every expected owner present.
+            let verification = onchain.map(|o| {
+                let signer_match = onchain_owners.as_ref().map(|set| {
+                    set.len() == signer_count && expected_lower.iter().all(|d| set.contains(d))
+                });
+                let threshold_match = o.threshold.map(|t| t == threshold);
+                // `reachable` needs both calls; `match` needs roster AND threshold.
+                let reachable = signer_match.is_some() && threshold_match.is_some();
+                json!({
+                    "reachable": reachable,
+                    "network": o.network,
+                    "safe": o.safe,
+                    "rpcHost": o.rpc_host,
+                    "onChainCount": o.owners.as_ref().map(|v| v.len()),
+                    "match": signer_match
+                        .zip(threshold_match)
+                        .map(|(owners, thr)| owners && thr),
+                    "threshold": {
+                        "declared": threshold,
+                        "onChain": o.threshold,
+                        "match": threshold_match,
+                    },
+                })
+            });
+            (
+                format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role."),
+                json!({
+                    "id": "signers",
+                    "title": format!("Safe signers ({threshold}-of-{signer_count})"),
+                    "note": format!("Expected by st0x.deploy's CI ({EXPECTED_STATE_PATH}) and checked against the live Safe getOwners() on Base."),
+                    "verification": verification,
+                    "entries": signers,
+                }),
+                Some(threshold),
+                Some(signer_count),
+            )
         }
-    }
-
-    // Provenance verdict for the roster + threshold: the declared set matches the
-    // live set iff they are the same size and every declared owner is on-chain.
-    let verification = onchain.map(|o| {
-        let signer_match = onchain_owners
-            .as_ref()
-            .map(|set| set.len() == signer_count && declared_lower.iter().all(|d| set.contains(d)));
-        let threshold_match = o.threshold.map(|t| t == threshold);
-        // The verdict needs BOTH calls: a threshold mismatch — or a threshold RPC
-        // that didn't answer — must not read as verified. So `reachable` means both
-        // answered, and `match` requires the roster AND the threshold to agree.
-        let reachable = signer_match.is_some() && threshold_match.is_some();
-        json!({
-            "reachable": reachable,
-            "network": o.network,
-            "safe": o.safe,
-            "rpcHost": o.rpc_host,
-            "onChainCount": o.owners.as_ref().map(|v| v.len()),
-            "match": signer_match
-                .zip(threshold_match)
-                .map(|(owners, thr)| owners && thr),
-            "threshold": {
-                "declared": threshold,
-                "onChain": o.threshold,
-                "match": threshold_match,
-            },
-        })
-    });
+    };
 
     let safe = json!({
         "id": "safe",
         "title": "Upgrade authority — token-owner Safe",
-        "note": format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role."),
+        "note": safe_note,
         "entries": [
             entry("Base Safe", Some(base_safe), "base", "active", "beacon owner + authoriser admin"),
             entry("Ethereum Safe", eth_safe, "ethereum", "active", "same policy, per-chain address"),
         ],
-    });
-
-    let signers_group = json!({
-        "id": "signers",
-        "title": format!("Safe signers ({threshold}-of-{signer_count})"),
-        "note": "Declared in the st0x.deploy constants and checked against the live Safe getOwners() on Base.",
-        "verification": verification,
-        "entries": signers,
     });
 
     // Which clone is live is READ FROM THE CHAIN, not asserted here: the two
@@ -1080,12 +1088,22 @@ mod tests {
         assert_eq!(parse_address_constant(SAFE_LIB, "NOPE_NOT_HERE"), None);
     }
 
-    #[test]
-    fn threshold_parses_as_uint() {
-        assert_eq!(
-            parse_uint_constant(SAFE_LIB, "STOX_TOKEN_OWNER_SAFE_THRESHOLD"),
-            Some(3)
-        );
+    /// The Base Safe expectation as `expected-state.json` carries it.
+    fn exp_safe() -> ExpectedSafe {
+        ExpectedSafe {
+            address: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into(),
+            owners: [
+                "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2",
+                "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d",
+                "0x8D5901d8aE48101B59400235ad8614A2e0510466",
+                "0xC1C89b7f5448F447d59f920456A9610f6b2544bC",
+                "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
+                "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2",
+            ]
+            .map(str::to_string)
+            .to_vec(),
+            threshold: 3,
+        }
     }
 
     #[test]
@@ -1099,6 +1117,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             None,
             None,
         )
@@ -1212,6 +1231,7 @@ mod tests {
                 v4_lib: &v4_zero,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             None,
             None,
         )
@@ -1249,6 +1269,7 @@ mod tests {
                     v4_lib: V4_LIB,
                     overrides: OVERRIDES
                 },
+                Ok(&exp_safe()),
                 None,
                 None
             ),
@@ -1270,6 +1291,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             None,
             None,
         )
@@ -1279,32 +1301,83 @@ mod tests {
         assert!(eth["address"].is_null());
     }
 
+    /// #217: the roster and threshold are the expectation's, never the
+    /// `_OWNER_{i}` constants — SAFE_LIB declares six, the expectation three.
     #[test]
-    fn signer_count_is_read_from_the_constants_not_a_fixed_six() {
-        // Three signer constants -> three signers read: proves the roster size
-        // comes from the source, not a hardcoded 6. Threshold absent -> 3.
-        let three = "
-            address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_1 = 0x1111111111111111111111111111111111111111;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0x2222222222222222222222222222222222222222;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x3333333333333333333333333333333333333333;
-        ";
+    fn signers_and_threshold_come_from_the_expectation_not_the_constants() {
+        let mut exp = exp_safe();
+        exp.owners.truncate(2);
+        exp.owners
+            .push("0x1111111111111111111111111111111111111111".into());
+        exp.threshold = 2;
+        let oc = onchain(
+            Some(vec![
+                LIVE_ROSTER[0],
+                LIVE_ROSTER[1],
+                "0x1111111111111111111111111111111111111111",
+            ]),
+            Some(2),
+        );
         let v = build_owners(
             "o",
             "r",
             &OwnerSources {
-                safe_lib: three,
+                safe_lib: SAFE_LIB,
                 auth_lib: AUTH_LIB,
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            None,
+            Ok(&exp),
+            Some(&oc),
             None,
         )
         .unwrap();
         assert_eq!(v["signerCount"], 3);
-        assert_eq!(v["groups"][1]["entries"].as_array().unwrap().len(), 3);
-        assert_eq!(v["groups"][1]["title"], "Safe signers (3-of-3)");
+        assert_eq!(v["threshold"], 2);
+        let sg = &v["groups"][1];
+        assert_eq!(sg["title"], "Safe signers (2-of-3)");
+        assert_eq!(sg["verification"]["match"], true);
+        assert_eq!(sg["verification"]["threshold"]["declared"], 2);
+        let entries = sg["entries"].as_array().unwrap();
+        assert_eq!(entries.len(), 3);
+        assert_eq!(
+            entries[2]["address"],
+            "0x1111111111111111111111111111111111111111"
+        );
+        assert!(entries.iter().all(|e| e["onChain"] == "match"));
+    }
+
+    /// No expectation: the signers group says why and claims no roster,
+    /// threshold or verdict, while the rest of the document still renders.
+    #[test]
+    fn an_unavailable_expectation_is_reported_not_guessed() {
+        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
+        let v = build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib: AUTH_LIB,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            Err(&ExpectedError::Empty),
+            Some(&oc),
+            None,
+        )
+        .unwrap();
+        assert!(v["threshold"].is_null());
+        assert!(v["signerCount"].is_null());
+        let sg = &v["groups"][1];
+        assert_eq!(sg["id"], "signers");
+        assert_eq!(
+            sg["note"],
+            "Expected owners unavailable — expected-state.json could not be fetched."
+        );
+        assert!(sg["verification"].is_null());
+        assert_eq!(sg["entries"].as_array().unwrap().len(), 0);
+        assert!(!v["groups"][0]["note"].as_str().unwrap().contains("-of-"));
+        assert_eq!(v["groups"].as_array().unwrap().len(), 4);
     }
 
     // ---- declared-vs-actual verification ----
@@ -1341,6 +1414,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             Some(&oc),
             None,
         )
@@ -1370,6 +1444,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             Some(&oc),
             None,
         )
@@ -1400,6 +1475,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             Some(&oc),
             None,
         )
@@ -1423,6 +1499,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             None,
             None,
         )
@@ -1445,6 +1522,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             Some(&oc),
             None,
         )
@@ -1477,6 +1555,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             Some(&oc),
             None,
         )
@@ -1592,6 +1671,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
+            Ok(&exp_safe()),
             None,
             None,
         )
