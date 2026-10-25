@@ -757,6 +757,9 @@ impl GrantOnChain {
     }
 }
 
+/// Asks `network` whether `target` grants `role_id` to the grantee address.
+pub type GrantCheck<'a> = dyn Fn(&str, &str, [u8; 32], &str) -> GrantOnChain + 'a;
+
 /// Roll a chain's per-grant results into one word.
 ///
 /// `unprovisioned` and `partial` are rollout states, not faults: #280's model
@@ -856,7 +859,7 @@ pub fn build_grants(
     src: &OwnerSources,
     spec: &GrantSpec,
     chains: &[ChainPin],
-    check: &dyn Fn(&str, &str, [u8; 32], &str) -> GrantOnChain,
+    check: &GrantCheck,
 ) -> Option<serde_json::Value> {
     let mut map = parse_expected_grants(spec.lib)?;
     for g in map.grants.iter_mut() {
@@ -1667,7 +1670,7 @@ mod tests {
         repo: &str,
         src: &OwnerSources,
         chains: &[ChainPin],
-        check: &dyn Fn(&str, &str, [u8; 32], &str) -> GrantOnChain,
+        check: &GrantCheck,
     ) -> Option<serde_json::Value> {
         build_grants(
             org,
@@ -2791,7 +2794,7 @@ mod tests {
         lib: &str,
         src: &OwnerSources,
         names: &[(String, String)],
-        check: &dyn Fn(&str, &str, [u8; 32], &str) -> GrantOnChain,
+        check: &GrantCheck,
     ) -> serde_json::Value {
         build_grants(
             "o",
