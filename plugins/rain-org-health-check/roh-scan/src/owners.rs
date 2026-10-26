@@ -1217,6 +1217,94 @@ mod tests {
         }
     }
 
+    fn chain(network: &str, receipt_vaults: &[&str]) -> PrivilegedChain {
+        PrivilegedChain {
+            network: network.into(),
+            chain_id: 0,
+            safe: None,
+            timelock: None,
+            receipt_vaults: receipt_vaults.iter().map(|v| v.to_string()).collect(),
+        }
+    }
+
+    /// The live read asks the first vault listed for THAT chain, on that
+    /// chain, and never borrows another chain's vault or answer.
+    #[test]
+    fn live_authoriser_reads_the_chains_own_first_vault() {
+        let chains = [
+            chain("base", &["0xb1", "0xb2"]),
+            chain("ethereum", &["0xe1", "0xe2"]),
+            chain("hyperevm", &[]),
+        ];
+        let read = |network: &str, vault: &str| Some(format!("{network}:{vault}"));
+        assert_eq!(
+            live_authoriser(Some(&chains), "base", &read).as_deref(),
+            Some("base:0xb1")
+        );
+        assert_eq!(
+            live_authoriser(Some(&chains), "ethereum", &read).as_deref(),
+            Some("ethereum:0xe1")
+        );
+        assert_eq!(live_authoriser(Some(&chains), "hyperevm", &read), None);
+        assert_eq!(live_authoriser(Some(&chains), "bsc", &read), None);
+        assert_eq!(live_authoriser(None, "ethereum", &read), None);
+        assert_eq!(
+            live_authoriser(Some(&chains), "ethereum", &|_, _| None),
+            None
+        );
+    }
+
+    /// Each clone's status comes from the live read on its own chain (#226):
+    /// the Ethereum pin alone never makes the Ethereum row `active`, and the
+    /// Base read never speaks for Ethereum.
+    #[test]
+    fn ethereum_clone_status_follows_the_ethereum_live_reading() {
+        const BASE: &str = "0x315b16faa6eE413faBCa877d3851B3818369f0cD";
+        const ETH: &str = "0x66566cc91dEAf818859bD4b09B7903ac48998157";
+        const OTHER: &str = "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456";
+        let v4_lib = format!(
+            "{V4_LIB}\n    address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address({ETH});\n"
+        );
+        let statuses = |base: Option<&str>, ethereum: Option<&str>| {
+            let rows = authoriser_entries(AUTH_LIB_UPSTREAM, &v4_lib, &per_chain(base, ethereum));
+            let status = |network: &str| {
+                rows.iter().find(|e| e["network"] == network).unwrap()["status"]
+                    .as_str()
+                    .unwrap()
+                    .to_string()
+            };
+            (status("base"), status("ethereum"))
+        };
+        let s = |a: &str, b: &str| (a.to_string(), b.to_string());
+        assert_eq!(statuses(None, None), s("unknown", "unknown"));
+        assert_eq!(statuses(Some(BASE), None), s("active", "unknown"));
+        assert_eq!(statuses(None, Some(ETH)), s("unknown", "active"));
+        assert_eq!(
+            statuses(Some(BASE), Some(&ETH.to_lowercase())),
+            s("active", "active")
+        );
+        assert_eq!(statuses(Some(BASE), Some(OTHER)), s("active", "pending"));
+        assert_eq!(statuses(Some(ETH), Some(BASE)), s("pending", "pending"));
+    }
+
+    /// An unhydrated Ethereum pin is never `active`: vaults reading a real
+    /// clone make it `pending`.
+    #[test]
+    fn unhydrated_ethereum_clone_is_pending_against_a_live_clone() {
+        let v4_lib = format!(
+            "{V4_LIB}\n    address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x0000000000000000000000000000000000000000);\n"
+        );
+        let eth = authoriser_entries(
+            AUTH_LIB_UPSTREAM,
+            &v4_lib,
+            &per_chain(None, Some("0x66566cc91dEAf818859bD4b09B7903ac48998157")),
+        )
+        .into_iter()
+        .find(|e| e["network"] == "ethereum")
+        .unwrap();
+        assert_eq!(eth["status"], "pending");
+    }
+
     /// The whole point of reading `authorizer()`: whichever clone the vaults
     /// actually delegate to is the active one, and the other is labelled by
     /// which side of the swap it sits on. A hardcoded pair gets this backwards
