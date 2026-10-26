@@ -1129,14 +1129,18 @@ mod tests {
         address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
     "#;
 
-    fn authoriser_entries(auth_lib: &str, live: Option<&str>) -> Vec<serde_json::Value> {
+    fn authoriser_entries(
+        auth_lib: &str,
+        v4_lib: &str,
+        live: Option<&str>,
+    ) -> Vec<serde_json::Value> {
         let v = build_owners(
             "S01-Issuer",
             "st0x.deploy",
             &OwnerSources {
                 safe_lib: SAFE_LIB,
                 auth_lib,
-                v4_lib: V4_LIB,
+                v4_lib,
                 overrides: OVERRIDES,
             },
             None,
@@ -1159,17 +1163,17 @@ mod tests {
     /// implementation literal, neither becomes a row.
     #[test]
     fn authoriser_group_lists_only_the_v4_clones() {
+        let v4_lib = format!("{V4_LIB}\n    address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x66566cc91dEAf818859bD4b09B7903ac48998157);\n");
         for auth_lib in [AUTH_LIB, AUTH_LIB_UPSTREAM] {
-            let rows: Vec<serde_json::Value> = authoriser_entries(auth_lib, None)
+            let rows: Vec<serde_json::Value> = authoriser_entries(auth_lib, &v4_lib, None)
                 .iter()
                 .map(|e| json!({"role": e["role"], "network": e["network"], "address": e["address"]}))
                 .collect();
-            // V4_LIB pins no Ethereum clone, so that row has no address.
             assert_eq!(
                 rows,
                 [
                     json!({"role": "V4 authoriser clone", "network": "base", "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD"}),
-                    json!({"role": "V4 authoriser clone", "network": "ethereum", "address": null}),
+                    json!({"role": "V4 authoriser clone", "network": "ethereum", "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157"}),
                 ]
             );
         }
@@ -1180,7 +1184,7 @@ mod tests {
     #[test]
     fn no_authoriser_row_is_active_without_an_address() {
         for live in [None, Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD")] {
-            for e in authoriser_entries(AUTH_LIB_UPSTREAM, live) {
+            for e in authoriser_entries(AUTH_LIB_UPSTREAM, V4_LIB, live) {
                 assert!(!(e["status"] == "active" && e["address"].is_null()), "{e}");
             }
         }
