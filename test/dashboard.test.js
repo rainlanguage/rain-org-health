@@ -7779,6 +7779,10 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     "two registry vaults + the extra governed vault show a foreign authoriser",
   );
   assert(
+    collect(box, "own-chip-no").filter((c) => c.textContent === "foreign").length === 3,
+    "every foreign authoriser chip is red",
+  );
+  assert(
     chips.filter((c) => c === "expected").length === 3,
     "three → target lines point at the expected authoriser (two registry + the extra vault)",
   );
