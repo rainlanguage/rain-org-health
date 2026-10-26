@@ -311,8 +311,6 @@ pub struct TokenSpec<'a> {
     pub unwrapped: Option<&'a str>,
     pub legacy: Option<&'a str>,
     pub receipt: Option<&'a str>,
-    /// The current prod authoriser a receipt vault should point at today.
-    pub auth_current: Option<&'a str>,
     /// The authoriser st0x.deploy's CI expects for this token (`expected-state.json`).
     pub auth_target: Option<&'a str>,
     /// Whether this token's receipt vault is in the migration's governed set
@@ -321,20 +319,17 @@ pub struct TokenSpec<'a> {
     pub in_migration: Option<bool>,
 }
 
-/// Resolve a live authoriser address against the current prod authoriser and the
-/// expected authoriser → (`label`, `atTarget`). `label`: `target` (the expected one),
-/// `current` (the pre-migration authoriser), `none` (address(0)), `foreign`
-/// (something else), or `unknown` (unread).
+/// Resolve a live authoriser address against the expected authoriser →
+/// (`label`, `atTarget`). `label`: `target` (the expected one), `none`
+/// (address(0)), `foreign` (something else), or `unknown` (unread).
 pub fn resolve_authoriser(
     live: Option<&str>,
-    current: Option<&str>,
     target: Option<&str>,
 ) -> (&'static str, Option<bool>) {
     let zero = "0x0000000000000000000000000000000000000000";
     let label = match live {
         None => "unknown",
         Some(a) if target.is_some_and(|t| a.eq_ignore_ascii_case(t)) => "target",
-        Some(a) if current.is_some_and(|c| a.eq_ignore_ascii_case(c)) => "current",
         Some(a) if a.eq_ignore_ascii_case(zero) => "none",
         Some(_) => "foreign",
     };
@@ -345,11 +340,10 @@ pub fn resolve_authoriser(
     (label, at_target)
 }
 
-/// The Tokens section's authoriser summary: the current prod authoriser, and
-/// each distinct authoriser `expected-state.json` routes Base tokens to with
-/// whether it is deployed. `error` says why the expectation is unavailable.
+/// The Tokens section's authoriser summary: each distinct authoriser
+/// `expected-state.json` routes Base tokens to with whether it is deployed.
+/// `error` says why the expectation is unavailable.
 pub fn authoriser_summary(
-    current: Option<&str>,
     expected: Result<&&ExpectedChain, &ExpectedError>,
     deployed: impl Fn(&str) -> Option<bool>,
 ) -> serde_json::Value {
@@ -362,7 +356,6 @@ pub fn authoriser_summary(
         }
     }
     json!({
-        "current": current,
         "source": EXPECTED_STATE_PATH,
         "error": expected.err().map(|e| e.to_string()),
         "targets": targets
@@ -382,10 +375,9 @@ pub fn extra_vault(
     symbol: Option<String>,
     deployed: Option<bool>,
     live_authoriser: Option<&str>,
-    auth_current: Option<&str>,
     auth_target: Option<&str>,
 ) -> serde_json::Value {
-    let (label, at_target) = resolve_authoriser(live_authoriser, auth_current, auth_target);
+    let (label, at_target) = resolve_authoriser(live_authoriser, auth_target);
     json!({
         "address": address,
         "name": name,
@@ -408,10 +400,8 @@ pub fn extra_vault(
 /// `asset()` or a declared linked address is wrong; `unknown` = a core read failed.
 ///
 /// The authoriser (read from the receipt vault) is resolved to WHO it is — the
-/// `current` prod authoriser, the expected `target`, `none`, or `foreign` — and
-/// reported NOW vs. target so a proposed `setAuthorizer` migration can be checked.
-/// It does NOT affect `status`: sitting at the current authoriser pre-migration is
-/// correct, not an error.
+/// expected `target`, `none`, or `foreign` — and reported NOW vs. target so a
+/// proposed `setAuthorizer` migration can be checked. It does NOT affect `status`.
 pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
     let TokenSpec {
         symbol,
@@ -421,7 +411,6 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         unwrapped,
         legacy,
         receipt,
-        auth_current,
         auth_target,
         in_migration,
     } = *spec;
@@ -470,7 +459,7 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
     // Authoriser (receipt-vault only): resolve who it actually is, and whether it
     // already sits at the authoriser st0x.deploy expects for it.
     let (authoriser_label, at_auth_target) = if wrapped {
-        resolve_authoriser(live.authoriser.as_deref(), auth_current, auth_target)
+        resolve_authoriser(live.authoriser.as_deref(), auth_target)
     } else {
         ("n/a", None)
     };
@@ -498,7 +487,7 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         "legacyDeployed": live.legacy_deployed,
         "receiptDeployed": live.receipt_deployed,
         // Authoriser provenance — for reviewing the setAuthorizer migration: what
-        // it is NOW (resolved to current / target / none / foreign) vs. the target.
+        // it is NOW (resolved to target / none / foreign) vs. the target.
         "authoriser": live.authoriser,
         "authoriserLabel": authoriser_label,
         "authoriserTarget": auth_target,
@@ -510,8 +499,8 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
 }
 
 /// Assemble the `deploymentTokens` document (sorted by symbol; `None` if empty).
-/// `authoriser` is the section-level authoriser summary (the current authoriser
-/// and the expected targets with whether each is deployed), so the page can
+/// `authoriser` is the section-level authoriser summary (the expected targets
+/// with whether each is deployed), so the page can
 /// count how many vaults already sit at their expected authoriser.
 pub fn build_tokens(
     org: &str,
@@ -922,7 +911,6 @@ mod tests {
             unwrapped,
             legacy: None,
             receipt: None,
-            auth_current: None,
             auth_target: None,
             in_migration: unwrapped.map(|_| true),
         }
@@ -1050,10 +1038,9 @@ mod tests {
 
     #[test]
     fn token_authoriser_resolved_now_vs_target_without_affecting_status() {
-        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+        let other = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
         let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
         let mut s = spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271"));
-        s.auth_current = Some(cur);
         s.auth_target = Some(tgt);
         let base = || {
             tl(
@@ -1065,12 +1052,12 @@ mod tests {
             )
         };
 
-        // pre-migration: at the current prod authoriser → labelled `current`, NOT
-        // at target, and the token is still `ok` (this is the correct pre-state).
-        let mut at_current = base();
-        at_current.authoriser = Some(cur.to_string());
-        let t = token_health(&s, &at_current);
-        assert_eq!(t["authoriserLabel"], "current");
+        // off target: any authoriser other than the expected one is `foreign`,
+        // NOT at target, and the token's status is unaffected.
+        let mut off_target = base();
+        off_target.authoriser = Some(other.to_string());
+        let t = token_health(&s, &off_target);
+        assert_eq!(t["authoriserLabel"], "foreign");
         assert_eq!(t["atAuthoriserTarget"], false);
         assert_eq!(t["authoriserTarget"], tgt);
         assert_eq!(t["status"], "ok");
@@ -1082,10 +1069,7 @@ mod tests {
         assert_eq!(t2["authoriserLabel"], "target");
         assert_eq!(t2["atAuthoriserTarget"], true);
 
-        // an unexpected authoriser → `foreign`; a failed read → `unknown`.
-        let mut foreign = base();
-        foreign.authoriser = Some("0xdead000000000000000000000000000000000001".into());
-        assert_eq!(token_health(&s, &foreign)["authoriserLabel"], "foreign");
+        // a failed read → `unknown`.
         assert_eq!(token_health(&s, &base())["authoriserLabel"], "unknown");
     }
 
@@ -1161,34 +1145,38 @@ mod tests {
     }
 
     #[test]
-    fn resolve_authoriser_labels_current_target_none_foreign_unknown() {
-        let cur = Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456");
+    fn resolve_authoriser_labels_target_none_foreign_unknown() {
         let tgt = Some("0x315b16faa6ee413fabca877d3851b3818369f0cd");
-        assert_eq!(resolve_authoriser(cur, cur, tgt), ("current", Some(false)));
-        assert_eq!(resolve_authoriser(tgt, cur, tgt), ("target", Some(true)));
         assert_eq!(
-            resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), cur, tgt),
+            resolve_authoriser(Some("0x315B16FAA6EE413FABCA877D3851B3818369F0CD"), tgt),
+            ("target", Some(true))
+        );
+        assert_eq!(
+            resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), tgt),
             ("none", Some(false))
         );
-        assert_eq!(resolve_authoriser(Some("0xdead"), cur, tgt).0, "foreign");
-        assert_eq!(resolve_authoriser(None, cur, tgt), ("unknown", None));
+        assert_eq!(
+            resolve_authoriser(Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"), tgt),
+            ("foreign", Some(false))
+        );
+        assert_eq!(resolve_authoriser(None, tgt), ("unknown", None));
+        assert_eq!(resolve_authoriser(Some("0xdead"), None), ("foreign", None));
     }
 
     #[test]
     fn extra_vault_carries_identity_and_authoriser_target() {
-        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+        let other = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
         let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
         let v = extra_vault(
             "0x3c0f",
             Some("Wrapped iShares iBonds ST0x".into()),
             Some("wtIBHG".into()),
             Some(true),
-            Some(cur),
-            Some(cur),
+            Some(other),
             Some(tgt),
         );
         assert_eq!(v["symbol"], "wtIBHG");
-        assert_eq!(v["authoriserLabel"], "current");
+        assert_eq!(v["authoriserLabel"], "foreign");
         assert_eq!(v["atAuthoriserTarget"], false);
         assert_eq!(v["authoriserTarget"], tgt);
     }
@@ -1217,8 +1205,8 @@ mod tests {
         const EU: &str = "0xDB9152e46c1D140DB6a6f814461f21c571F3275e";
         const US: &str = "0x315b16faa6eE413faBCa877d3851B3818369f0cD";
         let c = exp_chain(&[("0x01", US), ("0x02", EU), ("0x03", &US.to_lowercase())]);
-        let v = authoriser_summary(Some("0xc1"), Ok(&&c), |a| Some(a == EU));
-        assert_eq!(v["current"], "0xc1");
+        let v = authoriser_summary(Ok(&&c), |a| Some(a == EU));
+        assert!(v.get("current").is_none());
         assert_eq!(v["source"], "expected-state.json");
         assert!(v["error"].is_null());
         assert_eq!(
@@ -1230,9 +1218,7 @@ mod tests {
 
     #[test]
     fn authoriser_summary_without_an_expectation_says_why() {
-        let v = authoriser_summary(Some("0xc1"), Err(&ExpectedError::Empty), |_| {
-            panic!("nothing to probe")
-        });
+        let v = authoriser_summary(Err(&ExpectedError::Empty), |_| panic!("nothing to probe"));
         assert_eq!(v["error"], "expected-state.json could not be fetched");
         assert_eq!(v["targets"], json!([]));
     }

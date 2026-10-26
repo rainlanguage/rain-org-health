@@ -658,7 +658,6 @@ function renderDeployments(document, $, data, io) {
     const authChip = (lbl) => {
       const m = {
         target: ["expected ✓", "yes"],
-        current: ["current prod authoriser", "no"],
         none: ["unset", "no"],
         foreign: ["foreign", "no"],
       }[lbl] || ["—", "dim"];

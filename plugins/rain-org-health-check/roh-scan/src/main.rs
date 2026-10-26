@@ -3074,20 +3074,15 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // name()/symbol()/decimals() match the registry VERBATIM, its asset()
         // points at the registry unwrappedAddress, and the linked
         // unwrapped/legacy/receipt addresses are deployed. Also resolve each
-        // receipt vault's live authorizer() against the current prod authoriser
-        // and the authoriser st0x.deploy's CI expects for that token
-        // (`expected-state.json`, routed by region). Best-effort — a failed read
-        // marks that token `unknown`.
+        // receipt vault's live authorizer() against the authoriser st0x.deploy's
+        // CI expects for that token (`expected-state.json`, routed by region).
+        // Best-effort — a failed read marks that token `unknown`.
         let deployment_tokens = {
             let (org, repo) = ("ST0x-Technology", "st0x.registry");
             let (dorg, drepo) = (deploy_org, deploy_repo);
-            let auth_lib = gh_file(dorg, drepo, "src/lib/LibAuthoriserInvariants.sol");
-            let auth_current = owners::parse_address_constant(&auth_lib, "STOX_PROD_AUTHORISER");
-            let auth_summary = deployhealth::authoriser_summary(
-                auth_current.as_deref(),
-                expected_base.as_ref(),
-                |a| code_deployed(rpc_session(Chain::Base), a),
-            );
+            let auth_summary = deployhealth::authoriser_summary(expected_base.as_ref(), |a| {
+                code_deployed(rpc_session(Chain::Base), a)
+            });
             // The migration's AUTHORITATIVE governed set —
             // LibTokenInvariants.productionReceiptVaults(), the exact list the
             // setAuthorizer bundle operates on. Read up front so each token can be
@@ -3153,7 +3148,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 unwrapped,
                                 legacy,
                                 receipt,
-                                auth_current: auth_current.as_deref(),
                                 auth_target: unwrapped.and_then(|u| {
                                     expected_base
                                         .as_ref()
@@ -3207,7 +3201,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         symbol,
                         deployed,
                         auth.as_deref(),
-                        auth_current.as_deref(),
                         expected_base
                             .as_ref()
                             .ok()

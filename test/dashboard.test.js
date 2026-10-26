@@ -7490,7 +7490,6 @@ Deno.test("deployments: the health and tokens sections link their own chain too"
       wrappedCount: 1,
       atAuthoriserTarget: 1,
       authoriser: {
-        current: "0xc1",
         source: "expected-state.json",
         error: null,
         targets: [{ address: "0xt1", deployed: true }],
@@ -7607,7 +7606,7 @@ Deno.test("deployments: per-chain sections link their OWN chain's explorer", () 
 Deno.test("deployments: tokens check registry identity + asset wiring, flag mismatch/wiring", () => {
   const UNWRAP = "0x7271b5e7ff0f74f5e7e6c8b8c8a1b3c4d5e6f7a8";
   const WRONG = "0xbeef000000000000000000000000000000000002";
-  const CUR = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"; // current prod authoriser
+  const OTHER = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"; // not the expected authoriser
   const TGT = "0x315b16faa6ee413fabca877d3851b3818369f0cd"; // expected authoriser
   const data = {
     deploymentOwners: null,
@@ -7623,7 +7622,6 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
       wrappedCount: 3,
       atAuthoriserTarget: 1,
       authoriser: {
-        current: CUR,
         source: "expected-state.json",
         error: null,
         targets: [{ address: TGT, deployed: true }],
@@ -7653,7 +7651,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           atAuthoriserTarget: true,
           inMigrationSet: true,
         },
-        // asset() points at the wrong underlying → wiring; authoriser still at current
+        // asset() points at the wrong underlying → wiring; authoriser off target
         {
           symbol: "wtAMZN",
           name: "Wrapped Amazon ST0x",
@@ -7671,13 +7669,13 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           unwrappedDeployed: true,
           legacyDeployed: true,
           receiptDeployed: true,
-          authoriser: CUR,
-          authoriserLabel: "current",
+          authoriser: OTHER,
+          authoriserLabel: "foreign",
           authoriserTarget: TGT,
           atAuthoriserTarget: false,
           inMigrationSet: true,
         },
-        // on-chain symbol disagrees with the registry → mismatch; authoriser at current
+        // on-chain symbol disagrees with the registry → mismatch; authoriser off target
         {
           symbol: "wtTSLA",
           name: "Wrapped Tesla ST0x",
@@ -7695,8 +7693,8 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
           unwrappedDeployed: true,
           legacyDeployed: true,
           receiptDeployed: true,
-          authoriser: CUR,
-          authoriserLabel: "current",
+          authoriser: OTHER,
+          authoriserLabel: "foreign",
           authoriserTarget: TGT,
           atAuthoriserTarget: false,
           inMigrationSet: true,
@@ -7721,8 +7719,8 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
             name: "iShares iBonds 2027 Term High Yield ST0x",
             symbol: "tIBHG",
             deployed: true,
-            authoriser: CUR,
-            authoriserLabel: "current",
+            authoriser: OTHER,
+            authoriserLabel: "foreign",
             authoriserTarget: TGT,
             atAuthoriserTarget: false,
           },
@@ -7766,7 +7764,7 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     "the main token table holds only the three governed tokens",
   );
   // Authoriser provenance: the migrated vault shows the expected authoriser confirmed; the
-  // two pre-migration vaults show the current authoriser NOW + the expected target
+  // two off-target vaults show the foreign authoriser NOW + the expected target
   // (address linked), so the setAuthorizer bundle can be checked per vault.
   assert(
     chips.includes("expected ✓"),
@@ -7777,15 +7775,15 @@ Deno.test("deployments: tokens check registry identity + asset wiring, flag mism
     "the confirmed authoriser chip is green",
   );
   assert(
-    chips.filter((c) => c === "current prod authoriser").length === 3,
-    "two registry vaults + the extra governed vault show the current prod authoriser",
+    chips.filter((c) => c === "foreign").length === 3,
+    "two registry vaults + the extra governed vault show a foreign authoriser",
   );
   assert(
     chips.filter((c) => c === "expected").length === 3,
     "three → target lines point at the expected authoriser (two registry + the extra vault)",
   );
   assert(addrs.includes(TGT), "the expected target address is linked");
-  assert(addrs.includes(CUR), "the current authoriser address is linked");
+  assert(addrs.includes(OTHER), "the foreign authoriser address is linked");
   // a mismatched identity field shows the on-chain value NOW next to the registry value
   assert(
     chips.includes("on-chain"),
@@ -13926,7 +13924,6 @@ Deno.test("deployments: unavailable expected authorisers are an error banner, no
       wrappedCount: 0,
       atAuthoriserTarget: 0,
       authoriser: {
-        current: "0xc1",
         source: "expected-state.json",
         error: "expected-state.json: HTTP 404",
         targets: [],
@@ -13980,7 +13977,6 @@ Deno.test("deployments: every expected authoriser target is listed with its own 
       wrappedCount: 2,
       atAuthoriserTarget: 1,
       authoriser: {
-        current: "0xc1",
         source: "expected-state.json",
         error: null,
         targets: [
