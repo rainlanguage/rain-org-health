@@ -140,8 +140,7 @@ pub fn build_owners(
     onchain: Option<&OnChainSafe>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
-    let (safe_lib, auth_lib, v4_lib, overrides) =
-        (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
+    let (safe_lib, v4_lib, overrides) = (src.safe_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
     // Anchor: without the Base Safe there is nothing meaningful to show.
@@ -240,7 +239,6 @@ pub fn build_owners(
     // Base clones trade places during the V4 migration, and a hardcoded
     // active/pending pair goes stale the moment the swap lands — while the
     // token rows on the same page keep reporting the truth from `authorizer()`.
-    let v3_clone = addr(auth_lib, "STOX_PROD_AUTHORISER");
     let v4_clone = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
     let v4_clone_ethereum = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM");
     let live_note = match live_authoriser {
@@ -252,10 +250,6 @@ pub fn build_owners(
         "title": "Operational access — authoriser",
         "note": format!("Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. {live_note}"),
         "entries": [
-            entry("V3-era authoriser clone", v3_clone.clone(), "base",
-                authoriser_status(v3_clone.as_ref(), live_authoriser, "migrated"),
-                "the pre-V4 authorizer() target"),
-            entry("Authoriser implementation", addr(auth_lib, "STOX_PROD_AUTHORISER_IMPL"), "base", "active", "implementation behind the clone"),
             entry("V4 authoriser clone", v4_clone.clone(), "base",
                 authoriser_status(v4_clone.as_ref(), live_authoriser, "pending"),
                 "the V4 upgrade rewires every vault onto this"),
@@ -1125,6 +1119,75 @@ mod tests {
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "base")
             .unwrap();
         assert_eq!(v4["status"], "unknown");
+    }
+
+    /// st0x.deploy's `LibAuthoriserInvariants.sol` as upstream now ships it:
+    /// the V3-era name is an alias onto the V4 clone and no implementation
+    /// constant exists.
+    const AUTH_LIB_UPSTREAM: &str = r#"
+        address internal constant STOX_PROD_AUTHORISER = LibProdDeployV4.STOX_PROD_AUTHORISER_V4_CLONE;
+        address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
+    "#;
+
+    fn authoriser_entries(auth_lib: &str, live: Option<&str>) -> Vec<serde_json::Value> {
+        let v = build_owners(
+            "S01-Issuer",
+            "st0x.deploy",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            live,
+        )
+        .expect("anchor resolves");
+        v["groups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|g| g["id"] == "authoriser")
+            .unwrap()["entries"]
+            .as_array()
+            .unwrap()
+            .clone()
+    }
+
+    /// The dashboard shows today's authoriser only: the V4 clone per chain.
+    /// Even when the constants still carry the V3-era clone and an
+    /// implementation literal, neither becomes a row.
+    #[test]
+    fn authoriser_group_lists_only_the_v4_clones() {
+        for auth_lib in [AUTH_LIB, AUTH_LIB_UPSTREAM] {
+            let rows: Vec<(String, String)> = authoriser_entries(auth_lib, None)
+                .iter()
+                .map(|e| {
+                    (
+                        e["role"].as_str().unwrap().to_string(),
+                        e["network"].as_str().unwrap().to_string(),
+                    )
+                })
+                .collect();
+            assert_eq!(
+                rows,
+                [
+                    ("V4 authoriser clone".to_string(), "base".to_string()),
+                    ("V4 authoriser clone".to_string(), "ethereum".to_string()),
+                ]
+            );
+        }
+    }
+
+    /// A row with no address can never claim `active`, whatever the live
+    /// reading says.
+    #[test]
+    fn no_authoriser_row_is_active_without_an_address() {
+        for live in [None, Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD")] {
+            for e in authoriser_entries(AUTH_LIB_UPSTREAM, live) {
+                assert!(!(e["status"] == "active" && e["address"].is_null()), "{e}");
+            }
+        }
     }
 
     /// The whole point of reading `authorizer()`: whichever clone the vaults
