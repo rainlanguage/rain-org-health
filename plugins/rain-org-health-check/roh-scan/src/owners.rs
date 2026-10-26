@@ -1160,20 +1160,16 @@ mod tests {
     #[test]
     fn authoriser_group_lists_only_the_v4_clones() {
         for auth_lib in [AUTH_LIB, AUTH_LIB_UPSTREAM] {
-            let rows: Vec<(String, String)> = authoriser_entries(auth_lib, None)
+            let rows: Vec<serde_json::Value> = authoriser_entries(auth_lib, None)
                 .iter()
-                .map(|e| {
-                    (
-                        e["role"].as_str().unwrap().to_string(),
-                        e["network"].as_str().unwrap().to_string(),
-                    )
-                })
+                .map(|e| json!({"role": e["role"], "network": e["network"], "address": e["address"]}))
                 .collect();
+            // V4_LIB pins no Ethereum clone, so that row has no address.
             assert_eq!(
                 rows,
                 [
-                    ("V4 authoriser clone".to_string(), "base".to_string()),
-                    ("V4 authoriser clone".to_string(), "ethereum".to_string()),
+                    json!({"role": "V4 authoriser clone", "network": "base", "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD"}),
+                    json!({"role": "V4 authoriser clone", "network": "ethereum", "address": null}),
                 ]
             );
         }
