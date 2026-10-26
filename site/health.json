@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T06:23:26Z",
+  "generatedAt": "2026-10-26T14:26:31Z",
   "auditGraph": {
     "nodes": [
       {
@@ -54,6 +54,11 @@
             "repo": "rainlang",
             "pinned": "0.2.19",
             "latest": "0.2.20"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -96,6 +101,11 @@
             "repo": "rainlang",
             "pinned": "0.2.19",
             "latest": "0.2.20"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -196,6 +206,11 @@
             "repo": "rainlang",
             "pinned": "0.2.19",
             "latest": "0.2.20"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -309,6 +324,11 @@
             "repo": "rainlang",
             "pinned": "0.2.19",
             "latest": "0.2.20"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -373,6 +393,11 @@
             "repo": "rainlang",
             "pinned": "0.2.19",
             "latest": "0.2.20"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -525,7 +550,13 @@
           "rain.factory",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
+          }
+        ]
       },
       {
         "repo": "rain.verify.interface",
@@ -592,6 +623,11 @@
             "repo": "rainlang",
             "pinned": "0.2.19",
             "latest": "0.2.20"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -632,7 +668,13 @@
           "rain.math.float",
           "rainlang.interface"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
+          }
+        ]
       },
       {
         "repo": "rainlang",
@@ -659,6 +701,11 @@
             "repo": "rain.extrospection",
             "pinned": "0.1.14",
             "latest": "0.1.16"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -694,6 +741,11 @@
             "repo": "rainlang",
             "pinned": "0.2.19",
             "latest": "0.2.20"
+          },
+          {
+            "repo": "rainlang.interface",
+            "pinned": "0.2.13",
+            "latest": "0.2.14"
           }
         ]
       },
@@ -720,10 +772,10 @@
         "lastAudit": null,
         "openAuditIssues": 2,
         "lastMutation": {
-          "timestamp": "2026-10-09T16:05:00Z",
-          "commit": "c3f2d1e83eaaefa90ade88e32e886e929204d862",
+          "timestamp": "2026-10-26T11:06:53Z",
+          "commit": "f203e9cdda54a9079a29d27f0508252736cd5564",
           "skillVersion": "0.35.0",
-          "scope": "subgraph/src/** mapping sources on PR #428 (branch 2026-10-07-issue-427-rbac-subgraph). Two full passes: BEFORE at c3f2d1e, the suite as it stood before any test from this run, 46 of the 48 mutants (subgraph/src/euauthorizer.ts does not exist there, so its 2 mutants had nothing to target); AFTER at d69ee6af1f0c109d7bdce2af1d546433c8d2f6e1, all 48. The two passes exist because tests had been written before the first probe, which forfeits attribution; diffing the matrices recovers which killer is pre-existing and which is new. No published tag shares history with this branch, so both tag fields are null rather than zero."
+          "scope": "pr:496 (branch 2026-10-22-migration-applied-asserts-to-dashboard): LibOrchestratorInvariants.assertInstance and every script call site whose orchestrator role check moved out of it (orchestrator admin move, V3 backfill, grant orchestrator emergency including its preflight and post-state assertInstance() calls, retire direct signer roles). Suite: forge test over LibOrchestratorInvariantsTest, OrchestratorAdminToTimelockTest, BackfillMigrationRegistryV3Test and RetireDirectSignerRoles*, forked from public RPCs, plus the fork-free GrantOrchestratorEmergencyTest and OrchestratorAdminToTimelockLocalTest, with failing tests re-run up to twice to absorb RPC flakes. BEFORE pass at commit over M01-M15 and at 78f8cb7f358e2f6e3c8810a54d8b03441f1f2052 over M16-M17; AFTER pass over the 7 BEFORE survivors (see notes for the commit each was scored at)."
         },
         "blockedBy": [
           "rain.deploy",
@@ -1084,9 +1136,9 @@
       {
         "from": "rain.dia",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "rain.erc4626.words",
@@ -1126,9 +1178,9 @@
       {
         "from": "rain.erc4626.words",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "rain.extrospection",
@@ -1238,9 +1290,9 @@
       {
         "from": "rain.flare",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "rain.intorastring",
@@ -1343,9 +1395,9 @@
       {
         "from": "rain.merkle.deploy",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1406,9 +1458,9 @@
       {
         "from": "rain.pyth",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "rain.string",
@@ -1546,9 +1598,9 @@
       {
         "from": "rain.verify",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "raindex.deploy",
@@ -1637,9 +1689,9 @@
       {
         "from": "raindex.deploy",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "raindex.governance",
@@ -1665,9 +1717,9 @@
       {
         "from": "raindex.interface",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "rainlang",
@@ -1763,9 +1815,9 @@
       {
         "from": "rainlang",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.14"
       },
       {
         "from": "rainlang.deploy",
@@ -1826,23 +1878,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rainlang.interface",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
-      },
-      {
-        "from": "rainlang.interface",
-        "to": "rain.lib.hash",
-        "stale": false,
-        "pinned": "0.1.27",
-        "latest": "0.1.27"
-      },
-      {
-        "from": "rainlang.interface",
-        "to": "rain.lib.typecast",
-        "stale": false,
-        "pinned": "0.1.4",
-        "latest": "0.1.4"
+        "latest": "0.2.14"
       },
       {
         "from": "rainlang.interface",
@@ -2100,6 +2138,7 @@
   "deploymentGrants": {
     "org": "S01-Issuer",
     "repo": "st0x.deploy",
+    "contract": "authoriser",
     "source": "src/lib/LibAuthoriserInvariants.sol",
     "function": "expectedGrants(address,address)",
     "pinnedCount": 13,
@@ -2107,7 +2146,7 @@
     "chains": [
       {
         "network": "base",
-        "authoriser": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+        "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
         "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
         "rpcHost": "mainnet.base.org",
         "granted": 13,
@@ -2119,7 +2158,7 @@
       },
       {
         "network": "ethereum",
-        "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+        "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
         "granted": 13,
@@ -2131,7 +2170,7 @@
       },
       {
         "network": "hyperevm",
-        "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+        "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "rpc.hyperliquid.xyz/evm",
         "granted": 13,
@@ -2143,7 +2182,7 @@
       },
       {
         "network": "robinhood",
-        "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+        "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "rpc.mainnet.chain.robinhood.com",
         "granted": 13,
@@ -2155,7 +2194,7 @@
       },
       {
         "network": "bsc",
-        "authoriser": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
+        "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "bsc-dataseed.bnbchain.org",
         "granted": 13,
@@ -2669,6 +2708,258 @@
               {
                 "network": "bsc",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+                "status": "granted",
+                "safeHolds": null
+              }
+            ]
+          }
+        ]
+      }
+    ]
+  },
+  "deploymentOrchestratorGrants": {
+    "org": "S01-Issuer",
+    "repo": "st0x.deploy",
+    "contract": "orchestrator",
+    "source": "src/lib/LibOrchestratorInvariants.sol",
+    "function": "expectedGrants(address,address)",
+    "pinnedCount": 4,
+    "declaredCount": 4,
+    "chains": [
+      {
+        "network": "base",
+        "target": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+        "safe": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+        "rpcHost": "mainnet.base.org",
+        "granted": 3,
+        "missing": 1,
+        "unknown": 0,
+        "total": 4,
+        "state": "partial",
+        "safeKept": [
+          "bytes32(0)"
+        ]
+      },
+      {
+        "network": "ethereum",
+        "target": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+        "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        "rpcHost": "ethereum-rpc.publicnode.com",
+        "granted": 3,
+        "missing": 1,
+        "unknown": 0,
+        "total": 4,
+        "state": "partial",
+        "safeKept": [
+          "bytes32(0)"
+        ]
+      },
+      {
+        "network": "hyperevm",
+        "target": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+        "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        "rpcHost": "rpc.hyperliquid.xyz/evm",
+        "granted": 3,
+        "missing": 1,
+        "unknown": 0,
+        "total": 4,
+        "state": "partial",
+        "safeKept": [
+          "bytes32(0)"
+        ]
+      },
+      {
+        "network": "robinhood",
+        "target": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+        "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        "rpcHost": "rpc.mainnet.chain.robinhood.com",
+        "granted": 3,
+        "missing": 1,
+        "unknown": 0,
+        "total": 4,
+        "state": "partial",
+        "safeKept": [
+          "bytes32(0)"
+        ]
+      },
+      {
+        "network": "bsc",
+        "target": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+        "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        "rpcHost": "bsc-dataseed.bnbchain.org",
+        "granted": 3,
+        "missing": 1,
+        "unknown": 0,
+        "total": 4,
+        "state": "partial",
+        "safeKept": [
+          "bytes32(0)"
+        ]
+      }
+    ],
+    "grantees": [
+      {
+        "ident": "timelock",
+        "kind": "admin-holder",
+        "address": null,
+        "roles": [
+          {
+            "role": "bytes32(0)",
+            "roleId": "0x0000000000000000000000000000000000000000000000000000000000000000",
+            "admin": true,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+                "status": "missing",
+                "safeHolds": true
+              },
+              {
+                "network": "ethereum",
+                "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+                "status": "missing",
+                "safeHolds": true
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+                "status": "missing",
+                "safeHolds": true
+              },
+              {
+                "network": "robinhood",
+                "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+                "status": "missing",
+                "safeHolds": true
+              },
+              {
+                "network": "bsc",
+                "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+                "status": "missing",
+                "safeHolds": true
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ident": "chainSafe",
+        "kind": "safe",
+        "address": null,
+        "roles": [
+          {
+            "role": "EMERGENCY",
+            "roleId": "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "robinhood",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "bsc",
+                "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+                "status": "granted",
+                "safeHolds": null
+              }
+            ]
+          }
+        ]
+      },
+      {
+        "ident": "LibAuthoriserInvariants.GRANTEE_SERVICE_3D0C",
+        "kind": "constant",
+        "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+        "roles": [
+          {
+            "role": "MINT",
+            "roleId": "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "robinhood",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "bsc",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              }
+            ]
+          },
+          {
+            "role": "BURN",
+            "roleId": "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3",
+            "admin": false,
+            "chains": [
+              {
+                "network": "base",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "ethereum",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "hyperevm",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "robinhood",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
+                "status": "granted",
+                "safeHolds": null
+              },
+              {
+                "network": "bsc",
+                "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
                 "status": "granted",
                 "safeHolds": null
               }
@@ -3828,7 +4119,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 141,
-        "discoveredAtBlock": 53103248
+        "discoveredAtBlock": 53117751
       },
       {
         "network": "ethereum",
@@ -4345,7 +4636,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 26275048
+        "discoveredAtBlock": 26277456
       },
       {
         "network": "bsc",
@@ -5190,7 +5481,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 103,
-        "discoveredAtBlock": 129849063
+        "discoveredAtBlock": 129913480
       },
       {
         "network": "hyperevm",
@@ -5707,7 +5998,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 49551456
+        "discoveredAtBlock": 49580975
       },
       {
         "network": "robinhood",
@@ -6224,7 +6515,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 98203871
+        "discoveredAtBlock": 98481824
       }
     ]
   },
@@ -14431,7 +14722,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 10,
-    "healthy": 8,
+    "healthy": 10,
     "contracts": [
       {
         "name": "StoxCorporateActionsFacet",
@@ -14444,10 +14735,10 @@
       {
         "name": "StoxOffchainAssetReceiptVaultAuthorizerV1",
         "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
-        "status": "unknown",
-        "codeMatch": null,
-        "hashMatch": null,
-        "erc165": "absent"
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true,
+        "erc165": "conformant"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultBeaconSetDeployer",
@@ -14484,10 +14775,10 @@
       {
         "name": "StoxUnifiedDeployer",
         "address": "0x81D0ecD58346bf2d484E7774f55EABc1AA3F4bcc",
-        "status": "unknown",
-        "codeMatch": null,
-        "hashMatch": null,
-        "erc165": "absent"
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true,
+        "erc165": "conformant"
       },
       {
         "name": "StoxWrappedTokenVault",
@@ -14542,14 +14833,14 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+          "ownerLabel": "timelock",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -14578,27 +14869,27 @@
       "beacons": [
         {
           "name": "Receipt beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0xace121ae30d754536863a546f41b147be11202db",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Receipt-vault beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -14725,27 +15016,27 @@
       "beacons": [
         {
           "name": "Receipt beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0xace121ae30d754536863a546f41b147be11202db",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0xb092f127bd44f19bfa96e78db4beaf1066d2914e",
           "implVersion": "unknown",
           "targetImpl": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Receipt-vault beacon",
-          "address": null,
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "address": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "targetVersion": "0.1.1",
-          "atTarget": null,
-          "status": "unknown"
+          "atTarget": false,
+          "status": "behind"
         },
         {
           "name": "Wrapped-token-vault beacon",
@@ -14768,14 +15059,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 38,
+    "ok": 47,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 40,
+    "atAuthoriserTarget": 50,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -14785,13 +15076,13 @@
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-          "name": null,
-          "symbol": null,
-          "deployed": null,
-          "authoriser": null,
-          "authoriserLabel": "unknown",
+          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
+          "symbol": "tIBHG",
+          "deployed": true,
+          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+          "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": null
+          "atAuthoriserTarget": true
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
@@ -14919,26 +15210,26 @@
         "symbol": "wtAMZN",
         "name": "Wrapped Amazon.com Inc ST0x",
         "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Amazon.com Inc ST0x",
+        "liveSymbol": "wtAMZN",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "unwrapped": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "legacy": "0x8d8c315db61f60dcc3c66cdb48ca87fc643e35ea",
         "receipt": "0x3c4895df971e5c1fdca81bf74adb8eee94f24721",
-        "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "unwrappedDeployed": true,
+        "legacyDeployed": true,
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15023,26 +15314,26 @@
         "symbol": "wtBABA",
         "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
         "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Alibaba Group Holding Limited ADR ST0x",
+        "liveSymbol": "wtBABA",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
         "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
         "legacy": null,
         "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15205,26 +15496,26 @@
         "symbol": "wtDRAM",
         "name": "Wrapped Roundhill Memory ETF ST0x",
         "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Roundhill Memory ETF ST0x",
+        "liveSymbol": "wtDRAM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x96de077262609298cd891e4ab21bd34837de33ab",
         "unwrapped": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
         "legacy": null,
         "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15413,26 +15704,26 @@
         "symbol": "wtLLY",
         "name": "Wrapped Eli Lilly and Company ST0x",
         "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Eli Lilly and Company ST0x",
+        "liveSymbol": "wtLLY",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
         "unwrapped": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
         "legacy": null,
         "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15491,26 +15782,26 @@
         "symbol": "wtMCD",
         "name": "Wrapped McDonald's Corporation ST0x",
         "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped McDonald's Corporation ST0x",
+        "liveSymbol": "wtMCD",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
         "unwrapped": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
         "legacy": null,
         "receipt": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15569,26 +15860,26 @@
         "symbol": "wtMU",
         "name": "Wrapped Micron Technology, Inc. ST0x",
         "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Micron Technology, Inc. ST0x",
+        "liveSymbol": "wtMU",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
         "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
         "legacy": null,
         "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15751,26 +16042,26 @@
         "symbol": "wtQQQM",
         "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
         "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Invesco NASDAQ 100 ETF ST0x",
+        "liveSymbol": "wtQQQM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "unwrapped": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "legacy": null,
         "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15933,26 +16224,26 @@
         "symbol": "wtSPYM",
         "name": "Wrapped SPDR Portfolio S&P 500 ETF ST0x",
         "address": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
-        "status": "unknown",
+        "status": "mismatch",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": false,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped State Street SPDR Portfolio S&P 500 ETF ST0x",
+        "liveSymbol": "wtSPYM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "unwrapped": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "legacy": "0x2289249984f1fa2ce86c4e8867e7eb819ea7df95",
         "receipt": "0x957056dd6e2e594742e36675e8aa5a567163e5bd",
-        "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "unwrappedDeployed": true,
+        "legacyDeployed": true,
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15985,26 +16276,26 @@
         "symbol": "wtTR",
         "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
         "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Tootsie Roll Industries, Inc. ST0x",
+        "liveSymbol": "wtTR",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
         "unwrapped": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
         "legacy": null,
         "receipt": "0xf5e5d2d3b6be819Ff65cB364F4178252C9dbf5B7",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -16063,26 +16354,26 @@
         "symbol": "wtTTWO",
         "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
         "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
+        "liveSymbol": "wtTTWO",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
         "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
         "legacy": null,
         "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -16172,10 +16463,10 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 105,
+  "totalRepos": 106,
   "reposWithFindings": 35,
   "reposWholeRepoAudited": 11,
-  "reposNeverAudited": 94,
+  "reposNeverAudited": 95,
   "reposExternallyAudited": 26,
   "reposNeverExternallyAudited": 20,
   "summary": {
@@ -16601,6 +16892,13 @@
       "lastMutation": null
     },
     {
+      "name": "pg-fenced-lease",
+      "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
       "name": "private-key-dev-recovery",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -16639,7 +16937,7 @@
       "name": "rain-org-health",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 1,
+      "openAuditIssues": 4,
       "lastMutation": null
     },
     {
@@ -17115,10 +17413,10 @@
       "lastAudit": null,
       "openAuditIssues": 2,
       "lastMutation": {
-        "timestamp": "2026-10-09T16:05:00Z",
-        "commit": "c3f2d1e83eaaefa90ade88e32e886e929204d862",
+        "timestamp": "2026-10-26T11:06:53Z",
+        "commit": "f203e9cdda54a9079a29d27f0508252736cd5564",
         "skillVersion": "0.35.0",
-        "scope": "subgraph/src/** mapping sources on PR #428 (branch 2026-10-07-issue-427-rbac-subgraph). Two full passes: BEFORE at c3f2d1e, the suite as it stood before any test from this run, 46 of the 48 mutants (subgraph/src/euauthorizer.ts does not exist there, so its 2 mutants had nothing to target); AFTER at d69ee6af1f0c109d7bdce2af1d546433c8d2f6e1, all 48. The two passes exist because tests had been written before the first probe, which forfeits attribution; diffing the matrices recovers which killer is pre-existing and which is new. No published tag shares history with this branch, so both tag fields are null rather than zero."
+        "scope": "pr:496 (branch 2026-10-22-migration-applied-asserts-to-dashboard): LibOrchestratorInvariants.assertInstance and every script call site whose orchestrator role check moved out of it (orchestrator admin move, V3 backfill, grant orchestrator emergency including its preflight and post-state assertInstance() calls, retire direct signer roles). Suite: forge test over LibOrchestratorInvariantsTest, OrchestratorAdminToTimelockTest, BackfillMigrationRegistryV3Test and RetireDirectSignerRoles*, forked from public RPCs, plus the fork-free GrantOrchestratorEmergencyTest and OrchestratorAdminToTimelockLocalTest, with failing tests re-run up to twice to absorb RPC flakes. BEFORE pass at commit over M01-M15 and at 78f8cb7f358e2f6e3c8810a54d8b03441f1f2052 over M16-M17; AFTER pass over the 7 BEFORE survivors (see notes for the commit each was scored at)."
       }
     },
     {
@@ -18090,20 +18388,56 @@
       "latestTag": "sol-v0.1.0",
       "latestTagIso": "2026-10-21T13:28:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 443,
+      "sourceLocChangedSinceAudit": 468,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 320,
-      "sourceLocRemovedSinceAudit": 123,
+      "sourceLocAddedSinceAudit": 336,
+      "sourceLocRemovedSinceAudit": 132,
       "filesChangedSinceAudit": 15,
-      "commitsSinceAudit": 33,
+      "commitsSinceAudit": 42,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 86,
-      "commentLocRemovedSinceAudit": 9,
-      "codeLocAddedSinceAudit": 203,
-      "codeLocRemovedSinceAudit": 105,
+      "commentLocAddedSinceAudit": 93,
+      "commentLocRemovedSinceAudit": 14,
+      "codeLocAddedSinceAudit": 212,
+      "codeLocRemovedSinceAudit": 109,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
       "daysSinceAudit": 281
+    },
+    {
+      "name": "rainlang.interface",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
+          "path": "audit/protofire/rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T06:18:15Z",
+          "auditDateIso": "2026-03-01T18:58:14Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": "f83d8e0e2ea529acb9b76f622ff73464c65a3ba8",
+      "anchorKind": "commit",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-03-01T18:58:14Z",
+      "latestTag": "sol-v0.2.14",
+      "latestTagIso": "2026-10-26T13:17:05Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 329,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 156,
+      "sourceLocRemovedSinceAudit": 173,
+      "filesChangedSinceAudit": 10,
+      "commitsSinceAudit": 87,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 88,
+      "commentLocRemovedSinceAudit": 92,
+      "codeLocAddedSinceAudit": 63,
+      "codeLocRemovedSinceAudit": 73,
+      "driftFullyClassified": false,
+      "compareUrl": "https://github.com/rainlanguage/rainlang.interface/compare/f83d8e0e2ea529acb9b76f622ff73464c65a3ba8...main",
+      "daysSinceAudit": 239
     },
     {
       "name": "rain.lib.leakybucket",
@@ -18203,7 +18537,7 @@
       "sourceLocAddedSinceAudit": 139,
       "sourceLocRemovedSinceAudit": 49,
       "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 575,
+      "commitsSinceAudit": 577,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 80,
       "commentLocRemovedSinceAudit": 14,
@@ -18248,42 +18582,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
       "daysSinceAudit": 329
-    },
-    {
-      "name": "rainlang.interface",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
-          "path": "audit/protofire/rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T06:18:15Z",
-          "auditDateIso": "2026-03-01T18:58:14Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "f83d8e0e2ea529acb9b76f622ff73464c65a3ba8",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-03-01T18:58:14Z",
-      "latestTag": "sol-v0.2.13",
-      "latestTagIso": "2026-10-11T17:46:26Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 60,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 42,
-      "sourceLocRemovedSinceAudit": 18,
-      "filesChangedSinceAudit": 9,
-      "commitsSinceAudit": 77,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 30,
-      "commentLocRemovedSinceAudit": 8,
-      "codeLocAddedSinceAudit": 12,
-      "codeLocRemovedSinceAudit": 11,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rainlang.interface/compare/f83d8e0e2ea529acb9b76f622ff73464c65a3ba8...main",
-      "daysSinceAudit": 239
     },
     {
       "name": "rain.math.fixedpoint",
@@ -18345,15 +18643,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-10-07T16:17:36Z",
-      "latestTag": "sol-v0.1.22",
-      "latestTagIso": "2026-10-22T16:58:09Z",
+      "latestTag": "sol-v0.1.24",
+      "latestTagIso": "2026-10-26T11:37:18Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 91,
-      "commitsSinceAudit": 575,
+      "filesChangedSinceAudit": 93,
+      "commitsSinceAudit": 580,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18395,7 +18693,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 61,
-      "commitsSinceAudit": 312,
+      "commitsSinceAudit": 314,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18473,7 +18771,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 96,
-      "commitsSinceAudit": 463,
+      "commitsSinceAudit": 482,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -19011,7 +19309,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 2,
-      "testFiles": 11,
+      "testFiles": 12,
       "sourcesUnparsed": 0,
       "untested": [
         {
@@ -19093,7 +19391,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 9,
-      "testFiles": 227,
+      "testFiles": 234,
       "sourcesUnparsed": 1,
       "untested": []
     },
@@ -19426,7 +19724,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 28,
+      "testFiles": 31,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -19435,7 +19733,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 31,
-      "testFiles": 172,
+      "testFiles": 176,
       "sourcesUnparsed": 1,
       "untested": []
     }
