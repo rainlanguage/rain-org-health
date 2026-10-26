@@ -7,6 +7,7 @@
 //! chain: a `RUNTIME_CODE` that disagrees with its own `BYTECODE_HASH`, or either
 //! disagreeing with the deployed code, is a finding.
 
+use crate::expected::{ExpectedChain, ExpectedError, EXPECTED_STATE_PATH};
 use crate::rpc::{keccak256_hex, CallClass};
 use regex::Regex;
 use serde_json::json;
@@ -153,88 +154,62 @@ pub fn hydrated_pin(pin: &str) -> bool {
     !p.is_empty() && !p.chars().all(|c| c == '0')
 }
 
+/// The owners a beacon's live `owner()` is resolved against. `expected` is the
+/// owner st0x.deploy's CI asserts (`expected-state.json`, the chain's timelock)
+/// and is the only healthy one; `safe` and `legacy` only name a wrong owner.
+#[derive(Clone, Copy)]
+pub struct BeaconOwners<'a> {
+    pub expected: &'a str,
+    pub safe: Option<&'a str>,
+    pub legacy: Option<&'a str>,
+}
+
 /// Health of one production beacon, resolving BOTH what its `owner()` and
-/// `implementation()` actually ARE — not just whether they match a constant:
-/// - owner is labelled `safe` (the token-owner Safe), `timelock` (the chain's
-///   governance timelock, where the migration hands the beacons), `legacy` (the
-///   pre-migration deploy EOA), `foreign` (anything else), or `unknown`.
-/// - impl is resolved to a version: the `target_version` when it equals the
-///   target impl, `V1` when it's the pre-Zoltu impl, else `unknown`.
-/// - status: `healthy` when held by a GOVERNING owner (Safe or timelock) AND at
-///   the target version; `behind` when governed but the impl isn't the target
-///   (e.g. still V1); `drift` when the owner governs nothing — the deploy EOA or
-///   an unrecognised address; `unknown` when a live read failed.
+/// `implementation()` actually ARE:
+/// - owner is labelled `timelock` (the expected owner), `safe` (the token-owner
+///   Safe), `legacy` (the pre-migration deploy EOA), `foreign`, or `unknown`.
+/// - impl is labelled `expected` at the expected implementation, `V1` at the
+///   pre-Zoltu impl, else `unknown`.
+/// - status: `healthy` when owned by the expected owner AND at the expected
+///   implementation; `drift` on any other owner; `behind` on the expected owner
+///   but another implementation; `unknown` when a live read failed.
 ///
-/// The timelock is a governing owner, not drift. Handing a beacon to the
-/// governance timelock is the intended end state — it is what the
-/// `20260729-migrate-governance-to-timelock` bundle does — so labelling it
-/// `foreign` would report the completed migration as a fault, which is the
-/// opposite of what this check exists to say. `legacy` stays drift: the deploy
-/// EOA is a hot key that was never meant to retain a production beacon.
-#[allow(clippy::too_many_arguments)]
+/// A Safe-owned beacon is drift: a beacon owner can repoint every production
+/// proxy in one transaction, so a beacon on the Safe bypasses the timelock delay.
 pub fn beacon_health(
     name: &str,
     address: Option<String>,
-    safe_owner: &str,
-    legacy_owner: &str,
-    timelock_owner: Option<&str>,
-    target_impl: Option<&str>,
+    owners: &BeaconOwners,
+    target_impl: &str,
     v1_impl: Option<&str>,
-    target_version: &str,
     live_owner: Option<String>,
     live_impl: Option<String>,
 ) -> serde_json::Value {
-    // An all-zero pin is the placeholder a chain carries before its deploy has
-    // landed, not an address. Matching against it would label a beacon whose
-    // `owner()` answers the zero address — renounced, or bricked — as held by
-    // the Safe or the timelock, and therefore `healthy`. That is the dangerous
-    // direction, so an unhydrated pin matches nothing. Enforced here rather
-    // than at the two call sites, which would be two places to forget.
-    let hydrated = |pin: &str| hydrated_pin(pin);
-    // `legacy` is matched BEFORE `timelock`. If a chain's timelock pin ever
-    // resolved to the deploy EOA, timelock-first would label a beacon still held
-    // by that hot key `timelock` -> governed -> healthy, hiding the one case this
-    // section exists to catch. Legacy-first instead reports a genuinely migrated
-    // beacon as drift: a false alarm rather than a false all-clear, which is the
-    // direction to fail in.
+    // An all-zero pin would match a beacon answering the zero address.
+    let is = |o: &str, pin: Option<&str>| {
+        pin.is_some_and(|p| hydrated_pin(p) && o.eq_ignore_ascii_case(p))
+    };
     let owner_label = match live_owner.as_deref() {
         None => "unknown",
-        Some(o) if hydrated(safe_owner) && o.eq_ignore_ascii_case(safe_owner) => "safe",
-        Some(o) if hydrated(legacy_owner) && o.eq_ignore_ascii_case(legacy_owner) => "legacy",
-        Some(o) if timelock_owner.is_some_and(|t| hydrated(t) && o.eq_ignore_ascii_case(t)) => {
-            "timelock"
-        }
+        Some(o) if is(o, Some(owners.expected)) => "timelock",
+        Some(o) if is(o, owners.safe) => "safe",
+        Some(o) if is(o, owners.legacy) => "legacy",
         Some(_) => "foreign",
     };
-    // Both governing owners are acceptable holders: a chain the bundle has not
-    // reached yet is Safe-held, one it has reached is timelock-held, and neither
-    // is a fault. Collapsing them would make the migration itself look like
-    // drift on the chains where it has succeeded.
-    let governed = owner_label == "safe" || owner_label == "timelock";
-    // The impl pins get the same `hydrated` guard as the owner pins. A generated
-    // pointer file whose `DEPLOYED_ADDRESS` is still the all-zero placeholder —
-    // a form the constant regex DOES match — together with a beacon whose
-    // `implementation()` answers the zero address would otherwise read
-    // `atTarget: true` and, on a governed owner, `healthy`: a beacon pointing at
-    // nothing, reported as correct.
-    let target_pin = target_impl.filter(|t| hydrated(t));
-    let v1_pin = v1_impl.filter(|v| hydrated(v));
-    let impl_version = match live_impl.as_deref() {
-        None => "unknown",
-        Some(l) if target_pin.is_some_and(|t| l.eq_ignore_ascii_case(t)) => target_version,
-        Some(l) if v1_pin.is_some_and(|v| l.eq_ignore_ascii_case(v)) => "V1",
-        Some(_) => "unknown",
-    };
-    // `atTarget` is only determinable when BOTH the live impl and the target are
-    // known — otherwise `null`, so a missing target can't masquerade as "behind".
+    let target_pin = Some(target_impl).filter(|t| hydrated_pin(t));
     let at_target = match (live_impl.as_deref(), target_pin) {
         (Some(l), Some(t)) => Some(l.eq_ignore_ascii_case(t)),
         _ => None,
     };
-    // Without a readable target we can't assert "behind"; stay `unknown`.
-    let status = if live_owner.is_none() || live_impl.is_none() || target_pin.is_none() {
+    let impl_version = match live_impl.as_deref() {
+        None => "unknown",
+        Some(_) if at_target == Some(true) => "expected",
+        Some(l) if is(l, v1_impl) => "V1",
+        Some(_) => "unknown",
+    };
+    let status = if live_owner.is_none() || at_target.is_none() {
         "unknown"
-    } else if !governed {
+    } else if owner_label != "timelock" {
         "drift"
     } else if at_target != Some(true) {
         "behind"
@@ -246,30 +221,23 @@ pub fn beacon_health(
         "address": address,
         "owner": live_owner,
         "ownerLabel": owner_label,
-        // What it points at NOW, and what it SHOULD point at (the target-version
-        // impl) — so a proposed upgradeTo(...) can be checked against both.
         "implementation": live_impl,
         "implVersion": impl_version,
         "targetImpl": target_pin,
-        "targetVersion": target_version,
+        "targetOwner": Some(owners.expected).filter(|t| hydrated_pin(t)),
         "atTarget": at_target,
         "status": status,
     })
 }
 
 /// Assemble the `deploymentBeacons` document (sorted by name; `None` if empty).
-// Eight, as with `beacon_health` above: this is a flat JSON assembler and the
-// two pins are differently typed (`&str` vs `Option<&str>`), so the transposition
-// the lint guards against cannot compile here.
-#[allow(clippy::too_many_arguments)]
+/// `timelockOwner` is the expected owner when every beacon shares one.
 pub fn build_beacons(
     org: &str,
     repo: &str,
     network: &str,
     rpc_host: &str,
-    safe_owner: &str,
-    timelock_owner: Option<&str>,
-    target_version: &str,
+    safe: Option<&str>,
     mut beacons: Vec<serde_json::Value>,
 ) -> Option<serde_json::Value> {
     if beacons.is_empty() {
@@ -278,34 +246,37 @@ pub fn build_beacons(
     beacons.sort_by(|a, b| a["name"].as_str().cmp(&b["name"].as_str()));
     let total = beacons.len();
     let healthy = beacons.iter().filter(|b| b["status"] == "healthy").count();
+    let first = beacons[0]["targetOwner"].as_str();
+    let timelock = first.filter(|f| {
+        beacons.iter().all(|b| {
+            b["targetOwner"]
+                .as_str()
+                .is_some_and(|o| o.eq_ignore_ascii_case(f))
+        })
+    });
     Some(json!({
         "org": org,
         "repo": repo,
         "network": network,
         "rpcHost": rpc_host,
-        // Both pins, and only when hydrated. `timelock` now decides
-        // healthy-vs-drift, so a reader shown a `timelock` chip with no address
-        // to compare it against cannot tell this chain's timelock from another
-        // chain's — the cross-chain slip the vault-owners section names. An
-        // unhydrated pin is emitted as null rather than printed as `0x0000…`,
-        // which would read as a real expected holder.
-        "safeOwner": Some(safe_owner).filter(|s| hydrated_pin(s)),
-        "timelockOwner": timelock_owner.filter(|t| hydrated_pin(t)),
-        "targetVersion": target_version,
+        // An unhydrated pin is null, never printed as a `0x0000…` holder.
+        "safeOwner": safe.filter(|s| hydrated_pin(s)),
+        "timelockOwner": timelock,
+        "source": EXPECTED_STATE_PATH,
         "total": total,
         "healthy": healthy,
         "beacons": beacons,
     }))
 }
 
-/// A chain whose beacon set could not be read at all.
-///
-/// Emitted INSTEAD of dropping the chain. A dropped chain renders as no
-/// section, which is indistinguishable from "this chain has no production
-/// beacons" — the same silent vanish that hid the token registry. The block
-/// carries the chain's identity so the dashboard can say which chain is
-/// missing and why.
-pub fn beacons_unavailable(network: &str, rpc_host: &str, reason: &str) -> serde_json::Value {
+/// A chain, or with `network` `None` every chain, whose beacon set could not be
+/// read. Emitted instead of dropping it: a dropped chain renders as no section,
+/// which reads as "no production beacons" rather than "this broke".
+pub fn beacons_unavailable(
+    network: Option<&str>,
+    rpc_host: Option<&str>,
+    reason: &str,
+) -> serde_json::Value {
     json!({
         "network": network,
         "rpcHost": rpc_host,
@@ -340,9 +311,7 @@ pub struct TokenSpec<'a> {
     pub unwrapped: Option<&'a str>,
     pub legacy: Option<&'a str>,
     pub receipt: Option<&'a str>,
-    /// The current prod authoriser a receipt vault should point at today.
-    pub auth_current: Option<&'a str>,
-    /// The V4-clone authoriser the pending `setAuthorizer` bundle rewires to.
+    /// The authoriser st0x.deploy's CI expects for this token (`expected-state.json`).
     pub auth_target: Option<&'a str>,
     /// Whether this token's receipt vault is in the migration's governed set
     /// (the Base `receiptVaults` of `privileged-addresses.json`): `Some(true/false)` for a wrapped token,
@@ -350,20 +319,17 @@ pub struct TokenSpec<'a> {
     pub in_migration: Option<bool>,
 }
 
-/// Resolve a live authoriser address against the current prod authoriser and the
-/// V4-clone target → (`label`, `atTarget`). `label`: `target` (already migrated),
-/// `current` (the pre-migration authoriser), `none` (address(0)), `foreign`
-/// (something else), or `unknown` (unread).
+/// Resolve a live authoriser address against the expected authoriser →
+/// (`label`, `atTarget`). `label`: `target` (the expected one), `none`
+/// (address(0)), `foreign` (something else), or `unknown` (unread).
 pub fn resolve_authoriser(
     live: Option<&str>,
-    current: Option<&str>,
     target: Option<&str>,
 ) -> (&'static str, Option<bool>) {
     let zero = "0x0000000000000000000000000000000000000000";
     let label = match live {
         None => "unknown",
         Some(a) if target.is_some_and(|t| a.eq_ignore_ascii_case(t)) => "target",
-        Some(a) if current.is_some_and(|c| a.eq_ignore_ascii_case(c)) => "current",
         Some(a) if a.eq_ignore_ascii_case(zero) => "none",
         Some(_) => "foreign",
     };
@@ -372,6 +338,31 @@ pub fn resolve_authoriser(
         _ => None,
     };
     (label, at_target)
+}
+
+/// The Tokens section's authoriser summary: each distinct authoriser
+/// `expected-state.json` routes Base tokens to with whether it is deployed.
+/// `error` says why the expectation is unavailable.
+pub fn authoriser_summary(
+    expected: Result<&&ExpectedChain, &ExpectedError>,
+    deployed: impl Fn(&str) -> Option<bool>,
+) -> serde_json::Value {
+    let mut targets: Vec<&str> = Vec::new();
+    if let Ok(c) = expected {
+        for (_, a) in &c.authorisers {
+            if !targets.iter().any(|t| t.eq_ignore_ascii_case(a)) {
+                targets.push(a);
+            }
+        }
+    }
+    json!({
+        "source": EXPECTED_STATE_PATH,
+        "error": expected.err().map(|e| e.to_string()),
+        "targets": targets
+            .iter()
+            .map(|t| json!({"address": t, "deployed": deployed(t)}))
+            .collect::<Vec<_>>(),
+    })
 }
 
 /// A governed receipt vault that is in the migration set
@@ -384,10 +375,9 @@ pub fn extra_vault(
     symbol: Option<String>,
     deployed: Option<bool>,
     live_authoriser: Option<&str>,
-    auth_current: Option<&str>,
     auth_target: Option<&str>,
 ) -> serde_json::Value {
-    let (label, at_target) = resolve_authoriser(live_authoriser, auth_current, auth_target);
+    let (label, at_target) = resolve_authoriser(live_authoriser, auth_target);
     json!({
         "address": address,
         "name": name,
@@ -410,10 +400,8 @@ pub fn extra_vault(
 /// `asset()` or a declared linked address is wrong; `unknown` = a core read failed.
 ///
 /// The authoriser (read from the receipt vault) is resolved to WHO it is — the
-/// `current` prod authoriser, the V4-clone `target`, `none`, or `foreign` — and
-/// reported NOW vs. target so a proposed `setAuthorizer` migration can be checked.
-/// It does NOT affect `status`: sitting at the current authoriser pre-migration is
-/// correct, not an error.
+/// expected `target`, `none`, or `foreign` — and reported NOW vs. target so a
+/// proposed `setAuthorizer` migration can be checked. It does NOT affect `status`.
 pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
     let TokenSpec {
         symbol,
@@ -423,7 +411,6 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         unwrapped,
         legacy,
         receipt,
-        auth_current,
         auth_target,
         in_migration,
     } = *spec;
@@ -470,9 +457,9 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
     };
 
     // Authoriser (receipt-vault only): resolve who it actually is, and whether it
-    // already sits at the V4-clone target the pending setAuthorizer bundle sets.
+    // already sits at the authoriser st0x.deploy expects for it.
     let (authoriser_label, at_auth_target) = if wrapped {
-        resolve_authoriser(live.authoriser.as_deref(), auth_current, auth_target)
+        resolve_authoriser(live.authoriser.as_deref(), auth_target)
     } else {
         ("n/a", None)
     };
@@ -500,7 +487,7 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
         "legacyDeployed": live.legacy_deployed,
         "receiptDeployed": live.receipt_deployed,
         // Authoriser provenance — for reviewing the setAuthorizer migration: what
-        // it is NOW (resolved to current / target / none / foreign) vs. the target.
+        // it is NOW (resolved to target / none / foreign) vs. the target.
         "authoriser": live.authoriser,
         "authoriserLabel": authoriser_label,
         "authoriserTarget": auth_target,
@@ -512,9 +499,9 @@ pub fn token_health(spec: &TokenSpec, live: &TokenLive) -> serde_json::Value {
 }
 
 /// Assemble the `deploymentTokens` document (sorted by symbol; `None` if empty).
-/// `authoriser` is the section-level authoriser summary (current + target
-/// addresses and whether the target is deployed), so the page can state the
-/// migration target once and count how many vaults already sit at it.
+/// `authoriser` is the section-level authoriser summary (the expected targets
+/// with whether each is deployed), so the page can
+/// count how many vaults already sit at their expected authoriser.
 pub fn build_tokens(
     org: &str,
     repo: &str,
@@ -698,47 +685,78 @@ mod tests {
     const SAFE: &str = "0xe70d821f3462a074e63b42d0aac6523faae1d611";
     const LEGACY: &str = "0x8e4bdeec7ceb9570d440676345da1dce10329f5b";
     const TIMELOCK: &str = "0x48ba1371a78e6cc54157c63721756ab444510db3";
-    const TARGET: &str = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286"; // 0.1.1 impl
+    const TARGET: &str = "0xb092f127bd44f19bfa96e78db4beaf1066d2914e"; // 0.1.30 receipt impl
     const V1: &str = "0xe7573879d73455dc92cb4087fa8177594387cbcd"; // pre-Zoltu impl
+    const ZERO: &str = "0x0000000000000000000000000000000000000000";
 
-    fn bh(owner: Option<&str>, imp: Option<&str>) -> serde_json::Value {
+    const OWNERS: BeaconOwners = BeaconOwners {
+        expected: TIMELOCK,
+        safe: Some(SAFE),
+        legacy: Some(LEGACY),
+    };
+
+    fn bh_with(
+        owners: &BeaconOwners,
+        target: &str,
+        owner: Option<&str>,
+        imp: Option<&str>,
+    ) -> serde_json::Value {
         beacon_health(
             "Receipt beacon",
             Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(TIMELOCK),
-            Some(TARGET),
+            owners,
+            target,
             Some(V1),
-            "0.1.1",
             owner.map(str::to_string),
             imp.map(str::to_string),
         )
     }
 
-    #[test]
-    fn beacon_healthy_only_when_safe_owned_and_at_target() {
-        // live reads are checksummed; the compare is case-insensitive.
-        let b = bh(
-            Some("0xE70d821f3462a074e63b42d0AaC6523faAe1d611"),
-            Some(TARGET),
-        );
-        assert_eq!(b["status"], "healthy");
-        assert_eq!(b["ownerLabel"], "safe");
-        assert_eq!(b["implVersion"], "0.1.1");
-        assert_eq!(b["atTarget"], true);
+    fn bh(owner: Option<&str>, imp: Option<&str>) -> serde_json::Value {
+        bh_with(&OWNERS, TARGET, owner, imp)
     }
 
     #[test]
-    fn beacon_behind_when_safe_owned_but_still_on_v1() {
-        let b = bh(Some(SAFE), Some(V1));
-        assert_eq!(b["status"], "behind");
+    fn beacon_healthy_only_when_timelock_owned_and_at_target() {
+        // live reads are checksummed; the compare is case-insensitive.
+        let b = bh(
+            Some("0x48Ba1371A78E6cC54157c63721756ab444510DB3"),
+            Some("0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E"),
+        );
+        assert_eq!(b["status"], "healthy");
+        assert_eq!(b["ownerLabel"], "timelock");
+        assert_eq!(b["implVersion"], "expected");
+        assert_eq!(b["atTarget"], true);
+        assert_eq!(b["targetOwner"], TIMELOCK);
+        assert_eq!(b["targetImpl"], TARGET);
+    }
+
+    /// #219: the Safe can repoint every proxy in one transaction, so a beacon
+    /// handed back to it bypasses the timelock delay.
+    #[test]
+    fn a_safe_owned_beacon_is_drift_even_at_target() {
+        let b = bh(Some(SAFE), Some(TARGET));
         assert_eq!(b["ownerLabel"], "safe");
+        assert_eq!(b["status"], "drift");
+    }
+
+    /// #216: an upgraded beacon at the expected impl is at target, and one still
+    /// on an older impl is behind with both addresses surfaced.
+    #[test]
+    fn a_timelock_owned_beacon_on_another_impl_is_behind() {
+        let b = bh(Some(TIMELOCK), Some(V1));
+        assert_eq!(b["ownerLabel"], "timelock");
+        assert_eq!(b["status"], "behind");
         assert_eq!(b["implVersion"], "V1");
         assert_eq!(b["atTarget"], false);
-        // both the current (V1) and the should-be (target) impl are surfaced.
         assert_eq!(b["implementation"], V1);
         assert_eq!(b["targetImpl"], TARGET);
+        let other = bh(
+            Some(TIMELOCK),
+            Some("0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286"),
+        );
+        assert_eq!(other["status"], "behind");
+        assert_eq!(other["implVersion"], "unknown");
     }
 
     #[test]
@@ -752,185 +770,60 @@ mod tests {
         );
         assert_eq!(foreign["ownerLabel"], "foreign");
         assert_eq!(foreign["status"], "drift");
+        let no_labels = BeaconOwners {
+            expected: TIMELOCK,
+            safe: None,
+            legacy: None,
+        };
+        for o in [SAFE, LEGACY] {
+            assert_eq!(
+                bh_with(&no_labels, TARGET, Some(o), Some(TARGET))["ownerLabel"],
+                "foreign"
+            );
+        }
     }
 
-    /// The governance migration's end state is not a fault. Before the timelock
-    /// arm existed this read `foreign` -> `drift`, so the three Ethereum beacons
-    /// went red the moment the migration succeeded.
+    /// The expected owner is what CI accepts, so it wins over the Safe label
+    /// when both name the same address.
     #[test]
-    fn a_timelock_owned_beacon_is_governed_not_drift() {
-        let b = bh(
-            Some("0x48Ba1371A78E6cC54157c63721756ab444510DB3"),
-            Some(TARGET),
-        );
+    fn the_expected_owner_wins_over_the_safe_label() {
+        let same = BeaconOwners {
+            expected: SAFE,
+            safe: Some(SAFE),
+            legacy: Some(LEGACY),
+        };
+        let b = bh_with(&same, TARGET, Some(SAFE), Some(TARGET));
         assert_eq!(b["ownerLabel"], "timelock");
         assert_eq!(b["status"], "healthy");
-        assert_eq!(b["owner"], "0x48Ba1371A78E6cC54157c63721756ab444510DB3");
     }
 
-    /// Governed-but-stale must stay distinguishable from ungoverned: a timelock
-    /// beacon serving the old impl is `behind`, the same as a Safe one, not
-    /// `drift` and not `healthy`.
+    /// An all-zero pin is a placeholder, not an address: a beacon answering the
+    /// zero address must never match one, in any spelling.
     #[test]
-    fn a_timelock_owned_beacon_on_the_old_impl_is_behind() {
-        let b = bh(Some(TIMELOCK), Some(V1));
-        assert_eq!(b["ownerLabel"], "timelock");
-        assert_eq!(b["status"], "behind");
-        assert_eq!(b["atTarget"], false);
-    }
-
-    /// With no timelock pinned for the chain there is nothing to recognise, so
-    /// the same address is unrecognised rather than silently governed — a chain
-    /// whose pin has not landed yet must not get a free pass.
-    #[test]
-    fn without_a_timelock_pin_that_owner_is_foreign() {
-        let b = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            None,
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(TIMELOCK.into()),
-            Some(TARGET.into()),
-        );
-        assert_eq!(b["ownerLabel"], "foreign");
-        assert_eq!(b["status"], "drift");
-    }
-
-    /// An all-zero pin is a placeholder, not an address. A beacon that answers
-    /// the zero address has been renounced or bricked; matching it against an
-    /// unhydrated pin would call that `healthy`, which is the one direction
-    /// this section must never fail in.
-    #[test]
-    fn an_unhydrated_pin_never_adopts_a_zero_owner() {
-        const ZERO: &str = "0x0000000000000000000000000000000000000000";
-        // timelock pin not yet hydrated, beacon owner reads zero
-        let tl = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(ZERO),
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(ZERO.into()),
-            Some(TARGET.into()),
-        );
-        assert_eq!(
-            tl["ownerLabel"], "foreign",
-            "a zero owner is not the timelock"
-        );
-        assert_eq!(tl["status"], "drift");
-        // Spelling of the placeholder must not matter: an uppercase prefix or a
-        // prefixless pin is the same non-address, and a guard that only catches
-        // one spelling is a guard that can be slipped.
+    fn an_unhydrated_pin_never_adopts_a_zero_owner_or_impl() {
         for spelling in [
+            ZERO,
             "0X0000000000000000000000000000000000000000",
             "0000000000000000000000000000000000000000",
             "",
         ] {
-            let b = beacon_health(
-                "Receipt beacon",
-                Some("0x86e9".into()),
-                SAFE,
-                LEGACY,
-                Some(spelling),
-                Some(TARGET),
-                Some(V1),
-                "0.1.1",
-                Some(ZERO.into()),
-                Some(TARGET.into()),
-            );
+            let zeros = BeaconOwners {
+                expected: spelling,
+                safe: Some(spelling),
+                legacy: Some(spelling),
+            };
+            let b = bh_with(&zeros, TARGET, Some(ZERO), Some(TARGET));
             assert_eq!(
                 b["ownerLabel"], "foreign",
-                "a zero owner matched placeholder spelling {spelling:?}"
+                "zero owner matched {spelling:?}"
             );
-        }
-        // same for the Safe pin, and for the legacy pin
-        for pin in [SAFE, LEGACY] {
-            let b = beacon_health(
-                "Receipt beacon",
-                Some("0x86e9".into()),
-                if pin == SAFE { ZERO } else { SAFE },
-                if pin == LEGACY { ZERO } else { LEGACY },
-                None,
-                Some(TARGET),
-                Some(V1),
-                "0.1.1",
-                Some(ZERO.into()),
-                Some(TARGET.into()),
-            );
-            assert_eq!(b["ownerLabel"], "foreign", "a zero owner matched {pin}");
             assert_eq!(b["status"], "drift");
+            assert!(b["targetOwner"].is_null());
+            let t = bh_with(&OWNERS, spelling, Some(TIMELOCK), Some(ZERO));
+            assert!(t["atTarget"].is_null(), "zero impl matched {spelling:?}");
+            assert!(t["targetImpl"].is_null());
+            assert_eq!(t["status"], "unknown");
         }
-    }
-
-    /// The Safe pin wins when both pins hold the same address, so a chain that
-    /// has not separated them cannot report its Safe as the timelock.
-    #[test]
-    fn the_safe_label_wins_when_both_pins_are_the_same_address() {
-        let b = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(SAFE),
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
-            Some(SAFE.into()),
-            Some(TARGET.into()),
-        );
-        assert_eq!(b["ownerLabel"], "safe");
-        assert_eq!(b["status"], "healthy");
-    }
-
-    /// The headline count has to move with the label, or the section reads
-    /// "0 of 3 healthy" on a chain where every beacon is correctly governed.
-    #[test]
-    fn build_beacons_counts_a_timelock_owned_beacon_as_healthy() {
-        let tl_owned = bh(Some(TIMELOCK), Some(TARGET));
-        let safe_owned = bh(Some(SAFE), Some(TARGET));
-        let v = build_beacons(
-            "o",
-            "r",
-            "ethereum",
-            "host",
-            SAFE,
-            Some(TIMELOCK),
-            "0.1.1",
-            vec![tl_owned, safe_owned],
-        )
-        .unwrap();
-        assert_eq!(v["total"], 2);
-        assert_eq!(v["healthy"], 2);
-        // Both pins reach the page: a `timelock` chip the reader cannot compare
-        // against an address is indistinguishable from this chain holding
-        // ANOTHER chain's timelock.
-        assert_eq!(v["safeOwner"], SAFE);
-        assert_eq!(v["timelockOwner"], TIMELOCK);
-    }
-
-    /// An unhydrated pin must reach the page as null, not be printed as
-    /// `0x0000…`, which would read as a real expected holder.
-    #[test]
-    fn build_beacons_emits_no_unhydrated_pin() {
-        const ZERO: &str = "0x0000000000000000000000000000000000000000";
-        let b = bh(Some(SAFE), Some(TARGET));
-        let v =
-            build_beacons("o", "r", "base", "host", ZERO, Some(ZERO), "0.1.1", vec![b]).unwrap();
-        assert!(
-            v["safeOwner"].is_null(),
-            "zero Safe pin emitted as a holder"
-        );
-        assert!(
-            v["timelockOwner"].is_null(),
-            "zero timelock pin emitted as a holder"
-        );
     }
 
     #[test]
@@ -939,58 +832,48 @@ mod tests {
         assert_eq!(b["status"], "unknown");
         assert_eq!(b["ownerLabel"], "unknown");
         assert_eq!(b["implVersion"], "unknown");
+        assert_eq!(bh(Some(TIMELOCK), None)["status"], "unknown");
+        assert_eq!(bh(None, Some(TARGET))["status"], "unknown");
     }
 
     #[test]
-    fn beacon_unknown_when_target_impl_unavailable() {
-        // Owner + impl read fine, but the target pointer couldn't be read — we
-        // can't assert "behind" without it, so stay unknown / atTarget null.
-        let b = beacon_health(
-            "Receipt beacon",
-            Some("0x86e9".into()),
-            SAFE,
-            LEGACY,
-            Some(TIMELOCK),
-            None,
-            Some(V1),
-            "0.1.1",
-            Some(SAFE.into()),
-            Some(V1.into()),
-        );
-        assert_eq!(b["status"], "unknown");
-        assert!(b["atTarget"].is_null());
-    }
-
-    #[test]
-    fn build_beacons_counts_sorts_and_carries_target() {
-        let ok = bh(Some(SAFE), Some(TARGET)); // healthy
-        let behind = beacon_health(
+    fn build_beacons_counts_sorts_and_carries_the_expected_owner() {
+        let ok = bh(Some(TIMELOCK), Some(TARGET));
+        let safe_owned = beacon_health(
             "Alpha",
             Some("0x1".into()),
-            SAFE,
-            LEGACY,
-            Some(TIMELOCK),
-            Some(TARGET),
-            Some(V1),
-            "0.1.1",
+            &OWNERS,
+            TARGET,
+            None,
             Some(SAFE.into()),
-            Some(V1.into()),
+            Some(TARGET.into()),
         );
-        let v = build_beacons(
-            "o",
-            "r",
-            "base",
-            "host",
-            SAFE,
-            Some(TIMELOCK),
-            "0.1.1",
-            vec![ok, behind],
-        )
-        .unwrap();
+        let v = build_beacons("o", "r", "base", "host", Some(SAFE), vec![ok, safe_owned]).unwrap();
         assert_eq!(v["total"], 2);
         assert_eq!(v["healthy"], 1);
-        assert_eq!(v["targetVersion"], "0.1.1");
         assert_eq!(v["beacons"][0]["name"], "Alpha");
+        assert_eq!(v["safeOwner"], SAFE);
+        assert_eq!(v["timelockOwner"], TIMELOCK);
+        assert_eq!(v["source"], "expected-state.json");
+        assert!(v.get("targetVersion").is_none());
+        assert!(build_beacons("o", "r", "base", "host", Some(SAFE), vec![]).is_none());
+    }
+
+    /// Beacons expecting different owners have no one chain owner to show.
+    #[test]
+    fn build_beacons_shows_no_timelock_when_beacons_disagree() {
+        let other = BeaconOwners {
+            expected: "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            ..OWNERS
+        };
+        let a = bh(Some(TIMELOCK), Some(TARGET));
+        let b = bh_with(&other, TARGET, Some(TIMELOCK), Some(TARGET));
+        let v = build_beacons("o", "r", "base", "host", Some(ZERO), vec![a, b]).unwrap();
+        assert!(v["timelockOwner"].is_null());
+        assert!(
+            v["safeOwner"].is_null(),
+            "zero Safe pin emitted as a holder"
+        );
     }
 
     fn tl(
@@ -1028,7 +911,6 @@ mod tests {
             unwrapped,
             legacy: None,
             receipt: None,
-            auth_current: None,
             auth_target: None,
             in_migration: unwrapped.map(|_| true),
         }
@@ -1156,10 +1038,9 @@ mod tests {
 
     #[test]
     fn token_authoriser_resolved_now_vs_target_without_affecting_status() {
-        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+        let other = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
         let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
         let mut s = spec("wtNVDA", "N", 18, "0xfb5b", Some("0x7271"));
-        s.auth_current = Some(cur);
         s.auth_target = Some(tgt);
         let base = || {
             tl(
@@ -1171,12 +1052,12 @@ mod tests {
             )
         };
 
-        // pre-migration: at the current prod authoriser → labelled `current`, NOT
-        // at target, and the token is still `ok` (this is the correct pre-state).
-        let mut at_current = base();
-        at_current.authoriser = Some(cur.to_string());
-        let t = token_health(&s, &at_current);
-        assert_eq!(t["authoriserLabel"], "current");
+        // off target: any authoriser other than the expected one is `foreign`,
+        // NOT at target, and the token's status is unaffected.
+        let mut off_target = base();
+        off_target.authoriser = Some(other.to_string());
+        let t = token_health(&s, &off_target);
+        assert_eq!(t["authoriserLabel"], "foreign");
         assert_eq!(t["atAuthoriserTarget"], false);
         assert_eq!(t["authoriserTarget"], tgt);
         assert_eq!(t["status"], "ok");
@@ -1188,10 +1069,7 @@ mod tests {
         assert_eq!(t2["authoriserLabel"], "target");
         assert_eq!(t2["atAuthoriserTarget"], true);
 
-        // an unexpected authoriser → `foreign`; a failed read → `unknown`.
-        let mut foreign = base();
-        foreign.authoriser = Some("0xdead000000000000000000000000000000000001".into());
-        assert_eq!(token_health(&s, &foreign)["authoriserLabel"], "foreign");
+        // a failed read → `unknown`.
         assert_eq!(token_health(&s, &base())["authoriserLabel"], "unknown");
     }
 
@@ -1221,8 +1099,8 @@ mod tests {
     #[test]
     fn beacons_unavailable_names_the_chain_and_the_reason() {
         let v = beacons_unavailable(
-            "ethereum",
-            "ethereum-rpc.publicnode.com",
+            Some("ethereum"),
+            Some("ethereum-rpc.publicnode.com"),
             "constants unreadable",
         );
         assert_eq!(v["network"], "ethereum");
@@ -1267,35 +1145,81 @@ mod tests {
     }
 
     #[test]
-    fn resolve_authoriser_labels_current_target_none_foreign_unknown() {
-        let cur = Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456");
+    fn resolve_authoriser_labels_target_none_foreign_unknown() {
         let tgt = Some("0x315b16faa6ee413fabca877d3851b3818369f0cd");
-        assert_eq!(resolve_authoriser(cur, cur, tgt), ("current", Some(false)));
-        assert_eq!(resolve_authoriser(tgt, cur, tgt), ("target", Some(true)));
         assert_eq!(
-            resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), cur, tgt),
+            resolve_authoriser(Some("0x315B16FAA6EE413FABCA877D3851B3818369F0CD"), tgt),
+            ("target", Some(true))
+        );
+        assert_eq!(
+            resolve_authoriser(Some("0x0000000000000000000000000000000000000000"), tgt),
             ("none", Some(false))
         );
-        assert_eq!(resolve_authoriser(Some("0xdead"), cur, tgt).0, "foreign");
-        assert_eq!(resolve_authoriser(None, cur, tgt), ("unknown", None));
+        assert_eq!(
+            resolve_authoriser(Some("0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456"), tgt),
+            ("foreign", Some(false))
+        );
+        assert_eq!(resolve_authoriser(None, tgt), ("unknown", None));
+        assert_eq!(resolve_authoriser(Some("0xdead"), None), ("foreign", None));
     }
 
     #[test]
     fn extra_vault_carries_identity_and_authoriser_target() {
-        let cur = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+        let other = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
         let tgt = "0x315b16faa6ee413fabca877d3851b3818369f0cd";
         let v = extra_vault(
             "0x3c0f",
             Some("Wrapped iShares iBonds ST0x".into()),
             Some("wtIBHG".into()),
             Some(true),
-            Some(cur),
-            Some(cur),
+            Some(other),
             Some(tgt),
         );
         assert_eq!(v["symbol"], "wtIBHG");
-        assert_eq!(v["authoriserLabel"], "current");
+        assert_eq!(v["authoriserLabel"], "foreign");
         assert_eq!(v["atAuthoriserTarget"], false);
         assert_eq!(v["authoriserTarget"], tgt);
+    }
+
+    fn exp_chain(authorisers: &[(&str, &str)]) -> ExpectedChain {
+        ExpectedChain {
+            chain_id: 8453,
+            network: "base".into(),
+            beacon_set_deployer: None,
+            beacons: vec![],
+            safe: crate::expected::ExpectedSafe {
+                address: SAFE.into(),
+                owners: vec![SAFE.into()],
+                threshold: 1,
+            },
+            authorisers: authorisers
+                .iter()
+                .map(|(v, a)| (v.to_string(), a.to_string()))
+                .collect(),
+        }
+    }
+
+    /// #218: one target per distinct expected authoriser, not one V4 clone.
+    #[test]
+    fn authoriser_summary_lists_each_distinct_expected_target() {
+        const EU: &str = "0xDB9152e46c1D140DB6a6f814461f21c571F3275e";
+        const US: &str = "0x315b16faa6eE413faBCa877d3851B3818369f0cD";
+        let c = exp_chain(&[("0x01", US), ("0x02", EU), ("0x03", &US.to_lowercase())]);
+        let v = authoriser_summary(Ok(&&c), |a| Some(a == EU));
+        assert!(v.get("current").is_none());
+        assert_eq!(v["source"], "expected-state.json");
+        assert!(v["error"].is_null());
+        assert_eq!(
+            v["targets"],
+            json!([{"address": US, "deployed": false}, {"address": EU, "deployed": true}])
+        );
+        assert!(v.get("target").is_none());
+    }
+
+    #[test]
+    fn authoriser_summary_without_an_expectation_says_why() {
+        let v = authoriser_summary(Err(&ExpectedError::Empty), |_| panic!("nothing to probe"));
+        assert_eq!(v["error"], "expected-state.json could not be fetched");
+        assert_eq!(v["targets"], json!([]));
     }
 }

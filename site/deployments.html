@@ -334,11 +334,11 @@ function renderDeployments(document, $, data, io) {
     } else if (v.match) {
       cls = "ok";
       msg =
-        `Declared roster matches the live Safe — ${v.onChainCount} of ${v.onChainCount} ` +
+        `Expected roster matches the live Safe — ${v.onChainCount} of ${v.onChainCount} ` +
         `owners confirmed by getOwners() on ${v.network}.`;
     } else {
       cls = "drift";
-      msg = "Drift — the declared roster differs from the live Safe; see the flagged rows.";
+      msg = "Drift — the expected roster differs from the live Safe; see the flagged rows.";
     }
     const b = el("div", `own-verify own-verify-${cls}`);
     b.append(el("span", "own-verify-msg", msg));
@@ -349,8 +349,8 @@ function renderDeployments(document, $, data, io) {
           "span",
           "own-verify-thr",
           t.onChain == null
-            ? `threshold ${t.declared} (constant)`
-            : `threshold ${t.declared} (constant) · ${t.onChain} (on-chain)${t.match ? " ✓" : " ✗"}`,
+            ? `threshold ${t.declared} (expected)`
+            : `threshold ${t.declared} (expected) · ${t.onChain} (on-chain)${t.match ? " ✓" : " ✗"}`,
         ),
       );
     }
@@ -471,16 +471,15 @@ function renderDeployments(document, $, data, io) {
     }
     sink.append(table);
   };
-  // Production beacons: each should be held by a GOVERNING owner — the
-  // token-owner Safe, or the governance timelock once the migration has handed
-  // that chain over — and point at its pinned impl.
+  // Production beacons: each should be owned by its chain's timelock and point at
+  // the implementation st0x.deploy's CI expects.
   const renderBeaconSet = (b) => {
     if (!b) return;
     // A chain the scan could not read says so under its own heading. Returning
     // silently would drop the whole section, and a missing section reads as
     // "this chain has no production beacons" rather than "this broke".
     if (b.unavailable || !Array.isArray(b.beacons) || b.beacons.length === 0) {
-      sink.append(el("h2", null, `Beacons — ${b.network ?? "unknown chain"}`));
+      sink.append(el("h2", null, `Beacons — ${b.network ?? "all chains"}`));
       sink.append(
         el(
           "div",
@@ -495,7 +494,7 @@ function renderDeployments(document, $, data, io) {
       el(
         "div",
         "own-sub",
-        `Each production beacon should be held by the token-owner Safe or that chain's governance timelock, and pointing at its target (${b.targetVersion}) implementation — owner() and implementation() read live on-chain and resolved to who/what they actually are.`,
+        `Each production beacon should be owned by this chain's governance timelock and point at the implementation st0x.deploy's CI expects (${b.source ?? "expected-state.json"}) — owner() and implementation() read live on-chain. A Safe-owned beacon is a fault: its owner can repoint every proxy without the timelock delay.`,
       ),
     );
     const allHealthy = b.healthy === b.total;
@@ -504,13 +503,10 @@ function renderDeployments(document, $, data, io) {
       el(
         "span",
         "own-verify-msg",
-        `${b.healthy} of ${b.total} beacons governed & at ${b.targetVersion} on ${b.network}.`,
+        `${b.healthy} of ${b.total} beacons at the expected owner & implementation on ${b.network}.`,
       ),
     );
-    // Both pins, because `timelock` is what separates healthy from drift here.
-    // Showing only the Safe leaves a reader with a `timelock` chip and no
-    // address to check it against — they cannot tell this chain's timelock from
-    // another chain's, which is an ordinary migration slip.
+    // Both addresses, so a `timelock` or `Safe` chip can be checked against them.
     if (b.safeOwner) banner.append(el("span", "own-verify-src", `Safe = ${b.safeOwner}`));
     if (b.timelockOwner) {
       banner.append(el("span", "own-verify-src", `timelock = ${b.timelockOwner}`));
@@ -536,13 +532,10 @@ function renderDeployments(document, $, data, io) {
         rc.append(note);
       }
       const detail = el("div", "bcn-detail");
-      // owner: who it actually is
-      // `timelock` reads as a governing holder, not a fault: handing the beacons
-      // to the governance timelock is what the migration does, so the owner line
-      // says so and the status beside it stays healthy.
+      // owner: who it actually is; only the expected owner (`timelock`) is healthy.
       const own =
         bc.ownerLabel === "safe"
-          ? ["Safe", "yes"]
+          ? ["Safe", "no"]
           : bc.ownerLabel === "timelock"
             ? ["timelock", "yes"]
             : bc.ownerLabel === "legacy"
@@ -551,6 +544,9 @@ function renderDeployments(document, $, data, io) {
                 ? ["foreign", "no"]
                 : ["—", "dim"];
       detail.append(detailLine("owner", own[0], own[1], bc.owner));
+      if (bc.ownerLabel !== "timelock" && bc.targetOwner) {
+        detail.append(detailLine("expected", "timelock", "target", bc.targetOwner));
+      }
       // impl: what it points at NOW, and — when it isn't already there — what it
       // SHOULD point at, so a proposed upgradeTo(...) can be checked against both.
       if (bc.atTarget === true) {
@@ -560,7 +556,7 @@ function renderDeployments(document, $, data, io) {
         const nowCls = bc.atTarget === false ? "no" : "dim";
         detail.append(detailLine("now", nowLabel, nowCls, bc.implementation));
         if (bc.targetImpl) {
-          detail.append(detailLine("target", bc.targetVersion, "target", bc.targetImpl));
+          detail.append(detailLine("target", "expected", "target", bc.targetImpl));
         }
       }
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
@@ -622,26 +618,35 @@ function renderDeployments(document, $, data, io) {
       sink.append(tb);
     }
     const explorerLink = (addr) => addrNode("own-addr", addr, t.network);
-    // The setAuthorizer migration target, stated once: what a pending Safe bundle
-    // rewires every receipt vault's authorizer() to, and how many are already there.
+    // Each token's expected authoriser (st0x.deploy routes by region), stated
+    // once with how many vaults already sit at theirs.
     const auth = t.authoriser;
-    if (auth && auth.target) {
+    if (auth && typeof auth.error === "string" && auth.error) {
+      const ab = el("div", "own-verify own-verify-error");
+      ab.append(el("span", "own-verify-msg", `Expected authorisers unavailable — ${auth.error}.`));
+      sink.append(ab);
+    } else if (auth && Array.isArray(auth.targets) && auth.targets.length) {
       const allAt = t.atAuthoriserTarget === t.wrappedCount;
       const ab = el("div", `own-verify ${allAt ? "own-verify-ok" : "own-verify-drift"}`);
-      const dep =
-        auth.targetDeployed === true
-          ? "deployed"
-          : auth.targetDeployed === false
-            ? "NOT deployed"
-            : "deploy state unknown";
       ab.append(
         el(
           "span",
           "own-verify-msg",
-          `Authoriser migration — ${t.atAuthoriserTarget} of ${t.wrappedCount} receipt vaults at the V4-clone target (${dep}); a setAuthorizer bundle rewires the rest.`,
+          `Authorisers — ${t.atAuthoriserTarget} of ${t.wrappedCount} receipt vaults at the authoriser st0x.deploy's CI expects for them (${auth.source}); a setAuthorizer bundle rewires the rest.`,
         ),
       );
-      ab.append(el("span", "own-verify-src", `target ${auth.target}`));
+      for (const tg of auth.targets) {
+        const dep =
+          tg.deployed === true ? "deployed" : tg.deployed === false ? "NOT deployed" : "deploy state unknown";
+        ab.append(el("span", "own-verify-src", `target ${tg.address} (${dep})`));
+      }
+      sink.append(ab);
+    } else if (auth && Array.isArray(auth.targets)) {
+      // A readable file that routes no token: every vault is unchecked, never on target.
+      const ab = el("div", "own-verify own-verify-error");
+      ab.append(
+        el("span", "own-verify-msg", `No expected authorisers — ${auth.source} lists no ${t.network} tokens.`),
+      );
       sink.append(ab);
     }
     const okChip = (label, v) => {
@@ -652,8 +657,7 @@ function renderDeployments(document, $, data, io) {
     // The resolved-authoriser chip: what authorizer() actually is right now.
     const authChip = (lbl) => {
       const m = {
-        target: ["V4 clone ✓", "yes"],
-        current: ["current prod authoriser", "no"],
+        target: ["expected ✓", "yes"],
         none: ["unset", "no"],
         foreign: ["foreign", "no"],
       }[lbl] || ["—", "dim"];
@@ -670,7 +674,7 @@ function renderDeployments(document, $, data, io) {
       if (o.atAuthoriserTarget === false && o.authoriserTarget) {
         const atl = el("div", "bcn-line");
         atl.append(el("span", "bcn-key", "target"));
-        atl.append(el("span", "own-chip own-chip-target", "V4 clone"));
+        atl.append(el("span", "own-chip own-chip-target", "expected"));
         atl.append(explorerLink(o.authoriserTarget));
         detail.append(atl);
       }
@@ -827,7 +831,7 @@ function renderDeployments(document, $, data, io) {
           detail.append(dl);
         }
         // authoriser: what authorizer() on the receipt vault resolves to NOW, and
-        // — when it isn't yet the V4-clone target — the target the setAuthorizer
+        // — when it isn't yet its expected authoriser — the target the setAuthorizer
         // bundle sets, so the proposed transaction can be checked per vault.
         authRows(detail, tk);
       }
@@ -2888,7 +2892,7 @@ function renderDeployments(document, $, data, io) {
     link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
   );
   sub.append(
-    ` deploy constants — who controls production. Governed by a ${owners.threshold}-of-${owners.signerCount} Safe per chain.`,
+    ` deploy constants — who controls production.${owners.threshold != null && owners.signerCount != null ? ` Governed by a ${owners.threshold}-of-${owners.signerCount} Safe on Base.` : ""}`,
   );
   sink.append(sub);
   for (const g of owners.groups) {
@@ -2920,8 +2924,8 @@ function renderDeployments(document, $, data, io) {
         // constant source: present unless this owner was only seen on-chain.
         tail.append(
           oc === "extra"
-            ? el("span", "own-chip own-chip-no", "constant ✗")
-            : el("span", "own-chip own-chip-yes", "constant ✓"),
+            ? el("span", "own-chip own-chip-no", "expected ✗")
+            : el("span", "own-chip own-chip-yes", "expected ✓"),
         );
         // on-chain source: present for match/extra, absent for missing, unknown
         // when the RPC didn't answer.
