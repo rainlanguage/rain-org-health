@@ -2681,27 +2681,21 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         threshold: threshold_live,
                     }
                 });
-            // Which authoriser clone is LIVE, read from a production receipt
-            // vault rather than asserted from a constant. The two Base clones
-            // trade places during the V4 migration, so a hardcoded
-            // active/pending pair silently contradicts the token rows further
-            // down this same page, which read `authorizer()` per token.
-            let live_authoriser = {
-                base_vaults
-                    .first()
-                    .and_then(|vault| {
-                        eth_call(rpc_session(Chain::Base), vault, &rpc::authorizer_calldata())
+            // Whether each chain's authoriser clone is LIVE, read from one of
+            // that chain's production receipt vaults rather than asserted from
+            // its pin, so it cannot contradict the token rows further down this
+            // same page, which read `authorizer()` per token.
+            let read = |network: &str, vault: &str| {
+                Chain::from_network(network)
+                    .and_then(|chain| {
+                        eth_call(rpc_session(chain), vault, &rpc::authorizer_calldata())
                     })
                     .and_then(|hex| rpc::decode_address(&hex))
             };
-            owners::build_owners(
-                org,
-                repo,
-                &deploy_sources,
-                onchain.as_ref(),
-                live_authoriser.as_deref(),
-            )
-            .unwrap_or(serde_json::Value::Null)
+            let live =
+                |network: &str| owners::live_authoriser(privileged.as_deref().ok(), network, &read);
+            owners::build_owners(org, repo, &deploy_sources, onchain.as_ref(), &live)
+                .unwrap_or(serde_json::Value::Null)
         };
 
         // Who holds the ACTION roles (#143). The Safe above is the cold key that

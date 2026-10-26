@@ -91,13 +91,11 @@ fn is_unhydrated(pin: Option<&String>) -> bool {
 
 /// Whether an authoriser pin is the one production vaults actually delegate to.
 ///
-/// The two Base clones swap roles over the course of the V4 migration, so
-/// hardcoding "active" and "pending" freezes the page at whatever was true the
-/// day it was written — and it silently disagrees with the token rows on the
-/// same page, which read `authorizer()` live. `live` is that live value.
+/// A pin is only a constant: whether vaults delegate to it is a fact about the
+/// chain, and the token rows on the same page read `authorizer()` live. `live`
+/// is that live value, read on the pin's own chain.
 ///
-/// `not_live` is what this pin means when it is NOT the live one: the V3-era
-/// clone has been superseded, the V4 clone has not taken over yet. Without a
+/// `not_live` is what this pin means when it is NOT the live one. Without a
 /// live reading the honest answer is `unknown`, never a guess.
 pub fn authoriser_status(
     pin: Option<&String>,
@@ -109,6 +107,29 @@ pub fn authoriser_status(
         (Some(p), Some(l)) if p.eq_ignore_ascii_case(l) => "active",
         _ => not_live,
     }
+}
+
+/// The `authorizer()` a production receipt vault returns on `network`. `None`
+/// where that chain's read failed, which leaves its clone `unknown`.
+pub type LiveAuthoriser<'a> = &'a dyn Fn(&str) -> Option<String>;
+
+/// `read(network, vault)` is that vault's `authorizer()` on that chain.
+pub type ReadAuthoriser<'a> = &'a dyn Fn(&str, &str) -> Option<String>;
+
+/// The live authoriser on `network`: the `authorizer()` of the first production
+/// receipt vault the deploy repo lists for that chain. `None` with no listed
+/// vault or a failed read, never a substitute from another chain.
+pub fn live_authoriser(
+    chains: Option<&[PrivilegedChain]>,
+    network: &str,
+    read: ReadAuthoriser,
+) -> Option<String> {
+    let vault = chains?
+        .iter()
+        .find(|c| c.network == network)?
+        .receipt_vaults
+        .first()?;
+    read(network, vault)
 }
 
 /// The st0x.deploy library sources the owners document is assembled from.
@@ -130,15 +151,15 @@ pub struct OwnerSources<'a> {
 /// resolved — i.e. the repo was unreachable or the constant moved — so the page
 /// shows an honest "unavailable" state instead of a table of nulls.
 ///
-/// `live_authoriser` is the `authorizer()` a production vault actually returns;
-/// `None` when that read failed, which leaves every clone's status `unknown`
-/// rather than falling back to a literal.
+/// `live` is the `authorizer()` a production vault returns on each chain; a
+/// chain whose read failed leaves its clone `unknown` rather than falling back
+/// to a literal.
 pub fn build_owners(
     org: &str,
     repo: &str,
     src: &OwnerSources,
     onchain: Option<&OnChainSafe>,
-    live_authoriser: Option<&str>,
+    live: LiveAuthoriser,
 ) -> Option<serde_json::Value> {
     let (safe_lib, v4_lib, overrides) = (src.safe_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
@@ -235,32 +256,25 @@ pub fn build_owners(
         "entries": signers,
     });
 
-    // Which clone is live is READ FROM THE CHAIN, not asserted here: the two
-    // Base clones trade places during the V4 migration, and a hardcoded
-    // active/pending pair goes stale the moment the swap lands — while the
-    // token rows on the same page keep reporting the truth from `authorizer()`.
+    // Whether each chain's clone is live is READ FROM THAT CHAIN, not inferred
+    // from its pin: a pin says what the deploy repo expects, `authorizer()`
+    // says what the vaults delegate to.
     let v4_clone = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
     let v4_clone_ethereum = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM");
-    let live_note = match live_authoriser {
-        Some(_) => "Which clone is live is read from a production vault's authorizer() on Base.",
-        None => "The live authorizer() read failed, so no clone is marked active — status unknown, not assumed.",
-    };
     let authoriser = json!({
         "id": "authoriser",
         "title": "Operational access — authoriser",
-        "note": format!("Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. {live_note}"),
+        "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to its chain's authoriser. Each clone's status is read from a production vault's authorizer() on that clone's chain; where that read failed the status is unknown, not assumed.",
         "entries": [
             entry("V4 authoriser clone", v4_clone.clone(), "base",
-                authoriser_status(v4_clone.as_ref(), live_authoriser, "pending"),
+                authoriser_status(v4_clone.as_ref(), live("base").as_deref(), "pending"),
                 "the V4 upgrade rewires every vault onto this"),
             // Ethereum's clone is a nonce-based CloneFactory deploy, so its
             // address cannot be known ahead of the broadcast. The row is
             // rendered either way: an absent chain reads as "we do not deploy
             // there", which is the opposite of what an unhydrated pin means.
             entry("V4 authoriser clone", v4_clone_ethereum.clone(), "ethereum",
-                if v4_clone_ethereum.is_none() { "unknown" }
-                else if is_unhydrated(v4_clone_ethereum.as_ref()) { "pending" }
-                else { "active" },
+                authoriser_status(v4_clone_ethereum.as_ref(), live("ethereum").as_deref(), "pending"),
                 if is_unhydrated(v4_clone_ethereum.as_ref()) { "pin not yet hydrated — this says nothing about whether the clone exists" }
                 else { "the Ethereum bootstrap's authoriser clone" }),
             // The grantees that hold roles ON these authorisers are NOT listed
@@ -1094,7 +1108,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             None,
-            None,
+            &|_| None,
         )
         .expect("anchor resolves");
         assert_eq!(v["repo"], "st0x.deploy");
@@ -1132,7 +1146,7 @@ mod tests {
     fn authoriser_entries(
         auth_lib: &str,
         v4_lib: &str,
-        live: Option<&str>,
+        live: LiveAuthoriser,
     ) -> Vec<serde_json::Value> {
         let v = build_owners(
             "S01-Issuer",
@@ -1165,7 +1179,7 @@ mod tests {
     fn authoriser_group_lists_only_the_v4_clones() {
         let v4_lib = format!("{V4_LIB}\n    address constant STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM = address(0x66566cc91dEAf818859bD4b09B7903ac48998157);\n");
         for auth_lib in [AUTH_LIB, AUTH_LIB_UPSTREAM] {
-            let rows: Vec<serde_json::Value> = authoriser_entries(auth_lib, &v4_lib, None)
+            let rows: Vec<serde_json::Value> = authoriser_entries(auth_lib, &v4_lib, &|_| None)
                 .iter()
                 .map(|e| json!({"role": e["role"], "network": e["network"], "address": e["address"]}))
                 .collect();
@@ -1184,9 +1198,22 @@ mod tests {
     #[test]
     fn no_authoriser_row_is_active_without_an_address() {
         for live in [None, Some("0x315b16faa6eE413faBCa877d3851B3818369f0cD")] {
-            for e in authoriser_entries(AUTH_LIB_UPSTREAM, V4_LIB, live) {
+            for e in authoriser_entries(AUTH_LIB_UPSTREAM, V4_LIB, &per_chain(live, live)) {
                 assert!(!(e["status"] == "active" && e["address"].is_null()), "{e}");
             }
+        }
+    }
+
+    /// A live reading of `base` on Base and `ethereum` on Ethereum, nothing
+    /// anywhere else.
+    fn per_chain<'a>(
+        base: Option<&'a str>,
+        ethereum: Option<&'a str>,
+    ) -> impl Fn(&str) -> Option<String> + 'a {
+        move |network| match network {
+            "base" => base.map(str::to_string),
+            "ethereum" => ethereum.map(str::to_string),
+            _ => None,
         }
     }
 
@@ -1276,7 +1303,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             None,
-            None,
+            &|_| None,
         )
         .unwrap();
         let auth = v["groups"][2]["entries"].as_array().unwrap();
@@ -1284,7 +1311,9 @@ mod tests {
             .iter()
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "ethereum")
             .expect("the ethereum row must exist even unhydrated");
-        assert_eq!(eth["status"], "pending");
+        // No Ethereum authorizer() reading: the status is unknown, not inferred
+        // from the pin (#226).
+        assert_eq!(eth["status"], "unknown");
         let note = eth["note"].as_str().unwrap();
         assert!(
             note.contains("not yet hydrated"),
@@ -1313,7 +1342,7 @@ mod tests {
                     overrides: OVERRIDES
                 },
                 None,
-                None
+                &|_| None
             ),
             None
         );
@@ -1334,7 +1363,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             None,
-            None,
+            &|_| None,
         )
         .unwrap();
         let eth = &v["groups"][0]["entries"][1];
@@ -1362,7 +1391,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             None,
-            None,
+            &|_| None,
         )
         .unwrap();
         assert_eq!(v["signerCount"], 3);
@@ -1405,7 +1434,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             Some(&oc),
-            None,
+            &|_| None,
         )
         .unwrap();
         let sg = &v["groups"][1];
@@ -1434,7 +1463,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             Some(&oc),
-            None,
+            &|_| None,
         )
         .unwrap();
         let sg = &v["groups"][1];
@@ -1464,7 +1493,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             Some(&oc),
-            None,
+            &|_| None,
         )
         .unwrap();
         let sg = &v["groups"][1];
@@ -1487,7 +1516,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             None,
-            None,
+            &|_| None,
         )
         .unwrap();
         assert!(v["groups"][1]["verification"].is_null());
@@ -1509,7 +1538,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             Some(&oc),
-            None,
+            &|_| None,
         )
         .unwrap();
         let sg = &v["groups"][1];
@@ -1541,7 +1570,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             Some(&oc),
-            None,
+            &|_| None,
         )
         .unwrap();
         let sg = &v["groups"][1];
@@ -1656,7 +1685,7 @@ mod tests {
                 overrides: OVERRIDES,
             },
             None,
-            None,
+            &|_| None,
         )
         .unwrap();
         let auth = v["groups"][2]["entries"].as_array().unwrap();
