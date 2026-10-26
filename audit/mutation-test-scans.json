@@ -1,0 +1,42 @@
+[
+  {
+    "timestamp": "2026-10-26T11:41:20Z",
+    "commit": "05f10e838eca59b4b2445cc3024b9d5824bd33a8",
+    "testsAfterCommit": "ea06a5de1112596c2e2e1ffcef662ee4e588e199",
+    "publishedTag": null,
+    "commitsAheadOfTag": null,
+    "scope": "pr:225",
+    "tool": "adversarial-mutation-test",
+    "skillVersion": "0.35.0",
+    "summary": {
+      "behaviours": 8,
+      "candidates": 1,
+      "confirmed": 0,
+      "testsBefore": 763,
+      "testsAfter": 765,
+      "filed": [
+        "#226"
+      ]
+    }
+  },
+  {
+    "timestamp": "2026-10-26T12:33:38Z",
+    "commit": "68965860dd70779963b2b436f17a99f8a1bc02c0",
+    "testsAfterCommit": "175e30a00ea6a89f5d526ec717eefa856dafe46c",
+    "publishedTag": null,
+    "commitsAheadOfTag": null,
+    "scope": "pr:225",
+    "tool": "adversarial-mutation-test",
+    "skillVersion": "0.35.0",
+    "summary": {
+      "behaviours": 11,
+      "candidates": 1,
+      "confirmed": 0,
+      "testsBefore": 765,
+      "testsAfter": 769,
+      "filed": [
+        "#227"
+      ]
+    }
+  }
+]
