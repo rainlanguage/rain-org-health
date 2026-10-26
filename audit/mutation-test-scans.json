@@ -2,14 +2,14 @@
   {
     "timestamp": "2026-10-26T11:41:20Z",
     "commit": "05f10e838eca59b4b2445cc3024b9d5824bd33a8",
-    "testsAfterCommit": "2088bc5a80c780b0618f3dd097e6ace04dafaf1e",
+    "testsAfterCommit": "ea06a5de1112596c2e2e1ffcef662ee4e588e199",
     "publishedTag": null,
     "commitsAheadOfTag": null,
     "scope": "pr:225",
     "tool": "adversarial-mutation-test",
     "skillVersion": "0.35.0",
     "summary": {
-      "behaviours": 7,
+      "behaviours": 8,
       "candidates": 1,
       "confirmed": 0,
       "testsBefore": 763,
