@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-26T18:40:19Z",
+  "generatedAt": "2026-10-26T20:33:22Z",
   "auditGraph": {
     "nodes": [
       {
@@ -46,7 +46,6 @@
           "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
@@ -56,9 +55,14 @@
             "latest": "0.1.25"
           },
           {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
             "repo": "rainlang",
             "pinned": "0.2.19",
-            "latest": "0.2.26"
+            "latest": "0.2.27"
           },
           {
             "repo": "rainlang.interface",
@@ -98,14 +102,18 @@
           "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
           {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
             "repo": "rainlang",
             "pinned": "0.2.19",
-            "latest": "0.2.26"
+            "latest": "0.2.27"
           },
           {
             "repo": "rainlang.interface",
@@ -191,14 +199,18 @@
           "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
           {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
             "repo": "rainlang",
             "pinned": "0.2.19",
-            "latest": "0.2.26"
+            "latest": "0.2.27"
           },
           {
             "repo": "rainlang.interface",
@@ -309,19 +321,13 @@
           "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
           {
-            "repo": "rain.deploy",
-            "pinned": "0.1.22",
-            "latest": "0.1.25"
-          },
-          {
             "repo": "rainlang",
-            "pinned": "0.2.19",
-            "latest": "0.2.26"
+            "pinned": "0.2.26",
+            "latest": "0.2.27"
           },
           {
             "repo": "rainlang.interface",
@@ -383,14 +389,18 @@
           "rain.math.float.deploy",
           "rain.metadata",
           "rain.tofu.erc20-decimals",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
           {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
             "repo": "rainlang",
             "pinned": "0.2.19",
-            "latest": "0.2.26"
+            "latest": "0.2.27"
           },
           {
             "repo": "rainlang.interface",
@@ -494,9 +504,9 @@
         ],
         "staleDeps": [
           {
-            "repo": "rain.factory.deploy",
-            "pinned": "0.2.2",
-            "latest": "0.2.3"
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
           }
         ]
       },
@@ -522,14 +532,13 @@
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rain.vats",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
           {
             "repo": "rain.vats",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -613,7 +622,6 @@
           "rain.tofu.erc20-decimals",
           "rain.tofu.erc20-decimals.deploy",
           "raindex.interface",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
@@ -621,6 +629,16 @@
             "repo": "rain.deploy",
             "pinned": "0.1.22",
             "latest": "0.1.25"
+          },
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.7",
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.metadata.deploy",
@@ -640,7 +658,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.19",
-            "latest": "0.2.26"
+            "latest": "0.2.27"
           },
           {
             "repo": "rainlang.interface",
@@ -666,6 +684,11 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
             "repo": "raindex.interface",
             "pinned": "0.1.8",
             "latest": "0.1.10"
@@ -688,6 +711,11 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
             "repo": "rainlang.interface",
             "pinned": "0.2.14",
             "latest": "0.2.15"
@@ -699,7 +727,7 @@
         "org": "rainlanguage",
         "package": "rainlang",
         "packageKnown": true,
-        "audit": "stale",
+        "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
         "openAuditIssues": 0,
@@ -711,14 +739,18 @@
           "rain.math.float",
           "rain.math.float.deploy",
           "rain.metadata",
-          "rain.tofu.erc20-decimals",
-          "rainlang.interface"
+          "rain.tofu.erc20-decimals"
         ],
         "staleDeps": [
           {
-            "repo": "rainlang.interface",
-            "pinned": "0.2.13",
-            "latest": "0.2.15"
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.7",
+            "latest": "0.1.8"
           }
         ]
       },
@@ -741,14 +773,13 @@
           "rain.metadata",
           "rain.tofu.erc20-decimals",
           "rain.tofu.erc20-decimals.deploy",
-          "rainlang",
           "rainlang.interface"
         ],
         "staleDeps": [
           {
-            "repo": "rain.deploy",
-            "pinned": "0.1.22",
-            "latest": "0.1.25"
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.7",
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.tofu.erc20-decimals.deploy",
@@ -757,8 +788,8 @@
           },
           {
             "repo": "rainlang",
-            "pinned": "0.2.19",
-            "latest": "0.2.26"
+            "pinned": "0.2.26",
+            "latest": "0.2.27"
           },
           {
             "repo": "rainlang.interface",
@@ -818,9 +849,14 @@
             "latest": "0.2.3"
           },
           {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          },
+          {
             "repo": "rain.vats",
             "pinned": "0.2.9",
-            "latest": "0.2.10"
+            "latest": "0.2.11"
           }
         ]
       },
@@ -1079,7 +1115,13 @@
         "blockedBy": [
           "rain.math.float"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.math.float",
+            "pinned": "0.3.10",
+            "latest": "0.3.11"
+          }
+        ]
       }
     ],
     "edges": [
@@ -1135,9 +1177,9 @@
       {
         "from": "rain.dia",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "rain.dia",
@@ -1165,7 +1207,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.19",
-        "latest": "0.2.26"
+        "latest": "0.2.27"
       },
       {
         "from": "rain.dia",
@@ -1184,9 +1226,9 @@
       {
         "from": "rain.erc4626.words",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "rain.erc4626.words",
@@ -1207,7 +1249,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.19",
-        "latest": "0.2.26"
+        "latest": "0.2.27"
       },
       {
         "from": "rain.erc4626.words",
@@ -1296,9 +1338,9 @@
       {
         "from": "rain.flare",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "rain.flare",
@@ -1319,7 +1361,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.19",
-        "latest": "0.2.26"
+        "latest": "0.2.27"
       },
       {
         "from": "rain.flare",
@@ -1338,9 +1380,9 @@
       {
         "from": "rain.lib.leakybucket",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "rain.lib.memkv",
@@ -1388,14 +1430,14 @@
         "from": "rain.math.float.deploy",
         "to": "rain.math.float",
         "stale": false,
-        "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "pinned": "0.3.11",
+        "latest": "0.3.11"
       },
       {
         "from": "rain.merkle.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.22",
+        "stale": false,
+        "pinned": "0.1.25",
         "latest": "0.1.25"
       },
       {
@@ -1423,8 +1465,8 @@
         "from": "rain.merkle.deploy",
         "to": "rainlang",
         "stale": true,
-        "pinned": "0.2.19",
-        "latest": "0.2.26"
+        "pinned": "0.2.26",
+        "latest": "0.2.27"
       },
       {
         "from": "rain.merkle.deploy",
@@ -1464,9 +1506,9 @@
       {
         "from": "rain.pyth",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "rain.pyth",
@@ -1487,7 +1529,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.19",
-        "latest": "0.2.26"
+        "latest": "0.2.27"
       },
       {
         "from": "rain.pyth",
@@ -1548,8 +1590,8 @@
       {
         "from": "rain.vats",
         "to": "rain.factory.deploy",
-        "stale": true,
-        "pinned": "0.2.2",
+        "stale": false,
+        "pinned": "0.2.3",
         "latest": "0.2.3"
       },
       {
@@ -1562,9 +1604,9 @@
       {
         "from": "rain.vats",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "rain.vats",
@@ -1599,7 +1641,7 @@
         "to": "rain.vats",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "rain.verify",
@@ -1653,16 +1695,16 @@
       {
         "from": "raindex.deploy",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "raindex.deploy",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.7"
+        "latest": "0.1.8"
       },
       {
         "from": "raindex.deploy",
@@ -1718,7 +1760,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.19",
-        "latest": "0.2.26"
+        "latest": "0.2.27"
       },
       {
         "from": "raindex.deploy",
@@ -1730,9 +1772,9 @@
       {
         "from": "raindex.governance",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "raindex.governance",
@@ -1744,9 +1786,9 @@
       {
         "from": "raindex.interface",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "raindex.interface",
@@ -1800,16 +1842,16 @@
       {
         "from": "rainlang",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "rainlang",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.7"
+        "latest": "0.1.8"
       },
       {
         "from": "rainlang",
@@ -1847,17 +1889,10 @@
         "latest": "0.1.4"
       },
       {
-        "from": "rainlang",
-        "to": "rainlang.interface",
-        "stale": true,
-        "pinned": "0.2.13",
-        "latest": "0.2.15"
-      },
-      {
         "from": "rainlang.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.22",
+        "stale": false,
+        "pinned": "0.1.25",
         "latest": "0.1.25"
       },
       {
@@ -1870,9 +1905,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.7"
+        "latest": "0.1.8"
       },
       {
         "from": "rainlang.deploy",
@@ -1906,8 +1941,8 @@
         "from": "rainlang.deploy",
         "to": "rainlang",
         "stale": true,
-        "pinned": "0.2.19",
-        "latest": "0.2.26"
+        "pinned": "0.2.26",
+        "latest": "0.2.27"
       },
       {
         "from": "rainlang.deploy",
@@ -1975,9 +2010,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.math.float",
-        "stale": false,
+        "stale": true,
         "pinned": "0.3.10",
-        "latest": "0.3.10"
+        "latest": "0.3.11"
       },
       {
         "from": "st0x.deploy",
@@ -1998,7 +2033,7 @@
         "to": "rain.vats",
         "stale": true,
         "pinned": "0.2.9",
-        "latest": "0.2.10"
+        "latest": "0.2.11"
       },
       {
         "from": "st0x.deploy",
@@ -3557,6 +3592,14 @@
             "onChain": true
           },
           {
+            "vault": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
             "vault": "0x3d28020d2531a7d1d1152a8fa3e6763f508226b2",
             "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
             "label": "safe",
@@ -3632,6 +3675,14 @@
             "vault": "0x5e3fb85b57eb233a5e13d9a53f1f9ce08c24a5e6",
             "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
             "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6540478507ab063b03a704ac2c8e9118f1760848",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
@@ -3760,6 +3811,14 @@
             "vault": "0x8c1e16a91d016e0251486c1bdbc57eba4f0a61e6",
             "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
             "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x90687ba21da53189047cd168a66ecc76282bf800",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
@@ -4142,18 +4201,18 @@
           }
         ],
         "counts": {
-          "safe": 26,
+          "safe": 29,
           "timelock": 59,
           "other": 56,
           "unknown": 0,
           "unpinned": 0,
           "certificationExpired": 53,
           "certificationUnknown": 0,
-          "notPinned": 85,
+          "notPinned": 88,
           "notOnChain": 0
         },
-        "discoveredCount": 141,
-        "discoveredAtBlock": 53125361
+        "discoveredCount": 144,
+        "discoveredAtBlock": 53128749
       },
       {
         "network": "ethereum",
@@ -4670,7 +4729,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 26278721
+        "discoveredAtBlock": 26279284
       },
       {
         "network": "bsc",
@@ -4960,121 +5019,121 @@
           },
           {
             "vault": "0x0d2029ed7497a8cc5c65e808393ced0af2259385",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x683dd1c36169b25355c8c110942a820f395ffb7d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x185ccb3c9c09300b3877f71e747f041604f7603f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcb8b0c80560a66c96a25297cc98b23fa1d7acc6a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcd49da53d0570e6d34ab786aa4eb4f9e0e6ab045",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x543e33e9276cf00b74689c8e41fd7fc921128ba0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xe2593db54e7893d311cbf5087cdb7a9027b9a7fd",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xc67038bbff91f2568b902ff171e9f9c06ed98815",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xbca97cc57916734130c9f05ea8b217682a249b75",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x042dfd33de6766a8858f188dfcf207d311da6488",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5160,201 +5219,201 @@
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5440,82 +5499,82 @@
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           }
         ],
         "counts": {
-          "safe": 41,
-          "timelock": 62,
+          "safe": 12,
+          "timelock": 43,
           "other": 0,
-          "unknown": 0,
+          "unknown": 48,
           "unpinned": 0,
-          "certificationExpired": 42,
-          "certificationUnknown": 0,
+          "certificationExpired": 13,
+          "certificationUnknown": 48,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 103,
-        "discoveredAtBlock": 129947244
+        "discoveredAtBlock": 129962304
       },
       {
         "network": "hyperevm",
@@ -6032,7 +6091,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 49596425
+        "discoveredAtBlock": 49603309
       },
       {
         "network": "robinhood",
@@ -6549,7 +6608,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 62,
-        "discoveredAtBlock": 98631203
+        "discoveredAtBlock": 98696364
       }
     ]
   },
@@ -17924,7 +17983,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1197,
+      "fullSourceLoc": 1243,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -18243,7 +18302,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1530,
+      "fullSourceLoc": 1581,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -18383,15 +18442,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:18:51Z",
-      "latestTag": "sol-v0.2.10",
-      "latestTagIso": "2026-10-26T17:02:38Z",
+      "latestTag": "sol-v0.2.11",
+      "latestTagIso": "2026-10-26T19:54:43Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 732,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 448,
       "sourceLocRemovedSinceAudit": 284,
       "filesChangedSinceAudit": 24,
-      "commitsSinceAudit": 122,
+      "commitsSinceAudit": 124,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 98,
       "commentLocRemovedSinceAudit": 63,
@@ -18427,7 +18486,7 @@
       "sourceLocAddedSinceAudit": 336,
       "sourceLocRemovedSinceAudit": 132,
       "filesChangedSinceAudit": 15,
-      "commitsSinceAudit": 42,
+      "commitsSinceAudit": 45,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 93,
       "commentLocRemovedSinceAudit": 14,
@@ -18599,19 +18658,19 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2025-12-01T16:49:39Z",
-      "latestTag": "sol-v0.3.10",
-      "latestTagIso": "2026-10-16T16:12:00Z",
+      "latestTag": "sol-v0.3.11",
+      "latestTagIso": "2026-10-26T19:05:11Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 82,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 82,
       "filesChangedSinceAudit": 13,
-      "commitsSinceAudit": 1507,
+      "commitsSinceAudit": 1518,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 1829,
+      "commentLocAddedSinceAudit": 1849,
       "commentLocRemovedSinceAudit": 522,
-      "codeLocAddedSinceAudit": 1917,
+      "codeLocAddedSinceAudit": 1950,
       "codeLocRemovedSinceAudit": 1450,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
@@ -18727,7 +18786,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 61,
-      "commitsSinceAudit": 334,
+      "commitsSinceAudit": 342,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18736,42 +18795,6 @@
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/raindex.deploy/compare/sol-v0.1.12...main",
       "daysSinceAudit": 133
-    },
-    {
-      "name": "rainlang",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
-          "path": "audit/protofire/rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
-          "lastCommitIso": "2026-07-15T19:41:05Z",
-          "auditDateIso": "2026-03-08T19:12:56Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-03-08T19:12:56Z",
-      "latestTag": "sol-v0.2.26",
-      "latestTagIso": "2026-10-26T17:13:59Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 135,
-      "commitsSinceAudit": 356,
-      "sourceDriftTruncated": true,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
-      "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1...main",
-      "daysSinceAudit": 232
     },
     {
       "name": "st0x.deploy",
@@ -19300,6 +19323,48 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
       "daysSinceAudit": 266
+    },
+    {
+      "name": "rainlang",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "current",
+      "auditPdfs": [
+        {
+          "filename": "rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
+          "path": "audit/protofire/rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
+          "lastCommitIso": "2026-10-26T19:17:00Z",
+          "auditDateIso": "2026-10-26T19:17:00Z"
+        },
+        {
+          "filename": "rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
+          "path": "audit/protofire/rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
+          "lastCommitIso": "2026-07-15T19:41:05Z",
+          "auditDateIso": "2026-03-08T19:12:56Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": null,
+      "anchorKind": "unanchored",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-10-26T19:17:00Z",
+      "latestTag": "sol-v0.2.27",
+      "latestTagIso": "2026-10-26T19:55:09Z",
+      "isStale": false,
+      "sourceLocChangedSinceAudit": 0,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 0,
+      "sourceLocRemovedSinceAudit": 0,
+      "filesChangedSinceAudit": 0,
+      "commitsSinceAudit": 1,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 0,
+      "commentLocRemovedSinceAudit": 0,
+      "codeLocAddedSinceAudit": 0,
+      "codeLocRemovedSinceAudit": 0,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rainlang/compare/86d054219ac36d0e648146352bc26e64e509a156...main",
+      "daysSinceAudit": 0
     }
   ],
   "untestedExternals": [
@@ -19569,7 +19634,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 99,
+      "testFiles": 100,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -19722,7 +19787,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 16,
-      "testFiles": 257,
+      "testFiles": 259,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -19740,7 +19805,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 7,
-      "testFiles": 272,
+      "testFiles": 303,
       "sourcesUnparsed": 0,
       "untested": []
     },
