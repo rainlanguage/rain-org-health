@@ -403,6 +403,18 @@ fn eth_call_payload(to: &str, data: &str) -> String {
     )
 }
 
+/// `vault`'s `authorizer()` on `network`'s own chain, through `call(chain, to,
+/// data)`. `None` for a chain the scan has no endpoint for, or a failed read.
+fn read_authoriser(
+    network: &str,
+    vault: &str,
+    call: &dyn Fn(Chain, &str, &str) -> Option<String>,
+) -> Option<String> {
+    Chain::from_network(network)
+        .and_then(|chain| call(chain, vault, &rpc::authorizer_calldata()))
+        .and_then(|hex| rpc::decode_address(&hex))
+}
+
 /// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
 /// on failure. The scan must survive an RPC hiccup, so callers degrade gracefully.
 fn eth_call(session: Session, to: &str, data: &str) -> Option<String> {
@@ -2686,11 +2698,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             // its pin, so it cannot contradict the token rows further down this
             // same page, which read `authorizer()` per token.
             let read = |network: &str, vault: &str| {
-                Chain::from_network(network)
-                    .and_then(|chain| {
-                        eth_call(rpc_session(chain), vault, &rpc::authorizer_calldata())
-                    })
-                    .and_then(|hex| rpc::decode_address(&hex))
+                read_authoriser(network, vault, &|chain, to, data| {
+                    eth_call(rpc_session(chain), to, data)
+                })
             };
             let live =
                 |network: &str| owners::live_authoriser(privileged.as_deref().ok(), network, &read);
@@ -3545,6 +3555,24 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 mod tests {
     use super::*;
     use std::collections::HashMap;
+
+    /// The authoriser read goes to the network's own chain, asks `vault` for
+    /// `authorizer()`, and decodes the returned word as an address (#226).
+    #[test]
+    fn read_authoriser_calls_the_networks_own_chain() {
+        let word = "0x00000000000000000000000066566cc91deaf818859bd4b09b7903ac48998157";
+        let call = |chain: Chain, to: &str, data: &str| {
+            (chain == Chain::Ethereum && to == "0xe1" && data == rpc::authorizer_calldata())
+                .then(|| word.to_string())
+        };
+        assert_eq!(
+            read_authoriser("ethereum", "0xe1", &call).as_deref(),
+            Some("0x66566cc91deaf818859bd4b09b7903ac48998157")
+        );
+        assert_eq!(read_authoriser("base", "0xe1", &call), None);
+        assert_eq!(read_authoriser("nowhere", "0xe1", &call), None);
+        assert_eq!(read_authoriser("ethereum", "0xe1", &|_, _, _| None), None);
+    }
 
     // ---- batch failover ----
 
