@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-27T06:21:39Z",
+  "generatedAt": "2026-10-27T08:44:46Z",
   "auditGraph": {
     "nodes": [
       {
@@ -448,18 +448,7 @@
           "rain.vats",
           "rainlang"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.flare",
-            "pinned": "0.1.5",
-            "latest": "0.1.6"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.2.9",
-            "latest": "0.2.12"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.verify",
@@ -481,13 +470,7 @@
           "rain.tofu.erc20-decimals",
           "rainlang"
         ],
-        "staleDeps": [
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.27",
-            "latest": "0.2.30"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.verify.interface",
@@ -566,18 +549,7 @@
           "raindex.interface",
           "rainlang"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.3.10",
-            "latest": "0.3.11"
-          },
-          {
-            "repo": "raindex.interface",
-            "pinned": "0.1.11",
-            "latest": "0.1.13"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "raindex.interface",
@@ -672,18 +644,7 @@
           "rain.tofu.erc20-decimals.deploy",
           "rain.vats"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.tofu.erc20-decimals.deploy",
-            "pinned": "0.1.3",
-            "latest": "0.1.4"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.2.11",
-            "latest": "0.2.12"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.math.binary",
@@ -1409,8 +1370,8 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.flare",
-        "stale": true,
-        "pinned": "0.1.5",
+        "stale": false,
+        "pinned": "0.1.6",
         "latest": "0.1.6"
       },
       {
@@ -1423,8 +1384,8 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.2.9",
+        "stale": false,
+        "pinned": "0.2.12",
         "latest": "0.2.12"
       },
       {
@@ -1458,8 +1419,8 @@
       {
         "from": "rain.verify",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.27",
+        "stale": false,
+        "pinned": "0.2.30",
         "latest": "0.2.30"
       },
       {
@@ -1549,15 +1510,15 @@
       {
         "from": "raindex.governance",
         "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.3.10",
+        "stale": false,
+        "pinned": "0.3.11",
         "latest": "0.3.11"
       },
       {
         "from": "raindex.governance",
         "to": "raindex.interface",
-        "stale": true,
-        "pinned": "0.1.11",
+        "stale": false,
+        "pinned": "0.1.13",
         "latest": "0.1.13"
       },
       {
@@ -1773,15 +1734,15 @@
       {
         "from": "st0x.deploy",
         "to": "rain.tofu.erc20-decimals.deploy",
-        "stale": true,
-        "pinned": "0.1.3",
+        "stale": false,
+        "pinned": "0.1.4",
         "latest": "0.1.4"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.2.11",
+        "stale": false,
+        "pinned": "0.2.12",
         "latest": "0.2.12"
       },
       {
@@ -2918,40 +2879,40 @@
           },
           {
             "vault": "0x323804af6f3bb463d688b854667c6870a0fc06ad",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xc585aeb8b76c5f5e4215470a7625258e86ed7746",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x9a5d3caec90b0332b18c0b93fef42f3f8c918289",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x96de077262609298cd891e4ab21bd34837de33ab",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x7001e2974f775f0fd73a3d2e5914e591f3ec3fbb",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
@@ -3078,9 +3039,9 @@
           },
           {
             "vault": "0x5cefd886dd05001c2fc32c313e05360d07f37d8f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -3088,7 +3049,7 @@
             "vault": "0x57573351f3fdd20a57dee4a7f836de1ce9900d4b",
             "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
             "label": "timelock",
-            "certificationExpired": null,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -3104,7 +3065,7 @@
             "vault": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
             "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
             "label": "timelock",
-            "certificationExpired": null,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -3112,7 +3073,7 @@
             "vault": "0xca1a378f9a250131a2fe51c10f120fef7edca56e",
             "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
             "label": "timelock",
-            "certificationExpired": null,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -3951,17 +3912,17 @@
         ],
         "counts": {
           "safe": 29,
-          "timelock": 53,
+          "timelock": 59,
           "other": 56,
-          "unknown": 6,
+          "unknown": 0,
           "unpinned": 0,
           "certificationExpired": 53,
-          "certificationUnknown": 7,
+          "certificationUnknown": 0,
           "notPinned": 88,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53146395
+        "discoveredAtBlock": 53150702
       },
       {
         "network": "ethereum",
@@ -4502,7 +4463,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 26282217
+        "discoveredAtBlock": 26282934
       },
       {
         "network": "bsc",
@@ -4832,41 +4793,41 @@
           },
           {
             "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -4912,30 +4873,46 @@
           },
           {
             "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcc23ef9e1e74c22ab2a9b73e253af01531385b08",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xe39a028cdc8a50e655a5b31ba8a48ce36f3a8243",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
             "certificationExpired": false,
@@ -4943,50 +4920,34 @@
             "onChain": true
           },
           {
-            "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": true,
-            "onChain": true
-          },
-          {
-            "vault": "0xe39a028cdc8a50e655a5b31ba8a48ce36f3a8243",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
-            "pinned": true,
-            "onChain": true
-          },
-          {
             "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x194c6ebe9919c8681aa17c8814ee6c8a0534b28f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
@@ -5192,41 +5153,41 @@
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5272,38 +5233,46 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
             "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
             "label": "safe",
             "certificationExpired": true,
@@ -5311,67 +5280,59 @@
             "onChain": true
           },
           {
-            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           }
         ],
         "counts": {
-          "safe": 12,
-          "timelock": 58,
+          "safe": 11,
+          "timelock": 50,
           "other": 0,
-          "unknown": 36,
+          "unknown": 45,
           "unpinned": 0,
-          "certificationExpired": 15,
-          "certificationUnknown": 36,
+          "certificationExpired": 13,
+          "certificationUnknown": 45,
           "notPinned": 50,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 130040693
+        "discoveredAtBlock": 130059813
       },
       {
         "network": "hyperevm",
@@ -5912,7 +5873,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 49639182
+        "discoveredAtBlock": 49647934
       },
       {
         "network": "robinhood",
@@ -6453,7 +6414,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 99032889
+        "discoveredAtBlock": 99114479
       }
     ]
   },
@@ -15056,11 +15017,11 @@
           "address": "0x40584fbad768ff46f299cf50cae5b3d437e213fa",
           "name": "The Walt Disney Company ST0x",
           "symbol": "tDIS",
-          "deployed": true,
-          "authoriser": null,
-          "authoriserLabel": "unknown",
+          "deployed": null,
+          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+          "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": null
+          "atAuthoriserTarget": true
         }
       ],
       "missingFromMigration": []
@@ -16401,17 +16362,17 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 105,
-  "reposWithFindings": 35,
+  "totalRepos": 92,
+  "reposWithFindings": 31,
   "reposWholeRepoAudited": 11,
-  "reposNeverAudited": 94,
+  "reposNeverAudited": 81,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 20,
   "summary": {
     "per-chain-etherscan-key": 13,
-    "old-actions-checkout": 8,
-    "old-nix-installer": 7,
+    "old-nix-installer": 6,
     "removed-rainix-task": 6,
+    "old-actions-checkout": 5,
     "untested-externals": 4,
     "dead-magic-nix-cache": 3,
     "bespoke-ci": 2,
@@ -16534,24 +16495,10 @@
       ]
     },
     {
-      "name": "cyclo.subgraph",
-      "org": "cyclofinance",
-      "signals": [
-        "old-nix-installer"
-      ]
-    },
-    {
       "name": "flow",
       "org": "rainlanguage",
       "signals": [
         "removed-rainix-task"
-      ]
-    },
-    {
-      "name": "flow-subgraph",
-      "org": "rainlanguage",
-      "signals": [
-        "old-actions-checkout"
       ]
     },
     {
@@ -16566,13 +16513,6 @@
       "org": "rainlanguage",
       "signals": [
         "private-key-dev"
-      ]
-    },
-    {
-      "name": "rain-statusfi",
-      "org": "rainlanguage",
-      "signals": [
-        "old-actions-checkout"
       ]
     },
     {
@@ -16667,13 +16607,6 @@
       ]
     },
     {
-      "name": "rain1155",
-      "org": "rainlanguage",
-      "signals": [
-        "old-actions-checkout"
-      ]
-    },
-    {
       "name": "rainlang.deploy",
       "org": "rainlanguage",
       "signals": [
@@ -16718,13 +16651,6 @@
       "lastMutation": null
     },
     {
-      "name": "cyclo.brand",
-      "org": "cyclofinance",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
       "name": "cyclo.rewards",
       "org": "cyclofinance",
       "lastAudit": null,
@@ -16746,21 +16672,7 @@
       "lastMutation": null
     },
     {
-      "name": "cyclo.subgraph",
-      "org": "cyclofinance",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
       "name": "decentralicense",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "devcontainer",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -16792,13 +16704,6 @@
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 1,
-      "lastMutation": null
-    },
-    {
-      "name": "flow-subgraph",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
       "lastMutation": null
     },
     {
@@ -16858,38 +16763,10 @@
       "lastMutation": null
     },
     {
-      "name": "rain-deployment",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "rain-factories-subgraph",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
       "name": "rain-org-health",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 4,
-      "lastMutation": null
-    },
-    {
-      "name": "rain-protocol-subgraph",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "rain-statusfi",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
       "lastMutation": null
     },
     {
@@ -16901,13 +16778,6 @@
     },
     {
       "name": "rain-svelte-components",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "rain-zora",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -17236,20 +17106,6 @@
       "lastMutation": null
     },
     {
-      "name": "rain1155",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "rain721a-subgraph",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
       "name": "raindex-tg-bot",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -17366,20 +17222,6 @@
     },
     {
       "name": "test",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "vapour721a",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "wiki.rainprotocol.xyz",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -18140,7 +17982,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1564,
+      "fullSourceLoc": 1794,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -18319,16 +18161,16 @@
       "latestTag": "sol-v0.1.0",
       "latestTagIso": "2026-10-21T13:28:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 468,
+      "sourceLocChangedSinceAudit": 514,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 336,
+      "sourceLocAddedSinceAudit": 382,
       "sourceLocRemovedSinceAudit": 132,
-      "filesChangedSinceAudit": 15,
-      "commitsSinceAudit": 51,
+      "filesChangedSinceAudit": 16,
+      "commitsSinceAudit": 55,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 93,
+      "commentLocAddedSinceAudit": 105,
       "commentLocRemovedSinceAudit": 14,
-      "codeLocAddedSinceAudit": 212,
+      "codeLocAddedSinceAudit": 239,
       "codeLocRemovedSinceAudit": 109,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
@@ -18629,8 +18471,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 78,
-      "commitsSinceAudit": 408,
+      "filesChangedSinceAudit": 84,
+      "commitsSinceAudit": 415,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18672,7 +18514,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 149,
-      "commitsSinceAudit": 498,
+      "commitsSinceAudit": 500,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
