@@ -1463,11 +1463,10 @@ function renderDeployments(document, $, data, io) {
       if (a.error) throw new Error(`${entity}: ${a.error}`);
       const page = a.data.page;
       if (!Array.isArray(page)) throw new Error(`${entity}: the response carried no rows`);
+      for (const r of page) if (!r || typeof r !== "object" || typeof r.id !== "string") throw new Error(`${entity}: a row without an id`);
       rows.push(...page);
-      const last = page.length ? page[page.length - 1] : null;
       if (page.length < RBAC_PAGE) return rows;
-      if (!last || typeof last.id !== "string") throw new Error(`${entity}: a row without an id`);
-      cursor = last.id;
+      cursor = page[page.length - 1].id;
     }
     throw new Error(`${entity}: more than ${RBAC_PAGE * RBAC_MAX_PAGES} rows; not shown short`);
   };
@@ -2759,18 +2758,66 @@ function renderDeployments(document, $, data, io) {
   // One network's registry half, at one index position. The entities exist
   // only from the subgraph version that indexes the registries, so the schema
   // is asked first. Never throws.
-  const regRead = async (url) => {
+  const REG_TYPES = ["ConfigBinding", "ConfigRegister", "MigrationLine", "MigrationRecord", "RegistryDelegate", "RegistryDelegateChange"];
+  const REG_EXPECTED = { TOKEN_OWNER_SAFE: "token-owner Safe", GOVERNANCE_TIMELOCK: "governance timelock" };
+  const regLow = (v) => (typeof v === "string" ? v.toLowerCase() : "");
+  // Each record must sit at its position and be applied onto the record before
+  // it, the first onto genesis, and the line's own count, head and head record
+  // must agree with the last record.
+  const regLine = (l, rows, genesis) => {
+    const recs = rows.slice().sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
+    const problems = [];
+    const marked = new Map(recs.map((r) => [r, []]));
+    recs.forEach((r, i) => {
+      const p = marked.get(r);
+      if (r.index !== i) p.push(`at index ${r.index ?? "?"}, where ${i} was next`);
+      if (i === 0 && genesis === null) return;
+      const want = i === 0 ? genesis : regLow(recs[i - 1].migration);
+      if (regLow(r.appliedOnto) !== want) {
+        p.push(
+          i === 0
+            ? `applied onto ${r.appliedOnto}, not genesis`
+            : `applied onto ${r.appliedOnto}, not the previous record's migration ${recs[i - 1].migration}`,
+        );
+      }
+    });
+    const last = recs.length ? recs[recs.length - 1] : null;
+    const count = rbacNum(l.recordCount);
+    if (count !== recs.length) problems.push(`the line counts ${count ?? "?"} records; the read holds ${recs.length}`);
+    if (!last || regLow(l.head) !== regLow(last.migration)) problems.push(`the head ${l.head} is not the last record's migration`);
+    if (!last || !l.headRecord || l.headRecord.id !== last.id) problems.push("the head record is not the last record");
+    const records = recs.map((r) => ({ ...r, problems: marked.get(r) }));
+    const broken = problems.length > 0 || records.some((r) => r.problems.length > 0);
+    return {
+      ...l,
+      records,
+      problems,
+      chain: broken ? "broken" : genesis === null && records.length ? "unchecked" : "intact",
+    };
+  };
+  const regRead = async (url, genesis) => {
     const out = await rbacMeta(url);
     if (typeof out.indexedBlock !== "number") return out;
     const block = out.indexedBlock;
-    const probe = await rbacAsk(url, '{ t: __type(name: "ConfigBinding") { name } }');
+    const probe = await rbacAsk(url, `{ ${REG_TYPES.map((t, i) => `t${i}: __type(name: "${t}") { name }`).join(" ")} }`);
     const fail = (detail) => ({ ...out, state: "error", detail });
     if (probe.missing) return fail("the subgraph vanished mid-read");
     if (probe.unreachable) return fail("no readable answer to the schema probe");
     if (probe.error) return fail(probe.error);
-    if (probe.data.t === null) return { ...out, absent: true };
+    const have = [];
+    for (const [i, t] of REG_TYPES.entries()) {
+      const v = probe.data[`t${i}`];
+      if (v === null) continue;
+      if (!v || v.name !== t) return fail("the schema probe answered with something that is not a type");
+      have.push(t);
+    }
+    if (have.length === 0) return { ...out, absent: true };
+    if (have.length < REG_TYPES.length) {
+      return fail(`the schema has ${have.join(", ")} but not ${REG_TYPES.filter((t) => !have.includes(t)).join(", ")}`);
+    }
+    const got = {};
     try {
-      const [delegates, changes, bindings, registers, records] = await Promise.all([
+      const [delegates, changes, bindings, registers, lines, records, contracts] = await Promise.all([
         rbacReadAll(
           url,
           "registryDelegates",
@@ -2795,11 +2842,19 @@ function renderDeployments(document, $, data, io) {
         ),
         rbacReadAll(
           url,
-          "migrationRecords",
+          "migrationLines",
           "",
-          "line { writer namespace } index migration appliedAt sender blockNumber blockTimestamp transactionHash logIndex",
+          "writer namespace head recordCount headRecord { id }",
           block,
         ),
+        rbacReadAll(
+          url,
+          "migrationRecords",
+          "",
+          "line { id } index migration appliedOnto appliedAt sender blockNumber blockTimestamp transactionHash logIndex",
+          block,
+        ),
+        rbacReadAll(url, "contracts", "", "kind", block),
       ]);
       const num = (rows, keys) =>
         rows.map((r) => {
@@ -2807,15 +2862,28 @@ function renderDeployments(document, $, data, io) {
           for (const k of keys) o[k] = rbacNum(r[k]);
           return o;
         });
-      out.delegates = num(delegates, ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]);
-      out.changes = num(changes, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
-      out.bindings = num(bindings, ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
-      out.registers = num(registers, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
-      out.records = num(records, ["index", "appliedAt", "blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      const expected = new Map();
+      for (const c of contracts) if (Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind)) expected.set(regLow(c.id), c.kind);
+      got.expectedCount = expected.size;
+      got.delegates = num(delegates, ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
+        (d) => ({ ...d, expectedAs: expected.get(regLow(d.delegate)) || null }),
+      );
+      got.changes = num(changes, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      got.bindings = num(bindings, ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
+      got.registers = num(registers, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      const byLine = new Map(lines.map((l) => [l.id, []]));
+      for (const r of num(records, ["index", "appliedAt", "blockNumber", "blockTimestamp", "logIndex"])) {
+        const at = r.line && byLine.get(r.line.id);
+        if (!at) throw new Error("migrationRecords: a record on a line the index does not hold");
+        at.push(r);
+      }
+      got.lines = lines
+        .map((l) => regLine(l, byLine.get(l.id), genesis))
+        .sort((a, b) => regLow(a.namespace).localeCompare(regLow(b.namespace)) || regLow(a.writer).localeCompare(regLow(b.writer)));
     } catch (e) {
       return fail(e instanceof Error ? e.message : String(e));
     }
-    return out;
+    return { ...out, ...got };
   };
   const regBody = (slot, n, chain, endpoint, published, pins, labels) => {
     slot.replaceChildren(rbacBanner(n, endpoint, published));
@@ -2851,13 +2919,13 @@ function renderDeployments(document, $, data, io) {
       return d.address ? whoNode(d.address, chain, pins) : el("span", "mig-hash", d.raw);
     };
     // Current approvals first: they are who may write right now.
-    const live = n.delegates.filter((d) => d && d.approved === true);
+    const live = n.delegates.filter((d) => d.approved === true);
     section(
       `Delegations in force — ${live.length}`,
       live,
       "No account has approved a delegate in either registry.",
       (d) => {
-        const row = el("div", "own-row");
+        const row = el("div", d.expectedAs ? "own-row reg-delegate" : "own-row reg-delegate rbac-off");
         const ac = el("div", "bcn-detail");
         ac.append(
           line("in", el("span", "own-note", regKind(d.registry && d.registry.kind))),
@@ -2866,11 +2934,23 @@ function renderDeployments(document, $, data, io) {
         );
         const tail = el("div", "own-prov");
         tail.append(el("span", "own-chip own-chip-yes", "approved"));
+        if (d.expectedAs) {
+          tail.append(el("span", "own-chip own-chip-yes", REG_EXPECTED[d.expectedAs]));
+        } else {
+          const tag = el("span", "rbac-tag rbac-tag-unexpected reg-stray", "not Safe or timelock");
+          tag.title = "Neither a TOKEN_OWNER_SAFE nor a GOVERNANCE_TIMELOCK in this index.";
+          tail.append(tag);
+        }
         if (typeof d.approvedAtTimestamp === "number") tail.append(el("span", "own-note", utc(d.approvedAtTimestamp)));
         row.append(scopeNode(d.scope), ac, tail);
         return row;
       },
     );
+    if (n.expectedCount === 0) {
+      slot.append(
+        el("div", "own-note rbac-ideal-gap", "The index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised."),
+      );
+    }
     section(
       `Delegation changes — ${n.changes.length}, newest first`,
       n.changes,
@@ -2897,19 +2977,28 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
+    const nowSecs = Math.floor(io.now() / 1000);
+    const age = (ts) => (typeof ts !== "number" ? "age unknown" : ts > nowSecs ? "ahead of this browser's clock" : `${span(nowSecs - ts)} ago`);
+    const bindKey = (b) => {
+      const label = regLabel(labels, b.name);
+      return label ? "0" + label : "1" + regLow(b.name);
+    };
     section(
       `Config bindings — ${n.bindings.length}`,
-      n.bindings,
+      n.bindings.slice().sort((a, b) => bindKey(a).localeCompare(bindKey(b))),
       "Nothing is bound in the ConfigRegistry.",
       (b) => {
-        const row = el("div", "own-row");
+        const row = el("div", "own-row reg-binding");
         const ac = el("div", "bcn-detail");
         ac.append(line("authority", whoNode(String(b.authority), chain, pins)), line("value", valueNode(b.value)));
         if (typeof b.sender === "string" && b.sender.toLowerCase() !== String(b.authority).toLowerCase()) {
           ac.append(line("bound by", whoNode(b.sender, chain, pins)));
         }
         const tail = el("div", "own-prov");
-        tail.append(el("span", "own-note", utc(b.boundAtTimestamp)));
+        tail.append(
+          el("span", "own-note reg-age", age(b.boundAtTimestamp)),
+          el("span", "own-note", `block ${b.boundAtBlock ?? "?"} · ${utc(b.boundAtTimestamp)}`),
+        );
         if (typeof b.registerCount === "number" && b.registerCount > 1) {
           tail.append(el("span", "own-note", `${b.registerCount} writes`));
         }
@@ -2935,32 +3024,48 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
-    section(
-      `Migration records — ${n.records.length}, newest first`,
-      n.records,
-      "No migration has been recorded in the MigrationRegistry.",
-      (m) => {
-        const l = m.line || {};
-        const row = el("div", "own-row");
+    slot.append(el("div", "own-grouphead", `Migration lines — ${n.lines.length}`));
+    if (n.lines.length === 0) slot.append(el("div", "rbac-empty", "No migration has been recorded in the MigrationRegistry."));
+    const word = (v) => el("span", "own-note", regLabel(labels, v) || String(v));
+    for (const l of n.lines) {
+      const head = el("div", "bcn-detail reg-line");
+      const chip = el(
+        "span",
+        `own-chip own-chip-${l.chain === "intact" ? "yes" : "no"}`,
+        `${l.records.length} record${l.records.length === 1 ? "" : "s"}, chain ${l.chain}`,
+      );
+      head.append(
+        line("namespace", word(l.namespace)),
+        line("writer", whoNode(String(l.writer), chain, pins)),
+        line("head", word(l.head), chip),
+      );
+      if (l.chain === "unchecked") head.append(el("div", "own-note rbac-ideal-gap", "The scan carries no migration genesis to check the first record against."));
+      for (const p of l.problems) head.append(el("div", "own-note rbac-ideal-off reg-problem", p));
+      slot.append(head);
+      const table = el("div", "own-table");
+      for (const m of l.records) {
+        const row = el("div", m.problems.length ? "own-row reg-record rbac-off" : "own-row reg-record");
         const ac = el("div", "bcn-detail");
-        ac.append(
-          line("namespace", el("span", "own-note", regLabel(labels, l.namespace) || String(l.namespace))),
-          line("writer", whoNode(String(l.writer), chain, pins)),
-        );
+        ac.append(line("applied onto", word(m.appliedOnto)));
+        for (const p of m.problems) ac.append(el("div", "rbac-unknown reg-problem", p));
         if (typeof m.sender === "string" && m.sender.toLowerCase() !== String(l.writer).toLowerCase()) {
           ac.append(line("recorded by", whoNode(m.sender, chain, pins)));
         }
         const tail = el("div", "own-prov");
-        if (typeof m.index === "number") tail.append(el("span", "own-note", `#${m.index}`));
-        tail.append(el("span", "own-note", `applied ${utc(m.appliedAt)}`), txNode(m.transactionHash, chain));
+        tail.append(
+          el("span", "own-note reg-index", `#${m.index ?? "?"}`),
+          el("span", "own-note", `applied ${utc(m.appliedAt)}`),
+          txNode(m.transactionHash, chain),
+        );
         row.append(scopeNode(m.migration), ac, tail);
-        return row;
-      },
-    );
+        table.append(row);
+      }
+      if (l.records.length) slot.append(table);
+    }
   };
   // Builds the Root registry tab and starts one live read per network.
   // Returns a promise that settles once every network has rendered.
-  const renderRegistry = (r) => {
+  const renderRegistry = (r, migrations) => {
     sink.append(el("h2", null, "Root registry — delegations and config changes, per network"));
     const off = (why) => {
       sink.append(el("div", "rbac-empty", `Registry history unavailable — ${why}.`));
@@ -2973,7 +3078,7 @@ function renderDeployments(document, $, data, io) {
     sub.append(link("", `${r.org}/${r.repo}`, `https://github.com/${r.org}/${r.repo}/tree/main/subgraph`));
     sub.append(
       `'s subgraph as this page loads, at its "${r.tag}" tag: every delegate approval in the ConfigRegistry and ` +
-        "MigrationRegistry, every config binding and the writes behind it, and every migration record. Names, " +
+        "MigrationRegistry, every config binding and the writes behind it, and every migration line, checked record by record. Names, " +
         "scopes and migrations are labelled where the deploy repo spells out the hash's preimage, and shown as the raw hash otherwise.",
     );
     sink.append(sub);
@@ -2986,6 +3091,9 @@ function renderDeployments(document, $, data, io) {
         if (typeof v === "string" && !Object.prototype.hasOwnProperty.call(labels, k.toLowerCase())) labels[k.toLowerCase()] = v;
       }
     }
+    const g = migrations && typeof migrations === "object" ? migrations.genesis : null;
+    const genesis = typeof g === "string" && /^0x[0-9a-fA-F]{64}$/.test(g) ? g.toLowerCase() : null;
+    if (genesis !== null) labels[genesis] = "genesis";
     const pinTable = r.addressNames && typeof r.addressNames === "object" ? r.addressNames : null;
     const reads = [];
     for (const n of nets) {
@@ -3004,7 +3112,7 @@ function renderDeployments(document, $, data, io) {
         continue;
       }
       regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
-      reads.push(regRead(endpoint).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)));
+      reads.push(regRead(endpoint, genesis).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)));
     }
     return Promise.all(reads);
   };
@@ -3182,7 +3290,7 @@ function renderDeployments(document, $, data, io) {
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
     sink = panels.registry;
-    const registryDone = renderRegistry(data.deploymentRbac);
+    const registryDone = renderRegistry(data.deploymentRbac, data.deploymentMigrations);
     show(hashTab() || TABS[0][0]);
     return Promise.all([rbacDone, registryDone]);
   }
@@ -3260,7 +3368,7 @@ function renderDeployments(document, $, data, io) {
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
   sink = panels.registry;
-  const registryDone = renderRegistry(data.deploymentRbac);
+  const registryDone = renderRegistry(data.deploymentRbac, data.deploymentMigrations);
   show(hashTab() || TABS[0][0]);
   return Promise.all([rbacDone, registryDone]);
 }
