@@ -13945,3 +13945,37 @@ Deno.test("deployments: a predecessor still pending before the delay ends keeps 
   assert(w.includes("delay ends") && !w.includes("executable at"), w);
   assert(w.includes("is not in the index"), w);
 });
+
+// issue-pr-cron publishes the pipeline's data to its `dashboard-data` branch:
+// its `main` is ruleset-protected, and while the cron committed snapshots there
+// every push was rejected and these pages rendered a month-old snapshot. Every
+// raw fetch of that repo and every link to one of its data files must name the
+// data branch, so no page can quietly keep reading the frozen copy on main.
+Deno.test("issue-pr-cron data is read from its dashboard-data branch", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const DATA = /^(human-queue\.json|human-queue-history\.jsonl|landed-history\.jsonl|metrics\/runs\.jsonl|fsm-touches\.jsonl)$/;
+  const URLS =
+    /https:\/\/(?:raw\.githubusercontent\.com\/rainlanguage\/issue-pr-cron\/([^/"'`]+)|github\.com\/rainlanguage\/issue-pr-cron\/blob\/([^/"'`]+))\/([^"'`\s)]+)/g;
+  const offenders = [];
+  const fetched = new Set();
+  for (const entry of Deno.readDirSync(dir)) {
+    if (!entry.isFile || !entry.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    for (const m of src.matchAll(URLS)) {
+      const [url, rawRef, blobRef, path] = m;
+      if (rawRef !== undefined) {
+        fetched.add(path);
+        if (rawRef !== "dashboard-data") offenders.push(`${entry.name}: ${url}`);
+      } else if (DATA.test(path) && blobRef !== "dashboard-data") {
+        offenders.push(`${entry.name}: ${url}`);
+      }
+    }
+  }
+  assert(
+    offenders.length === 0,
+    "issue-pr-cron data must come from dashboard-data:\n" + offenders.join("\n"),
+  );
+  for (const p of ["human-queue.json", "human-queue-history.jsonl", "metrics/runs.jsonl"]) {
+    assert(fetched.has(p), `no page fetches ${p} any more: ${[...fetched]}`);
+  }
+});
