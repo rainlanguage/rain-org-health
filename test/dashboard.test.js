@@ -13985,7 +13985,7 @@ const REG_NAME = "0x" + "c1".repeat(32);
 const regWord = (n) => "0x" + n.repeat(64 / n.length);
 const REG_M = [regWord("e1"), regWord("e2"), regWord("e3")];
 const REG_LINE = "0x" + "11".repeat(72);
-const REG_LINE_B = "0x" + "22".repeat(72);
+const REG_LINE_B = "0x" + "00".repeat(72);
 const REG_NS_B = regWord("ee");
 const regRecord = (id, line, index, migration, appliedOnto, over = {}) => ({
   id,
@@ -14299,6 +14299,8 @@ Deno.test("root registry: without the scan's genesis the first record is uncheck
   assert(textOf(lines[0]).includes("no migration genesis"), textOf(lines[0]));
   assert(collect(p, "reg-problem").length === 0, "nothing called broken");
   assert(!textOf(regRecs(p)[0]).includes("genesis"), "genesis not labelled without the scan's");
+  const malformed = await regPanel(regFake(), { registryNames: REG_NAMES }, { genesis: "0x1234" });
+  assert(textOf(regLines(malformed)[0]).includes("chain unchecked"), "a genesis that is not a word is no genesis: " + textOf(regLines(malformed)[0]));
   const f = regFake();
   f.rows.migrationRecords.find((r) => r.id === "0xra").appliedOnto = regWord("77");
   const q = await regPanel(f, { registryNames: REG_NAMES }, { genesis: "0x1234" });
