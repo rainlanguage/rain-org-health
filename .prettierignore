@@ -7,3 +7,6 @@ test/
 # Formatting them would rewrite ~1.9MB of minified code we do not own, make the
 # diff unreviewable, and desync the file from the version it claims to be.
 site/vendor/
+# The org-wide merge-brief PR template, shipped verbatim across repos. Prettier
+# reflows its inline field comments onto separate lines and breaks the layout.
+.github/pull_request_template.md
