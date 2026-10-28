@@ -13945,3 +13945,30 @@ Deno.test("deployments: a predecessor still pending before the delay ends keeps 
   assert(w.includes("delay ends") && !w.includes("executable at"), w);
   assert(w.includes("is not in the index"), w);
 });
+
+// issue-pr-cron publishes its data files only to its `dashboard-data` branch.
+Deno.test("issue-pr-cron data is read from its dashboard-data branch", () => {
+  const dir = new URL("../site/", import.meta.url);
+  const DATA = /^(human-queue\.json|human-queue-history\.jsonl|landed-history\.jsonl|metrics\/runs\.jsonl|fsm-touches\.jsonl)$/;
+  const URLS =
+    /https:\/\/(?:raw\.githubusercontent\.com\/rainlanguage\/issue-pr-cron\/([^/"'`]+)|github\.com\/rainlanguage\/issue-pr-cron\/blob\/([^/"'`]+))\/([^"'`\s)]+)/g;
+  const offenders = [];
+  const fetched = new Set();
+  for (const entry of Deno.readDirSync(dir)) {
+    if (!entry.isFile || !entry.name.endsWith(".html")) continue;
+    const src = Deno.readTextFileSync(new URL(entry.name, dir));
+    for (const m of src.matchAll(URLS)) {
+      const [url, rawRef, blobRef, path] = m;
+      if (!DATA.test(path)) continue;
+      if (rawRef !== undefined) fetched.add(path);
+      if ((rawRef ?? blobRef) !== "dashboard-data") offenders.push(`${entry.name}: ${url}`);
+    }
+  }
+  assert(
+    offenders.length === 0,
+    "issue-pr-cron data must come from dashboard-data:\n" + offenders.join("\n"),
+  );
+  for (const p of ["human-queue.json", "human-queue-history.jsonl", "metrics/runs.jsonl"]) {
+    assert(fetched.has(p), `no page fetches ${p} any more: ${[...fetched]}`);
+  }
+});

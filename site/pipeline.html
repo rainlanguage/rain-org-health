@@ -1630,8 +1630,8 @@ function sevenDaySlope(series, nowMs) {
 // consumer, not a producer, of data; new data ⇒ new fetch, not new baking). The history
 // rollup (per-state inventory over time) is a second artifact fetched the same way; if it is
 // missing/older the panel simply renders no sparklines and no trend borders.
-const HQ_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue.json";
-const HIST_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue-history.jsonl";
+const HQ_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/dashboard-data/human-queue.json";
+const HIST_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/dashboard-data/human-queue-history.jsonl";
 $("meta").textContent = "pipeline conformance · issue-pr-cron";
 Promise.all([
   fetch(HQ_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),

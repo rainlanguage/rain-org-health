@@ -307,7 +307,7 @@ $("meta").textContent = "producer run metrics · issue-pr-cron";
 // Data is issue-pr-cron's public metrics/runs.jsonl (one JSON object per run),
 // fetched cross-origin from raw. Startup overhead = share of a run's tool calls
 // spent recovering state before the first GitHub mutation; lower is better.
-const PM_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/metrics/runs.jsonl";
+const PM_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/dashboard-data/metrics/runs.jsonl";
 const MON = ["Jan","Feb","Mar","Apr","May","Jun","Jul","Aug","Sep","Oct","Nov","Dec"];
 
 // The chart reads startup two ways: "pct" = proportion of a run's tool calls
@@ -1019,7 +1019,7 @@ function renderPmNote(last, skips = [], runs = []) {
     );
   }
   const src = tag("a", "runs.jsonl");
-  src.href = "https://github.com/rainlanguage/issue-pr-cron/blob/main/metrics/runs.jsonl";
+  src.href = "https://github.com/rainlanguage/issue-pr-cron/blob/dashboard-data/metrics/runs.jsonl";
   src.rel = "noopener";
   src.target = "_blank";
   nodes.push("Source: ", src, ".");
