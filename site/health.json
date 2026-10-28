@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-28T02:21:16Z",
+  "generatedAt": "2026-10-28T09:47:35Z",
   "auditGraph": {
     "nodes": [
       {
@@ -127,13 +127,7 @@
           "rain.factory",
           "rain.metadata"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.25",
-            "latest": "0.1.26"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.factory.deploy",
@@ -156,13 +150,7 @@
           "rain.factory",
           "rain.metadata"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.25",
-            "latest": "0.1.26"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.flare",
@@ -437,13 +425,7 @@
           "rain.metadata",
           "rain.tofu.erc20-decimals"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.25",
-            "latest": "0.1.26"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.vats",
@@ -1140,8 +1122,8 @@
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.25",
+        "stale": false,
+        "pinned": "0.1.26",
         "latest": "0.1.26"
       },
       {
@@ -1161,8 +1143,8 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.25",
+        "stale": false,
+        "pinned": "0.1.26",
         "latest": "0.1.26"
       },
       {
@@ -1385,8 +1367,8 @@
       {
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.25",
+        "stale": false,
+        "pinned": "0.1.26",
         "latest": "0.1.26"
       },
       {
@@ -4014,7 +3996,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53182389
+        "discoveredAtBlock": 53195777
       },
       {
         "network": "ethereum",
@@ -4519,6 +4501,14 @@
             "onChain": true
           },
           {
+            "vault": "0xaab11f0141c2aa6b9a3845efdb1a6d16dc40924a",
+            "owner": "0x827e0c61917086c464b6844411636c377fcc5da3",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
             "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
@@ -4546,16 +4536,16 @@
         "counts": {
           "safe": 0,
           "timelock": 65,
-          "other": 0,
+          "other": 1,
           "unknown": 0,
           "unpinned": 0,
           "certificationExpired": 4,
           "certificationUnknown": 0,
-          "notPinned": 9,
+          "notPinned": 10,
           "notOnChain": 0
         },
-        "discoveredCount": 65,
-        "discoveredAtBlock": 26288204
+        "discoveredCount": 66,
+        "discoveredAtBlock": 26290431
       },
       {
         "network": "bsc",
@@ -5424,7 +5414,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 130200508
+        "discoveredAtBlock": 130260077
       },
       {
         "network": "hyperevm",
@@ -5965,7 +5955,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 49712380
+        "discoveredAtBlock": 49739642
       },
       {
         "network": "robinhood",
@@ -6506,7 +6496,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 99724543
+        "discoveredAtBlock": 99982140
       }
     ]
   },
@@ -17785,7 +17775,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 514,
+      "fullSourceLoc": 560,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -18017,7 +18007,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 570,
+      "fullSourceLoc": 616,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
