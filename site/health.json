@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-28T09:47:35Z",
+  "generatedAt": "2026-10-28T16:42:04Z",
   "auditGraph": {
     "nodes": [
       {
@@ -253,7 +253,6 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
-          "rain.factory",
           "rain.math.float",
           "rain.metadata"
         ],
@@ -323,7 +322,6 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
-          "rain.factory",
           "rain.metadata"
         ],
         "staleDeps": [
@@ -779,7 +777,6 @@
           "scope": "PR #339 release 0.1.20: src/generated/0_1_20/ConfigRegistry.sol, MigrationRegistry.sol, TimelockController.sol; LibConfigRegistryReleased and LibMigrationRegistryReleased 0_1_20 entries; foundry.toml version; LibConfigRegistryApprove.checkApprovalOnNetworks input checks; offline, no RPC"
         },
         "blockedBy": [
-          "rain.factory",
           "rain.metadata"
         ],
         "staleDeps": []
@@ -978,13 +975,6 @@
         "stale": false,
         "pinned": "0.1.28",
         "latest": "0.1.28"
-      },
-      {
-        "from": "rain.deploy",
-        "to": "rain.factory",
-        "stale": false,
-        "pinned": "0.2.5",
-        "latest": "0.2.5"
       },
       {
         "from": "rain.deploy",
@@ -3996,7 +3986,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53195777
+        "discoveredAtBlock": 53208216
       },
       {
         "network": "ethereum",
@@ -4545,7 +4535,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26290431
+        "discoveredAtBlock": 26292504
       },
       {
         "network": "bsc",
@@ -5414,7 +5404,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 130260077
+        "discoveredAtBlock": 130315351
       },
       {
         "network": "hyperevm",
@@ -5955,7 +5945,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 49739642
+        "discoveredAtBlock": 49764943
       },
       {
         "network": "robinhood",
@@ -6496,7 +6486,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 99982140
+        "discoveredAtBlock": 100221022
       }
     ]
   },
@@ -15053,7 +15043,7 @@
       "function": "privileged-addresses.json (base receiptVaults)",
       "error": null,
       "governedCount": 56,
-      "registryTokenCount": 51,
+      "registryTokenCount": 54,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
@@ -15106,7 +15096,32 @@
           "atAuthoriserTarget": true
         }
       ],
-      "missingFromMigration": []
+      "missingFromMigration": [
+        {
+          "symbol": "wtIFX",
+          "name": "Wrapped Infineon Technologies AG ST0x",
+          "address": "0x339ad5e0d1Cc8B014eB6aCacbE8991214C5A9325",
+          "receiptVault": "0x90687ba21da53189047cd168a66ecc76282bf800",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtSOI",
+          "name": "Wrapped Soitec SA ST0x",
+          "address": "0xD50020eCA7CAAC05Ba7E7571C7B498781ca98d47",
+          "receiptVault": "0x6540478507ab063b03a704ac2c8e9118f1760848",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        },
+        {
+          "symbol": "wtTPRO",
+          "name": "Wrapped Technoprobe S.p.A. ST0x",
+          "address": "0x5ED9f297f10e2b72950F5abc2c2B770ee831805b",
+          "receiptVault": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
+          "wrapped": true,
+          "reason": "receipt vault not in migration set"
+        }
+      ]
     },
     "tokens": [
       {
@@ -18628,8 +18643,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 103,
-      "commitsSinceAudit": 630,
+      "filesChangedSinceAudit": 99,
+      "commitsSinceAudit": 940,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18671,7 +18686,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 90,
-      "commitsSinceAudit": 435,
+      "commitsSinceAudit": 441,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -19333,7 +19348,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 9,
-      "testFiles": 242,
+      "testFiles": 194,
       "sourcesUnparsed": 1,
       "untested": []
     },
