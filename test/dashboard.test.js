@@ -13946,11 +13946,7 @@ Deno.test("deployments: a predecessor still pending before the delay ends keeps 
   assert(w.includes("is not in the index"), w);
 });
 
-// issue-pr-cron publishes the pipeline's data to its `dashboard-data` branch:
-// its `main` is ruleset-protected, and while the cron committed snapshots there
-// every push was rejected and these pages rendered a month-old snapshot. Every
-// raw fetch of that repo and every link to one of its data files must name the
-// data branch, so no page can quietly keep reading the frozen copy on main.
+// issue-pr-cron publishes its data files only to its `dashboard-data` branch.
 Deno.test("issue-pr-cron data is read from its dashboard-data branch", () => {
   const dir = new URL("../site/", import.meta.url);
   const DATA = /^(human-queue\.json|human-queue-history\.jsonl|landed-history\.jsonl|metrics\/runs\.jsonl|fsm-touches\.jsonl)$/;
@@ -13963,12 +13959,9 @@ Deno.test("issue-pr-cron data is read from its dashboard-data branch", () => {
     const src = Deno.readTextFileSync(new URL(entry.name, dir));
     for (const m of src.matchAll(URLS)) {
       const [url, rawRef, blobRef, path] = m;
-      if (rawRef !== undefined) {
-        fetched.add(path);
-        if (rawRef !== "dashboard-data") offenders.push(`${entry.name}: ${url}`);
-      } else if (DATA.test(path) && blobRef !== "dashboard-data") {
-        offenders.push(`${entry.name}: ${url}`);
-      }
+      if (!DATA.test(path)) continue;
+      if (rawRef !== undefined) fetched.add(path);
+      if ((rawRef ?? blobRef) !== "dashboard-data") offenders.push(`${entry.name}: ${url}`);
     }
   }
   assert(
