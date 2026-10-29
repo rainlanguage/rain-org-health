@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-29T01:51:24Z",
+  "generatedAt": "2026-10-29T08:35:03Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4004,7 +4004,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53224699
+        "discoveredAtBlock": 53236800
       },
       {
         "network": "ethereum",
@@ -4553,7 +4553,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26295233
+        "discoveredAtBlock": 26297239
       },
       {
         "network": "bsc",
@@ -5422,7 +5422,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 130388518
+        "discoveredAtBlock": 130442288
       },
       {
         "network": "hyperevm",
@@ -5963,7 +5963,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 49798411
+        "discoveredAtBlock": 49823047
       },
       {
         "network": "robinhood",
@@ -6504,7 +6504,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 100538378
+        "discoveredAtBlock": 100769358
       }
     ]
   },
@@ -16477,10 +16477,10 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 105,
+  "totalRepos": 106,
   "reposWithFindings": 35,
   "reposWholeRepoAudited": 11,
-  "reposNeverAudited": 94,
+  "reposNeverAudited": 95,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 20,
   "summary": {
@@ -17394,6 +17394,13 @@
     {
       "name": "router",
       "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "s01.claims",
+      "org": "S01-Issuer",
       "lastAudit": null,
       "openAuditIssues": 0,
       "lastMutation": null
