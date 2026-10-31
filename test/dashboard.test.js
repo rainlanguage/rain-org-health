@@ -11740,6 +11740,7 @@ function fakeSubgraph(over = {}) {
         t5: null,
         t6: null,
         t7: null,
+        t8: null,
       },
     },
     // entity name -> a raw response body to answer with instead of rows.
@@ -14130,6 +14131,7 @@ const REG_TYPES = [
   "RegistryDelegateChange",
   "RegistryUnscopedDelegate",
   "RegistryUnscopedDelegateChange",
+  "RegistryMeta",
 ];
 const regProbe = (names) => ({
   data: Object.fromEntries(
@@ -14419,33 +14421,66 @@ Deno.test("root registry: an index that does not read the registries says so and
   assert(reads.length === 0, "no registry entity read: " + reads.join(" | "));
 });
 
-Deno.test("root registry: a schema with only some registry entities, or a non-type answer, is an error", async () => {
-  const p = await regPanel(
-    regFake({ registrySchema: regProbe(["ConfigBinding", "MigrationRecord"]) }),
-  );
-  assert(!textOf(p).includes("does not read the registries"), "not absent");
+Deno.test("root registry: an index lacking some V5 registry types says it predates them, names them, and reads nothing", async () => {
+  const lacking = async (names) => {
+    const f = regFake({ registrySchema: regProbe(names) });
+    const p = await regPanel(f);
+    const t = textOf(p);
+    assert(!t.includes("Index error"), "not an error: " + t);
+    assert(!t.includes("does not read the registries"), "not absent: " + t);
+    assert(
+      collect(collect(p, "rbac-net")[0], "own-verify-ok").length === 1,
+      "the normal index banner: " + regErr(p),
+    );
+    assert(!t.includes("Delegations in force"), "nothing shown: " + t);
+    const reads = regQueries(f).filter((q) =>
+      /page: (registry|config|migration)/.test(q)
+    );
+    assert(
+      reads.length === 0,
+      "no registry entity read: " + reads.join(" | "),
+    );
+    return t;
+  };
+  const some = await lacking(["ConfigBinding", "MigrationRecord"]);
   assert(
-    regErr(p).includes(
-      "the schema has ConfigBinding, MigrationRecord but not ConfigRegister, MigrationLine, RegistryDelegate, RegistryDelegateChange, RegistryUnscopedDelegate, RegistryUnscopedDelegateChange",
+    some.includes(
+      "This version of the index predates the V5 registries (lacks ConfigRegister, MigrationLine, RegistryDelegate, RegistryDelegateChange, RegistryUnscopedDelegate, RegistryUnscopedDelegateChange, RegistryMeta); nothing is shown for them.",
     ),
-    regErr(p),
+    some,
   );
-  assert(!textOf(p).includes("Delegations in force"), "nothing shown");
-  const missingLast = regProbe(REG_TYPES.slice(0, -1));
-  const q = await regPanel(regFake({ registrySchema: missingLast }));
+  const last = await lacking(REG_TYPES.slice(0, -1));
+  assert(last.includes("(lacks RegistryMeta);"), last);
+  // The prod st0x-rbac schema before the V5 subgraph is deployed.
+  const live = await lacking(
+    REG_TYPES.filter((t) =>
+      ![
+        "RegistryUnscopedDelegate",
+        "RegistryUnscopedDelegateChange",
+        "RegistryMeta",
+      ].includes(t)
+    ),
+  );
   assert(
-    regErr(q).includes("but not RegistryUnscopedDelegateChange"),
-    regErr(q),
+    live.includes(
+      "(lacks RegistryUnscopedDelegate, RegistryUnscopedDelegateChange, RegistryMeta);",
+    ),
+    live,
   );
+});
+
+Deno.test("root registry: a schema probe answered with a non-type, or not answered, is an index error", async () => {
   const bad = regProbe([]);
   bad.data.t0 = { name: "Nope" };
   const r = await regPanel(regFake({ registrySchema: bad }));
   assert(regErr(r).includes("is not a type"), regErr(r));
+  assert(!textOf(r).includes("predates the V5 registries"), textOf(r));
   const s = await regPanel(regFake({ registrySchema: null }));
   assert(
     regErr(s).includes("no readable answer to the schema probe"),
     regErr(s),
   );
+  assert(!textOf(s).includes("predates the V5 registries"), textOf(s));
 });
 
 Deno.test("root registry: only approvals in force are listed as delegations, a scope labelled by its verified preimage", async () => {
