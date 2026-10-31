@@ -14579,8 +14579,108 @@ Deno.test("root registry: delegation changes are newest first with approve and r
   const rows = collect(regGroup(p, "Delegation changes"), "own-row");
   const chips = rows.map((r) => collect(r, "own-chip")[0].textContent);
   assert(chips.join(",") === "approved,revoked,approved", chips.join(","));
+  const kinds = rows.map((r) => collect(r, "own-chip")[0].className);
+  assert(
+    kinds.join() ===
+      [
+        "own-chip own-chip-yes",
+        "own-chip own-chip-no",
+        "own-chip own-chip-yes",
+      ].join(),
+    kinds.join(),
+  );
   assert(textOf(rows[0]).includes("MigrationRegistry"), "block 20 first");
   assert(textOf(rows[2]).includes("ConfigRegistry"), "block 10 last");
+});
+
+Deno.test("root registry: every delegation and config change shows when it happened and links its transaction", async () => {
+  const f = regFake();
+  f.rows.registryDelegateChanges[1].blockTimestamp = String(RBAC_TS - 86400);
+  f.rows.configRegisters[0].blockTimestamp = String(RBAC_TS - 2 * 86400);
+  const p = await regPanel(f);
+  for (
+    const [group, want] of [
+      ["Delegation changes", [
+        ["0xtxc3", "2026-10-13 09:13 UTC"],
+        ["0xtxc2", "2026-10-12 09:29 UTC"],
+        ["0xtxc1", "2026-10-13 09:13 UTC"],
+      ]],
+      ["Config changes", [
+        ["0xtxr2", "2026-10-13 09:13 UTC"],
+        ["0xtxr1", "2026-10-11 09:29 UTC"],
+      ]],
+    ]
+  ) {
+    const rows = collect(regGroup(p, group), "own-row");
+    assert(rows.length === want.length, group + ": " + rows.length);
+    rows.forEach((r, i) => {
+      const [tx, at] = want[i];
+      assert(textOf(r).includes(at), group + " " + i + ": " + textOf(r));
+      const hrefs = tags(r, "a").map((a) => a.href);
+      assert(
+        hrefs.includes("https://basescan.org/tx/" + tx),
+        group + " " + i + ": " + hrefs.join(),
+      );
+    });
+  }
+});
+
+Deno.test("root registry: a delegation change names who sent it only when that is not the approver, whatever the case", async () => {
+  const f = regFake();
+  f.rows.registryDelegateChanges[0].transactionFrom = REG_ROOT_CHECKSUM;
+  f.rows.registryDelegateChanges[1].transactionFrom = REG_STRANGER;
+  const p = await regPanel(f);
+  const rows = collect(regGroup(p, "Delegation changes"), "own-row");
+  const sentBy = rows.map((r) =>
+    collect(r, "bcn-line").filter((x) =>
+      collect(x, "bcn-key")[0].textContent === "sent by"
+    ).map(textOf).join()
+  );
+  assert(sentBy.length === 3, sentBy.join(" | "));
+  assert(sentBy[0] === "" && sentBy[2] === "", sentBy.join(" | "));
+  assert(sentBy[1].includes(REG_STRANGER), sentBy.join(" | "));
+});
+
+Deno.test("root registry: a delegation in force shows when it was approved, if the index says", async () => {
+  const at = async (ts) => {
+    const f = regFake();
+    f.rows.registryDelegates[0].approvedAtTimestamp = ts;
+    const p = await regPanel(f);
+    return textOf(
+      collect(regGroup(p, "Delegations in force"), "reg-delegate")[0],
+    );
+  };
+  const known = await at(String(RBAC_TS - 100));
+  assert(known.includes("2026-10-13 09:28 UTC"), known);
+  const unknown = await at(null);
+  assert(
+    !unknown.includes("UTC") && !unknown.includes("time unknown"),
+    unknown,
+  );
+});
+
+Deno.test("root registry: a delegate is recognised as the index's Safe whatever the hex case of either address", async () => {
+  const upper = (a) => "0x" + a.slice(2).toUpperCase();
+  for (
+    const [why, contract, delegate] of [
+      ["the index's Safe in upper case", upper(REG_SAFE), REG_SAFE],
+      ["the delegate in upper case", REG_SAFE, upper(REG_SAFE)],
+    ]
+  ) {
+    const f = regFake();
+    f.rows.contracts[0] = { ...f.rows.contracts[0], id: contract };
+    f.rows.registryDelegates[0].delegate = delegate;
+    const p = await regPanel(f);
+    const row =
+      collect(regGroup(p, "Delegations in force"), "reg-delegate")[0];
+    assert(collect(row, "reg-stray").length === 0, why + ": " + textOf(row));
+    assert(
+      collect(row, "own-chip").map((c) => c.textContent).includes(
+        "token-owner Safe",
+      ),
+      why + ": " + textOf(row),
+    );
+  }
 });
 
 Deno.test("root registry: changes in one block are newest first by log index", async () => {
@@ -15453,6 +15553,23 @@ Deno.test("root registry: only the V5 registries are named; any other kind reads
         "registry (MIGRATION_REGISTRY)",
         "ConfigRegistry V5",
       ].join(),
+    kinds.join(),
+  );
+});
+
+Deno.test("root registry: a delegate in a registry of neither V5 kind is listed whichever registries are declared", async () => {
+  const f = regFake();
+  f.rows.registryDelegates.push({
+    ...f.rows.registryDelegates[0],
+    id: "d8",
+    registry: { id: "0x" + "c4".repeat(20), kind: "VAULT_REGISTRY" },
+  });
+  const p = await regPanel(f);
+  const kinds = collect(regGroup(p, "Delegations in force"), "bcn-line")
+    .filter((l) => collect(l, "bcn-key")[0].textContent === "in")
+    .map((l) => collect(l, "own-note")[0].textContent);
+  assert(
+    kinds.join() === ["MigrationRegistry V5", "registry (VAULT_REGISTRY)"].join(),
     kinds.join(),
   );
 });
