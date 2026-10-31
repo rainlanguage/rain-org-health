@@ -6587,8 +6587,18 @@ function orchestratorGrants() {
     pinnedCount: 4,
     declaredCount: 4,
     chains: [
-      chain("base", BASE_SAFE, "0x48ba1371A78E6cC54157c63721756ab444510DB3", "granted"),
-      chain("ethereum", ETH_SAFE, "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B", "missing"),
+      chain(
+        "base",
+        BASE_SAFE,
+        "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+        "granted",
+      ),
+      chain(
+        "ethereum",
+        ETH_SAFE,
+        "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        "missing",
+      ),
     ],
     grantees: [
       {
@@ -6600,8 +6610,18 @@ function orchestratorGrants() {
           roleId: "0x" + "0".repeat(64),
           admin: true,
           chains: [
-            { network: "base", address: "0x48ba1371A78E6cC54157c63721756ab444510DB3", status: "granted", safeHolds: false },
-            { network: "ethereum", address: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B", status: "granted", safeHolds: false },
+            {
+              network: "base",
+              address: "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+              status: "granted",
+              safeHolds: false,
+            },
+            {
+              network: "ethereum",
+              address: "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+              status: "granted",
+              safeHolds: false,
+            },
           ],
         }],
       },
@@ -6614,8 +6634,18 @@ function orchestratorGrants() {
           roleId: "0x" + "e".repeat(64),
           admin: false,
           chains: [
-            { network: "base", address: BASE_SAFE, status: "granted", safeHolds: null },
-            { network: "ethereum", address: ETH_SAFE, status: "missing", safeHolds: null },
+            {
+              network: "base",
+              address: BASE_SAFE,
+              status: "granted",
+              safeHolds: null,
+            },
+            {
+              network: "ethereum",
+              address: ETH_SAFE,
+              status: "missing",
+              safeHolds: null,
+            },
           ],
         }],
       },
@@ -6630,54 +6660,88 @@ Deno.test("deployments: the orchestrator's grants render beside the authoriser's
   const heads = tags(box, "h2").map((h) => h.textContent);
   const auth = heads.findIndex((h) => h.startsWith("Authoriser role grants"));
   const orch = heads.findIndex((h) => h.startsWith("Orchestrator role grants"));
-  assert(auth >= 0 && orch === auth + 1, "orchestrator section follows the authoriser's: " + heads.join(" | "));
-  const banners = collect(box, "own-verify").map(textOf);
-  const orchBanners = banners.filter((t) => t.includes(`orchestrator ${ORCH_INSTANCE}`));
-  assert(orchBanners.length === 2, "one banner per chain names the instance: " + banners.join(" | "));
   assert(
-    orchBanners.some((t) => t.startsWith("ethereum — 3 of 4 expectations met; 1 expectation not met")),
-    "ethereum's missing EMERGENCY holder is counted: " + orchBanners.join(" | "),
+    auth >= 0 && orch === auth + 1,
+    "orchestrator section follows the authoriser's: " + heads.join(" | "),
+  );
+  const banners = collect(box, "own-verify").map(textOf);
+  const orchBanners = banners.filter((t) =>
+    t.includes(`orchestrator ${ORCH_INSTANCE}`)
+  );
+  assert(
+    orchBanners.length === 2,
+    "one banner per chain names the instance: " + banners.join(" | "),
+  );
+  assert(
+    orchBanners.some((t) =>
+      t.startsWith("ethereum — 3 of 4 expectations met; 1 expectation not met")
+    ),
+    "ethereum's missing EMERGENCY holder is counted: " +
+      orchBanners.join(" | "),
   );
   const viol = collect(box, "viol").map(textOf);
   assert(
-    viol.some((t) => t.includes("chainSafe") && t.includes(ETH_SAFE) && t.includes("EMERGENCY")),
-    "the violated expectation names the holder, its address and the role: " + viol.join(" | "),
+    viol.some((t) =>
+      t.includes("chainSafe") && t.includes(ETH_SAFE) && t.includes("EMERGENCY")
+    ),
+    "the violated expectation names the holder, its address and the role: " +
+      viol.join(" | "),
   );
   const links = tags(box, "a").map((a) => a.textContent);
   assert(
-    links.includes("LibOrchestratorInvariants.expectedGrants(address,address)") &&
+    links.includes(
+      "LibOrchestratorInvariants.expectedGrants(address,address)",
+    ) &&
       links.includes("LibAuthoriserInvariants.expectedGrants(address)"),
-    "each map is linked by its own library: " + links.filter((l) => l.includes("expectedGrants")).join(" | "),
+    "each map is linked by its own library: " +
+      links.filter((l) => l.includes("expectedGrants")).join(" | "),
   );
   const sections = grantSections(box);
   assert(
     sections.includes("Admin role — who can grant and revoke") &&
       sections.includes("Action roles — who can mint, burn and recover"),
-    "the orchestrator's sections carry its own headings: " + sections.join(" | "),
+    "the orchestrator's sections carry its own headings: " +
+      sections.join(" | "),
   );
 });
 
 Deno.test("deployments: an orchestrator chain with no instance pinned says so, not 'authoriser'", () => {
   const d = grantsData();
   const o = orchestratorGrants();
-  o.chains[1] = { ...o.chains[1], target: null, granted: 0, missing: 0, unknown: 2, total: 2, state: "unknown" };
+  o.chains[1] = {
+    ...o.chains[1],
+    target: null,
+    granted: 0,
+    missing: 0,
+    unknown: 2,
+    total: 2,
+    state: "unknown",
+  };
   d.deploymentOrchestratorGrants = o;
   const box = deploymentsBox(d);
   const down = collect(box, "own-verify-down").map(textOf);
   assert(
-    down.length === 1 && down[0].includes("no orchestrator pinned for this chain yet"),
+    down.length === 1 &&
+      down[0].includes("no orchestrator pinned for this chain yet"),
     "the unread orchestrator chain names the missing pin: " + down.join(" | "),
   );
 });
 
 Deno.test("deployments: with no orchestrator grant data its section is absent", () => {
-  const box = deploymentsBox({ ...grantsData(), deploymentOrchestratorGrants: null });
+  const box = deploymentsBox({
+    ...grantsData(),
+    deploymentOrchestratorGrants: null,
+  });
   assert(
-    !tags(box, "h2").some((h) => h.textContent.startsWith("Orchestrator role grants")),
+    !tags(box, "h2").some((h) =>
+      h.textContent.startsWith("Orchestrator role grants")
+    ),
     "no orchestrator section",
   );
   assert(
-    tags(box, "h2").some((h) => h.textContent.startsWith("Authoriser role grants")),
+    tags(box, "h2").some((h) =>
+      h.textContent.startsWith("Authoriser role grants")
+    ),
     "the authoriser section still renders",
   );
 });
@@ -6885,7 +6949,8 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
     "six sub-tabs: " + btns.map((b) => b.textContent).join(","),
   );
   assert(
-    btns.map((b) => b.dataset.tab).join(",") === "safe,contracts,rbac,held,registry,migrations",
+    btns.map((b) => b.dataset.tab).join(",") ===
+      "safe,contracts,rbac,held,registry,migrations",
     "tabs in order safe,contracts,rbac,held,registry,migrations: " +
       btns.map((b) => b.dataset.tab).join(","),
   );
@@ -7014,8 +7079,10 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   );
   const file = tags(collect(panel, "own-sub")[0], "a");
   assert(
-    file.length === 1 && file[0].textContent === "acme/deploy's migrations.json" &&
-      file[0].href === "https://github.com/acme/deploy/blob/HEAD/migrations.json",
+    file.length === 1 &&
+      file[0].textContent === "acme/deploy's migrations.json" &&
+      file[0].href ===
+        "https://github.com/acme/deploy/blob/HEAD/migrations.json",
     "the source file is named and linked",
   );
   const heads = collect(panel, "tok-h3").map((h) => h.textContent);
@@ -7026,7 +7093,10 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
     "per-network heads count states off the rows: " + heads.join("|"),
   );
   const rows = migRows(panel);
-  assert(rows.length === 4, "one row per migration per network: " + rows.length);
+  assert(
+    rows.length === 4,
+    "one row per migration per network: " + rows.length,
+  );
   assert(
     rows.map((r) => collect(r, "own-role")[0].textContent).join(",") ===
       "history.s.sol,no-record.s.sol,pending.s.sol,done.s.sol",
@@ -7046,7 +7116,9 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
     migChips(rows[1]).join() === "no registry record" &&
       collect(rows[1], "own-chip-no").length === 1 &&
       rows[1].className.split(" ").includes("mig-unregistered") &&
-      textOf(rows[1]).includes("error — writes no registry record, so it is in no line") &&
+      textOf(rows[1]).includes(
+        "error — writes no registry record, so it is in no line",
+      ) &&
       collect(rows[1], "mig-hash").length === 0,
     "a migration with no registry record is an error, not a dim not-recorded",
   );
@@ -7075,7 +7147,8 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   );
   const where = collect(panel, "own-groupnote").map(textOf);
   assert(
-    where[1].includes(MIG_REGISTRY) && where[1].includes("via mainnet.base.org"),
+    where[1].includes(MIG_REGISTRY) &&
+      where[1].includes("via mainnet.base.org"),
     "registry and endpoint named per network: " + where[1],
   );
 });
@@ -7091,14 +7164,30 @@ Deno.test("deployments: every declared migration not in its registry is a pendin
     migNetwork({
       migrations: [
         migRow({ script: "script/a.s.sol" }),
-        migRow({ script: "script/b.s.sol", id: MIG_ID_2, state: "notRecorded", executedAt: 1791056759 }),
-        migRow({ script: "script/c.s.sol", state: "applied", appliedAt: 1791457413 }),
+        migRow({
+          script: "script/b.s.sol",
+          id: MIG_ID_2,
+          state: "notRecorded",
+          executedAt: 1791056759,
+        }),
+        migRow({
+          script: "script/c.s.sol",
+          state: "applied",
+          appliedAt: 1791457413,
+        }),
       ],
     }),
     migNetwork({
       chainId: 8453,
       network: "base",
-      migrations: [migRow({ script: "script/a.s.sol", writer: BASE_SAFE, state: "applied", appliedAt: 1791457413 })],
+      migrations: [
+        migRow({
+          script: "script/a.s.sol",
+          writer: BASE_SAFE,
+          state: "applied",
+          appliedAt: 1791457413,
+        }),
+      ],
     }),
     migNetwork({
       chainId: 56,
@@ -7111,49 +7200,70 @@ Deno.test("deployments: every declared migration not in its registry is a pendin
   assert(b.length === 4, "one total banner and one per network: " + b.length);
   assert(
     b[0].cls === "own-verify-roll" &&
-      b[0].text.startsWith("2 required migrations pending across every network") &&
+      b[0].text.startsWith(
+        "2 required migrations pending across every network",
+      ) &&
       b[0].text.includes("1 more could not be read") &&
       b[0].text.includes("ethereum 2") && !b[0].text.includes("base"),
-    "total counts pending and not-recorded, names the networks owing them: " + b[0].text,
+    "total counts pending and not-recorded, names the networks owing them: " +
+      b[0].text,
   );
   assert(
-    b[1].cls === "own-verify-roll" && b[1].text === "2 required migrations pending on ethereum",
+    b[1].cls === "own-verify-roll" &&
+      b[1].text === "2 required migrations pending on ethereum",
     "ethereum warns: " + b[1].text,
   );
   assert(
-    b[2].cls === "own-verify-ok" && b[2].text === "Every declared migration is applied on base",
+    b[2].cls === "own-verify-ok" &&
+      b[2].text === "Every declared migration is applied on base",
     "base is clean: " + b[2].text,
   );
   assert(
-    b[3].cls === "own-verify-down" && b[3].text === "Nothing known pending on bsc, but 1 could not be read",
+    b[3].cls === "own-verify-down" &&
+      b[3].text === "Nothing known pending on bsc, but 1 could not be read",
     "an unread network is never reported clean: " + b[3].text,
   );
   const rows = migRows(panel);
   assert(
     ["mig-notApplied", "mig-notRecorded"].every((c, i) =>
-      rows[i].className.split(" ").includes(c) && collect(rows[i], "own-chip-roll").length === 1
+      rows[i].className.split(" ").includes(c) &&
+      collect(rows[i], "own-chip-roll").length === 1
     ) && migChips(rows[0]).join() === "pending",
     "pending and not-recorded rows are warning rows",
   );
-  assert(collect(rows[2], "own-chip-roll").length === 0, "an applied row is not a warning");
+  assert(
+    collect(rows[2], "own-chip-roll").length === 0,
+    "an applied row is not a warning",
+  );
 });
 
 Deno.test("deployments: a network with every migration applied reads clean, and one pending reads singular", () => {
   const box = deploymentsBox(migData([
-    migNetwork({ migrations: [migRow({ state: "applied", appliedAt: 1791457413 })] }),
-    migNetwork({ chainId: 8453, network: "base", migrations: [migRow({ writer: BASE_SAFE })] }),
+    migNetwork({
+      migrations: [migRow({ state: "applied", appliedAt: 1791457413 })],
+    }),
+    migNetwork({
+      chainId: 8453,
+      network: "base",
+      migrations: [migRow({ writer: BASE_SAFE })],
+    }),
   ]));
   const b = migBanners(migPanel(box));
   assert(
     b[0].text === "1 required migration pending across every networkbase 1" &&
-      b[1].cls === "own-verify-ok" && b[2].text === "1 required migration pending on base",
+      b[1].cls === "own-verify-ok" &&
+      b[2].text === "1 required migration pending on base",
     "singular wording, clean network ok: " + b.map((x) => x.text).join("|"),
   );
   const clean = migBanners(migPanel(deploymentsBox(migData([
-    migNetwork({ migrations: [migRow({ state: "applied", appliedAt: 1791457413 })] }),
+    migNetwork({
+      migrations: [migRow({ state: "applied", appliedAt: 1791457413 })],
+    }),
   ]))));
   assert(
-    clean[0].cls === "own-verify-ok" && clean[0].text === "Every declared migration is applied across every network",
+    clean[0].cls === "own-verify-ok" &&
+      clean[0].text ===
+        "Every declared migration is applied across every network",
     "nothing pending anywhere is the clean total: " + clean[0].text,
   );
 });
@@ -7212,7 +7322,9 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
   const rows = migRows(migPanel(box));
   assert(
     textOf(rows[0]).includes("waits on") &&
-      textOf(rows[0]).includes("nothing — it opens its namespace's line in the registry") &&
+      textOf(rows[0]).includes(
+        "nothing — it opens its namespace's line in the registry",
+      ) &&
       migChips(rows[0]).join() === "pending",
     "a genesis prerequisite opens its namespace's line, with no chip of its own",
   );
@@ -7242,13 +7354,19 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
 Deno.test("deployments: a migration entry with no script is skipped and the rest render", () => {
   const box = deploymentsBox(migData([
     migNetwork({
-      migrations: [null, migRow({ script: null }), migRow({ script: "" }), migRow()],
+      migrations: [
+        null,
+        migRow({ script: null }),
+        migRow({ script: "" }),
+        migRow(),
+      ],
     }),
   ]));
   const panel = migPanel(box);
   const rows = migRows(panel);
   assert(
-    rows.length === 1 && collect(rows[0], "own-role")[0].textContent === "one.s.sol",
+    rows.length === 1 &&
+      collect(rows[0], "own-role")[0].textContent === "one.s.sol",
     "only the entry with a script is a row: " + rows.length,
   );
   assert(
@@ -7294,12 +7412,23 @@ Deno.test("deployments: an unread registry reads unknown and says why, never not
 Deno.test("deployments: unreadable migration data is an honest unavailable and the page survives", () => {
   const cases = [
     [
-      { org: "acme", repo: "deploy", path: "migrations.json", unavailable: "migrations.json: not schema version 1" },
+      {
+        org: "acme",
+        repo: "deploy",
+        path: "migrations.json",
+        unavailable: "migrations.json: not schema version 1",
+      },
       "Migrations unavailable — migrations.json: not schema version 1.",
     ],
     [null, "Migrations unavailable — the scan produced no migration data."],
-    [undefined, "Migrations unavailable — the scan produced no migration data."],
-    [{ networks: [] }, "Migrations unavailable — the scan produced no migration data."],
+    [
+      undefined,
+      "Migrations unavailable — the scan produced no migration data.",
+    ],
+    [
+      { networks: [] },
+      "Migrations unavailable — the scan produced no migration data.",
+    ],
   ];
   for (const [v, want] of cases) {
     const box = deploymentsBox({ ...OWNERS, deploymentMigrations: v });
@@ -7361,7 +7490,10 @@ Deno.test("deployments: migration fields render as text, never markup", () => {
     collect(panel, "tok-h3")[0].textContent.startsWith(payload + " — "),
     "network lands as text",
   );
-  assert(textOf(panel).includes(payload + "pending"), "unlisted id lands as text");
+  assert(
+    textOf(panel).includes(payload + "pending"),
+    "unlisted id lands as text",
+  );
   assert(tags(panel, "img").length === 0, "no element built from the payload");
 });
 
@@ -10722,13 +10854,19 @@ Deno.test("deployments: an on-chain vault missing from the file is a warning wit
   assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
   assert(collect(box, "own-verify-error").length === 0, "not an error");
   const pills = collect(box, "own-status-notpinned");
-  assert(pills.length === 1 && pills[0].textContent === "not pinned", "one not-pinned pill");
+  assert(
+    pills.length === 1 && pills[0].textContent === "not pinned",
+    "one not-pinned pill",
+  );
   const folded = collect(box, "vault-clean").map(textOf).join("|");
   assert(
     !folded.includes("0xbbb") && folded.includes("0xaaa"),
     "an unpinned vault is not folded as clean, got: " + folded,
   );
-  assert(t.includes("1 not pinned, 0 not on-chain"), "counted in the chain heading, got: " + t);
+  assert(
+    t.includes("1 not pinned, 0 not on-chain"),
+    "counted in the chain heading, got: " + t,
+  );
 });
 
 Deno.test("deployments: a pinned vault not found on-chain is an error with its pill", () => {
@@ -10740,15 +10878,23 @@ Deno.test("deployments: a pinned vault not found on-chain is an error with its p
   ]));
   const t = textOf(box);
   assert(
-    t.includes("base: 1 pinned in privileged-addresses.json but not found on-chain"),
+    t.includes(
+      "base: 1 pinned in privileged-addresses.json but not found on-chain",
+    ),
     "the error names the chain and count, got: " + t,
   );
   assert(collect(box, "own-verify-error").length >= 1, "error banner");
   assert(collect(box, "own-verify-ok").length === 0, "never the ok banner");
   const pills = collect(box, "own-status-notonchain");
-  assert(pills.length === 1 && pills[0].textContent === "not on-chain", "one not-on-chain pill");
+  assert(
+    pills.length === 1 && pills[0].textContent === "not on-chain",
+    "one not-on-chain pill",
+  );
   const folded = collect(box, "vault-clean").map(textOf).join("|");
-  assert(!folded.includes("0xbbb"), "a vault not on-chain is not folded as clean");
+  assert(
+    !folded.includes("0xbbb"),
+    "a vault not on-chain is not folded as clean",
+  );
 });
 
 Deno.test("deployments: a failed or absent discovery is an error, never clean", () => {
@@ -10763,7 +10909,9 @@ Deno.test("deployments: a failed or absent discovery is an error, never clean", 
   const box = deploymentsBox(vaultsDoc([failed, absent]));
   const t = textOf(box);
   assert(
-    t.includes("base: on-chain vault discovery failed: the subgraph did not answer"),
+    t.includes(
+      "base: on-chain vault discovery failed: the subgraph did not answer",
+    ),
     "the producer's discovery error is shown, got: " + t,
   );
   assert(
@@ -10775,7 +10923,13 @@ Deno.test("deployments: a failed or absent discovery is an error, never clean", 
 
 Deno.test("deployments: the chain note says how many vaults were found on-chain and when", () => {
   const box = deploymentsBox(vaultsDoc([
-    { ...vaultChainRow("bsc", ETH_SAFE, ETH_TL, [vrow("0xaaa", ETH_TL, "timelock", false)]), discoveredCount: 103, discoveredAtBlock: 129276993 },
+    {
+      ...vaultChainRow("bsc", ETH_SAFE, ETH_TL, [
+        vrow("0xaaa", ETH_TL, "timelock", false),
+      ]),
+      discoveredCount: 103,
+      discoveredAtBlock: 129276993,
+    },
   ]));
   const t = textOf(box);
   assert(t.includes("103 found on-chain at block 129276993"), "got: " + t);
@@ -11576,7 +11730,9 @@ function fakeSubgraph(over = {}) {
     schema: { data: { t: null } },
     // The registry probe's answer, as `schema` is the timelock's: `t: null` is a
     // version that does not index the registries.
-    registrySchema: { data: { t0: null, t1: null, t2: null, t3: null, t4: null, t5: null } },
+    registrySchema: {
+      data: { t0: null, t1: null, t2: null, t3: null, t4: null, t5: null },
+    },
     // entity name -> a raw response body to answer with instead of rows.
     raw: {},
     status: 200,
@@ -13971,16 +14127,24 @@ const regProbe = (names) => ({
 });
 // A subgraph version that indexes the registries.
 const REG_SCHEMA = regProbe(REG_TYPES);
-const REG_CONFIG = { id: "0x2f1f82c65cce305df3950f8af8fa5ad6d9a815e8", kind: "CONFIG_REGISTRY" };
-const REG_MIGRATION = { id: "0x5a48e719785e11c4643ea4056d0861a6a69e91a0", kind: "MIGRATION_REGISTRY" };
+const REG_CONFIG = {
+  id: "0x2f1f82c65cce305df3950f8af8fa5ad6d9a815e8",
+  kind: "CONFIG_REGISTRY",
+};
+const REG_MIGRATION = {
+  id: "0x5a48e719785e11c4643ea4056d0861a6a69e91a0",
+  kind: "MIGRATION_REGISTRY",
+};
 const REG_ROOT = "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c";
 const REG_SAFE = "0x" + "5a".repeat(20);
 const REG_BEACON = "0x" + "be".repeat(20);
 const REG_STRANGER = "0x" + "5f".repeat(20);
 // `cast keccak "st0x.deploy"`.
-const REG_NS = "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4";
+const REG_NS =
+  "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4";
 // `cast keccak "rain.migration-registry.head.genesis"`.
-const REG_GENESIS = "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f";
+const REG_GENESIS =
+  "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f";
 const REG_NAME = "0x" + "c1".repeat(32);
 const regWord = (n) => "0x" + n.repeat(64 / n.length);
 const REG_M = [regWord("e1"), regWord("e2"), regWord("e3")];
@@ -14009,7 +14173,12 @@ function regFake(over = {}) {
     { id: RBAC_TL, kind: "GOVERNANCE_TIMELOCK" },
     { id: RBAC_AUTH, kind: "AUTHORIZER" },
   ];
-  const delegate = (registry) => ({ registry, account: REG_ROOT, scope: REG_NS, delegate: REG_SAFE });
+  const delegate = (registry) => ({
+    registry,
+    account: REG_ROOT,
+    scope: REG_NS,
+    delegate: REG_SAFE,
+  });
   f.rows.registryDelegates = [
     {
       id: "d1",
@@ -14100,21 +14269,29 @@ function regFake(over = {}) {
   return f;
 }
 
-const REG_NAMES = { [REG_NS]: "st0x.deploy", [REG_NAME]: "st0x.vault-beacon.v1" };
+const REG_NAMES = {
+  [REG_NS]: "st0x.deploy",
+  [REG_NAME]: "st0x.vault-beacon.v1",
+};
 
 async function regPanel(
   f,
   extra = { registryNames: REG_NAMES },
   migrations = { genesis: REG_GENESIS },
 ) {
-  const data = { ...rbacData([rbacNet()], extra), deploymentMigrations: migrations };
+  const data = {
+    ...rbacData([rbacNet()], extra),
+    deploymentMigrations: migrations,
+  };
   const { box, done } = deploymentsRender(data, f.io);
   await done;
   return collect(box, "tabpanel").find((p) => p.dataset.tab === "registry");
 }
 const regGroup = (p, head) => {
   const kids = collect(p, "rbac-net")[0].children;
-  const at = kids.findIndex((k) => k.className === "own-grouphead" && k.textContent.startsWith(head));
+  const at = kids.findIndex((k) =>
+    k.className === "own-grouphead" && k.textContent.startsWith(head)
+  );
   assert(at >= 0, "section " + head + " present: " + textOf(p));
   return kids[at + 1];
 };
@@ -14122,7 +14299,8 @@ const regQueries = (f) => f.seen.map((s) => JSON.parse(s.init.body).query);
 const regLines = (p) => collect(p, "reg-line");
 const regRecs = (p) => collect(p, "reg-record");
 const regIndex = (r) => collect(r, "reg-index")[0].textContent;
-const regErr = (p) => collect(collect(p, "rbac-net")[0], "own-verify").map(textOf).join(" | ");
+const regErr = (p) =>
+  collect(collect(p, "rbac-net")[0], "own-verify").map(textOf).join(" | ");
 
 Deno.test("root registry: an index that does not read the registries says so and reads nothing", async () => {
   const f = fakeSubgraph();
@@ -14132,12 +14310,16 @@ Deno.test("root registry: an index that does not read the registries says so and
   for (const t of REG_TYPES) {
     assert(probe.includes(`__type(name: "${t}")`), "probed " + t);
   }
-  const reads = regQueries(f).filter((q) => /page: (registry|config|migration)/.test(q));
+  const reads = regQueries(f).filter((q) =>
+    /page: (registry|config|migration)/.test(q)
+  );
   assert(reads.length === 0, "no registry entity read: " + reads.join(" | "));
 });
 
 Deno.test("root registry: a schema with only some registry entities, or a non-type answer, is an error", async () => {
-  const p = await regPanel(regFake({ registrySchema: regProbe(["ConfigBinding", "MigrationRecord"]) }));
+  const p = await regPanel(
+    regFake({ registrySchema: regProbe(["ConfigBinding", "MigrationRecord"]) }),
+  );
   assert(!textOf(p).includes("does not read the registries"), "not absent");
   assert(
     regErr(p).includes(
@@ -14154,7 +14336,10 @@ Deno.test("root registry: a schema with only some registry entities, or a non-ty
   const r = await regPanel(regFake({ registrySchema: bad }));
   assert(regErr(r).includes("is not a type"), regErr(r));
   const s = await regPanel(regFake({ registrySchema: null }));
-  assert(regErr(s).includes("no readable answer to the schema probe"), regErr(s));
+  assert(
+    regErr(s).includes("no readable answer to the schema probe"),
+    regErr(s),
+  );
 });
 
 Deno.test("root registry: only approvals in force are listed as delegations, labelled from the deploy repo", async () => {
@@ -14165,37 +14350,74 @@ Deno.test("root registry: only approvals in force are listed as delegations, lab
   const rows = collect(live, "own-row");
   assert(rows.length === 1, "one live approval");
   const t = textOf(rows[0]);
-  assert(t.includes("st0x.deploy") && t.includes(REG_NS), "scope labelled with its hash: " + t);
-  assert(t.includes("MigrationRegistry") && !t.includes("ConfigRegistry"), "the revoked ConfigRegistry approval is not in force: " + t);
+  assert(
+    t.includes("st0x.deploy") && t.includes(REG_NS),
+    "scope labelled with its hash: " + t,
+  );
+  assert(
+    t.includes("MigrationRegistry") && !t.includes("ConfigRegistry"),
+    "the revoked ConfigRegistry approval is not in force: " + t,
+  );
   assert(t.includes(REG_ROOT) && t.includes(REG_SAFE), t);
 });
 
 Deno.test("root registry: a delegate that is neither a Safe nor a timelock in the index is flagged", async () => {
   const f = regFake();
-  const live = (id, delegate) => ({ ...f.rows.registryDelegates[0], id, delegate });
-  f.rows.registryDelegates.push(live("d3", RBAC_TL), live("d4", REG_STRANGER), live("d5", RBAC_AUTH));
+  const live = (id, delegate) => ({
+    ...f.rows.registryDelegates[0],
+    id,
+    delegate,
+  });
+  f.rows.registryDelegates.push(
+    live("d3", RBAC_TL),
+    live("d4", REG_STRANGER),
+    live("d5", RBAC_AUTH),
+  );
   const p = await regPanel(f);
   const rows = collect(regGroup(p, "Delegations in force"), "reg-delegate");
   assert(rows.length === 4, "every live approval: " + rows.length);
   const by = (a) => rows.find((r) => textOf(r).includes(a));
-  for (const [a, as] of [[REG_SAFE, "token-owner Safe"], [RBAC_TL, "governance timelock"]]) {
+  for (
+    const [a, as] of [[REG_SAFE, "token-owner Safe"], [
+      RBAC_TL,
+      "governance timelock",
+    ]]
+  ) {
     const r = by(a);
-    assert(collect(r, "reg-stray").length === 0 && !r.className.includes("rbac-off"), "not flagged: " + a);
-    assert(collect(r, "own-chip").map((c) => c.textContent).includes(as), textOf(r));
+    assert(
+      collect(r, "reg-stray").length === 0 && !r.className.includes("rbac-off"),
+      "not flagged: " + a,
+    );
+    assert(
+      collect(r, "own-chip").map((c) => c.textContent).includes(as),
+      textOf(r),
+    );
   }
   for (const a of [REG_STRANGER, RBAC_AUTH]) {
     const r = by(a);
     const tag = collect(r, "reg-stray");
-    assert(tag.length === 1 && tag[0].textContent === "not Safe or timelock", "flagged: " + a);
+    assert(
+      tag.length === 1 && tag[0].textContent === "not Safe or timelock",
+      "flagged: " + a,
+    );
     assert(r.className.includes("rbac-off"), "row marked: " + a);
   }
-  assert(!textOf(p).includes("holds no token-owner Safe"), "no gap note when the index holds them");
+  assert(
+    !textOf(p).includes("holds no token-owner Safe"),
+    "no gap note when the index holds them",
+  );
   const g = regFake();
   g.rows.contracts = [];
   const q = await regPanel(g);
   const only = collect(regGroup(q, "Delegations in force"), "reg-delegate")[0];
-  assert(collect(only, "reg-stray").length === 1, "nothing recognised without the index's Safe and timelock");
-  assert(textOf(q).includes("holds no token-owner Safe or governance timelock"), textOf(q));
+  assert(
+    collect(only, "reg-stray").length === 1,
+    "nothing recognised without the index's Safe and timelock",
+  );
+  assert(
+    textOf(q).includes("holds no token-owner Safe or governance timelock"),
+    textOf(q),
+  );
 });
 
 Deno.test("root registry: delegation changes are newest first with approve and revoke told apart", async () => {
@@ -14210,26 +14432,51 @@ Deno.test("root registry: delegation changes are newest first with approve and r
 Deno.test("root registry: config values that hold an address read as it, others as their bytes", async () => {
   const p = await regPanel(regFake());
   const binding = textOf(regGroup(p, "Config bindings"));
-  assert(binding.includes("st0x.vault-beacon.v1") && binding.includes(REG_BEACON), binding);
+  assert(
+    binding.includes("st0x.vault-beacon.v1") && binding.includes(REG_BEACON),
+    binding,
+  );
   assert(binding.includes("2 writes"), binding);
-  assert(binding.includes("bound by"), "a delegate's write names who wrote it: " + binding);
+  assert(
+    binding.includes("bound by"),
+    "a delegate's write names who wrote it: " + binding,
+  );
   const writes = collect(regGroup(p, "Config changes"), "own-row").map(textOf);
   assert(writes.length === 2, "every write");
   assert(writes[0].includes(REG_BEACON), "newest write first: " + writes[0]);
-  assert(writes[1].includes("0xdeadbeef"), "a non-address value as its bytes: " + writes[1]);
+  assert(
+    writes[1].includes("0xdeadbeef"),
+    "a non-address value as its bytes: " + writes[1],
+  );
 });
 
 Deno.test("root registry: bindings show their age and block, labelled names first", async () => {
   const f = regFake();
-  const bind = (id, name, ts) => ({ ...f.rows.configBindings[0], id, name, boundAtBlock: "31", boundAtTimestamp: String(ts) });
+  const bind = (id, name, ts) => ({
+    ...f.rows.configBindings[0],
+    id,
+    name,
+    boundAtBlock: "31",
+    boundAtTimestamp: String(ts),
+  });
   // An unnamed hash that sorts below the labelled one, bound ahead of the clock.
-  f.rows.configBindings.push(bind("b0", regWord("01"), TL_NOW + 30), bind("b2", regWord("cc"), TL_NOW - 90));
+  f.rows.configBindings.push(
+    bind("b0", regWord("01"), TL_NOW + 30),
+    bind("b2", regWord("cc"), TL_NOW - 90),
+  );
   const p = await regPanel(f);
   const rows = collect(regGroup(p, "Config bindings"), "reg-binding");
   const names = rows.map((r) => collect(r, "own-role")[0].textContent);
-  assert(names.join() === ["st0x.vault-beacon.v1", regWord("01"), regWord("cc")].join(), names.join());
+  assert(
+    names.join() ===
+      ["st0x.vault-beacon.v1", regWord("01"), regWord("cc")].join(),
+    names.join(),
+  );
   const ages = rows.map((r) => collect(r, "reg-age")[0].textContent);
-  assert(ages.join() === "3d 2h ago,ahead of this browser's clock,1m 30s ago", ages.join());
+  assert(
+    ages.join() === "3d 2h ago,ahead of this browser's clock,1m 30s ago",
+    ages.join(),
+  );
   assert(textOf(rows[0]).includes("block 30 · "), textOf(rows[0]));
   assert(textOf(rows[1]).includes("block 31 · "), textOf(rows[1]));
 });
@@ -14238,47 +14485,98 @@ Deno.test("root registry: each migration line reads in index order with its head
   const p = await regPanel(regFake());
   const lines = regLines(p);
   assert(lines.length === 2, "two lines");
-  assert(textOf(lines[0]).includes("st0x.deploy") && textOf(lines[1]).includes(REG_NS_B), "ordered by namespace");
+  assert(
+    textOf(lines[0]).includes("st0x.deploy") &&
+      textOf(lines[1]).includes(REG_NS_B),
+    "ordered by namespace",
+  );
   const head = textOf(lines[0]);
-  assert(head.includes(REG_M[2]) && head.includes("3 records, chain intact"), head);
+  assert(
+    head.includes(REG_M[2]) && head.includes("3 records, chain intact"),
+    head,
+  );
   assert(head.includes(REG_ROOT), "writer named");
   assert(textOf(lines[1]).includes("1 record, chain intact"), textOf(lines[1]));
   const recs = regRecs(p);
-  assert(recs.map(regIndex).join() === "#0,#1,#2,#0", recs.map(regIndex).join());
-  assert(recs.slice(0, 3).every((r, i) => textOf(r).includes(REG_M[i])), "each record's migration");
-  assert(textOf(recs[0]).includes("applied onto") && textOf(recs[0]).includes("genesis"), "genesis labelled: " + textOf(recs[0]));
-  assert(textOf(recs[1]).includes("recorded by") && textOf(recs[1]).includes(RBAC_TL), "a sender other than the writer");
-  assert(collect(p, "reg-problem").length === 0, "no problem on an intact line");
+  assert(
+    recs.map(regIndex).join() === "#0,#1,#2,#0",
+    recs.map(regIndex).join(),
+  );
+  assert(
+    recs.slice(0, 3).every((r, i) => textOf(r).includes(REG_M[i])),
+    "each record's migration",
+  );
+  assert(
+    textOf(recs[0]).includes("applied onto") &&
+      textOf(recs[0]).includes("genesis"),
+    "genesis labelled: " + textOf(recs[0]),
+  );
+  assert(
+    textOf(recs[1]).includes("recorded by") &&
+      textOf(recs[1]).includes(RBAC_TL),
+    "a sender other than the writer",
+  );
+  assert(
+    collect(p, "reg-problem").length === 0,
+    "no problem on an intact line",
+  );
   assert(recs.every((r) => !r.className.includes("rbac-off")), "none marked");
 });
 
 Deno.test("root registry: a broken migration chain is named record by record", async () => {
   const leafs = (n) => collect(n, "reg-problem").map((x) => x.textContent);
   const f = regFake();
-  f.rows.migrationRecords.find((r) => r.id === "0xrb").appliedOnto = regWord("77");
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").appliedOnto = regWord(
+    "77",
+  );
   const p = await regPanel(f);
   const recs = regRecs(p);
   assert(
-    leafs(recs[1]).join() === `applied onto ${regWord("77")}, not the previous record's migration ${REG_M[0]}`,
+    leafs(recs[1]).join() ===
+      `applied onto ${regWord("77")}, not the previous record's migration ${
+        REG_M[0]
+      }`,
     leafs(recs[1]).join(),
   );
   assert(recs[1].className.includes("rbac-off"), "row marked");
-  assert(leafs(recs[0]).length === 0 && leafs(recs[2]).length === 0, "others clean");
-  assert(textOf(regLines(p)[0]).includes("3 records, chain broken"), textOf(regLines(p)[0]));
-  assert(textOf(regLines(p)[1]).includes("chain intact"), "the other line is untouched");
+  assert(
+    leafs(recs[0]).length === 0 && leafs(recs[2]).length === 0,
+    "others clean",
+  );
+  assert(
+    textOf(regLines(p)[0]).includes("3 records, chain broken"),
+    textOf(regLines(p)[0]),
+  );
+  assert(
+    textOf(regLines(p)[1]).includes("chain intact"),
+    "the other line is untouched",
+  );
 
   const g = regFake();
   g.rows.migrationRecords.find((r) => r.id === "0xrc").appliedOnto = RBAC_ZERO;
   const q = await regPanel(g);
-  assert(leafs(regRecs(q)[0]).join() === `applied onto ${RBAC_ZERO}, not genesis`, textOf(regRecs(q)[0]));
+  assert(
+    leafs(regRecs(q)[0]).join() === `applied onto ${RBAC_ZERO}, not genesis`,
+    textOf(regRecs(q)[0]),
+  );
   assert(textOf(regLines(q)[0]).includes("chain broken"), "broken");
 
   const h = regFake();
-  h.rows.migrationRecords = h.rows.migrationRecords.filter((r) => r.id !== "0xrb");
+  h.rows.migrationRecords = h.rows.migrationRecords.filter((r) =>
+    r.id !== "0xrb"
+  );
   const r = await regPanel(h);
-  assert(leafs(regRecs(r)[1]).includes("at index 2, where 1 was next"), leafs(regRecs(r)[1]).join(" | "));
-  const lineProbs = collect(regLines(r)[0], "reg-problem").map((x) => x.textContent);
-  assert(lineProbs.join() === "the line counts 3 records; the read holds 2", lineProbs.join(" | "));
+  assert(
+    leafs(regRecs(r)[1]).includes("at index 2, where 1 was next"),
+    leafs(regRecs(r)[1]).join(" | "),
+  );
+  const lineProbs = collect(regLines(r)[0], "reg-problem").map((x) =>
+    x.textContent
+  );
+  assert(
+    lineProbs.join() === "the line counts 3 records; the read holds 2",
+    lineProbs.join(" | "),
+  );
 
   const k = regFake();
   k.rows.migrationLines[1].head = REG_M[1];
@@ -14286,7 +14584,10 @@ Deno.test("root registry: a broken migration chain is named record by record", a
   const s = await regPanel(k);
   const hp = collect(regLines(s)[0], "reg-problem").map((x) => x.textContent);
   assert(
-    hp.join(" | ") === `the head ${REG_M[1]} is not the last record's migration | the head record is not the last record`,
+    hp.join(" | ") ===
+      `the head ${
+        REG_M[1]
+      } is not the last record's migration | the head record is not the last record`,
     hp.join(" | "),
   );
   assert(textOf(regLines(s)[0]).includes("chain broken"), "broken");
@@ -14295,40 +14596,81 @@ Deno.test("root registry: a broken migration chain is named record by record", a
 Deno.test("root registry: without the scan's genesis the first record is unchecked, the rest still checked", async () => {
   const p = await regPanel(regFake(), { registryNames: REG_NAMES }, null);
   const lines = regLines(p);
-  assert(textOf(lines[0]).includes("3 records, chain unchecked"), textOf(lines[0]));
+  assert(
+    textOf(lines[0]).includes("3 records, chain unchecked"),
+    textOf(lines[0]),
+  );
   assert(textOf(lines[0]).includes("no migration genesis"), textOf(lines[0]));
   assert(collect(p, "reg-problem").length === 0, "nothing called broken");
-  assert(!textOf(regRecs(p)[0]).includes("genesis"), "genesis not labelled without the scan's");
-  const malformed = await regPanel(regFake(), { registryNames: REG_NAMES }, { genesis: "0x1234" });
-  assert(textOf(regLines(malformed)[0]).includes("chain unchecked"), "a genesis that is not a word is no genesis: " + textOf(regLines(malformed)[0]));
+  assert(
+    !textOf(regRecs(p)[0]).includes("genesis"),
+    "genesis not labelled without the scan's",
+  );
+  const malformed = await regPanel(regFake(), { registryNames: REG_NAMES }, {
+    genesis: "0x1234",
+  });
+  assert(
+    textOf(regLines(malformed)[0]).includes("chain unchecked"),
+    "a genesis that is not a word is no genesis: " +
+      textOf(regLines(malformed)[0]),
+  );
   const f = regFake();
-  f.rows.migrationRecords.find((r) => r.id === "0xra").appliedOnto = regWord("77");
-  const q = await regPanel(f, { registryNames: REG_NAMES }, { genesis: "0x1234" });
-  assert(textOf(regLines(q)[0]).includes("chain broken"), "a wrong link is still found");
+  f.rows.migrationRecords.find((r) => r.id === "0xra").appliedOnto = regWord(
+    "77",
+  );
+  const q = await regPanel(f, { registryNames: REG_NAMES }, {
+    genesis: "0x1234",
+  });
+  assert(
+    textOf(regLines(q)[0]).includes("chain broken"),
+    "a wrong link is still found",
+  );
 });
 
 Deno.test("root registry: a record on a line the index does not hold fails the read", async () => {
   const f = regFake();
-  f.rows.migrationRecords.push(regRecord("0xr0", "0x" + "33".repeat(72), 0, regWord("97"), REG_GENESIS));
+  f.rows.migrationRecords.push(
+    regRecord("0xr0", "0x" + "33".repeat(72), 0, regWord("97"), REG_GENESIS),
+  );
   const p = await regPanel(f);
-  assert(regErr(p).includes("a record on a line the index does not hold"), regErr(p));
-  assert(regLines(p).length === 0 && !textOf(p).includes("Delegations in force"), "nothing shown short");
+  assert(
+    regErr(p).includes("a record on a line the index does not hold"),
+    regErr(p),
+  );
+  assert(
+    regLines(p).length === 0 && !textOf(p).includes("Delegations in force"),
+    "nothing shown short",
+  );
 });
 
 Deno.test("root registry: a row that is not an object fails its read, wherever it sits", async () => {
-  for (const [entity, at] of [["configBindings", 0], ["registryDelegates", 1], ["migrationRecords", 0], ["contracts", 2]]) {
+  for (
+    const [entity, at] of [["configBindings", 0], ["registryDelegates", 1], [
+      "migrationRecords",
+      0,
+    ], ["contracts", 2]]
+  ) {
     const f = regFake();
     const page = f.rows[entity].slice();
     page.splice(at, 0, null);
     f.raw[entity] = { data: { page } };
     const p = await regPanel(f);
-    assert(regErr(p).includes(`${entity}: a row without an id`), entity + ": " + regErr(p));
-    assert(!textOf(p).includes("Delegations in force"), entity + ": nothing shown short");
+    assert(
+      regErr(p).includes(`${entity}: a row without an id`),
+      entity + ": " + regErr(p),
+    );
+    assert(
+      !textOf(p).includes("Delegations in force"),
+      entity + ": nothing shown short",
+    );
   }
   const f = regFake();
   f.raw.roles = { data: { page: [null, ...f.rows.roles] } };
   const p = await rbacPanelLive(f);
-  assert(textOf(p).includes("roles: a row without an id"), "the same holds for every paged read: " + textOf(p));
+  assert(
+    textOf(p).includes("roles: a row without an id"),
+    "the same holds for every paged read: " + textOf(p),
+  );
 });
 
 Deno.test("root registry: an unlabelled hash is shown raw", async () => {
@@ -14339,7 +14681,9 @@ Deno.test("root registry: an unlabelled hash is shown raw", async () => {
 });
 
 Deno.test("root registry: a failed page shows no registry history at all", async () => {
-  const f = regFake({ raw: { configRegisters: { errors: [{ message: "boom" }] } } });
+  const f = regFake({
+    raw: { configRegisters: { errors: [{ message: "boom" }] } },
+  });
   const p = await regPanel(f);
   const t = textOf(p);
   assert(t.includes("boom"), t);
@@ -14354,8 +14698,15 @@ Deno.test("root registry: labels and registry strings render as text, never mark
   f.rows.registryDelegates[0].scope = XSS_ATTR;
   const p = await regPanel(f, { registryNames: { [REG_NS]: XSS_IMG } });
   const t = textOf(p);
-  for (const x of [XSS_SCRIPT, XSS_SVG, XSS_ATTR]) assert(t.includes(x), "as text: " + x);
-  assert(t.includes("unreadable value"), "a non-hex value is not echoed as bytes");
+  for (const x of [XSS_SCRIPT, XSS_SVG, XSS_ATTR]) {
+    assert(t.includes(x), "as text: " + x);
+  }
+  assert(
+    t.includes("unreadable value"),
+    "a non-hex value is not echoed as bytes",
+  );
   assert(textOf(regLines(p)[0]).includes(XSS_IMG), "label as text");
-  for (const tag of MARKUP_TAGS) assert(tags(p, tag).length === 0, "no " + tag + " element created");
+  for (const tag of MARKUP_TAGS) {
+    assert(tags(p, tag).length === 0, "no " + tag + " element created");
+  }
 });
