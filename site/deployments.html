@@ -2800,16 +2800,14 @@ function renderDeployments(document, $, data, io) {
     const count = rbacNum(l.recordCount);
     if (count !== recs.length) problems.push(`the line counts ${count ?? "?"} records; the read holds ${recs.length}`);
     const behind = l.head !== null && l.headBlock > indexed;
-    if (!(recs.length === 0 && genesis !== null && regLow(l.head) === genesis)) {
-      if (l.head !== null && !behind) {
-        const seen = recs.filter((r) => typeof r.blockNumber === "number" && r.blockNumber <= l.headBlock);
-        const want = seen.length ? regLow(seen[seen.length - 1].migration) : genesis;
-        if (want !== null && regLow(l.head) !== want) {
-          problems.push(`the head ${l.head} is not the migration of the last record at or before block ${l.headBlock}`);
-        }
+    if (l.head !== null && !behind) {
+      const seen = recs.filter((r) => typeof r.blockNumber === "number" && r.blockNumber <= l.headBlock);
+      const want = seen.length ? regLow(seen[seen.length - 1].migration) : genesis;
+      if (want !== null && regLow(l.head) !== want) {
+        problems.push(`the head ${l.head} is not the migration of the last record at or before block ${l.headBlock}`);
       }
-      if ((last ? last.id : null) !== (l.headRecord ? l.headRecord.id : null)) problems.push("the head record is not the last record");
     }
+    if ((last ? last.id : null) !== (l.headRecord ? l.headRecord.id : null)) problems.push("the head record is not the last record");
     const records = recs.map((r) => ({ ...r, problems: marked.get(r) }));
     const broken = problems.length > 0 || records.some((r) => r.problems.length > 0);
     return {
