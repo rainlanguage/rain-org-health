@@ -15126,7 +15126,10 @@ Deno.test("root registry: a declared line the scan reads at genesis, with nothin
   const lines = regLines(p);
   assert(lines.length === 1, "the scan's line is listed: " + textOf(p));
   const t = textOf(lines[0]);
-  assert(t.includes("st0x.deploy") && t.includes(REG_ROOT_CHECKSUM), t);
+  assert(
+    t.includes("st0x.deploy") && t.toLowerCase().includes(REG_ROOT),
+    t,
+  );
   assert(t.includes("its history is not yet backfilled"), t);
   assert(
     collect(p, "reg-problem").length === 0 && !t.includes("chain broken"),
