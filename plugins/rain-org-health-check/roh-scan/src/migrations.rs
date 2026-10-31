@@ -720,6 +720,9 @@ mod tests {
         let mut f = fixture();
         f["migrations"][3]["chains"]["7"]["writer"] = Value::from(SAFE_X.to_lowercase());
         f["migrations"][3]["chains"]["7"]["prerequisites"] = json!([pre(SAFE_Y, NS_B, ID_2)]);
+        let ns_a_upper = format!("0x{}", NS_A[2..].to_uppercase());
+        f["migrations"][3]["chains"]["10"]["prerequisites"] =
+            json!([pre(SAFE_Y, &ns_a_upper, ID_2)]);
         let head = format!("0x{}", "ab".repeat(32));
         let asked = RefCell::new(Vec::new());
         let doc = build(
