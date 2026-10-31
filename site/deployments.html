@@ -2801,9 +2801,16 @@ function renderDeployments(document, $, data, io) {
     const last = recs.length ? recs[recs.length - 1] : null;
     const count = rbacNum(l.recordCount);
     if (count !== recs.length) problems.push(`the line counts ${count ?? "?"} records; the read holds ${recs.length}`);
-    if (l.head === null) problems.push("the scan read no headV5 for this line");
-    else if (!last || regLow(l.head) !== regLow(last.migration)) problems.push(`the head ${l.head} is not the last record's migration`);
-    if (!last || !l.headRecord || l.headRecord.id !== last.id) problems.push("the head record is not the last record");
+    if (!(recs.length === 0 && genesis !== null && regLow(l.head) === genesis)) {
+      if (l.head !== null) {
+        const seen = recs.filter((r) => typeof r.blockNumber === "number" && r.blockNumber <= l.headBlock);
+        const want = seen.length ? regLow(seen[seen.length - 1].migration) : genesis;
+        if (want !== null && regLow(l.head) !== want) {
+          problems.push(`the head ${l.head} is not the migration of the last record at or before block ${l.headBlock}`);
+        }
+      }
+      if (!last || !l.headRecord || l.headRecord.id !== last.id) problems.push("the head record is not the last record");
+    }
     const records = recs.map((r) => ({ ...r, problems: marked.get(r) }));
     const broken = problems.length > 0 || records.some((r) => r.problems.length > 0);
     return {
@@ -2931,9 +2938,22 @@ function renderDeployments(document, $, data, io) {
         at.push(r);
       }
       const onDeclared = (l) => declared === null || regLow(l.registry && l.registry.id) === declared;
-      got.lines = lines
-        .filter(onDeclared)
-        .map((l) => regLine({ ...l, head: heads.get(regLineKey(l)) ?? null }, byLine.get(l.id), genesis))
+      const ownLines = lines.filter(onDeclared);
+      const indexed = new Set(ownLines.map(regLineKey));
+      const scanOnly = [...heads.entries()]
+        .filter(([k]) => !indexed.has(k))
+        .map(([, h]) => ({ id: null, registry: { id: declared }, writer: h.writer, namespace: h.namespace, recordCount: 0, headRecord: null }));
+      got.lines = ownLines
+        .concat(scanOnly)
+        .map((l) => {
+          const h = heads.get(regLineKey(l));
+          const read = Boolean(h) && h.head !== null && typeof h.block === "number";
+          return regLine(
+            { ...l, head: read ? h.head : null, headBlock: read ? h.block : null },
+            l.id === null ? [] : byLine.get(l.id),
+            genesis,
+          );
+        })
         .sort((a, b) => regLow(a.namespace).localeCompare(regLow(b.namespace)) || regLow(a.writer).localeCompare(regLow(b.writer)));
     } catch (e) {
       return fail(e instanceof Error ? e.message : String(e));
@@ -3100,7 +3120,7 @@ function renderDeployments(document, $, data, io) {
       head.append(
         line("namespace", word(l.namespace)),
         line("writer", whoNode(String(l.writer), chain, pins)),
-        line("head", word(l.head), chip),
+        line("head", l.head === null ? el("span", "own-note", "not read") : word(l.head), chip),
       );
       if (l.records.length === 0 && genesis !== null && regLow(l.head) === genesis) {
         head.append(el("div", "own-note rbac-ideal-gap", "At genesis on this registry: its history is not yet backfilled."));
@@ -3171,7 +3191,12 @@ function renderDeployments(document, $, data, io) {
         const heads = new Map();
         for (const h of m.lines) {
           if (h && typeof h.writer === "string" && typeof h.namespace === "string") {
-            heads.set(regLineKey(h), typeof h.head === "string" ? h.head : null);
+            heads.set(regLineKey(h), {
+              writer: h.writer,
+              namespace: h.namespace,
+              head: typeof h.head === "string" ? h.head : null,
+              block: typeof h.headBlock === "number" ? h.headBlock : null,
+            });
           }
         }
         headsBy.set(m.network, heads);
@@ -3195,7 +3220,7 @@ function renderDeployments(document, $, data, io) {
       }
       regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
       reads.push(
-        regRead(endpoint, genesis, declaredBy.get(n.network) ?? null, configBy.get(n.network) ?? null, headsBy.get(n.network) ?? new Map()).then((res) =>
+        regRead(endpoint, genesis, declaredBy.get(chain) ?? null, configBy.get(n.network) ?? null, headsBy.get(chain) ?? new Map()).then((res) =>
           regBody(slot, res, chain, endpoint, published, pins, labels),
         ),
       );
