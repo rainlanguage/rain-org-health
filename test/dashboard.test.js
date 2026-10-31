@@ -14482,7 +14482,10 @@ Deno.test("root registry: a schema probe answered with a non-type, an error, or 
   for (
     const [probe, want] of [
       [null, "no readable answer to the schema probe"],
-      [{ error: "subgraph name/version error" }, "the subgraph vanished mid-read"],
+      [
+        { error: "subgraph name/version error" },
+        "the subgraph vanished mid-read",
+      ],
       [{ errors: [{ message: "boom" }] }, "boom"],
     ]
   ) {
@@ -14671,8 +14674,7 @@ Deno.test("root registry: a delegate is recognised as the index's Safe whatever 
     f.rows.contracts[0] = { ...f.rows.contracts[0], id: contract };
     f.rows.registryDelegates[0].delegate = delegate;
     const p = await regPanel(f);
-    const row =
-      collect(regGroup(p, "Delegations in force"), "reg-delegate")[0];
+    const row = collect(regGroup(p, "Delegations in force"), "reg-delegate")[0];
     assert(collect(row, "reg-stray").length === 0, why + ": " + textOf(row));
     assert(
       collect(row, "own-chip").map((c) => c.textContent).includes(
@@ -15729,7 +15731,8 @@ Deno.test("root registry: a delegate in a registry of neither V5 kind is listed 
     .filter((l) => collect(l, "bcn-key")[0].textContent === "in")
     .map((l) => collect(l, "own-note")[0].textContent);
   assert(
-    kinds.join() === ["MigrationRegistry V5", "registry (VAULT_REGISTRY)"].join(),
+    kinds.join() ===
+      ["MigrationRegistry V5", "registry (VAULT_REGISTRY)"].join(),
     kinds.join(),
   );
 });
