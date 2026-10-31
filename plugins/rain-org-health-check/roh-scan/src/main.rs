@@ -3696,6 +3696,39 @@ mod tests {
         assert_eq!(singles.get(), 0);
     }
 
+    #[test]
+    fn a_batch_at_a_block_asks_every_call_at_that_block_batched_or_single() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 1);
+        let sent = std::cell::RefCell::new(Vec::new());
+        let post = |_: &str, payload: &str| {
+            sent.borrow_mut().push(payload.to_string());
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_at_via(&["a"], 0, &calls, "0x2a", &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+        let sent = sent.borrow();
+        assert_eq!(
+            sent.iter().filter(|p| !p.starts_with('[')).count(),
+            calls.len()
+        );
+        for p in sent.iter() {
+            let v: serde_json::Value = serde_json::from_str(p).unwrap();
+            let asks: Vec<serde_json::Value> = match v {
+                serde_json::Value::Array(a) => a,
+                one => vec![one],
+            };
+            for a in asks {
+                assert_eq!(a["method"], "eth_call", "{p}");
+                assert_eq!(a["params"][1], "0x2a", "{p}");
+            }
+        }
+    }
+
     // ---- chain endpoint coverage ----
 
     /// Every network the deploy repo pins must resolve to a chain, or the page

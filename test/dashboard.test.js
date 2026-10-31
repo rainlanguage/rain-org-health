@@ -14319,6 +14319,8 @@ const REG_NAMES = {
 
 // A network both vocabularies name alike: graph-cli's and the deploy repo's.
 const REG_NET = rbacNet({ network: "base", chain: "base" });
+// The block the scan read every headV5 at: after every record regFake indexes.
+const REG_HEAD_BLOCK = 50;
 // roh-scan's deploymentMigrations: the declared registry and each line's headV5.
 const regScan = (over = {}) => ({
   org: "S01-Issuer",
@@ -14334,8 +14336,18 @@ const regScan = (over = {}) => ({
       unread: 0,
       migrations: [],
       lines: [
-        { writer: REG_ROOT_CHECKSUM, namespace: REG_NS, head: REG_M[2] },
-        { writer: REG_ROOT_CHECKSUM, namespace: REG_NS_B, head: regWord("98") },
+        {
+          writer: REG_ROOT_CHECKSUM,
+          namespace: REG_NS,
+          headBlock: REG_HEAD_BLOCK,
+          head: REG_M[2],
+        },
+        {
+          writer: REG_ROOT_CHECKSUM,
+          namespace: REG_NS_B,
+          headBlock: REG_HEAD_BLOCK,
+          head: regWord("98"),
+        },
       ],
     },
   ],
@@ -14663,7 +14675,7 @@ Deno.test("root registry: a broken migration chain is named record by record", a
     hp.join(" | ") ===
       `the head ${
         REG_M[1]
-      } is not the last record's migration | the head record is not the last record`,
+      } is not the migration of the last record at or before block ${REG_HEAD_BLOCK} | the head record is not the last record`,
     hp.join(" | "),
   );
   assert(textOf(regLines(s)[0]).includes("chain broken"), "broken");
@@ -14940,6 +14952,35 @@ Deno.test("root registry: on Ethereum the declared registry and heads apply thou
     regLines(p).map(textOf).join(" | "),
   );
   assert(collect(p, "reg-problem").length === 0, "no line is missing its head");
+  assert(
+    regLines(p).every((l) => !textOf(regHeadLine(l)).includes("not read")),
+    "every head read: " + regLines(p).map(textOf).join(" | "),
+  );
+});
+
+Deno.test("root registry: on Ethereum the declared ConfigRegistry is found under the subgraph's own network name", async () => {
+  const scan = regScan();
+  scan.networks[0] = { ...scan.networks[0], chainId: 1, network: "ethereum" };
+  // roh-scan keys configRegistries by subgraph/networks.json's keys, as it
+  // keys the networks the page reads.
+  const p = await regPanel(
+    regElsewhere(regFake()),
+    { registryNames: REG_NAMES, configRegistries: { mainnet: REG_CONFIG.id } },
+    scan,
+    rbacNet(),
+  );
+  const heads = regHeads(p);
+  for (
+    const h of [
+      "Delegations in force — 1",
+      "Delegation changes — 3, newest first",
+      "Config bindings — 1",
+      "Config changes — 2, newest first",
+    ]
+  ) {
+    assert(heads.includes(h), h + ": " + heads);
+  }
+  assert(!textOf(p).includes(regWord("b9")), "the other registry's binding");
 });
 
 Deno.test("root registry: a value reads as an address only when its type says address", async () => {
@@ -15080,11 +15121,24 @@ Deno.test("root registry: each line's head is the scan's headV5, keyed by writer
   const head = textOf(regLines(p)[0]);
   assert(head.includes(REG_M[2]) && head.includes("chain intact"), head);
   assert(!head.includes(regWord("77")), "the index's own head is not shown");
+});
 
+const regHeadLine = (l) =>
+  collect(l, "bcn-line").find((x) =>
+    collect(x, "bcn-key")[0].textContent === "head"
+  );
+
+Deno.test("root registry: a head the scan did not read shows as not read, never as a problem", async () => {
   const absent = regScan();
   absent.networks[0].lines = absent.networks[0].lines.slice(1);
   const unread = regScan();
-  unread.networks[0].lines[0].head = null;
+  unread.networks[0].lines[0] = {
+    ...unread.networks[0].lines[0],
+    head: null,
+    headBlock: null,
+  };
+  const noBlock = regScan();
+  delete noBlock.networks[0].lines[0].headBlock;
   const elsewhere = regScan();
   elsewhere.networks[0].lines = absent.networks[0].lines;
   elsewhere.networks.unshift({
@@ -15096,20 +15150,96 @@ Deno.test("root registry: each line's head is the scan's headV5, keyed by writer
     const [why, scan] of [
       ["not in the scan", absent],
       ["unread", unread],
+      ["read at no block", noBlock],
       ["read on another network", elsewhere],
     ]
   ) {
     const q = await regPanel(regFake(), undefined, scan);
-    const probs = collect(regLines(q)[0], "reg-problem").map((x) =>
-      x.textContent
+    const [a, b] = regLines(q);
+    assert(
+      collect(a, "reg-problem").length === 0,
+      why + ": " + collect(a, "reg-problem").map(textOf).join(" | "),
+    );
+    const h = textOf(regHeadLine(a));
+    assert(h.includes("not read") && !h.includes(REG_M[2]), why + ": " + h);
+    assert(
+      textOf(a).includes("3 records, chain intact"),
+      why + ": " + textOf(a),
     );
     assert(
-      probs.join() === "the scan read no headV5 for this line",
-      why + ": " + probs.join(" | "),
-    );
-    assert(
-      collect(regLines(q)[1], "reg-problem").length === 0,
+      collect(b, "reg-problem").length === 0 &&
+        textOf(regHeadLine(b)).includes(regWord("98")),
       why + ": the other line keeps its head",
+    );
+  }
+});
+
+Deno.test("root registry: a head is checked against the records up to the block the scan read it at", async () => {
+  // Line A gains a fourth record at block 60, after the scan's block 50.
+  const later = () => {
+    const f = regFake();
+    f.rows.migrationRecords.push(
+      regRecord("0xr9", REG_LINE, 3, regWord("e4"), REG_M[2], {
+        blockNumber: "60",
+      }),
+    );
+    f.rows.migrationLines[1] = {
+      ...f.rows.migrationLines[1],
+      head: regWord("e4"),
+      recordCount: 4,
+      headRecord: { id: "0xr9" },
+    };
+    return f;
+  };
+  const at = (headBlock, head) => {
+    const scan = regScan();
+    scan.networks[0].lines[0] = {
+      ...scan.networks[0].lines[0],
+      headBlock,
+      head,
+    };
+    return scan;
+  };
+  for (
+    const [why, headBlock, head] of [
+      ["a record after the scan's block", REG_HEAD_BLOCK, REG_M[2]],
+      ["the block just before that record", 59, REG_M[2]],
+      ["a record at the scan's block", 60, regWord("e4")],
+      ["read before the line's first record", 30, REG_GENESIS],
+    ]
+  ) {
+    const p = await regPanel(later(), undefined, at(headBlock, head));
+    const a = regLines(p)[0];
+    assert(
+      collect(a, "reg-problem").length === 0,
+      why + ": " + collect(a, "reg-problem").map(textOf).join(" | "),
+    );
+    assert(
+      textOf(a).includes("4 records, chain intact"),
+      why + ": " + textOf(a),
+    );
+    assert(
+      textOf(regHeadLine(a)).includes(head === REG_GENESIS ? "genesis" : head),
+      why,
+    );
+  }
+  for (
+    const [why, headBlock, head, want] of [
+      ["the record at the scan's block", 60, REG_M[2], regWord("e4")],
+      ["before the line's first record", 30, REG_M[0], "genesis"],
+    ]
+  ) {
+    const p = await regPanel(later(), undefined, at(headBlock, head));
+    const a = regLines(p)[0];
+    const probs = collect(a, "reg-problem").map(textOf);
+    assert(
+      probs.join(" | ") ===
+        `the head ${head} is not the migration of the last record at or before block ${headBlock}`,
+      why + " (" + want + "): " + probs.join(" | "),
+    );
+    assert(
+      textOf(a).includes("4 records, chain broken"),
+      why + ": " + textOf(a),
     );
   }
 });
@@ -15120,7 +15250,12 @@ Deno.test("root registry: a declared line the scan reads at genesis, with nothin
   f.rows.migrationRecords = [];
   const scan = regScan();
   scan.networks[0].lines = [
-    { writer: REG_ROOT_CHECKSUM, namespace: REG_NS, head: REG_GENESIS },
+    {
+      writer: REG_ROOT_CHECKSUM,
+      namespace: REG_NS,
+      headBlock: REG_HEAD_BLOCK,
+      head: REG_GENESIS,
+    },
   ];
   const p = await regPanel(f, undefined, scan);
   const lines = regLines(p);
@@ -15134,5 +15269,61 @@ Deno.test("root registry: a declared line the scan reads at genesis, with nothin
   assert(
     collect(p, "reg-problem").length === 0 && !t.includes("chain broken"),
     "nothing called broken: " + t,
+  );
+
+  const g = regFake();
+  g.rows.migrationLines = g.rows.migrationLines.filter((l) =>
+    l.id === REG_LINE_B
+  );
+  g.rows.migrationRecords = g.rows.migrationRecords.filter((r) =>
+    r.line.id === REG_LINE_B
+  );
+  const both = regScan();
+  both.networks[0].lines[0].head = REG_GENESIS;
+  const q = await regPanel(g, undefined, both);
+  assert(regHeads(q).includes("Migration lines — 2"), regHeads(q));
+  const [a, b] = regLines(q);
+  assert(
+    textOf(a).includes("st0x.deploy") &&
+      textOf(a).includes("its history is not yet backfilled") &&
+      textOf(a).includes("0 records, chain intact"),
+    "beside an indexed line: " + textOf(a),
+  );
+  assert(
+    textOf(b).includes(REG_NS_B) &&
+      textOf(b).includes("1 record, chain intact") &&
+      !textOf(b).includes("not yet backfilled"),
+    textOf(b),
+  );
+  assert(collect(q, "reg-problem").length === 0, textOf(q));
+});
+
+Deno.test("root registry: a line only the scan holds, its head unread, is not read rather than broken", async () => {
+  const f = regFake();
+  f.rows.migrationLines = f.rows.migrationLines.filter((l) =>
+    l.id === REG_LINE_B
+  );
+  f.rows.migrationRecords = f.rows.migrationRecords.filter((r) =>
+    r.line.id === REG_LINE_B
+  );
+  const scan = regScan();
+  scan.networks[0].lines[0] = {
+    ...scan.networks[0].lines[0],
+    head: null,
+    headBlock: null,
+  };
+  const p = await regPanel(f, undefined, scan);
+  assert(regHeads(p).includes("Migration lines — 2"), regHeads(p));
+  const a = regLines(p)[0];
+  assert(textOf(a).includes("st0x.deploy"), textOf(a));
+  assert(textOf(regHeadLine(a)).includes("not read"), textOf(a));
+  assert(
+    collect(a, "reg-problem").length === 0 &&
+      !textOf(a).includes("chain broken"),
+    "an unread head breaks nothing: " + textOf(a),
+  );
+  assert(
+    !textOf(a).includes("not yet backfilled"),
+    "an unread head is not genesis: " + textOf(a),
   );
 });

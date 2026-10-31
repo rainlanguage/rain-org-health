@@ -507,8 +507,8 @@ mod tests {
         (name != "tenchain").then(|| format!("rpc.{name}"))
     }
 
-    fn no_heads(_: &Network, lines: &[(String, String)]) -> Vec<Option<String>> {
-        vec![None; lines.len()]
+    fn no_heads(_: &Network, lines: &[(String, String)]) -> (Option<u64>, Vec<Option<String>>) {
+        (None, vec![None; lines.len()])
     }
 
     fn render(src: &str, registry: &Registry) -> Value {
@@ -723,7 +723,7 @@ mod tests {
             &|_, r| vec![None; r.len()],
             &|n, l| {
                 asked.borrow_mut().push((n.name.clone(), l.to_vec()));
-                vec![Some(head.clone()), None]
+                (Some(77), vec![Some(head.clone()), None])
             },
         );
         let line = |w: &str, ns: &str| (w.to_string(), ns.to_string());
@@ -743,18 +743,39 @@ mod tests {
         assert_eq!(
             net(&doc, "sevenchain")["lines"],
             json!([
-                {"writer": SAFE_X, "namespace": NS_A, "head": head},
-                {"writer": SAFE_X, "namespace": NS_B, "head": null},
-                {"writer": SAFE_Y, "namespace": NS_B, "head": null}
+                {"writer": SAFE_X, "namespace": NS_A, "headBlock": 77, "head": head},
+                {"writer": SAFE_X, "namespace": NS_B, "headBlock": null, "head": null},
+                {"writer": SAFE_Y, "namespace": NS_B, "headBlock": null, "head": null}
             ])
         );
         assert_eq!(
             net(&doc, "tenchain")["lines"],
             json!([
-                {"writer": SAFE_Y, "namespace": NS_A, "head": head},
-                {"writer": SAFE_Y, "namespace": NS_B, "head": null}
+                {"writer": SAFE_Y, "namespace": NS_A, "headBlock": 77, "head": head},
+                {"writer": SAFE_Y, "namespace": NS_B, "headBlock": null, "head": null}
             ])
         );
+    }
+
+    #[test]
+    fn a_head_read_at_no_known_block_carries_no_block() {
+        let head = format!("0x{}", "ab".repeat(32));
+        let doc = build(
+            "acme",
+            "deploy",
+            &fixture().to_string(),
+            &host,
+            &|_, r| vec![None; r.len()],
+            &|_, l| (None, vec![Some(head.clone()); l.len()]),
+        );
+        for n in ["sevenchain", "tenchain"] {
+            let lines = net(&doc, n)["lines"].as_array().unwrap().clone();
+            assert!(!lines.is_empty(), "{n}");
+            for l in lines {
+                assert_eq!(l["head"], Value::from(head.clone()), "{n}");
+                assert_eq!(l["headBlock"], Value::Null, "{n}");
+            }
+        }
     }
 
     #[test]
