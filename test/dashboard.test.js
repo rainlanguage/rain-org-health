@@ -15868,6 +15868,8 @@ Deno.test("root registry: a head the scan did not read shows as not read, never 
   };
   const noBlock = regScan();
   delete noBlock.networks[0].lines[0].headBlock;
+  const noHash = regScan();
+  noHash.networks[0].lines[0] = { ...noHash.networks[0].lines[0], head: 5 };
   const elsewhere = regScan();
   elsewhere.networks[0].lines = absent.networks[0].lines;
   elsewhere.networks.unshift({
@@ -15880,6 +15882,7 @@ Deno.test("root registry: a head the scan did not read shows as not read, never 
       ["not in the scan", absent],
       ["unread", unread],
       ["read at no block", noBlock],
+      ["given as no hash", noHash],
       ["read on another network", elsewhere],
     ]
   ) {
@@ -15902,6 +15905,15 @@ Deno.test("root registry: a head the scan did not read shows as not read, never 
       why + ": the other line keeps its head",
     );
   }
+  const noLines = regScan();
+  delete noLines.networks[0].lines;
+  const n = await regPanel(regFake(), undefined, noLines);
+  assert(regLines(n).length === 2, regHeads(n));
+  assert(
+    regLines(n).every((l) => textOf(regHeadLine(l)).includes("not read")) &&
+      collect(n, "reg-problem").length === 0,
+    "a network the scan gives no lines reads no head: " + textOf(n),
+  );
 });
 
 Deno.test("root registry: a head is checked against the records up to the block the scan read it at", async () => {
@@ -16175,4 +16187,283 @@ Deno.test("root registry: a line only the scan holds, its head unread, is not re
     !textOf(a).includes("not yet backfilled"),
     "an unread head is not genesis: " + textOf(a),
   );
+});
+
+Deno.test("root registry: a line's chip is green only for an intact chain", async () => {
+  const chipOf = (l) => collect(regHeadLine(l), "own-chip")[0].className;
+  const intact = regLines(await regPanel(regFake()))[0];
+  assert(textOf(intact).includes("chain intact"), textOf(intact));
+  assert(chipOf(intact) === "own-chip own-chip-yes", chipOf(intact));
+  const f = regFake();
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").appliedOnto = regWord(
+    "77",
+  );
+  const broken = regLines(await regPanel(f))[0];
+  assert(textOf(broken).includes("chain broken"), textOf(broken));
+  assert(chipOf(broken) === "own-chip own-chip-no", chipOf(broken));
+  const unchecked = regLines(
+    await regPanel(regFake(), undefined, regScan({ genesis: undefined })),
+  )[0];
+  assert(textOf(unchecked).includes("chain unchecked"), textOf(unchecked));
+  assert(chipOf(unchecked) === "own-chip own-chip-no", chipOf(unchecked));
+});
+
+Deno.test("root registry: a line the scan read at genesis before its first record is not called unbackfilled", async () => {
+  const scan = regScan();
+  scan.networks[0].lines[0] = {
+    ...scan.networks[0].lines[0],
+    headBlock: 39,
+    head: REG_GENESIS,
+  };
+  const a = regLines(await regPanel(regFake(), undefined, scan))[0];
+  assert(textOf(a).includes("3 records, chain intact"), textOf(a));
+  assert(collect(a, "reg-problem").length === 0, textOf(a));
+  assert(!textOf(a).includes("not yet backfilled"), textOf(a));
+});
+
+Deno.test("root registry: a line with no records shows no record table", async () => {
+  const f = regFake();
+  f.rows.migrationLines = f.rows.migrationLines.filter((l) =>
+    l.id === REG_LINE_B
+  );
+  f.rows.migrationRecords = f.rows.migrationRecords.filter((r) =>
+    r.line.id === REG_LINE_B
+  );
+  const scan = regScan();
+  scan.networks[0].lines[0].head = REG_GENESIS;
+  const p = await regPanel(f, undefined, scan);
+  const [a, b] = regLines(p);
+  assert(textOf(a).includes("0 records"), textOf(a));
+  assert(textOf(b).includes("1 record,"), textOf(b));
+  const kids = collect(p, "rbac-net")[0].children;
+  const next = (n) => kids[kids.indexOf(n) + 1];
+  assert(next(a) === b, "no table between: " + textOf(next(a)));
+  assert(
+    next(b).className === "own-table" && regRecs(next(b)).length === 1,
+    textOf(next(b)),
+  );
+  assert(kids.indexOf(next(b)) === kids.length - 1, "nothing after");
+});
+
+Deno.test("root registry: a record names who recorded it only when that is not the line's writer, whatever the case", async () => {
+  const f = regFake();
+  const rec = (id) => f.rows.migrationRecords.find((r) => r.id === id);
+  rec("0xrc").sender = REG_ROOT_CHECKSUM;
+  rec("0xra").sender = REG_ROOT;
+  const p = await regPanel(f);
+  const by = regRecs(p).slice(0, 3).map((r) =>
+    collect(r, "bcn-line").filter((x) =>
+      collect(x, "bcn-key")[0].textContent === "recorded by"
+    ).map(textOf).join()
+  );
+  assert(by[0] === "" && by[2] === "", by.join(" | "));
+  assert(by[1].includes(RBAC_TL), by.join(" | "));
+});
+
+Deno.test("root registry: each record shows when it was applied, if the index says", async () => {
+  const f = regFake();
+  const rec = (id) => f.rows.migrationRecords.find((r) => r.id === id);
+  rec("0xrc").appliedAt = String(RBAC_TS - 3 * 86400);
+  rec("0xra").appliedAt = null;
+  const p = await regPanel(f);
+  const at = regRecs(p).slice(0, 3).map((r) =>
+    collect(collect(r, "own-prov")[0], "own-note").map((n) => n.textContent)
+      .filter((t) => t.startsWith("applied")).join()
+  );
+  assert(
+    at.join(" | ") ===
+      "applied 2026-10-10 09:29 UTC | applied 2026-10-13 08:06 UTC | applied time unknown",
+    at.join(" | "),
+  );
+});
+
+Deno.test("root registry: an absent, unreadable or empty subgraph location says so and reads nothing", async () => {
+  const off = async (rbac) => {
+    const f = regFake();
+    const data = { ...grantsData(), deploymentMigrations: regScan() };
+    if (rbac !== undefined) data.deploymentRbac = rbac;
+    const { box, done } = deploymentsRender(data, f.io);
+    await done;
+    assert(f.seen.length === 0, "nothing read: " + f.seen.length);
+    const t = textOf(
+      collect(box, "tabpanel").find((x) => x.dataset.tab === "registry"),
+    );
+    assert(!t.includes("Read live from"), t);
+    return t;
+  };
+  for (const r of [undefined, null, "st0x-rbac", 5, true]) {
+    const t = await off(r);
+    assert(
+      t.includes(
+        "Registry history unavailable — this scan carries no subgraph location.",
+      ),
+      String(r) + ": " + t,
+    );
+  }
+  const why = await off(
+    rbacData(undefined, {
+      unavailable: "could not read subgraph/networks.json",
+    }).deploymentRbac,
+  );
+  assert(
+    why.includes(
+      "Registry history unavailable — the scan could not read subgraph/networks.json.",
+    ),
+    why,
+  );
+  const f = regFake();
+  const { box, done } = deploymentsRender(
+    { ...rbacData([]), deploymentMigrations: regScan() },
+    f.io,
+  );
+  await done;
+  const empty = textOf(
+    collect(box, "tabpanel").find((x) => x.dataset.tab === "registry"),
+  );
+  assert(
+    empty.includes(
+      "Registry history unavailable — the subgraph declares no networks.",
+    ),
+    empty,
+  );
+  assert(f.seen.length === 0, "nothing read for no networks");
+});
+
+Deno.test("root registry: a network the scan gives no https endpoint is an error and is never read", async () => {
+  for (const endpoint of ["http://q.example/gn", undefined]) {
+    const f = regFake();
+    const p = await regPanel(
+      f,
+      undefined,
+      regScan(),
+      rbacNet({ network: "base", chain: "base", endpoint }),
+    );
+    assert(
+      regErr(p).includes("the scan gave no https endpoint for this network"),
+      String(endpoint) + ": " + regErr(p),
+    );
+    assert(!textOf(p).includes("Reading the index"), textOf(p));
+    assert(f.seen.length === 0, "never read: " + f.seen.length);
+  }
+});
+
+Deno.test("root registry: each network is titled by its chain, the subgraph's name beside it where they differ", async () => {
+  const titles = async (net) =>
+    collect(await regPanel(regFake(), undefined, regScan(), net), "tok-h3")
+      .map((h) => h.textContent).join(" | ");
+  assert((await titles(REG_NET)) === "base", await titles(REG_NET));
+  assert(
+    (await titles(rbacNet())) === "ethereum (mainnet)",
+    await titles(rbacNet()),
+  );
+  assert(
+    (await titles(rbacNet({ chain: null }))) === "mainnet",
+    await titles(rbacNet({ chain: null })),
+  );
+});
+
+Deno.test("root registry: the scan's genesis checks the first record and labels it whatever its hex case", async () => {
+  const upper = "0x" + REG_GENESIS.slice(2).toUpperCase();
+  const p = await regPanel(regFake(), undefined, regScan({ genesis: upper }));
+  const [a, b] = regLines(p);
+  assert(textOf(a).includes("3 records, chain intact"), textOf(a));
+  assert(textOf(b).includes("1 record, chain intact"), textOf(b));
+  assert(collect(p, "reg-problem").length === 0, textOf(p));
+  const onto = collect(regRecs(p)[0], "bcn-line").find((x) =>
+    collect(x, "bcn-key")[0].textContent === "applied onto"
+  );
+  assert(textOf(onto) === "applied ontogenesis", textOf(onto));
+});
+
+Deno.test("root registry: the scan's ConfigRegistry is matched whatever its hex case; one given as no address declares none", async () => {
+  const has = (p, want) => {
+    const heads = regHeads(p);
+    for (const h of want) assert(heads.includes(h), h + ": " + heads);
+  };
+  const upper = "0x" + REG_CONFIG.id.slice(2).toUpperCase();
+  const p = await regPanel(regElsewhere(regFake()), {
+    configRegistries: { base: upper },
+  });
+  has(p, ["Config bindings — 1", "Config changes — 2, newest first"]);
+  assert(!textOf(p).includes(regWord("b9")), "the other registry's binding");
+  for (const a of [null, 5]) {
+    const q = await regPanel(regElsewhere(regFake()), {
+      configRegistries: { base: a },
+    });
+    has(q, ["Config bindings — 2", "Config changes — 3, newest first"]);
+  }
+});
+
+Deno.test("root registry: a network the scan declares no MigrationRegistry for reads every migration line, its heads still applied", async () => {
+  for (const registry of [null, undefined, 5]) {
+    const scan = regScan();
+    scan.networks[0].registry = registry;
+    if (registry === undefined) delete scan.networks[0].registry;
+    const p = await regPanel(regElsewhere(regFake()), undefined, scan);
+    assert(
+      regHeads(p).includes("Migration lines — 3"),
+      String(registry) + ": " + regHeads(p),
+    );
+    assert(regRecs(p).length === 5, "the other registry's record too");
+    const b = regLines(p).find((l) => textOf(l).includes(REG_NS_B));
+    assert(
+      textOf(regHeadLine(b)).includes(regWord("98")),
+      String(registry) + ": " + textOf(b),
+    );
+  }
+});
+
+Deno.test("root registry: a scan line without a string writer or namespace is no line", async () => {
+  const scan = regScan();
+  scan.networks[0].lines.push(
+    {
+      writer: REG_ROOT_CHECKSUM,
+      namespace: null,
+      headBlock: REG_HEAD_BLOCK,
+      head: regWord("55"),
+    },
+    {
+      writer: null,
+      namespace: regWord("56"),
+      headBlock: REG_HEAD_BLOCK,
+      head: regWord("57"),
+    },
+  );
+  const p = await regPanel(regFake(), undefined, scan);
+  assert(regHeads(p).includes("Migration lines — 2"), regHeads(p));
+  assert(
+    !textOf(p).includes(regWord("55")) && !textOf(p).includes(regWord("57")),
+    textOf(p),
+  );
+});
+
+Deno.test("root registry: the page settles only once every network's registry read has rendered, with or without the owners", async () => {
+  for (const owners of [OWNERS.deploymentOwners, null]) {
+    const f = regFake();
+    // The registry's schema probe answers after the role reads have settled.
+    const io = {
+      now: f.io.now,
+      fetch: (url, init) =>
+        JSON.parse(init.body).query.includes("ConfigBinding")
+          ? new Promise((r) => setTimeout(r, 5)).then(() =>
+            f.io.fetch(url, init)
+          )
+          : f.io.fetch(url, init),
+    };
+    const { box, done } = deploymentsRender({
+      ...rbacData([REG_NET], { configRegistries: { base: REG_CONFIG.id } }),
+      deploymentMigrations: regScan(),
+      deploymentOwners: owners,
+    }, io);
+    await done;
+    const p = collect(box, "tabpanel").find((x) =>
+      x.dataset.tab === "registry"
+    );
+    const why = owners ? "owners: " : "no owners: ";
+    assert(!textOf(p).includes("Reading the index"), why + textOf(p));
+    assert(
+      regHeads(p).includes("Delegations in force — 1"),
+      why + regHeads(p),
+    );
+  }
 });
