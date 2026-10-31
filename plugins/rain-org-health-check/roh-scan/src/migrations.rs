@@ -815,7 +815,7 @@ mod tests {
     }
 
     #[test]
-    fn a_line_that_cannot_be_encoded_asks_no_head() {
+    fn an_unencodable_line_is_unread_and_unasked_while_the_others_are_read() {
         let net = Network {
             chain_id: 7,
             name: "sevenchain".to_string(),
@@ -824,14 +824,50 @@ mod tests {
         let lines = vec![
             (SAFE_X.to_string(), NS_A.to_string()),
             ("safe".to_string(), NS_A.to_string()),
+            (SAFE_Y.to_string(), NS_B.to_string()),
         ];
-        let called = RefCell::new(false);
-        let got = read_heads(&net, &lines, &|_| {
-            *called.borrow_mut() = true;
+        let sent = RefCell::new(Vec::new());
+        let got = read_heads(&net, &lines, &|calls| {
+            sent.borrow_mut().extend_from_slice(calls);
+            calls
+                .iter()
+                .enumerate()
+                .map(|(i, _)| Some(format!("0x{}", ["ab", "cd", "ef"][i].repeat(32))))
+                .collect()
+        });
+        assert_eq!(
+            got,
+            vec![
+                Some(format!("0x{}", "ab".repeat(32))),
+                None,
+                Some(format!("0x{}", "cd".repeat(32))),
+            ]
+        );
+        let want: Vec<(String, String)> = [&lines[0], &lines[2]]
+            .iter()
+            .map(|(w, ns)| (REGISTRY.to_string(), rpc::head_v5_calldata(w, ns).unwrap()))
+            .collect();
+        assert_eq!(*sent.borrow(), want);
+    }
+
+    #[test]
+    fn lines_none_of_which_encode_are_all_unread_and_none_asked() {
+        let net = Network {
+            chain_id: 7,
+            name: "sevenchain".to_string(),
+            registry: REGISTRY.to_string(),
+        };
+        let lines = vec![
+            ("safe".to_string(), NS_A.to_string()),
+            (SAFE_X.to_string(), "ns".to_string()),
+        ];
+        let sent = RefCell::new(Vec::new());
+        let got = read_heads(&net, &lines, &|calls| {
+            sent.borrow_mut().extend_from_slice(calls);
             vec![Some(format!("0x{}", "ab".repeat(32))); 2]
         });
         assert_eq!(got, vec![None, None]);
-        assert!(!*called.borrow());
+        assert!(sent.borrow().is_empty());
     }
 
     #[test]

@@ -14192,8 +14192,19 @@ const regRecord = (id, line, index, migration, appliedOnto, over = {}) => ({
   blockTimestamp: String(RBAC_TS - 40 + index),
   transactionHash: "0xtx" + id,
   logIndex: "0",
+  metas: [],
   ...over,
 });
+// A RegistryMeta as the index stores it: `verified` when every key preimage
+// item hashes to its key.
+const regMeta = (verified, strings) => ({
+  verified,
+  nameString: null,
+  namespaceString: null,
+  migrationString: null,
+  ...strings,
+});
+const REG_M1_LABEL = "st0x.underlying-naming.rename.1";
 
 function regFake(over = {}) {
   const f = fakeSubgraph({ registrySchema: REG_SCHEMA, ...over });
@@ -14258,6 +14269,7 @@ function regFake(over = {}) {
       boundAtBlock: "30",
       boundAtTimestamp: String(TL_NOW - (3 * 86400 + 2 * 3600)),
       registerCount: 2,
+      metas: [regMeta(true, { nameString: "st0x.vault-beacon.v1" })],
     },
   ];
   const write = (id, value, valueType, block) => ({
@@ -14303,19 +14315,28 @@ function regFake(over = {}) {
     },
   ];
   // Ids in reverse index order (the fake pages by id): line order is `index`.
+  // Only record #1's write carried a meta the index verified.
   f.rows.migrationRecords = [
     regRecord("0xra", REG_LINE, 2, REG_M[2], REG_M[1]),
-    regRecord("0xrb", REG_LINE, 1, REG_M[1], REG_M[0], { sender: RBAC_TL }),
+    regRecord("0xrb", REG_LINE, 1, REG_M[1], REG_M[0], {
+      sender: RBAC_TL,
+      metas: [
+        regMeta(true, {
+          namespaceString: "st0x.deploy",
+          migrationString: REG_M1_LABEL,
+        }),
+      ],
+    }),
     regRecord("0xrc", REG_LINE, 0, REG_M[0], REG_GENESIS),
     regRecord("0xr8", REG_LINE_B, 0, regWord("98"), REG_GENESIS),
   ];
+  for (const r of f.rows.migrationRecords) {
+    r.line.namespace = f.rows.migrationLines.find((l) =>
+      l.id === r.line.id
+    ).namespace;
+  }
   return f;
 }
-
-const REG_NAMES = {
-  [REG_NS]: "st0x.deploy",
-  [REG_NAME]: "st0x.vault-beacon.v1",
-};
 
 // A network both vocabularies name alike: graph-cli's and the deploy repo's.
 const REG_NET = rbacNet({ network: "base", chain: "base" });
@@ -14356,7 +14377,7 @@ const regScan = (over = {}) => ({
 
 async function regPanel(
   f,
-  extra = { registryNames: REG_NAMES },
+  extra = {},
   migrations = regScan(),
   net = REG_NET,
 ) {
@@ -14429,7 +14450,7 @@ Deno.test("root registry: a schema with only some registry entities, or a non-ty
   );
 });
 
-Deno.test("root registry: only approvals in force are listed as delegations, labelled from the deploy repo", async () => {
+Deno.test("root registry: only approvals in force are listed as delegations, a scope labelled by its verified preimage", async () => {
   const p = await regPanel(regFake());
   const head = collect(p, "own-grouphead").map((h) => h.textContent);
   assert(head.includes("Delegations in force — 1"), head.join(" | "));
@@ -14545,6 +14566,7 @@ Deno.test("root registry: bindings show their age and block, labelled names firs
     name,
     boundAtBlock: "31",
     boundAtTimestamp: String(ts),
+    metas: [],
   });
   // An unnamed hash that sorts below the labelled one, bound ahead of the clock.
   f.rows.configBindings.push(
@@ -14769,11 +14791,85 @@ Deno.test("root registry: a row that is not an object fails its read, wherever i
   );
 });
 
-Deno.test("root registry: an unlabelled hash is shown raw", async () => {
-  const p = await regPanel(regFake(), {});
-  const t = textOf(collect(p, "rbac-net")[0]);
-  assert(t.includes(REG_M[0]) && t.includes(REG_NS), t);
-  assert(!t.includes("st0x.deploy"), t);
+// Each place a registry hash is shown: [delegation scope, binding name, line
+// namespace, record #1's migration, record #2's applied-onto].
+const regShown = (p) => {
+  const value = (n, key) =>
+    collect(
+      collect(n, "bcn-line").find((x) =>
+        collect(x, "bcn-key")[0].textContent === key
+      ),
+      "own-note",
+    )[0].textContent;
+  const role = (n) => collect(n, "own-role")[0].textContent;
+  return [
+    role(regGroup(p, "Delegations in force")),
+    role(regGroup(p, "Config bindings")),
+    value(regLines(p)[0], "namespace"),
+    role(regRecs(p)[1]),
+    value(regRecs(p)[2], "applied onto"),
+  ];
+};
+const REG_RAW = [REG_NS, REG_NAME, REG_NS, REG_M[1], REG_M[1]];
+
+Deno.test("root registry: a hash is labelled by its preimage only where the index verified it", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].metas.push(
+    regMeta(false, { nameString: "forged.name" }),
+  );
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").metas.push(
+    regMeta(false, {
+      namespaceString: "forged.namespace",
+      migrationString: "forged.migration",
+    }),
+  );
+  const p = await regPanel(f);
+  const shown = regShown(p);
+  assert(
+    shown.join() ===
+      [
+        "st0x.deploy",
+        "st0x.vault-beacon.v1",
+        "st0x.deploy",
+        REG_M1_LABEL,
+        REG_M1_LABEL,
+      ].join(),
+    shown.join(),
+  );
+  assert(
+    collect(regRecs(p)[1], "grt-roleid")[0].textContent === REG_M[1],
+    "a labelled migration keeps its hash beside it",
+  );
+  assert(!textOf(p).includes("forged"), "an unverified meta labels nothing");
+  const raws = regRecs(p).map((r) => collect(r, "own-role")[0].textContent);
+  assert(
+    raws.join() === [REG_M[0], REG_M1_LABEL, REG_M[2], regWord("98")].join(),
+    "a migration no verified meta names is its hash: " + raws.join(),
+  );
+
+  const g = regFake();
+  for (const m of [...g.rows.configBindings, ...g.rows.migrationRecords]) {
+    for (const x of m.metas) x.verified = false;
+  }
+  const q = await regPanel(g);
+  assert(regShown(q).join() === REG_RAW.join(), regShown(q).join());
+  for (const s of ["st0x.deploy", "st0x.vault-beacon.v1", REG_M1_LABEL]) {
+    assert(!textOf(q).includes(s), "unverified: " + s);
+  }
+
+  const h = regFake();
+  for (const m of [...h.rows.configBindings, ...h.rows.migrationRecords]) {
+    m.metas = [];
+  }
+  const r = await regPanel(h, {
+    roleNames: {
+      [REG_NS]: "NS_ROLE",
+      [REG_NAME]: "NAME_ROLE",
+      [REG_M[1]]: "M_ROLE",
+    },
+  });
+  assert(regShown(r).join() === REG_RAW.join(), regShown(r).join());
+  assert(!/NS_ROLE|NAME_ROLE|M_ROLE/.test(textOf(r)), "a role name is no label");
 });
 
 Deno.test("root registry: a failed page shows no registry history at all", async () => {
@@ -14791,14 +14887,14 @@ Deno.test("root registry: labels and registry strings render as text, never mark
   f.rows.configBindings[0].value = XSS_IMG;
   f.rows.configBindings[0].name = XSS_SCRIPT;
   f.rows.configBindings[0].valueType = XSS_SVG;
+  f.rows.configBindings[0].metas = [regMeta(true, { nameString: XSS_IMG })];
   f.rows.registryDelegates[0].scope = XSS_ATTR;
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").metas = [
+    regMeta(true, { namespaceString: XSS_IMG, migrationString: XSS_IMG }),
+  ];
   const scan = regScan();
   scan.networks[0].lines[0].head = XSS_SVG;
-  const p = await regPanel(
-    f,
-    { registryNames: { [REG_NS]: XSS_IMG } },
-    scan,
-  );
+  const p = await regPanel(f, undefined, scan);
   const t = textOf(p);
   for (const x of [XSS_SCRIPT, XSS_SVG, XSS_ATTR]) {
     assert(t.includes(x), "as text: " + x);
@@ -14812,7 +14908,12 @@ Deno.test("root registry: labels and registry strings render as text, never mark
     t.includes("unreadable value"),
     "a non-hex value is not echoed as bytes",
   );
-  assert(textOf(regLines(p)[0]).includes(XSS_IMG), "label as text");
+  assert(textOf(regLines(p)[0]).includes(XSS_IMG), "a namespace as text");
+  assert(
+    textOf(regGroup(p, "Config bindings")).includes(XSS_IMG),
+    "a name as text",
+  );
+  assert(textOf(regRecs(p)[1]).includes(XSS_IMG), "a migration as text");
   for (const tag of MARKUP_TAGS) {
     assert(tags(p, tag).length === 0, "no " + tag + " element created");
   }
@@ -14833,7 +14934,9 @@ function regElsewhere(f) {
     headRecord: { id: "0xr4" },
   });
   f.rows.migrationRecords.push(
-    regRecord("0xr4", other, 0, regWord("97"), REG_GENESIS),
+    regRecord("0xr4", other, 0, regWord("97"), REG_GENESIS, {
+      line: { id: other, namespace: REG_NS },
+    }),
   );
   for (
     const [id, registry] of [["d8", REG_MIGRATION_OTHER], [
@@ -14885,6 +14988,7 @@ function regElsewhere(f) {
     id: "b9",
     registry: REG_CONFIG_OTHER,
     name: regWord("b9"),
+    metas: [],
   });
   f.rows.configRegisters.push({
     ...f.rows.configRegisters[1],
@@ -14920,7 +15024,7 @@ Deno.test("root registry: only the registries the deploy repo declares are read 
 
   const q = await regPanel(
     regElsewhere(regFake()),
-    { registryNames: REG_NAMES, configRegistries: {} },
+    { configRegistries: {} },
     regScan({ networks: [] }),
   );
   const all = regHeads(q);
@@ -14965,7 +15069,7 @@ Deno.test("root registry: on Ethereum the declared ConfigRegistry is found under
   // keys the networks the page reads.
   const p = await regPanel(
     regElsewhere(regFake()),
-    { registryNames: REG_NAMES, configRegistries: { mainnet: REG_CONFIG.id } },
+    { configRegistries: { mainnet: REG_CONFIG.id } },
     scan,
     rbacNet(),
   );
@@ -14992,6 +15096,7 @@ Deno.test("root registry: a value reads as an address only when its type says ad
     value,
     valueType,
     valueTypeHash: REG_TYPE_HASH[valueType] ?? regWord("ff"),
+    metas: [],
   });
   f.rows.configBindings.push(
     bind("b2", regAddressWord(REG_STRANGER), "uint256"),
@@ -15038,6 +15143,35 @@ Deno.test("root registry: a value reads as an address only when its type says ad
     collect(value(w), "own-note").map((x) => x.textContent).join()
   );
   assert(types.join() === "address,bytes4", types.join());
+});
+
+Deno.test("root registry: only the V5 registries are named; any other kind reads as itself", async () => {
+  const f = regFake();
+  f.rows.registryDelegates.push(
+    {
+      ...f.rows.registryDelegates[0],
+      id: "d5",
+      registry: { id: "0x" + "c3".repeat(20), kind: "CONFIG_REGISTRY" },
+    },
+    {
+      ...f.rows.registryDelegates[0],
+      id: "d6",
+      registry: { id: "0x" + "d3".repeat(20), kind: "MIGRATION_REGISTRY" },
+    },
+  );
+  const p = await regPanel(f, { configRegistries: {} }, regScan({ networks: [] }));
+  const kinds = collect(regGroup(p, "Delegations in force"), "bcn-line")
+    .filter((l) => collect(l, "bcn-key")[0].textContent === "in")
+    .map((l) => collect(l, "own-note")[0].textContent);
+  assert(
+    kinds.join() ===
+      [
+        "MigrationRegistry V5",
+        "registry (CONFIG_REGISTRY)",
+        "registry (MIGRATION_REGISTRY)",
+      ].join(),
+    kinds.join(),
+  );
 });
 
 Deno.test("root registry: an unscoped delegate holds every scope, in force and in the changes", async () => {
@@ -15181,6 +15315,7 @@ Deno.test("root registry: a head is checked against the records up to the block 
     const f = regFake();
     f.rows.migrationRecords.push(
       regRecord("0xr9", REG_LINE, 3, regWord("e4"), REG_M[2], {
+        line: { id: REG_LINE, namespace: REG_NS },
         blockNumber: "60",
       }),
     );
@@ -15326,7 +15461,7 @@ Deno.test("root registry: a declared line the scan reads at genesis, with nothin
   assert(lines.length === 1, "the scan's line is listed: " + textOf(p));
   const t = textOf(lines[0]);
   assert(
-    t.includes("st0x.deploy") && t.toLowerCase().includes(REG_ROOT),
+    t.includes(REG_NS) && t.toLowerCase().includes(REG_ROOT),
     t,
   );
   assert(t.includes("its history is not yet backfilled"), t);
@@ -15348,7 +15483,7 @@ Deno.test("root registry: a declared line the scan reads at genesis, with nothin
   assert(regHeads(q).includes("Migration lines — 2"), regHeads(q));
   const [a, b] = regLines(q);
   assert(
-    textOf(a).includes("st0x.deploy") &&
+    textOf(a).includes(REG_NS) &&
       textOf(a).includes("its history is not yet backfilled") &&
       textOf(a).includes("0 records, chain intact"),
     "beside an indexed line: " + textOf(a),
@@ -15379,7 +15514,7 @@ Deno.test("root registry: a line only the scan holds, its head unread, is not re
   const p = await regPanel(f, undefined, scan);
   assert(regHeads(p).includes("Migration lines — 2"), regHeads(p));
   const a = regLines(p)[0];
-  assert(textOf(a).includes("st0x.deploy"), textOf(a));
+  assert(textOf(a).includes(REG_NS), textOf(a));
   assert(textOf(regHeadLine(a)).includes("not read"), textOf(a));
   assert(
     collect(a, "reg-problem").length === 0 &&

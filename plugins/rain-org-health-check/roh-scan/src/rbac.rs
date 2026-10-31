@@ -405,40 +405,6 @@ jobs:
     }
 
     #[test]
-    fn registry_names_come_from_dotted_lower_case_hash_preimages() {
-        let src = r#"
-            bytes32 internal constant NAMESPACE = keccak256("st0x.deploy");
-            bytes32 constant B = keccak256( "st0x.vault-beacon.v1" );
-            bytes32 constant R = keccak256("MINT");
-            bytes32 constant T = keccak256("EIP712Domain(string name)");
-            bytes32 constant U = keccak256("undotted");
-            bytes32 constant D = keccak256("st0x.deploy");
-        "#;
-        assert_eq!(
-            registry_names(&[src]),
-            vec![
-                (
-                    crate::rpc::role_id_hex("st0x.deploy"),
-                    "st0x.deploy".to_string()
-                ),
-                (
-                    crate::rpc::role_id_hex("st0x.vault-beacon.v1"),
-                    "st0x.vault-beacon.v1".to_string()
-                ),
-            ]
-        );
-    }
-
-    #[test]
-    fn registry_name_hash_is_the_keccak_of_the_label() {
-        // `cast keccak "st0x.deploy"`: LibStoxMigrations.NAMESPACE.
-        assert_eq!(
-            registry_names(&[r#"keccak256("st0x.deploy")"#])[0].0,
-            "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4"
-        );
-    }
-
-    #[test]
     fn rbac_doc_lists_each_network_with_its_chain_endpoint_and_the_names() {
         let nets = vec!["base".to_string(), "arbitrum-one".to_string()];
         let names = vec![
