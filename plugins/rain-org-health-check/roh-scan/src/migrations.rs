@@ -198,8 +198,9 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
         .collect()
 }
 
-/// One slot per `(writer, namespace)` line; `None` where the read did not answer.
-pub type ReadHeads<'a> = &'a dyn Fn(&Network, &[(String, String)]) -> Vec<Option<String>>;
+/// The block the heads were read at, and one slot per `(writer, namespace)` line; `None` where the read did not answer.
+pub type ReadHeads<'a> =
+    &'a dyn Fn(&Network, &[(String, String)]) -> (Option<u64>, Vec<Option<String>>);
 
 pub fn read_heads(
     net: &Network,
@@ -270,7 +271,7 @@ fn network_json(
             lines.push((r.writer.clone(), r.namespace.clone()));
         }
     }
-    let head_answers = heads(net, &lines);
+    let (head_block, head_answers) = heads(net, &lines);
     let applied = |r: &Record| {
         asked
             .iter()
@@ -364,10 +365,12 @@ fn network_json(
             .iter()
             .enumerate()
             .map(|(i, (w, ns))| {
+                let head = head_answers.get(i).cloned().flatten();
                 json!({
                     "writer": w,
                     "namespace": ns,
-                    "head": head_answers.get(i).cloned().flatten(),
+                    "headBlock": head.as_ref().and(head_block),
+                    "head": head,
                 })
             })
             .collect::<Vec<_>>(),

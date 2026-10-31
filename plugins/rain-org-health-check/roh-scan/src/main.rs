@@ -398,9 +398,22 @@ fn post_json(url: &str, body: &str) -> Option<Vec<u8>> {
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
 fn eth_call_payload(to: &str, data: &str) -> String {
+    eth_call_payload_at(to, data, "latest")
+}
+
+fn eth_call_payload_at(to: &str, data: &str, tag: &str) -> String {
     format!(
-        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"{tag}"]}}"#
     )
+}
+
+fn eth_block_number(session: Session) -> Option<u64> {
+    let body = curl_json(
+        session,
+        r#"{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}"#,
+    )?;
+    let hex = rpc::result_hex(&body)?;
+    u64::from_str_radix(hex.strip_prefix("0x")?, 16).ok()
 }
 
 /// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
@@ -462,6 +475,30 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
     calls: &[(String, String)],
     post: &F,
 ) -> Vec<Option<String>> {
+    eth_call_batch_at_via(rpcs, cursor, calls, "latest", post)
+}
+
+fn eth_call_batch_at(
+    session: Session,
+    calls: &[(String, String)],
+    tag: &str,
+) -> Vec<Option<String>> {
+    eth_call_batch_at_via(
+        session.chain.rpcs(),
+        session.cursor,
+        calls,
+        tag,
+        &curl_post,
+    )
+}
+
+fn eth_call_batch_at_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
+    rpcs: &[&str],
+    cursor: usize,
+    calls: &[(String, String)],
+    tag: &str,
+    post: &F,
+) -> Vec<Option<String>> {
     let mut out: Vec<Option<String>> = Vec::with_capacity(calls.len());
     for chunk in calls.chunks(ETH_CALL_BATCH_CHUNK) {
         let body = chunk
@@ -469,7 +506,7 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
             .enumerate()
             .map(|(i, (to, data))| {
                 format!(
-                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"{tag}"]}}"#
                 )
             })
             .collect::<Vec<_>>()
@@ -483,7 +520,7 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
         match answered {
             Some(slots) => out.extend(slots),
             None => out.extend(chunk.iter().map(|(to, data)| {
-                first_body(rpcs, cursor, &eth_call_payload(to, data), post)
+                first_body(rpcs, cursor, &eth_call_payload_at(to, data, tag), post)
                     .and_then(|b| rpc::result_hex(&b))
             })),
         }
@@ -2880,11 +2917,22 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 }),
                 None => vec![None; records.len()],
             },
-            &|net, lines| match Chain::from_network(&net.name) {
-                Some(chain) => migrations::read_heads(net, lines, &|calls| {
-                    eth_call_batch(rpc_session(chain), calls)
-                }),
-                None => vec![None; lines.len()],
+            &|net, lines| {
+                let unread = (None, vec![None; lines.len()]);
+                let Some(chain) = Chain::from_network(&net.name) else {
+                    return unread;
+                };
+                let session = rpc_session(chain);
+                let Some(block) = eth_block_number(session) else {
+                    return unread;
+                };
+                let tag = format!("0x{block:x}");
+                (
+                    Some(block),
+                    migrations::read_heads(net, lines, &|calls| {
+                        eth_call_batch_at(session, calls, &tag)
+                    }),
+                )
             },
         );
 
