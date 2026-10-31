@@ -15775,6 +15775,38 @@ Deno.test("root registry: a declared line the scan reads at genesis, with nothin
   assert(collect(q, "reg-problem").length === 0, textOf(q));
 });
 
+Deno.test("root registry: an indexed line the scan reads at genesis still names a head record the read does not hold", async () => {
+  for (
+    const [count, want] of [
+      [0, "the head record is not the last record"],
+      [
+        3,
+        "the line counts 3 records; the read holds 0 | the head record is not the last record",
+      ],
+    ]
+  ) {
+    const f = regFake();
+    f.rows.migrationLines[1] = {
+      ...f.rows.migrationLines[1],
+      recordCount: count,
+      headRecord: { id: "0xra" },
+    };
+    f.rows.migrationRecords = f.rows.migrationRecords.filter((r) =>
+      r.line.id === REG_LINE_B
+    );
+    const scan = regScan();
+    scan.networks[0].lines[0].head = REG_GENESIS;
+    const a = regLines(await regPanel(f, undefined, scan))[0];
+    assert(textOf(a).includes(REG_NS), textOf(a));
+    const probs = collect(a, "reg-problem").map((x) => x.textContent);
+    assert(probs.join(" | ") === want, count + ": " + probs.join(" | "));
+    assert(
+      textOf(a).includes("0 records, chain broken"),
+      count + ": " + textOf(a),
+    );
+  }
+});
+
 Deno.test("root registry: a line only the scan holds, its head unread, is not read rather than broken", async () => {
   const f = regFake();
   f.rows.migrationLines = f.rows.migrationLines.filter((l) =>
