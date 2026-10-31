@@ -2745,8 +2745,6 @@ function renderDeployments(document, $, data, io) {
       ? labels[id.toLowerCase()]
       : null;
   const REG_KINDS = {
-    CONFIG_REGISTRY: "ConfigRegistry V3",
-    MIGRATION_REGISTRY: "MigrationRegistry V3",
     CONFIG_REGISTRY_V5: "ConfigRegistry V5",
     MIGRATION_REGISTRY_V5: "MigrationRegistry V5",
   };
@@ -2929,7 +2927,7 @@ function renderDeployments(document, $, data, io) {
       );
       got.changes = num(allChanges.filter((c) => ours(c.registryDelegate)), ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
       got.bindings = num(bindings.filter(ours), ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
-      got.registers = num(registers.filter((r) => ours({ registry: { ...(r.binding && r.binding.registry), kind: "CONFIG_REGISTRY" } })), [
+      got.registers = num(registers.filter((r) => ours({ registry: { ...(r.binding && r.binding.registry), kind: "CONFIG_REGISTRY_V5" } })), [
         "blockNumber",
         "blockTimestamp",
         "logIndex",
