@@ -490,6 +490,32 @@ mod tests {
     }
 
     #[test]
+    fn decode_quantity_reads_0x_prefixed_hex() {
+        assert_eq!(decode_quantity("0x0"), Some(0));
+        assert_eq!(decode_quantity("0x10"), Some(16));
+        assert_eq!(decode_quantity("0x1b4"), Some(436));
+        assert_eq!(decode_quantity("0x1B4"), Some(436));
+        assert_eq!(decode_quantity("0xffffffffffffffff"), Some(u64::MAX));
+    }
+
+    #[test]
+    fn decode_quantity_is_none_without_0x_or_for_empty_oversize_or_non_hex() {
+        assert_eq!(decode_quantity("10"), None);
+        assert_eq!(decode_quantity(""), None);
+        assert_eq!(decode_quantity("0x"), None);
+        assert_eq!(decode_quantity("0x10000000000000000"), None);
+        assert_eq!(decode_quantity("0x1g"), None);
+    }
+
+    #[test]
+    fn block_tag_is_0x_lowercase_hex_without_leading_zeros() {
+        assert_eq!(block_tag(0), "0x0");
+        assert_eq!(block_tag(16), "0x10");
+        assert_eq!(block_tag(436), "0x1b4");
+        assert_eq!(block_tag(u64::MAX), "0xffffffffffffffff");
+    }
+
+    #[test]
     fn token_calldata_selectors_and_string_uint8_decoders() {
         assert!(name_calldata().starts_with("0x06fdde03")); // name()
         assert!(symbol_calldata().starts_with("0x95d89b41")); // symbol()
