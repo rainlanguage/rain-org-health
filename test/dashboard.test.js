@@ -15158,7 +15158,8 @@ Deno.test("root registry: a head the scan did not read shows as not read, never 
     const [a, b] = regLines(q);
     assert(
       collect(a, "reg-problem").length === 0,
-      why + ": " + collect(a, "reg-problem").map(textOf).join(" | "),
+      why + ": " +
+        collect(a, "reg-problem").map((x) => x.textContent).join(" | "),
     );
     const h = textOf(regHeadLine(a));
     assert(h.includes("not read") && !h.includes(REG_M[2]), why + ": " + h);
@@ -15212,7 +15213,8 @@ Deno.test("root registry: a head is checked against the records up to the block 
     const a = regLines(p)[0];
     assert(
       collect(a, "reg-problem").length === 0,
-      why + ": " + collect(a, "reg-problem").map(textOf).join(" | "),
+      why + ": " +
+        collect(a, "reg-problem").map((x) => x.textContent).join(" | "),
     );
     assert(
       textOf(a).includes("4 records, chain intact"),
@@ -15231,7 +15233,7 @@ Deno.test("root registry: a head is checked against the records up to the block 
   ) {
     const p = await regPanel(later(), undefined, at(headBlock, head));
     const a = regLines(p)[0];
-    const probs = collect(a, "reg-problem").map(textOf);
+    const probs = collect(a, "reg-problem").map((x) => x.textContent);
     assert(
       probs.join(" | ") ===
         `the head ${head} is not the migration of the last record at or before block ${headBlock}`,
