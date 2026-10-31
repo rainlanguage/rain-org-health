@@ -14195,8 +14195,6 @@ const regRecord = (id, line, index, migration, appliedOnto, over = {}) => ({
   metas: [],
   ...over,
 });
-// A RegistryMeta as the index stores it: `verified` when every key preimage
-// item hashes to its key.
 const regMeta = (verified, strings) => ({
   verified,
   nameString: null,
@@ -14791,8 +14789,6 @@ Deno.test("root registry: a row that is not an object fails its read, wherever i
   );
 });
 
-// Each place a registry hash is shown: [delegation scope, binding name, line
-// namespace, record #1's migration, record #2's applied-onto].
 const regShown = (p) => {
   const value = (n, key) =>
     collect(
