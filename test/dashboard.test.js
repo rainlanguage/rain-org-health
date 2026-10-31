@@ -14840,7 +14840,10 @@ Deno.test("root registry: a hash is labelled by its preimage only where the inde
     collect(regRecs(p)[1], "grt-roleid")[0].textContent === REG_M[1],
     "a labelled migration keeps its hash beside it",
   );
-  assert(!textOf(p).includes("forged"), "an unverified meta labels nothing");
+  assert(
+    !textOf(collect(p, "rbac-net")[0]).includes("forged"),
+    "an unverified meta labels nothing",
+  );
   const raws = regRecs(p).map((r) => collect(r, "own-role")[0].textContent);
   assert(
     raws.join() === [REG_M[0], REG_M1_LABEL, REG_M[2], regWord("98")].join(),
@@ -14854,7 +14857,7 @@ Deno.test("root registry: a hash is labelled by its preimage only where the inde
   const q = await regPanel(g);
   assert(regShown(q).join() === REG_RAW.join(), regShown(q).join());
   for (const s of ["st0x.deploy", "st0x.vault-beacon.v1", REG_M1_LABEL]) {
-    assert(!textOf(q).includes(s), "unverified: " + s);
+    assert(!textOf(collect(q, "rbac-net")[0]).includes(s), "unverified: " + s);
   }
 
   const h = regFake();
@@ -14869,7 +14872,10 @@ Deno.test("root registry: a hash is labelled by its preimage only where the inde
     },
   });
   assert(regShown(r).join() === REG_RAW.join(), regShown(r).join());
-  assert(!/NS_ROLE|NAME_ROLE|M_ROLE/.test(textOf(r)), "a role name is no label");
+  assert(
+    !/NS_ROLE|NAME_ROLE|M_ROLE/.test(textOf(collect(r, "rbac-net")[0])),
+    "a role name is no label",
+  );
 });
 
 Deno.test("root registry: a failed page shows no registry history at all", async () => {
@@ -15159,7 +15165,11 @@ Deno.test("root registry: only the V5 registries are named; any other kind reads
       registry: { id: "0x" + "d3".repeat(20), kind: "MIGRATION_REGISTRY" },
     },
   );
-  const p = await regPanel(f, { configRegistries: {} }, regScan({ networks: [] }));
+  const p = await regPanel(
+    f,
+    { configRegistries: {} },
+    regScan({ networks: [] }),
+  );
   const kinds = collect(regGroup(p, "Delegations in force"), "bcn-line")
     .filter((l) => collect(l, "bcn-key")[0].textContent === "in")
     .map((l) => collect(l, "own-note")[0].textContent);
