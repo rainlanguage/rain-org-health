@@ -2781,7 +2781,7 @@ function renderDeployments(document, $, data, io) {
   // it, the first onto genesis, and the line's own count, head and head record
   // must agree with the last record.
   const regLineKey = (l) => `${regLow(l.writer)}:${regLow(l.namespace)}`;
-  const regLine = (l, rows, genesis) => {
+  const regLine = (l, rows, genesis, indexed) => {
     const recs = rows.slice().sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
     const problems = [];
     const marked = new Map(recs.map((r) => [r, []]));
@@ -2801,15 +2801,16 @@ function renderDeployments(document, $, data, io) {
     const last = recs.length ? recs[recs.length - 1] : null;
     const count = rbacNum(l.recordCount);
     if (count !== recs.length) problems.push(`the line counts ${count ?? "?"} records; the read holds ${recs.length}`);
+    const behind = l.head !== null && l.headBlock > indexed;
     if (!(recs.length === 0 && genesis !== null && regLow(l.head) === genesis)) {
-      if (l.head !== null) {
+      if (l.head !== null && !behind) {
         const seen = recs.filter((r) => typeof r.blockNumber === "number" && r.blockNumber <= l.headBlock);
         const want = seen.length ? regLow(seen[seen.length - 1].migration) : genesis;
         if (want !== null && regLow(l.head) !== want) {
           problems.push(`the head ${l.head} is not the migration of the last record at or before block ${l.headBlock}`);
         }
       }
-      if (!last || !l.headRecord || l.headRecord.id !== last.id) problems.push("the head record is not the last record");
+      if ((last ? last.id : null) !== (l.headRecord ? l.headRecord.id : null)) problems.push("the head record is not the last record");
     }
     const records = recs.map((r) => ({ ...r, problems: marked.get(r) }));
     const broken = problems.length > 0 || records.some((r) => r.problems.length > 0);
@@ -2817,6 +2818,7 @@ function renderDeployments(document, $, data, io) {
       ...l,
       records,
       problems,
+      behind,
       chain: broken ? "broken" : genesis === null && records.length ? "unchecked" : "intact",
     };
   };
@@ -2917,6 +2919,7 @@ function renderDeployments(document, $, data, io) {
       };
       got.declared = declared;
       got.config = config;
+      got.genesis = genesis;
       const scoped = delegates.concat(unscoped.map((d) => ({ ...d, scope: null, unscoped: true })));
       got.delegates = num(scoped.filter(ours), ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
         (d) => ({ ...d, expectedAs: expected.get(regLow(d.delegate)) || null }),
@@ -2952,6 +2955,7 @@ function renderDeployments(document, $, data, io) {
             { ...l, head: read ? h.head : null, headBlock: read ? h.block : null },
             l.id === null ? [] : byLine.get(l.id),
             genesis,
+            block,
           );
         })
         .sort((a, b) => regLow(a.namespace).localeCompare(regLow(b.namespace)) || regLow(a.writer).localeCompare(regLow(b.writer)));
@@ -3122,8 +3126,13 @@ function renderDeployments(document, $, data, io) {
         line("writer", whoNode(String(l.writer), chain, pins)),
         line("head", l.head === null ? el("span", "own-note", "not read") : word(l.head), chip),
       );
-      if (l.records.length === 0 && genesis !== null && regLow(l.head) === genesis) {
+      if (l.records.length === 0 && n.genesis !== null && regLow(l.head) === n.genesis) {
         head.append(el("div", "own-note rbac-ideal-gap", "At genesis on this registry: its history is not yet backfilled."));
+      }
+      if (l.behind) {
+        head.append(
+          el("div", "own-note rbac-ideal-gap", `subgraph behind the scan (indexed to block ${n.indexedBlock}, head read at block ${l.headBlock})`),
+        );
       }
       if (l.chain === "unchecked") head.append(el("div", "own-note rbac-ideal-gap", "The scan carries no migration genesis to check the first record against."));
       for (const p of l.problems) head.append(el("div", "own-note rbac-ideal-off reg-problem", p));
