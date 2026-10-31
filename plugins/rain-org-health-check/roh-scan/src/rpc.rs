@@ -184,6 +184,14 @@ pub fn decode_word(result_hex: &str) -> Option<String> {
         .map(|r| r._0.to_string().to_lowercase())
 }
 
+pub fn decode_quantity(result_hex: &str) -> Option<u64> {
+    u64::from_str_radix(result_hex.strip_prefix("0x")?, 16).ok()
+}
+
+pub fn block_tag(block: u64) -> String {
+    format!("0x{block:x}")
+}
+
 /// `None` unless `writer` is an address and `namespace` is 32-byte hex.
 pub fn head_v5_calldata(writer: &str, namespace: &str) -> Option<String> {
     Some(to_hex(

@@ -412,8 +412,7 @@ fn eth_block_number(session: Session) -> Option<u64> {
         session,
         r#"{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}"#,
     )?;
-    let hex = rpc::result_hex(&body)?;
-    u64::from_str_radix(hex.strip_prefix("0x")?, 16).ok()
+    rpc::decode_quantity(&rpc::result_hex(&body)?)
 }
 
 /// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
@@ -2913,7 +2912,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 let Some(block) = eth_block_number(session) else {
                     return unread;
                 };
-                let tag = format!("0x{block:x}");
+                let tag = rpc::block_tag(block);
                 (
                     Some(block),
                     migrations::read_heads(net, lines, &|calls| {
