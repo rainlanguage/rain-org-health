@@ -15246,6 +15246,68 @@ Deno.test("root registry: a head is checked against the records up to the block 
   }
 });
 
+Deno.test("root registry: a head read past the index's block is behind, never broken; at the index's block it is compared", async () => {
+  // On chain line A gains a fourth record at block 60; the index holds only
+  // its three records at blocks 40-42 and line B's at block 40.
+  const read = (indexed) => {
+    const f = regFake();
+    f.meta.data._meta.block.number = indexed;
+    return f;
+  };
+  const at = (headBlock, head) => {
+    const scan = regScan();
+    scan.networks[0].lines[0] = {
+      ...scan.networks[0].lines[0],
+      headBlock,
+      head,
+    };
+    return scan;
+  };
+  const note = (indexed, headBlock) =>
+    `subgraph behind the scan (indexed to block ${indexed}, head read at block ${headBlock})`;
+  for (
+    const [why, indexed, headBlock, head] of [
+      ["a record the index has not reached", 55, 60, regWord("e4")],
+      ["one block past the index", 59, 60, regWord("e4")],
+      ["a head both reads agree on", 55, 60, REG_M[2]],
+    ]
+  ) {
+    const p = await regPanel(read(indexed), undefined, at(headBlock, head));
+    const [a, b] = regLines(p);
+    assert(
+      collect(p, "reg-problem").length === 0,
+      why + ": " +
+        collect(p, "reg-problem").map((x) => x.textContent).join(" | "),
+    );
+    assert(
+      textOf(a).includes("3 records, chain intact"),
+      why + ": " + textOf(a),
+    );
+    assert(textOf(regHeadLine(a)).includes(head), why + ": " + textOf(a));
+    assert(
+      textOf(a).includes(note(indexed, headBlock)),
+      why + ": " + textOf(a),
+    );
+    assert(
+      !textOf(b).includes("subgraph behind the scan") &&
+        textOf(b).includes("1 record, chain intact"),
+      why + ": a head read within the index is not behind: " + textOf(b),
+    );
+  }
+  const p = await regPanel(read(60), undefined, at(60, regWord("e4")));
+  const a = regLines(p)[0];
+  const probs = collect(a, "reg-problem").map((x) => x.textContent);
+  assert(
+    probs.join(" | ") ===
+      `the head ${
+        regWord("e4")
+      } is not the migration of the last record at or before block 60`,
+    probs.join(" | "),
+  );
+  assert(textOf(a).includes("3 records, chain broken"), textOf(a));
+  assert(!textOf(a).includes("subgraph behind the scan"), textOf(a));
+});
+
 Deno.test("root registry: a declared line the scan reads at genesis, with nothing indexed, reads as not yet backfilled", async () => {
   const f = regFake();
   f.rows.migrationLines = [];
