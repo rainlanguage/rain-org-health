@@ -2780,6 +2780,7 @@ function renderDeployments(document, $, data, io) {
   // Each record must sit at its position and be applied onto the record before
   // it, the first onto genesis, and the line's own count, head and head record
   // must agree with the last record.
+  const regLineKey = (l) => `${regLow(l.writer)}:${regLow(l.namespace)}`;
   const regLine = (l, rows, genesis) => {
     const recs = rows.slice().sort((a, b) => (a.index ?? Infinity) - (b.index ?? Infinity));
     const problems = [];
@@ -2800,7 +2801,8 @@ function renderDeployments(document, $, data, io) {
     const last = recs.length ? recs[recs.length - 1] : null;
     const count = rbacNum(l.recordCount);
     if (count !== recs.length) problems.push(`the line counts ${count ?? "?"} records; the read holds ${recs.length}`);
-    if (!last || regLow(l.head) !== regLow(last.migration)) problems.push(`the head ${l.head} is not the last record's migration`);
+    if (l.head === null) problems.push("the scan read no headV5 for this line");
+    else if (!last || regLow(l.head) !== regLow(last.migration)) problems.push(`the head ${l.head} is not the last record's migration`);
     if (!last || !l.headRecord || l.headRecord.id !== last.id) problems.push("the head record is not the last record");
     const records = recs.map((r) => ({ ...r, problems: marked.get(r) }));
     const broken = problems.length > 0 || records.some((r) => r.problems.length > 0);
@@ -2811,7 +2813,7 @@ function renderDeployments(document, $, data, io) {
       chain: broken ? "broken" : genesis === null && records.length ? "unchecked" : "intact",
     };
   };
-  const regRead = async (url, genesis, declared, config) => {
+  const regRead = async (url, genesis, declared, config, heads) => {
     const out = await rbacMeta(url);
     if (typeof out.indexedBlock !== "number") return out;
     const block = out.indexedBlock;
@@ -2931,7 +2933,7 @@ function renderDeployments(document, $, data, io) {
       const onDeclared = (l) => declared === null || regLow(l.registry && l.registry.id) === declared;
       got.lines = lines
         .filter(onDeclared)
-        .map((l) => regLine(l, byLine.get(l.id), genesis))
+        .map((l) => regLine({ ...l, head: heads.get(regLineKey(l)) ?? null }, byLine.get(l.id), genesis))
         .sort((a, b) => regLow(a.namespace).localeCompare(regLow(b.namespace)) || regLow(a.writer).localeCompare(regLow(b.writer)));
     } catch (e) {
       return fail(e instanceof Error ? e.message : String(e));
@@ -3162,8 +3164,18 @@ function renderDeployments(document, $, data, io) {
     const cr = r.configRegistries && typeof r.configRegistries === "object" ? r.configRegistries : {};
     const configBy = new Map(Object.entries(cr).filter(([, a]) => typeof a === "string").map(([k, a]) => [k, a.toLowerCase()]));
     const declaredBy = new Map();
+    const headsBy = new Map();
     for (const m of migrations && Array.isArray(migrations.networks) ? migrations.networks : []) {
       if (m && typeof m.network === "string" && typeof m.registry === "string") declaredBy.set(m.network, m.registry.toLowerCase());
+      if (m && typeof m.network === "string" && Array.isArray(m.lines)) {
+        const heads = new Map();
+        for (const h of m.lines) {
+          if (h && typeof h.writer === "string" && typeof h.namespace === "string") {
+            heads.set(regLineKey(h), typeof h.head === "string" ? h.head : null);
+          }
+        }
+        headsBy.set(m.network, heads);
+      }
     }
     const reads = [];
     for (const n of nets) {
@@ -3183,7 +3195,7 @@ function renderDeployments(document, $, data, io) {
       }
       regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
       reads.push(
-        regRead(endpoint, genesis, declaredBy.get(n.network) ?? null, configBy.get(n.network) ?? null).then((res) =>
+        regRead(endpoint, genesis, declaredBy.get(n.network) ?? null, configBy.get(n.network) ?? null, headsBy.get(n.network) ?? new Map()).then((res) =>
           regBody(slot, res, chain, endpoint, published, pins, labels),
         ),
       );
