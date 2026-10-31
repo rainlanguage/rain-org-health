@@ -201,7 +201,11 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
 /// One slot per `(writer, namespace)` line; `None` where the read did not answer.
 pub type ReadHeads<'a> = &'a dyn Fn(&Network, &[(String, String)]) -> Vec<Option<String>>;
 
-pub fn read_heads(net: &Network, lines: &[(String, String)], call: EthCalls) -> Vec<Option<String>> {
+pub fn read_heads(
+    net: &Network,
+    lines: &[(String, String)],
+    call: EthCalls,
+) -> Vec<Option<String>> {
     let Some(calls) = lines
         .iter()
         .map(|(w, ns)| rpc::head_v5_calldata(w, ns).map(|data| (net.registry.clone(), data)))
@@ -260,10 +264,9 @@ fn network_json(
     let answers = read(net, &asked);
     let mut lines: Vec<(String, String)> = Vec::new();
     for r in &asked {
-        if !lines
-            .iter()
-            .any(|(w, ns)| w.eq_ignore_ascii_case(&r.writer) && ns.eq_ignore_ascii_case(&r.namespace))
-        {
+        if !lines.iter().any(|(w, ns)| {
+            w.eq_ignore_ascii_case(&r.writer) && ns.eq_ignore_ascii_case(&r.namespace)
+        }) {
             lines.push((r.writer.clone(), r.namespace.clone()));
         }
     }
