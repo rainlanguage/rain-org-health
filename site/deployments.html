@@ -2771,6 +2771,7 @@ function renderDeployments(document, $, data, io) {
     "RegistryDelegateChange",
     "RegistryUnscopedDelegate",
     "RegistryUnscopedDelegateChange",
+    "RegistryMeta",
   ];
   const REG_EXPECTED = { TOKEN_OWNER_SAFE: "token-owner Safe", GOVERNANCE_TIMELOCK: "governance timelock" };
   const regLow = (v) => (typeof v === "string" ? v.toLowerCase() : "");
@@ -2836,9 +2837,8 @@ function renderDeployments(document, $, data, io) {
       have.push(t);
     }
     if (have.length === 0) return { ...out, absent: true };
-    if (have.length < REG_TYPES.length) {
-      return fail(`the schema has ${have.join(", ")} but not ${REG_TYPES.filter((t) => !have.includes(t)).join(", ")}`);
-    }
+    const lacks = REG_TYPES.filter((t) => !have.includes(t));
+    if (lacks.length > 0) return { ...out, lacks };
     const got = {};
     try {
       const [delegates, changes, bindings, registers, lines, records, contracts, unscoped, unscopedChanges] = await Promise.all([
@@ -2980,6 +2980,12 @@ function renderDeployments(document, $, data, io) {
     slot.replaceChildren(rbacBanner(n, endpoint, published));
     if (n.absent) {
       slot.append(el("div", "rbac-empty", "This version of the index does not read the registries; nothing is shown for them."));
+      return;
+    }
+    if (Array.isArray(n.lacks)) {
+      slot.append(
+        el("div", "rbac-empty", `This version of the index predates the V5 registries (lacks ${n.lacks.join(", ")}); nothing is shown for them.`),
+      );
       return;
     }
     if (!Array.isArray(n.delegates)) return;
