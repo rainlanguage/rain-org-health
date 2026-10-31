@@ -14469,18 +14469,31 @@ Deno.test("root registry: an index lacking some V5 registry types says it predat
   );
 });
 
-Deno.test("root registry: a schema probe answered with a non-type, or not answered, is an index error", async () => {
+Deno.test("root registry: a schema probe answered with a non-type, an error, or not at all is an index error", async () => {
   const bad = regProbe([]);
   bad.data.t0 = { name: "Nope" };
-  const r = await regPanel(regFake({ registrySchema: bad }));
-  assert(regErr(r).includes("is not a type"), regErr(r));
-  assert(!textOf(r).includes("predates the V5 registries"), textOf(r));
-  const s = await regPanel(regFake({ registrySchema: null }));
-  assert(
-    regErr(s).includes("no readable answer to the schema probe"),
-    regErr(s),
-  );
-  assert(!textOf(s).includes("predates the V5 registries"), textOf(s));
+  const gap = regProbe(REG_TYPES);
+  delete gap.data.t3;
+  for (const probe of [bad, gap]) {
+    const r = await regPanel(regFake({ registrySchema: probe }));
+    assert(regErr(r).includes("is not a type"), regErr(r));
+    assert(!textOf(r).includes("predates the V5 registries"), textOf(r));
+  }
+  for (
+    const [probe, want] of [
+      [null, "no readable answer to the schema probe"],
+      [{ error: "subgraph name/version error" }, "the subgraph vanished mid-read"],
+      [{ errors: [{ message: "boom" }] }, "boom"],
+    ]
+  ) {
+    const s = await regPanel(regFake({ registrySchema: probe }));
+    assert(regErr(s).includes(want), want + ": " + regErr(s));
+    assert(
+      !textOf(s).includes("predates the V5 registries") &&
+        !textOf(s).includes("does not read the registries"),
+      want + ": " + textOf(s),
+    );
+  }
 });
 
 Deno.test("root registry: only approvals in force are listed as delegations, a scope labelled by its verified preimage", async () => {
@@ -14862,22 +14875,69 @@ Deno.test("root registry: without the scan's genesis the first record is uncheck
     "a head read before the first record has nothing to check against: " +
       textOf(e),
   );
+  const empty = regFake();
+  empty.rows.migrationLines[1] = {
+    ...empty.rows.migrationLines[1],
+    recordCount: 0,
+    headRecord: null,
+  };
+  empty.rows.migrationRecords = empty.rows.migrationRecords.filter((r) =>
+    r.line.id === REG_LINE_B
+  );
+  const z = regLines(
+    await regPanel(empty, undefined, regScan({ genesis: undefined })),
+  )[0];
+  assert(
+    textOf(z).includes("0 records, chain intact") &&
+      !textOf(z).includes("no migration genesis"),
+    "a line with no records has no first record to leave unchecked: " +
+      textOf(z),
+  );
+});
+
+Deno.test("root registry: a registry with no migration line says none has been recorded", async () => {
+  const f = regFake();
+  f.rows.migrationLines = [];
+  f.rows.migrationRecords = [];
+  const p = await regPanel(f, undefined, regScan({ networks: [] }));
+  assert(regHeads(p).includes("Migration lines — 0"), regHeads(p));
+  assert(regLines(p).length === 0, textOf(p));
+  assert(
+    textOf(p).includes(
+      "No migration has been recorded in the MigrationRegistry.",
+    ),
+    textOf(p),
+  );
+  const q = await regPanel(regFake());
+  assert(
+    !textOf(q).includes("No migration has been recorded"),
+    "not beside lines: " + textOf(q),
+  );
 });
 
 Deno.test("root registry: a record on a line the index does not hold fails the read", async () => {
-  const f = regFake();
-  f.rows.migrationRecords.push(
-    regRecord("0xr0", "0x" + "33".repeat(72), 0, regWord("97"), REG_GENESIS),
-  );
-  const p = await regPanel(f);
-  assert(
-    regErr(p).includes("a record on a line the index does not hold"),
-    regErr(p),
-  );
-  assert(
-    regLines(p).length === 0 && !textOf(p).includes("Delegations in force"),
-    "nothing shown short",
-  );
+  for (
+    const [why, line] of [
+      ["another line", { id: "0x" + "33".repeat(72) }],
+      ["no line", null],
+    ]
+  ) {
+    const f = regFake();
+    f.rows.migrationRecords.push(
+      regRecord("0xr0", REG_LINE, 0, regWord("97"), REG_GENESIS, { line }),
+    );
+    const p = await regPanel(f);
+    assert(
+      regErr(p).includes(
+        "migrationRecords: a record on a line the index does not hold",
+      ),
+      why + ": " + regErr(p),
+    );
+    assert(
+      regLines(p).length === 0 && !textOf(p).includes("Delegations in force"),
+      why + ": nothing shown short",
+    );
+  }
 });
 
 Deno.test("root registry: a row that is not an object, or has no string id, fails its read, wherever it sits", async () => {
