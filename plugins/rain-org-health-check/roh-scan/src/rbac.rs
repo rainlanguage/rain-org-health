@@ -137,32 +137,6 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     out
 }
 
-/// Every registry label the deploy repo spells out, keyed by its hash.
-///
-/// The registries emit `bytes32` names and namespaces, never their preimages.
-/// A label is shown where a source writes `keccak256("label")` for a dotted
-/// lower-case label (`st0x.deploy`, `st0x.vault-beacon.v1`): the convention the
-/// deploy repo's binding names and migration namespaces follow. Upper-case
-/// preimages are roles, which `role_names` covers.
-/// @return `(0x-hash, label)` pairs, deduplicated, first appearance wins.
-pub fn registry_names(sources: &[&str]) -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = Vec::new();
-    let Ok(hashed) =
-        Regex::new(r#"keccak256\(\s*"([a-z][a-z0-9]*(?:[.-][a-z0-9]+)*\.[a-z0-9.-]+)"\s*\)"#)
-    else {
-        return out;
-    };
-    for src in sources {
-        for c in hashed.captures_iter(src) {
-            let id = crate::rpc::role_id_hex(&c[1]);
-            if !out.iter().any(|(i, _)| *i == id) {
-                out.push((id, c[1].to_string()));
-            }
-        }
-    }
-    out
-}
-
 /// Names from the deploy repo's `ideal-roles.json`: each `(role, roleName)` pair
 /// whose name hashes to its role, or is `DEFAULT_ADMIN_ROLE` for `bytes32(0)`. A
 /// pair whose name is not its role's is dropped, never shown.

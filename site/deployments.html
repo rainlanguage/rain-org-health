@@ -2737,9 +2737,8 @@ function renderDeployments(document, $, data, io) {
   };
   // Root registry: who may write under whom in the ConfigRegistry and the
   // MigrationRegistry, and every binding and record written, read live from
-  // the same index as Role changes. The registries emit hashes, never their
-  // preimages, so a scope or name is labelled only where the deploy repo
-  // spells its preimage out.
+  // the same index as Role changes. A name, namespace or migration is labelled
+  // only by a preimage the index verified from the write's MetaV1_2.
   const regLabel = (labels, id) =>
     typeof id === "string" && Object.prototype.hasOwnProperty.call(labels, id.toLowerCase()) && typeof labels[id.toLowerCase()] === "string"
       ? labels[id.toLowerCase()]
@@ -2861,7 +2860,7 @@ function renderDeployments(document, $, data, io) {
           url,
           "configBindings",
           "",
-          "registry { id kind } authority name value valueType valueTypeHash sender boundAtBlock boundAtTimestamp registerCount",
+          "registry { id kind } authority name value valueType valueTypeHash sender boundAtBlock boundAtTimestamp registerCount metas { verified nameString }",
           block,
         ),
         rbacReadAll(
@@ -2882,7 +2881,7 @@ function renderDeployments(document, $, data, io) {
           url,
           "migrationRecords",
           "",
-          "line { id } index migration appliedOnto appliedAt sender blockNumber blockTimestamp transactionHash logIndex",
+          "line { id namespace } index migration appliedOnto appliedAt sender blockNumber blockTimestamp transactionHash logIndex metas { verified namespaceString migrationString }",
           block,
         ),
         rbacReadAll(url, "contracts", "", "kind", block),
@@ -2915,6 +2914,20 @@ function renderDeployments(document, $, data, io) {
         const want = /^MIGRATION_REGISTRY/.test(k) ? declared : /^CONFIG_REGISTRY/.test(k) ? config : null;
         return want === null || regLow(d && d.registry && d.registry.id) === want;
       };
+      const preimages = {};
+      const preimage = (id, s) => {
+        if (typeof id === "string" && typeof s === "string") preimages[regLow(id)] = s;
+      };
+      for (const b of bindings) for (const m of Array.isArray(b.metas) ? b.metas : []) if (m && m.verified === true) preimage(b.name, m.nameString);
+      for (const r of records) {
+        for (const m of Array.isArray(r.metas) ? r.metas : []) {
+          if (m && m.verified === true) {
+            preimage(r.line && r.line.namespace, m.namespaceString);
+            preimage(r.migration, m.migrationString);
+          }
+        }
+      }
+      got.preimages = preimages;
       got.declared = declared;
       got.config = config;
       got.genesis = genesis;
@@ -2962,7 +2975,8 @@ function renderDeployments(document, $, data, io) {
     }
     return { ...out, ...got };
   };
-  const regBody = (slot, n, chain, endpoint, published, pins, labels) => {
+  const regBody = (slot, n, chain, endpoint, published, pins, base) => {
+    const labels = { ...base, ...(n && n.preimages) };
     slot.replaceChildren(rbacBanner(n, endpoint, published));
     if (n.absent) {
       slot.append(el("div", "rbac-empty", "This version of the index does not read the registries; nothing is shown for them."));
@@ -3171,19 +3185,13 @@ function renderDeployments(document, $, data, io) {
     sub.append(link("", `${r.org}/${r.repo}`, `https://github.com/${r.org}/${r.repo}/tree/main/subgraph`));
     sub.append(
       `'s subgraph as this page loads, at its "${r.tag}" tag: every delegate approval in the ConfigRegistry and ` +
-        "MigrationRegistry, every config binding and the writes behind it, and every migration line, checked record by record. Names, " +
-        "scopes and migrations are labelled where the deploy repo spells out the hash's preimage, and shown as the raw hash otherwise.",
+        "MigrationRegistry, every config binding and the writes behind it, and every migration line, checked record by record. A name, " +
+        "namespace or migration is labelled where the index verified its preimage from the write's MetaV1_2, and shown as the raw hash otherwise.",
     );
     sink.append(sub);
     const nets = Array.isArray(r.networks) ? r.networks : [];
     if (nets.length === 0) return off("the subgraph declares no networks");
     const labels = {};
-    for (const src of [r.registryNames, r.roleNames]) {
-      if (!src || typeof src !== "object") continue;
-      for (const [k, v] of Object.entries(src)) {
-        if (typeof v === "string" && !Object.prototype.hasOwnProperty.call(labels, k.toLowerCase())) labels[k.toLowerCase()] = v;
-      }
-    }
     const g = migrations && typeof migrations === "object" ? migrations.genesis : null;
     const genesis = typeof g === "string" && /^0x[0-9a-fA-F]{64}$/.test(g) ? g.toLowerCase() : null;
     if (genesis !== null) labels[genesis] = "genesis";
