@@ -207,16 +207,20 @@ pub fn read_heads(
     lines: &[(String, String)],
     call: EthCalls,
 ) -> Vec<Option<String>> {
-    let Some(calls) = lines
+    let encoded: Vec<Option<String>> = lines.iter().map(|(w, ns)| rpc::head_v5_calldata(w, ns)).collect();
+    let calls: Vec<(String, String)> = encoded
         .iter()
-        .map(|(w, ns)| rpc::head_v5_calldata(w, ns).map(|data| (net.registry.clone(), data)))
-        .collect::<Option<Vec<_>>>()
-    else {
-        return vec![None; lines.len()];
-    };
-    call(&calls)
-        .into_iter()
-        .map(|hex| hex.as_deref().and_then(rpc::decode_word))
+        .flatten()
+        .map(|data| (net.registry.clone(), data.clone()))
+        .collect();
+    let mut answers = call(&calls).into_iter();
+    encoded
+        .iter()
+        .map(|data| {
+            data.as_ref()
+                .and_then(|_| answers.next().flatten())
+                .and_then(|hex| rpc::decode_word(&hex))
+        })
         .collect()
 }
 
