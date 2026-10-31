@@ -2744,21 +2744,37 @@ function renderDeployments(document, $, data, io) {
     typeof id === "string" && Object.prototype.hasOwnProperty.call(labels, id.toLowerCase()) && typeof labels[id.toLowerCase()] === "string"
       ? labels[id.toLowerCase()]
       : null;
-  const regKind = (k) => (k === "CONFIG_REGISTRY" ? "ConfigRegistry" : k === "MIGRATION_REGISTRY" ? "MigrationRegistry" : `registry (${String(k)})`);
+  const REG_KINDS = {
+    CONFIG_REGISTRY: "ConfigRegistry V3",
+    MIGRATION_REGISTRY: "MigrationRegistry V3",
+    CONFIG_REGISTRY_V5: "ConfigRegistry V5",
+    MIGRATION_REGISTRY_V5: "MigrationRegistry V5",
+  };
+  const regKind = (k) => (Object.prototype.hasOwnProperty.call(REG_KINDS, k) ? REG_KINDS[k] : `registry (${String(k)})`);
   // Newest first, as for role changes.
   const regNewest = (a, b) => (b.blockNumber ?? -1) - (a.blockNumber ?? -1) || (b.logIndex ?? -1) - (a.logIndex ?? -1);
   // A 32-byte word holding an address reads as that address; any other value
   // is shown as its bytes.
-  const regValue = (v) => {
+  const regValue = (v, type) => {
     if (typeof v !== "string" || !/^0x([0-9a-fA-F]{2})*$/.test(v)) return { raw: "unreadable value" };
     const hex = v.slice(2).toLowerCase();
-    if (hex.length === 64 && hex.startsWith("0".repeat(24))) return { address: "0x" + hex.slice(24) };
+    const word = hex.length === 64 && hex.startsWith("0".repeat(24));
+    if (typeof type === "string" ? type === "address" && word : word) return { address: "0x" + hex.slice(24) };
     return { raw: v };
   };
   // One network's registry half, at one index position. The entities exist
   // only from the subgraph version that indexes the registries, so the schema
   // is asked first. Never throws.
-  const REG_TYPES = ["ConfigBinding", "ConfigRegister", "MigrationLine", "MigrationRecord", "RegistryDelegate", "RegistryDelegateChange"];
+  const REG_TYPES = [
+    "ConfigBinding",
+    "ConfigRegister",
+    "MigrationLine",
+    "MigrationRecord",
+    "RegistryDelegate",
+    "RegistryDelegateChange",
+    "RegistryUnscopedDelegate",
+    "RegistryUnscopedDelegateChange",
+  ];
   const REG_EXPECTED = { TOKEN_OWNER_SAFE: "token-owner Safe", GOVERNANCE_TIMELOCK: "governance timelock" };
   const regLow = (v) => (typeof v === "string" ? v.toLowerCase() : "");
   // Each record must sit at its position and be applied onto the record before
@@ -2817,7 +2833,7 @@ function renderDeployments(document, $, data, io) {
     }
     const got = {};
     try {
-      const [delegates, changes, bindings, registers, lines, records, contracts] = await Promise.all([
+      const [delegates, changes, bindings, registers, lines, records, contracts, unscoped, unscopedChanges] = await Promise.all([
         rbacReadAll(
           url,
           "registryDelegates",
@@ -2861,6 +2877,20 @@ function renderDeployments(document, $, data, io) {
           block,
         ),
         rbacReadAll(url, "contracts", "", "kind", block),
+        rbacReadAll(
+          url,
+          "registryUnscopedDelegates",
+          "",
+          "registry { id kind } account delegate approved approvedAtBlock approvedAtTimestamp revokedAtBlock revokedAtTimestamp",
+          block,
+        ),
+        rbacReadAll(
+          url,
+          "registryUnscopedDelegateChanges",
+          "",
+          "registryUnscopedDelegate { registry { id kind } account delegate } approved blockNumber blockTimestamp transactionHash transactionFrom logIndex",
+          block,
+        ),
       ]);
       const num = (rows, keys) =>
         rows.map((r) => {
@@ -2878,10 +2908,14 @@ function renderDeployments(document, $, data, io) {
       };
       got.declared = declared;
       got.config = config;
-      got.delegates = num(delegates.filter(ours), ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
+      const scoped = delegates.concat(unscoped.map((d) => ({ ...d, scope: null, unscoped: true })));
+      got.delegates = num(scoped.filter(ours), ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
         (d) => ({ ...d, expectedAs: expected.get(regLow(d.delegate)) || null }),
       );
-      got.changes = num(changes.filter((c) => ours(c.registryDelegate)), ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      const allChanges = changes.concat(
+        unscopedChanges.map((c) => ({ ...c, registryDelegate: { ...c.registryUnscopedDelegate, scope: null, unscoped: true } })),
+      );
+      got.changes = num(allChanges.filter((c) => ours(c.registryDelegate)), ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
       got.bindings = num(bindings.filter(ours), ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
       got.registers = num(registers.filter((r) => ours({ registry: { ...(r.binding && r.binding.registry), kind: "CONFIG_REGISTRY" } })), [
         "blockNumber",
@@ -2911,8 +2945,12 @@ function renderDeployments(document, $, data, io) {
       return;
     }
     if (!Array.isArray(n.delegates)) return;
-    const scopeNode = (id) => {
+    const scopeNode = (id, unscoped) => {
       const box = el("div", "own-rc");
+      if (unscoped) {
+        box.append(el("div", "own-role", "every scope (unscoped)"));
+        return box;
+      }
       const label = regLabel(labels, id);
       box.append(el("div", "own-role", label || (typeof id === "string" ? id : "(unknown)")));
       if (label) box.append(el("div", "grt-roleid", id));
@@ -2933,9 +2971,13 @@ function renderDeployments(document, $, data, io) {
       l.append(el("span", "bcn-key", key), ...nodes);
       return l;
     };
-    const valueNode = (v) => {
-      const d = regValue(v);
-      return d.address ? whoNode(d.address, chain, pins) : el("span", "mig-hash", d.raw);
+    const valueNode = (v, type) => {
+      const d = regValue(v, type);
+      const node = d.address ? whoNode(d.address, chain, pins) : el("span", "mig-hash", d.raw);
+      if (typeof type !== "string") return node;
+      const box = el("span", null);
+      box.append(node, " ", el("span", "own-note", type));
+      return box;
     };
     // Current approvals first: they are who may write right now.
     const live = n.delegates.filter((d) => d.approved === true);
@@ -2961,7 +3003,7 @@ function renderDeployments(document, $, data, io) {
           tail.append(tag);
         }
         if (typeof d.approvedAtTimestamp === "number") tail.append(el("span", "own-note", utc(d.approvedAtTimestamp)));
-        row.append(scopeNode(d.scope), ac, tail);
+        row.append(scopeNode(d.scope, d.unscoped === true), ac, tail);
         return row;
       },
     );
@@ -2992,7 +3034,7 @@ function renderDeployments(document, $, data, io) {
           el("span", "own-note", utc(c.blockTimestamp)),
           txNode(c.transactionHash, chain),
         );
-        row.append(scopeNode(d.scope), ac, tail);
+        row.append(scopeNode(d.scope, d.unscoped === true), ac, tail);
         return row;
       },
     );
@@ -3009,7 +3051,7 @@ function renderDeployments(document, $, data, io) {
       (b) => {
         const row = el("div", "own-row reg-binding");
         const ac = el("div", "bcn-detail");
-        ac.append(line("authority", whoNode(String(b.authority), chain, pins)), line("value", valueNode(b.value)));
+        ac.append(line("authority", whoNode(String(b.authority), chain, pins)), line("value", valueNode(b.value, b.valueType)));
         if (typeof b.sender === "string" && b.sender.toLowerCase() !== String(b.authority).toLowerCase()) {
           ac.append(line("bound by", whoNode(b.sender, chain, pins)));
         }
@@ -3033,7 +3075,7 @@ function renderDeployments(document, $, data, io) {
         const b = c.binding || {};
         const row = el("div", "own-row");
         const ac = el("div", "bcn-detail");
-        ac.append(line("authority", whoNode(String(b.authority), chain, pins)), line("value", valueNode(c.value)));
+        ac.append(line("authority", whoNode(String(b.authority), chain, pins)), line("value", valueNode(c.value, c.valueType)));
         if (typeof c.sender === "string" && c.sender.toLowerCase() !== String(b.authority).toLowerCase()) {
           ac.append(line("bound by", whoNode(c.sender, chain, pins)));
         }
