@@ -2803,8 +2803,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             ".github/workflows/deploy-subgraph.yaml",
         );
         let subgraph = rbac::parse_deploy_workflow(&subgraph_workflow);
-        let subgraph_networks =
-            rbac::parse_networks(&gh_file(deploy_org, deploy_repo, "subgraph/networks.json"));
+        let subgraph_networks_src = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
+        let subgraph_networks = rbac::parse_networks(&subgraph_networks_src);
         let deployment_rbac = {
             let mut doc = rbac::build_rbac(
                 deploy_org,
@@ -2813,6 +2813,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 subgraph_networks.as_deref(),
                 &role_names,
             );
+            doc["configRegistries"] =
+                serde_json::Value::Object(rbac::config_registries(&subgraph_networks_src));
             // Who each address on the tab is: every `address` constant in the
             // deploy repo's libraries, per chain. Every `.sol` the two
             // directories list is read, so a new library or pin is named

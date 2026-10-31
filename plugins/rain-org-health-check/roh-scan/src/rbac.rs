@@ -62,6 +62,20 @@ pub fn parse_networks(json_src: &str) -> Option<Vec<String>> {
     Some(v.as_object()?.keys().cloned().collect())
 }
 
+/// Each network's V5 `ConfigRegistry`, as `networks.json` declares it for the
+/// subgraph to index, lowercased.
+pub fn config_registries(json_src: &str) -> Map<String, Value> {
+    let Ok(Value::Object(v)) = serde_json::from_str::<Value>(json_src) else {
+        return Map::new();
+    };
+    v.iter()
+        .filter_map(|(n, c)| {
+            let a = c.get("ConfigRegistryV5")?.get("address")?.as_str()?;
+            Some((n.clone(), Value::from(a.to_lowercase())))
+        })
+        .collect()
+}
+
 /// The page's chain name for a subgraph network name.
 ///
 /// graph-cli names chains its own way (`mainnet`, `hyper-evm` / `hyperevm`);

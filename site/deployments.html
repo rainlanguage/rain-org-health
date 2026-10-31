@@ -2795,7 +2795,7 @@ function renderDeployments(document, $, data, io) {
       chain: broken ? "broken" : genesis === null && records.length ? "unchecked" : "intact",
     };
   };
-  const regRead = async (url, genesis, declared) => {
+  const regRead = async (url, genesis, declared, config) => {
     const out = await rbacMeta(url);
     if (typeof out.indexedBlock !== "number") return out;
     const block = out.indexedBlock;
@@ -2832,12 +2832,18 @@ function renderDeployments(document, $, data, io) {
           "registryDelegate { registry { id kind } account scope delegate } approved blockNumber blockTimestamp transactionHash transactionFrom logIndex",
           block,
         ),
-        rbacReadAll(url, "configBindings", "", "authority name value sender boundAtBlock boundAtTimestamp registerCount", block),
+        rbacReadAll(
+          url,
+          "configBindings",
+          "",
+          "registry { id kind } authority name value valueType valueTypeHash sender boundAtBlock boundAtTimestamp registerCount",
+          block,
+        ),
         rbacReadAll(
           url,
           "configRegisters",
           "",
-          "binding { authority name } sender value blockNumber blockTimestamp transactionHash logIndex",
+          "binding { registry { id } authority name } sender value valueType valueTypeHash blockNumber blockTimestamp transactionHash logIndex",
           block,
         ),
         rbacReadAll(
@@ -2865,17 +2871,23 @@ function renderDeployments(document, $, data, io) {
       const expected = new Map();
       for (const c of contracts) if (Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind)) expected.set(regLow(c.id), c.kind);
       got.expectedCount = expected.size;
-      const ours = (d) =>
-        declared === null ||
-        !/^MIGRATION_REGISTRY/.test(String(d && d.registry && d.registry.kind)) ||
-        regLow(d && d.registry && d.registry.id) === declared;
+      const ours = (d) => {
+        const k = String(d && d.registry && d.registry.kind);
+        const want = /^MIGRATION_REGISTRY/.test(k) ? declared : /^CONFIG_REGISTRY/.test(k) ? config : null;
+        return want === null || regLow(d && d.registry && d.registry.id) === want;
+      };
       got.declared = declared;
+      got.config = config;
       got.delegates = num(delegates.filter(ours), ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
         (d) => ({ ...d, expectedAs: expected.get(regLow(d.delegate)) || null }),
       );
       got.changes = num(changes.filter((c) => ours(c.registryDelegate)), ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
-      got.bindings = num(bindings, ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
-      got.registers = num(registers, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      got.bindings = num(bindings.filter(ours), ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
+      got.registers = num(registers.filter((r) => ours({ registry: { ...(r.binding && r.binding.registry), kind: "CONFIG_REGISTRY" } })), [
+        "blockNumber",
+        "blockTimestamp",
+        "logIndex",
+      ]).sort(regNewest);
       const byLine = new Map(lines.map((l) => [l.id, []]));
       for (const r of num(records, ["index", "appliedAt", "blockNumber", "blockTimestamp", "logIndex"])) {
         const at = r.line && byLine.get(r.line.id);
@@ -3105,6 +3117,8 @@ function renderDeployments(document, $, data, io) {
     const genesis = typeof g === "string" && /^0x[0-9a-fA-F]{64}$/.test(g) ? g.toLowerCase() : null;
     if (genesis !== null) labels[genesis] = "genesis";
     const pinTable = r.addressNames && typeof r.addressNames === "object" ? r.addressNames : null;
+    const cr = r.configRegistries && typeof r.configRegistries === "object" ? r.configRegistries : {};
+    const configBy = new Map(Object.entries(cr).filter(([, a]) => typeof a === "string").map(([k, a]) => [k, a.toLowerCase()]));
     const declaredBy = new Map();
     for (const m of migrations && Array.isArray(migrations.networks) ? migrations.networks : []) {
       if (m && typeof m.network === "string" && typeof m.registry === "string") declaredBy.set(m.network, m.registry.toLowerCase());
@@ -3127,7 +3141,7 @@ function renderDeployments(document, $, data, io) {
       }
       regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
       reads.push(
-        regRead(endpoint, genesis, declaredBy.get(n.network) ?? null).then((res) =>
+        regRead(endpoint, genesis, declaredBy.get(n.network) ?? null, configBy.get(n.network) ?? null).then((res) =>
           regBody(slot, res, chain, endpoint, published, pins, labels),
         ),
       );
