@@ -2844,7 +2844,7 @@ function renderDeployments(document, $, data, io) {
           url,
           "migrationLines",
           "",
-          "writer namespace head recordCount headRecord { id }",
+          "registry { id kind } writer namespace head recordCount headRecord { id }",
           block,
         ),
         rbacReadAll(
@@ -2865,7 +2865,10 @@ function renderDeployments(document, $, data, io) {
       const expected = new Map();
       for (const c of contracts) if (Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind)) expected.set(regLow(c.id), c.kind);
       got.expectedCount = expected.size;
-      const ours = (d) => declared === null || (d && d.registry && d.registry.kind) !== "MIGRATION_REGISTRY" || regLow(d && d.registry && d.registry.id) === declared;
+      const ours = (d) =>
+        declared === null ||
+        !/^MIGRATION_REGISTRY/.test(String(d && d.registry && d.registry.kind)) ||
+        regLow(d && d.registry && d.registry.id) === declared;
       got.declared = declared;
       got.delegates = num(delegates.filter(ours), ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
         (d) => ({ ...d, expectedAs: expected.get(regLow(d.delegate)) || null }),
@@ -2879,7 +2882,9 @@ function renderDeployments(document, $, data, io) {
         if (!at) throw new Error("migrationRecords: a record on a line the index does not hold");
         at.push(r);
       }
+      const onDeclared = (l) => declared === null || regLow(l.registry && l.registry.id) === declared;
       got.lines = lines
+        .filter(onDeclared)
         .map((l) => regLine(l, byLine.get(l.id), genesis))
         .sort((a, b) => regLow(a.namespace).localeCompare(regLow(b.namespace)) || regLow(a.writer).localeCompare(regLow(b.writer)));
     } catch (e) {
@@ -3121,7 +3126,11 @@ function renderDeployments(document, $, data, io) {
         continue;
       }
       regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
-      reads.push(regRead(endpoint, genesis, declaredBy.get(n.network) ?? null).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)));
+      reads.push(
+        regRead(endpoint, genesis, declaredBy.get(n.network) ?? null).then((res) =>
+          regBody(slot, res, chain, endpoint, published, pins, labels),
+        ),
+      );
     }
     return Promise.all(reads);
   };
