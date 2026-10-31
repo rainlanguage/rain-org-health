@@ -1,4 +1,4 @@
-//! The deploy repo's migrations joined with each registry's `appliedV5`; the page has no RPC.
+//! The deploy repo's migrations joined with each registry's `appliedV5` and each line's `headV5`; the page has no RPC.
 
 use crate::rpc;
 use alloy_primitives::{Address, FixedBytes};
@@ -198,6 +198,23 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
         .collect()
 }
 
+/// One slot per `(writer, namespace)` line; `None` where the read did not answer.
+pub type ReadHeads<'a> = &'a dyn Fn(&Network, &[(String, String)]) -> Vec<Option<String>>;
+
+pub fn read_heads(net: &Network, lines: &[(String, String)], call: EthCalls) -> Vec<Option<String>> {
+    let Some(calls) = lines
+        .iter()
+        .map(|(w, ns)| rpc::head_v5_calldata(w, ns).map(|data| (net.registry.clone(), data)))
+        .collect::<Option<Vec<_>>>()
+    else {
+        return vec![None; lines.len()];
+    };
+    call(&calls)
+        .into_iter()
+        .map(|hex| hex.as_deref().and_then(rpc::decode_word))
+        .collect()
+}
+
 /// Registry 0 for a migration the file says ran is a missing record, not one that has not run.
 fn state(applied: Option<u64>, executed_at: u64) -> &'static str {
     match applied {
@@ -216,7 +233,13 @@ fn when(t: u64) -> Value {
     }
 }
 
-fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: ReadApplied) -> Value {
+fn network_json(
+    m: &Manifest,
+    net: &Network,
+    rpc_host: Option<String>,
+    read: ReadApplied,
+    heads: ReadHeads,
+) -> Value {
     let genesis = |r: &Record| r.id.eq_ignore_ascii_case(&m.genesis);
     let mut asked: Vec<Record> = Vec::new();
     for mig in &m.migrations {
@@ -235,6 +258,16 @@ fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: Rea
         }
     }
     let answers = read(net, &asked);
+    let mut lines: Vec<(String, String)> = Vec::new();
+    for r in &asked {
+        if !lines
+            .iter()
+            .any(|(w, ns)| w.eq_ignore_ascii_case(&r.writer) && ns.eq_ignore_ascii_case(&r.namespace))
+        {
+            lines.push((r.writer.clone(), r.namespace.clone()));
+        }
+    }
+    let head_answers = heads(net, &lines);
     let applied = |r: &Record| {
         asked
             .iter()
@@ -324,6 +357,17 @@ fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: Rea
         "rpcHost": rpc_host,
         "unread": (0..asked.len()).filter(|i| answers.get(*i).copied().flatten().is_none()).count(),
         "migrations": rows,
+        "lines": lines
+            .iter()
+            .enumerate()
+            .map(|(i, (w, ns))| {
+                json!({
+                    "writer": w,
+                    "namespace": ns,
+                    "head": head_answers.get(i).cloned().flatten(),
+                })
+            })
+            .collect::<Vec<_>>(),
     })
 }
 
@@ -333,6 +377,7 @@ pub fn build(
     src: &str,
     rpc_host: &dyn Fn(&str) -> Option<String>,
     read: ReadApplied,
+    heads: ReadHeads,
 ) -> Value {
     let mut doc = json!({"org": org, "repo": repo, "path": PATH});
     let parsed = if src.trim().is_empty() {
@@ -347,7 +392,7 @@ pub fn build(
             doc["networks"] = m
                 .networks
                 .iter()
-                .map(|n| network_json(&m, n, rpc_host(&n.name), read))
+                .map(|n| network_json(&m, n, rpc_host(&n.name), read, heads))
                 .collect();
         }
     }

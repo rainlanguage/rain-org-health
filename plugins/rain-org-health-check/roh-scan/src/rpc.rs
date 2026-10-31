@@ -176,6 +176,25 @@ pub fn decode_address(result_hex: &str) -> Option<String> {
         .map(|r| r._0.to_string().to_lowercase())
 }
 
+/// Decode a single `bytes32` return as lowercase `0x…`.
+pub fn decode_word(result_hex: &str) -> Option<String> {
+    let bytes = result_bytes(result_hex)?;
+    headV5Call::abi_decode_returns(&bytes, false)
+        .ok()
+        .map(|r| r._0.to_string().to_lowercase())
+}
+
+/// `None` unless `writer` is an address and `namespace` is 32-byte hex.
+pub fn head_v5_calldata(writer: &str, namespace: &str) -> Option<String> {
+    Some(to_hex(
+        headV5Call {
+            writer: writer.parse().ok()?,
+            namespace: namespace.parse().ok()?,
+        }
+        .abi_encode(),
+    ))
+}
+
 /// Decode a `string` return (`name()` / `symbol()`).
 pub fn decode_string(result_hex: &str) -> Option<String> {
     let bytes = result_bytes(result_hex)?;

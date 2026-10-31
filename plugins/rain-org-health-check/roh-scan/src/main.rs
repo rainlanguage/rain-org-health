@@ -2880,6 +2880,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 }),
                 None => vec![None; records.len()],
             },
+            &|net, lines| match Chain::from_network(&net.name) {
+                Some(chain) => migrations::read_heads(net, lines, &|calls| {
+                    eth_call_batch(rpc_session(chain), calls)
+                }),
+                None => vec![None; lines.len()],
+            },
         );
 
         // Ownership of the governed vaults, which the governance migration
