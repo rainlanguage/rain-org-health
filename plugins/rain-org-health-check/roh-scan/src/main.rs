@@ -483,13 +483,7 @@ fn eth_call_batch_at(
     calls: &[(String, String)],
     tag: &str,
 ) -> Vec<Option<String>> {
-    eth_call_batch_at_via(
-        session.chain.rpcs(),
-        session.cursor,
-        calls,
-        tag,
-        &curl_post,
-    )
+    eth_call_batch_at_via(session.chain.rpcs(), session.cursor, calls, tag, &curl_post)
 }
 
 fn eth_call_batch_at_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
