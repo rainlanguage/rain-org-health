@@ -3703,7 +3703,45 @@ mod tests {
             sent.iter().filter(|p| !p.starts_with('[')).count(),
             calls.len()
         );
-        for p in sent.iter() {
+        assert_every_call_asked_at(&sent, "0x2a");
+    }
+
+    #[test]
+    fn a_batch_asks_every_call_at_the_latest_block_batched_or_single() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 1);
+        let sent = std::cell::RefCell::new(Vec::new());
+        let post = |_: &str, payload: &str| {
+            sent.borrow_mut().push(payload.to_string());
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_via(&["a"], 0, &calls, &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+        let sent = sent.borrow();
+        assert_eq!(
+            sent.iter().filter(|p| !p.starts_with('[')).count(),
+            calls.len()
+        );
+        assert_every_call_asked_at(&sent, "latest");
+    }
+
+    #[test]
+    fn a_single_call_is_asked_at_the_latest_block() {
+        let p = eth_call_payload("0xab", "0x8da5cb5b");
+        let v: serde_json::Value = serde_json::from_str(&p).unwrap();
+        assert_eq!(
+            v["params"][0],
+            serde_json::json!({"to": "0xab", "data": "0x8da5cb5b"})
+        );
+        assert_every_call_asked_at(&[p], "latest");
+    }
+
+    fn assert_every_call_asked_at(sent: &[String], tag: &str) {
+        for p in sent {
             let v: serde_json::Value = serde_json::from_str(p).unwrap();
             let asks: Vec<serde_json::Value> = match v {
                 serde_json::Value::Array(a) => a,
@@ -3711,7 +3749,7 @@ mod tests {
             };
             for a in asks {
                 assert_eq!(a["method"], "eth_call", "{p}");
-                assert_eq!(a["params"][1], "0x2a", "{p}");
+                assert_eq!(a["params"][1], tag, "{p}");
             }
         }
     }

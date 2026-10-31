@@ -474,6 +474,14 @@ mod tests {
     }
 
     #[test]
+    fn decode_word_reads_the_leading_word_of_a_return_with_trailing_data() {
+        assert_eq!(
+            decode_word(&format!("0x{}{}", "ab".repeat(32), "cd".repeat(32))),
+            Some(format!("0x{}", "ab".repeat(32)))
+        );
+    }
+
+    #[test]
     fn token_calldata_selectors_and_string_uint8_decoders() {
         assert!(name_calldata().starts_with("0x06fdde03")); // name()
         assert!(symbol_calldata().starts_with("0x95d89b41")); // symbol()
