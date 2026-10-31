@@ -207,7 +207,10 @@ pub fn read_heads(
     lines: &[(String, String)],
     call: EthCalls,
 ) -> Vec<Option<String>> {
-    let encoded: Vec<Option<String>> = lines.iter().map(|(w, ns)| rpc::head_v5_calldata(w, ns)).collect();
+    let encoded: Vec<Option<String>> = lines
+        .iter()
+        .map(|(w, ns)| rpc::head_v5_calldata(w, ns))
+        .collect();
     let calls: Vec<(String, String)> = encoded
         .iter()
         .flatten()
