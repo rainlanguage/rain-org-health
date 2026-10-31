@@ -14570,6 +14570,39 @@ Deno.test("root registry: delegation changes are newest first with approve and r
   assert(textOf(rows[2]).includes("ConfigRegistry"), "block 10 last");
 });
 
+Deno.test("root registry: changes in one block are newest first by log index", async () => {
+  const f = regFake();
+  const c3 = f.rows.registryDelegateChanges[2];
+  c3.logIndex = "9";
+  f.rows.registryDelegateChanges.push({
+    ...c3,
+    id: "c4",
+    approved: false,
+    logIndex: "10",
+  });
+  const r2 = f.rows.configRegisters[1];
+  r2.logIndex = "9";
+  f.rows.configRegisters.push({
+    ...r2,
+    id: "r3",
+    value: "0xcafe",
+    valueType: "bytes4",
+    logIndex: "10",
+  });
+  const p = await regPanel(f);
+  const changes = collect(regGroup(p, "Delegation changes"), "own-row");
+  assert(
+    changes.map((r) => collect(r, "own-chip")[0].textContent).join() ===
+      "revoked,approved,revoked,approved",
+    changes.map(textOf).join(" | "),
+  );
+  const writes = collect(regGroup(p, "Config changes"), "own-row").map(textOf);
+  assert(writes.length === 3, writes.join(" | "));
+  assert(writes[0].includes("0xcafe"), "log 10 first: " + writes[0]);
+  assert(writes[1].includes(REG_BEACON), "log 9 next: " + writes[1]);
+  assert(writes[2].includes("0xdeadbeef"), "the older block last");
+});
+
 Deno.test("root registry: config values that hold an address read as it, others as their bytes", async () => {
   const p = await regPanel(regFake());
   const binding = textOf(regGroup(p, "Config bindings"));
@@ -14720,6 +14753,16 @@ Deno.test("root registry: a broken migration chain is named record by record", a
     lineProbs.join(" | "),
   );
 
+  const u = regFake();
+  u.rows.migrationLines[1].recordCount = "three";
+  const uProbs = collect(regLines(await regPanel(u))[0], "reg-problem").map((
+    x,
+  ) => x.textContent);
+  assert(
+    uProbs.join(" | ") === "the line counts ? records; the read holds 3",
+    "an unreadable count is a problem, shown as ?: " + uProbs.join(" | "),
+  );
+
   const k = regFake();
   k.rows.migrationLines[1].headRecord = { id: "0xrb" };
   const behind = regScan();
@@ -14734,6 +14777,40 @@ Deno.test("root registry: a broken migration chain is named record by record", a
     hp.join(" | "),
   );
   assert(textOf(regLines(s)[0]).includes("chain broken"), "broken");
+});
+
+Deno.test("root registry: a record the index gives no position sorts last and is named at index ?", async () => {
+  const f = regFake();
+  f.rows.migrationRecords.push(
+    regRecord("0xr0", REG_LINE, null, regWord("e4"), REG_M[2], {
+      line: { id: REG_LINE, namespace: REG_NS },
+      blockNumber: "43",
+    }),
+  );
+  f.rows.migrationLines[1] = {
+    ...f.rows.migrationLines[1],
+    recordCount: 4,
+    headRecord: { id: "0xr0" },
+  };
+  const scan = regScan();
+  scan.networks[0].lines[0].head = regWord("e4");
+  const p = await regPanel(f, undefined, scan);
+  const recs = regRecs(p).slice(0, 4);
+  assert(
+    recs.map(regIndex).join() === "#0,#1,#2,#?",
+    recs.map(regIndex).join(),
+  );
+  const leafs = recs.map((r) =>
+    collect(r, "reg-problem").map((x) => x.textContent).join(" | ")
+  );
+  assert(
+    leafs.join(",") === ",,,at index ?, where 3 was next",
+    leafs.join(","),
+  );
+  assert(
+    collect(regLines(p)[0], "reg-problem").length === 0,
+    textOf(regLines(p)[0]),
+  );
 });
 
 Deno.test("root registry: without the scan's genesis the first record is unchecked, the rest still checked", async () => {
@@ -14772,6 +14849,19 @@ Deno.test("root registry: without the scan's genesis the first record is uncheck
     textOf(regLines(q)[0]).includes("chain broken"),
     "a wrong link is still found",
   );
+  const early = regScan({ genesis: undefined });
+  early.networks[0].lines[0] = {
+    ...early.networks[0].lines[0],
+    headBlock: 30,
+    head: REG_M[0],
+  };
+  const e = regLines(await regPanel(regFake(), undefined, early))[0];
+  assert(
+    collect(e, "reg-problem").length === 0 &&
+      textOf(e).includes("3 records, chain unchecked"),
+    "a head read before the first record has nothing to check against: " +
+      textOf(e),
+  );
 });
 
 Deno.test("root registry: a record on a line the index does not hold fails the read", async () => {
@@ -14790,7 +14880,7 @@ Deno.test("root registry: a record on a line the index does not hold fails the r
   );
 });
 
-Deno.test("root registry: a row that is not an object fails its read, wherever it sits", async () => {
+Deno.test("root registry: a row that is not an object, or has no string id, fails its read, wherever it sits", async () => {
   for (
     const [entity, at] of [
       ["configBindings", 0],
@@ -14801,27 +14891,38 @@ Deno.test("root registry: a row that is not an object fails its read, wherever i
       ["registryUnscopedDelegateChanges", 0],
     ]
   ) {
+    const like = regFake().rows[entity][0] ?? {};
+    for (
+      const [why, bad] of [
+        ["null", null],
+        ["no id", {}],
+        ["a number id", { ...like, id: 5 }],
+      ]
+    ) {
+      const f = regFake();
+      const page = f.rows[entity].slice();
+      page.splice(at, 0, bad);
+      f.raw[entity] = { data: { page } };
+      const p = await regPanel(f);
+      assert(
+        regErr(p).includes(`${entity}: a row without an id`),
+        entity + " (" + why + "): " + regErr(p),
+      );
+      assert(
+        !textOf(p).includes("Delegations in force"),
+        entity + " (" + why + "): nothing shown short",
+      );
+    }
+  }
+  for (const bad of [null, {}, { id: 5 }]) {
     const f = regFake();
-    const page = f.rows[entity].slice();
-    page.splice(at, 0, null);
-    f.raw[entity] = { data: { page } };
-    const p = await regPanel(f);
+    f.raw.roles = { data: { page: [bad, ...f.rows.roles] } };
+    const p = await rbacPanelLive(f);
     assert(
-      regErr(p).includes(`${entity}: a row without an id`),
-      entity + ": " + regErr(p),
-    );
-    assert(
-      !textOf(p).includes("Delegations in force"),
-      entity + ": nothing shown short",
+      textOf(p).includes("roles: a row without an id"),
+      "the same holds for every paged read: " + textOf(p),
     );
   }
-  const f = regFake();
-  f.raw.roles = { data: { page: [null, ...f.rows.roles] } };
-  const p = await rbacPanelLive(f);
-  assert(
-    textOf(p).includes("roles: a row without an id"),
-    "the same holds for every paged read: " + textOf(p),
-  );
 });
 
 const regShown = (p) => {
@@ -14906,6 +15007,28 @@ Deno.test("root registry: a hash is labelled by its preimage only where the inde
   assert(
     !/NS_ROLE|NAME_ROLE|M_ROLE/.test(textOf(collect(r, "rbac-net")[0])),
     "a role name is no label",
+  );
+});
+
+Deno.test("root registry: a scope or name the index gives as no hash reads as (unknown)", async () => {
+  const f = regFake();
+  f.rows.registryDelegates[0].scope = null;
+  f.rows.configBindings[0].name = null;
+  f.rows.configRegisters[1].binding.name = 7;
+  const p = await regPanel(f);
+  const role = (n) => collect(n, "own-role")[0].textContent;
+  const live = collect(regGroup(p, "Delegations in force"), "reg-delegate");
+  assert(live.length === 1 && role(live[0]) === "(unknown)", textOf(p));
+  const binding = collect(regGroup(p, "Config bindings"), "reg-binding")[0];
+  assert(role(binding) === "(unknown)", textOf(binding));
+  assert(
+    !textOf(binding).includes("st0x.vault-beacon.v1"),
+    "no label without a hash: " + textOf(binding),
+  );
+  const writes = collect(regGroup(p, "Config changes"), "own-row");
+  assert(
+    writes.map(role).join() === ["(unknown)", REG_NAME].join(),
+    writes.map(role).join(),
   );
 });
 
@@ -15182,6 +15305,59 @@ Deno.test("root registry: a value reads as an address only when its type says ad
   assert(types.join() === "address,bytes4", types.join());
 });
 
+Deno.test("root registry: only a 32-byte word with twelve zero bytes before it reads as an address, in either case", async () => {
+  const f = regFake();
+  const tail = REG_STRANGER.slice(2);
+  const values = {
+    "longer than a word": "0x" + "0".repeat(24) + tail + "00",
+    "eleven and a half zero bytes": "0x" + "0".repeat(23) + "1" + tail,
+    "no zero bytes": regWord("c1"),
+    "an odd count of hex digits": "0xabc",
+    "upper-case hex": "0x" + regAddressWord(REG_STRANGER).slice(2)
+      .toUpperCase(),
+  };
+  Object.values(values).forEach((value, i) =>
+    f.rows.configBindings.push({
+      ...f.rows.configBindings[0],
+      id: "b" + (i + 2),
+      name: regWord("0" + (i + 2)),
+      value,
+      valueType: "address",
+      metas: [],
+    })
+  );
+  const p = await regPanel(f);
+  const rows = collect(regGroup(p, "Config bindings"), "reg-binding");
+  const shown = Object.keys(values).map((why, i) => {
+    const r = rows.find((x) =>
+      collect(x, "own-role")[0].textContent === regWord("0" + (i + 2))
+    );
+    const v = collect(r, "bcn-line").find((l) =>
+      collect(l, "bcn-key")[0].textContent === "value"
+    );
+    return [
+      why,
+      collect(v, "own-addr").map((a) => a.textContent).join(),
+      collect(v, "mig-hash").map((a) => a.textContent).join(),
+    ];
+  });
+  const want = [
+    ["longer than a word", "", values["longer than a word"]],
+    [
+      "eleven and a half zero bytes",
+      "",
+      values["eleven and a half zero bytes"],
+    ],
+    ["no zero bytes", "", regWord("c1")],
+    ["an odd count of hex digits", "", "unreadable value"],
+    ["upper-case hex", REG_STRANGER, ""],
+  ];
+  assert(
+    JSON.stringify(shown) === JSON.stringify(want),
+    JSON.stringify(shown),
+  );
+});
+
 Deno.test("root registry: only the V5 registries are named; any other kind reads as itself", async () => {
   const f = regFake();
   f.rows.registryDelegates.push(
@@ -15194,6 +15370,11 @@ Deno.test("root registry: only the V5 registries are named; any other kind reads
       ...f.rows.registryDelegates[0],
       id: "d6",
       registry: { id: "0x" + "d3".repeat(20), kind: "MIGRATION_REGISTRY" },
+    },
+    {
+      ...f.rows.registryDelegates[0],
+      id: "d7",
+      registry: REG_CONFIG,
     },
   );
   const p = await regPanel(
@@ -15210,6 +15391,7 @@ Deno.test("root registry: only the V5 registries are named; any other kind reads
         "MigrationRegistry V5",
         "registry (CONFIG_REGISTRY)",
         "registry (MIGRATION_REGISTRY)",
+        "ConfigRegistry V5",
       ].join(),
     kinds.join(),
   );
@@ -15302,6 +15484,38 @@ const regHeadLine = (l) =>
   collect(l, "bcn-line").find((x) =>
     collect(x, "bcn-key")[0].textContent === "head"
   );
+
+Deno.test("root registry: a hash matches its line, its link and its label whatever its hex case", async () => {
+  const upper = (h) => "0x" + h.slice(2).toUpperCase();
+  const f = regFake();
+  f.rows.migrationRecords.find((r) => r.id === "0xrc").appliedOnto = upper(
+    REG_GENESIS,
+  );
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").appliedOnto = upper(
+    REG_M[0],
+  );
+  const scan = regScan();
+  scan.networks[0].lines[0] = {
+    ...scan.networks[0].lines[0],
+    namespace: upper(REG_NS),
+    headBlock: 41,
+    head: upper(REG_M[1]),
+  };
+  const p = await regPanel(f, undefined, scan);
+  assert(regHeads(p).includes("Migration lines — 2"), regHeads(p));
+  const a = regLines(p)[0];
+  assert(collect(p, "reg-problem").length === 0, textOf(p));
+  assert(textOf(a).includes("3 records, chain intact"), textOf(a));
+  assert(
+    textOf(regHeadLine(a)).includes(REG_M1_LABEL) &&
+      !textOf(regHeadLine(a)).includes(upper(REG_M[1])),
+    "the head takes its label: " + textOf(regHeadLine(a)),
+  );
+  const onto = collect(regRecs(p)[0], "bcn-line").find((x) =>
+    collect(x, "bcn-key")[0].textContent === "applied onto"
+  );
+  assert(textOf(onto).includes("genesis"), textOf(onto));
+});
 
 Deno.test("root registry: a head the scan did not read shows as not read, never as a problem", async () => {
   const absent = regScan();
@@ -15405,6 +15619,7 @@ Deno.test("root registry: a head is checked against the records up to the block 
     const [why, headBlock, head, want] of [
       ["the record at the scan's block", 60, REG_M[2], regWord("e4")],
       ["before the line's first record", 30, REG_M[0], "genesis"],
+      ["genesis after the line's records", 60, REG_GENESIS, regWord("e4")],
     ]
   ) {
     const p = await regPanel(later(), undefined, at(headBlock, head));
@@ -15420,6 +15635,28 @@ Deno.test("root registry: a head is checked against the records up to the block 
       why + ": " + textOf(a),
     );
   }
+});
+
+Deno.test("root registry: a record the index gives no block or no migration never confirms the head", async () => {
+  const problems = async (field, head) => {
+    const f = regFake();
+    f.rows.migrationRecords.find((r) => r.id === "0xra")[field] = null;
+    const scan = regScan();
+    scan.networks[0].lines[0].head = head;
+    const a = regLines(await regPanel(f, undefined, scan))[0];
+    return collect(a, "reg-problem").map((x) => x.textContent).join(" | ");
+  };
+  const wrong = (head) =>
+    `the head ${head} is not the migration of the last record at or before block ${REG_HEAD_BLOCK}`;
+  const noBlockPrior = await problems("blockNumber", REG_M[1]);
+  assert(
+    noBlockPrior === "",
+    "the record before it is the last read: " + noBlockPrior,
+  );
+  const noBlockOwn = await problems("blockNumber", REG_M[2]);
+  assert(noBlockOwn === wrong(REG_M[2]), noBlockOwn);
+  const noMigration = await problems("migration", REG_M[2]);
+  assert(noMigration === wrong(REG_M[2]), noMigration);
 });
 
 Deno.test("root registry: a head read past the index's block is behind, never broken; at the index's block it is compared", async () => {
