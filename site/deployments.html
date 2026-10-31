@@ -2795,7 +2795,7 @@ function renderDeployments(document, $, data, io) {
       chain: broken ? "broken" : genesis === null && records.length ? "unchecked" : "intact",
     };
   };
-  const regRead = async (url, genesis) => {
+  const regRead = async (url, genesis, declared) => {
     const out = await rbacMeta(url);
     if (typeof out.indexedBlock !== "number") return out;
     const block = out.indexedBlock;
@@ -2865,10 +2865,12 @@ function renderDeployments(document, $, data, io) {
       const expected = new Map();
       for (const c of contracts) if (Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind)) expected.set(regLow(c.id), c.kind);
       got.expectedCount = expected.size;
-      got.delegates = num(delegates, ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
+      const ours = (d) => declared === null || (d && d.registry && d.registry.kind) !== "MIGRATION_REGISTRY" || regLow(d && d.registry && d.registry.id) === declared;
+      got.declared = declared;
+      got.delegates = num(delegates.filter(ours), ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
         (d) => ({ ...d, expectedAs: expected.get(regLow(d.delegate)) || null }),
       );
-      got.changes = num(changes, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
+      got.changes = num(changes.filter((c) => ours(c.registryDelegate)), ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
       got.bindings = num(bindings, ["boundAtBlock", "boundAtTimestamp", "registerCount"]);
       got.registers = num(registers, ["blockNumber", "blockTimestamp", "logIndex"]).sort(regNewest);
       const byLine = new Map(lines.map((l) => [l.id, []]));
@@ -3039,6 +3041,9 @@ function renderDeployments(document, $, data, io) {
         line("writer", whoNode(String(l.writer), chain, pins)),
         line("head", word(l.head), chip),
       );
+      if (l.records.length === 0 && genesis !== null && regLow(l.head) === genesis) {
+        head.append(el("div", "own-note rbac-ideal-gap", "At genesis on this registry: its history is not yet backfilled."));
+      }
       if (l.chain === "unchecked") head.append(el("div", "own-note rbac-ideal-gap", "The scan carries no migration genesis to check the first record against."));
       for (const p of l.problems) head.append(el("div", "own-note rbac-ideal-off reg-problem", p));
       slot.append(head);
@@ -3095,6 +3100,10 @@ function renderDeployments(document, $, data, io) {
     const genesis = typeof g === "string" && /^0x[0-9a-fA-F]{64}$/.test(g) ? g.toLowerCase() : null;
     if (genesis !== null) labels[genesis] = "genesis";
     const pinTable = r.addressNames && typeof r.addressNames === "object" ? r.addressNames : null;
+    const declaredBy = new Map();
+    for (const m of migrations && Array.isArray(migrations.networks) ? migrations.networks : []) {
+      if (m && typeof m.network === "string" && typeof m.registry === "string") declaredBy.set(m.network, m.registry.toLowerCase());
+    }
     const reads = [];
     for (const n of nets) {
       if (!n || typeof n !== "object") continue;
@@ -3112,7 +3121,7 @@ function renderDeployments(document, $, data, io) {
         continue;
       }
       regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
-      reads.push(regRead(endpoint, genesis).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)));
+      reads.push(regRead(endpoint, genesis, declaredBy.get(n.network) ?? null).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)));
     }
     return Promise.all(reads);
   };
