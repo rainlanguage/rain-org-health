@@ -14751,22 +14751,80 @@ Deno.test("root registry: bindings show their age and block, labelled names firs
   f.rows.configBindings.push(
     bind("b0", regWord("01"), TL_NOW + 30),
     bind("b2", regWord("cc"), TL_NOW - 90),
+    bind("b3", regWord("dd"), TL_NOW),
+    {
+      ...bind("b4", regWord("ef"), 0),
+      boundAtBlock: null,
+      boundAtTimestamp: null,
+    },
   );
   const p = await regPanel(f);
   const rows = collect(regGroup(p, "Config bindings"), "reg-binding");
   const names = rows.map((r) => collect(r, "own-role")[0].textContent);
   assert(
     names.join() ===
-      ["st0x.vault-beacon.v1", regWord("01"), regWord("cc")].join(),
+      [
+        "st0x.vault-beacon.v1",
+        regWord("01"),
+        regWord("cc"),
+        regWord("dd"),
+        regWord("ef"),
+      ].join(),
     names.join(),
   );
   const ages = rows.map((r) => collect(r, "reg-age")[0].textContent);
   assert(
-    ages.join() === "3d 2h ago,ahead of this browser's clock,1m 30s ago",
+    ages.join() ===
+      "3d 2h ago,ahead of this browser's clock,1m 30s ago,0s ago,age unknown",
     ages.join(),
   );
   assert(textOf(rows[0]).includes("block 30 · "), textOf(rows[0]));
   assert(textOf(rows[1]).includes("block 31 · "), textOf(rows[1]));
+  assert(
+    textOf(rows[4]).includes("block ? · time unknown"),
+    textOf(rows[4]),
+  );
+});
+
+Deno.test("root registry: a binding names its write count only past one, whether the index gives it as a number or a string", async () => {
+  for (
+    const [count, want] of [
+      [2, "2 writes"],
+      ["2", "2 writes"],
+      ["17", "17 writes"],
+      [1, null],
+      ["1", null],
+    ]
+  ) {
+    const f = regFake();
+    f.rows.configBindings[0].registerCount = count;
+    const p = await regPanel(f);
+    const t = textOf(
+      collect(regGroup(p, "Config bindings"), "reg-binding")[0],
+    );
+    const shown = /\d+ writes/.exec(t);
+    assert(
+      (shown ? shown[0] : null) === want,
+      JSON.stringify(count) + ": " + t,
+    );
+  }
+});
+
+Deno.test("root registry: a binding or config write names who wrote it only when that is not the authority, whatever the case", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].sender = REG_ROOT_CHECKSUM;
+  f.rows.configRegisters[0].sender = REG_ROOT_CHECKSUM;
+  const p = await regPanel(f);
+  const boundBy = (r) =>
+    collect(r, "bcn-line").filter((x) =>
+      collect(x, "bcn-key")[0].textContent === "bound by"
+    ).map(textOf).join();
+  const binding = collect(regGroup(p, "Config bindings"), "reg-binding")[0];
+  assert(boundBy(binding) === "", textOf(binding));
+  const writes = collect(regGroup(p, "Config changes"), "own-row");
+  assert(writes.length === 2, writes.map(textOf).join(" | "));
+  assert(boundBy(writes[0]).includes(REG_SAFE), textOf(writes[0]));
+  assert(boundBy(writes[1]) === "", textOf(writes[1]));
 });
 
 Deno.test("root registry: each migration line reads in index order with its head, the chain checked", async () => {
@@ -14809,6 +14867,37 @@ Deno.test("root registry: each migration line reads in index order with its head
     "no problem on an intact line",
   );
   assert(recs.every((r) => !r.className.includes("rbac-off")), "none marked");
+});
+
+Deno.test("root registry: lines in one namespace are ordered by writer", async () => {
+  const f = regFake();
+  const writer = "0x" + "0a".repeat(20);
+  // Its id sorts after line A's, so the index reads it after.
+  f.rows.migrationLines.push({
+    id: "0x" + "22".repeat(72),
+    registry: REG_MIGRATION,
+    writer,
+    namespace: REG_NS,
+    head: null,
+    recordCount: 0,
+    headRecord: null,
+  });
+  const p = await regPanel(f);
+  const lines = regLines(p);
+  const writerOf = (l) =>
+    textOf(
+      collect(l, "bcn-line").find((x) =>
+        collect(x, "bcn-key")[0].textContent === "writer"
+      ),
+    );
+  assert(lines.length === 3, regHeads(p));
+  assert(
+    writerOf(lines[0]).includes(writer) &&
+      writerOf(lines[1]).includes(REG_ROOT) &&
+      textOf(lines[1]).includes("3 records") &&
+      textOf(lines[2]).includes(REG_NS_B),
+    lines.map(textOf).join(" | "),
+  );
 });
 
 Deno.test("root registry: a broken migration chain is named record by record", async () => {
@@ -15167,6 +15256,77 @@ Deno.test("root registry: a hash is labelled by its preimage only where the inde
   assert(
     !/NS_ROLE|NAME_ROLE|M_ROLE/.test(textOf(collect(r, "rbac-net")[0])),
     "a role name is no label",
+  );
+});
+
+Deno.test("root registry: a verified preimage labels its hash whatever the hex case the index wrote it in", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].name = "0x" + REG_NAME.slice(2).toUpperCase();
+  const p = await regPanel(f);
+  const binding = collect(regGroup(p, "Config bindings"), "reg-binding")[0];
+  assert(
+    collect(binding, "own-role")[0].textContent === "st0x.vault-beacon.v1",
+    textOf(binding),
+  );
+});
+
+Deno.test("root registry: a verified meta that carries no preimage leaves the label another gave", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].metas.push(regMeta(true, {}));
+  f.rows.migrationRecords.find((r) => r.id === "0xrc").metas = [
+    regMeta(true, { migrationString: "st0x.first" }),
+  ];
+  const p = await regPanel(f);
+  const shown = regShown(p);
+  assert(
+    shown.join() ===
+      [
+        "st0x.deploy",
+        "st0x.vault-beacon.v1",
+        "st0x.deploy",
+        REG_M1_LABEL,
+        REG_M1_LABEL,
+      ].join(),
+    shown.join(),
+  );
+  assert(
+    collect(regRecs(p)[0], "own-role")[0].textContent === "st0x.first",
+    textOf(regRecs(p)[0]),
+  );
+});
+
+Deno.test("root registry: a preimage verified for a name that is no hash labels no other name", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].name = null;
+  f.rows.configRegisters[0].binding.name = "";
+  const p = await regPanel(f);
+  const writes = collect(regGroup(p, "Config changes"), "own-row");
+  assert(
+    writes.map((r) => collect(r, "own-role")[0].textContent).join() ===
+      [REG_NAME, ""].join(),
+    writes.map(textOf).join(" | "),
+  );
+  assert(
+    !textOf(collect(p, "rbac-net")[0]).includes("st0x.vault-beacon.v1"),
+    "the preimage of no hash labels nothing",
+  );
+});
+
+Deno.test("root registry: metas that are not a list label nothing and the read stands", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].metas = regMeta(true, {
+    nameString: "st0x.vault-beacon.v1",
+  });
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").metas = regMeta(true, {
+    namespaceString: "st0x.deploy",
+    migrationString: REG_M1_LABEL,
+  });
+  const p = await regPanel(f);
+  assert(regShown(p).join() === REG_RAW.join(), regShown(p).join());
+  assert(
+    regHeads(p).includes("Config bindings — 1") &&
+      regHeads(p).includes("Migration lines — 2"),
+    regErr(p),
   );
 });
 
