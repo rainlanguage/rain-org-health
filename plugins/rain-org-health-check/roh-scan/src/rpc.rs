@@ -429,7 +429,7 @@ mod tests {
         assert_eq!(
             cd,
             format!(
-                "0x9b984cac000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}{}",
+                "0xa62f2b0e000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}{}",
                 "11".repeat(32),
                 "22".repeat(32)
             )
@@ -443,6 +443,34 @@ mod tests {
             applied_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, "0x22"),
             None
         );
+    }
+
+    /// Selector from `cast sig "headV5(address,bytes32)"`.
+    #[test]
+    fn head_v5_calldata_encodes_writer_then_namespace() {
+        let ns = format!("0x{}", "11".repeat(32));
+        assert_eq!(
+            head_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns).unwrap(),
+            format!(
+                "0x70eecc24000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}",
+                "11".repeat(32)
+            )
+        );
+        assert_eq!(head_v5_calldata("safe", &ns), None);
+        assert_eq!(
+            head_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11"),
+            None
+        );
+    }
+
+    #[test]
+    fn decode_word_reads_a_bytes32_return_lowercased_and_nothing_shorter() {
+        assert_eq!(
+            decode_word(&format!("0x{}", "AB".repeat(32))),
+            Some(format!("0x{}", "ab".repeat(32)))
+        );
+        assert_eq!(decode_word("0x"), None);
+        assert_eq!(decode_word(&format!("0x{}", "ab".repeat(31))), None);
     }
 
     #[test]

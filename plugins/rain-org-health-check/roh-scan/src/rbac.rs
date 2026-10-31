@@ -321,6 +321,32 @@ jobs:
     }
 
     #[test]
+    fn config_registries_are_each_networks_v5_config_registry_lowercased() {
+        let src = r#"{
+            "base": {
+                "ConfigRegistry": {"address": "0x2222222222222222222222222222222222222222", "startBlock": 52910632},
+                "ConfigRegistryV5": {"address": "0x82b7e6FDfD25EF64b013F98e8F2c1fC1D1872eC9", "startBlock": 53210195},
+                "MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31", "startBlock": 53210703}
+            },
+            "mainnet": {"ConfigRegistry": {"address": "0x2222222222222222222222222222222222222222"}},
+            "bsc": {"ConfigRegistryV5": {"startBlock": 1}},
+            "hyperevm": {"ConfigRegistryV5": {"address": 7}},
+            "robinhood": [1]
+        }"#;
+        let got = config_registries(src);
+        assert_eq!(
+            got,
+            serde_json::from_str::<Map<String, Value>>(
+                r#"{"base": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9"}"#
+            )
+            .unwrap()
+        );
+        for bad in ["", "not json", "[1]", "null"] {
+            assert!(config_registries(bad).is_empty(), "{bad}");
+        }
+    }
+
+    #[test]
     fn chain_names_translate_graph_cli_names() {
         assert_eq!(chain_name("mainnet"), Some("ethereum"));
         assert_eq!(chain_name("hyper-evm"), Some("hyperevm"));

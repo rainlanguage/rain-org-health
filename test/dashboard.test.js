@@ -11731,7 +11731,16 @@ function fakeSubgraph(over = {}) {
     // The registry probe's answer, as `schema` is the timelock's: `t: null` is a
     // version that does not index the registries.
     registrySchema: {
-      data: { t0: null, t1: null, t2: null, t3: null, t4: null, t5: null },
+      data: {
+        t0: null,
+        t1: null,
+        t2: null,
+        t3: null,
+        t4: null,
+        t5: null,
+        t6: null,
+        t7: null,
+      },
     },
     // entity name -> a raw response body to answer with instead of rows.
     raw: {},
@@ -14119,6 +14128,8 @@ const REG_TYPES = [
   "MigrationRecord",
   "RegistryDelegate",
   "RegistryDelegateChange",
+  "RegistryUnscopedDelegate",
+  "RegistryUnscopedDelegateChange",
 ];
 const regProbe = (names) => ({
   data: Object.fromEntries(
@@ -14127,15 +14138,32 @@ const regProbe = (names) => ({
 });
 // A subgraph version that indexes the registries.
 const REG_SCHEMA = regProbe(REG_TYPES);
+// st0x.deploy's V5 registries (subgraph/networks.json, migrations.json).
 const REG_CONFIG = {
-  id: "0x2f1f82c65cce305df3950f8af8fa5ad6d9a815e8",
-  kind: "CONFIG_REGISTRY",
+  id: "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9",
+  kind: "CONFIG_REGISTRY_V5",
 };
 const REG_MIGRATION = {
-  id: "0x5a48e719785e11c4643ea4056d0861a6a69e91a0",
-  kind: "MIGRATION_REGISTRY",
+  id: "0xd708186f68d527b64c001398550627508205ee31",
+  kind: "MIGRATION_REGISTRY_V5",
+};
+const REG_MIGRATION_DECLARED = "0xd708186f68D527B64c001398550627508205EE31";
+const REG_CONFIG_OTHER = {
+  id: "0x" + "c5".repeat(20),
+  kind: "CONFIG_REGISTRY_V5",
+};
+const REG_MIGRATION_OTHER = {
+  id: "0x" + "d5".repeat(20),
+  kind: "MIGRATION_REGISTRY_V5",
+};
+// `cast keccak "<type>"`.
+const REG_TYPE_HASH = {
+  address: "0x421683f821a0574472445355be6d2b769119e8515f8376a1d7878523dfdecf7b",
+  uint256: "0xec13d6d12b88433319b64e1065a96ea19cd330ef6603f5f6fb685dde3959a320",
+  bytes4: "0x55eba6289855380d9b683f0861f19ccda2c51f4eb4a532fbf1ce830b150f32ee",
 };
 const REG_ROOT = "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c";
+const REG_ROOT_CHECKSUM = "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c";
 const REG_SAFE = "0x" + "5a".repeat(20);
 const REG_BEACON = "0x" + "be".repeat(20);
 const REG_STRANGER = "0x" + "5f".repeat(20);
@@ -14147,6 +14175,7 @@ const REG_GENESIS =
   "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f";
 const REG_NAME = "0x" + "c1".repeat(32);
 const regWord = (n) => "0x" + n.repeat(64 / n.length);
+const regAddressWord = (a) => "0x" + a.slice(2).padStart(64, "0");
 const REG_M = [regWord("e1"), regWord("e2"), regWord("e3")];
 const REG_LINE = "0x" + "11".repeat(72);
 const REG_LINE_B = "0x" + "00".repeat(72);
@@ -14214,48 +14243,62 @@ function regFake(over = {}) {
     change("c2", REG_CONFIG, false, 15),
     change("c3", REG_MIGRATION, true, 20),
   ];
+  f.rows.registryUnscopedDelegates = [];
+  f.rows.registryUnscopedDelegateChanges = [];
   f.rows.configBindings = [
     {
       id: "b1",
+      registry: REG_CONFIG,
       authority: REG_ROOT,
       name: REG_NAME,
-      value: "0x" + REG_BEACON.slice(2).padStart(64, "0"),
+      value: regAddressWord(REG_BEACON),
+      valueType: "address",
+      valueTypeHash: REG_TYPE_HASH.address,
       sender: REG_SAFE,
       boundAtBlock: "30",
       boundAtTimestamp: String(TL_NOW - (3 * 86400 + 2 * 3600)),
       registerCount: 2,
     },
   ];
-  const write = (id, value, block) => ({
+  const write = (id, value, valueType, block) => ({
     id,
-    binding: { authority: REG_ROOT, name: REG_NAME },
+    binding: {
+      registry: { id: REG_CONFIG.id },
+      authority: REG_ROOT,
+      name: REG_NAME,
+    },
     sender: REG_SAFE,
     value,
+    valueType,
+    valueTypeHash: REG_TYPE_HASH[valueType],
     blockNumber: String(block),
     blockTimestamp: String(RBAC_TS - 1000 + block),
     transactionHash: "0xtx" + id,
+    transactionFrom: REG_SAFE,
     logIndex: "0",
   });
   f.rows.configRegisters = [
-    write("r1", "0xdeadbeef", 25),
-    write("r2", "0x" + REG_BEACON.slice(2).padStart(64, "0"), 30),
+    write("r1", "0xdeadbeef", "bytes4", 25),
+    write("r2", regAddressWord(REG_BEACON), "address", 30),
   ];
   // Line B sorts after line A by namespace, though its id sorts first.
   f.rows.migrationLines = [
     {
       id: REG_LINE_B,
+      registry: REG_MIGRATION,
       writer: REG_ROOT,
       namespace: REG_NS_B,
       head: regWord("98"),
-      recordCount: "1",
+      recordCount: 1,
       headRecord: { id: "0xr8" },
     },
     {
       id: REG_LINE,
+      registry: REG_MIGRATION,
       writer: REG_ROOT,
       namespace: REG_NS,
       head: REG_M[2],
-      recordCount: "3",
+      recordCount: 3,
       headRecord: { id: "0xra" },
     },
   ];
@@ -14274,13 +14317,42 @@ const REG_NAMES = {
   [REG_NAME]: "st0x.vault-beacon.v1",
 };
 
+// A network both vocabularies name alike: graph-cli's and the deploy repo's.
+const REG_NET = rbacNet({ network: "base", chain: "base" });
+// roh-scan's deploymentMigrations: the declared registry and each line's headV5.
+const regScan = (over = {}) => ({
+  org: "S01-Issuer",
+  repo: "st0x.deploy",
+  path: "migrations.json",
+  genesis: REG_GENESIS,
+  networks: [
+    {
+      chainId: 8453,
+      network: "base",
+      registry: REG_MIGRATION_DECLARED,
+      rpcHost: null,
+      unread: 0,
+      migrations: [],
+      lines: [
+        { writer: REG_ROOT_CHECKSUM, namespace: REG_NS, head: REG_M[2] },
+        { writer: REG_ROOT_CHECKSUM, namespace: REG_NS_B, head: regWord("98") },
+      ],
+    },
+  ],
+  ...over,
+});
+
 async function regPanel(
   f,
   extra = { registryNames: REG_NAMES },
-  migrations = { genesis: REG_GENESIS },
+  migrations = regScan(),
+  net = REG_NET,
 ) {
   const data = {
-    ...rbacData([rbacNet()], extra),
+    ...rbacData([net], {
+      configRegistries: { [net.network]: REG_CONFIG.id },
+      ...extra,
+    }),
     deploymentMigrations: migrations,
   };
   const { box, done } = deploymentsRender(data, f.io);
@@ -14323,14 +14395,17 @@ Deno.test("root registry: a schema with only some registry entities, or a non-ty
   assert(!textOf(p).includes("does not read the registries"), "not absent");
   assert(
     regErr(p).includes(
-      "the schema has ConfigBinding, MigrationRecord but not ConfigRegister, MigrationLine, RegistryDelegate, RegistryDelegateChange",
+      "the schema has ConfigBinding, MigrationRecord but not ConfigRegister, MigrationLine, RegistryDelegate, RegistryDelegateChange, RegistryUnscopedDelegate, RegistryUnscopedDelegateChange",
     ),
     regErr(p),
   );
   assert(!textOf(p).includes("Delegations in force"), "nothing shown");
   const missingLast = regProbe(REG_TYPES.slice(0, -1));
   const q = await regPanel(regFake({ registrySchema: missingLast }));
-  assert(regErr(q).includes("but not RegistryDelegateChange"), regErr(q));
+  assert(
+    regErr(q).includes("but not RegistryUnscopedDelegateChange"),
+    regErr(q),
+  );
   const bad = regProbe([]);
   bad.data.t0 = { name: "Nope" };
   const r = await regPanel(regFake({ registrySchema: bad }));
@@ -14579,9 +14654,10 @@ Deno.test("root registry: a broken migration chain is named record by record", a
   );
 
   const k = regFake();
-  k.rows.migrationLines[1].head = REG_M[1];
   k.rows.migrationLines[1].headRecord = { id: "0xrb" };
-  const s = await regPanel(k);
+  const behind = regScan();
+  behind.networks[0].lines[0].head = REG_M[1];
+  const s = await regPanel(k, undefined, behind);
   const hp = collect(regLines(s)[0], "reg-problem").map((x) => x.textContent);
   assert(
     hp.join(" | ") ===
@@ -14594,7 +14670,11 @@ Deno.test("root registry: a broken migration chain is named record by record", a
 });
 
 Deno.test("root registry: without the scan's genesis the first record is unchecked, the rest still checked", async () => {
-  const p = await regPanel(regFake(), { registryNames: REG_NAMES }, null);
+  const p = await regPanel(
+    regFake(),
+    undefined,
+    regScan({ genesis: undefined }),
+  );
   const lines = regLines(p);
   assert(
     textOf(lines[0]).includes("3 records, chain unchecked"),
@@ -14606,9 +14686,11 @@ Deno.test("root registry: without the scan's genesis the first record is uncheck
     !textOf(regRecs(p)[0]).includes("genesis"),
     "genesis not labelled without the scan's",
   );
-  const malformed = await regPanel(regFake(), { registryNames: REG_NAMES }, {
-    genesis: "0x1234",
-  });
+  const malformed = await regPanel(
+    regFake(),
+    undefined,
+    regScan({ genesis: "0x1234" }),
+  );
   assert(
     textOf(regLines(malformed)[0]).includes("chain unchecked"),
     "a genesis that is not a word is no genesis: " +
@@ -14618,9 +14700,7 @@ Deno.test("root registry: without the scan's genesis the first record is uncheck
   f.rows.migrationRecords.find((r) => r.id === "0xra").appliedOnto = regWord(
     "77",
   );
-  const q = await regPanel(f, { registryNames: REG_NAMES }, {
-    genesis: "0x1234",
-  });
+  const q = await regPanel(f, undefined, regScan({ genesis: "0x1234" }));
   assert(
     textOf(regLines(q)[0]).includes("chain broken"),
     "a wrong link is still found",
@@ -14645,10 +14725,14 @@ Deno.test("root registry: a record on a line the index does not hold fails the r
 
 Deno.test("root registry: a row that is not an object fails its read, wherever it sits", async () => {
   for (
-    const [entity, at] of [["configBindings", 0], ["registryDelegates", 1], [
-      "migrationRecords",
-      0,
-    ], ["contracts", 2]]
+    const [entity, at] of [
+      ["configBindings", 0],
+      ["registryDelegates", 1],
+      ["migrationRecords", 0],
+      ["contracts", 2],
+      ["registryUnscopedDelegates", 0],
+      ["registryUnscopedDelegateChanges", 0],
+    ]
   ) {
     const f = regFake();
     const page = f.rows[entity].slice();
@@ -14694,13 +14778,24 @@ Deno.test("root registry: labels and registry strings render as text, never mark
   const f = regFake();
   f.rows.configBindings[0].value = XSS_IMG;
   f.rows.configBindings[0].name = XSS_SCRIPT;
-  f.rows.migrationLines[1].head = XSS_SVG;
+  f.rows.configBindings[0].valueType = XSS_SVG;
   f.rows.registryDelegates[0].scope = XSS_ATTR;
-  const p = await regPanel(f, { registryNames: { [REG_NS]: XSS_IMG } });
+  const scan = regScan();
+  scan.networks[0].lines[0].head = XSS_SVG;
+  const p = await regPanel(
+    f,
+    { registryNames: { [REG_NS]: XSS_IMG } },
+    scan,
+  );
   const t = textOf(p);
   for (const x of [XSS_SCRIPT, XSS_SVG, XSS_ATTR]) {
     assert(t.includes(x), "as text: " + x);
   }
+  assert(
+    textOf(regGroup(p, "Config bindings")).includes(XSS_SVG),
+    "a value type as text",
+  );
+  assert(textOf(regLines(p)[0]).includes(XSS_SVG), "a scan head as text");
   assert(
     t.includes("unreadable value"),
     "a non-hex value is not echoed as bytes",
@@ -14709,4 +14804,332 @@ Deno.test("root registry: labels and registry strings render as text, never mark
   for (const tag of MARKUP_TAGS) {
     assert(tags(p, tag).length === 0, "no " + tag + " element created");
   }
+});
+
+// Rows on a MigrationRegistry and a ConfigRegistry the deploy repo does not
+// declare: a line with its record, delegations scoped and unscoped, a binding
+// and its write.
+function regElsewhere(f) {
+  const other = "0x" + "44".repeat(72);
+  f.rows.migrationLines.push({
+    id: other,
+    registry: REG_MIGRATION_OTHER,
+    writer: REG_ROOT,
+    namespace: REG_NS,
+    head: regWord("97"),
+    recordCount: 1,
+    headRecord: { id: "0xr4" },
+  });
+  f.rows.migrationRecords.push(
+    regRecord("0xr4", other, 0, regWord("97"), REG_GENESIS),
+  );
+  for (
+    const [id, registry] of [["d8", REG_MIGRATION_OTHER], [
+      "d9",
+      REG_CONFIG_OTHER,
+    ]]
+  ) {
+    f.rows.registryDelegates.push({
+      ...f.rows.registryDelegates[0],
+      id,
+      registry,
+    });
+    f.rows.registryDelegateChanges.push({
+      ...f.rows.registryDelegateChanges[2],
+      id: "c" + id,
+      registryDelegate: {
+        ...f.rows.registryDelegateChanges[2].registryDelegate,
+        registry,
+      },
+    });
+  }
+  f.rows.registryUnscopedDelegates.push({
+    id: "u8",
+    registry: REG_MIGRATION_OTHER,
+    account: REG_ROOT,
+    delegate: REG_SAFE,
+    approved: true,
+    approvedAtBlock: "21",
+    approvedAtTimestamp: String(RBAC_TS - 90),
+    revokedAtBlock: null,
+    revokedAtTimestamp: null,
+  });
+  f.rows.registryUnscopedDelegateChanges.push({
+    id: "uc8",
+    registryUnscopedDelegate: {
+      registry: REG_MIGRATION_OTHER,
+      account: REG_ROOT,
+      delegate: REG_SAFE,
+    },
+    approved: true,
+    blockNumber: "21",
+    blockTimestamp: String(RBAC_TS - 979),
+    transactionHash: "0xtxuc8",
+    transactionFrom: REG_ROOT,
+    logIndex: "0",
+  });
+  f.rows.configBindings.push({
+    ...f.rows.configBindings[0],
+    id: "b9",
+    registry: REG_CONFIG_OTHER,
+    name: regWord("b9"),
+  });
+  f.rows.configRegisters.push({
+    ...f.rows.configRegisters[1],
+    id: "r9",
+    binding: {
+      registry: { id: REG_CONFIG_OTHER.id },
+      authority: REG_ROOT,
+      name: regWord("b9"),
+    },
+  });
+  return f;
+}
+const regHeads = (p) =>
+  collect(p, "own-grouphead").map((h) => h.textContent).join(" | ");
+
+Deno.test("root registry: only the registries the deploy repo declares are read into the tab", async () => {
+  const p = await regPanel(regElsewhere(regFake()));
+  const heads = regHeads(p);
+  for (
+    const h of [
+      "Delegations in force — 1",
+      "Delegation changes — 3, newest first",
+      "Config bindings — 1",
+      "Config changes — 2, newest first",
+      "Migration lines — 2",
+    ]
+  ) {
+    assert(heads.includes(h), h + ": " + heads);
+  }
+  assert(regRecs(p).length === 4, "the other registry's record is not shown");
+  assert(!textOf(p).includes(regWord("97")), "nor its line's head");
+  assert(!textOf(p).includes(regWord("b9")), "nor its binding");
+
+  const q = await regPanel(
+    regElsewhere(regFake()),
+    { registryNames: REG_NAMES, configRegistries: {} },
+    regScan({ networks: [] }),
+  );
+  const all = regHeads(q);
+  for (
+    const h of [
+      "Delegations in force — 4",
+      "Delegation changes — 6, newest first",
+      "Config bindings — 2",
+      "Config changes — 3, newest first",
+      "Migration lines — 3",
+    ]
+  ) {
+    assert(all.includes(h), "nothing declared, nothing dropped: " + all);
+  }
+});
+
+Deno.test("root registry: on Ethereum the declared registry and heads apply though the subgraph names it mainnet", async () => {
+  const scan = regScan();
+  scan.networks[0] = { ...scan.networks[0], chainId: 1, network: "ethereum" };
+  const p = await regPanel(
+    regElsewhere(regFake()),
+    undefined,
+    scan,
+    rbacNet(),
+  );
+  assert(regHeads(p).includes("Migration lines — 2"), regHeads(p));
+  assert(
+    regLines(p).every((l) => textOf(l).includes("chain intact")),
+    regLines(p).map(textOf).join(" | "),
+  );
+  assert(collect(p, "reg-problem").length === 0, "no line is missing its head");
+});
+
+Deno.test("root registry: a value reads as an address only when its type says address", async () => {
+  const f = regFake();
+  const bind = (id, value, valueType) => ({
+    ...f.rows.configBindings[0],
+    id,
+    name: regWord(id.slice(1).padStart(2, "0")),
+    value,
+    valueType,
+    valueTypeHash: REG_TYPE_HASH[valueType] ?? regWord("ff"),
+  });
+  f.rows.configBindings.push(
+    bind("b2", regAddressWord(REG_STRANGER), "uint256"),
+    bind("b3", "0xdeadbeef", "address"),
+    // graph-node decoded the type lossily: no type, so the word is judged alone.
+    bind("b4", regAddressWord(REG_STRANGER), null),
+  );
+  const p = await regPanel(f);
+  const rows = collect(regGroup(p, "Config bindings"), "reg-binding");
+  const by = (name) =>
+    rows.find((r) => collect(r, "own-role")[0].textContent === name);
+  const value = (r) =>
+    collect(r, "bcn-line").find((l) =>
+      collect(l, "bcn-key")[0].textContent === "value"
+    );
+  const addrs = (r) => collect(value(r), "own-addr").map((a) => a.textContent);
+  const raw = (r) => collect(value(r), "mig-hash").map((a) => a.textContent);
+  const type = (r) => collect(value(r), "own-note").map((a) => a.textContent);
+
+  const a = by("st0x.vault-beacon.v1");
+  assert(addrs(a).join() === REG_BEACON && raw(a).length === 0, textOf(a));
+  assert(type(a).join() === "address", type(a).join());
+
+  const n = by(regWord("02"));
+  assert(
+    addrs(n).length === 0,
+    "a uint256 word is not an address: " + textOf(n),
+  );
+  assert(raw(n).join() === regAddressWord(REG_STRANGER), raw(n).join());
+  assert(type(n).join() === "uint256", type(n).join());
+
+  const s = by(regWord("03"));
+  assert(
+    addrs(s).length === 0 && raw(s).join() === "0xdeadbeef",
+    "an address type over a short value is its bytes: " + textOf(s),
+  );
+
+  const u = by(regWord("04"));
+  assert(addrs(u).join() === REG_STRANGER, textOf(u));
+  assert(type(u).length === 0, "no type shown: " + type(u).join());
+
+  const writes = collect(regGroup(p, "Config changes"), "own-row");
+  const types = writes.map((w) =>
+    collect(value(w), "own-note").map((x) => x.textContent).join()
+  );
+  assert(types.join() === "address,bytes4", types.join());
+});
+
+Deno.test("root registry: an unscoped delegate holds every scope, in force and in the changes", async () => {
+  const f = regFake();
+  const unscoped = (id, registry, delegate, approved, block) => ({
+    id,
+    registry,
+    account: REG_ROOT,
+    delegate,
+    approved,
+    approvedAtBlock: String(block),
+    approvedAtTimestamp: String(RBAC_TS - 100 + block),
+    revokedAtBlock: approved ? null : String(block + 2),
+    revokedAtTimestamp: approved ? null : String(RBAC_TS - 98 + block),
+  });
+  f.rows.registryUnscopedDelegates = [
+    unscoped("u1", REG_MIGRATION, RBAC_TL, true, 22),
+    unscoped("u2", REG_CONFIG, REG_STRANGER, false, 12),
+  ];
+  const change = (id, u, approved, block) => ({
+    id,
+    registryUnscopedDelegate: {
+      registry: u.registry,
+      account: u.account,
+      delegate: u.delegate,
+    },
+    approved,
+    blockNumber: String(block),
+    blockTimestamp: String(RBAC_TS - 1000 + block),
+    transactionHash: "0xtx" + id,
+    transactionFrom: REG_ROOT,
+    logIndex: "0",
+  });
+  const [u1, u2] = f.rows.registryUnscopedDelegates;
+  f.rows.registryUnscopedDelegateChanges = [
+    change("uc1", u1, true, 22),
+    change("uc2", u2, true, 12),
+    change("uc3", u2, false, 14),
+  ];
+  const p = await regPanel(f);
+  const scope = (r) => collect(r, "own-role")[0].textContent;
+
+  const live = collect(regGroup(p, "Delegations in force"), "reg-delegate");
+  assert(live.length === 2, "the revoked unscoped approval is not in force");
+  const u = live.find((r) => scope(r) === "every scope (unscoped)");
+  assert(u, live.map(textOf).join(" | "));
+  assert(
+    textOf(u).includes(RBAC_TL) && textOf(u).includes("MigrationRegistry V5"),
+    textOf(u),
+  );
+  assert(
+    collect(u, "own-chip").map((c) => c.textContent).includes(
+      "governance timelock",
+    ),
+    textOf(u),
+  );
+  assert(
+    !textOf(u).includes(REG_NS),
+    "an unscoped approval names no scope: " + textOf(u),
+  );
+
+  const rows = collect(regGroup(p, "Delegation changes"), "own-row");
+  const chips = rows.map((r) => collect(r, "own-chip")[0].textContent);
+  assert(
+    chips.join() === "approved,approved,revoked,revoked,approved,approved",
+    chips.join(),
+  );
+  const scopes = rows.map(scope);
+  const U = "every scope (unscoped)";
+  assert(
+    scopes.join() ===
+      [U, "st0x.deploy", "st0x.deploy", U, U, "st0x.deploy"].join(),
+    scopes.join(),
+  );
+});
+
+Deno.test("root registry: each line's head is the scan's headV5, keyed by writer and namespace", async () => {
+  const f = regFake();
+  f.rows.migrationLines[1].head = regWord("77");
+  const p = await regPanel(f);
+  const head = textOf(regLines(p)[0]);
+  assert(head.includes(REG_M[2]) && head.includes("chain intact"), head);
+  assert(!head.includes(regWord("77")), "the index's own head is not shown");
+
+  const absent = regScan();
+  absent.networks[0].lines = absent.networks[0].lines.slice(1);
+  const unread = regScan();
+  unread.networks[0].lines[0].head = null;
+  const elsewhere = regScan();
+  elsewhere.networks[0].lines = absent.networks[0].lines;
+  elsewhere.networks.unshift({
+    ...regScan().networks[0],
+    chainId: 56,
+    network: "bsc",
+  });
+  for (
+    const [why, scan] of [
+      ["not in the scan", absent],
+      ["unread", unread],
+      ["read on another network", elsewhere],
+    ]
+  ) {
+    const q = await regPanel(regFake(), undefined, scan);
+    const probs = collect(regLines(q)[0], "reg-problem").map((x) =>
+      x.textContent
+    );
+    assert(
+      probs.join() === "the scan read no headV5 for this line",
+      why + ": " + probs.join(" | "),
+    );
+    assert(
+      collect(regLines(q)[1], "reg-problem").length === 0,
+      why + ": the other line keeps its head",
+    );
+  }
+});
+
+Deno.test("root registry: a declared line the scan reads at genesis, with nothing indexed, reads as not yet backfilled", async () => {
+  const f = regFake();
+  f.rows.migrationLines = [];
+  f.rows.migrationRecords = [];
+  const scan = regScan();
+  scan.networks[0].lines = [
+    { writer: REG_ROOT_CHECKSUM, namespace: REG_NS, head: REG_GENESIS },
+  ];
+  const p = await regPanel(f, undefined, scan);
+  const lines = regLines(p);
+  assert(lines.length === 1, "the scan's line is listed: " + textOf(p));
+  const t = textOf(lines[0]);
+  assert(t.includes("st0x.deploy") && t.includes(REG_ROOT_CHECKSUM), t);
+  assert(t.includes("its history is not yet backfilled"), t);
+  assert(
+    collect(p, "reg-problem").length === 0 && !t.includes("chain broken"),
+    "nothing called broken: " + t,
+  );
 });
