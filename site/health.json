@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T05:50:54Z",
+  "generatedAt": "2026-10-31T12:40:08Z",
   "auditGraph": {
     "nodes": [
       {
@@ -727,28 +727,7 @@
           "rain.tofu.erc20-decimals.deploy",
           "rain.vats"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.25",
-            "latest": "0.1.29"
-          },
-          {
-            "repo": "rain.factory",
-            "pinned": "0.2.5",
-            "latest": "0.2.7"
-          },
-          {
-            "repo": "rain.factory.deploy",
-            "pinned": "0.2.3",
-            "latest": "0.2.4"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.2.12",
-            "latest": "0.2.13"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.math.binary",
@@ -1799,8 +1778,8 @@
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.25",
+        "stale": false,
+        "pinned": "0.1.29",
         "latest": "0.1.29"
       },
       {
@@ -1820,15 +1799,15 @@
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.2.5",
+        "stale": false,
+        "pinned": "0.2.7",
         "latest": "0.2.7"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.factory.deploy",
-        "stale": true,
-        "pinned": "0.2.3",
+        "stale": false,
+        "pinned": "0.2.4",
         "latest": "0.2.4"
       },
       {
@@ -1855,8 +1834,8 @@
       {
         "from": "st0x.deploy",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.2.12",
+        "stale": false,
+        "pinned": "0.2.13",
         "latest": "0.2.13"
       },
       {
@@ -3673,9 +3652,9 @@
           },
           {
             "vault": "0x94ade44dd0bf93ce832835c072f50a1dbfca8c54",
-            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
-            "label": "other",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -3683,23 +3662,23 @@
             "vault": "0x9610c265eb8f38b22fec78498c74924d9fe55891",
             "owner": null,
             "label": "unknown",
-            "certificationExpired": false,
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x9e0052b62ff6ce9055b33996a1dee768041b1f67",
-            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
-            "label": "other",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x9f4854bf247db4f7781120cb17d9057032ff0962",
-            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
-            "label": "other",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -3707,7 +3686,7 @@
             "vault": "0x9face7632b0a935b7a670fe30513cbaa1cba235b",
             "owner": null,
             "label": "unknown",
-            "certificationExpired": true,
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -3731,14 +3710,14 @@
             "vault": "0xa4f1f3e56f4d008433b43d3e551a46b4b7910268",
             "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
             "label": "other",
-            "certificationExpired": null,
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa51a91845815a80ac70807d39544e6c6eacfb70d",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
             "certificationExpired": true,
             "pinned": false,
             "onChain": true
@@ -4025,18 +4004,18 @@
           }
         ],
         "counts": {
-          "safe": 28,
+          "safe": 29,
           "timelock": 58,
-          "other": 55,
-          "unknown": 3,
+          "other": 52,
+          "unknown": 5,
           "unpinned": 0,
-          "certificationExpired": 52,
-          "certificationUnknown": 1,
+          "certificationExpired": 51,
+          "certificationUnknown": 5,
           "notPinned": 88,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53318272
+        "discoveredAtBlock": 53330550
       },
       {
         "network": "ethereum",
@@ -4585,7 +4564,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26310770
+        "discoveredAtBlock": 26312805
       },
       {
         "network": "bsc",
@@ -4955,38 +4934,46 @@
           },
           {
             "vault": "0x543e33e9276cf00b74689c8e41fd7fc921128ba0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xe2593db54e7893d311cbf5087cdb7a9027b9a7fd",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xc67038bbff91f2568b902ff171e9f9c06ed98815",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xbca97cc57916734130c9f05ea8b217682a249b75",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x042dfd33de6766a8858f188dfcf207d311da6488",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
             "certificationExpired": false,
@@ -4994,42 +4981,34 @@
             "onChain": true
           },
           {
-            "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
-            "pinned": true,
-            "onChain": true
-          },
-          {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcc23ef9e1e74c22ab2a9b73e253af01531385b08",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
             "pinned": true,
             "onChain": true
           },
@@ -5195,41 +5174,41 @@
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5275,41 +5254,41 @@
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5355,81 +5334,81 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5443,18 +5422,18 @@
           }
         ],
         "counts": {
-          "safe": 20,
-          "timelock": 56,
+          "safe": 38,
+          "timelock": 58,
           "other": 0,
-          "unknown": 30,
+          "unknown": 10,
           "unpinned": 0,
-          "certificationExpired": 22,
-          "certificationUnknown": 30,
+          "certificationExpired": 41,
+          "certificationUnknown": 10,
           "notPinned": 50,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 130804186
+        "discoveredAtBlock": 130858738
       },
       {
         "network": "hyperevm",
@@ -5995,7 +5974,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 49988664
+        "discoveredAtBlock": 50013572
       },
       {
         "network": "robinhood",
@@ -6536,7 +6515,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 102329863
+        "discoveredAtBlock": 102560668
       }
     ]
   },
@@ -13992,16 +13971,16 @@
       {
         "chainId": 1,
         "network": "ethereum",
-        "registry": "0x5A48e719785E11c4643EA4056D0861A6a69e91a0",
+        "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "unread": 0,
+        "unread": 7,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14010,7 +13989,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14021,7 +14000,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notRecorded",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": 1791056759,
             "waitsOn": [
@@ -14041,7 +14020,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14061,7 +14040,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14081,7 +14060,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14090,7 +14069,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "notRecorded",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": 1791056759
               }
@@ -14101,27 +14080,27 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
               {
                 "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
-                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
-                "state": "notApplied",
+                "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
+                "script": "script/20261030-backfill-migration-registry-v5.s.sol",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
           },
           {
-            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "script": "script/20261030-backfill-migration-registry-v5.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14130,7 +14109,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14141,16 +14120,16 @@
       {
         "chainId": 56,
         "network": "bsc",
-        "registry": "0x5A48e719785E11c4643EA4056D0861A6a69e91a0",
+        "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "bsc-dataseed.bnbchain.org",
-        "unread": 0,
+        "unread": 7,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14159,7 +14138,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14170,7 +14149,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notRecorded",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": 1791109807,
             "waitsOn": [
@@ -14190,7 +14169,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14210,7 +14189,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14230,7 +14209,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14239,7 +14218,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "notRecorded",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": 1791109807
               }
@@ -14250,27 +14229,27 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
               {
                 "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
-                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
-                "state": "notApplied",
+                "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
+                "script": "script/20261030-backfill-migration-registry-v5.s.sol",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
           },
           {
-            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "script": "script/20261030-backfill-migration-registry-v5.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14279,7 +14258,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14290,16 +14269,16 @@
       {
         "chainId": 999,
         "network": "hyperevm",
-        "registry": "0x5A48e719785E11c4643EA4056D0861A6a69e91a0",
+        "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "rpc.hyperliquid.xyz/evm",
-        "unread": 0,
+        "unread": 7,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14308,7 +14287,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14319,7 +14298,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notRecorded",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": 1791062016,
             "waitsOn": [
@@ -14339,7 +14318,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14359,7 +14338,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14379,7 +14358,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14388,7 +14367,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "notRecorded",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": 1791062016
               }
@@ -14399,27 +14378,27 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
               {
                 "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
-                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
-                "state": "notApplied",
+                "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
+                "script": "script/20261030-backfill-migration-registry-v5.s.sol",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
           },
           {
-            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "script": "script/20261030-backfill-migration-registry-v5.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14428,7 +14407,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14439,16 +14418,16 @@
       {
         "chainId": 4663,
         "network": "robinhood",
-        "registry": "0x5A48e719785E11c4643EA4056D0861A6a69e91a0",
+        "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "rpc.mainnet.chain.robinhood.com",
-        "unread": 0,
+        "unread": 7,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14457,7 +14436,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14468,7 +14447,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notRecorded",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": 1791131389,
             "waitsOn": [
@@ -14488,7 +14467,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14508,7 +14487,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14528,7 +14507,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14537,7 +14516,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "notRecorded",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": 1791131389
               }
@@ -14548,27 +14527,27 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
               {
                 "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
-                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
-                "state": "notApplied",
+                "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
+                "script": "script/20261030-backfill-migration-registry-v5.s.sol",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
           },
           {
-            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "script": "script/20261030-backfill-migration-registry-v5.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14577,7 +14556,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14588,16 +14567,16 @@
       {
         "chainId": 8453,
         "network": "base",
-        "registry": "0x5A48e719785E11c4643EA4056D0861A6a69e91a0",
+        "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "mainnet.base.org",
-        "unread": 0,
+        "unread": 7,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14606,7 +14585,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14617,7 +14596,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "notRecorded",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": 1791142369,
             "waitsOn": [
@@ -14637,7 +14616,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14657,7 +14636,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14677,7 +14656,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14686,7 +14665,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "notRecorded",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": 1791142369
               }
@@ -14697,27 +14676,27 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
               {
                 "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
-                "script": "script/20261022-backfill-migration-registry-v3.s.sol",
-                "state": "notApplied",
+                "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
+                "script": "script/20261030-backfill-migration-registry-v5.s.sol",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
           },
           {
-            "script": "script/20261022-backfill-migration-registry-v3.s.sol",
+            "script": "script/20261030-backfill-migration-registry-v5.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "id": "0x1d0a122eb0c6b277ce27f34518d08baef969adf24bb136bfc5481ec4935c0ac8",
+            "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14726,7 +14705,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -15139,7 +15118,7 @@
           "address": "0x40584fbad768ff46f299cf50cae5b3d437e213fa",
           "name": "The Walt Disney Company ST0x",
           "symbol": "tDIS",
-          "deployed": true,
+          "deployed": null,
           "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
           "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -18785,7 +18764,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 159,
-      "commitsSinceAudit": 505,
+      "commitsSinceAudit": 592,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -19738,7 +19717,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 34,
-      "testFiles": 191,
+      "testFiles": 192,
       "sourcesUnparsed": 1,
       "untested": []
     }
