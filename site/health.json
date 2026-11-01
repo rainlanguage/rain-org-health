@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-10-31T21:40:25Z",
+  "generatedAt": "2026-11-01T01:15:24Z",
   "auditGraph": {
     "nodes": [
       {
@@ -126,7 +126,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.5",
-            "latest": "0.2.7"
+            "latest": "0.2.8"
           }
         ]
       },
@@ -175,7 +175,13 @@
           "rain.factory",
           "rain.metadata"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.7",
+            "latest": "0.2.8"
+          }
+        ]
       },
       {
         "repo": "rain.flare",
@@ -502,7 +508,13 @@
           "rain.math.float",
           "rain.metadata"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.7",
+            "latest": "0.2.8"
+          }
+        ]
       },
       {
         "repo": "rain.vats.flare",
@@ -565,7 +577,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.5",
-            "latest": "0.2.7"
+            "latest": "0.2.8"
           }
         ]
       },
@@ -775,7 +787,13 @@
           "rain.tofu.erc20-decimals.deploy",
           "rain.vats"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.7",
+            "latest": "0.2.8"
+          }
+        ]
       },
       {
         "repo": "rain.math.binary",
@@ -1169,7 +1187,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.7"
+        "latest": "0.2.8"
       },
       {
         "from": "rain.extrospection",
@@ -1230,9 +1248,9 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.7",
-        "latest": "0.2.7"
+        "latest": "0.2.8"
       },
       {
         "from": "rain.flare",
@@ -1475,9 +1493,9 @@
       {
         "from": "rain.vats",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.7",
-        "latest": "0.2.7"
+        "latest": "0.2.8"
       },
       {
         "from": "rain.vats",
@@ -1547,7 +1565,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.7"
+        "latest": "0.2.8"
       },
       {
         "from": "rain.verify",
@@ -1853,9 +1871,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.7",
-        "latest": "0.2.7"
+        "latest": "0.2.8"
       },
       {
         "from": "st0x.deploy",
@@ -3106,38 +3124,46 @@
           },
           {
             "vault": "0x98c02b58b7e65ef5a4262d9536162949e3b2e141",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xdde9346107609a05439a0b59ab6ed4f7f81a1fbf",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x15de944cd020a18c8e5626fb0f81b36e73956199",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xd36056a4a03707d3743fce4e9c08852820adcfdc",
             "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
             "label": "timelock",
             "certificationExpired": false,
@@ -3145,42 +3171,34 @@
             "onChain": true
           },
           {
-            "vault": "0xd36056a4a03707d3743fce4e9c08852820adcfdc",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
-            "pinned": true,
-            "onChain": true
-          },
-          {
             "vault": "0x6a071e25fa25653cf15d1ee320ea3df771926aa0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb6021810971714cd48572af527307acc324ecf61",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xbdc237aa3b67cc3088adaf117913f30bf08157a3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -3626,41 +3644,41 @@
           },
           {
             "vault": "0x80308f7f0bd25f371c2c96deaa01c355536295f2",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x8104acbd0f748f4c3d327b56f54dfbf59f0540b3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x821fa59bdff190443e2f4212953b58219d3be664",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x86ef8075d8a594c8e302a105a401c22eb98071eb",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x8ac090daefe825fd04a2cd7309fcf9b2805735a8",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -4058,18 +4076,18 @@
           }
         ],
         "counts": {
-          "safe": 27,
+          "safe": 29,
           "timelock": 54,
-          "other": 53,
-          "unknown": 10,
+          "other": 56,
+          "unknown": 5,
           "unpinned": 0,
-          "certificationExpired": 50,
-          "certificationUnknown": 10,
+          "certificationExpired": 53,
+          "certificationUnknown": 5,
           "notPinned": 88,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53346756
+        "discoveredAtBlock": 53353207
       },
       {
         "network": "ethereum",
@@ -4618,7 +4636,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26315495
+        "discoveredAtBlock": 26316567
       },
       {
         "network": "bsc",
@@ -4948,41 +4966,41 @@
           },
           {
             "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5028,41 +5046,41 @@
           },
           {
             "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcc23ef9e1e74c22ab2a9b73e253af01531385b08",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5108,41 +5126,41 @@
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x21ebe855f15c2e1badea603c1cb07b964096a616",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2c5374933d1e7208b2184fa1a45119fdcac13123",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5308,41 +5326,41 @@
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5388,38 +5406,46 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
             "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
             "label": "safe",
             "certificationExpired": true,
@@ -5427,42 +5453,34 @@
             "onChain": true
           },
           {
-            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5476,18 +5494,18 @@
           }
         ],
         "counts": {
-          "safe": 30,
-          "timelock": 56,
+          "safe": 36,
+          "timelock": 50,
           "other": 0,
           "unknown": 20,
           "unpinned": 0,
-          "certificationExpired": 32,
+          "certificationExpired": 39,
           "certificationUnknown": 20,
           "notPinned": 50,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 130930729
+        "discoveredAtBlock": 130959394
       },
       {
         "network": "hyperevm",
@@ -6028,7 +6046,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50046519
+        "discoveredAtBlock": 50059643
       },
       {
         "network": "robinhood",
@@ -6569,7 +6587,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 102873104
+        "discoveredAtBlock": 102996863
       }
     ]
   },
@@ -14776,7 +14794,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 10,
-    "healthy": 8,
+    "healthy": 10,
     "contracts": [
       {
         "name": "StoxCorporateActionsFacet",
@@ -14789,10 +14807,10 @@
       {
         "name": "StoxOffchainAssetReceiptVaultAuthorizerV1",
         "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
-        "status": "unknown",
-        "codeMatch": null,
-        "hashMatch": null,
-        "erc165": "absent"
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true,
+        "erc165": "conformant"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultBeaconSetDeployer",
@@ -14829,10 +14847,10 @@
       {
         "name": "StoxUnifiedDeployer",
         "address": "0x81D0ecD58346bf2d484E7774f55EABc1AA3F4bcc",
-        "status": "unknown",
-        "codeMatch": null,
-        "hashMatch": null,
-        "erc165": "absent"
+        "status": "healthy",
+        "codeMatch": true,
+        "hashMatch": true,
+        "erc165": "conformant"
       },
       {
         "name": "StoxWrappedTokenVault",
@@ -14887,9 +14905,9 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
-          "owner": null,
-          "ownerLabel": "unknown",
-          "implementation": null,
+          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+          "ownerLabel": "timelock",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
           "implVersion": "unknown",
           "targetImpl": null,
           "targetVersion": "0.1.1",
@@ -15113,14 +15131,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 38,
+    "ok": 47,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 40,
+    "atAuthoriserTarget": 50,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -15130,13 +15148,13 @@
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-          "name": null,
-          "symbol": null,
-          "deployed": null,
-          "authoriser": null,
-          "authoriserLabel": "unknown",
+          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
+          "symbol": "tIBHG",
+          "deployed": true,
+          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+          "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": null
+          "atAuthoriserTarget": true
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
@@ -15289,26 +15307,26 @@
         "symbol": "wtAMZN",
         "name": "Wrapped Amazon.com Inc ST0x",
         "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Amazon.com Inc ST0x",
+        "liveSymbol": "wtAMZN",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "unwrapped": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "legacy": "0x8d8c315db61f60dcc3c66cdb48ca87fc643e35ea",
         "receipt": "0x3c4895df971e5c1fdca81bf74adb8eee94f24721",
-        "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "unwrappedDeployed": true,
+        "legacyDeployed": true,
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15393,26 +15411,26 @@
         "symbol": "wtBABA",
         "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
         "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Alibaba Group Holding Limited ADR ST0x",
+        "liveSymbol": "wtBABA",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
         "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
         "legacy": null,
         "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15575,26 +15593,26 @@
         "symbol": "wtDRAM",
         "name": "Wrapped Roundhill Memory ETF ST0x",
         "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Roundhill Memory ETF ST0x",
+        "liveSymbol": "wtDRAM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x96de077262609298cd891e4ab21bd34837de33ab",
         "unwrapped": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
         "legacy": null,
         "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15783,26 +15801,26 @@
         "symbol": "wtLLY",
         "name": "Wrapped Eli Lilly and Company ST0x",
         "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Eli Lilly and Company ST0x",
+        "liveSymbol": "wtLLY",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
         "unwrapped": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
         "legacy": null,
         "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15861,26 +15879,26 @@
         "symbol": "wtMCD",
         "name": "Wrapped McDonald's Corporation ST0x",
         "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped McDonald's Corporation ST0x",
+        "liveSymbol": "wtMCD",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
         "unwrapped": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
         "legacy": null,
         "receipt": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -15939,26 +15957,26 @@
         "symbol": "wtMU",
         "name": "Wrapped Micron Technology, Inc. ST0x",
         "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Micron Technology, Inc. ST0x",
+        "liveSymbol": "wtMU",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
         "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
         "legacy": null,
         "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -16121,26 +16139,26 @@
         "symbol": "wtQQQM",
         "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
         "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Invesco NASDAQ 100 ETF ST0x",
+        "liveSymbol": "wtQQQM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "unwrapped": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "legacy": null,
         "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -16303,26 +16321,26 @@
         "symbol": "wtSPYM",
         "name": "Wrapped SPDR Portfolio S&P 500 ETF ST0x",
         "address": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
-        "status": "unknown",
+        "status": "mismatch",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": false,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped State Street SPDR Portfolio S&P 500 ETF ST0x",
+        "liveSymbol": "wtSPYM",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "unwrapped": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "legacy": "0x2289249984f1fa2ce86c4e8867e7eb819ea7df95",
         "receipt": "0x957056dd6e2e594742e36675e8aa5a567163e5bd",
-        "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "unwrappedDeployed": true,
+        "legacyDeployed": true,
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -16355,26 +16373,26 @@
         "symbol": "wtTR",
         "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
         "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Tootsie Roll Industries, Inc. ST0x",
+        "liveSymbol": "wtTR",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
         "unwrapped": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
         "legacy": null,
         "receipt": "0xf5e5d2d3b6be819Ff65cB364F4178252C9dbf5B7",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -16433,26 +16451,26 @@
         "symbol": "wtTTWO",
         "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
         "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
-        "symbolOk": null,
-        "decimalsOk": null,
-        "liveName": null,
-        "liveSymbol": null,
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
+        "liveSymbol": "wtTTWO",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
         "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
         "legacy": null,
         "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -18330,15 +18348,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.2.7",
-      "latestTagIso": "2026-10-30T08:31:44Z",
+      "latestTag": "sol-v0.2.8",
+      "latestTagIso": "2026-10-31T22:09:44Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 4187,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 3815,
       "sourceLocRemovedSinceAudit": 372,
       "filesChangedSinceAudit": 32,
-      "commitsSinceAudit": 519,
+      "commitsSinceAudit": 520,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1109,
       "commentLocRemovedSinceAudit": 145,
@@ -18346,7 +18364,7 @@
       "codeLocRemovedSinceAudit": 181,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
-      "daysSinceAudit": 111
+      "daysSinceAudit": 112
     },
     {
       "name": "rain.extrospection",
@@ -18394,7 +18412,7 @@
       "codeLocRemovedSinceAudit": 122,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 172
+      "daysSinceAudit": 173
     },
     {
       "name": "rain.vats",
@@ -18442,7 +18460,7 @@
       "codeLocRemovedSinceAudit": 196,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 164
+      "daysSinceAudit": 165
     },
     {
       "name": "rain.merkle.deploy",
@@ -18470,7 +18488,7 @@
       "sourceLocAddedSinceAudit": 382,
       "sourceLocRemovedSinceAudit": 132,
       "filesChangedSinceAudit": 16,
-      "commitsSinceAudit": 57,
+      "commitsSinceAudit": 58,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 105,
       "commentLocRemovedSinceAudit": 14,
@@ -18478,7 +18496,7 @@
       "codeLocRemovedSinceAudit": 109,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
-      "daysSinceAudit": 286
+      "daysSinceAudit": 287
     },
     {
       "name": "rain.lib.leakybucket",
@@ -18506,7 +18524,7 @@
       "sourceLocAddedSinceAudit": 170,
       "sourceLocRemovedSinceAudit": 109,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 84,
+      "commitsSinceAudit": 85,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 91,
       "commentLocRemovedSinceAudit": 29,
@@ -18514,7 +18532,7 @@
       "codeLocRemovedSinceAudit": 70,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.leakybucket/compare/06baa59b15b0b4ad51189288e3137eee677db37d...main",
-      "daysSinceAudit": 39
+      "daysSinceAudit": 40
     },
     {
       "name": "rain.tofu.erc20-decimals",
@@ -18542,7 +18560,7 @@
       "sourceLocAddedSinceAudit": 153,
       "sourceLocRemovedSinceAudit": 119,
       "filesChangedSinceAudit": 5,
-      "commitsSinceAudit": 79,
+      "commitsSinceAudit": 80,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 117,
       "commentLocRemovedSinceAudit": 55,
@@ -18550,7 +18568,7 @@
       "codeLocRemovedSinceAudit": 53,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/03406b6ad8d33a802c6eb58ae4dac3f0ea9aed38...main",
-      "daysSinceAudit": 263
+      "daysSinceAudit": 264
     },
     {
       "name": "rainlang",
@@ -18584,7 +18602,7 @@
       "sourceLocAddedSinceAudit": 129,
       "sourceLocRemovedSinceAudit": 87,
       "filesChangedSinceAudit": 50,
-      "commitsSinceAudit": 14,
+      "commitsSinceAudit": 15,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 14,
       "commentLocRemovedSinceAudit": 7,
@@ -18592,7 +18610,7 @@
       "codeLocRemovedSinceAudit": 80,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/86d054219ac36d0e648146352bc26e64e509a156...main",
-      "daysSinceAudit": 5
+      "daysSinceAudit": 6
     },
     {
       "name": "rain.metadata",
@@ -18620,7 +18638,7 @@
       "sourceLocAddedSinceAudit": 139,
       "sourceLocRemovedSinceAudit": 49,
       "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 633,
+      "commitsSinceAudit": 635,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 80,
       "commentLocRemovedSinceAudit": 14,
@@ -18628,7 +18646,7 @@
       "codeLocRemovedSinceAudit": 29,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
-      "daysSinceAudit": 275
+      "daysSinceAudit": 276
     },
     {
       "name": "rain.math.float",
@@ -18656,7 +18674,7 @@
       "sourceLocAddedSinceAudit": 0,
       "sourceLocRemovedSinceAudit": 82,
       "filesChangedSinceAudit": 13,
-      "commitsSinceAudit": 1520,
+      "commitsSinceAudit": 1521,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1849,
       "commentLocRemovedSinceAudit": 522,
@@ -18664,7 +18682,7 @@
       "codeLocRemovedSinceAudit": 1450,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
-      "daysSinceAudit": 334
+      "daysSinceAudit": 335
     },
     {
       "name": "rain.math.fixedpoint",
@@ -18692,7 +18710,7 @@
       "sourceLocAddedSinceAudit": 11,
       "sourceLocRemovedSinceAudit": 9,
       "filesChangedSinceAudit": 5,
-      "commitsSinceAudit": 32,
+      "commitsSinceAudit": 33,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
@@ -18700,7 +18718,7 @@
       "codeLocRemovedSinceAudit": 9,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/1752e9fbd635901ac7eb177699681ed97290e12e...main",
-      "daysSinceAudit": 334
+      "daysSinceAudit": 335
     },
     {
       "name": "rain.deploy",
@@ -18734,7 +18752,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 112,
-      "commitsSinceAudit": 1067,
+      "commitsSinceAudit": 1068,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18742,7 +18760,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
-      "daysSinceAudit": 24
+      "daysSinceAudit": 25
     },
     {
       "name": "raindex.deploy",
@@ -18776,7 +18794,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 90,
-      "commitsSinceAudit": 442,
+      "commitsSinceAudit": 443,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -18784,7 +18802,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/raindex.deploy/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 138
+      "daysSinceAudit": 139
     },
     {
       "name": "st0x.deploy",
@@ -18826,7 +18844,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
-      "daysSinceAudit": 65
+      "daysSinceAudit": 66
     },
     {
       "name": "rain.lib.typecast",
@@ -18862,7 +18880,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
-      "daysSinceAudit": 286
+      "daysSinceAudit": 287
     },
     {
       "name": "rain.math.saturating",
@@ -18898,7 +18916,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
-      "daysSinceAudit": 334
+      "daysSinceAudit": 335
     },
     {
       "name": "rain.intorastring",
@@ -18934,7 +18952,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
-      "daysSinceAudit": 269
+      "daysSinceAudit": 270
     },
     {
       "name": "rain.math.binary",
@@ -18970,7 +18988,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
-      "daysSinceAudit": 285
+      "daysSinceAudit": 286
     },
     {
       "name": "rain.datacontract",
@@ -19024,7 +19042,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/sol-v0.2.0...main",
-      "daysSinceAudit": 67
+      "daysSinceAudit": 68
     },
     {
       "name": "rain.lib.hash",
@@ -19066,7 +19084,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/092293e9f180a6df6c4fdfae5461870c117c0fb9...main",
-      "daysSinceAudit": 45
+      "daysSinceAudit": 46
     },
     {
       "name": "rain.lib.memkv",
@@ -19108,7 +19126,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/05dd78183e919872924ee061b855e29424bc43b4...main",
-      "daysSinceAudit": 43
+      "daysSinceAudit": 44
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -19144,7 +19162,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.binmaskflag/compare/41d8dfb2edf9695d1344e8d56ddae7c1789690c4...main",
-      "daysSinceAudit": 275
+      "daysSinceAudit": 276
     },
     {
       "name": "rain.sol.codegen",
@@ -19192,7 +19210,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/sol-v0.1.39...main",
-      "daysSinceAudit": 30
+      "daysSinceAudit": 31
     },
     {
       "name": "rain.solmem",
@@ -19234,7 +19252,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.solmem/compare/e75080f460876f4070c4e127c8668d778df93e94...main",
-      "daysSinceAudit": 74
+      "daysSinceAudit": 75
     },
     {
       "name": "rain.string",
@@ -19276,7 +19294,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.string/compare/79b2f4fd3fbd0e21b8e757d94abd361178cefa62...main",
-      "daysSinceAudit": 67
+      "daysSinceAudit": 68
     },
     {
       "name": "rain.verify.interface",
@@ -19312,7 +19330,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
-      "daysSinceAudit": 271
+      "daysSinceAudit": 272
     }
   ],
   "untestedExternals": [
