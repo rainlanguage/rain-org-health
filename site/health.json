@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-01T15:15:53Z",
+  "generatedAt": "2026-11-01T16:50:35Z",
   "auditGraph": {
     "nodes": [
       {
@@ -57,7 +57,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -98,7 +98,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -126,7 +126,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.5",
-            "latest": "0.2.8"
+            "latest": "0.2.9"
           }
         ]
       },
@@ -179,7 +179,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.7",
-            "latest": "0.2.8"
+            "latest": "0.2.9"
           }
         ]
       },
@@ -207,7 +207,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -330,7 +330,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -375,7 +375,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -403,7 +403,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -508,13 +508,7 @@
           "rain.math.float",
           "rain.metadata"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.factory",
-            "pinned": "0.2.7",
-            "latest": "0.2.8"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.vats.flare",
@@ -544,7 +538,7 @@
           {
             "repo": "rain.vats",
             "pinned": "0.2.12",
-            "latest": "0.2.13"
+            "latest": "0.2.15"
           }
         ]
       },
@@ -577,7 +571,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.5",
-            "latest": "0.2.8"
+            "latest": "0.2.9"
           }
         ]
       },
@@ -644,7 +638,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -721,7 +715,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -755,7 +749,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -791,7 +785,12 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.7",
-            "latest": "0.2.8"
+            "latest": "0.2.9"
+          },
+          {
+            "repo": "rain.vats",
+            "pinned": "0.2.13",
+            "latest": "0.2.15"
           }
         ]
       },
@@ -868,7 +867,7 @@
           {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
-            "latest": "0.1.44"
+            "latest": "0.1.45"
           }
         ]
       },
@@ -1082,7 +1081,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rain.deploy",
@@ -1124,7 +1123,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rain.dia",
@@ -1166,7 +1165,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rain.erc4626.words",
@@ -1187,7 +1186,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.8"
+        "latest": "0.2.9"
       },
       {
         "from": "rain.extrospection",
@@ -1250,7 +1249,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.7",
-        "latest": "0.2.8"
+        "latest": "0.2.9"
       },
       {
         "from": "rain.flare",
@@ -1278,7 +1277,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rain.flare",
@@ -1376,7 +1375,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rain.merkle.deploy",
@@ -1404,7 +1403,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rain.pyth",
@@ -1432,7 +1431,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rain.pyth",
@@ -1493,9 +1492,9 @@
       {
         "from": "rain.vats",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.2.7",
-        "latest": "0.2.8"
+        "stale": false,
+        "pinned": "0.2.9",
+        "latest": "0.2.9"
       },
       {
         "from": "rain.vats",
@@ -1551,7 +1550,7 @@
         "to": "rain.vats",
         "stale": true,
         "pinned": "0.2.12",
-        "latest": "0.2.13"
+        "latest": "0.2.15"
       },
       {
         "from": "rain.verify",
@@ -1565,7 +1564,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.8"
+        "latest": "0.2.9"
       },
       {
         "from": "rain.verify",
@@ -1621,7 +1620,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "raindex.deploy",
@@ -1761,7 +1760,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rainlang",
@@ -1817,7 +1816,7 @@
         "to": "rain.metadata",
         "stale": true,
         "pinned": "0.1.43",
-        "latest": "0.1.44"
+        "latest": "0.1.45"
       },
       {
         "from": "rainlang.deploy",
@@ -1873,7 +1872,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.7",
-        "latest": "0.2.8"
+        "latest": "0.2.9"
       },
       {
         "from": "st0x.deploy",
@@ -1906,9 +1905,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.vats",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.13",
-        "latest": "0.2.13"
+        "latest": "0.2.15"
       },
       {
         "from": "st0x.deploy",
@@ -4087,7 +4086,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53378526
+        "discoveredAtBlock": 53381383
       },
       {
         "network": "ethereum",
@@ -4636,7 +4635,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26320776
+        "discoveredAtBlock": 26321252
       },
       {
         "network": "bsc",
@@ -5406,41 +5405,41 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5494,18 +5493,18 @@
           }
         ],
         "counts": {
-          "safe": 41,
+          "safe": 36,
           "timelock": 65,
           "other": 0,
-          "unknown": 0,
+          "unknown": 5,
           "unpinned": 0,
-          "certificationExpired": 45,
-          "certificationUnknown": 0,
+          "certificationExpired": 40,
+          "certificationUnknown": 5,
           "notPinned": 50,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131071940
+        "discoveredAtBlock": 131084633
       },
       {
         "network": "hyperevm",
@@ -6046,7 +6045,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50111141
+        "discoveredAtBlock": 50116953
       },
       {
         "network": "robinhood",
@@ -6587,7 +6586,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 103483476
+        "discoveredAtBlock": 103539295
       }
     ]
   },
@@ -6644,6 +6643,13 @@
       "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba": "MINT",
       "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3": "BURN",
       "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de": "EMERGENCY"
+    },
+    "configRegistries": {
+      "base": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9",
+      "bsc": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9",
+      "hyperevm": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9",
+      "mainnet": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9",
+      "robinhood": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9"
     },
     "addressNames": {
       "base": {
@@ -14045,14 +14051,14 @@
         "network": "ethereum",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "unread": 7,
+        "unread": 0,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14061,7 +14067,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14072,7 +14078,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notRecorded",
             "appliedAt": null,
             "executedAt": 1791056759,
             "waitsOn": [
@@ -14092,7 +14098,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14112,7 +14118,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14132,7 +14138,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14141,7 +14147,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notRecorded",
                 "appliedAt": null,
                 "executedAt": 1791056759
               }
@@ -14152,7 +14158,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14161,7 +14167,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
                 "script": "script/20261030-backfill-migration-registry-v5.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14172,7 +14178,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14181,11 +14187,31 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
+          }
+        ],
+        "lines": [
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "headBlock": 26321251,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 26321251,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 26321251,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
       },
@@ -14194,14 +14220,14 @@
         "network": "bsc",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "bsc-dataseed.bnbchain.org",
-        "unread": 7,
+        "unread": 0,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14210,7 +14236,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14221,7 +14247,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notRecorded",
             "appliedAt": null,
             "executedAt": 1791109807,
             "waitsOn": [
@@ -14241,7 +14267,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14261,7 +14287,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14281,7 +14307,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14290,7 +14316,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notRecorded",
                 "appliedAt": null,
                 "executedAt": 1791109807
               }
@@ -14301,7 +14327,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14310,7 +14336,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
                 "script": "script/20261030-backfill-migration-registry-v5.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14321,7 +14347,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14330,11 +14356,31 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
+          }
+        ],
+        "lines": [
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "headBlock": 131084575,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 131084575,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 131084575,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
       },
@@ -14343,14 +14389,14 @@
         "network": "hyperevm",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "rpc.hyperliquid.xyz/evm",
-        "unread": 7,
+        "unread": 0,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14359,7 +14405,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14370,7 +14416,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notRecorded",
             "appliedAt": null,
             "executedAt": 1791062016,
             "waitsOn": [
@@ -14390,7 +14436,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14410,7 +14456,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14430,7 +14476,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14439,7 +14485,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notRecorded",
                 "appliedAt": null,
                 "executedAt": 1791062016
               }
@@ -14450,7 +14496,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14459,7 +14505,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
                 "script": "script/20261030-backfill-migration-registry-v5.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14470,7 +14516,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14479,11 +14525,31 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
+          }
+        ],
+        "lines": [
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "headBlock": 50116923,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 50116923,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 50116923,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
       },
@@ -14492,14 +14558,14 @@
         "network": "robinhood",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "rpc.mainnet.chain.robinhood.com",
-        "unread": 7,
+        "unread": 0,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14508,7 +14574,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14519,7 +14585,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notRecorded",
             "appliedAt": null,
             "executedAt": 1791131389,
             "waitsOn": [
@@ -14539,7 +14605,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14559,7 +14625,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14579,7 +14645,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14588,7 +14654,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notRecorded",
                 "appliedAt": null,
                 "executedAt": 1791131389
               }
@@ -14599,7 +14665,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14608,7 +14674,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
                 "script": "script/20261030-backfill-migration-registry-v5.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14619,7 +14685,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14628,11 +14694,31 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
+          }
+        ],
+        "lines": [
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "headBlock": 103539003,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 103539003,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 103539003,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
       },
@@ -14641,14 +14727,14 @@
         "network": "base",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "mainnet.base.org",
-        "unread": 7,
+        "unread": 0,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x68847439065e76f168f14737cda7cb7f920f30021cc88a737633db6d7ca3c543",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14657,7 +14743,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14668,7 +14754,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "unknown",
+            "state": "notRecorded",
             "appliedAt": null,
             "executedAt": 1791142369,
             "waitsOn": [
@@ -14688,7 +14774,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0x3899b25618c4bb889fa5d0fc5b27e7189655348a89e9d2deaebdcdee45ebc2f4",
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14708,7 +14794,7 @@
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
             "id": "0xc09a48924b028bfd44ebe19075ba5cb1235875e64d498bc770c0dbc2cd9c419b",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14728,7 +14814,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14737,7 +14823,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc3a838b5f075fbf855329612292400d9d728c845aa96fcbf9db3a889b1128c15",
                 "script": "script/20260729-migrate-governance-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notRecorded",
                 "appliedAt": null,
                 "executedAt": 1791142369
               }
@@ -14748,7 +14834,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14757,7 +14843,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
                 "script": "script/20261030-backfill-migration-registry-v5.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -14768,7 +14854,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -14777,11 +14863,31 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
             ]
+          }
+        ],
+        "lines": [
+          {
+            "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "headBlock": 53381385,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 53381385,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
+          },
+          {
+            "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
+            "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
+            "headBlock": 53381385,
+            "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
       }
@@ -14794,7 +14900,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 10,
-    "healthy": 10,
+    "healthy": 8,
     "contracts": [
       {
         "name": "StoxCorporateActionsFacet",
@@ -14807,10 +14913,10 @@
       {
         "name": "StoxOffchainAssetReceiptVaultAuthorizerV1",
         "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
-        "status": "healthy",
-        "codeMatch": true,
-        "hashMatch": true,
-        "erc165": "conformant"
+        "status": "unknown",
+        "codeMatch": null,
+        "hashMatch": null,
+        "erc165": "absent"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultBeaconSetDeployer",
@@ -14847,10 +14953,10 @@
       {
         "name": "StoxUnifiedDeployer",
         "address": "0x81D0ecD58346bf2d484E7774f55EABc1AA3F4bcc",
-        "status": "healthy",
-        "codeMatch": true,
-        "hashMatch": true,
-        "erc165": "conformant"
+        "status": "unknown",
+        "codeMatch": null,
+        "hashMatch": null,
+        "erc165": "absent"
       },
       {
         "name": "StoxWrappedTokenVault",
@@ -14905,9 +15011,9 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
-          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-          "ownerLabel": "timelock",
-          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
           "implVersion": "unknown",
           "targetImpl": null,
           "targetVersion": "0.1.1",
@@ -15131,14 +15237,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 47,
+    "ok": 38,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 50,
+    "atAuthoriserTarget": 40,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -15148,13 +15254,13 @@
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
-          "symbol": "tIBHG",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
+          "name": null,
+          "symbol": null,
+          "deployed": null,
+          "authoriser": null,
+          "authoriserLabel": "unknown",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "atAuthoriserTarget": null
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
@@ -15307,26 +15413,26 @@
         "symbol": "wtAMZN",
         "name": "Wrapped Amazon.com Inc ST0x",
         "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Amazon.com Inc ST0x",
-        "liveSymbol": "wtAMZN",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "legacy": "0x8d8c315db61f60dcc3c66cdb48ca87fc643e35ea",
         "receipt": "0x3c4895df971e5c1fdca81bf74adb8eee94f24721",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "unwrappedDeployed": null,
+        "legacyDeployed": null,
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -15411,26 +15517,26 @@
         "symbol": "wtBABA",
         "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
         "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Alibaba Group Holding Limited ADR ST0x",
-        "liveSymbol": "wtBABA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
         "legacy": null,
         "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -15593,26 +15699,26 @@
         "symbol": "wtDRAM",
         "name": "Wrapped Roundhill Memory ETF ST0x",
         "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Roundhill Memory ETF ST0x",
-        "liveSymbol": "wtDRAM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x96de077262609298cd891e4ab21bd34837de33ab",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
         "legacy": null,
         "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -15801,26 +15907,26 @@
         "symbol": "wtLLY",
         "name": "Wrapped Eli Lilly and Company ST0x",
         "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Eli Lilly and Company ST0x",
-        "liveSymbol": "wtLLY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
         "legacy": null,
         "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -15879,26 +15985,26 @@
         "symbol": "wtMCD",
         "name": "Wrapped McDonald's Corporation ST0x",
         "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped McDonald's Corporation ST0x",
-        "liveSymbol": "wtMCD",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
         "legacy": null,
         "receipt": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -15957,26 +16063,26 @@
         "symbol": "wtMU",
         "name": "Wrapped Micron Technology, Inc. ST0x",
         "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Micron Technology, Inc. ST0x",
-        "liveSymbol": "wtMU",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
         "legacy": null,
         "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -16139,26 +16245,26 @@
         "symbol": "wtQQQM",
         "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
         "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Invesco NASDAQ 100 ETF ST0x",
-        "liveSymbol": "wtQQQM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "legacy": null,
         "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -16321,26 +16427,26 @@
         "symbol": "wtSPYM",
         "name": "Wrapped SPDR Portfolio S&P 500 ETF ST0x",
         "address": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
-        "status": "mismatch",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": false,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped State Street SPDR Portfolio S&P 500 ETF ST0x",
-        "liveSymbol": "wtSPYM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "legacy": "0x2289249984f1fa2ce86c4e8867e7eb819ea7df95",
         "receipt": "0x957056dd6e2e594742e36675e8aa5a567163e5bd",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "unwrappedDeployed": null,
+        "legacyDeployed": null,
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -16373,26 +16479,26 @@
         "symbol": "wtTR",
         "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
         "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Tootsie Roll Industries, Inc. ST0x",
-        "liveSymbol": "wtTR",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
         "legacy": null,
         "receipt": "0xf5e5d2d3b6be819Ff65cB364F4178252C9dbf5B7",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -16451,26 +16557,26 @@
         "symbol": "wtTTWO",
         "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
         "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
-        "liveSymbol": "wtTTWO",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
         "legacy": null,
         "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -18348,19 +18454,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.2.8",
-      "latestTagIso": "2026-10-31T22:09:44Z",
+      "latestTag": "sol-v0.2.9",
+      "latestTagIso": "2026-11-01T16:05:22Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4187,
+      "sourceLocChangedSinceAudit": 4619,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 3815,
+      "sourceLocAddedSinceAudit": 4247,
       "sourceLocRemovedSinceAudit": 372,
-      "filesChangedSinceAudit": 32,
-      "commitsSinceAudit": 520,
+      "filesChangedSinceAudit": 33,
+      "commitsSinceAudit": 555,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 1109,
+      "commentLocAddedSinceAudit": 1199,
       "commentLocRemovedSinceAudit": 145,
-      "codeLocAddedSinceAudit": 2404,
+      "codeLocAddedSinceAudit": 2713,
       "codeLocRemovedSinceAudit": 181,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
@@ -18444,19 +18550,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:18:51Z",
-      "latestTag": "sol-v0.2.13",
-      "latestTagIso": "2026-10-30T12:51:23Z",
+      "latestTag": "sol-v0.2.15",
+      "latestTagIso": "2026-11-01T16:33:08Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 741,
+      "sourceLocChangedSinceAudit": 925,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 457,
+      "sourceLocAddedSinceAudit": 641,
       "sourceLocRemovedSinceAudit": 284,
-      "filesChangedSinceAudit": 24,
-      "commitsSinceAudit": 142,
+      "filesChangedSinceAudit": 26,
+      "commitsSinceAudit": 152,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 99,
+      "commentLocAddedSinceAudit": 183,
       "commentLocRemovedSinceAudit": 63,
-      "codeLocAddedSinceAudit": 348,
+      "codeLocAddedSinceAudit": 434,
       "codeLocRemovedSinceAudit": 196,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
@@ -18630,15 +18736,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-01-29T12:12:35Z",
-      "latestTag": "sol-v0.1.44",
-      "latestTagIso": "2026-10-31T13:00:10Z",
+      "latestTag": "sol-v0.1.45",
+      "latestTagIso": "2026-11-01T15:40:04Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 188,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 139,
       "sourceLocRemovedSinceAudit": 49,
       "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 635,
+      "commitsSinceAudit": 642,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 80,
       "commentLocRemovedSinceAudit": 14,
@@ -19510,7 +19616,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 135,
+      "testFiles": 141,
       "sourcesUnparsed": 0,
       "untested": []
     },
@@ -19708,7 +19814,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 23,
-      "testFiles": 141,
+      "testFiles": 149,
       "sourcesUnparsed": 0,
       "untested": []
     },
