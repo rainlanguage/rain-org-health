@@ -16245,6 +16245,183 @@ Deno.test("root registry: a line with no records shows no record table", async (
   assert(kids.indexOf(next(b)) === kids.length - 1, "nothing after");
 });
 
+const DEPLOY_CSS = styleBlocks(
+  Deno.readTextFileSync(new URL("../site/deployments.html", import.meta.url)),
+).flatMap(cssRules);
+// What `prop` resolves to on a rendered node under deployments.html's stylesheet:
+// the most specific class or type rule on the node, else its parent's.
+const deployStyle = (node, prop) => {
+  const decl = new RegExp(`(?:^|;)\\s*${prop}\\s*:\\s*([^;]+)`);
+  for (let n = node; n; n = n.parent) {
+    const classes = String(n.className).split(" ");
+    let best = null;
+    for (const r of DEPLOY_CSS) {
+      const v = decl.exec(r.body);
+      if (!v) continue;
+      for (const sel of r.sel.split(",").map((s) => s.trim())) {
+        const parts = sel.split(/\s*[\s>+~]\s*/);
+        const m = /^([a-z][\w-]*)?((?:\.[\w-]+)*)$/.exec(
+          parts[parts.length - 1],
+        );
+        if (!m) continue;
+        const want = m[2].split(".").filter(Boolean);
+        if (!m[1] && want.length === 0) continue;
+        if (
+          (m[1] && m[1] !== n.tagName) ||
+          !want.every((c) => classes.includes(c))
+        ) continue;
+        assert(
+          parts.length === 1,
+          `${sel} sets ${prop} by context this does not resolve`,
+        );
+        const spec = want.length * 10 + (m[1] ? 1 : 0);
+        if (!best || spec >= best.spec) best = { spec, value: v[1].trim() };
+      }
+    }
+    if (best) return best.value;
+  }
+  return null;
+};
+const regWriterOf = (l) =>
+  textOf(
+    collect(l, "bcn-line").find((x) =>
+      collect(x, "bcn-key")[0].textContent === "writer"
+    ),
+  );
+// Line A's head read one record back, and record #1 applied onto the wrong word.
+const regBrokenPanel = () => {
+  const f = regFake();
+  f.rows.migrationRecords.find((r) => r.id === "0xrb").appliedOnto = regWord(
+    "77",
+  );
+  const scan = regScan();
+  scan.networks[0].lines[0].head = REG_M[1];
+  return regPanel(f, undefined, scan);
+};
+
+Deno.test("root registry: a line only the scan holds names its writer in the same case as the indexed lines", async () => {
+  const scan = regScan();
+  scan.networks[0].lines.push({
+    writer: REG_ROOT_CHECKSUM,
+    namespace: regWord("dd"),
+    headBlock: REG_HEAD_BLOCK,
+    head: REG_GENESIS,
+  });
+  const lines = regLines(await regPanel(regFake(), undefined, scan));
+  const only = lines.find((l) => textOf(l).includes(regWord("dd")));
+  assert(lines.length === 3 && only, lines.map(textOf).join(" | "));
+  const indexed = lines.filter((l) => l !== only).map(regWriterOf);
+  assert(indexed.every((w) => w.includes(REG_ROOT)), indexed.join(" | "));
+  assert(
+    indexed.every((w) => w === regWriterOf(only)),
+    regWriterOf(only) + " vs " + indexed.join(" | "),
+  );
+});
+
+Deno.test("root registry: not-yet-backfilled, behind-the-scan and no-genesis notes are not in the red a broken chain's problems take", async () => {
+  const f = regFake();
+  f.meta.data._meta.block.number = 55;
+  const scan = regScan();
+  scan.networks[0].lines[0].headBlock = 60;
+  scan.networks[0].lines.push({
+    writer: REG_ROOT_CHECKSUM,
+    namespace: regWord("dd"),
+    headBlock: REG_HEAD_BLOCK,
+    head: REG_GENESIS,
+  });
+  const lines = [
+    ...regLines(await regPanel(f, undefined, scan)),
+    ...regLines(
+      await regPanel(regFake(), undefined, regScan({ genesis: undefined })),
+    ),
+  ];
+  const kinds = [
+    "not yet backfilled",
+    "subgraph behind the scan",
+    "no migration genesis",
+  ];
+  const notes = lines.flatMap((l) => collect(l, "own-note")).filter((n) =>
+    kinds.some((k) => String(n.textContent).includes(k))
+  );
+  assert(
+    kinds.every((k) => notes.some((n) => n.textContent.includes(k))),
+    notes.map((n) => n.textContent).join(" | "),
+  );
+  const p = await regBrokenPanel();
+  const problems = [
+    collect(regLines(p)[0], "reg-problem"),
+    collect(regRecs(p)[1], "reg-problem"),
+  ].map((ps) => ps[0]);
+  assert(problems.every(Boolean), "a line and a record problem: " + textOf(p));
+  const alarm = problems.map((n) => deployStyle(n, "color"));
+  assert(alarm.every((c) => c === "var(--crit)"), alarm.join(" | "));
+  for (const n of notes) {
+    assert(
+      !alarm.includes(deployStyle(n, "color")),
+      n.textContent + ": " + deployStyle(n, "color"),
+    );
+  }
+});
+
+Deno.test("root registry: a migration problem's hashes keep their case, on a record and on its line", async () => {
+  const p = await regBrokenPanel();
+  for (
+    const [n, hash] of [
+      [collect(regRecs(p)[1], "reg-problem")[0], REG_M[0]],
+      [collect(regLines(p)[0], "reg-problem")[0], REG_M[1]],
+    ]
+  ) {
+    assert(n && n.textContent.includes(hash), n ? n.textContent : textOf(p));
+    const t = deployStyle(n, "text-transform");
+    assert(t === null || t === "none", n.textContent + ": " + t);
+  }
+});
+
+Deno.test("root registry: a hash or a migration problem wraps inside its line or record instead of running past it", async () => {
+  const p = await regBrokenPanel();
+  const valuesOf = (row, key) =>
+    collect(row, "bcn-line").filter((x) =>
+      collect(x, "bcn-key")[0].textContent === key
+    ).map((x) => x.children[1]);
+  const lines = regLines(p);
+  const recs = regRecs(p);
+  const hashes = [
+    ...lines.flatMap((l) => [
+      ...valuesOf(l, "namespace"),
+      ...valuesOf(l, "head"),
+    ]),
+    ...recs.flatMap((r) => valuesOf(r, "applied onto")),
+  ];
+  assert(
+    lines.length > 0 && recs.length > 0 &&
+      hashes.length === lines.length * 2 + recs.length,
+    textOf(p),
+  );
+  const problems = collect(p, "reg-problem");
+  assert(
+    lines.some((l) => collect(l, "reg-problem").length) &&
+      recs.some((r) => collect(r, "reg-problem").length),
+    "a line and a record problem: " + textOf(p),
+  );
+  for (const n of [...hashes, ...problems]) {
+    assert(
+      deployStyle(n, "overflow-wrap") === "anywhere",
+      n.textContent + ": " + deployStyle(n, "overflow-wrap"),
+    );
+    let a = n;
+    for (;;) {
+      assert(a, n.textContent + " sits in no line or record");
+      assert(
+        deployStyle(a, "white-space") !== "nowrap",
+        n.textContent + ": nowrap on " + a.className,
+      );
+      const cls = String(a.className).split(" ");
+      if (cls.includes("reg-line") || cls.includes("reg-record")) break;
+      a = a.parent;
+    }
+  }
+});
+
 Deno.test("root registry: a record names who recorded it only when that is not the line's writer, whatever the case", async () => {
   const f = regFake();
   const rec = (id) => f.rows.migrationRecords.find((r) => r.id === id);

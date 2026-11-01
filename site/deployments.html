@@ -91,6 +91,8 @@
   .rbac-tag-unexpected { color: var(--crit); }
   .rbac-tag-grant { color: var(--debt); }
   .own-sub.rbac-ideal-gap, .own-note.rbac-ideal-gap, .own-note.rbac-ideal-off { color: var(--crit); }
+  .own-note.reg-hash, .reg-problem { overflow-wrap: anywhere; }
+  .rbac-unknown.reg-problem { text-transform: none; }
   /* Governance timelock operations. A pending one is a change to production
      that happens unless someone cancels it, so it is a boxed card in the
      rollout amber; one whose call lands on a contract the timelock governs
@@ -3129,7 +3131,7 @@ function renderDeployments(document, $, data, io) {
     );
     slot.append(el("div", "own-grouphead", `Migration lines — ${n.lines.length}`));
     if (n.lines.length === 0) slot.append(el("div", "rbac-empty", "No migration has been recorded in the MigrationRegistry."));
-    const word = (v) => el("span", "own-note", regLabel(labels, v) || String(v));
+    const word = (v) => el("span", "own-note reg-hash", regLabel(labels, v) || String(v));
     for (const l of n.lines) {
       const head = el("div", "bcn-detail reg-line");
       const chip = el(
@@ -3143,14 +3145,12 @@ function renderDeployments(document, $, data, io) {
         line("head", l.head === null ? el("span", "own-note", "not read") : word(l.head), chip),
       );
       if (l.records.length === 0 && n.genesis !== null && regLow(l.head) === n.genesis) {
-        head.append(el("div", "own-note rbac-ideal-gap", "At genesis on this registry: its history is not yet backfilled."));
+        head.append(el("div", "own-note", "At genesis on this registry: its history is not yet backfilled."));
       }
       if (l.behind) {
-        head.append(
-          el("div", "own-note rbac-ideal-gap", `subgraph behind the scan (indexed to block ${n.indexedBlock}, head read at block ${l.headBlock})`),
-        );
+        head.append(el("div", "own-note", `subgraph behind the scan (indexed to block ${n.indexedBlock}, head read at block ${l.headBlock})`));
       }
-      if (l.chain === "unchecked") head.append(el("div", "own-note rbac-ideal-gap", "The scan carries no migration genesis to check the first record against."));
+      if (l.chain === "unchecked") head.append(el("div", "own-note", "The scan carries no migration genesis to check the first record against."));
       for (const p of l.problems) head.append(el("div", "own-note rbac-ideal-off reg-problem", p));
       slot.append(head);
       const table = el("div", "own-table");
@@ -3211,7 +3211,7 @@ function renderDeployments(document, $, data, io) {
         for (const h of m.lines) {
           if (h && typeof h.writer === "string" && typeof h.namespace === "string") {
             heads.set(regLineKey(h), {
-              writer: h.writer,
+              writer: h.writer.toLowerCase(),
               namespace: h.namespace,
               head: typeof h.head === "string" ? h.head : null,
               block: typeof h.headBlock === "number" ? h.headBlock : null,
