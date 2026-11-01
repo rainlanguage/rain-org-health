@@ -16333,12 +16333,18 @@ Deno.test("root registry: not-yet-backfilled, behind-the-scan and no-genesis not
       await regPanel(regFake(), undefined, regScan({ genesis: undefined })),
     ),
   ];
+  const kinds = [
+    "not yet backfilled",
+    "subgraph behind the scan",
+    "no migration genesis",
+  ];
   const notes = lines.flatMap((l) => collect(l, "own-note")).filter((n) =>
-    /not yet backfilled|subgraph behind the scan|no migration genesis/.test(
-      n.textContent,
-    )
+    kinds.some((k) => String(n.textContent).includes(k))
   );
-  assert(notes.length === 3, notes.map((n) => n.textContent).join(" | "));
+  assert(
+    kinds.every((k) => notes.some((n) => n.textContent.includes(k))),
+    notes.map((n) => n.textContent).join(" | "),
+  );
   const p = await regBrokenPanel();
   const problems = [
     collect(regLines(p)[0], "reg-problem"),
