@@ -21,7 +21,8 @@ sol! {
     function authorizer() external view returns (address);
     function iReceiptBeacon() external view returns (address);
     function iOffchainAssetReceiptVaultBeacon() external view returns (address);
-    function appliedV3(address writer, bytes32 namespace, bytes32 migration) external view returns (uint256);
+    function appliedV5(address writer, bytes32 namespace, bytes32 migration) external view returns (uint256);
+    function headV5(address writer, bytes32 namespace) external view returns (bytes32);
     function isCertificationExpired() external view returns (bool);
 }
 
@@ -110,9 +111,9 @@ pub fn authorizer_calldata() -> String {
     to_hex(authorizerCall {}.abi_encode())
 }
 /// `None` unless `writer` is an address and both words are 32-byte hex.
-pub fn applied_v3_calldata(writer: &str, namespace: &str, migration: &str) -> Option<String> {
+pub fn applied_v5_calldata(writer: &str, namespace: &str, migration: &str) -> Option<String> {
     Some(to_hex(
-        appliedV3Call {
+        appliedV5Call {
             writer: writer.parse().ok()?,
             namespace: namespace.parse().ok()?,
             migration: migration.parse().ok()?,
@@ -173,6 +174,33 @@ pub fn decode_address(result_hex: &str) -> Option<String> {
     ownerCall::abi_decode_returns(&bytes, false)
         .ok()
         .map(|r| r._0.to_string().to_lowercase())
+}
+
+/// Decode a single `bytes32` return as lowercase `0x…`.
+pub fn decode_word(result_hex: &str) -> Option<String> {
+    let bytes = result_bytes(result_hex)?;
+    headV5Call::abi_decode_returns(&bytes, false)
+        .ok()
+        .map(|r| r._0.to_string().to_lowercase())
+}
+
+pub fn decode_quantity(result_hex: &str) -> Option<u64> {
+    u64::from_str_radix(result_hex.strip_prefix("0x")?, 16).ok()
+}
+
+pub fn block_tag(block: u64) -> String {
+    format!("0x{block:x}")
+}
+
+/// `None` unless `writer` is an address and `namespace` is 32-byte hex.
+pub fn head_v5_calldata(writer: &str, namespace: &str) -> Option<String> {
+    Some(to_hex(
+        headV5Call {
+            writer: writer.parse().ok()?,
+            namespace: namespace.parse().ok()?,
+        }
+        .abi_encode(),
+    ))
 }
 
 /// Decode a `string` return (`name()` / `symbol()`).
@@ -399,30 +427,92 @@ mod tests {
         assert_eq!(has_role_calldata(role_id("DEPOSIT"), "0xdeadbeef"), None);
     }
 
-    /// Selector from `cast sig "appliedV3(address,bytes32,bytes32)"`.
+    /// Selector from `cast sig "appliedV5(address,bytes32,bytes32)"`.
     #[test]
-    fn applied_v3_calldata_encodes_writer_namespace_then_migration() {
+    fn applied_v5_calldata_encodes_writer_namespace_then_migration() {
         let ns = format!("0x{}", "11".repeat(32));
         let id = format!("0x{}", "22".repeat(32));
         let cd =
-            applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, &id).unwrap();
+            applied_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, &id).unwrap();
         assert_eq!(
             cd,
             format!(
-                "0x9b984cac000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}{}",
+                "0xa62f2b0e000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}{}",
                 "11".repeat(32),
                 "22".repeat(32)
             )
         );
-        assert_eq!(applied_v3_calldata("safe", &ns, &id), None);
+        assert_eq!(applied_v5_calldata("safe", &ns, &id), None);
         assert_eq!(
-            applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11", &id),
+            applied_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11", &id),
             None
         );
         assert_eq!(
-            applied_v3_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, "0x22"),
+            applied_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns, "0x22"),
             None
         );
+    }
+
+    /// Selector from `cast sig "headV5(address,bytes32)"`.
+    #[test]
+    fn head_v5_calldata_encodes_writer_then_namespace() {
+        let ns = format!("0x{}", "11".repeat(32));
+        assert_eq!(
+            head_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", &ns).unwrap(),
+            format!(
+                "0x70eecc24000000000000000000000000e70d821f3462a074e63b42d0aac6523faae1d611{}",
+                "11".repeat(32)
+            )
+        );
+        assert_eq!(head_v5_calldata("safe", &ns), None);
+        assert_eq!(
+            head_v5_calldata("0xe70d821f3462a074e63b42d0AaC6523faAe1d611", "0x11"),
+            None
+        );
+    }
+
+    #[test]
+    fn decode_word_reads_a_bytes32_return_lowercased_and_nothing_shorter() {
+        assert_eq!(
+            decode_word(&format!("0x{}", "AB".repeat(32))),
+            Some(format!("0x{}", "ab".repeat(32)))
+        );
+        assert_eq!(decode_word("0x"), None);
+        assert_eq!(decode_word(&format!("0x{}", "ab".repeat(31))), None);
+    }
+
+    #[test]
+    fn decode_word_reads_the_leading_word_of_a_return_with_trailing_data() {
+        assert_eq!(
+            decode_word(&format!("0x{}{}", "ab".repeat(32), "cd".repeat(32))),
+            Some(format!("0x{}", "ab".repeat(32)))
+        );
+    }
+
+    #[test]
+    fn decode_quantity_reads_0x_prefixed_hex() {
+        assert_eq!(decode_quantity("0x0"), Some(0));
+        assert_eq!(decode_quantity("0x10"), Some(16));
+        assert_eq!(decode_quantity("0x1b4"), Some(436));
+        assert_eq!(decode_quantity("0x1B4"), Some(436));
+        assert_eq!(decode_quantity("0xffffffffffffffff"), Some(u64::MAX));
+    }
+
+    #[test]
+    fn decode_quantity_is_none_without_0x_or_for_empty_oversize_or_non_hex() {
+        assert_eq!(decode_quantity("10"), None);
+        assert_eq!(decode_quantity(""), None);
+        assert_eq!(decode_quantity("0x"), None);
+        assert_eq!(decode_quantity("0x10000000000000000"), None);
+        assert_eq!(decode_quantity("0x1g"), None);
+    }
+
+    #[test]
+    fn block_tag_is_0x_lowercase_hex_without_leading_zeros() {
+        assert_eq!(block_tag(0), "0x0");
+        assert_eq!(block_tag(16), "0x10");
+        assert_eq!(block_tag(436), "0x1b4");
+        assert_eq!(block_tag(u64::MAX), "0xffffffffffffffff");
     }
 
     #[test]

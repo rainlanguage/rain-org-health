@@ -12,14 +12,15 @@ renders them** — it never generates data, shells out to tools, or reaches into
 another repo's tooling. Every data source is owned + emitted by its
 **producer**:
 
-| data                             | produced by                                                                    | how the dashboard gets it    |
-| -------------------------------- | ------------------------------------------------------------------------------ | ---------------------------- |
-| repo modernization signals       | `roh-scan` (this repo) → `health.json`                                         | same-origin fetch            |
-| producer-run metrics             | `issue-pr-cron` → `metrics/runs.jsonl`                                         | runtime fetch of its raw URL |
-| pipeline / FSM-conformance state | `issue-pr-cron`'s `pr-review-report human-queue --json` → `human-queue.json`   | runtime fetch of its raw URL |
-| st0x role changes (RBAC)         | st0x.deploy's RBAC subgraph on Ormi (`roh-scan` only emits its location)       | runtime GraphQL POST         |
-| st0x ideal role holdings         | st0x.deploy → `ideal-roles.json`                                               | runtime fetch of its raw URL |
-| st0x migrations, run or not      | `roh-scan` reads st0x.deploy's `migrations.json` + each registry's `appliedV3` | same-origin fetch            |
+| data                                                        | produced by                                                                    | how the dashboard gets it    |
+| ----------------------------------------------------------- | ------------------------------------------------------------------------------ | ---------------------------- |
+| repo modernization signals                                  | `roh-scan` (this repo) → `health.json`                                         | same-origin fetch            |
+| producer-run metrics                                        | `issue-pr-cron` → `metrics/runs.jsonl`                                         | runtime fetch of its raw URL |
+| pipeline / FSM-conformance state                            | `issue-pr-cron`'s `pr-review-report human-queue --json` → `human-queue.json`   | runtime fetch of its raw URL |
+| st0x role changes (RBAC)                                    | st0x.deploy's RBAC subgraph on Ormi (`roh-scan` only emits its location)       | runtime GraphQL POST         |
+| st0x ideal role holdings                                    | st0x.deploy → `ideal-roles.json`                                               | runtime fetch of its raw URL |
+| st0x root registry (delegations, config, migration records) | st0x.deploy's subgraph on Ormi (`roh-scan` emits its location)                 | runtime GraphQL POST         |
+| st0x migrations, run or not                                 | `roh-scan` reads st0x.deploy's `migrations.json` + each registry's `appliedV5` | same-origin fetch            |
 
 Do not regress this:
 

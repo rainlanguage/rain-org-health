@@ -398,9 +398,21 @@ fn post_json(url: &str, body: &str) -> Option<Vec<u8>> {
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
 fn eth_call_payload(to: &str, data: &str) -> String {
+    eth_call_payload_at(to, data, "latest")
+}
+
+fn eth_call_payload_at(to: &str, data: &str, tag: &str) -> String {
     format!(
-        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"{tag}"]}}"#
     )
+}
+
+fn eth_block_number(session: Session) -> Option<u64> {
+    let body = curl_json(
+        session,
+        r#"{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}"#,
+    )?;
+    rpc::decode_quantity(&rpc::result_hex(&body)?)
 }
 
 /// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
@@ -462,6 +474,24 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
     calls: &[(String, String)],
     post: &F,
 ) -> Vec<Option<String>> {
+    eth_call_batch_at_via(rpcs, cursor, calls, "latest", post)
+}
+
+fn eth_call_batch_at(
+    session: Session,
+    calls: &[(String, String)],
+    tag: &str,
+) -> Vec<Option<String>> {
+    eth_call_batch_at_via(session.chain.rpcs(), session.cursor, calls, tag, &curl_post)
+}
+
+fn eth_call_batch_at_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
+    rpcs: &[&str],
+    cursor: usize,
+    calls: &[(String, String)],
+    tag: &str,
+    post: &F,
+) -> Vec<Option<String>> {
     let mut out: Vec<Option<String>> = Vec::with_capacity(calls.len());
     for chunk in calls.chunks(ETH_CALL_BATCH_CHUNK) {
         let body = chunk
@@ -469,7 +499,7 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
             .enumerate()
             .map(|(i, (to, data))| {
                 format!(
-                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"{tag}"]}}"#
                 )
             })
             .collect::<Vec<_>>()
@@ -483,7 +513,7 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
         match answered {
             Some(slots) => out.extend(slots),
             None => out.extend(chunk.iter().map(|(to, data)| {
-                first_body(rpcs, cursor, &eth_call_payload(to, data), post)
+                first_body(rpcs, cursor, &eth_call_payload_at(to, data, tag), post)
                     .and_then(|b| rpc::result_hex(&b))
             })),
         }
@@ -2803,8 +2833,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             ".github/workflows/deploy-subgraph.yaml",
         );
         let subgraph = rbac::parse_deploy_workflow(&subgraph_workflow);
-        let subgraph_networks =
-            rbac::parse_networks(&gh_file(deploy_org, deploy_repo, "subgraph/networks.json"));
+        let subgraph_networks_src = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
+        let subgraph_networks = rbac::parse_networks(&subgraph_networks_src);
         let deployment_rbac = {
             let mut doc = rbac::build_rbac(
                 deploy_org,
@@ -2813,6 +2843,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 subgraph_networks.as_deref(),
                 &role_names,
             );
+            doc["configRegistries"] =
+                serde_json::Value::Object(rbac::config_registries(&subgraph_networks_src));
             // Who each address on the tab is: every `address` constant in the
             // deploy repo's libraries, per chain. Every `.sol` the two
             // directories list is read, so a new library or pin is named
@@ -2870,6 +2902,23 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     eth_call_batch(rpc_session(chain), calls)
                 }),
                 None => vec![None; records.len()],
+            },
+            &|net, lines| {
+                let unread = (None, vec![None; lines.len()]);
+                let Some(chain) = Chain::from_network(&net.name) else {
+                    return unread;
+                };
+                let session = rpc_session(chain);
+                let Some(block) = eth_block_number(session) else {
+                    return unread;
+                };
+                let tag = rpc::block_tag(block);
+                (
+                    Some(block),
+                    migrations::read_heads(net, lines, &|calls| {
+                        eth_call_batch_at(session, calls, &tag)
+                    }),
+                )
             },
         );
 
@@ -3631,6 +3680,77 @@ mod tests {
             vec![Some("0xaa".to_string()), Some("0xbb".to_string())]
         );
         assert_eq!(singles.get(), 0);
+    }
+
+    #[test]
+    fn a_batch_at_a_block_asks_every_call_at_that_block_batched_or_single() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 1);
+        let sent = std::cell::RefCell::new(Vec::new());
+        let post = |_: &str, payload: &str| {
+            sent.borrow_mut().push(payload.to_string());
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_at_via(&["a"], 0, &calls, "0x2a", &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+        let sent = sent.borrow();
+        assert_eq!(
+            sent.iter().filter(|p| !p.starts_with('[')).count(),
+            calls.len()
+        );
+        assert_every_call_asked_at(&sent, "0x2a");
+    }
+
+    #[test]
+    fn a_batch_asks_every_call_at_the_latest_block_batched_or_single() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 1);
+        let sent = std::cell::RefCell::new(Vec::new());
+        let post = |_: &str, payload: &str| {
+            sent.borrow_mut().push(payload.to_string());
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_via(&["a"], 0, &calls, &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+        let sent = sent.borrow();
+        assert_eq!(
+            sent.iter().filter(|p| !p.starts_with('[')).count(),
+            calls.len()
+        );
+        assert_every_call_asked_at(&sent, "latest");
+    }
+
+    #[test]
+    fn a_single_call_is_asked_at_the_latest_block() {
+        let p = eth_call_payload("0xab", "0x8da5cb5b");
+        let v: serde_json::Value = serde_json::from_str(&p).unwrap();
+        assert_eq!(
+            v["params"][0],
+            serde_json::json!({"to": "0xab", "data": "0x8da5cb5b"})
+        );
+        assert_every_call_asked_at(&[p], "latest");
+    }
+
+    fn assert_every_call_asked_at(sent: &[String], tag: &str) {
+        for p in sent {
+            let v: serde_json::Value = serde_json::from_str(p).unwrap();
+            let asks: Vec<serde_json::Value> = match v {
+                serde_json::Value::Array(a) => a,
+                one => vec![one],
+            };
+            for a in asks {
+                assert_eq!(a["method"], "eth_call", "{p}");
+                assert_eq!(a["params"][1], tag, "{p}");
+            }
+        }
     }
 
     // ---- chain endpoint coverage ----
