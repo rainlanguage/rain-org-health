@@ -16377,6 +16377,51 @@ Deno.test("root registry: a migration problem's hashes keep their case, on a rec
   }
 });
 
+Deno.test("root registry: a hash or a migration problem wraps inside its line or record instead of running past it", async () => {
+  const p = await regBrokenPanel();
+  const valuesOf = (row, key) =>
+    collect(row, "bcn-line").filter((x) =>
+      collect(x, "bcn-key")[0].textContent === key
+    ).map((x) => x.children[1]);
+  const lines = regLines(p);
+  const recs = regRecs(p);
+  const hashes = [
+    ...lines.flatMap((l) => [
+      ...valuesOf(l, "namespace"),
+      ...valuesOf(l, "head"),
+    ]),
+    ...recs.flatMap((r) => valuesOf(r, "applied onto")),
+  ];
+  assert(
+    lines.length > 0 && recs.length > 0 &&
+      hashes.length === lines.length * 2 + recs.length,
+    textOf(p),
+  );
+  const problems = collect(p, "reg-problem");
+  assert(
+    lines.some((l) => collect(l, "reg-problem").length) &&
+      recs.some((r) => collect(r, "reg-problem").length),
+    "a line and a record problem: " + textOf(p),
+  );
+  for (const n of [...hashes, ...problems]) {
+    assert(
+      deployStyle(n, "overflow-wrap") === "anywhere",
+      n.textContent + ": " + deployStyle(n, "overflow-wrap"),
+    );
+    let a = n;
+    for (;;) {
+      assert(a, n.textContent + " sits in no line or record");
+      assert(
+        deployStyle(a, "white-space") !== "nowrap",
+        n.textContent + ": nowrap on " + a.className,
+      );
+      const cls = String(a.className).split(" ");
+      if (cls.includes("reg-line") || cls.includes("reg-record")) break;
+      a = a.parent;
+    }
+  }
+});
+
 Deno.test("root registry: a record names who recorded it only when that is not the line's writer, whatever the case", async () => {
   const f = regFake();
   const rec = (id) => f.rows.migrationRecords.find((r) => r.id === id);
