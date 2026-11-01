@@ -16260,7 +16260,9 @@ const deployStyle = (node, prop) => {
       if (!v) continue;
       for (const sel of r.sel.split(",").map((s) => s.trim())) {
         const parts = sel.split(/\s*[\s>+~]\s*/);
-        const m = /^([a-z][\w-]*)?((?:\.[\w-]+)*)$/.exec(parts[parts.length - 1]);
+        const m = /^([a-z][\w-]*)?((?:\.[\w-]+)*)$/.exec(
+          parts[parts.length - 1],
+        );
         if (!m) continue;
         const want = m[2].split(".").filter(Boolean);
         if (!m[1] && want.length === 0) continue;
