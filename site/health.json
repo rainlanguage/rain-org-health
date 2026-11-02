@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T16:05:34Z",
+  "generatedAt": "2026-11-02T16:16:51Z",
   "auditGraph": {
     "nodes": [
       {
@@ -44,7 +44,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rainlang"
         ],
         "staleDeps": [
@@ -94,7 +93,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rainlang"
         ],
         "staleDeps": [
@@ -127,8 +125,7 @@
         },
         "blockedBy": [
           "rain.deploy",
-          "rain.factory",
-          "rain.metadata"
+          "rain.factory"
         ],
         "staleDeps": [
           {
@@ -151,8 +148,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
-          "rain.factory",
-          "rain.metadata"
+          "rain.factory"
         ],
         "staleDeps": [
           {
@@ -180,8 +176,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
-          "rain.factory",
-          "rain.metadata"
+          "rain.factory"
         ],
         "staleDeps": []
       },
@@ -201,7 +196,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rainlang"
         ],
         "staleDeps": [
@@ -296,8 +290,7 @@
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
-          "rain.math.float",
-          "rain.metadata"
+          "rain.math.float"
         ],
         "staleDeps": [
           {
@@ -323,7 +316,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rainlang"
         ],
         "staleDeps": [
@@ -349,7 +341,7 @@
         "org": "rainlanguage",
         "package": "rain-metadata",
         "packageKnown": true,
-        "audit": "stale",
+        "audit": "current",
         "depsKnown": true,
         "lastAudit": null,
         "openAuditIssues": 0,
@@ -373,8 +365,7 @@
         "openAuditIssues": 0,
         "lastMutation": null,
         "blockedBy": [
-          "rain.deploy",
-          "rain.metadata"
+          "rain.deploy"
         ],
         "staleDeps": [
           {
@@ -405,7 +396,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rainlang"
         ],
         "staleDeps": [
@@ -486,8 +476,7 @@
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
-          "rain.factory",
-          "rain.metadata"
+          "rain.factory"
         ],
         "staleDeps": [
           {
@@ -522,8 +511,7 @@
           "rain.extrospection",
           "rain.factory",
           "rain.factory.deploy",
-          "rain.math.float",
-          "rain.metadata"
+          "rain.math.float"
         ],
         "staleDeps": [
           {
@@ -551,7 +539,6 @@
           "rain.flare",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rain.vats",
           "rainlang"
         ],
@@ -584,7 +571,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rainlang"
         ],
         "staleDeps": [
@@ -652,7 +638,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rain.metadata.deploy",
           "rain.tofu.erc20-decimals.deploy",
           "raindex.interface",
@@ -697,7 +682,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "raindex.interface",
           "rainlang"
         ],
@@ -719,7 +703,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rainlang"
         ],
         "staleDeps": [
@@ -745,8 +728,7 @@
           "rain.extrospection",
           "rain.factory",
           "rain.math.float",
-          "rain.math.float.deploy",
-          "rain.metadata"
+          "rain.math.float.deploy"
         ],
         "staleDeps": [
           {
@@ -782,7 +764,6 @@
           "rain.factory",
           "rain.math.float",
           "rain.math.float.deploy",
-          "rain.metadata",
           "rain.tofu.erc20-decimals.deploy",
           "rainlang"
         ],
@@ -826,7 +807,6 @@
           "rain.factory",
           "rain.factory.deploy",
           "rain.math.float",
-          "rain.metadata",
           "rain.tofu.erc20-decimals.deploy",
           "rain.vats"
         ],
@@ -919,9 +899,7 @@
           "skillVersion": "0.35.0",
           "scope": "PR #339 release 0.1.20: src/generated/0_1_20/ConfigRegistry.sol, MigrationRegistry.sol, TimelockController.sol; LibConfigRegistryReleased and LibMigrationRegistryReleased 0_1_20 entries; foundry.toml version; LibConfigRegistryApprove.checkApprovalOnNetworks input checks; offline, no RPC"
         },
-        "blockedBy": [
-          "rain.metadata"
-        ],
+        "blockedBy": [],
         "staleDeps": [
           {
             "repo": "rain.metadata",
@@ -1089,8 +1067,7 @@
           "scope": "Issue #268 PR: EIP1167_RUNTIME_CODE_PREFIX, cloneRuntimeCode and cloneRuntimeCodeHash in LibICloneableFactoryV5, new in the scanned commit together with their tests. The functions had no callers before it, so the pre-existing suite could kill none of them by construction."
         },
         "blockedBy": [
-          "rain.deploy",
-          "rain.metadata"
+          "rain.deploy"
         ],
         "staleDeps": []
       },
@@ -3822,81 +3799,81 @@
           },
           {
             "vault": "0xa134e0cfa73fd0c7460fe5321d8d035e110e3afb",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa3c8839bf1b16288c459ac2eed8a5db596dc1d5f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa4f1f3e56f4d008433b43d3e551a46b4b7910268",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa51a91845815a80ac70807d39544e6c6eacfb70d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa662066a60964a528ad05209139a79bda3a7577f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xad206ba0cb873778c3c333d5fb9d5dbad23bfd3b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xadecffdd1bf913768e8b08688954e5bf6e83290f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xaf07a843a6221d3e6540122fa712df8541b05e26",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb04ae1d688ab751b1c067405ca5f0f775e991d8a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xbaf11c95e73b3091d1133e68c14c9ff1ce848563",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
@@ -4134,18 +4111,18 @@
           }
         ],
         "counts": {
-          "safe": 24,
-          "timelock": 58,
-          "other": 52,
-          "unknown": 10,
+          "safe": 29,
+          "timelock": 59,
+          "other": 56,
+          "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 47,
-          "certificationUnknown": 10,
+          "certificationExpired": 53,
+          "certificationUnknown": 0,
           "notPinned": 88,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53423115
+        "discoveredAtBlock": 53423459
       },
       {
         "network": "ethereum",
@@ -4694,7 +4671,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26328181
+        "discoveredAtBlock": 26328238
       },
       {
         "network": "bsc",
@@ -5184,81 +5161,81 @@
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x21ebe855f15c2e1badea603c1cb07b964096a616",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2c5374933d1e7208b2184fa1a45119fdcac13123",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5304,41 +5281,41 @@
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5384,41 +5361,41 @@
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5552,18 +5529,18 @@
           }
         ],
         "counts": {
-          "safe": 24,
-          "timelock": 62,
+          "safe": 41,
+          "timelock": 65,
           "other": 0,
-          "unknown": 20,
+          "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 26,
-          "certificationUnknown": 20,
+          "certificationExpired": 45,
+          "certificationUnknown": 0,
           "notPinned": 50,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131270042
+        "discoveredAtBlock": 131271571
       },
       {
         "network": "hyperevm",
@@ -6104,7 +6081,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50201801
+        "discoveredAtBlock": 50202494
       },
       {
         "network": "robinhood",
@@ -6645,7 +6622,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 104344191
+        "discoveredAtBlock": 104351021
       }
     ]
   },
@@ -21778,19 +21755,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26328180,
+            "headBlock": 26328237,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26328180,
+            "headBlock": 26328237,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26328180,
+            "headBlock": 26328237,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21947,19 +21924,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131270002,
+            "headBlock": 131271522,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131270002,
+            "headBlock": 131271522,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131270002,
+            "headBlock": 131271522,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22116,19 +22093,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50201778,
+            "headBlock": 50202473,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50201778,
+            "headBlock": 50202473,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50201778,
+            "headBlock": 50202473,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22285,19 +22262,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 104344041,
+            "headBlock": 104350814,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 104344041,
+            "headBlock": 104350814,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 104344041,
+            "headBlock": 104350814,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22454,19 +22431,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53423117,
+            "headBlock": 53423459,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53423117,
+            "headBlock": 53423459,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53423117,
+            "headBlock": 53423459,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22817,7 +22794,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 38,
+    "ok": 37,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -22875,7 +22852,7 @@
         {
           "address": "0x40584fbad768ff46f299cf50cae5b3d437e213fa",
           "name": "The Walt Disney Company ST0x",
-          "symbol": null,
+          "symbol": "tDIS",
           "deployed": true,
           "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
           "authoriserLabel": "target",
@@ -23539,7 +23516,7 @@
         "symbol": "wtMC",
         "name": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
         "address": "0x378a04202D25659763A02dA5FE77c0a35e64Ce1D",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
@@ -23554,7 +23531,7 @@
         "receipt": "0xc3fd55a007cb7e4549a4b5064691c75609b1411b",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": true,
+        "receiptDeployed": null,
         "authoriser": "0xdb9152e46c1d140db6a6f814461f21c571f3275e",
         "authoriserLabel": "foreign",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -26263,42 +26240,6 @@
       "daysSinceAudit": 41
     },
     {
-      "name": "rain.metadata",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.metadata.fde2333cdf92d0879164be4eacb1eb844cea79d9.feb-2026.pdf",
-          "path": "audit/protofire/rain.metadata.fde2333cdf92d0879164be4eacb1eb844cea79d9.feb-2026.pdf",
-          "lastCommitIso": "2026-07-15T11:12:48Z",
-          "auditDateIso": "2026-01-29T12:12:35Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": "fde2333cdf92d0879164be4eacb1eb844cea79d9",
-      "anchorKind": "commit",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-01-29T12:12:35Z",
-      "latestTag": "sol-v0.1.45",
-      "latestTagIso": "2026-11-01T15:40:04Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 188,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 139,
-      "sourceLocRemovedSinceAudit": 49,
-      "filesChangedSinceAudit": 8,
-      "commitsSinceAudit": 642,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 80,
-      "commentLocRemovedSinceAudit": 14,
-      "codeLocAddedSinceAudit": 51,
-      "codeLocRemovedSinceAudit": 29,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/fde2333cdf92d0879164be4eacb1eb844cea79d9...main",
-      "daysSinceAudit": 277
-    },
-    {
       "name": "rain.math.float",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -26783,6 +26724,48 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/sol-v0.2.2...main",
       "daysSinceAudit": 32
+    },
+    {
+      "name": "rain.metadata",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "current",
+      "auditPdfs": [
+        {
+          "filename": "rain.metadata.fde2333cdf92d0879164be4eacb1eb844cea79d9.feb-2026.pdf",
+          "path": "audit/protofire/rain.metadata.fde2333cdf92d0879164be4eacb1eb844cea79d9.feb-2026.pdf",
+          "lastCommitIso": "2026-07-15T11:12:48Z",
+          "auditDateIso": "2026-01-29T12:12:35Z"
+        },
+        {
+          "filename": "rain.metadata.sol-v0.1.43-r3.0.oct-2026.pdf",
+          "path": "audit/protofire/rain.metadata.sol-v0.1.43-r3.0.oct-2026.pdf",
+          "lastCommitIso": "2026-11-02T16:01:16Z",
+          "auditDateIso": "2026-09-03T09:07:56Z"
+        }
+      ],
+      "referencePdfIndex": 1,
+      "auditedRef": "sol-v0.1.43",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-09-03T09:07:56Z",
+      "latestTag": "npm-v0.1.4",
+      "latestTagIso": "2026-11-02T16:12:39Z",
+      "isStale": false,
+      "sourceLocChangedSinceAudit": 0,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 0,
+      "sourceLocRemovedSinceAudit": 0,
+      "filesChangedSinceAudit": 0,
+      "commitsSinceAudit": 70,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 0,
+      "commentLocRemovedSinceAudit": 0,
+      "codeLocAddedSinceAudit": 0,
+      "codeLocRemovedSinceAudit": 0,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/sol-v0.1.43...main",
+      "daysSinceAudit": 60
     },
     {
       "name": "rain.sol.binmaskflag",
