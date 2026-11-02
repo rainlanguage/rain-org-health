@@ -183,8 +183,7 @@ pub fn build_owners(
     onchain: Option<&OnChainSafe>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
-    let (safe_lib, auth_lib, v4_lib, overrides) =
-        (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
+    let (safe_lib, v4_lib, overrides) = (src.safe_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
     // Anchor: without the Base Safe there is nothing meaningful to show.
@@ -274,11 +273,7 @@ pub fn build_owners(
         "entries": signers,
     });
 
-    // Which clone is live is READ FROM THE CHAIN, not asserted here: the two
-    // Base clones trade places during the V4 migration, and a hardcoded
-    // active/pending pair goes stale the moment the swap lands — while the
-    // token rows on the same page keep reporting the truth from `authorizer()`.
-    let v3_clone = addr(auth_lib, "STOX_PROD_AUTHORISER");
+    // Which clone is live is READ FROM THE CHAIN, not asserted here.
     let v4_clone = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
     let v4_clone_ethereum = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM");
     let live_note = match live_authoriser {
@@ -290,10 +285,6 @@ pub fn build_owners(
         "title": "Operational access — authoriser",
         "note": format!("Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. {live_note}"),
         "entries": [
-            entry("V3-era authoriser clone", v3_clone.clone(), "base",
-                authoriser_status(v3_clone.as_ref(), live_authoriser, "migrated"),
-                "the pre-V4 authorizer() target"),
-            entry("Authoriser implementation", addr(auth_lib, "STOX_PROD_AUTHORISER_IMPL"), "base", "active", "implementation behind the clone"),
             entry("V4 authoriser clone", v4_clone.clone(), "base",
                 authoriser_status(v4_clone.as_ref(), live_authoriser, "pending"),
                 "the V4 upgrade rewires every vault onto this"),
