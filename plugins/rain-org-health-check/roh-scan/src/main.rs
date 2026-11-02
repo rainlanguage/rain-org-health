@@ -2898,7 +2898,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 rbac::REGISTRY_REPO,
                 ".github/workflows/deploy-subgraph.yaml",
             ),
-            &gh_file(rbac::REGISTRY_ORG, rbac::REGISTRY_REPO, "subgraph/networks.json"),
+            &gh_file(
+                rbac::REGISTRY_ORG,
+                rbac::REGISTRY_REPO,
+                "subgraph/networks.json",
+            ),
             &deployment_rbac,
         );
 
