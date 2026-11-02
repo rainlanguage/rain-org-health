@@ -2892,28 +2892,15 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             doc
         };
 
-        // The Root registry tab reads rain.deploy's registry subgraph, not the RBAC one.
-        let deployment_registry = {
-            let (registry_org, registry_repo) = ("rainlanguage", "rain.deploy");
-            let workflow = gh_file(
-                registry_org,
-                registry_repo,
+        let deployment_registry = rbac::build_registry(
+            &gh_file(
+                rbac::REGISTRY_ORG,
+                rbac::REGISTRY_REPO,
                 ".github/workflows/deploy-subgraph.yaml",
-            );
-            let networks_src = gh_file(registry_org, registry_repo, "subgraph/networks.json");
-            let mut doc = rbac::build_location(
-                registry_org,
-                registry_repo,
-                rbac::parse_deploy_workflow(&workflow).as_ref(),
-                rbac::parse_networks(&networks_src).as_deref(),
-            );
-            doc["configRegistries"] =
-                serde_json::Value::Object(rbac::config_registries(&networks_src));
-            if let Some(names) = deployment_rbac.get("addressNames") {
-                doc["addressNames"] = names.clone();
-            }
-            doc
-        };
+            ),
+            &gh_file(rbac::REGISTRY_ORG, rbac::REGISTRY_REPO, "subgraph/networks.json"),
+            &deployment_rbac,
+        );
 
         let deployment_migrations = migrations::build(
             deploy_org,

@@ -240,6 +240,26 @@ pub fn build_rbac(
     doc
 }
 
+/// The repo whose registry subgraph the "Root registry" tab reads.
+pub const REGISTRY_ORG: &str = "rainlanguage";
+pub const REGISTRY_REPO: &str = "rain.deploy";
+
+/// The `deploymentRegistry` document: [`build_location`] for the registry repo,
+/// its config registries, and the address names `rbac_doc` holds.
+pub fn build_registry(workflow_src: &str, networks_src: &str, rbac_doc: &Value) -> Value {
+    let mut doc = build_location(
+        REGISTRY_ORG,
+        REGISTRY_REPO,
+        parse_deploy_workflow(workflow_src).as_ref(),
+        parse_networks(networks_src).as_deref(),
+    );
+    doc["configRegistries"] = Value::Object(config_registries(networks_src));
+    if let Some(names) = rbac_doc.get("addressNames") {
+        doc["addressNames"] = names.clone();
+    }
+    doc
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
