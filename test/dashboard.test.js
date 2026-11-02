@@ -16914,12 +16914,12 @@ Deno.test("root registry: with or without the owners, delegate kinds come from t
 
 Deno.test("root registry: the tab says delegates are recognised from the same network's RBAC index", async () => {
   const p = await regPanel(regFake());
-  const sub = collect(p, "own-sub")[0];
+  const sub = textOf(collect(p, "own-sub")[0]);
   assert(
-    sub.textContent.includes(
+    sub.includes(
       "A delegate is recognised as a token-owner Safe or governance timelock from the RBAC index for the same network.",
     ),
-    sub.textContent,
+    sub,
   );
 });
 
