@@ -141,6 +141,16 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     out
 }
 
+/// `AccessControl.sol` at the OpenZeppelin tag the deploy repo's `foundry.toml` pins.
+pub fn openzeppelin_access_control_path(foundry: &str) -> Option<String> {
+    let version = crate::graph::foundry_dependencies(foundry)
+        .ok()?
+        .into_iter()
+        .find(|d| d.package == "@openzeppelin-contracts")?
+        .version_req;
+    (!version.is_empty()).then(|| format!("contracts/access/AccessControl.sol?ref=v{version}"))
+}
+
 /// Where a repo's subgraph is published per network: the location part of the
 /// `deploymentRbac` and `deploymentRegistry` documents.
 ///
@@ -827,6 +837,38 @@ jobs:
                 "{case}"
             );
             assert!(d.get("networks").is_none(), "{case}");
+        }
+    }
+
+    #[test]
+    fn openzeppelin_path_follows_the_foundry_pin() {
+        let foundry = r#"
+[profile.default]
+src = "src"
+
+[dependencies]
+forge-std = "1.9.7"
+"@openzeppelin-contracts" = "5.7.0"
+"#;
+        assert_eq!(
+            openzeppelin_access_control_path(foundry).as_deref(),
+            Some("contracts/access/AccessControl.sol?ref=v5.7.0")
+        );
+        assert_eq!(
+            openzeppelin_access_control_path(&foundry.replace("5.7.0", "5.8.1")).as_deref(),
+            Some("contracts/access/AccessControl.sol?ref=v5.8.1")
+        );
+    }
+
+    #[test]
+    fn openzeppelin_path_is_none_without_a_readable_pin() {
+        for foundry in [
+            "",
+            "not toml {{{",
+            "[dependencies]\nforge-std = \"1.9.7\"\n",
+            "[dependencies]\n\"@openzeppelin-contracts\" = { git = \"https://x\" }\n",
+        ] {
+            assert_eq!(openzeppelin_access_control_path(foundry), None, "{foundry:?}");
         }
     }
 }

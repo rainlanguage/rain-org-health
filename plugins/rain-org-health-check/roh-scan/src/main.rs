@@ -2765,11 +2765,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 deploy_repo,
                 "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
             );
-            let access_control = gh_file(
-                "OpenZeppelin",
-                "openzeppelin-contracts",
-                "contracts/access/AccessControl.sol?ref=v5.7.0",
-            );
+            let access_control = rbac::openzeppelin_access_control_path(&gh_file(
+                deploy_org,
+                deploy_repo,
+                "foundry.toml",
+            ))
+            .map(|path| gh_file("OpenZeppelin", "openzeppelin-contracts", &path))
+            .unwrap_or_default();
             rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer, &access_control])
         };
 
