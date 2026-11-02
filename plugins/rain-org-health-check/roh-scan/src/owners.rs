@@ -50,19 +50,24 @@ pub fn parse_uint_constant(src: &str, name: &str) -> Option<u64> {
         .and_then(|m| m.as_str().parse().ok())
 }
 
-/// The declared Safe roster: each constant `expectedOwners()` assigns, in
-/// assignment order, resolved by `parse_address_constant`. `None` when the
-/// function is missing, a constant it assigns is undefined, or it assigns
+/// The declared Safe roster: each constant `expectedOwners()` assigns to an
+/// indexed element (any index expression), in assignment order, resolved by
+/// `parse_address_constant`. The body is that of the first declaration with
+/// one; a body-less `function expectedOwners(...) ...;` is skipped. `None` when
+/// no declaration has a body, a constant it assigns is undefined, or it assigns
 /// none; an assignment of anything but a bare constant is not read.
 pub fn parse_expected_owners(src: &str) -> Option<Vec<String>> {
     let code = Regex::new(r"(?s)//[^\n]*|/\*.*?\*/")
         .ok()?
         .replace_all(src, "");
-    let start = Regex::new(r"\bfunction\s+expectedOwners\s*\(")
+    let open = Regex::new(r"\bfunction\s+expectedOwners\s*\(")
         .ok()?
-        .find(&code)?
-        .end();
-    let open = start + code[start..].find('{')?;
+        .find_iter(&code)
+        .find_map(|m| {
+            let rest = &code[m.end()..];
+            let i = rest.find(['{', ';'])?;
+            (rest.as_bytes()[i] == b'{').then_some(m.end() + i)
+        })?;
     let mut depth = 0usize;
     let mut close = None;
     for (i, c) in code[open..].char_indices() {
@@ -79,7 +84,7 @@ pub fn parse_expected_owners(src: &str) -> Option<Vec<String>> {
         }
     }
     let body = &code[open + 1..close?];
-    let assign = Regex::new(r"\b\w+\s*\[\s*\d+\s*\]\s*=\s*([A-Za-z_]\w*)\s*;").ok()?;
+    let assign = Regex::new(r"\b\w+\s*\[[^;]*?\]\s*=\s*([A-Za-z_]\w*)\s*;").ok()?;
     let owners: Option<Vec<String>> = assign
         .captures_iter(body)
         .map(|c| parse_address_constant(src, &c[1]))
