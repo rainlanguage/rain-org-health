@@ -716,6 +716,67 @@ jobs:
     }
 
     #[test]
+    fn registry_doc_fetches_rain_deploys_workflow_and_networks_each_for_its_part() {
+        let workflow = "SUBGRAPH_NAME: from-the-workflow\nORMI_QUERY_BASE: https://q.example/api\n";
+        let networks = json!({
+            "base": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
+            "flare": {"MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31"}},
+        })
+        .to_string();
+        let asked = std::cell::RefCell::new(Vec::new());
+        let rbac_doc = rbac_doc_with_address_names();
+        let d = build_registry(&rbac_doc, |org: &str, repo: &str, path: &str| {
+            asked
+                .borrow_mut()
+                .push((org.to_string(), repo.to_string(), path.to_string()));
+            match (org, repo, path) {
+                ("rainlanguage", "rain.deploy", ".github/workflows/deploy-subgraph.yaml") => {
+                    workflow.to_string()
+                }
+                ("rainlanguage", "rain.deploy", "subgraph/networks.json") => networks.clone(),
+                _ => String::new(),
+            }
+        });
+        let mut asked = asked.into_inner();
+        asked.sort();
+        assert_eq!(
+            asked,
+            [
+                ".github/workflows/deploy-subgraph.yaml",
+                "subgraph/networks.json"
+            ]
+            .map(|p| (
+                "rainlanguage".to_string(),
+                "rain.deploy".to_string(),
+                p.to_string()
+            ))
+        );
+        assert_eq!(
+            d,
+            json!({
+                "org": "rainlanguage",
+                "repo": "rain.deploy",
+                "tag": "prod",
+                "subgraph": "from-the-workflow",
+                "networks": [
+                    {
+                        "network": "base",
+                        "chain": "base",
+                        "endpoint": "https://q.example/api/subgraphs/from-the-workflow-base/prod/gn",
+                    },
+                    {
+                        "network": "flare",
+                        "chain": null,
+                        "endpoint": "https://q.example/api/subgraphs/from-the-workflow-flare/prod/gn",
+                    },
+                ],
+                "configRegistries": {"base": REGISTRY_CONFIG_V5.to_lowercase()},
+                "addressNames": rbac_doc["addressNames"],
+            })
+        );
+    }
+
+    #[test]
     fn registry_doc_lists_a_network_without_a_v5_config_registry_and_declares_none_for_it() {
         let networks_src = json!({
             "base": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
