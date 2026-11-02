@@ -1307,6 +1307,148 @@ mod tests {
         assert_eq!(parse_expected_owners(empty), None);
     }
 
+    const OWNER_A: &str = "0x1111111111111111111111111111111111111111";
+    const OWNER_B: &str = "0x2222222222222222222222222222222222222222";
+    const OWNER_C: &str = "0x3333333333333333333333333333333333333333";
+
+    fn roster(owners: &[&str]) -> Option<Vec<String>> {
+        Some(owners.iter().map(|o| o.to_string()).collect())
+    }
+
+    #[test]
+    fn expected_owners_reads_an_array_of_any_name() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory signers = new address[](1);
+                signers[0] = OWNER_A;
+                return signers;
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
+    }
+
+    #[test]
+    fn expected_owners_ignores_whitespace() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+            address internal constant OWNER_C = 0x3333333333333333333333333333333333333333;
+            function  expectedOwners ()
+                internal pure returns (address[] memory)
+            {
+                address[] memory owners = new address[](3);
+                owners [ 0 ]=OWNER_A ;
+                owners[1]\t=\tOWNER_B;
+                owners[2]
+                    = OWNER_C;
+                return owners;
+            }
+        ";
+        assert_eq!(
+            parse_expected_owners(src),
+            roster(&[OWNER_A, OWNER_B, OWNER_C])
+        );
+    }
+
+    #[test]
+    fn expected_owners_skips_multi_line_and_successive_block_comments() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](2);
+                /* owners[0] = OWNER_RETIRED;
+                   owners[1] = OWNER_RETIRED; */
+                owners[0] = OWNER_A;
+                /* rotated in */ owners[1] = OWNER_B;
+                return owners;
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_B]));
+    }
+
+    #[test]
+    fn expected_owners_is_not_read_from_a_function_sharing_its_prefix() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+            function expectedOwnersEthereum() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](1);
+                owners[0] = OWNER_B;
+                return owners;
+            }
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](1);
+                owners[0] = OWNER_A;
+                return owners;
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
+    }
+
+    #[test]
+    fn expected_owners_reads_past_a_nested_block() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](2);
+                {
+                    owners[0] = OWNER_A;
+                }
+                owners[1] = OWNER_B;
+                return owners;
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_B]));
+    }
+
+    #[test]
+    fn expected_owners_is_none_when_its_body_is_unterminated() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](1);
+                owners[0] = OWNER_A;
+        ";
+        assert_eq!(parse_expected_owners(src), None);
+    }
+
+    #[test]
+    fn expected_owners_reads_a_body_holding_non_ascii_text() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+            function expectedOwners() internal pure returns (address[] memory) {
+                string memory rule = unicode\"————————————————————————————————\";
+                address[] memory owners = new address[](2);
+                owners[0] = OWNER_A;
+                owners[1] = OWNER_B;
+                return owners;
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_B]));
+    }
+
+    #[test]
+    fn expected_owners_skips_an_assignment_that_is_not_a_bare_constant() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_C = 0x3333333333333333333333333333333333333333;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](5);
+                owners[0] = OWNER_A;
+                owners[1] = 0x2222222222222222222222222222222222222222;
+                owners[2] = address(0x4444444444444444444444444444444444444444);
+                owners[3] = LibOther.OWNER_B;
+                owners[4] = OWNER_C;
+                return owners;
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_C]));
+    }
+
     #[test]
     fn build_owners_assembles_all_groups() {
         let v = build_owners(
@@ -1733,6 +1875,7 @@ mod tests {
         assert!(safe_note.starts_with("3-of-6 "), "{safe_note}");
         let sg = &v["groups"][1];
         assert_eq!(sg["title"], "Safe signers (3-of-6)");
+        assert!(sg["note"].as_str().unwrap().contains("expectedOwners()"));
         assert_eq!(sg["verification"]["match"], true);
         let entries = sg["entries"].as_array().unwrap();
         let roles: Vec<&str> = entries
@@ -1770,6 +1913,10 @@ mod tests {
             "0xdeadbeef00000000000000000000000000000002"
         );
         assert_eq!(unexpected[0]["status"], "extra");
+        assert!(unexpected[0]["note"]
+            .as_str()
+            .unwrap()
+            .contains("expectedOwners()"));
         assert_eq!(declared.len(), 6);
         assert!(declared.iter().all(|e| e["onChain"] == "match"));
     }
