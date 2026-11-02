@@ -12183,6 +12183,49 @@ Deno.test("deployments: every index state is stated, and no data never reads as 
   }
 });
 
+// Bodies that carry an error with no message in it.
+const EMPTY_ERRORS = [{ errors: [] }, { error: "" }, {
+  errors: [{ message: "" }],
+}];
+const EMPTY_ERROR = "the endpoint answered with an empty error";
+
+Deno.test("deployments: an index answering with an empty error is an error state on role changes, never a throw", async () => {
+  for (const body of EMPTY_ERRORS) {
+    for (
+      const [over, phrase] of [
+        [{ meta: body }, EMPTY_ERROR],
+        [{ raw: { roleHolders: body } }, "roleHolders: " + EMPTY_ERROR],
+      ]
+    ) {
+      const label = JSON.stringify(over);
+      const p = await rbacPanelLive(fakeSubgraph(over));
+      const banners = rbacBanners(p);
+      assert(
+        banners.length === 1 &&
+          banners[0].className.includes("own-verify-drift"),
+        label + ": " + banners.map((b) => b.className).join(" | "),
+      );
+      const t = textOf(banners[0]);
+      assert(t.includes(phrase) && !t.includes("Cannot read"), label + ": " + t);
+      assert(t.includes("not the same as no changes"), label + ": " + t);
+      assert(collect(p, "rbac-chg").length === 0, label + ": no rows");
+    }
+    const label = JSON.stringify({ schema: body });
+    const p = await rbacPanelLive(tlFake({ schema: body }));
+    const err = collect(p, "tl-error");
+    assert(
+      err.length === 1 && textOf(err[0]).includes(EMPTY_ERROR) &&
+        !textOf(err[0]).includes("Cannot read"),
+      label + ": " + err.map(textOf).join(" | "),
+    );
+    assert(collect(p, "tl-absent").length === 0, label + ": not absent");
+    assert(
+      collect(p, "rbac-chg").length === 3,
+      label + ": role history unaffected",
+    );
+  }
+});
+
 Deno.test("deployments: an absent or unreadable role-history location says so", async () => {
   const f = fakeSubgraph();
   let p = await rbacPanelLive(f, grantsData());
@@ -16932,13 +16975,13 @@ async function regUnchecked(why, setup) {
       `Delegate recognition was not checked on this network — ${why}.`,
     notes.join(" | "),
   );
-  return f;
+  return { f, p };
 }
 
 Deno.test("root registry: without a usable RBAC location every delegate is not checked, with the reason", async () => {
   const noDoc = "this scan carries no RBAC subgraph location";
   for (const doc of [undefined, null, 5, "st0x-rbac"]) {
-    const f = await regUnchecked(noDoc, (_f, data) => {
+    const { f } = await regUnchecked(noDoc, (_f, data) => {
       if (doc === undefined) delete data.deploymentRbac;
       else data.deploymentRbac = doc;
     });
@@ -16973,7 +17016,7 @@ Deno.test("root registry: without a usable RBAC location every delegate is not c
     ),
   ];
   for (const [why, doc] of cases) {
-    const f = await regUnchecked(why, (_f, data) => {
+    const { f } = await regUnchecked(why, (_f, data) => {
       data.deploymentRbac = doc(data.deploymentRbac);
     });
     assert(regKindReads(f.rbac).length === 0, why);
@@ -17008,12 +17051,67 @@ Deno.test("root registry: an RBAC index that cannot be read leaves every delegat
     ],
   ];
   for (const [why, setup] of cases) {
-    const f = await regUnchecked(failed + why, (f) => setup(f.rbac));
+    const { f } = await regUnchecked(failed + why, (f) => setup(f.rbac));
     assert(
       f.seen.every((s) => s.url === regUrl("base")) &&
         regQueries(f).some((q) => q.includes("page: configBindings(")),
       why + ": the registry is still read",
     );
+  }
+});
+
+Deno.test("root registry: an RBAC index answering with an empty error keeps the network's history, every delegate not checked", async () => {
+  const failed = "the RBAC index read failed: ";
+  for (const body of EMPTY_ERRORS) {
+    for (
+      const [why, setup] of [
+        [EMPTY_ERROR, (g) => g.meta = body],
+        ["contracts: " + EMPTY_ERROR, (g) => g.raw.contracts = body],
+      ]
+    ) {
+      const label = JSON.stringify(body) + " " + why;
+      const { p } = await regUnchecked(failed + why, (f) => setup(f.rbac));
+      const t = textOf(p);
+      assert(
+        !t.includes("Index error") && !t.includes("Cannot read"),
+        label + ": " + regErr(p),
+      );
+      assert(
+        collect(collect(p, "rbac-net")[0], "own-verify-ok").length === 1,
+        label + ": the registry index banner: " + regErr(p),
+      );
+      for (
+        const head of [
+          "Delegations in force",
+          "Config bindings, valid — 1",
+          "Config changes, valid — 2",
+        ]
+      ) {
+        assert(regHeads(p).includes(head), label + ": " + regHeads(p));
+      }
+      assert(regLines(p).length === 2, label + ": " + textOf(p));
+    }
+  }
+});
+
+Deno.test("root registry: a registry index answering with an empty error is an index error that says so", async () => {
+  for (const body of EMPTY_ERRORS) {
+    for (
+      const over of [
+        { meta: body },
+        { registrySchema: body },
+        { raw: { configRegisters: body } },
+      ]
+    ) {
+      const label = JSON.stringify(over);
+      const p = await regPanel(regFake(over));
+      const t = textOf(p);
+      assert(
+        regErr(p).includes(EMPTY_ERROR) && !t.includes("Cannot read"),
+        label + ": " + regErr(p),
+      );
+      assert(!t.includes("Delegations in force"), label + ": " + t);
+    }
   }
 });
 
