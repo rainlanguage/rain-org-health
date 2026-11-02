@@ -6011,7 +6011,7 @@ Deno.test("deployments: the Historical & bricked group is on the Known bad tab, 
   );
   assert(
     collect(panels.knownbad, "own-role").map((r) => r.textContent).join() ===
-      "V2 receipt beacon owner" &&
+        "V2 receipt beacon owner" &&
       collect(panels.knownbad, "own-status-bricked").length === 1,
     "with its bricked row",
   );
