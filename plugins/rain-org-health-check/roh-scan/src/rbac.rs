@@ -110,9 +110,10 @@ pub fn endpoint(src: &SubgraphSource, network: &str) -> String {
 ///
 /// The subgraph stores role ids, never names — the preimage is not in the log.
 /// So a name is shown only where a source this scan reads writes
-/// `keccak256("NAME")` for it, plus `DEFAULT_ADMIN_ROLE` where a source pins it
-/// as `bytes32(0)`. Upper-case identifiers only: the same sources hash EIP-712
-/// type strings and storage-slot labels, which are not roles.
+/// `keccak256("NAME")` for it, plus each `bytes32` `*_ROLE` constant a source
+/// defines as zero (`= 0x00` or `= bytes32(0)`), by its own name. Upper-case
+/// identifiers only: the same sources hash EIP-712 type strings and storage-slot
+/// labels, which are not roles.
 /// @return `(0x-id, name)` pairs, deduplicated, first appearance wins.
 pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     let mut out: Vec<(String, String)> = Vec::new();
@@ -123,16 +124,15 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     };
     let (Ok(hashed), Ok(zero)) = (
         Regex::new(r#"keccak256\(\s*"([A-Z][A-Z0-9_]*)"\s*\)"#),
-        Regex::new(r"\bDEFAULT_ADMIN_ROLE\s*=\s*bytes32\(\s*0\s*\)"),
+        Regex::new(
+            r"\bbytes32\s+(?:(?:public|internal|private)\s+)?constant\s+([A-Z][A-Z0-9_]*_ROLE)\s*=\s*(?:0x0+|bytes32\(\s*0\s*\))\s*;",
+        ),
     ) else {
         return out;
     };
     for src in sources {
-        if zero.is_match(src) {
-            push(
-                format!("0x{}", "0".repeat(64)),
-                "DEFAULT_ADMIN_ROLE".to_string(),
-            );
+        for c in zero.captures_iter(src) {
+            push(format!("0x{}", "0".repeat(64)), c[1].to_string());
         }
         for c in hashed.captures_iter(src) {
             push(crate::rpc::role_id_hex(&c[1]), c[1].to_string());
@@ -141,40 +141,14 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     out
 }
 
-/// Names from the deploy repo's `ideal-roles.json`: each `(role, roleName)` pair
-/// whose name hashes to its role, or is `DEFAULT_ADMIN_ROLE` for `bytes32(0)`. A
-/// pair whose name is not its role's is dropped, never shown.
-pub fn ideal_role_names(json: &str) -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = Vec::new();
-    let Ok(doc) = serde_json::from_str::<serde_json::Value>(json) else {
-        return out;
-    };
-    let zero = format!("0x{}", "0".repeat(64));
-    let chains = doc.get("chains").and_then(|c| c.as_object());
-    for chain in chains.into_iter().flat_map(|c| c.values()) {
-        let contracts = chain.get("contracts").and_then(|c| c.as_array());
-        for contract in contracts.into_iter().flatten() {
-            let pairs = contract.get("expected").and_then(|e| e.as_array());
-            for pair in pairs.into_iter().flatten() {
-                let (Some(role), Some(name)) = (
-                    pair.get("role").and_then(|r| r.as_str()),
-                    pair.get("roleName").and_then(|n| n.as_str()),
-                ) else {
-                    continue;
-                };
-                let role = role.to_lowercase();
-                let hashes = if name == "DEFAULT_ADMIN_ROLE" {
-                    role == zero
-                } else {
-                    crate::rpc::role_id_hex(name) == role
-                };
-                if hashes && !out.iter().any(|(i, _)| *i == role) {
-                    out.push((role, name.to_string()));
-                }
-            }
-        }
-    }
-    out
+/// `AccessControl.sol` at the OpenZeppelin tag the deploy repo's `foundry.toml` pins.
+pub fn openzeppelin_access_control_path(foundry: &str) -> Option<String> {
+    let version = crate::graph::foundry_dependencies(foundry)
+        .ok()?
+        .into_iter()
+        .find(|d| d.package == "@openzeppelin-contracts")?
+        .version_req;
+    (!version.is_empty()).then(|| format!("contracts/access/AccessControl.sol?ref=v{version}"))
 }
 
 /// Where a repo's subgraph is published per network: the location part of the
@@ -377,33 +351,6 @@ jobs:
     }
 
     #[test]
-    fn ideal_role_names_keep_only_names_that_are_their_roles() {
-        let zero = format!("0x{}", "0".repeat(64));
-        let emergency = crate::rpc::role_id_hex("EMERGENCY");
-        let mint = crate::rpc::role_id_hex("MINT");
-        let json = json!({"version": 1, "chains": {"1": {"network": "ethereum", "contracts": [
-            {"address": "0x01", "expected": [
-                {"role": zero, "roleName": "DEFAULT_ADMIN_ROLE", "grantee": "0x02"},
-                {"role": emergency.to_uppercase().replace("0X", "0x"), "roleName": "EMERGENCY", "grantee": "0x02"},
-                {"role": mint, "roleName": "BURN", "grantee": "0x02"},
-                {"role": crate::rpc::role_id_hex("CERTIFY"), "grantee": "0x02"}
-            ]},
-            {"address": "0x03", "expected": [
-                {"role": zero, "roleName": "DEFAULT_ADMIN_ROLE", "grantee": "0x04"}
-            ]}
-        ]}}})
-        .to_string();
-        assert_eq!(
-            ideal_role_names(&json),
-            vec![
-                (zero, "DEFAULT_ADMIN_ROLE".to_string()),
-                (emergency, "EMERGENCY".to_string()),
-            ]
-        );
-        assert!(ideal_role_names("not json").is_empty());
-    }
-
-    #[test]
     fn role_names_come_from_upper_case_hash_preimages_and_the_zero_pin() {
         let names = role_names(&[
             r#"bytes32 public constant MINT_ROLE = keccak256("MINT");
@@ -426,6 +373,17 @@ jobs:
                     "DEPOSIT_ADMIN".to_string()
                 ),
             ]
+        );
+    }
+
+    #[test]
+    fn a_zero_role_is_named_by_its_open_zeppelin_constant() {
+        assert_eq!(
+            role_names(&["bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;"]),
+            vec![(
+                format!("0x{}", "0".repeat(64)),
+                "DEFAULT_ADMIN_ROLE".to_string()
+            )]
         );
     }
 
@@ -879,6 +837,42 @@ jobs:
                 "{case}"
             );
             assert!(d.get("networks").is_none(), "{case}");
+        }
+    }
+
+    #[test]
+    fn openzeppelin_path_follows_the_foundry_pin() {
+        let foundry = r#"
+[profile.default]
+src = "src"
+
+[dependencies]
+forge-std = "1.9.7"
+"@openzeppelin-contracts" = "5.7.0"
+"#;
+        assert_eq!(
+            openzeppelin_access_control_path(foundry).as_deref(),
+            Some("contracts/access/AccessControl.sol?ref=v5.7.0")
+        );
+        assert_eq!(
+            openzeppelin_access_control_path(&foundry.replace("5.7.0", "5.8.1")).as_deref(),
+            Some("contracts/access/AccessControl.sol?ref=v5.8.1")
+        );
+    }
+
+    #[test]
+    fn openzeppelin_path_is_none_without_a_readable_pin() {
+        for foundry in [
+            "",
+            "not toml {{{",
+            "[dependencies]\nforge-std = \"1.9.7\"\n",
+            "[dependencies]\n\"@openzeppelin-contracts\" = { git = \"https://x\" }\n",
+        ] {
+            assert_eq!(
+                openzeppelin_access_control_path(foundry),
+                None,
+                "{foundry:?}"
+            );
         }
     }
 }
