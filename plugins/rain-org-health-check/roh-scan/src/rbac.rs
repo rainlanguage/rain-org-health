@@ -602,8 +602,14 @@ jobs:
         let source = parse_deploy_workflow(REGISTRY_WORKFLOW).unwrap();
         let networks_src = registry_networks_json();
         let networks = parse_networks(&networks_src).unwrap();
-        let d = build_location("rainlanguage", "rain.deploy", Some(&source), Some(&networks));
-        let base = "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
+        let d = build_location(
+            "rainlanguage",
+            "rain.deploy",
+            Some(&source),
+            Some(&networks),
+        );
+        let base =
+            "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
         let chains = [
             None,
             Some("base"),
@@ -639,7 +645,10 @@ jobs:
         let registries = config_registries(&networks_src);
         assert_eq!(
             registries.keys().map(String::as_str).collect::<Vec<_>>(),
-            REGISTRY_NETWORKS.iter().map(|(n, _, _)| *n).collect::<Vec<_>>()
+            REGISTRY_NETWORKS
+                .iter()
+                .map(|(n, _, _)| *n)
+                .collect::<Vec<_>>()
         );
         for (n, a) in &registries {
             assert_eq!(a, &Value::from(REGISTRY_CONFIG_V5.to_lowercase()), "{n}");
