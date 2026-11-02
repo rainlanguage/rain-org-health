@@ -3101,9 +3101,10 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
-    if (!n.recognition.checked) {
+    const anyDelegate = n.delegates.length > 0;
+    if (anyDelegate && !n.recognition.checked) {
       slot.append(el("div", "own-note rbac-ideal-gap", `Delegate recognition was not checked on this network — ${n.recognition.why}.`));
-    } else if (n.recognition.count === 0) {
+    } else if (anyDelegate && n.recognition.count === 0) {
       slot.append(
         el("div", "own-note rbac-ideal-gap", "The RBAC index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised."),
       );
