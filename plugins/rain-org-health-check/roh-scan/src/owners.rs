@@ -1157,10 +1157,47 @@ mod tests {
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x8D5901d8aE48101B59400235ad8614A2e0510466;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_4 = 0xC1C89b7f5448F447d59f920456A9610f6b2544bC;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_5 = 0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_6 = 0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2;
+            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_TDM = 0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2;
+
+            /// @notice Expected owner set in `getOwners()` order.
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](6);
+                owners[0] = STOX_TOKEN_OWNER_SAFE_OWNER_1;
+                owners[1] = STOX_TOKEN_OWNER_SAFE_OWNER_2;
+                owners[2] = STOX_TOKEN_OWNER_SAFE_OWNER_3;
+                // owners[2] = STOX_TOKEN_OWNER_SAFE_OWNER_RETIRED;
+                owners[3] = STOX_TOKEN_OWNER_SAFE_OWNER_4;
+                /* owners[4] = STOX_TOKEN_OWNER_SAFE_OWNER_RETIRED; */
+                owners[4] = STOX_TOKEN_OWNER_SAFE_OWNER_5;
+                owners[5] = STOX_TOKEN_OWNER_SAFE_OWNER_TDM;
+                return owners;
+            }
+
+            /// @notice The owners in creation order; the set is `expectedOwners()`.
+            function tokenOwnerSafeCreationOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](6);
+                owners[0] = STOX_TOKEN_OWNER_SAFE_OWNER_5;
+                owners[1] = STOX_TOKEN_OWNER_SAFE_OWNER_1;
+                owners[2] = STOX_TOKEN_OWNER_SAFE_OWNER_2;
+                owners[3] = STOX_TOKEN_OWNER_SAFE_OWNER_3;
+                owners[4] = STOX_TOKEN_OWNER_SAFE_OWNER_4;
+                owners[5] = STOX_TOKEN_OWNER_SAFE_OWNER_TDM;
+                return owners;
+            }
+
             address internal constant SAFE_MODULES_SENTINEL = address(0x1);
         }
     "#;
+
+    // The SAFE_LIB `expectedOwners()` roster in assignment order, as declared.
+    const DECLARED_ROSTER: [&str; 6] = [
+        "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2",
+        "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d",
+        "0x8D5901d8aE48101B59400235ad8614A2e0510466",
+        "0xC1C89b7f5448F447d59f920456A9610f6b2544bC",
+        "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
+        "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2",
+    ];
     const AUTH_LIB: &str = r#"
         address internal constant STOX_PROD_AUTHORISER = 0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456;
         address internal constant STOX_PROD_AUTHORISER_IMPL = 0x2B4A510c3619d5E888095BFE9f95902D32dA5556;
@@ -1226,6 +1263,48 @@ mod tests {
             parse_uint_constant(SAFE_LIB, "STOX_TOKEN_OWNER_SAFE_THRESHOLD"),
             Some(3)
         );
+    }
+
+    #[test]
+    fn expected_owners_are_every_assigned_constant_in_assignment_order() {
+        assert_eq!(
+            parse_expected_owners(SAFE_LIB),
+            Some(DECLARED_ROSTER.map(str::to_string).to_vec())
+        );
+    }
+
+    #[test]
+    fn expected_owners_is_none_without_the_function() {
+        let renamed = SAFE_LIB.replace("function expectedOwners(", "function retiredOwners(");
+        assert_ne!(renamed, SAFE_LIB);
+        assert_eq!(parse_expected_owners(&renamed), None);
+    }
+
+    #[test]
+    fn expected_owners_is_none_when_an_assigned_constant_is_undefined() {
+        let undefined = SAFE_LIB.replace(
+            "address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_TDM = 0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2;",
+            "",
+        );
+        assert_ne!(undefined, SAFE_LIB);
+        assert_eq!(parse_expected_owners(&undefined), None);
+    }
+
+    #[test]
+    fn expected_owners_is_none_when_it_assigns_nothing() {
+        let empty = "
+            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_1 = 0x4746095B1Ea1A84446d34448f44e74D3d51f92F2;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](0);
+                return owners;
+            }
+            function tokenOwnerSafeCreationOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](1);
+                owners[0] = STOX_TOKEN_OWNER_SAFE_OWNER_1;
+                return owners;
+            }
+        ";
+        assert_eq!(parse_expected_owners(empty), None);
     }
 
     #[test]
@@ -1420,14 +1499,20 @@ mod tests {
     }
 
     #[test]
-    fn signer_count_is_read_from_the_constants_not_a_fixed_six() {
-        // Three signer constants -> three signers read: proves the roster size
-        // comes from the source, not a hardcoded 6. Threshold absent -> 3.
+    fn signer_count_is_the_expected_owners_length_not_a_fixed_six() {
+        // Threshold absent -> 3.
         let three = "
             address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_1 = 0x1111111111111111111111111111111111111111;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0x2222222222222222222222222222222222222222;
             address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x3333333333333333333333333333333333333333;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](3);
+                owners[0] = STOX_TOKEN_OWNER_SAFE_OWNER_1;
+                owners[1] = STOX_TOKEN_OWNER_SAFE_OWNER_2;
+                owners[2] = STOX_TOKEN_OWNER_SAFE_OWNER_3;
+                return owners;
+            }
         ";
         let v = build_owners(
             "o",
@@ -1628,6 +1713,88 @@ mod tests {
         );
         assert!(sg["verification"]["match"].is_null());
         assert!(sg["verification"]["threshold"]["onChain"].is_null());
+    }
+
+    fn with_safe_lib(safe_lib: &str) -> OwnerSources<'_> {
+        OwnerSources {
+            safe_lib,
+            auth_lib: AUTH_LIB,
+            v4_lib: V4_LIB,
+            overrides: OVERRIDES,
+        }
+    }
+
+    #[test]
+    fn a_live_safe_matching_expected_owners_is_a_verified_3_of_6() {
+        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
+        let v = build_owners("o", "r", &with_safe_lib(SAFE_LIB), Some(&oc), None).unwrap();
+        assert_eq!(v["signerCount"], 6);
+        let safe_note = v["groups"][0]["note"].as_str().unwrap();
+        assert!(safe_note.starts_with("3-of-6 "), "{safe_note}");
+        let sg = &v["groups"][1];
+        assert_eq!(sg["title"], "Safe signers (3-of-6)");
+        assert_eq!(sg["verification"]["match"], true);
+        let entries = sg["entries"].as_array().unwrap();
+        let roles: Vec<&str> = entries.iter().map(|e| e["role"].as_str().unwrap()).collect();
+        assert_eq!(
+            roles,
+            ["Signer 1", "Signer 2", "Signer 3", "Signer 4", "Signer 5", "Signer 6"]
+        );
+        let addresses: Vec<&str> = entries
+            .iter()
+            .map(|e| e["address"].as_str().unwrap())
+            .collect();
+        assert_eq!(addresses, DECLARED_ROSTER);
+        assert!(entries.iter().all(|e| e["onChain"] == "match"));
+    }
+
+    #[test]
+    fn a_live_owner_outside_expected_owners_is_flagged() {
+        let mut live = LIVE_ROSTER.to_vec();
+        live.push("0xdeadbeef00000000000000000000000000000002");
+        let oc = onchain(Some(live), Some(3));
+        let v = build_owners("o", "r", &with_safe_lib(SAFE_LIB), Some(&oc), None).unwrap();
+        assert_eq!(v["signerCount"], 6);
+        let sg = &v["groups"][1];
+        assert_eq!(sg["verification"]["match"], false);
+        let entries = sg["entries"].as_array().unwrap();
+        let (unexpected, declared): (Vec<_>, Vec<_>) = entries
+            .iter()
+            .partition(|e| e["role"] == "Unexpected on-chain owner");
+        assert_eq!(unexpected.len(), 1);
+        assert_eq!(
+            unexpected[0]["address"],
+            "0xdeadbeef00000000000000000000000000000002"
+        );
+        assert_eq!(unexpected[0]["status"], "extra");
+        assert_eq!(declared.len(), 6);
+        assert!(declared.iter().all(|e| e["onChain"] == "match"));
+    }
+
+    #[test]
+    fn an_unreadable_roster_flags_every_live_owner() {
+        let no_function = SAFE_LIB.replace("function expectedOwners(", "function retiredOwners(");
+        let undefined = SAFE_LIB.replace(
+            "address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_TDM = 0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2;",
+            "",
+        );
+        for safe_lib in [&no_function, &undefined] {
+            assert_ne!(safe_lib, SAFE_LIB);
+            let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
+            let v = build_owners("o", "r", &with_safe_lib(safe_lib), Some(&oc), None).unwrap();
+            assert_eq!(v["signerCount"], 0);
+            let sg = &v["groups"][1];
+            assert_eq!(sg["verification"]["match"], false);
+            let entries = sg["entries"].as_array().unwrap();
+            assert!(entries
+                .iter()
+                .all(|e| e["role"] == "Unexpected on-chain owner" && e["status"] == "extra"));
+            let flagged: Vec<&str> = entries
+                .iter()
+                .map(|e| e["address"].as_str().unwrap())
+                .collect();
+            assert_eq!(flagged, LIVE_ROSTER);
+        }
     }
 
     // ---- authoriser role grants (#143) ----
