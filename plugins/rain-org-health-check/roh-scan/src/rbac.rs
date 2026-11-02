@@ -450,4 +450,179 @@ jobs:
         );
         assert_eq!(d["roleNames"], json!({"0xaa": "MINT", "0xbb": "BURN"}));
     }
+
+    #[test]
+    fn location_doc_says_which_source_was_unread_and_lists_no_networks() {
+        let d = build_location("o", "r", None, None);
+        assert_eq!(
+            d,
+            json!({
+                "org": "o",
+                "repo": "r",
+                "tag": "prod",
+                "unavailable": "could not read SUBGRAPH_NAME / ORMI_QUERY_BASE from .github/workflows/deploy-subgraph.yaml",
+            })
+        );
+        let nets = vec!["base".to_string()];
+        assert_eq!(
+            build_location("o", "r", None, Some(&nets)),
+            d,
+            "networks without a source are no location"
+        );
+        assert_eq!(
+            build_location("o", "r", Some(&src()), None),
+            json!({
+                "org": "o",
+                "repo": "r",
+                "tag": "prod",
+                "subgraph": "st0x-rbac",
+                "unavailable": "could not read subgraph/networks.json",
+            })
+        );
+    }
+
+    #[test]
+    fn location_doc_lists_each_network_with_its_chain_and_tagged_endpoint_and_nothing_else() {
+        let nets = vec!["mainnet".to_string(), "arbitrum-one".to_string()];
+        assert_eq!(
+            build_location("o", "r", Some(&src()), Some(&nets)),
+            json!({
+                "org": "o",
+                "repo": "r",
+                "tag": "prod",
+                "subgraph": "st0x-rbac",
+                "networks": [
+                    {
+                        "network": "mainnet",
+                        "chain": "ethereum",
+                        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4f/subgraphs/st0x-rbac-mainnet/prod/gn",
+                    },
+                    {
+                        "network": "arbitrum-one",
+                        "chain": null,
+                        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4f/subgraphs/st0x-rbac-arbitrum-one/prod/gn",
+                    },
+                ],
+            })
+        );
+        assert_eq!(
+            build_location("o", "r", Some(&src()), Some(&[]))["networks"],
+            json!([])
+        );
+    }
+
+    #[test]
+    fn rbac_doc_is_its_location_plus_role_names_only_when_located() {
+        let names = vec![("0xaa".to_string(), "MINT".to_string())];
+        let nets = vec!["base".to_string()];
+        let s = src();
+        for (source, networks) in [(None, None), (None, Some(&nets)), (Some(&s), None)] {
+            let networks = networks.map(|n| n.as_slice());
+            assert_eq!(
+                build_rbac("o", "r", source, networks, &names),
+                build_location("o", "r", source, networks),
+                "an unlocated doc carries no role names"
+            );
+        }
+        let mut want = build_location("o", "r", Some(&s), Some(&nets));
+        want["roleNames"] = json!({"0xaa": "MINT"});
+        assert_eq!(build_rbac("o", "r", Some(&s), Some(&nets), &names), want);
+        assert_eq!(
+            build_rbac("o", "r", Some(&s), Some(&nets), &[])["roleNames"],
+            json!({}),
+            "a located doc with no names says so with an empty map"
+        );
+    }
+
+    /// rain.deploy's `.github/workflows/deploy-subgraph.yaml` and
+    /// `subgraph/networks.json` on main.
+    const REGISTRY_WORKFLOW: &str = r#"
+name: Deploy subgraph
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUBGRAPH_NAME: rain-deploy-registry
+      # subgraph-deploy probes this public query base and skips a version that already answers.
+      ORMI_QUERY_BASE: https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71
+    steps:
+      - run: nix develop github:rainlanguage/rainix#subgraph-shell -c subgraph-deploy
+"#;
+    const REGISTRY_NETWORKS: [(&str, u64, u64); 9] = [
+        ("arbitrum-one", 519115682, 519119422),
+        ("base", 53210195, 53210703),
+        ("base-sepolia", 51439343, 51444423),
+        ("bsc", 130324009, 130326266),
+        ("flare", 73190792, 73191741),
+        ("mainnet", 26292829, 26292913),
+        ("hyperevm", 49768958, 49769995),
+        ("matic", 96336285, 96336965),
+        ("robinhood", 100259389, 100268990),
+    ];
+    const REGISTRY_CONFIG_V5: &str = "0x82b7e6FDfD25EF64b013F98e8F2c1fC1D1872eC9";
+
+    fn registry_networks_json() -> String {
+        let mut doc = Map::new();
+        for (n, config_block, migration_block) in REGISTRY_NETWORKS {
+            doc.insert(
+                n.to_string(),
+                json!({
+                    "ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5, "startBlock": config_block},
+                    "MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31", "startBlock": migration_block},
+                }),
+            );
+        }
+        Value::Object(doc).to_string()
+    }
+
+    #[test]
+    fn registry_location_reads_rain_deploys_workflow_and_all_nine_networks() {
+        let source = parse_deploy_workflow(REGISTRY_WORKFLOW).unwrap();
+        let networks_src = registry_networks_json();
+        let networks = parse_networks(&networks_src).unwrap();
+        let d = build_location("rainlanguage", "rain.deploy", Some(&source), Some(&networks));
+        let base = "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
+        let chains = [
+            None,
+            Some("base"),
+            None,
+            Some("bsc"),
+            None,
+            Some("ethereum"),
+            Some("hyperevm"),
+            None,
+            Some("robinhood"),
+        ];
+        let want: Vec<Value> = REGISTRY_NETWORKS
+            .iter()
+            .zip(chains)
+            .map(|((n, _, _), chain)| {
+                json!({
+                    "network": n,
+                    "chain": chain,
+                    "endpoint": format!("{base}/subgraphs/rain-deploy-registry-{n}/prod/gn"),
+                })
+            })
+            .collect();
+        assert_eq!(
+            d,
+            json!({
+                "org": "rainlanguage",
+                "repo": "rain.deploy",
+                "tag": "prod",
+                "subgraph": "rain-deploy-registry",
+                "networks": want,
+            })
+        );
+        let registries = config_registries(&networks_src);
+        assert_eq!(
+            registries.keys().map(String::as_str).collect::<Vec<_>>(),
+            REGISTRY_NETWORKS.iter().map(|(n, _, _)| *n).collect::<Vec<_>>()
+        );
+        for (n, a) in &registries {
+            assert_eq!(a, &Value::from(REGISTRY_CONFIG_V5.to_lowercase()), "{n}");
+        }
+    }
 }

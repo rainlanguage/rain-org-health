@@ -14206,13 +14206,25 @@ const regMeta = (verified, strings) => ({
 });
 const REG_M1_LABEL = "st0x.underlying-naming.rename.1";
 
+// `f` answers the registry index; `f.rbac` answers every RBAC index endpoint,
+// where delegate recognition reads the Safes and timelocks.
 function regFake(over = {}) {
   const f = fakeSubgraph({ registrySchema: REG_SCHEMA, ...over });
-  f.rows.contracts = [
+  f.rows.contracts = [{ ...REG_CONFIG }, { ...REG_MIGRATION }];
+  f.rbac = fakeSubgraph();
+  f.rbac.rows.contracts = [
     { id: REG_SAFE, kind: "TOKEN_OWNER_SAFE" },
     { id: RBAC_TL, kind: "GOVERNANCE_TIMELOCK" },
     { id: RBAC_AUTH, kind: "AUTHORIZER" },
   ];
+  const registry = f.io.fetch;
+  f.io = {
+    now: () => f.now,
+    fetch: (url, init) =>
+      url.startsWith(REG_RBAC_BASE)
+        ? f.rbac.io.fetch(url, init)
+        : registry(url, init),
+  };
   const delegate = (registry) => ({
     registry,
     account: REG_ROOT,
@@ -14269,6 +14281,7 @@ function regFake(over = {}) {
       boundAtBlock: "30",
       boundAtTimestamp: String(TL_NOW - (3 * 86400 + 2 * 3600)),
       registerCount: 2,
+      status: "VALID",
       metas: [regMeta(true, { nameString: "st0x.vault-beacon.v1" })],
     },
   ];
@@ -14283,6 +14296,7 @@ function regFake(over = {}) {
     value,
     valueType,
     valueTypeHash: REG_TYPE_HASH[valueType],
+    status: "VALID",
     blockNumber: String(block),
     blockTimestamp: String(RBAC_TS - 1000 + block),
     transactionHash: "0xtx" + id,
@@ -14338,8 +14352,31 @@ function regFake(over = {}) {
   return f;
 }
 
+const regUrl = (network) =>
+  `https://q.example/subgraphs/rain-deploy-registry-${network}/prod/gn`;
+const REG_RBAC_BASE = RBAC_URL.slice(0, RBAC_URL.indexOf("mainnet"));
+const regRbacUrl = (network) => `${REG_RBAC_BASE}${network}/prod/gn`;
+const regNet = (over = {}) => {
+  const network = over.network ?? "base";
+  return { network, chain: "base", endpoint: regUrl(network), ...over };
+};
 // A network both vocabularies name alike: graph-cli's and the deploy repo's.
-const REG_NET = rbacNet({ network: "base", chain: "base" });
+const REG_NET = regNet();
+// roh-scan's deploymentRegistry.
+const regDoc = (networks, extra = {}) => ({
+  org: "rainlanguage",
+  repo: "rain.deploy",
+  tag: "prod",
+  subgraph: "rain-deploy-registry",
+  networks,
+  ...extra,
+});
+const regRbacNet = (net) =>
+  rbacNet({
+    network: net.network,
+    chain: net.chain,
+    endpoint: regRbacUrl(net.network),
+  });
 // The block the scan read every headV5 at: after every record regFake indexes.
 const REG_HEAD_BLOCK = 50;
 // roh-scan's deploymentMigrations: the declared registry and each line's headV5.
@@ -14375,22 +14412,37 @@ const regScan = (over = {}) => ({
   ...over,
 });
 
-async function regPanel(
-  f,
+function regData(
+  net = REG_NET,
   extra = {},
   migrations = regScan(),
-  net = REG_NET,
+  rbac = rbacData([regRbacNet(net)]).deploymentRbac,
 ) {
-  const data = {
-    ...rbacData([net], {
+  return {
+    ...grantsData(),
+    deploymentRbac: rbac,
+    deploymentRegistry: regDoc([net], {
       configRegistries: { [net.network]: REG_CONFIG.id },
       ...extra,
     }),
     deploymentMigrations: migrations,
   };
+}
+const regTab = (box) =>
+  collect(box, "tabpanel").find((p) => p.dataset.tab === "registry");
+async function regRender(f, data) {
   const { box, done } = deploymentsRender(data, f.io);
   await done;
-  return collect(box, "tabpanel").find((p) => p.dataset.tab === "registry");
+  return regTab(box);
+}
+function regPanel(
+  f,
+  extra = {},
+  migrations = regScan(),
+  net = REG_NET,
+  rbac = undefined,
+) {
+  return regRender(f, regData(net, extra, migrations, rbac));
 }
 const regGroup = (p, head) => {
   const kids = collect(p, "rbac-net")[0].children;
@@ -14518,7 +14570,7 @@ Deno.test("root registry: only approvals in force are listed as delegations, a s
   assert(t.includes(REG_ROOT) && t.includes(REG_SAFE), t);
 });
 
-Deno.test("root registry: a delegate that is neither a Safe nor a timelock in the index is flagged", async () => {
+Deno.test("root registry: a delegate that is neither a Safe nor a timelock in the RBAC index is flagged", async () => {
   const f = regFake();
   const live = (id, delegate) => ({
     ...f.rows.registryDelegates[0],
@@ -14557,14 +14609,21 @@ Deno.test("root registry: a delegate that is neither a Safe nor a timelock in th
       tag.length === 1 && tag[0].textContent === "not Safe or timelock",
       "flagged: " + a,
     );
+    assert(
+      tag[0].title ===
+        "Neither a TOKEN_OWNER_SAFE nor a GOVERNANCE_TIMELOCK in the RBAC index.",
+      tag[0].title,
+    );
     assert(r.className.includes("rbac-off"), "row marked: " + a);
   }
+  assert(collect(p, "reg-unchecked").length === 0, "every delegate checked");
   assert(
-    !textOf(p).includes("holds no token-owner Safe"),
+    !textOf(p).includes("holds no token-owner Safe") &&
+      !textOf(p).includes("not checked"),
     "no gap note when the index holds them",
   );
   const g = regFake();
-  g.rows.contracts = [];
+  g.rbac.rows.contracts = [];
   const q = await regPanel(g);
   const only = collect(regGroup(q, "Delegations in force"), "reg-delegate")[0];
   assert(
@@ -14572,7 +14631,10 @@ Deno.test("root registry: a delegate that is neither a Safe nor a timelock in th
     "nothing recognised without the index's Safe and timelock",
   );
   assert(
-    textOf(q).includes("holds no token-owner Safe or governance timelock"),
+    collect(collect(q, "rbac-net")[0], "rbac-ideal-gap").map(textOf).join(
+      " | ",
+    ) ===
+      "The RBAC index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised.",
     textOf(q),
   );
 });
@@ -14662,7 +14724,7 @@ Deno.test("root registry: a delegation in force shows when it was approved, if t
   );
 });
 
-Deno.test("root registry: a delegate is recognised as the index's Safe whatever the hex case of either address", async () => {
+Deno.test("root registry: a delegate is recognised as the RBAC index's Safe whatever the hex case of either address", async () => {
   const upper = (a) => "0x" + a.slice(2).toUpperCase();
   for (
     const [why, contract, delegate] of [
@@ -14671,7 +14733,7 @@ Deno.test("root registry: a delegate is recognised as the index's Safe whatever 
     ]
   ) {
     const f = regFake();
-    f.rows.contracts[0] = { ...f.rows.contracts[0], id: contract };
+    f.rbac.rows.contracts[0] = { ...f.rbac.rows.contracts[0], id: contract };
     f.rows.registryDelegates[0].delegate = delegate;
     const p = await regPanel(f);
     const row = collect(regGroup(p, "Delegations in force"), "reg-delegate")[0];
@@ -15137,7 +15199,6 @@ Deno.test("root registry: a row that is not an object, or has no string id, fail
       ["configBindings", 0],
       ["registryDelegates", 1],
       ["migrationRecords", 0],
-      ["contracts", 2],
       ["registryUnscopedDelegates", 0],
       ["registryUnscopedDelegateChanges", 0],
     ]
@@ -15166,7 +15227,7 @@ Deno.test("root registry: a row that is not an object, or has no string id, fail
     }
   }
   for (const bad of [null, {}, { id: 5 }]) {
-    const f = regFake();
+    const f = fakeSubgraph();
     f.raw.roles = { data: { page: [bad, ...f.rows.roles] } };
     const p = await rbacPanelLive(f);
     assert(
@@ -15247,13 +15308,18 @@ Deno.test("root registry: a hash is labelled by its preimage only where the inde
   for (const m of [...h.rows.configBindings, ...h.rows.migrationRecords]) {
     m.metas = [];
   }
-  const r = await regPanel(h, {
-    roleNames: {
-      [REG_NS]: "NS_ROLE",
-      [REG_NAME]: "NAME_ROLE",
-      [REG_M[1]]: "M_ROLE",
-    },
-  });
+  const roleNames = {
+    [REG_NS]: "NS_ROLE",
+    [REG_NAME]: "NAME_ROLE",
+    [REG_M[1]]: "M_ROLE",
+  };
+  const r = await regPanel(
+    h,
+    { roleNames },
+    regScan(),
+    REG_NET,
+    rbacData([regRbacNet(REG_NET)], { roleNames }).deploymentRbac,
+  );
   assert(regShown(r).join() === REG_RAW.join(), regShown(r).join());
   assert(
     !/NS_ROLE|NAME_ROLE|M_ROLE/.test(textOf(collect(r, "rbac-net")[0])),
@@ -15326,7 +15392,7 @@ Deno.test("root registry: metas that are not a list label nothing and the read s
   const p = await regPanel(f);
   assert(regShown(p).join() === REG_RAW.join(), regShown(p).join());
   assert(
-    regHeads(p).includes("Config bindings — 1") &&
+    regHeads(p).includes("Config bindings, valid — 1") &&
       regHeads(p).includes("Migration lines — 2"),
     regErr(p),
   );
@@ -15493,8 +15559,8 @@ Deno.test("root registry: only the registries the deploy repo declares are read 
     const h of [
       "Delegations in force — 1",
       "Delegation changes — 3, newest first",
-      "Config bindings — 1",
-      "Config changes — 2, newest first",
+      "Config bindings, valid — 1",
+      "Config changes, valid — 2, newest first",
       "Migration lines — 2",
     ]
   ) {
@@ -15514,8 +15580,8 @@ Deno.test("root registry: only the registries the deploy repo declares are read 
     const h of [
       "Delegations in force — 4",
       "Delegation changes — 6, newest first",
-      "Config bindings — 2",
-      "Config changes — 3, newest first",
+      "Config bindings, valid — 2",
+      "Config changes, valid — 3, newest first",
       "Migration lines — 3",
     ]
   ) {
@@ -15530,7 +15596,7 @@ Deno.test("root registry: on Ethereum the declared registry and heads apply thou
     regElsewhere(regFake()),
     undefined,
     scan,
-    rbacNet(),
+    regNet({ network: "mainnet", chain: "ethereum" }),
   );
   assert(regHeads(p).includes("Migration lines — 2"), regHeads(p));
   assert(
@@ -15553,15 +15619,15 @@ Deno.test("root registry: on Ethereum the declared ConfigRegistry is found under
     regElsewhere(regFake()),
     { configRegistries: { mainnet: REG_CONFIG.id } },
     scan,
-    rbacNet(),
+    regNet({ network: "mainnet", chain: "ethereum" }),
   );
   const heads = regHeads(p);
   for (
     const h of [
       "Delegations in force — 1",
       "Delegation changes — 3, newest first",
-      "Config bindings — 1",
-      "Config changes — 2, newest first",
+      "Config bindings, valid — 1",
+      "Config changes, valid — 2, newest first",
     ]
   ) {
     assert(heads.includes(h), h + ": " + heads);
@@ -16454,21 +16520,22 @@ Deno.test("root registry: each record shows when it was applied, if the index sa
   );
 });
 
-Deno.test("root registry: an absent, unreadable or empty subgraph location says so and reads nothing", async () => {
-  const off = async (rbac) => {
+Deno.test("root registry: an absent, unreadable or empty registry location says so and reads nothing, the RBAC location beside it", async () => {
+  const off = async (registry) => {
     const f = regFake();
-    const data = { ...grantsData(), deploymentMigrations: regScan() };
-    if (rbac !== undefined) data.deploymentRbac = rbac;
-    const { box, done } = deploymentsRender(data, f.io);
-    await done;
+    const data = regData();
+    if (registry === undefined) delete data.deploymentRegistry;
+    else data.deploymentRegistry = registry;
+    const t = textOf(await regRender(f, data));
     assert(f.seen.length === 0, "nothing read: " + f.seen.length);
-    const t = textOf(
-      collect(box, "tabpanel").find((x) => x.dataset.tab === "registry"),
+    assert(
+      !regQueries(f.rbac).some((q) => q.includes("page: contracts(")),
+      "no delegate recognised for a registry never read",
     );
     assert(!t.includes("Read live from"), t);
     return t;
   };
-  for (const r of [undefined, null, "st0x-rbac", 5, true]) {
+  for (const r of [undefined, null, "rain-deploy-registry", 5, true]) {
     const t = await off(r);
     assert(
       t.includes(
@@ -16478,9 +16545,7 @@ Deno.test("root registry: an absent, unreadable or empty subgraph location says 
     );
   }
   const why = await off(
-    rbacData(undefined, {
-      unavailable: "could not read subgraph/networks.json",
-    }).deploymentRbac,
+    regDoc(undefined, { unavailable: "could not read subgraph/networks.json" }),
   );
   assert(
     why.includes(
@@ -16488,39 +16553,29 @@ Deno.test("root registry: an absent, unreadable or empty subgraph location says 
     ),
     why,
   );
-  const f = regFake();
-  const { box, done } = deploymentsRender(
-    { ...rbacData([]), deploymentMigrations: regScan() },
-    f.io,
-  );
-  await done;
-  const empty = textOf(
-    collect(box, "tabpanel").find((x) => x.dataset.tab === "registry"),
-  );
+  const empty = await off(regDoc([]));
   assert(
     empty.includes(
       "Registry history unavailable — the subgraph declares no networks.",
     ),
     empty,
   );
-  assert(f.seen.length === 0, "nothing read for no networks");
 });
 
 Deno.test("root registry: a network the scan gives no https endpoint is an error and is never read", async () => {
   for (const endpoint of ["http://q.example/gn", undefined]) {
     const f = regFake();
-    const p = await regPanel(
-      f,
-      undefined,
-      regScan(),
-      rbacNet({ network: "base", chain: "base", endpoint }),
-    );
+    const p = await regPanel(f, undefined, regScan(), regNet({ endpoint }));
     assert(
       regErr(p).includes("the scan gave no https endpoint for this network"),
       String(endpoint) + ": " + regErr(p),
     );
     assert(!textOf(p).includes("Reading the index"), textOf(p));
     assert(f.seen.length === 0, "never read: " + f.seen.length);
+    assert(
+      !regQueries(f.rbac).some((q) => q.includes("page: contracts(")),
+      "no delegate recognised for it",
+    );
   }
 });
 
@@ -16528,15 +16583,14 @@ Deno.test("root registry: each network is titled by its chain, the subgraph's na
   const titles = async (net) =>
     collect(await regPanel(regFake(), undefined, regScan(), net), "tok-h3")
       .map((h) => h.textContent).join(" | ");
+  const mainnet = regNet({ network: "mainnet", chain: "ethereum" });
+  const unnamed = regNet({ network: "mainnet", chain: null });
   assert((await titles(REG_NET)) === "base", await titles(REG_NET));
   assert(
-    (await titles(rbacNet())) === "ethereum (mainnet)",
-    await titles(rbacNet()),
+    (await titles(mainnet)) === "ethereum (mainnet)",
+    await titles(mainnet),
   );
-  assert(
-    (await titles(rbacNet({ chain: null }))) === "mainnet",
-    await titles(rbacNet({ chain: null })),
-  );
+  assert((await titles(unnamed)) === "mainnet", await titles(unnamed));
 });
 
 Deno.test("root registry: the scan's genesis checks the first record and labels it whatever its hex case", async () => {
@@ -16561,13 +16615,13 @@ Deno.test("root registry: the scan's ConfigRegistry is matched whatever its hex 
   const p = await regPanel(regElsewhere(regFake()), {
     configRegistries: { base: upper },
   });
-  has(p, ["Config bindings — 1", "Config changes — 2, newest first"]);
+  has(p, ["Config bindings, valid — 1", "Config changes, valid — 2, newest first"]);
   assert(!textOf(p).includes(regWord("b9")), "the other registry's binding");
   for (const a of [null, 5]) {
     const q = await regPanel(regElsewhere(regFake()), {
       configRegistries: { base: a },
     });
-    has(q, ["Config bindings — 2", "Config changes — 3, newest first"]);
+    has(q, ["Config bindings, valid — 2", "Config changes, valid — 3, newest first"]);
   }
 });
 
@@ -16628,8 +16682,7 @@ Deno.test("root registry: the page settles only once every network's registry re
           : f.io.fetch(url, init),
     };
     const { box, done } = deploymentsRender({
-      ...rbacData([REG_NET], { configRegistries: { base: REG_CONFIG.id } }),
-      deploymentMigrations: regScan(),
+      ...regData(),
       deploymentOwners: owners,
     }, io);
     await done;
