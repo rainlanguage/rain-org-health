@@ -3316,9 +3316,7 @@ function renderDeployments(document, $, data, io) {
           configBy.get(n.network) ?? null,
           headsBy.get(chain) ?? new Map(),
           rbacFor(n.network),
-        ).then((res) =>
-          regBody(slot, res, chain, endpoint, published, pins, labels),
-        ),
+        ).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)),
       );
     }
     return Promise.all(reads);
