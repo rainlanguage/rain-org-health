@@ -274,11 +274,7 @@ pub fn build_owners(
         "entries": signers,
     });
 
-    // Which clone is live is READ FROM THE CHAIN, not asserted here: the two
-    // Base clones trade places during the V4 migration, and a hardcoded
-    // active/pending pair goes stale the moment the swap lands — while the
-    // token rows on the same page keep reporting the truth from `authorizer()`.
-    let v3_clone = addr(auth_lib, "STOX_PROD_AUTHORISER");
+    // Which clone is live is READ FROM THE CHAIN, not asserted here.
     let v4_clone = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE");
     let v4_clone_ethereum = addr(v4_lib, "STOX_PROD_AUTHORISER_V4_CLONE_ETHEREUM");
     let live_note = match live_authoriser {
@@ -290,9 +286,6 @@ pub fn build_owners(
         "title": "Operational access — authoriser",
         "note": format!("Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. {live_note}"),
         "entries": [
-            entry("V3-era authoriser clone", v3_clone.clone(), "base",
-                authoriser_status(v3_clone.as_ref(), live_authoriser, "migrated"),
-                "the pre-V4 authorizer() target"),
             entry("Authoriser implementation", addr(auth_lib, "STOX_PROD_AUTHORISER_IMPL"), "base", "active", "implementation behind the clone"),
             entry("V4 authoriser clone", v4_clone.clone(), "base",
                 authoriser_status(v4_clone.as_ref(), live_authoriser, "pending"),
@@ -321,6 +314,7 @@ pub fn build_owners(
         "note": "Defined in the constants but not live control of production.",
         "entries": [
             entry("Deploy-time initial owner", addr(v4_lib, "BEACON_INITIAL_OWNER"), "", "migrated", "held the beacons at deploy; ownership since migrated to the Safe"),
+            entry("V3-era authoriser clone", addr(auth_lib, "STOX_PROD_AUTHORISER_V3_CLONE"), "base", "migrated", "the pre-V4 production authoriser clone"),
             entry("V2 receipt beacon owner", addr(overrides, "RECEIPT_BEACON_OWNER"), "base", "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
             entry("V2 vault beacon owner", addr(overrides, "VAULT_BEACON_OWNER"), "base", "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
         ],
@@ -1206,6 +1200,7 @@ mod tests {
     const AUTH_LIB: &str = r#"
         address internal constant STOX_PROD_AUTHORISER = 0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456;
         address internal constant STOX_PROD_AUTHORISER_IMPL = 0x2B4A510c3619d5E888095BFE9f95902D32dA5556;
+        address internal constant STOX_PROD_AUTHORISER_V3_CLONE = 0x7a3F5bC2e0D9e4A1b6C8d0E2f4A6b8C0d2E4f6A8;
         address internal constant GRANTEE_SERVICE_1C66 = 0x1c66D6708914C40239D54919320b4C48cAE3D1A9;
         bytes32 internal constant DEFAULT_ADMIN_ROLE = bytes32(0);
     "#;
@@ -1568,7 +1563,8 @@ mod tests {
         // All six signers.
         assert_eq!(groups[1]["entries"].as_array().unwrap().len(), 6);
         // Bricked V2 owners carry the bricked status.
-        assert_eq!(groups[3]["entries"][1]["status"], "bricked");
+        assert_eq!(groups[3]["entries"][2]["status"], "bricked");
+        assert_eq!(groups[3]["entries"][3]["status"], "bricked");
         // Without a live authorizer() reading no clone claims to be active.
         let auth = groups[2]["entries"].as_array().unwrap();
         let v4 = auth
@@ -1576,6 +1572,143 @@ mod tests {
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "base")
             .unwrap();
         assert_eq!(v4["status"], "unknown");
+    }
+
+    const V3_CLONE: &str = "0x7a3F5bC2e0D9e4A1b6C8d0E2f4A6b8C0d2E4f6A8";
+    const V4_CLONE_BASE: &str = "0x315b16faa6eE413faBCa877d3851B3818369f0cD";
+
+    fn owners_from_auth_lib(auth_lib: &str, live: Option<&str>) -> serde_json::Value {
+        build_owners(
+            "o",
+            "r",
+            &OwnerSources {
+                safe_lib: SAFE_LIB,
+                auth_lib,
+                v4_lib: V4_LIB,
+                overrides: OVERRIDES,
+            },
+            None,
+            live,
+        )
+        .unwrap()
+    }
+
+    fn group_entries<'a>(v: &'a serde_json::Value, id: &str) -> &'a Vec<serde_json::Value> {
+        v["groups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|g| g["id"] == id)
+            .unwrap()["entries"]
+            .as_array()
+            .unwrap()
+    }
+
+    fn owner_rows(v: &serde_json::Value) -> Vec<(String, String, String)> {
+        v["groups"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .flat_map(|g| {
+                g["entries"].as_array().unwrap().iter().map(move |e| {
+                    (
+                        g["id"].as_str().unwrap().to_string(),
+                        e["role"].as_str().unwrap().to_string(),
+                        e["network"].as_str().unwrap().to_string(),
+                    )
+                })
+            })
+            .collect()
+    }
+
+    #[test]
+    fn the_operational_access_group_holds_the_implementation_and_v4_clone_rows() {
+        // AUTH_LIB still declares STOX_PROD_AUTHORISER and _IMPL as literals.
+        for live in [None, Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456")] {
+            let v = owners_from_auth_lib(AUTH_LIB, live);
+            let rows: Vec<(&str, &str)> = group_entries(&v, "authoriser")
+                .iter()
+                .map(|e| (e["role"].as_str().unwrap(), e["network"].as_str().unwrap()))
+                .collect();
+            assert_eq!(
+                rows,
+                [
+                    ("Authoriser implementation", "base"),
+                    ("V4 authoriser clone", "base"),
+                    ("V4 authoriser clone", "ethereum")
+                ],
+                "live reading {live:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn the_historical_group_carries_the_v3_clone_as_migrated_on_base() {
+        for live in [None, Some(V4_CLONE_BASE), Some(V3_CLONE)] {
+            let v = owners_from_auth_lib(AUTH_LIB, live);
+            let hist = group_entries(&v, "historical");
+            let roles: Vec<&str> = hist.iter().map(|e| e["role"].as_str().unwrap()).collect();
+            assert_eq!(
+                roles,
+                [
+                    "Deploy-time initial owner",
+                    "V3-era authoriser clone",
+                    "V2 receipt beacon owner",
+                    "V2 vault beacon owner"
+                ]
+            );
+            assert_eq!(hist[1]["address"], V3_CLONE);
+            assert_eq!(hist[1]["network"], "base");
+            assert_eq!(hist[1]["status"], "migrated", "live reading {live:?}");
+            assert!(
+                hist[1]["note"].as_str().is_some_and(|n| !n.is_empty()),
+                "the row says what the address was"
+            );
+        }
+    }
+
+    #[test]
+    fn the_v3_clone_row_address_is_null_when_its_constant_is_absent() {
+        let auth_lib: String = AUTH_LIB
+            .lines()
+            .filter(|l| !l.contains("STOX_PROD_AUTHORISER_V3_CLONE"))
+            .collect::<Vec<_>>()
+            .join("\n");
+        let v = owners_from_auth_lib(&auth_lib, None);
+        let row = &group_entries(&v, "historical")[1];
+        assert_eq!(row["role"], "V3-era authoriser clone");
+        assert!(row["address"].is_null(), "got {}", row["address"]);
+        assert_eq!(row["network"], "base");
+        assert_eq!(row["status"], "migrated");
+    }
+
+    #[test]
+    fn an_aliased_stox_prod_authoriser_adds_no_row() {
+        let auth_lib = r#"
+            address internal constant STOX_PROD_AUTHORISER = LibProdDeployV4.STOX_PROD_AUTHORISER_V4_CLONE;
+            address internal constant STOX_PROD_AUTHORISER_V3_CLONE = 0x7a3F5bC2e0D9e4A1b6C8d0E2f4A6b8C0d2E4f6A8;
+        "#;
+        let v = owners_from_auth_lib(auth_lib, Some(V4_CLONE_BASE));
+        let mut expected: Vec<(&str, String, &str)> = vec![
+            ("safe", "Base Safe".into(), "base"),
+            ("safe", "Ethereum Safe".into(), "ethereum"),
+        ];
+        expected.extend((1..=6).map(|i| ("signers", format!("Signer {i}"), "")));
+        expected.extend([
+            ("authoriser", "Authoriser implementation".into(), "base"),
+            ("authoriser", "V4 authoriser clone".into(), "base"),
+            ("authoriser", "V4 authoriser clone".into(), "ethereum"),
+            ("historical", "Deploy-time initial owner".into(), ""),
+            ("historical", "V3-era authoriser clone".into(), "base"),
+            ("historical", "V2 receipt beacon owner".into(), "base"),
+            ("historical", "V2 vault beacon owner".into(), "base"),
+        ]);
+        let expected: Vec<(String, String, String)> = expected
+            .into_iter()
+            .map(|(g, r, n)| (g.to_string(), r, n.to_string()))
+            .collect();
+        assert_eq!(owner_rows(&v), expected);
+        assert_eq!(group_entries(&v, "historical")[1]["address"], V3_CLONE);
     }
 
     /// The whole point of reading `authorizer()`: whichever clone the vaults
