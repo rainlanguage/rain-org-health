@@ -2739,8 +2739,8 @@ function renderDeployments(document, $, data, io) {
   };
   // Root registry: who may write under whom in the ConfigRegistry and the
   // MigrationRegistry, and every binding and record written, read live from
-  // the same index as Role changes. A name, namespace or migration is labelled
-  // only by a preimage the index verified from the write's MetaV1_2.
+  // the registry subgraph. A name, namespace or migration is labelled only by
+  // a preimage the index verified from the write's MetaV1_2.
   const regLabel = (labels, id) =>
     typeof id === "string" && Object.prototype.hasOwnProperty.call(labels, id.toLowerCase()) && typeof labels[id.toLowerCase()] === "string"
       ? labels[id.toLowerCase()]
@@ -3420,7 +3420,7 @@ function renderDeployments(document, $, data, io) {
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
     sink = panels.registry;
-    const registryDone = renderRegistry(data.deploymentRbac, data.deploymentMigrations);
+    const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations);
     show(hashTab() || TABS[0][0]);
     return Promise.all([rbacDone, registryDone]);
   }
@@ -3498,7 +3498,7 @@ function renderDeployments(document, $, data, io) {
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
   sink = panels.registry;
-  const registryDone = renderRegistry(data.deploymentRbac, data.deploymentMigrations);
+  const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations);
   show(hashTab() || TABS[0][0]);
   return Promise.all([rbacDone, registryDone]);
 }
