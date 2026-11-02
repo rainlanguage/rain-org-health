@@ -14631,9 +14631,9 @@ Deno.test("root registry: a delegate that is neither a Safe nor a timelock in th
     "nothing recognised without the index's Safe and timelock",
   );
   assert(
-    collect(collect(q, "rbac-net")[0], "rbac-ideal-gap").map(textOf).join(
-      " | ",
-    ) ===
+    collect(collect(q, "rbac-net")[0], "rbac-ideal-gap").map((n) =>
+      n.textContent
+    ).join(" | ") ===
       "The RBAC index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised.",
     textOf(q),
   );
@@ -16521,7 +16521,7 @@ Deno.test("root registry: each record shows when it was applied, if the index sa
 });
 
 Deno.test("root registry: an absent, unreadable or empty registry location says so and reads nothing, the RBAC location beside it", async () => {
-  const off = async (registry) => {
+  const off = async (registry, located = false) => {
     const f = regFake();
     const data = regData();
     if (registry === undefined) delete data.deploymentRegistry;
@@ -16532,7 +16532,7 @@ Deno.test("root registry: an absent, unreadable or empty registry location says 
       !regQueries(f.rbac).some((q) => q.includes("page: contracts(")),
       "no delegate recognised for a registry never read",
     );
-    assert(!t.includes("Read live from"), t);
+    assert(t.includes("Read live from") === located, t);
     return t;
   };
   for (const r of [undefined, null, "rain-deploy-registry", 5, true]) {
@@ -16553,7 +16553,7 @@ Deno.test("root registry: an absent, unreadable or empty registry location says 
     ),
     why,
   );
-  const empty = await off(regDoc([]));
+  const empty = await off(regDoc([]), true);
   assert(
     empty.includes(
       "Registry history unavailable — the subgraph declares no networks.",
