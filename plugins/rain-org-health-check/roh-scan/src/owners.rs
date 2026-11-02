@@ -1658,6 +1658,10 @@ mod tests {
             assert_eq!(hist[1]["address"], V3_CLONE);
             assert_eq!(hist[1]["network"], "base");
             assert_eq!(hist[1]["status"], "migrated", "live reading {live:?}");
+            assert!(
+                hist[1]["note"].as_str().is_some_and(|n| !n.is_empty()),
+                "the row says what the address was"
+            );
         }
     }
 
