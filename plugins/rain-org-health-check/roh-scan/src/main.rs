@@ -2772,7 +2772,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             ))
             .map(|path| gh_file("OpenZeppelin", "openzeppelin-contracts", &path))
             .unwrap_or_default();
-            rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer, &access_control])
+            rbac::role_names(&[
+                &auth,
+                &timelock,
+                &orchestrator,
+                &authorizer,
+                &access_control,
+            ])
         };
 
         // One session per chain, so every `hasRole` for a chain hits the same

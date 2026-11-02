@@ -868,7 +868,11 @@ forge-std = "1.9.7"
             "[dependencies]\nforge-std = \"1.9.7\"\n",
             "[dependencies]\n\"@openzeppelin-contracts\" = { git = \"https://x\" }\n",
         ] {
-            assert_eq!(openzeppelin_access_control_path(foundry), None, "{foundry:?}");
+            assert_eq!(
+                openzeppelin_access_control_path(foundry),
+                None,
+                "{foundry:?}"
+            );
         }
     }
 }
