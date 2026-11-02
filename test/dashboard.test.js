@@ -17063,6 +17063,81 @@ Deno.test("root registry: an RBAC index that cannot be read leaves every delegat
   }
 });
 
+// Each recognition state that writes a note when a delegation is in force.
+const REG_NOTE_STATES = [
+  [
+    "Delegate recognition was not checked on this network — this scan carries no RBAC subgraph location.",
+    (_f, data) => delete data.deploymentRbac,
+  ],
+  [
+    "Delegate recognition was not checked on this network — the RBAC subgraph does not index this network.",
+    (_f, data) => data.deploymentRbac.networks = [],
+  ],
+  [
+    "Delegate recognition was not checked on this network — the RBAC index read failed: indexer down.",
+    (f) => f.rbac.meta = { errors: [{ message: "indexer down" }] },
+  ],
+  [
+    "The RBAC index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised.",
+    (f) => f.rbac.rows.contracts = [],
+  ],
+];
+async function regNotes(delegations, setup) {
+  const f = regFake();
+  delegations(f);
+  const data = regData();
+  setup(f, data);
+  const p = await regRender(f, data);
+  const notes = collect(collect(p, "rbac-net")[0], "rbac-ideal-gap").map((n) =>
+    n.textContent
+  );
+  return { p, notes };
+}
+const regNoneInForce = (p, label) => {
+  assert(regHeads(p).includes("Delegations in force — 0"), label);
+  assert(
+    regGroup(p, "Delegations in force").textContent ===
+      "No account has approved a delegate in either registry.",
+    label + ": " + textOf(p),
+  );
+};
+
+Deno.test("root registry: a network with no delegation shows no recognition note, checked or not", async () => {
+  for (const [note, setup] of REG_NOTE_STATES) {
+    const control = await regNotes(() => {}, setup);
+    assert(control.notes.join(" | ") === note, control.notes.join(" | "));
+    const { p, notes } = await regNotes((f) => {
+      f.rows.registryDelegates = [];
+      f.rows.registryDelegateChanges = [];
+    }, setup);
+    regNoneInForce(p, note);
+    assert(notes.length === 0, note + ": " + notes.join(" | "));
+    assert(
+      regHeads(p).includes("Delegation changes — 0, newest first"),
+      regHeads(p),
+    );
+  }
+});
+
+Deno.test("root registry: a network whose only delegate is revoked shows no recognition note, checked or not", async () => {
+  for (const [note, setup] of REG_NOTE_STATES) {
+    const { p, notes } = await regNotes((f) => {
+      f.rows.registryDelegates = f.rows.registryDelegates.filter((d) =>
+        d.approved === false
+      );
+      f.rows.registryDelegateChanges = f.rows.registryDelegateChanges.filter(
+        (c) => c.registryDelegate.registry === REG_CONFIG,
+      );
+    }, setup);
+    regNoneInForce(p, note);
+    assert(notes.length === 0, note + ": " + notes.join(" | "));
+    const changes = collect(regGroup(p, "Delegation changes"), "own-row").map(
+      (r) => collect(r, "own-chip")[0].textContent,
+    );
+    assert(changes.join(",") === "revoked,approved", note + ": " + changes);
+  }
+});
+
 Deno.test("root registry: an RBAC index answering with an empty error keeps the network's history, every delegate not checked", async () => {
   const failed = "the RBAC index read failed: ";
   for (const body of EMPTY_ERRORS) {
