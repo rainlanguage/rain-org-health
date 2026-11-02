@@ -8,6 +8,10 @@
 //! per-network query URLs, and the role-id → name map, whose preimages live in
 //! Solidity sources rather than in any log.
 //!
+//! The "Root registry" tab reads rain.deploy's registry subgraph, located the
+//! same way from that repo's workflow and `networks.json`; see
+//! [`build_location`].
+//!
 //! Everything that locates the subgraph is read from the deploy repo, not typed
 //! here: the networks are `subgraph/networks.json`'s keys, and the deployment
 //! name and query base are the `SUBGRAPH_NAME` / `ORMI_QUERY_BASE` its deploy
@@ -173,17 +177,17 @@ pub fn ideal_role_names(json: &str) -> Vec<(String, String)> {
     out
 }
 
-/// The `deploymentRbac` document.
+/// Where a repo's subgraph is published per network: the location part of the
+/// `deploymentRbac` and `deploymentRegistry` documents.
 ///
-/// `source` / `networks` are `None` when the deploy repo's workflow or
-/// `networks.json` could not be read; the document then says which, rather than
-/// listing no networks.
-pub fn build_rbac(
+/// `source` / `networks` are `None` when the repo's workflow or `networks.json`
+/// could not be read; the document then says which, rather than listing no
+/// networks.
+pub fn build_location(
     org: &str,
     repo: &str,
     source: Option<&SubgraphSource>,
     networks: Option<&[String]>,
-    names: &[(String, String)],
 ) -> Value {
     let mut doc = json!({
         "org": org,
@@ -212,6 +216,21 @@ pub fn build_rbac(
             })
             .collect::<Vec<_>>(),
     );
+    doc
+}
+
+/// The `deploymentRbac` document: [`build_location`] plus the role names.
+pub fn build_rbac(
+    org: &str,
+    repo: &str,
+    source: Option<&SubgraphSource>,
+    networks: Option<&[String]>,
+    names: &[(String, String)],
+) -> Value {
+    let mut doc = build_location(org, repo, source, networks);
+    if source.is_none() || networks.is_none() {
+        return doc;
+    }
     doc["roleNames"] = Value::Object(
         names
             .iter()
