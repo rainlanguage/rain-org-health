@@ -5995,9 +5995,66 @@ Deno.test("deployments: an unresolved address renders as not-found, not dropped"
   );
 });
 
-Deno.test("deployments: no owner data shows an empty state and no groups", () => {
+const panelsByTab = (box) =>
+  Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
+const groupHeads = (node) =>
+  collect(node, "own-grouphead").map((h) => h.textContent);
+const OWNERS_UNAVAILABLE =
+  "Owner data unavailable — the scan could not read the st0x.deploy constants.";
+
+Deno.test("deployments: the Historical & bricked group is on the Known bad tab, the other owner groups on Safe & ownership", () => {
+  const panels = panelsByTab(deploymentsBox(OWNERS));
+  assert(
+    groupHeads(panels.knownbad).join("|") === "Historical & bricked",
+    "Known bad holds the historical group alone: " +
+      groupHeads(panels.knownbad).join("|"),
+  );
+  assert(
+    collect(panels.knownbad, "own-role").map((r) => r.textContent).join() ===
+        "V2 receipt beacon owner" &&
+      collect(panels.knownbad, "own-status-bricked").length === 1,
+    "with its bricked row",
+  );
+  assert(
+    groupHeads(panels.safe).join("|") ===
+      "Upgrade authority — token-owner Safe|Safe signers (3-of-6)|Operational access — authoriser",
+    "Safe & ownership keeps every other group, in order, and not the historical one: " +
+      groupHeads(panels.safe).join("|"),
+  );
+  assert(
+    collect(panels.safe, "own-status-bricked").length === 0,
+    "no bricked row left on Safe & ownership",
+  );
+});
+
+Deno.test("deployments: an owner group is filed on Known bad by its id, not its title", () => {
+  const data = structuredClone(OWNERS);
+  const groups = data.deploymentOwners.groups;
+  groups[3].title = "Retired";
+  groups[0].title = "Historical & bricked";
+  const panels = panelsByTab(deploymentsBox(data));
+  assert(
+    groupHeads(panels.knownbad).join("|") === "Retired",
+    "the id historical group moves whatever it is titled: " +
+      groupHeads(panels.knownbad).join("|"),
+  );
+  assert(
+    groupHeads(panels.safe)[0] === "Historical & bricked",
+    "a non-historical id stays on Safe & ownership whatever it is titled",
+  );
+});
+
+Deno.test("deployments: no owner data says so on both Safe & ownership and Known bad, with no groups", () => {
   const box = deploymentsBox({ deploymentOwners: null });
-  assert(collect(box, "empty").length === 1, "empty-state message shown");
+  const panels = panelsByTab(box);
+  for (const tab of ["safe", "knownbad"]) {
+    const empty = collect(panels[tab], "empty").map((e) => e.textContent);
+    assert(
+      empty.length === 1 && empty[0] === OWNERS_UNAVAILABLE,
+      tab + ": the unavailable message, once: " + empty.join("|"),
+    );
+  }
+  assert(collect(box, "empty").length === 2, "and nowhere else");
   assert(collect(box, "own-group").length === 0, "no owner groups rendered");
 });
 
@@ -6401,7 +6458,14 @@ Deno.test("deployments: the grants section renders even when the owner constants
   const d = grantsData();
   d.deploymentOwners = null;
   const box = deploymentsBox(d);
-  assert(collect(box, "empty").length === 1, "owners report themselves absent");
+  const panels = panelsByTab(box);
+  assert(
+    ["safe", "knownbad"].every((t) =>
+      collect(panels[t], "empty").map((e) => e.textContent).join("|") ===
+        OWNERS_UNAVAILABLE
+    ) && collect(box, "empty").length === 2,
+    "owners report themselves absent on Safe & ownership and Known bad",
+  );
   assert(
     collect(box, "own-role").some((r) =>
       r.textContent === "GRANTEE_SERVICE_1C66"
@@ -6945,14 +7009,18 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
   assert(
-    btns.length === 6,
-    "six sub-tabs: " + btns.map((b) => b.textContent).join(","),
+    btns.length === 7,
+    "seven sub-tabs: " + btns.map((b) => b.textContent).join(","),
   );
   assert(
     btns.map((b) => b.dataset.tab).join(",") ===
-      "safe,contracts,rbac,held,registry,migrations",
-    "tabs in order safe,contracts,rbac,held,registry,migrations: " +
+      "safe,contracts,rbac,held,registry,migrations,knownbad",
+    "tabs in order safe,contracts,rbac,held,registry,migrations,knownbad: " +
       btns.map((b) => b.dataset.tab).join(","),
+  );
+  assert(
+    btns[6].textContent === "Known bad",
+    "the last tab reads Known bad: " + btns[6].textContent,
   );
   // Exactly one active, and it is the first — a page that opens with none
   // active looks broken, and one that opens with both looks like no tabs.
@@ -6963,7 +7031,7 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   );
 
   const panels = collect(box, "tabpanel");
-  assert(panels.length === 6, "six panels");
+  assert(panels.length === 7, "seven panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
   assert(
     !byTab.safe.classList.contains("tab-hidden"),
@@ -6984,6 +7052,10 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   assert(
     byTab.migrations.classList.contains("tab-hidden"),
     "migrations panel hidden on load",
+  );
+  assert(
+    byTab.knownbad.classList.contains("tab-hidden"),
+    "known bad panel hidden on load",
   );
 });
 
