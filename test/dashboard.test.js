@@ -16863,7 +16863,8 @@ Deno.test("root registry: registry rows come from the registry index and delegat
   const kinds = regKindReads(f.rbac);
   assert(
     kinds.length === 1 && kinds[0].url === regRbacUrl("base") &&
-      JSON.parse(kinds[0].init.body).query.includes("block: {number: 777}"),
+      JSON.parse(kinds[0].init.body).query.includes("block: {number: 777}") &&
+      JSON.parse(kinds[0].init.body).query.includes("{ id kind }"),
     kinds.map((k) => k.url + " " + k.init.body).join(" | "),
   );
   const rows = collect(regGroup(p, "Delegations in force"), "reg-delegate");
@@ -16883,6 +16884,42 @@ Deno.test("root registry: registry rows come from the registry index and delegat
     regQueries(f.rbac).some((q) => q.includes("page: roles(")) &&
       !reg.some((q) => q.includes("page: roles(")),
     "role changes still read the RBAC index",
+  );
+});
+
+Deno.test("root registry: with or without the owners, delegate kinds come from the RBAC index", async () => {
+  for (const owners of [OWNERS.deploymentOwners, null]) {
+    const why = owners ? "owners: " : "no owners: ";
+    const f = regFake();
+    const p = await regRender(f, { ...regData(), deploymentOwners: owners });
+    const kinds = regKindReads(f.rbac);
+    assert(
+      kinds.length === 1 && kinds[0].url === regRbacUrl("base"),
+      why + kinds.map((k) => k.url).join(" | "),
+    );
+    assert(
+      !regQueries(f).some((q) => q.includes("page: contracts(")),
+      why + "the registry index is never asked for kinds",
+    );
+    const safe = collect(regGroup(p, "Delegations in force"), "reg-delegate")
+      .find((r) => textOf(r).includes(REG_SAFE));
+    assert(
+      collect(safe, "own-chip").map((c) => c.textContent).includes(
+        "token-owner Safe",
+      ) && collect(safe, "reg-stray").length === 0,
+      why + textOf(safe),
+    );
+  }
+});
+
+Deno.test("root registry: the tab says delegates are recognised from the same network's RBAC index", async () => {
+  const p = await regPanel(regFake());
+  const sub = collect(p, "own-sub")[0];
+  assert(
+    sub.textContent.includes(
+      "A delegate is recognised as a token-owner Safe or governance timelock from the RBAC index for the same network.",
+    ),
+    sub.textContent,
   );
 });
 
@@ -17024,6 +17061,19 @@ Deno.test("root registry: without a usable RBAC location every delegate is not c
     });
     assert(regKindReads(f.rbac).length === 0, why);
   }
+});
+
+Deno.test("root registry: an RBAC network entry that is not an object locates no network, even one the registry leaves unnamed", async () => {
+  const { f } = await regUnchecked(
+    "the RBAC subgraph does not index this network",
+    (_f, data) => {
+      data.deploymentRegistry.networks = [
+        { chain: "base", endpoint: regUrl("base") },
+      ];
+      data.deploymentRbac.networks = [5, "base", true];
+    },
+  );
+  assert(regKindReads(f.rbac).length === 0, "no RBAC index read");
 });
 
 Deno.test("root registry: an RBAC index that cannot be read leaves every delegate not checked, with the reason", async () => {
@@ -17242,11 +17292,11 @@ Deno.test("root registry: config bindings split valid from corrupted, each corru
     binding("aa", "VALID"),
   );
   const p = await regPanel(f);
-  const heads = regHeads(p);
+  const heads = regHeads(p).split(" | ");
   assert(
     heads.includes("Config bindings, valid — 2") &&
       heads.includes("Config bindings, corrupted — 9"),
-    heads,
+    heads.join(" | "),
   );
   const valid = collect(regGroup(p, "Config bindings, valid"), "reg-binding");
   assert(
