@@ -183,7 +183,8 @@ pub fn build_owners(
     onchain: Option<&OnChainSafe>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
-    let (safe_lib, v4_lib, overrides) = (src.safe_lib, src.v4_lib, src.overrides);
+    let (safe_lib, auth_lib, v4_lib, overrides) =
+        (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
     // Anchor: without the Base Safe there is nothing meaningful to show.
@@ -312,6 +313,7 @@ pub fn build_owners(
         "note": "Defined in the constants but not live control of production.",
         "entries": [
             entry("Deploy-time initial owner", addr(v4_lib, "BEACON_INITIAL_OWNER"), "", "migrated", "held the beacons at deploy; ownership since migrated to the Safe"),
+            entry("V3-era authoriser clone", addr(auth_lib, "STOX_PROD_AUTHORISER_V3_CLONE"), "base", "migrated", "the pre-V4 production authoriser clone"),
             entry("V2 receipt beacon owner", addr(overrides, "RECEIPT_BEACON_OWNER"), "base", "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
             entry("V2 vault beacon owner", addr(overrides, "VAULT_BEACON_OWNER"), "base", "bricked", "owned by the token contract itself — the V2 beacon can no longer be upgraded"),
         ],
