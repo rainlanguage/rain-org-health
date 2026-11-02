@@ -2765,15 +2765,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 deploy_repo,
                 "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
             );
-            let mut names = rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer]);
-            let ideal_names =
-                rbac::ideal_role_names(&gh_file(deploy_org, deploy_repo, "ideal-roles.json"));
-            for (id, name) in ideal_names {
-                if !names.iter().any(|(i, _)| *i == id) {
-                    names.push((id, name));
-                }
-            }
-            names
+            let access_control = gh_file(
+                "OpenZeppelin",
+                "openzeppelin-contracts",
+                "contracts/access/AccessControl.sol?ref=v5.7.0",
+            );
+            rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer, &access_control])
         };
 
         // One session per chain, so every `hasRole` for a chain hits the same
