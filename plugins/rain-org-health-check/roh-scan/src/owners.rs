@@ -286,6 +286,7 @@ pub fn build_owners(
         "title": "Operational access — authoriser",
         "note": format!("Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. {live_note}"),
         "entries": [
+            entry("Authoriser implementation", addr(auth_lib, "STOX_PROD_AUTHORISER_IMPL"), "base", "active", "implementation behind the clone"),
             entry("V4 authoriser clone", v4_clone.clone(), "base",
                 authoriser_status(v4_clone.as_ref(), live_authoriser, "pending"),
                 "the V4 upgrade rewires every vault onto this"),
@@ -1621,7 +1622,7 @@ mod tests {
     }
 
     #[test]
-    fn the_operational_access_group_holds_exactly_the_v4_clone_rows() {
+    fn the_operational_access_group_holds_the_implementation_and_v4_clone_rows() {
         // AUTH_LIB still declares STOX_PROD_AUTHORISER and _IMPL as literals.
         for live in [None, Some("0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456")] {
             let v = owners_from_auth_lib(AUTH_LIB, live);
@@ -1632,6 +1633,7 @@ mod tests {
             assert_eq!(
                 rows,
                 [
+                    ("Authoriser implementation", "base"),
                     ("V4 authoriser clone", "base"),
                     ("V4 authoriser clone", "ethereum")
                 ],
@@ -1693,6 +1695,7 @@ mod tests {
         ];
         expected.extend((1..=6).map(|i| ("signers", format!("Signer {i}"), "")));
         expected.extend([
+            ("authoriser", "Authoriser implementation".into(), "base"),
             ("authoriser", "V4 authoriser clone".into(), "base"),
             ("authoriser", "V4 authoriser clone".into(), "ethereum"),
             ("historical", "Deploy-time initial owner".into(), ""),
