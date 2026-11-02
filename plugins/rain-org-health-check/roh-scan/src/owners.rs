@@ -1345,7 +1345,9 @@ mod tests {
                 address[] memory owners = new address[](3);
                 owners [ 0 ]=OWNER_A ;
                 owners[1]\t=\tOWNER_B;
-                owners[2]
+                owners[
+                    2
+                ]
                     = OWNER_C;
                 return owners;
             }
@@ -1495,6 +1497,25 @@ mod tests {
                     owners[0] = OWNER_B;
                     return owners;
                 }
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
+    }
+
+    #[test]
+    fn expected_owners_reads_the_first_declaration_with_a_body() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+            function expectedOwners() internal pure returns (address[] memory) {
+                address[] memory owners = new address[](1);
+                owners[0] = OWNER_A;
+                return owners;
+            }
+            function expectedOwners(uint256 chainId) internal pure returns (address[] memory) {
+                address[] memory owners = new address[](1);
+                owners[0] = OWNER_B;
+                return owners;
             }
         ";
         assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
