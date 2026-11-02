@@ -654,4 +654,121 @@ jobs:
             assert_eq!(a, &Value::from(REGISTRY_CONFIG_V5.to_lowercase()), "{n}");
         }
     }
+
+    fn rbac_doc_with_address_names() -> Value {
+        let mut d = build_rbac(
+            "o",
+            "r",
+            Some(&src()),
+            Some(&["base".to_string()]),
+            &[("0xaa".to_string(), "MINT".to_string())],
+        );
+        d["configRegistries"] = json!({"base": "0x2222222222222222222222222222222222222222"});
+        d["addressNames"] = json!({
+            "base": {
+                "0x5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a": [
+                    {"name": "TOKEN_OWNER_SAFE", "contract": "LibSafeInvariants"}
+                ]
+            },
+            "ethereum": {},
+        });
+        d["addressNamesUnread"] = json!(["src/lib/LibUnread.sol"]);
+        d
+    }
+
+    #[test]
+    fn registry_doc_is_rain_deploys_location_its_config_registries_and_the_rbac_docs_address_names(
+    ) {
+        let networks_src = registry_networks_json();
+        let rbac_doc = rbac_doc_with_address_names();
+        let mut want = build_location(
+            "rainlanguage",
+            "rain.deploy",
+            parse_deploy_workflow(REGISTRY_WORKFLOW).as_ref(),
+            parse_networks(&networks_src).as_deref(),
+        );
+        want["configRegistries"] = Value::Object(
+            REGISTRY_NETWORKS
+                .iter()
+                .map(|(n, _, _)| {
+                    (
+                        n.to_string(),
+                        Value::from(REGISTRY_CONFIG_V5.to_lowercase()),
+                    )
+                })
+                .collect(),
+        );
+        want["addressNames"] = rbac_doc["addressNames"].clone();
+        let d = build_registry(REGISTRY_WORKFLOW, &networks_src, &rbac_doc);
+        assert_eq!(d, want);
+        assert_eq!(d["subgraph"], "rain-deploy-registry");
+        assert_eq!(d["networks"].as_array().map(Vec::len), Some(9));
+    }
+
+    #[test]
+    fn registry_doc_lists_a_network_without_a_v5_config_registry_and_declares_none_for_it() {
+        let networks_src = json!({
+            "base": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
+            "flare": {"MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31"}},
+        })
+        .to_string();
+        let d = build_registry(REGISTRY_WORKFLOW, &networks_src, &json!({}));
+        assert_eq!(
+            d["networks"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|n| n["network"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            vec!["base", "flare"]
+        );
+        assert_eq!(
+            d["configRegistries"],
+            json!({"base": REGISTRY_CONFIG_V5.to_lowercase()})
+        );
+    }
+
+    #[test]
+    fn registry_doc_carries_no_address_names_when_the_rbac_doc_has_none() {
+        let networks_src = registry_networks_json();
+        let mut located = rbac_doc_with_address_names();
+        located.as_object_mut().unwrap().remove("addressNames");
+        for rbac_doc in [
+            json!({}),
+            Value::Null,
+            build_rbac("o", "r", None, None, &[]),
+            located,
+        ] {
+            let d = build_registry(REGISTRY_WORKFLOW, &networks_src, &rbac_doc);
+            assert!(d.get("addressNames").is_none(), "{rbac_doc}");
+            assert_eq!(d["networks"].as_array().map(Vec::len), Some(9));
+        }
+    }
+
+    #[test]
+    fn registry_doc_says_which_rain_deploy_source_was_unread() {
+        let networks_src = registry_networks_json();
+        let workflow_unread = "could not read SUBGRAPH_NAME / ORMI_QUERY_BASE from .github/workflows/deploy-subgraph.yaml";
+        let networks_unread = "could not read subgraph/networks.json";
+        let plain_http = REGISTRY_WORKFLOW.replace("https://", "http://");
+        let name_only = "SUBGRAPH_NAME: rain-deploy-registry\n";
+        for (workflow, networks, why, subgraph) in [
+            ("", networks_src.as_str(), workflow_unread, None),
+            (name_only, networks_src.as_str(), workflow_unread, None),
+            (plain_http.as_str(), networks_src.as_str(), workflow_unread, None),
+            ("", "", workflow_unread, None),
+            (REGISTRY_WORKFLOW, "", networks_unread, Some("rain-deploy-registry")),
+            (REGISTRY_WORKFLOW, "[1]", networks_unread, Some("rain-deploy-registry")),
+            (REGISTRY_WORKFLOW, "not json", networks_unread, Some("rain-deploy-registry")),
+        ] {
+            let d = build_registry(workflow, networks, &rbac_doc_with_address_names());
+            let case = format!("{workflow:?} / {networks:?}");
+            assert_eq!(d["org"], "rainlanguage", "{case}");
+            assert_eq!(d["repo"], "rain.deploy", "{case}");
+            assert_eq!(d["tag"], "prod", "{case}");
+            assert_eq!(d["unavailable"], why, "{case}");
+            assert_eq!(d.get("subgraph").and_then(Value::as_str), subgraph, "{case}");
+            assert!(d.get("networks").is_none(), "{case}");
+        }
+    }
 }
