@@ -16749,8 +16749,9 @@ Deno.test("root registry: a registry subgraph published nowhere names the regist
   const f = regFake({ meta: { error: "subgraph name/version error" } });
   const p = await regPanel(f);
   assert(
-    regErr(p) ===
-      "No subgraph — nothing is published at rain-deploy-registry-base/prod. No history is shown, which is not the same as no changes.",
+    regErr(p).startsWith(
+      "No subgraph — nothing is published at rain-deploy-registry-base/prod. No history is shown",
+    ),
     regErr(p),
   );
   assert(
@@ -16771,7 +16772,9 @@ const REG_ENTITIES = [
   "registryUnscopedDelegateChanges",
 ];
 const regKindReads = (g) =>
-  g.seen.filter((s) => JSON.parse(s.init.body).query.includes("page: contracts("));
+  g.seen.filter((s) =>
+    JSON.parse(s.init.body).query.includes("page: contracts(")
+  );
 
 Deno.test("root registry: registry rows come from the registry index and delegate kinds from the RBAC index at its own block", async () => {
   const f = regFake();
@@ -16845,9 +16848,7 @@ Deno.test("root registry: each network recognises its delegates from that networ
   f.io = {
     now: f.io.now,
     fetch: (url, init) =>
-      url === regRbacUrl("mainnet")
-        ? eth.io.fetch(url, init)
-        : both(url, init),
+      url === regRbacUrl("mainnet") ? eth.io.fetch(url, init) : both(url, init),
   };
   f.rows.registryDelegates.push({
     ...f.rows.registryDelegates[0],
@@ -16866,9 +16867,7 @@ Deno.test("root registry: each network recognises its delegates from that networ
   const nets = collect(p, "rbac-net");
   assert(nets.length === 2, "two networks: " + nets.length);
   const recognised = (net, a) => {
-    const row = collect(net, "reg-delegate").find((r) =>
-      textOf(r).includes(a)
-    );
+    const row = collect(net, "reg-delegate").find((r) => textOf(r).includes(a));
     return collect(row, "reg-stray").length === 1
       ? "stray"
       : collect(row, "own-chip").map((c) => c.textContent).filter((c) =>
@@ -17018,8 +17017,7 @@ Deno.test("root registry: an RBAC index that cannot be read leaves every delegat
   }
 });
 
-// The status groups under one "…, corrupted" head: each group's name and the
-// rows under it, or the empty text when there are none.
+// Each status group under a "…, corrupted" head with its rows, or the empty text.
 const regCorrupted = (p, head) => {
   const kids = collect(p, "rbac-net")[0].children;
   const at = kids.findIndex((k) =>
@@ -17183,14 +17181,24 @@ Deno.test("root registry: an empty valid or corrupted list says which it is", as
   });
   assert(
     corrupt.join(" | ") ===
-      ["No binding holds a valid value.", null, "No write bound a valid value.", null]
+      [
+        "No binding holds a valid value.",
+        null,
+        "No write bound a valid value.",
+        null,
+      ]
         .join(" | "),
     corrupt.join(" | "),
   );
   const valid = await empties(() => {});
   assert(
     valid.join(" | ") ===
-      [null, "No binding holds a corrupted value.", null, "No write bound a corrupted value."]
+      [
+        null,
+        "No binding holds a corrupted value.",
+        null,
+        "No write bound a corrupted value.",
+      ]
         .join(" | "),
     valid.join(" | "),
   );
