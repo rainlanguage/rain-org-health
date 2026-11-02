@@ -1433,17 +1433,18 @@ function renderDeployments(document, $, data, io) {
     }
     if (!body || typeof body !== "object") return { error: status || "the endpoint answered with something that is not a JSON object" };
     // `errors` beside `data` is a failure, not a partial answer.
+    // Callers test `error` truthily, so an empty message would read as success.
+    const empty = "the endpoint answered with an empty error";
     if ("errors" in body) {
       const errs = Array.isArray(body.errors) ? body.errors : [body.errors];
       return {
-        error: errs
-          .map((e) => (e && typeof e.message === "string" ? e.message : JSON.stringify(e)))
-          .join("; "),
+        error:
+          errs.map((e) => (e && typeof e.message === "string" ? e.message : JSON.stringify(e))).join("; ") || empty,
       };
     }
     if ("error" in body) {
       if (body.error === RBAC_MISSING) return { missing: true };
-      return { error: typeof body.error === "string" ? body.error : JSON.stringify(body.error) };
+      return { error: (typeof body.error === "string" ? body.error : JSON.stringify(body.error)) || empty };
     }
     if (!body.data || typeof body.data !== "object") return { error: status || "the response carried no data" };
     return { data: body.data };
@@ -2824,12 +2825,12 @@ function renderDeployments(document, $, data, io) {
   // The Safes and timelocks are indexed by the RBAC subgraph, not the registry's. Never throws.
   const regRecognise = async (rbac) => {
     if (typeof rbac.why === "string") return { why: rbac.why };
-    const m = await rbacMeta(rbac.endpoint);
-    if (typeof m.indexedBlock !== "number") {
-      const why = m.state === "missing" ? "nothing is published there" : m.state === "unreachable" ? "no readable answer" : m.detail || "no detail";
-      return { why: `the RBAC index read failed: ${why}` };
-    }
     try {
+      const m = await rbacMeta(rbac.endpoint);
+      if (typeof m.indexedBlock !== "number") {
+        const why = m.state === "missing" ? "nothing is published there" : m.state === "unreachable" ? "no readable answer" : m.detail || "no detail";
+        return { why: `the RBAC index read failed: ${why}` };
+      }
       const expected = new Map();
       for (const c of await rbacReadAll(rbac.endpoint, "contracts", "", "kind", m.indexedBlock)) {
         if (Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind)) expected.set(regLow(c.id), c.kind);
