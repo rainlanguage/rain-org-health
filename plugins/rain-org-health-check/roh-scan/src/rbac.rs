@@ -677,8 +677,8 @@ jobs:
     }
 
     #[test]
-    fn registry_doc_is_rain_deploys_location_its_config_registries_and_the_rbac_docs_address_names(
-    ) {
+    fn registry_doc_is_rain_deploys_location_its_config_registries_and_the_rbac_docs_address_names()
+    {
         let networks_src = registry_networks_json();
         let rbac_doc = rbac_doc_with_address_names();
         let mut want = build_location(
@@ -755,11 +755,31 @@ jobs:
         for (workflow, networks, why, subgraph) in [
             ("", networks_src.as_str(), workflow_unread, None),
             (name_only, networks_src.as_str(), workflow_unread, None),
-            (plain_http.as_str(), networks_src.as_str(), workflow_unread, None),
+            (
+                plain_http.as_str(),
+                networks_src.as_str(),
+                workflow_unread,
+                None,
+            ),
             ("", "", workflow_unread, None),
-            (REGISTRY_WORKFLOW, "", networks_unread, Some("rain-deploy-registry")),
-            (REGISTRY_WORKFLOW, "[1]", networks_unread, Some("rain-deploy-registry")),
-            (REGISTRY_WORKFLOW, "not json", networks_unread, Some("rain-deploy-registry")),
+            (
+                REGISTRY_WORKFLOW,
+                "",
+                networks_unread,
+                Some("rain-deploy-registry"),
+            ),
+            (
+                REGISTRY_WORKFLOW,
+                "[1]",
+                networks_unread,
+                Some("rain-deploy-registry"),
+            ),
+            (
+                REGISTRY_WORKFLOW,
+                "not json",
+                networks_unread,
+                Some("rain-deploy-registry"),
+            ),
         ] {
             let d = build_registry(workflow, networks, &rbac_doc_with_address_names());
             let case = format!("{workflow:?} / {networks:?}");
@@ -767,7 +787,11 @@ jobs:
             assert_eq!(d["repo"], "rain.deploy", "{case}");
             assert_eq!(d["tag"], "prod", "{case}");
             assert_eq!(d["unavailable"], why, "{case}");
-            assert_eq!(d.get("subgraph").and_then(Value::as_str), subgraph, "{case}");
+            assert_eq!(
+                d.get("subgraph").and_then(Value::as_str),
+                subgraph,
+                "{case}"
+            );
             assert!(d.get("networks").is_none(), "{case}");
         }
     }
