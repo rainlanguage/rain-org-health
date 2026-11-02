@@ -12206,7 +12206,10 @@ Deno.test("deployments: an index answering with an empty error is an error state
         label + ": " + banners.map((b) => b.className).join(" | "),
       );
       const t = textOf(banners[0]);
-      assert(t.includes(phrase) && !t.includes("Cannot read"), label + ": " + t);
+      assert(
+        t.includes(phrase) && !t.includes("Cannot read"),
+        label + ": " + t,
+      );
       assert(t.includes("not the same as no changes"), label + ": " + t);
       assert(collect(p, "rbac-chg").length === 0, label + ": no rows");
     }
