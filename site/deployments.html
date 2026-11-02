@@ -2750,6 +2750,7 @@ function renderDeployments(document, $, data, io) {
     MIGRATION_REGISTRY_V5: "MigrationRegistry V5",
   };
   const regKind = (k) => (Object.prototype.hasOwnProperty.call(REG_KINDS, k) ? REG_KINDS[k] : `registry (${String(k)})`);
+  const REG_CORRUPTED = ["TYPE_HASH_MISMATCH", "VALUE_NOT_DECODABLE", "VALUE_NOT_CANONICAL"];
   // Newest first, as for role changes.
   const regNewest = (a, b) => (b.blockNumber ?? -1) - (a.blockNumber ?? -1) || (b.logIndex ?? -1) - (a.logIndex ?? -1);
   // A 32-byte word holding an address reads as that address; any other value
@@ -2860,14 +2861,14 @@ function renderDeployments(document, $, data, io) {
           url,
           "configBindings",
           "",
-          "registry { id kind } authority name value valueType valueTypeHash sender boundAtBlock boundAtTimestamp registerCount metas { verified nameString }",
+          "registry { id kind } authority name value valueType valueTypeHash status sender boundAtBlock boundAtTimestamp registerCount metas { verified nameString }",
           block,
         ),
         rbacReadAll(
           url,
           "configRegisters",
           "",
-          "binding { registry { id } authority name } sender value valueType valueTypeHash blockNumber blockTimestamp transactionHash logIndex",
+          "binding { registry { id } authority name } sender value valueType valueTypeHash status blockNumber blockTimestamp transactionHash logIndex",
           block,
         ),
         rbacReadAll(
@@ -3010,6 +3011,32 @@ function renderDeployments(document, $, data, io) {
       for (const r of rows) table.append(draw(r));
       slot.append(table);
     };
+    // Only VALID is valid: any other status, unrecognised or missing included, lists as corrupted.
+    const statusSplit = (title, order, rows, empty, draw) => {
+      const valid = rows.filter((r) => r.status === "VALID");
+      section(`${title}, valid — ${valid.length}${order}`, valid, rows.length === 0 ? empty.none : empty.valid, draw);
+      const groups = new Map(REG_CORRUPTED.map((s) => [s, []]));
+      for (const r of rows) {
+        if (r.status === "VALID") continue;
+        const k = typeof r.status === "string" ? r.status : null;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(r);
+      }
+      const bad = rows.length - valid.length;
+      slot.append(el("div", "own-grouphead", `${title}, corrupted — ${bad}${order}`));
+      if (bad === 0) {
+        slot.append(el("div", "rbac-empty", empty.corrupted));
+        return;
+      }
+      for (const [k, list] of groups) {
+        if (list.length === 0) continue;
+        const name = k === null ? "no status" : REG_CORRUPTED.includes(k) ? k : `unrecognised status ${JSON.stringify(k)}`;
+        slot.append(el("div", "own-note rbac-ideal-off reg-status", `${name} — ${list.length}`));
+        const table = el("div", "own-table");
+        for (const r of list) table.append(draw(r));
+        slot.append(table);
+      }
+    };
     const line = (key, ...nodes) => {
       const l = el("div", "bcn-line");
       l.append(el("span", "bcn-key", key), ...nodes);
@@ -3088,10 +3115,15 @@ function renderDeployments(document, $, data, io) {
       const label = regLabel(labels, b.name);
       return label ? "0" + label : "1" + regLow(b.name);
     };
-    section(
-      `Config bindings — ${n.bindings.length}`,
+    statusSplit(
+      "Config bindings",
+      "",
       n.bindings.slice().sort((a, b) => bindKey(a).localeCompare(bindKey(b))),
-      "Nothing is bound in the ConfigRegistry.",
+      {
+        none: "Nothing is bound in the ConfigRegistry.",
+        valid: "No binding holds a valid value.",
+        corrupted: "No binding holds a corrupted value.",
+      },
       (b) => {
         const row = el("div", "own-row reg-binding");
         const ac = el("div", "bcn-detail");
@@ -3111,10 +3143,15 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
-    section(
-      `Config changes — ${n.registers.length}, newest first`,
+    statusSplit(
+      "Config changes",
+      ", newest first",
       n.registers,
-      "No value has ever been bound in the ConfigRegistry.",
+      {
+        none: "No value has ever been bound in the ConfigRegistry.",
+        valid: "No write bound a valid value.",
+        corrupted: "No write bound a corrupted value.",
+      },
       (c) => {
         const b = c.binding || {};
         const row = el("div", "own-row");
