@@ -2892,6 +2892,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             doc
         };
 
+        let deployment_registry = rbac::build_registry(&deployment_rbac, gh_file);
+
         let deployment_migrations = migrations::build(
             deploy_org,
             deploy_repo,
@@ -3500,6 +3502,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentOrchestratorGrants": deployment_orchestrator_grants,
             "deploymentVaultOwners": deployment_vault_owners,
             "deploymentRbac": deployment_rbac,
+            "deploymentRegistry": deployment_registry,
             "deploymentMigrations": deployment_migrations,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,

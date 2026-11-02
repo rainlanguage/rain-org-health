@@ -1433,17 +1433,18 @@ function renderDeployments(document, $, data, io) {
     }
     if (!body || typeof body !== "object") return { error: status || "the endpoint answered with something that is not a JSON object" };
     // `errors` beside `data` is a failure, not a partial answer.
+    // Callers test `error` truthily, so an empty message would read as success.
+    const empty = "the endpoint answered with an empty error";
     if ("errors" in body) {
       const errs = Array.isArray(body.errors) ? body.errors : [body.errors];
       return {
-        error: errs
-          .map((e) => (e && typeof e.message === "string" ? e.message : JSON.stringify(e)))
-          .join("; "),
+        error:
+          errs.map((e) => (e && typeof e.message === "string" ? e.message : JSON.stringify(e))).join("; ") || empty,
       };
     }
     if ("error" in body) {
       if (body.error === RBAC_MISSING) return { missing: true };
-      return { error: typeof body.error === "string" ? body.error : JSON.stringify(body.error) };
+      return { error: (typeof body.error === "string" ? body.error : JSON.stringify(body.error)) || empty };
     }
     if (!body.data || typeof body.data !== "object") return { error: status || "the response carried no data" };
     return { data: body.data };
@@ -2739,8 +2740,8 @@ function renderDeployments(document, $, data, io) {
   };
   // Root registry: who may write under whom in the ConfigRegistry and the
   // MigrationRegistry, and every binding and record written, read live from
-  // the same index as Role changes. A name, namespace or migration is labelled
-  // only by a preimage the index verified from the write's MetaV1_2.
+  // the registry subgraph. A name, namespace or migration is labelled only by
+  // a preimage the index verified from the write's MetaV1_2.
   const regLabel = (labels, id) =>
     typeof id === "string" && Object.prototype.hasOwnProperty.call(labels, id.toLowerCase()) && typeof labels[id.toLowerCase()] === "string"
       ? labels[id.toLowerCase()]
@@ -2750,6 +2751,7 @@ function renderDeployments(document, $, data, io) {
     MIGRATION_REGISTRY_V5: "MigrationRegistry V5",
   };
   const regKind = (k) => (Object.prototype.hasOwnProperty.call(REG_KINDS, k) ? REG_KINDS[k] : `registry (${String(k)})`);
+  const REG_CORRUPTED = ["TYPE_HASH_MISMATCH", "VALUE_NOT_DECODABLE", "VALUE_NOT_CANONICAL"];
   // Newest first, as for role changes.
   const regNewest = (a, b) => (b.blockNumber ?? -1) - (a.blockNumber ?? -1) || (b.logIndex ?? -1) - (a.logIndex ?? -1);
   // A 32-byte word holding an address reads as that address; any other value
@@ -2820,7 +2822,25 @@ function renderDeployments(document, $, data, io) {
       chain: broken ? "broken" : genesis === null && records.length ? "unchecked" : "intact",
     };
   };
-  const regRead = async (url, genesis, declared, config, heads) => {
+  // The Safes and timelocks are indexed by the RBAC subgraph, not the registry's. Never throws.
+  const regRecognise = async (rbac) => {
+    if (typeof rbac.why === "string") return { why: rbac.why };
+    try {
+      const m = await rbacMeta(rbac.endpoint);
+      if (typeof m.indexedBlock !== "number") {
+        const why = m.state === "missing" ? "nothing is published there" : m.state === "unreachable" ? "no readable answer" : m.detail || "no detail";
+        return { why: `the RBAC index read failed: ${why}` };
+      }
+      const expected = new Map();
+      for (const c of await rbacReadAll(rbac.endpoint, "contracts", "", "kind", m.indexedBlock)) {
+        if (Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind)) expected.set(regLow(c.id), c.kind);
+      }
+      return { expected };
+    } catch (e) {
+      return { why: `the RBAC index read failed: ${e instanceof Error ? e.message : String(e)}` };
+    }
+  };
+  const regRead = async (url, genesis, declared, config, heads, rbac) => {
     const out = await rbacMeta(url);
     if (typeof out.indexedBlock !== "number") return out;
     const block = out.indexedBlock;
@@ -2841,7 +2861,7 @@ function renderDeployments(document, $, data, io) {
     if (lacks.length > 0) return { ...out, lacks };
     const got = {};
     try {
-      const [delegates, changes, bindings, registers, lines, records, contracts, unscoped, unscopedChanges] = await Promise.all([
+      const [delegates, changes, bindings, registers, lines, records, recognised, unscoped, unscopedChanges] = await Promise.all([
         rbacReadAll(
           url,
           "registryDelegates",
@@ -2860,14 +2880,14 @@ function renderDeployments(document, $, data, io) {
           url,
           "configBindings",
           "",
-          "registry { id kind } authority name value valueType valueTypeHash sender boundAtBlock boundAtTimestamp registerCount metas { verified nameString }",
+          "registry { id kind } authority name value valueType valueTypeHash status sender boundAtBlock boundAtTimestamp registerCount metas { verified nameString }",
           block,
         ),
         rbacReadAll(
           url,
           "configRegisters",
           "",
-          "binding { registry { id } authority name } sender value valueType valueTypeHash blockNumber blockTimestamp transactionHash logIndex",
+          "binding { registry { id } authority name } sender value valueType valueTypeHash status blockNumber blockTimestamp transactionHash logIndex",
           block,
         ),
         rbacReadAll(
@@ -2884,7 +2904,7 @@ function renderDeployments(document, $, data, io) {
           "line { id namespace } index migration appliedOnto appliedAt sender blockNumber blockTimestamp transactionHash logIndex metas { verified namespaceString migrationString }",
           block,
         ),
-        rbacReadAll(url, "contracts", "", "kind", block),
+        regRecognise(rbac),
         rbacReadAll(
           url,
           "registryUnscopedDelegates",
@@ -2906,9 +2926,8 @@ function renderDeployments(document, $, data, io) {
           for (const k of keys) o[k] = rbacNum(r[k]);
           return o;
         });
-      const expected = new Map();
-      for (const c of contracts) if (Object.prototype.hasOwnProperty.call(REG_EXPECTED, c.kind)) expected.set(regLow(c.id), c.kind);
-      got.expectedCount = expected.size;
+      const expected = recognised.expected || null;
+      got.recognition = expected ? { checked: true, count: expected.size } : { checked: false, why: recognised.why };
       const ours = (d) => {
         const k = String(d && d.registry && d.registry.kind);
         const want = /^MIGRATION_REGISTRY/.test(k) ? declared : /^CONFIG_REGISTRY/.test(k) ? config : null;
@@ -2933,7 +2952,7 @@ function renderDeployments(document, $, data, io) {
       got.genesis = genesis;
       const scoped = delegates.concat(unscoped.map((d) => ({ ...d, scope: null, unscoped: true })));
       got.delegates = num(scoped.filter(ours), ["approvedAtBlock", "approvedAtTimestamp", "revokedAtBlock", "revokedAtTimestamp"]).map(
-        (d) => ({ ...d, expectedAs: expected.get(regLow(d.delegate)) || null }),
+        (d) => ({ ...d, expectedAs: expected ? expected.get(regLow(d.delegate)) || null : null }),
       );
       const allChanges = changes.concat(
         unscopedChanges.map((c) => ({ ...c, registryDelegate: { ...c.registryUnscopedDelegate, scope: null, unscoped: true } })),
@@ -3010,6 +3029,32 @@ function renderDeployments(document, $, data, io) {
       for (const r of rows) table.append(draw(r));
       slot.append(table);
     };
+    // Only VALID is valid: any other status, unrecognised or missing included, lists as corrupted.
+    const statusSplit = (title, order, rows, empty, draw) => {
+      const valid = rows.filter((r) => r.status === "VALID");
+      section(`${title}, valid — ${valid.length}${order}`, valid, rows.length === 0 ? empty.none : empty.valid, draw);
+      const groups = new Map(REG_CORRUPTED.map((s) => [s, []]));
+      for (const r of rows) {
+        if (r.status === "VALID") continue;
+        const k = typeof r.status === "string" ? r.status : null;
+        if (!groups.has(k)) groups.set(k, []);
+        groups.get(k).push(r);
+      }
+      const bad = rows.length - valid.length;
+      slot.append(el("div", "own-grouphead", `${title}, corrupted — ${bad}${order}`));
+      if (bad === 0) {
+        slot.append(el("div", "rbac-empty", empty.corrupted));
+        return;
+      }
+      for (const [k, list] of groups) {
+        if (list.length === 0) continue;
+        const name = k === null ? "no status" : REG_CORRUPTED.includes(k) ? k : `unrecognised status ${JSON.stringify(k)}`;
+        slot.append(el("div", "own-note rbac-ideal-off reg-status", `${name} — ${list.length}`));
+        const table = el("div", "own-table");
+        for (const r of list) table.append(draw(r));
+        slot.append(table);
+      }
+    };
     const line = (key, ...nodes) => {
       const l = el("div", "bcn-line");
       l.append(el("span", "bcn-key", key), ...nodes);
@@ -3030,7 +3075,8 @@ function renderDeployments(document, $, data, io) {
       live,
       "No account has approved a delegate in either registry.",
       (d) => {
-        const row = el("div", d.expectedAs ? "own-row reg-delegate" : "own-row reg-delegate rbac-off");
+        const stray = n.recognition.checked && !d.expectedAs;
+        const row = el("div", stray ? "own-row reg-delegate rbac-off" : "own-row reg-delegate");
         const ac = el("div", "bcn-detail");
         ac.append(
           line("in", el("span", "own-note", regKind(d.registry && d.registry.kind))),
@@ -3039,11 +3085,15 @@ function renderDeployments(document, $, data, io) {
         );
         const tail = el("div", "own-prov");
         tail.append(el("span", "own-chip own-chip-yes", "approved"));
-        if (d.expectedAs) {
+        if (!n.recognition.checked) {
+          const chip = el("span", "own-chip own-chip-dim reg-unchecked", "not checked");
+          chip.title = `Not checked against the RBAC index: ${n.recognition.why}.`;
+          tail.append(chip);
+        } else if (d.expectedAs) {
           tail.append(el("span", "own-chip own-chip-yes", REG_EXPECTED[d.expectedAs]));
         } else {
           const tag = el("span", "rbac-tag rbac-tag-unexpected reg-stray", "not Safe or timelock");
-          tag.title = "Neither a TOKEN_OWNER_SAFE nor a GOVERNANCE_TIMELOCK in this index.";
+          tag.title = "Neither a TOKEN_OWNER_SAFE nor a GOVERNANCE_TIMELOCK in the RBAC index.";
           tail.append(tag);
         }
         if (typeof d.approvedAtTimestamp === "number") tail.append(el("span", "own-note", utc(d.approvedAtTimestamp)));
@@ -3051,9 +3101,12 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
-    if (n.expectedCount === 0) {
+    const anyDelegate = live.length > 0;
+    if (anyDelegate && !n.recognition.checked) {
+      slot.append(el("div", "own-note rbac-ideal-gap", `Delegate recognition was not checked on this network — ${n.recognition.why}.`));
+    } else if (anyDelegate && n.recognition.count === 0) {
       slot.append(
-        el("div", "own-note rbac-ideal-gap", "The index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised."),
+        el("div", "own-note rbac-ideal-gap", "The RBAC index holds no token-owner Safe or governance timelock on this network, so no delegate is recognised."),
       );
     }
     section(
@@ -3088,10 +3141,15 @@ function renderDeployments(document, $, data, io) {
       const label = regLabel(labels, b.name);
       return label ? "0" + label : "1" + regLow(b.name);
     };
-    section(
-      `Config bindings — ${n.bindings.length}`,
+    statusSplit(
+      "Config bindings",
+      "",
       n.bindings.slice().sort((a, b) => bindKey(a).localeCompare(bindKey(b))),
-      "Nothing is bound in the ConfigRegistry.",
+      {
+        none: "Nothing is bound in the ConfigRegistry.",
+        valid: "No binding holds a valid value.",
+        corrupted: "No binding holds a corrupted value.",
+      },
       (b) => {
         const row = el("div", "own-row reg-binding");
         const ac = el("div", "bcn-detail");
@@ -3111,10 +3169,15 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
-    section(
-      `Config changes — ${n.registers.length}, newest first`,
+    statusSplit(
+      "Config changes",
+      ", newest first",
       n.registers,
-      "No value has ever been bound in the ConfigRegistry.",
+      {
+        none: "No value has ever been bound in the ConfigRegistry.",
+        valid: "No write bound a valid value.",
+        corrupted: "No write bound a corrupted value.",
+      },
       (c) => {
         const b = c.binding || {};
         const row = el("div", "own-row");
@@ -3176,7 +3239,7 @@ function renderDeployments(document, $, data, io) {
   };
   // Builds the Root registry tab and starts one live read per network.
   // Returns a promise that settles once every network has rendered.
-  const renderRegistry = (r, migrations) => {
+  const renderRegistry = (r, migrations, rbac) => {
     sink.append(el("h2", null, "Root registry — delegations and config changes, per network"));
     const off = (why) => {
       sink.append(el("div", "rbac-empty", `Registry history unavailable — ${why}.`));
@@ -3190,9 +3253,18 @@ function renderDeployments(document, $, data, io) {
     sub.append(
       `'s subgraph as this page loads, at its "${r.tag}" tag: every delegate approval in the ConfigRegistry and ` +
         "MigrationRegistry, every config binding and the writes behind it, and every migration line, checked record by record. A name, " +
-        "namespace or migration is labelled where the index verified its preimage from the write's MetaV1_2, and shown as the raw hash otherwise.",
+        "namespace or migration is labelled where the index verified its preimage from the write's MetaV1_2, and shown as the raw hash otherwise. " +
+        "A delegate is recognised as a token-owner Safe or governance timelock from the RBAC index for the same network.",
     );
     sink.append(sub);
+    const rbacFor = (network) => {
+      if (!rbac || typeof rbac !== "object") return { why: "this scan carries no RBAC subgraph location" };
+      if (typeof rbac.unavailable === "string") return { why: `the scan ${rbac.unavailable} for the RBAC subgraph` };
+      const m = (Array.isArray(rbac.networks) ? rbac.networks : []).find((x) => x && typeof x === "object" && x.network === network);
+      if (!m) return { why: "the RBAC subgraph does not index this network" };
+      if (typeof m.endpoint !== "string" || !m.endpoint.startsWith("https://")) return { why: "the scan gave no https endpoint for the RBAC index" };
+      return { endpoint: m.endpoint };
+    };
     const nets = Array.isArray(r.networks) ? r.networks : [];
     if (nets.length === 0) return off("the subgraph declares no networks");
     const labels = {};
@@ -3239,9 +3311,14 @@ function renderDeployments(document, $, data, io) {
       }
       regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
       reads.push(
-        regRead(endpoint, genesis, declaredBy.get(chain) ?? null, configBy.get(n.network) ?? null, headsBy.get(chain) ?? new Map()).then((res) =>
-          regBody(slot, res, chain, endpoint, published, pins, labels),
-        ),
+        regRead(
+          endpoint,
+          genesis,
+          declaredBy.get(chain) ?? null,
+          configBy.get(n.network) ?? null,
+          headsBy.get(chain) ?? new Map(),
+          rbacFor(n.network),
+        ).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)),
       );
     }
     return Promise.all(reads);
@@ -3420,7 +3497,7 @@ function renderDeployments(document, $, data, io) {
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
     sink = panels.registry;
-    const registryDone = renderRegistry(data.deploymentRbac, data.deploymentMigrations);
+    const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac);
     show(hashTab() || TABS[0][0]);
     return Promise.all([rbacDone, registryDone]);
   }
@@ -3498,7 +3575,7 @@ function renderDeployments(document, $, data, io) {
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
   sink = panels.registry;
-  const registryDone = renderRegistry(data.deploymentRbac, data.deploymentMigrations);
+  const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac);
   show(hashTab() || TABS[0][0]);
   return Promise.all([rbacDone, registryDone]);
 }
