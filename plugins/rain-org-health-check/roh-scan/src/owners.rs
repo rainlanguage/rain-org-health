@@ -1735,7 +1735,10 @@ mod tests {
         assert_eq!(sg["title"], "Safe signers (3-of-6)");
         assert_eq!(sg["verification"]["match"], true);
         let entries = sg["entries"].as_array().unwrap();
-        let roles: Vec<&str> = entries.iter().map(|e| e["role"].as_str().unwrap()).collect();
+        let roles: Vec<&str> = entries
+            .iter()
+            .map(|e| e["role"].as_str().unwrap())
+            .collect();
         assert_eq!(
             roles,
             ["Signer 1", "Signer 2", "Signer 3", "Signer 4", "Signer 5", "Signer 6"]
