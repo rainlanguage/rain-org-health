@@ -52,7 +52,8 @@ pub fn parse_uint_constant(src: &str, name: &str) -> Option<u64> {
 
 /// The declared Safe roster: each constant `expectedOwners()` assigns, in
 /// assignment order, resolved by `parse_address_constant`. `None` when the
-/// function, an assignment, or any constant it names can't be read.
+/// function is missing, a constant it assigns is undefined, or it assigns
+/// none; an assignment of anything but a bare constant is not read.
 pub fn parse_expected_owners(src: &str) -> Option<Vec<String>> {
     let code = Regex::new(r"(?s)//[^\n]*|/\*.*?\*/")
         .ok()?
