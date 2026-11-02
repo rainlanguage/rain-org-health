@@ -16615,13 +16615,19 @@ Deno.test("root registry: the scan's ConfigRegistry is matched whatever its hex 
   const p = await regPanel(regElsewhere(regFake()), {
     configRegistries: { base: upper },
   });
-  has(p, ["Config bindings, valid — 1", "Config changes, valid — 2, newest first"]);
+  has(p, [
+    "Config bindings, valid — 1",
+    "Config changes, valid — 2, newest first",
+  ]);
   assert(!textOf(p).includes(regWord("b9")), "the other registry's binding");
   for (const a of [null, 5]) {
     const q = await regPanel(regElsewhere(regFake()), {
       configRegistries: { base: a },
     });
-    has(q, ["Config bindings, valid — 2", "Config changes, valid — 3, newest first"]);
+    has(q, [
+      "Config bindings, valid — 2",
+      "Config changes, valid — 3, newest first",
+    ]);
   }
 });
 
