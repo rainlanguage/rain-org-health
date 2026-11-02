@@ -16703,3 +16703,523 @@ Deno.test("root registry: the page settles only once every network's registry re
     );
   }
 });
+
+Deno.test("root registry: the tab reads the registry subgraph's location, never the RBAC subgraph's", async () => {
+  const f = regElsewhere(regFake());
+  const pin = (name) => ({ base: { [REG_SAFE]: [{ name }] } });
+  const data = regData(REG_NET, { addressNames: pin("REGISTRY_PIN") });
+  data.deploymentRbac = {
+    ...data.deploymentRbac,
+    configRegistries: { base: REG_CONFIG_OTHER.id },
+    addressNames: pin("RBAC_PIN"),
+  };
+  const p = await regRender(f, data);
+  const t = textOf(p);
+  const src = tags(p, "a").filter((a) =>
+    a.textContent === "rainlanguage/rain.deploy"
+  );
+  assert(
+    src.length === 1 &&
+      src[0].href ===
+        "https://github.com/rainlanguage/rain.deploy/tree/main/subgraph",
+    tags(p, "a").map((a) => a.textContent + " " + a.href).join(" | "),
+  );
+  assert(!t.includes("st0x.deploy's subgraph"), t);
+  assert(
+    f.seen.length > 0 && f.seen.every((s) => s.url === regUrl("base")),
+    f.seen.map((s) => s.url).join(" | "),
+  );
+  assert(t.includes(regUrl("base")) && !t.includes(regRbacUrl("base")), t);
+  assert(regHeads(p).includes("Config bindings, valid — 1"), regHeads(p));
+  assert(!t.includes(regWord("b9")), "the RBAC doc's ConfigRegistry is unread");
+  const delegate = collect(
+    regGroup(p, "Delegations in force"),
+    "reg-delegate",
+  )[0];
+  assert(
+    collect(delegate, "rbac-name").map((n) => n.textContent).includes(
+      "REGISTRY_PIN",
+    ),
+    textOf(delegate),
+  );
+  assert(t.includes("REGISTRY_PIN") && !t.includes("RBAC_PIN"), t);
+});
+
+Deno.test("root registry: a registry subgraph published nowhere names the registry deployment and reads no RBAC index for it", async () => {
+  const f = regFake({ meta: { error: "subgraph name/version error" } });
+  const p = await regPanel(f);
+  assert(
+    regErr(p) ===
+      "No subgraph — nothing is published at rain-deploy-registry-base/prod. No history is shown, which is not the same as no changes.",
+    regErr(p),
+  );
+  assert(
+    !regQueries(f.rbac).some((q) => q.includes("page: contracts(")),
+    regQueries(f.rbac).join(" | "),
+  );
+  assert(collect(p, "reg-delegate").length === 0, textOf(p));
+});
+
+const REG_ENTITIES = [
+  "registryDelegates",
+  "registryDelegateChanges",
+  "configBindings",
+  "configRegisters",
+  "migrationLines",
+  "migrationRecords",
+  "registryUnscopedDelegates",
+  "registryUnscopedDelegateChanges",
+];
+const regKindReads = (g) =>
+  g.seen.filter((s) => JSON.parse(s.init.body).query.includes("page: contracts("));
+
+Deno.test("root registry: registry rows come from the registry index and delegate kinds from the RBAC index at its own block", async () => {
+  const f = regFake();
+  f.rbac.meta = {
+    data: {
+      _meta: {
+        block: { number: 777, timestamp: RBAC_TS },
+        hasIndexingErrors: false,
+      },
+    },
+  };
+  f.rows.contracts.push({ id: REG_STRANGER, kind: "TOKEN_OWNER_SAFE" });
+  f.rows.registryDelegates.push({
+    ...f.rows.registryDelegates[0],
+    id: "d3",
+    delegate: REG_STRANGER,
+  });
+  const p = await regPanel(f);
+  assert(
+    f.seen.every((s) => s.url === regUrl("base")),
+    f.seen.map((s) => s.url).join(" | "),
+  );
+  const reg = regQueries(f);
+  for (const e of REG_ENTITIES) {
+    assert(
+      reg.some((q) =>
+        q.includes(`page: ${e}(`) && q.includes("block: {number: 900}")
+      ),
+      e + " read from the registry index at its block",
+    );
+    assert(
+      !regQueries(f.rbac).some((q) => q.includes(`page: ${e}(`)),
+      e + " never read from the RBAC index",
+    );
+  }
+  assert(
+    !reg.some((q) => q.includes("page: contracts(")),
+    "the registry index is never asked for kinds",
+  );
+  const kinds = regKindReads(f.rbac);
+  assert(
+    kinds.length === 1 && kinds[0].url === regRbacUrl("base") &&
+      JSON.parse(kinds[0].init.body).query.includes("block: {number: 777}"),
+    kinds.map((k) => k.url + " " + k.init.body).join(" | "),
+  );
+  const rows = collect(regGroup(p, "Delegations in force"), "reg-delegate");
+  const by = (a) => rows.find((r) => textOf(r).includes(a));
+  assert(
+    collect(by(REG_STRANGER), "reg-stray").length === 1,
+    "a Safe only the registry index names is not recognised: " +
+      textOf(by(REG_STRANGER)),
+  );
+  assert(
+    collect(by(REG_SAFE), "own-chip").map((c) => c.textContent).includes(
+      "token-owner Safe",
+    ),
+    textOf(by(REG_SAFE)),
+  );
+  assert(
+    regQueries(f.rbac).some((q) => q.includes("page: roles(")) &&
+      !reg.some((q) => q.includes("page: roles(")),
+    "role changes still read the RBAC index",
+  );
+});
+
+Deno.test("root registry: each network recognises its delegates from that network's own RBAC index", async () => {
+  const f = regFake();
+  const eth = fakeSubgraph();
+  eth.rows.contracts = [{ id: REG_STRANGER, kind: "GOVERNANCE_TIMELOCK" }];
+  const both = f.io.fetch;
+  f.io = {
+    now: f.io.now,
+    fetch: (url, init) =>
+      url === regRbacUrl("mainnet")
+        ? eth.io.fetch(url, init)
+        : both(url, init),
+  };
+  f.rows.registryDelegates.push({
+    ...f.rows.registryDelegates[0],
+    id: "d3",
+    delegate: REG_STRANGER,
+  });
+  const mainnet = regNet({ network: "mainnet", chain: "ethereum" });
+  const p = await regRender(f, {
+    ...regData(),
+    deploymentRbac: rbacData([regRbacNet(REG_NET), regRbacNet(mainnet)])
+      .deploymentRbac,
+    deploymentRegistry: regDoc([REG_NET, mainnet], {
+      configRegistries: { base: REG_CONFIG.id, mainnet: REG_CONFIG.id },
+    }),
+  });
+  const nets = collect(p, "rbac-net");
+  assert(nets.length === 2, "two networks: " + nets.length);
+  const recognised = (net, a) => {
+    const row = collect(net, "reg-delegate").find((r) =>
+      textOf(r).includes(a)
+    );
+    return collect(row, "reg-stray").length === 1
+      ? "stray"
+      : collect(row, "own-chip").map((c) => c.textContent).filter((c) =>
+        c !== "approved"
+      ).join();
+  };
+  const got = nets.map((n) =>
+    [recognised(n, REG_SAFE), recognised(n, REG_STRANGER)].join(" / ")
+  );
+  assert(
+    got.join(" | ") ===
+      "token-owner Safe / stray | stray / governance timelock",
+    got.join(" | "),
+  );
+  for (const [g, net] of [[f.rbac, "base"], [eth, "mainnet"]]) {
+    const kinds = regKindReads(g);
+    assert(
+      kinds.length === 1 && kinds[0].url === regRbacUrl(net),
+      net + ": " + kinds.map((k) => k.url).join(" | "),
+    );
+  }
+});
+
+// Every delegate in force shows "not checked" with the reason, never the red tag.
+async function regUnchecked(why, setup) {
+  const f = regFake();
+  f.rows.registryDelegates.push({
+    ...f.rows.registryDelegates[0],
+    id: "d3",
+    delegate: REG_STRANGER,
+  });
+  const data = regData();
+  setup(f, data);
+  const p = await regRender(f, data);
+  const rows = collect(regGroup(p, "Delegations in force"), "reg-delegate");
+  assert(rows.length === 2, why + ": " + textOf(p));
+  for (const r of rows) {
+    const chip = collect(r, "reg-unchecked");
+    assert(
+      chip.length === 1 && chip[0].textContent === "not checked" &&
+        chip[0].className.split(" ").includes("own-chip-dim"),
+      why + ": " + textOf(r),
+    );
+    assert(
+      chip[0].title === `Not checked against the RBAC index: ${why}.`,
+      chip[0].title,
+    );
+    assert(collect(r, "reg-stray").length === 0, why + ": " + textOf(r));
+    assert(!r.className.includes("rbac-off"), why + ": " + r.className);
+    assert(
+      !collect(r, "own-chip").some((c) =>
+        ["token-owner Safe", "governance timelock"].includes(c.textContent)
+      ),
+      why + ": " + textOf(r),
+    );
+  }
+  const notes = collect(collect(p, "rbac-net")[0], "rbac-ideal-gap").map((n) =>
+    n.textContent
+  );
+  assert(
+    notes.join(" | ") ===
+      `Delegate recognition was not checked on this network — ${why}.`,
+    notes.join(" | "),
+  );
+  return f;
+}
+
+Deno.test("root registry: without a usable RBAC location every delegate is not checked, with the reason", async () => {
+  const noDoc = "this scan carries no RBAC subgraph location";
+  for (const doc of [undefined, null, 5, "st0x-rbac"]) {
+    const f = await regUnchecked(noDoc, (_f, data) => {
+      if (doc === undefined) delete data.deploymentRbac;
+      else data.deploymentRbac = doc;
+    });
+    assert(regKindReads(f.rbac).length === 0, String(doc));
+  }
+  const cases = [
+    [
+      "the scan could not read subgraph/networks.json for the RBAC subgraph",
+      (rbac) => ({
+        org: rbac.org,
+        repo: rbac.repo,
+        tag: rbac.tag,
+        subgraph: rbac.subgraph,
+        unavailable: "could not read subgraph/networks.json",
+      }),
+    ],
+    ...[[rbacNet()], [], null, "base", { base: regRbacUrl("base") }, [
+      null,
+      5,
+    ]].map((networks) => [
+      "the RBAC subgraph does not index this network",
+      (rbac) => ({ ...rbac, networks }),
+    ]),
+    ...["http://q.example/subgraphs/st0x-rbac-base/prod/gn", undefined, 7].map(
+      (endpoint) => [
+        "the scan gave no https endpoint for the RBAC index",
+        (rbac) => ({
+          ...rbac,
+          networks: [rbacNet({ network: "base", chain: "base", endpoint })],
+        }),
+      ],
+    ),
+  ];
+  for (const [why, doc] of cases) {
+    const f = await regUnchecked(why, (_f, data) => {
+      data.deploymentRbac = doc(data.deploymentRbac);
+    });
+    assert(regKindReads(f.rbac).length === 0, why);
+  }
+});
+
+Deno.test("root registry: an RBAC index that cannot be read leaves every delegate not checked, with the reason", async () => {
+  const failed = "the RBAC index read failed: ";
+  const cases = [
+    [
+      "nothing is published there",
+      (g) => g.meta = { error: "subgraph name/version error" },
+    ],
+    ["no readable answer", (g) => g.meta = null],
+    ["indexer down", (g) => g.meta = { errors: [{ message: "indexer down" }] }],
+    [
+      "the index answered without a block position",
+      (g) => g.meta = { data: { _meta: { hasIndexingErrors: false } } },
+    ],
+    [
+      "contracts: page failed",
+      (g) => g.raw.contracts = { errors: [{ message: "page failed" }] },
+    ],
+    [
+      "contracts: a row without an id",
+      (g) =>
+        g.raw.contracts = { data: { page: [{ kind: "TOKEN_OWNER_SAFE" }] } },
+    ],
+    [
+      "contracts: the response carried no rows",
+      (g) => g.raw.contracts = { data: { page: null } },
+    ],
+  ];
+  for (const [why, setup] of cases) {
+    const f = await regUnchecked(failed + why, (f) => setup(f.rbac));
+    assert(
+      f.seen.every((s) => s.url === regUrl("base")) &&
+        regQueries(f).some((q) => q.includes("page: configBindings(")),
+      why + ": the registry is still read",
+    );
+  }
+});
+
+// The status groups under one "…, corrupted" head: each group's name and the
+// rows under it, or the empty text when there are none.
+const regCorrupted = (p, head) => {
+  const kids = collect(p, "rbac-net")[0].children;
+  const at = kids.findIndex((k) =>
+    k.className === "own-grouphead" && k.textContent.startsWith(head)
+  );
+  assert(at >= 0, "section " + head + " present: " + regHeads(p));
+  const out = [];
+  for (const k of kids.slice(at + 1)) {
+    if (k.className === "own-grouphead") break;
+    if (k.className.split(" ").includes("reg-status")) {
+      out.push({ name: k.textContent, rows: [] });
+    } else if (k.className === "own-table") {
+      out[out.length - 1].rows = k.children;
+    } else out.push({ empty: k.textContent });
+  }
+  return out;
+};
+const regTx = (row) =>
+  tags(row, "a").map((a) => a.href).find((h) => h.includes("/tx/")).split(
+    "/tx/0xtx",
+  )[1];
+
+Deno.test("root registry: config bindings split valid from corrupted, each corrupted status grouped and named", async () => {
+  const f = regFake();
+  const binding = (n, status) => {
+    const b = {
+      ...f.rows.configBindings[0],
+      id: "b" + n,
+      name: regWord(n),
+      metas: [],
+      status,
+    };
+    if (status === undefined) delete b.status;
+    return b;
+  };
+  f.rows.configBindings.push(
+    binding("a1", "BOGUS"),
+    binding("a2", "VALUE_NOT_CANONICAL"),
+    binding("a3", undefined),
+    binding("a4", "TYPE_HASH_MISMATCH"),
+    binding("a5", "valid"),
+    binding("a6", null),
+    binding("a7", 7),
+    binding("a8", "VALUE_NOT_DECODABLE"),
+    binding("a9", "TYPE_HASH_MISMATCH"),
+    binding("aa", "VALID"),
+  );
+  const p = await regPanel(f);
+  const heads = regHeads(p);
+  assert(
+    heads.includes("Config bindings, valid — 2") &&
+      heads.includes("Config bindings, corrupted — 9"),
+    heads,
+  );
+  const valid = collect(regGroup(p, "Config bindings, valid"), "reg-binding");
+  assert(
+    valid.length === 2 && textOf(valid[0]).includes("st0x.vault-beacon.v1") &&
+      textOf(valid[1]).includes(regWord("aa")),
+    valid.map(textOf).join(" | "),
+  );
+  const names = (rows) =>
+    rows.map((r) =>
+      ["a1", "a2", "a3", "a4", "a5", "a6", "a7", "a8", "a9"].find((n) =>
+        textOf(r).includes(regWord(n))
+      )
+    ).join(",");
+  const got = regCorrupted(p, "Config bindings, corrupted").map((g) =>
+    `${g.name}: ${names(g.rows)}`
+  );
+  assert(
+    got.join(" | ") ===
+      [
+        "TYPE_HASH_MISMATCH — 2: a4,a9",
+        "VALUE_NOT_DECODABLE — 1: a8",
+        "VALUE_NOT_CANONICAL — 1: a2",
+        'unrecognised status "BOGUS" — 1: a1',
+        "no status — 3: a3,a6,a7",
+        'unrecognised status "valid" — 1: a5',
+      ].join(" | "),
+    got.join(" | "),
+  );
+});
+
+Deno.test("root registry: config changes split valid from corrupted newest first, each corrupted status grouped and named", async () => {
+  const f = regFake();
+  const write = (id, block, status) => {
+    const w = {
+      ...f.rows.configRegisters[0],
+      id,
+      blockNumber: String(block),
+      transactionHash: "0xtx" + id,
+      status,
+    };
+    if (status === undefined) delete w.status;
+    return w;
+  };
+  f.rows.configRegisters.push(
+    write("r3", 33, "VALUE_NOT_DECODABLE"),
+    write("r4", 32, "NOT_A_STATUS"),
+    write("r5", 31, undefined),
+    write("r6", 34, "VALUE_NOT_DECODABLE"),
+    write("r7", 29, "TYPE_HASH_MISMATCH"),
+  );
+  const p = await regPanel(f);
+  const heads = regHeads(p);
+  assert(
+    heads.includes("Config changes, valid — 2, newest first") &&
+      heads.includes("Config changes, corrupted — 5, newest first"),
+    heads,
+  );
+  const valid = collect(regGroup(p, "Config changes, valid"), "own-row");
+  assert(valid.map(regTx).join() === "r2,r1", valid.map(regTx).join());
+  const got = regCorrupted(p, "Config changes, corrupted").map((g) =>
+    `${g.name}: ${g.rows.map(regTx).join()}`
+  );
+  assert(
+    got.join(" | ") ===
+      [
+        "TYPE_HASH_MISMATCH — 1: r7",
+        "VALUE_NOT_DECODABLE — 2: r6,r3",
+        'unrecognised status "NOT_A_STATUS" — 1: r4',
+        "no status — 1: r5",
+      ].join(" | "),
+    got.join(" | "),
+  );
+});
+
+Deno.test("root registry: an empty valid or corrupted list says which it is", async () => {
+  const empties = async (setup) => {
+    const f = regFake();
+    setup(f);
+    const p = await regPanel(f);
+    return [
+      "Config bindings, valid",
+      "Config bindings, corrupted",
+      "Config changes, valid",
+      "Config changes, corrupted",
+    ].map((h) => {
+      const next = regGroup(p, h);
+      return next.className === "rbac-empty" ? next.textContent : null;
+    });
+  };
+  const none = await empties((f) => {
+    f.rows.configBindings = [];
+    f.rows.configRegisters = [];
+  });
+  assert(
+    none.join(" | ") ===
+      [
+        "Nothing is bound in the ConfigRegistry.",
+        "No binding holds a corrupted value.",
+        "No value has ever been bound in the ConfigRegistry.",
+        "No write bound a corrupted value.",
+      ].join(" | "),
+    none.join(" | "),
+  );
+  const corrupt = await empties((f) => {
+    for (const r of f.rows.configBindings.concat(f.rows.configRegisters)) {
+      r.status = "TYPE_HASH_MISMATCH";
+    }
+  });
+  assert(
+    corrupt.join(" | ") ===
+      ["No binding holds a valid value.", null, "No write bound a valid value.", null]
+        .join(" | "),
+    corrupt.join(" | "),
+  );
+  const valid = await empties(() => {});
+  assert(
+    valid.join(" | ") ===
+      [null, "No binding holds a corrupted value.", null, "No write bound a corrupted value."]
+        .join(" | "),
+    valid.join(" | "),
+  );
+});
+
+Deno.test("root registry: bindings and their writes are read with their status", async () => {
+  const f = regFake();
+  await regPanel(f);
+  for (const e of ["configBindings", "configRegisters"]) {
+    const q = regQueries(f).find((x) => x.includes(`page: ${e}(`));
+    assert(/\sstatus\s/.test(q), e + ": " + q);
+  }
+});
+
+Deno.test("root registry: an unrecognised status renders as text, never markup", async () => {
+  const f = regFake();
+  f.rows.configBindings[0].status = XSS_IMG;
+  f.rows.configRegisters[0].status = XSS_SCRIPT;
+  const p = await regPanel(f);
+  const named = collect(p, "reg-status").map((s) => s.textContent);
+  assert(
+    named.join(" | ") ===
+      [
+        `unrecognised status ${JSON.stringify(XSS_IMG)} — 1`,
+        `unrecognised status ${JSON.stringify(XSS_SCRIPT)} — 1`,
+      ].join(" | "),
+    named.join(" | "),
+  );
+  for (const tag of MARKUP_TAGS) {
+    assert(tags(p, tag).length === 0, "no " + tag + " element created");
+  }
+});
