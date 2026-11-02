@@ -3101,7 +3101,7 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
-    const anyDelegate = n.delegates.length > 0;
+    const anyDelegate = live.length > 0;
     if (anyDelegate && !n.recognition.checked) {
       slot.append(el("div", "own-note rbac-ideal-gap", `Delegate recognition was not checked on this network — ${n.recognition.why}.`));
     } else if (anyDelegate && n.recognition.count === 0) {
