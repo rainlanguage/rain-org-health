@@ -376,6 +376,7 @@ function renderDeployments(document, $, data, io) {
     ["held", "Roles held"],
     ["registry", "Root registry"],
     ["migrations", "Migrations"],
+    ["knownbad", "Known bad"],
   ];
   const subnav = el("div", "subnav");
   const panels = {};
@@ -3482,6 +3483,9 @@ function renderDeployments(document, $, data, io) {
     sink.append(
       el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
     );
+    panels.knownbad.append(
+      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
+    );
     // The grant map is parsed independently of the owner constants, so it can
     // still be readable when they are not — and it is the half of this page
     // that says who can move value.
@@ -3558,7 +3562,7 @@ function renderDeployments(document, $, data, io) {
       table.append(row);
     }
     grp.append(table);
-    sink.append(grp);
+    (g.id === "historical" ? panels.knownbad : sink).append(grp);
   }
   // Safe tab: who holds production, and whether it is still the Safe or has
   // moved to the governance timelock. Contracts tab: everything the Safe
