@@ -1455,6 +1455,70 @@ mod tests {
     }
 
     #[test]
+    fn expected_owners_reads_an_assignment_at_any_index_expression() {
+        let src = "
+            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+            address internal constant OWNER_C = 0x3333333333333333333333333333333333333333;
+            uint256 internal constant LAST = 2;
+            function expectedOwners() internal pure returns (address[] memory) {
+                uint256[2] memory slot = [uint256(0), 1];
+                address[] memory owners = new address[](LAST + 1);
+                owners[0] = OWNER_A;
+                owners[slot[1]] = OWNER_B;
+                owners[LAST] = OWNER_C;
+                return owners;
+            }
+        ";
+        assert_eq!(
+            parse_expected_owners(src),
+            roster(&[OWNER_A, OWNER_B, OWNER_C])
+        );
+    }
+
+    #[test]
+    fn expected_owners_skips_a_body_less_declaration() {
+        let src = "
+            interface IRoster {
+                function expectedOwners() external pure returns (address[] memory);
+            }
+            library LibRoster {
+                address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+                address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
+                function expectedOwners() internal pure returns (address[] memory) {
+                    address[] memory owners = new address[](1);
+                    owners[0] = OWNER_A;
+                    return owners;
+                }
+                function creationOwners() internal pure returns (address[] memory) {
+                    address[] memory owners = new address[](1);
+                    owners[0] = OWNER_B;
+                    return owners;
+                }
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
+    }
+
+    #[test]
+    fn expected_owners_is_none_when_every_declaration_is_body_less() {
+        let src = "
+            interface IRoster {
+                function expectedOwners() external pure returns (address[] memory);
+            }
+            library LibRoster {
+                address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
+                function creationOwners() internal pure returns (address[] memory) {
+                    address[] memory owners = new address[](1);
+                    owners[0] = OWNER_A;
+                    return owners;
+                }
+            }
+        ";
+        assert_eq!(parse_expected_owners(src), None);
+    }
+
+    #[test]
     fn build_owners_assembles_all_groups() {
         let v = build_owners(
             "S01-Issuer",
