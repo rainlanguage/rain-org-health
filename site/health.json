@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-02T13:59:17Z",
+  "generatedAt": "2026-11-02T15:14:09Z",
   "auditGraph": {
     "nodes": [
       {
@@ -785,11 +785,6 @@
             "repo": "rain.metadata",
             "pinned": "0.1.43",
             "latest": "0.1.45"
-          },
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.30",
-            "latest": "0.2.31"
           }
         ]
       },
@@ -1887,8 +1882,8 @@
       {
         "from": "rainlang.deploy",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.30",
+        "stale": false,
+        "pinned": "0.2.31",
         "latest": "0.2.31"
       },
       {
@@ -2064,13 +2059,6 @@
         "note": "Every production receipt vault delegates deposit / withdraw / certify authorization to this authoriser. Which clone is live is read from a production vault's authorizer() on Base.",
         "entries": [
           {
-            "role": "V3-era authoriser clone",
-            "address": null,
-            "network": "base",
-            "status": "unknown",
-            "note": "the pre-V4 authorizer() target"
-          },
-          {
             "role": "Authoriser implementation",
             "address": null,
             "network": "base",
@@ -2104,6 +2092,13 @@
             "network": "",
             "status": "migrated",
             "note": "held the beacons at deploy; ownership since migrated to the Safe"
+          },
+          {
+            "role": "V3-era authoriser clone",
+            "address": "0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456",
+            "network": "base",
+            "status": "migrated",
+            "note": "the pre-V4 production authoriser clone"
           },
           {
             "role": "V2 receipt beacon owner",
@@ -4131,7 +4126,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53419329
+        "discoveredAtBlock": 53421579
       },
       {
         "network": "ethereum",
@@ -4680,7 +4675,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26327556
+        "discoveredAtBlock": 26327926
       },
       {
         "network": "bsc",
@@ -5549,7 +5544,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131253316
+        "discoveredAtBlock": 131263200
       },
       {
         "network": "hyperevm",
@@ -6090,7 +6085,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50194147
+        "discoveredAtBlock": 50198673
       },
       {
         "network": "robinhood",
@@ -6631,7 +6626,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 104269953
+        "discoveredAtBlock": 104313807
       }
     ]
   },
@@ -6744,6 +6739,13 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE",
             "contract": "LibProdDeployCurrent",
             "path": "src/generated/LibProdDeployCurrent.sol"
+          }
+        ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -8219,6 +8221,13 @@
             "path": "src/generated/LibProdDeployV4.sol"
           }
         ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
+          }
+        ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
           {
             "name": "GRANTEE_SERVICE_3D0C",
@@ -9683,6 +9692,13 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE_HYPEREVM",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
+          }
+        ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -11158,6 +11174,13 @@
             "path": "src/generated/LibProdDeployV4.sol"
           }
         ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
+          }
+        ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
           {
             "name": "GRANTEE_SERVICE_3D0C",
@@ -12629,6 +12652,13 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE_BSC",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
+          }
+        ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -14198,6 +14228,13 @@
             "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
+          }
+        ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
           {
             "name": "GRANTEE_SERVICE_3D0C",
@@ -15671,6 +15708,13 @@
             "path": "src/generated/LibProdDeployV4.sol"
           }
         ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
+          }
+        ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
           {
             "name": "GRANTEE_SERVICE_3D0C",
@@ -17135,6 +17179,13 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE_HYPEREVM",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
+          }
+        ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -18610,6 +18661,13 @@
             "path": "src/generated/LibProdDeployV4.sol"
           }
         ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
+          }
+        ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
           {
             "name": "GRANTEE_SERVICE_3D0C",
@@ -20081,6 +20139,13 @@
             "name": "STOX_PROD_AUTHORISER_V4_CLONE_BSC",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
+          }
+        ],
+        "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456": [
+          {
+            "name": "STOX_PROD_AUTHORISER_V3_CLONE",
+            "contract": "LibAuthoriserInvariants",
+            "path": "src/lib/LibAuthoriserInvariants.sol"
           }
         ],
         "0x3d0cd66efa66c05d86c3d4316b03eae87ab9e8ae": [
@@ -21694,19 +21759,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26327553,
+            "headBlock": 26327925,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26327553,
+            "headBlock": 26327925,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26327553,
+            "headBlock": 26327925,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21863,19 +21928,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131253178,
+            "headBlock": 131263174,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131253178,
+            "headBlock": 131263174,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131253178,
+            "headBlock": 131263174,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22032,19 +22097,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50194078,
+            "headBlock": 50198653,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50194078,
+            "headBlock": 50198653,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50194078,
+            "headBlock": 50198653,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22201,19 +22266,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 104269307,
+            "headBlock": 104313743,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 104269307,
+            "headBlock": 104313743,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 104269307,
+            "headBlock": 104313743,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22370,19 +22435,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53419330,
+            "headBlock": 53421581,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53419330,
+            "headBlock": 53421581,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53419330,
+            "headBlock": 53421581,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22733,14 +22798,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 38,
+    "ok": 37,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 40,
+    "atAuthoriserTarget": 39,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -23585,26 +23650,26 @@
         "symbol": "wtNKE",
         "name": "Wrapped NIKE, Inc. ST0x",
         "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
+        "nameOk": null,
+        "symbolOk": null,
         "decimalsOk": true,
-        "liveName": "Wrapped NIKE, Inc. ST0x",
-        "liveSymbol": "wtNKE",
+        "liveName": null,
+        "liveSymbol": null,
         "liveDecimals": 18,
         "assetOk": true,
         "asset": "0x88c3f4e2e0a977fed97ed246c70bfd7a01070246",
         "unwrapped": "0x88C3F4E2E0a977Fed97ed246c70BFD7A01070246",
         "legacy": null,
         "receipt": "0x8A0037757d67084f5431c02eE2A352593eFe2957",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -25906,7 +25971,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 2024,
+      "fullSourceLoc": 2254,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -26438,7 +26503,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 159,
-      "commitsSinceAudit": 592,
+      "commitsSinceAudit": 597,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
