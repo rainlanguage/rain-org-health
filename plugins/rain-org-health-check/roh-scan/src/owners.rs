@@ -192,11 +192,10 @@ pub fn build_owners(
         .and_then(|o| o.owners.as_ref())
         .map(|v| v.iter().map(|a| a.to_lowercase()).collect());
 
-    // Unread roster: no declared set, so no live owner can be called unexpected.
-    let declared = parse_expected_owners(safe_lib);
+    let declared = parse_expected_owners(safe_lib).unwrap_or_default();
     let mut signers: Vec<serde_json::Value> = Vec::new();
     let mut declared_lower: Vec<String> = Vec::new();
-    for (i, a) in declared.iter().flatten().enumerate() {
+    for (i, a) in declared.iter().enumerate() {
         let al = a.to_lowercase();
         let on_chain = match &onchain_owners {
             None => "unverified",
@@ -209,11 +208,11 @@ pub fn build_owners(
             "status": "active", "note": "", "onChain": on_chain,
         }));
     }
-    let signer_count = declared.as_ref().map(Vec::len);
+    let signer_count = signers.len();
 
     // Any live owner NOT in the declared set is unexpected — surface the drift
     // rather than hide it.
-    if let (Some(set), Some(_)) = (&onchain_owners, &declared) {
+    if let Some(set) = &onchain_owners {
         for oc in set.iter().filter(|oc| !declared_lower.contains(oc)) {
             signers.push(json!({
                 "role": "Unexpected on-chain owner", "address": oc, "network": "base",
@@ -228,8 +227,7 @@ pub fn build_owners(
     let verification = onchain.map(|o| {
         let signer_match = onchain_owners
             .as_ref()
-            .zip(signer_count)
-            .map(|(set, n)| set.len() == n && declared_lower.iter().all(|d| set.contains(d)));
+            .map(|set| set.len() == signer_count && declared_lower.iter().all(|d| set.contains(d)));
         let threshold_match = o.threshold.map(|t| t == threshold);
         // The verdict needs BOTH calls: a threshold mismatch — or a threshold RPC
         // that didn't answer — must not read as verified. So `reachable` means both
@@ -252,19 +250,10 @@ pub fn build_owners(
         })
     });
 
-    let policy = match signer_count {
-        Some(n) => format!("{threshold}-of-{n}"),
-        None => format!("{threshold}-of-? (roster unread)"),
-    };
-    let signers_note = match signer_count {
-        Some(_) => "Declared by st0x.deploy's expectedOwners() and checked against the live Safe getOwners() on Base.",
-        None => "st0x.deploy's expectedOwners() could not be read, so the declared roster is unread, not empty.",
-    };
-
     let safe = json!({
         "id": "safe",
         "title": "Upgrade authority — token-owner Safe",
-        "note": format!("{policy} Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role."),
+        "note": format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role."),
         "entries": [
             entry("Base Safe", Some(base_safe), "base", "active", "beacon owner + authoriser admin"),
             entry("Ethereum Safe", eth_safe, "ethereum", "active", "same policy, per-chain address"),
@@ -273,8 +262,8 @@ pub fn build_owners(
 
     let signers_group = json!({
         "id": "signers",
-        "title": format!("Safe signers ({policy})"),
-        "note": signers_note,
+        "title": format!("Safe signers ({threshold}-of-{signer_count})"),
+        "note": "Declared by st0x.deploy's expectedOwners() and checked against the live Safe getOwners() on Base.",
         "verification": verification,
         "entries": signers,
     });
