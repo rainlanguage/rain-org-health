@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T06:54:34Z",
+  "generatedAt": "2026-11-03T13:58:05Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2991,7 +2991,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4e169cd2ab4f82640a8c65c68fed55863866fdb0",
@@ -2999,7 +2999,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x626757e6f50675d17fcad312e82f989ae7a23d38",
@@ -3007,7 +3007,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
@@ -3015,7 +3015,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x58ce5024b89b4f73c27814c0f0abbea331c99be8",
@@ -3023,7 +3023,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x38eb797892ed71da69bdc27a456a7c83ff813b52",
@@ -3031,7 +3031,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x7271a3c91bb6070ed09333b84a815949d4f16d14",
@@ -3039,7 +3039,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x9a507314ea2a6c5686c0d07bfecb764dcf324dff",
@@ -3047,7 +3047,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x1f17523b147ccc2a2328c0f014f6d49c479ea063",
@@ -3055,7 +3055,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
@@ -3063,7 +3063,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfbde45df60249203b12148452fc77c3b5f811eb2",
@@ -3071,7 +3071,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
@@ -3079,7 +3079,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc941c1506b7555ba8c506fb6c9b9cc259902d612",
@@ -3087,7 +3087,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
@@ -3095,7 +3095,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x0acfea6833c4a3f41bf2fbd736aa9eea547d90ee",
@@ -3103,7 +3103,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x323804af6f3bb463d688b854667c6870a0fc06ad",
@@ -3111,7 +3111,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc585aeb8b76c5f5e4215470a7625258e86ed7746",
@@ -3119,7 +3119,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x9a5d3caec90b0332b18c0b93fef42f3f8c918289",
@@ -3127,7 +3127,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x96de077262609298cd891e4ab21bd34837de33ab",
@@ -3135,7 +3135,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x7001e2974f775f0fd73a3d2e5914e591f3ec3fbb",
@@ -3143,7 +3143,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4dba41f0feb390f208a85e96168ff5d8ac2b6f5c",
@@ -3151,7 +3151,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x722cb373f1871a176fb5dc3953046f2eae22f619",
@@ -3159,7 +3159,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
@@ -3167,7 +3167,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x50b5225409a55b873fd6c2fd5880af5a11ace9b1",
@@ -3175,7 +3175,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6088f8ef741ae1f5a61882866f130631b41617e2",
@@ -3183,7 +3183,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x98c02b58b7e65ef5a4262d9536162949e3b2e141",
@@ -3191,7 +3191,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdde9346107609a05439a0b59ab6ed4f7f81a1fbf",
@@ -3199,7 +3199,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
@@ -3207,7 +3207,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
@@ -3215,7 +3215,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x15de944cd020a18c8e5626fb0f81b36e73956199",
@@ -3223,7 +3223,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xd36056a4a03707d3743fce4e9c08852820adcfdc",
@@ -3231,7 +3231,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6a071e25fa25653cf15d1ee320ea3df771926aa0",
@@ -3239,7 +3239,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
@@ -3247,7 +3247,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb6021810971714cd48572af527307acc324ecf61",
@@ -3255,7 +3255,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xbdc237aa3b67cc3088adaf117913f30bf08157a3",
@@ -3263,7 +3263,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5cefd886dd05001c2fc32c313e05360d07f37d8f",
@@ -3271,7 +3271,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x57573351f3fdd20a57dee4a7f836de1ce9900d4b",
@@ -3279,7 +3279,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x8518931497d2a8f07bc607d1d3295b398d065a65",
@@ -3287,7 +3287,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
@@ -3295,7 +3295,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xca1a378f9a250131a2fe51c10f120fef7edca56e",
@@ -3303,7 +3303,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x51d5c8c8040358686952a30fac116aac32390d6a",
@@ -3311,7 +3311,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xbeb0c2011bd5520a0998b69132e9245e39ac5d1d",
@@ -3319,7 +3319,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
@@ -3327,7 +3327,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x88c3f4e2e0a977fed97ed246c70bfd7a01070246",
@@ -3335,7 +3335,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xa4178410216f5f00c718be88c2ff8ac24de192bc",
@@ -3343,7 +3343,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6c2b6ed57d4d9e93f3e4975fac70ee4b180f4eb9",
@@ -3351,7 +3351,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe9bc7ef69f123ca2bca1021d1be30224271a9217",
@@ -3359,7 +3359,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
@@ -3367,7 +3367,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xeda4df511dea07b6529db2196998b30e03791d87",
@@ -3375,7 +3375,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x785bd77b8e92866f87e01416d1022d729975d529",
@@ -3383,7 +3383,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x22e99389f5ef6fa110317e2aec0a95d8aa39efd4",
@@ -3391,7 +3391,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xda2e8d6e2a7d0a38a6b39a274d6911476062298b",
@@ -3399,7 +3399,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6c5c451672e9d0cef8728cb511c01e5cdd096563",
@@ -3407,7 +3407,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x31f55e6dcf09e706ba10e4cbb455de0fbf932bca",
@@ -3415,7 +3415,7 @@
             "label": "safe",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6ec2421d74f2af61b7ee7bccae25a3b6a7961aa0",
@@ -3423,7 +3423,7 @@
             "label": "safe",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x40584fbad768ff46f299cf50cae5b3d437e213fa",
@@ -3431,21 +3431,726 @@
             "label": "safe",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
+          },
+          {
+            "vault": "0x01c07a1d4f569e0aae674b3509b3aab57ee73bd4",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x07d7ca9384812b86e7e429473df354fb59da73a0",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x0bac265630d1afbd85b048974c0d57e49ade7d74",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x131c02261cbc043f21ead0e4122ff211e35d08f7",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x135c095beeb69881e1fb1efb4599518e4977c3cd",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x1563ecc7625207cc91a2e86c0a57a893933e8e01",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x1c51bb8685605afbc95c6bc1fb3d63d680a24f57",
+            "owner": "0x19f95a84aa1c48a2c6a7b2d5de164331c86d030c",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x1e3c29671e09ea0ff83bae2e5edf8b3ab786f38c",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x24a9eddd6a3b66de4944c47dcb0337c106effac8",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x253e634b581042d2a2a33db9b8b619533156f067",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x2e51bd39beb6be40689081836707859dbb6d835a",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x306f3f1bbad9b8a680217f9a49353bad95546d0f",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x3d28020d2531a7d1d1152a8fa3e6763f508226b2",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x3ee8455a2ce06830218c87de27a859d4a428a79d",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x3f2957da3cedce37e2295d030e913a8d7d48ab5f",
+            "owner": "0x691accd4c6dc147e3cf983bcbf3198896e794451",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x41c151375344882848685b344bf8f6b8e4188d86",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x47c04a6f705f755c10641e975607ece8f18bc60c",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x48a8b8106e8c0edbb1edefc3f7564d4a660b821a",
+            "owner": "0x8f6bf4a948af2fc74ee34982c4435a7c013d1a52",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x4a9a9fc94a507559481270d0bff3315ab92fcefa",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x53b6febebfe755b37607088f3ba536416146ca2e",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x5409b0413b5d2062a1b913a01afc0475aaaaa4bf",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x5e3fb85b57eb233a5e13d9a53f1f9ce08c24a5e6",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6540478507ab063b03a704ac2c8e9118f1760848",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x661e6a738c7a4036a4e879897a864a0f1aebee60",
+            "owner": "0x8f6bf4a948af2fc74ee34982c4435a7c013d1a52",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6a6098509f271775a1c305b2b3e112d4e480c8e0",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x725e0df28d1eb09338f63776b76bcfc00f3b6f44",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x74a5c92fe1185bdc4dcc0eba4a42dc090b46be9e",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x7844e35d9d8fb68bbfc7c0731683a6cb5a51092c",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x79ada5fb3f94a36ca831725c26024c1b142d7024",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x7a2242990addd87b40388f56908ac1f05d379a7e",
+            "owner": "0x6d7006bc6aa5dd32e903023a8064f8b21a05701b",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x7a5155b7677f6af0a1c87f0f5ba4dae9c66a6f6b",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x7c05faf967c1fba5ff987018f8ce0e82f5588e9e",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x7e03988887fc2480c7814e373a3a563660e3e77b",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x80308f7f0bd25f371c2c96deaa01c355536295f2",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x8104acbd0f748f4c3d327b56f54dfbf59f0540b3",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x821fa59bdff190443e2f4212953b58219d3be664",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x86ef8075d8a594c8e302a105a401c22eb98071eb",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x8ac090daefe825fd04a2cd7309fcf9b2805735a8",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x8c1e16a91d016e0251486c1bdbc57eba4f0a61e6",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x90687ba21da53189047cd168a66ecc76282bf800",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x90bef44ac29d63c82ccd73d9d632b05078e559ea",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x936c906e9839b09f874090624d57bc20ca562189",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x94a0a619e79f3892c6f76afa62889e3bf86186e8",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x94ade44dd0bf93ce832835c072f50a1dbfca8c54",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x9610c265eb8f38b22fec78498c74924d9fe55891",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x9e0052b62ff6ce9055b33996a1dee768041b1f67",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x9f4854bf247db4f7781120cb17d9057032ff0962",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x9face7632b0a935b7a670fe30513cbaa1cba235b",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa134e0cfa73fd0c7460fe5321d8d035e110e3afb",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa3c8839bf1b16288c459ac2eed8a5db596dc1d5f",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa4f1f3e56f4d008433b43d3e551a46b4b7910268",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa51a91845815a80ac70807d39544e6c6eacfb70d",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa662066a60964a528ad05209139a79bda3a7577f",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xad206ba0cb873778c3c333d5fb9d5dbad23bfd3b",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xadecffdd1bf913768e8b08688954e5bf6e83290f",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xaf07a843a6221d3e6540122fa712df8541b05e26",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb04ae1d688ab751b1c067405ca5f0f775e991d8a",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xbaf11c95e73b3091d1133e68c14c9ff1ce848563",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xbf530d18213d5d923cc84668e18ba494d32b3dad",
+            "owner": "0x8e4bdeec7ceb9570d440676345da1dce10329f5b",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xc0fe37b0eee8ca9237d03c55ebbb9e37fbab18aa",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xc51523b64638eb4ad0fad3d4dd1c23d7ab33f088",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xc7fb028dd220298db0a442828617d04acb00b853",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xcbdff0f98adb9236f8f4fccbe261ea1a53ac42e3",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xcc21468e708931ccb2357357b2e9637893762b46",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xccca8f6b8c9047c7298332e6ba704045944591fc",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xcf7599006d8eda8ea712d1b01e7fae7581dd77b7",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xd15919e6931d97ecc0aafac72d46188929ab1081",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xd40ba41de9ed1933e16d41b70bbc0eb3f0558e61",
+            "owner": "0x19f95a84aa1c48a2c6a7b2d5de164331c86d030c",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xd4cf0cdd9293fc7a58a168cf836cefebc3cb5422",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xda1087ceac09c8ca1fff9283d4db6fac24691766",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdc33ce232a0cde841d3a3092c6a91786381e6b76",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xddb07add0e23bb7ec97f53c0959d9c6cc09624f4",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdeb89fb5406d04f17173c1e6a72bf797df0c7330",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdf620d79026fcb2fd7e6c0dfa99e2e46f2f07550",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdf91d23ab662633c10d97196a2ef047825317bb4",
+            "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdfed616b3246306c72c634f8fd1f9def21c763e7",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xe4c2f86fbcc314f9298e8e7fc4359a9194685a3a",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xe63904f6c8ef88c6640ac2197ccca6f036b182a1",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xe729c5d758f1f1ba4ef19742e6a807b646ed5278",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xeacb0ef8b160d0340578d8ba24311a5f7ad717f2",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xeca7f1c395164070ad2702f41998f71a672d4bda",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xf1b6223f3e4e3f75341ab7e82e0988a6155da453",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xf5245a17e5eb64d53dea213d40aba01821d465cd",
+            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xf5c75d1399caa85d2d9549caf9d4998280230f80",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xf976f4846c4845936a34a92d53bc091567f27a02",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xfb7076abaebd866108a1843832563ebd54615a04",
+            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xfe3be4f17d50bd39d2434c96578a8cbb58e39596",
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
           }
         ],
         "counts": {
-          "safe": 3,
-          "timelock": 53,
-          "other": 0,
+          "safe": 29,
+          "timelock": 59,
+          "other": 56,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 0,
+          "certificationExpired": 53,
           "certificationUnknown": 0,
-          "notPinned": 0,
+          "notPinned": 88,
           "notOnChain": 0
         },
-        "discoveryError": "the subgraph location could not be read from st0x.deploy's deploy-subgraph workflow"
+        "discoveredCount": 144,
+        "discoveredAtBlock": 53462497
       },
       {
         "network": "ethereum",
@@ -3459,7 +4164,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
@@ -3467,7 +4172,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
@@ -3475,7 +4180,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
@@ -3483,7 +4188,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
@@ -3491,7 +4196,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
@@ -3499,7 +4204,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
@@ -3507,7 +4212,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
@@ -3515,7 +4220,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
@@ -3523,7 +4228,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
@@ -3531,7 +4236,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
@@ -3539,7 +4244,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
@@ -3547,7 +4252,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
@@ -3555,7 +4260,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
@@ -3563,7 +4268,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
@@ -3571,7 +4276,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
@@ -3579,7 +4284,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
@@ -3587,7 +4292,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
@@ -3595,7 +4300,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
@@ -3603,7 +4308,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
@@ -3611,7 +4316,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
@@ -3619,7 +4324,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
@@ -3627,7 +4332,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
@@ -3635,7 +4340,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
@@ -3643,7 +4348,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
@@ -3651,7 +4356,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
@@ -3659,7 +4364,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
@@ -3667,7 +4372,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
@@ -3675,7 +4380,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
@@ -3683,7 +4388,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
@@ -3691,7 +4396,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
@@ -3699,7 +4404,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
@@ -3707,7 +4412,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
@@ -3715,7 +4420,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
@@ -3723,7 +4428,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
@@ -3731,7 +4436,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
@@ -3739,7 +4444,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
@@ -3747,7 +4452,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
@@ -3755,7 +4460,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
@@ -3763,7 +4468,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
@@ -3771,7 +4476,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
@@ -3779,7 +4484,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
@@ -3787,7 +4492,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
@@ -3795,7 +4500,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
@@ -3803,7 +4508,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
@@ -3811,7 +4516,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
@@ -3819,7 +4524,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
@@ -3827,7 +4532,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
@@ -3835,7 +4540,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
@@ -3843,7 +4548,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
@@ -3851,7 +4556,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
@@ -3859,7 +4564,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
@@ -3867,7 +4572,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
@@ -3875,7 +4580,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfae9afe275e57759f8fbae5f252c65adbf1b773f",
@@ -3883,7 +4588,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
@@ -3891,7 +4596,7 @@
             "label": "timelock",
             "certificationExpired": true,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xd78025aa344e549a1d76ece1591c481cc7bc3548",
@@ -3899,21 +4604,102 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
+          },
+          {
+            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xaab11f0141c2aa6b9a3845efdb1a6d16dc40924a",
+            "owner": "0x827e0c61917086c464b6844411636c377fcc5da3",
+            "label": "other",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
           }
         ],
         "counts": {
           "safe": 0,
-          "timelock": 56,
-          "other": 0,
+          "timelock": 65,
+          "other": 1,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 1,
+          "certificationExpired": 4,
           "certificationUnknown": 0,
-          "notPinned": 0,
+          "notPinned": 10,
           "notOnChain": 0
         },
-        "discoveryError": "the subgraph location could not be read from st0x.deploy's deploy-subgraph workflow"
+        "discoveredCount": 66,
+        "discoveredAtBlock": 26334726
       },
       {
         "network": "bsc",
@@ -3927,7 +4713,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
@@ -3935,7 +4721,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
@@ -3943,7 +4729,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
@@ -3951,7 +4737,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
@@ -3959,7 +4745,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
@@ -3967,7 +4753,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
@@ -3975,7 +4761,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
@@ -3983,7 +4769,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
@@ -3991,7 +4777,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
@@ -3999,7 +4785,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
@@ -4007,7 +4793,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
@@ -4015,7 +4801,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
@@ -4023,7 +4809,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
@@ -4031,7 +4817,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
@@ -4039,7 +4825,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
@@ -4047,7 +4833,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
@@ -4055,7 +4841,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
@@ -4063,7 +4849,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfae9afe275e57759f8fbae5f252c65adbf1b773f",
@@ -4071,7 +4857,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
@@ -4079,7 +4865,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xd78025aa344e549a1d76ece1591c481cc7bc3548",
@@ -4087,7 +4873,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
@@ -4095,7 +4881,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
@@ -4103,7 +4889,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
@@ -4111,7 +4897,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xaab11f0141c2aa6b9a3845efdb1a6d16dc40924a",
@@ -4119,7 +4905,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x516d6c697c40e24de9d17811e642a07a6d70cf07",
@@ -4127,7 +4913,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x012ec0436407b8ade9a00614e01abf1faab69755",
@@ -4135,7 +4921,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe319e212860ef85c4082b3b73641bd25721c88b2",
@@ -4143,7 +4929,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2c594750dbe8e5b2d8d155b4fcb39fed307a91b9",
@@ -4151,7 +4937,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x925eb169ed82889a7afe5292d97998acb26b6233",
@@ -4159,7 +4945,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfa63f568c4487711124d9f258d3a9167a89797c3",
@@ -4167,7 +4953,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb9c3a133e2425eec6d8a1dad9a0d78308be79a5e",
@@ -4175,7 +4961,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xd2f6abfb251a3e43df9191486485de0e46a9e6a5",
@@ -4183,7 +4969,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xd170ed7698508f228bb5a67d0f4548eeea6f15cb",
@@ -4191,7 +4977,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2aa2258b97f44425769cf1a4e92a3562060a93e8",
@@ -4199,7 +4985,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x0d2029ed7497a8cc5c65e808393ced0af2259385",
@@ -4207,7 +4993,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x683dd1c36169b25355c8c110942a820f395ffb7d",
@@ -4215,7 +5001,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x185ccb3c9c09300b3877f71e747f041604f7603f",
@@ -4223,7 +5009,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xcb8b0c80560a66c96a25297cc98b23fa1d7acc6a",
@@ -4231,7 +5017,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xcd49da53d0570e6d34ab786aa4eb4f9e0e6ab045",
@@ -4239,7 +5025,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
@@ -4247,7 +5033,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
@@ -4255,7 +5041,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
@@ -4263,7 +5049,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
@@ -4271,7 +5057,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
@@ -4279,7 +5065,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x543e33e9276cf00b74689c8e41fd7fc921128ba0",
@@ -4287,7 +5073,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe2593db54e7893d311cbf5087cdb7a9027b9a7fd",
@@ -4295,7 +5081,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc67038bbff91f2568b902ff171e9f9c06ed98815",
@@ -4303,7 +5089,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xbca97cc57916734130c9f05ea8b217682a249b75",
@@ -4311,7 +5097,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x042dfd33de6766a8858f188dfcf207d311da6488",
@@ -4319,7 +5105,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
@@ -4327,7 +5113,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
@@ -4335,7 +5121,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
@@ -4343,7 +5129,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xcc23ef9e1e74c22ab2a9b73e253af01531385b08",
@@ -4351,7 +5137,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
@@ -4359,7 +5145,7 @@
             "label": "timelock",
             "certificationExpired": true,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe39a028cdc8a50e655a5b31ba8a48ce36f3a8243",
@@ -4367,21 +5153,422 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
+          },
+          {
+            "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x194c6ebe9919c8681aa17c8814ee6c8a0534b28f",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x21ebe855f15c2e1badea603c1cb07b964096a616",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x2c5374933d1e7208b2184fa1a45119fdcac13123",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x344147366f648640076d363faf659c214788e99d",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xc361da5ac6523fbc40a1b160ce98d1e84667325b",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xc6e584f4341e418962a0dde3f2969b6be58f1920",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
           }
         ],
         "counts": {
-          "safe": 0,
-          "timelock": 56,
+          "safe": 41,
+          "timelock": 65,
           "other": 0,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 1,
+          "certificationExpired": 45,
           "certificationUnknown": 0,
-          "notPinned": 0,
+          "notPinned": 50,
           "notOnChain": 0
         },
-        "discoveryError": "the subgraph location could not be read from st0x.deploy's deploy-subgraph workflow"
+        "discoveredCount": 106,
+        "discoveredAtBlock": 131445019
       },
       {
         "network": "hyperevm",
@@ -4395,7 +5582,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
@@ -4403,7 +5590,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
@@ -4411,7 +5598,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
@@ -4419,7 +5606,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
@@ -4427,7 +5614,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
@@ -4435,7 +5622,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
@@ -4443,7 +5630,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
@@ -4451,7 +5638,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
@@ -4459,7 +5646,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
@@ -4467,7 +5654,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
@@ -4475,7 +5662,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
@@ -4483,7 +5670,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
@@ -4491,7 +5678,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
@@ -4499,7 +5686,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
@@ -4507,7 +5694,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
@@ -4515,7 +5702,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
@@ -4523,7 +5710,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
@@ -4531,7 +5718,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
@@ -4539,7 +5726,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
@@ -4547,7 +5734,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
@@ -4555,7 +5742,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
@@ -4563,7 +5750,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
@@ -4571,7 +5758,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
@@ -4579,7 +5766,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
@@ -4587,7 +5774,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
@@ -4595,7 +5782,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
@@ -4603,7 +5790,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
@@ -4611,7 +5798,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
@@ -4619,7 +5806,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
@@ -4627,7 +5814,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
@@ -4635,7 +5822,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
@@ -4643,7 +5830,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
@@ -4651,7 +5838,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
@@ -4659,7 +5846,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
@@ -4667,7 +5854,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
@@ -4675,7 +5862,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
@@ -4683,7 +5870,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
@@ -4691,7 +5878,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
@@ -4699,7 +5886,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
@@ -4707,7 +5894,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
@@ -4715,7 +5902,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
@@ -4723,7 +5910,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
@@ -4731,7 +5918,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
@@ -4739,7 +5926,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
@@ -4747,7 +5934,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
@@ -4755,7 +5942,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
@@ -4763,7 +5950,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
@@ -4771,7 +5958,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
@@ -4779,7 +5966,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
@@ -4787,7 +5974,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
@@ -4795,7 +5982,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
@@ -4803,7 +5990,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
@@ -4811,7 +5998,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfae9afe275e57759f8fbae5f252c65adbf1b773f",
@@ -4819,7 +6006,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
@@ -4827,7 +6014,7 @@
             "label": "timelock",
             "certificationExpired": true,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xd78025aa344e549a1d76ece1591c481cc7bc3548",
@@ -4835,21 +6022,94 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
+          },
+          {
+            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
           }
         ],
         "counts": {
           "safe": 0,
-          "timelock": 56,
+          "timelock": 65,
           "other": 0,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 1,
+          "certificationExpired": 4,
           "certificationUnknown": 0,
-          "notPinned": 0,
+          "notPinned": 9,
           "notOnChain": 0
         },
-        "discoveryError": "the subgraph location could not be read from st0x.deploy's deploy-subgraph workflow"
+        "discoveredCount": 65,
+        "discoveredAtBlock": 50281873
       },
       {
         "network": "robinhood",
@@ -4863,7 +6123,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
@@ -4871,7 +6131,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
@@ -4879,7 +6139,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
@@ -4887,7 +6147,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
@@ -4895,7 +6155,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
@@ -4903,7 +6163,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
@@ -4911,7 +6171,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
@@ -4919,7 +6179,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
@@ -4927,7 +6187,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
@@ -4935,7 +6195,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
@@ -4943,7 +6203,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
@@ -4951,7 +6211,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
@@ -4959,7 +6219,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
@@ -4967,7 +6227,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
@@ -4975,7 +6235,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
@@ -4983,7 +6243,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
@@ -4991,7 +6251,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
@@ -4999,7 +6259,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
@@ -5007,7 +6267,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
@@ -5015,7 +6275,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
@@ -5023,7 +6283,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
@@ -5031,7 +6291,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
@@ -5039,7 +6299,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
@@ -5047,7 +6307,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
@@ -5055,7 +6315,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
@@ -5063,7 +6323,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
@@ -5071,7 +6331,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
@@ -5079,7 +6339,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
@@ -5087,7 +6347,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
@@ -5095,7 +6355,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
@@ -5103,7 +6363,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
@@ -5111,7 +6371,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
@@ -5119,7 +6379,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
@@ -5127,7 +6387,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
@@ -5135,7 +6395,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
@@ -5143,7 +6403,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
@@ -5151,7 +6411,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
@@ -5159,7 +6419,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
@@ -5167,7 +6427,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
@@ -5175,7 +6435,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
@@ -5183,7 +6443,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
@@ -5191,7 +6451,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
@@ -5199,7 +6459,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
@@ -5207,7 +6467,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
@@ -5215,7 +6475,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
@@ -5223,7 +6483,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
@@ -5231,7 +6491,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
@@ -5239,7 +6499,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
@@ -5247,7 +6507,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
@@ -5255,7 +6515,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
@@ -5263,7 +6523,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
@@ -5271,7 +6531,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
@@ -5279,7 +6539,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xfae9afe275e57759f8fbae5f252c65adbf1b773f",
@@ -5287,7 +6547,7 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
@@ -5295,7 +6555,7 @@
             "label": "timelock",
             "certificationExpired": true,
             "pinned": true,
-            "onChain": null
+            "onChain": true
           },
           {
             "vault": "0xd78025aa344e549a1d76ece1591c481cc7bc3548",
@@ -5303,21 +6563,94 @@
             "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
-            "onChain": null
+            "onChain": true
+          },
+          {
+            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
+          },
+          {
+            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": false,
+            "onChain": true
           }
         ],
         "counts": {
           "safe": 0,
-          "timelock": 56,
+          "timelock": 65,
           "other": 0,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 1,
+          "certificationExpired": 4,
           "certificationUnknown": 0,
-          "notPinned": 0,
+          "notPinned": 9,
           "notOnChain": 0
         },
-        "discoveryError": "the subgraph location could not be read from st0x.deploy's deploy-subgraph workflow"
+        "discoveredCount": 65,
+        "discoveredAtBlock": 105111196
       }
     ]
   },
@@ -5325,7 +6658,58 @@
     "org": "S01-Issuer",
     "repo": "st0x.deploy",
     "tag": "prod",
-    "unavailable": "could not read SUBGRAPH_NAME / ORMI_QUERY_BASE from .github/workflows/deploy-subgraph.yaml",
+    "subgraph": "st0x-rbac",
+    "networks": [
+      {
+        "network": "base",
+        "chain": "base",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-base/prod/gn"
+      },
+      {
+        "network": "bsc",
+        "chain": "bsc",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-bsc/prod/gn"
+      },
+      {
+        "network": "hyperevm",
+        "chain": "hyperevm",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-hyperevm/prod/gn"
+      },
+      {
+        "network": "mainnet",
+        "chain": "ethereum",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-mainnet/prod/gn"
+      },
+      {
+        "network": "robinhood",
+        "chain": "robinhood",
+        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71/subgraphs/st0x-rbac-robinhood/prod/gn"
+      }
+    ],
+    "roleNames": {
+      "0x1ae915b310cb86de75afe5db1721d474dd0a8617151f7524866025476454bc02": "DEPOSIT_ADMIN",
+      "0xa0f4a7675effb97b81a0c9d5b53b44a73019f25c5ec8fda76d7c1ad3920851d3": "WITHDRAW_ADMIN",
+      "0x48ece560b6811ee496fa3dedc7d5be3dfce8c5eb8f1cc18626507e158a23169b": "CERTIFY_ADMIN",
+      "0xe5c740c26fb65f0a8de546defe3fe0011d5f2292abe6c4e6c3833916f4d8f76c": "CONFISCATE_SHARES_ADMIN",
+      "0x4fa4167c411e3d3edd62f8bf767cb8c66f94f891502ddab57e7c55ca1d7d891d": "CONFISCATE_RECEIPT_ADMIN",
+      "0xd6075ca92e18a15ce0e8ecaaae57a112072844045d11beeb264aac5f85e0daf2": "SCHEDULE_CORPORATE_ACTION_ADMIN",
+      "0xe25ff801c3c463dad5f8999289b7b43090e0f6f5039ae7c220cbb762fe8ff373": "CANCEL_CORPORATE_ACTION_ADMIN",
+      "0x87a7811f4bfedea3d341ad165680ae306b01aaeacc205d227629cf157dd9f821": "DEPOSIT",
+      "0x7a8dc26796a1e50e6e190b70259f58f6a4edd5b22280ceecc82b687b8e982869": "WITHDRAW",
+      "0x50a07cb25d0d864370863300b20987dfdae089abad71b607faf639d09d053391": "CERTIFY",
+      "0x54f0af3716c79b30b8c228679d31d77a1a5f526c16af3262730e0a8de4363fed": "CONFISCATE_SHARES",
+      "0x3dd35eca0ca8a128757fa464a5dfa4ad6cc4853cad96dce4e90fdbea4f0a52e3": "CONFISCATE_RECEIPT",
+      "0xfc0b9a47b723baf66339577301d13949cab2da29c3baeaa9cfc1f36c513e8f89": "SCHEDULE_CORPORATE_ACTION",
+      "0x921a3c774c4abecc1bddc4f7beb397fdb2cde7806021d9571086abb74cd023e7": "CANCEL_CORPORATE_ACTION",
+      "0x0000000000000000000000000000000000000000000000000000000000000000": "TIMELOCK_DEFAULT_ADMIN_ROLE",
+      "0xb09aa5aeb3702cfd50b6b62bc4532604938f21248a27a1d5ca736082b6819cc1": "PROPOSER_ROLE",
+      "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63": "EXECUTOR_ROLE",
+      "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783": "CANCELLER_ROLE",
+      "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba": "MINT",
+      "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3": "BURN",
+      "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de": "EMERGENCY",
+      "0x97c877e40edb41710f0baf588c878ee15a04499b06ae8c98cf488875d91a7213": "MY_ROLE"
+    },
     "configRegistries": {
       "base": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9",
       "bsc": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9",
@@ -20401,19 +21785,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26332613,
+            "headBlock": 26334726,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26332613,
+            "headBlock": 26334726,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26332613,
+            "headBlock": 26334726,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -20570,19 +21954,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131388509,
+            "headBlock": 131444982,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131388509,
+            "headBlock": 131444982,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131388509,
+            "headBlock": 131444982,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -20739,19 +22123,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50256008,
+            "headBlock": 50281853,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50256008,
+            "headBlock": 50281853,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50256008,
+            "headBlock": 50281853,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -20908,19 +22292,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 104863675,
+            "headBlock": 105111265,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 104863675,
+            "headBlock": 105111265,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 104863675,
+            "headBlock": 105111265,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21077,19 +22461,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53449788,
+            "headBlock": 53462498,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53449788,
+            "headBlock": 53462498,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53449788,
+            "headBlock": 53462498,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21103,7 +22487,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 10,
-    "healthy": 10,
+    "healthy": 8,
     "contracts": [
       {
         "name": "StoxCorporateActionsFacet",
@@ -21116,10 +22500,10 @@
       {
         "name": "StoxOffchainAssetReceiptVaultAuthorizerV1",
         "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
-        "status": "healthy",
-        "codeMatch": true,
-        "hashMatch": true,
-        "erc165": "conformant"
+        "status": "unknown",
+        "codeMatch": null,
+        "hashMatch": null,
+        "erc165": "absent"
       },
       {
         "name": "StoxOffchainAssetReceiptVaultBeaconSetDeployer",
@@ -21156,10 +22540,10 @@
       {
         "name": "StoxUnifiedDeployer",
         "address": "0x81D0ecD58346bf2d484E7774f55EABc1AA3F4bcc",
-        "status": "healthy",
-        "codeMatch": true,
-        "hashMatch": true,
-        "erc165": "conformant"
+        "status": "unknown",
+        "codeMatch": null,
+        "hashMatch": null,
+        "erc165": "absent"
       },
       {
         "name": "StoxWrappedTokenVault",
@@ -21214,9 +22598,9 @@
         {
           "name": "Receipt-vault beacon",
           "address": "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
-          "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-          "ownerLabel": "timelock",
-          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
+          "owner": null,
+          "ownerLabel": "unknown",
+          "implementation": null,
           "implVersion": "unknown",
           "targetImpl": null,
           "targetVersion": "0.1.1",
@@ -21440,14 +22824,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 47,
+    "ok": 32,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 50,
+    "atAuthoriserTarget": 37,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -21457,13 +22841,13 @@
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
-          "symbol": "tIBHG",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
+          "name": null,
+          "symbol": null,
+          "deployed": null,
+          "authoriser": null,
+          "authoriserLabel": "unknown",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "atAuthoriserTarget": null
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
@@ -21616,26 +23000,26 @@
         "symbol": "wtAMZN",
         "name": "Wrapped Amazon.com Inc ST0x",
         "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Amazon.com Inc ST0x",
-        "liveSymbol": "wtAMZN",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x466cb2e46fa1afc0ab5e22274b34d0391db18efd",
         "legacy": "0x8d8c315db61f60dcc3c66cdb48ca87fc643e35ea",
         "receipt": "0x3c4895df971e5c1fdca81bf74adb8eee94f24721",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "unwrappedDeployed": null,
+        "legacyDeployed": null,
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -21720,26 +23104,26 @@
         "symbol": "wtBABA",
         "name": "Wrapped Alibaba Group Holding Limited ADR ST0x",
         "address": "0x7e5cc7eAe0455A07Ab4abf354E0f5657BA2888BD",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Alibaba Group Holding Limited ADR ST0x",
-        "liveSymbol": "wtBABA",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6b8fa7288dbec7c1c62bfe59cbd7bec7ebf846c5",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
         "legacy": null,
         "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -21902,26 +23286,26 @@
         "symbol": "wtDRAM",
         "name": "Wrapped Roundhill Memory ETF ST0x",
         "address": "0x1A91Df4a970EBaB1bB4AF32Eb6d10509028eE4b8",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Roundhill Memory ETF ST0x",
-        "liveSymbol": "wtDRAM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x96de077262609298cd891e4ab21bd34837de33ab",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
         "legacy": null,
         "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -22110,40 +23494,40 @@
         "symbol": "wtLLY",
         "name": "Wrapped Eli Lilly and Company ST0x",
         "address": "0x892CcF5E75f4a7Ee6402971a1587F65BEE4d52bd",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Eli Lilly and Company ST0x",
-        "liveSymbol": "wtLLY",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0xA41Ce7B8255A01062ED1AF23ea5E8137B9300554",
         "legacy": null,
         "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
         "symbol": "wtLRCX",
         "name": "Wrapped Lam Research Corporation ST0x",
         "address": "0x328B9aFFa511fE26673edBb4fEa37eDaF908A3bc",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
-        "decimalsOk": true,
+        "decimalsOk": null,
         "liveName": "Wrapped Lam Research Corporation ST0x",
         "liveSymbol": "wtLRCX",
-        "liveDecimals": 18,
+        "liveDecimals": null,
         "assetOk": true,
         "asset": "0xdde9346107609a05439a0b59ab6ed4f7f81a1fbf",
         "unwrapped": "0xDdE9346107609A05439A0B59Ab6eD4f7F81a1FBF",
@@ -22188,38 +23572,38 @@
         "symbol": "wtMCD",
         "name": "Wrapped McDonald's Corporation ST0x",
         "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped McDonald's Corporation ST0x",
-        "liveSymbol": "wtMCD",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x6363657e19a82abe0e210e9b8c88ea61d96eceab",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x6363657E19A82ABE0E210e9b8c88Ea61d96eceaB",
         "legacy": null,
         "receipt": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
         "symbol": "wtMSFT",
         "name": "Wrapped Microsoft Corporation ST0x",
         "address": "0x515A3Ac2a6aB590bDFa970caFFFd7fAdC680886E",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
+        "nameOk": null,
         "symbolOk": true,
         "decimalsOk": true,
-        "liveName": "Wrapped Microsoft Corporation ST0x",
+        "liveName": null,
         "liveSymbol": "wtMSFT",
         "liveDecimals": 18,
         "assetOk": true,
@@ -22230,10 +23614,10 @@
         "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -22266,38 +23650,38 @@
         "symbol": "wtMU",
         "name": "Wrapped Micron Technology, Inc. ST0x",
         "address": "0x89EcfE9E0728D6b3c5eb0EE7236f8C6F806C7B56",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Micron Technology, Inc. ST0x",
-        "liveSymbol": "wtMU",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x7d89a2dffdaf9f48a64337c725d925381b431ae2",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
         "legacy": null,
         "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
         "symbol": "wtNKE",
         "name": "Wrapped NIKE, Inc. ST0x",
         "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
+        "nameOk": null,
         "symbolOk": true,
         "decimalsOk": true,
-        "liveName": "Wrapped NIKE, Inc. ST0x",
+        "liveName": null,
         "liveSymbol": "wtNKE",
         "liveDecimals": 18,
         "assetOk": true,
@@ -22307,7 +23691,7 @@
         "receipt": "0x8A0037757d67084f5431c02eE2A352593eFe2957",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": true,
+        "receiptDeployed": null,
         "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
         "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -22370,7 +23754,7 @@
         "symbol": "wtPLBY",
         "name": "Wrapped Playboy, Inc. ST0x",
         "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
@@ -22385,7 +23769,7 @@
         "receipt": "0x5978B2FA7B3DDA36847eb7D2003EC7AE112258AA",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": true,
+        "receiptDeployed": null,
         "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
         "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -22448,26 +23832,26 @@
         "symbol": "wtQQQM",
         "name": "Wrapped Invesco NASDAQ 100 ETF ST0x",
         "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Invesco NASDAQ 100 ETF ST0x",
-        "liveSymbol": "wtQQQM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "legacy": null,
         "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -22552,39 +23936,39 @@
         "symbol": "wtSMCI",
         "name": "Wrapped Super Micro Computer, Inc. ST0x",
         "address": "0xA759FAbbD866e6DB8bF76613C35825dC2e380bf0",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
+        "nameOk": null,
         "symbolOk": true,
         "decimalsOk": true,
-        "liveName": "Wrapped Super Micro Computer, Inc. ST0x",
+        "liveName": null,
         "liveSymbol": "wtSMCI",
         "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x8518931497d2a8f07bc607d1d3295b398d065a65",
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x8518931497d2A8f07Bc607D1D3295b398D065A65",
         "legacy": null,
         "receipt": "0xC23aC719988d2ABeffEE8AC75C790E328c44Fe79",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
         "symbol": "wtSPCX",
         "name": "Wrapped Space Exploration Technologies Corp. ST0x",
         "address": "0x19F89aaEf8a93f38A974beca9776f09aB844887F",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
         "nameOk": true,
-        "symbolOk": true,
+        "symbolOk": null,
         "decimalsOk": true,
         "liveName": "Wrapped Space Exploration Technologies Corp. ST0x",
-        "liveSymbol": "wtSPCX",
+        "liveSymbol": null,
         "liveDecimals": 18,
         "assetOk": true,
         "asset": "0xc585aeb8b76c5f5e4215470a7625258e86ed7746",
@@ -22593,11 +23977,11 @@
         "receipt": "0xba81B21F8a22bD99900E00Ed1373EC77C0772F55",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -22630,26 +24014,26 @@
         "symbol": "wtSPYM",
         "name": "Wrapped SPDR Portfolio S&P 500 ETF ST0x",
         "address": "0x31C2C14134e6E3B7ef9478297F199331133Fc2d8",
-        "status": "mismatch",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": false,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped State Street SPDR Portfolio S&P 500 ETF ST0x",
-        "liveSymbol": "wtSPYM",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x8fdf41116f755771bfe0747d5f8c3711d5debfbb",
         "legacy": "0x2289249984f1fa2ce86c4e8867e7eb819ea7df95",
         "receipt": "0x957056dd6e2e594742e36675e8aa5a567163e5bd",
-        "unwrappedDeployed": true,
-        "legacyDeployed": true,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "unwrappedDeployed": null,
+        "legacyDeployed": null,
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -22682,26 +24066,26 @@
         "symbol": "wtTR",
         "name": "Wrapped Tootsie Roll Industries, Inc. ST0x",
         "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Tootsie Roll Industries, Inc. ST0x",
-        "liveSymbol": "wtTR",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0xef935b17d5be5b7eca803158a845a08a7a9383f2",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0xeF935b17d5BE5b7ecA803158a845A08A7A9383f2",
         "legacy": null,
         "receipt": "0xf5e5d2d3b6be819Ff65cB364F4178252C9dbf5B7",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -22760,26 +24144,26 @@
         "symbol": "wtTTWO",
         "name": "Wrapped Take-Two Interactive Software, Inc. ST0x",
         "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
-        "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
-        "liveSymbol": "wtTTWO",
-        "liveDecimals": 18,
-        "assetOk": true,
-        "asset": "0x1a29ed11df8295d5f3b5f59849fd94cad615e024",
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
         "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
         "legacy": null,
         "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -24953,7 +26337,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 112,
-      "commitsSinceAudit": 1107,
+      "commitsSinceAudit": 1109,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
