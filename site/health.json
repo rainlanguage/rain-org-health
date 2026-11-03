@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T15:14:18Z",
+  "generatedAt": "2026-11-03T21:05:01Z",
   "auditGraph": {
     "nodes": [
       {
@@ -50,7 +50,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.metadata",
@@ -60,7 +60,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -104,7 +104,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -131,7 +131,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.5",
-            "latest": "0.2.9"
+            "latest": "0.2.10"
           }
         ]
       },
@@ -154,7 +154,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.26",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           }
         ]
       },
@@ -207,7 +207,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -296,7 +296,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           }
         ]
       },
@@ -322,7 +322,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.metadata",
@@ -332,7 +332,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -371,7 +371,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.metadata",
@@ -407,7 +407,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -482,7 +482,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.26",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -551,7 +551,7 @@
           {
             "repo": "rain.vats",
             "pinned": "0.2.12",
-            "latest": "0.2.16"
+            "latest": "0.2.18"
           }
         ]
       },
@@ -577,17 +577,17 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.factory",
             "pinned": "0.2.5",
-            "latest": "0.2.9"
+            "latest": "0.2.10"
           },
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -647,7 +647,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.metadata",
@@ -662,7 +662,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -709,7 +709,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.30",
-            "latest": "0.2.31"
+            "latest": "0.2.32"
           }
         ]
       },
@@ -734,12 +734,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
-          },
-          {
-            "repo": "rain.metadata",
-            "pinned": "0.1.43",
-            "latest": "0.1.45"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.tofu.erc20-decimals",
@@ -771,7 +766,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.25",
-            "latest": "0.1.29"
+            "latest": "0.1.30"
           },
           {
             "repo": "rain.metadata",
@@ -782,6 +777,11 @@
             "repo": "rain.tofu.erc20-decimals",
             "pinned": "0.1.4",
             "latest": "0.1.5"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.31",
+            "latest": "0.2.32"
           }
         ]
       },
@@ -813,11 +813,6 @@
           "rainlang"
         ],
         "staleDeps": [
-          {
-            "repo": "rain.metadata",
-            "pinned": "0.1.43",
-            "latest": "0.1.45"
-          },
           {
             "repo": "rain.tofu.erc20-decimals",
             "pinned": "0.1.4",
@@ -1117,7 +1112,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.dia",
@@ -1166,7 +1161,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "rain.erc4626.words",
@@ -1201,14 +1196,14 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "rain.extrospection",
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.9"
+        "latest": "0.2.10"
       },
       {
         "from": "rain.extrospection",
@@ -1229,7 +1224,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.26",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.extrospection.deploy",
@@ -1242,8 +1237,8 @@
         "from": "rain.factory",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.29",
-        "latest": "0.1.29"
+        "pinned": "0.1.30",
+        "latest": "0.1.30"
       },
       {
         "from": "rain.factory",
@@ -1256,8 +1251,8 @@
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.29",
-        "latest": "0.1.29"
+        "pinned": "0.1.30",
+        "latest": "0.1.30"
       },
       {
         "from": "rain.factory.deploy",
@@ -1270,8 +1265,8 @@
         "from": "rain.factory.deploy",
         "to": "rain.factory",
         "stale": false,
-        "pinned": "0.2.9",
-        "latest": "0.2.9"
+        "pinned": "0.2.10",
+        "latest": "0.2.10"
       },
       {
         "from": "rain.flare",
@@ -1313,7 +1308,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "rain.intorastring",
@@ -1369,7 +1364,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1383,7 +1378,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.merkle.deploy",
@@ -1411,14 +1406,14 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "rain.metadata.deploy",
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1467,7 +1462,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "rain.string",
@@ -1481,7 +1476,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.26",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1501,8 +1496,8 @@
         "from": "rain.vats",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.29",
-        "latest": "0.1.29"
+        "pinned": "0.1.30",
+        "latest": "0.1.30"
       },
       {
         "from": "rain.vats",
@@ -1515,15 +1510,15 @@
         "from": "rain.vats",
         "to": "rain.factory",
         "stale": false,
-        "pinned": "0.2.9",
-        "latest": "0.2.9"
+        "pinned": "0.2.10",
+        "latest": "0.2.10"
       },
       {
         "from": "rain.vats",
         "to": "rain.factory.deploy",
         "stale": false,
-        "pinned": "0.2.5",
-        "latest": "0.2.5"
+        "pinned": "0.2.6",
+        "latest": "0.2.6"
       },
       {
         "from": "rain.vats",
@@ -1572,21 +1567,21 @@
         "to": "rain.vats",
         "stale": true,
         "pinned": "0.2.12",
-        "latest": "0.2.16"
+        "latest": "0.2.18"
       },
       {
         "from": "rain.verify",
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.5",
-        "latest": "0.2.9"
+        "latest": "0.2.10"
       },
       {
         "from": "rain.verify",
@@ -1607,14 +1602,14 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "raindex.deploy",
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "raindex.deploy",
@@ -1691,7 +1686,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "raindex.governance",
@@ -1719,14 +1714,14 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.30",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "rainlang",
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rainlang",
@@ -1780,8 +1775,8 @@
       {
         "from": "rainlang",
         "to": "rain.metadata",
-        "stale": true,
-        "pinned": "0.1.43",
+        "stale": false,
+        "pinned": "0.1.45",
         "latest": "0.1.45"
       },
       {
@@ -1817,7 +1812,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.25",
-        "latest": "0.1.29"
+        "latest": "0.1.30"
       },
       {
         "from": "rainlang.deploy",
@@ -1864,16 +1859,16 @@
       {
         "from": "rainlang.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.31",
-        "latest": "0.2.31"
+        "latest": "0.2.32"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.29",
-        "latest": "0.1.29"
+        "pinned": "0.1.30",
+        "latest": "0.1.30"
       },
       {
         "from": "st0x.deploy",
@@ -1893,15 +1888,15 @@
         "from": "st0x.deploy",
         "to": "rain.factory",
         "stale": false,
-        "pinned": "0.2.9",
-        "latest": "0.2.9"
+        "pinned": "0.2.10",
+        "latest": "0.2.10"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.factory.deploy",
         "stale": false,
-        "pinned": "0.2.5",
-        "latest": "0.2.5"
+        "pinned": "0.2.6",
+        "latest": "0.2.6"
       },
       {
         "from": "st0x.deploy",
@@ -1934,8 +1929,8 @@
       {
         "from": "st0x.deploy",
         "to": "rain.metadata",
-        "stale": true,
-        "pinned": "0.1.43",
+        "stale": false,
+        "pinned": "0.1.45",
         "latest": "0.1.45"
       },
       {
@@ -1963,8 +1958,8 @@
         "from": "st0x.deploy",
         "to": "rain.vats",
         "stale": false,
-        "pinned": "0.2.16",
-        "latest": "0.2.16"
+        "pinned": "0.2.18",
+        "latest": "0.2.18"
       },
       {
         "from": "st0x.deploy",
@@ -1977,8 +1972,8 @@
         "from": "st0x.deploy",
         "to": "rainlang",
         "stale": false,
-        "pinned": "0.2.31",
-        "latest": "0.2.31"
+        "pinned": "0.2.32",
+        "latest": "0.2.32"
       }
     ]
   },
@@ -4150,7 +4145,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53464777
+        "discoveredAtBlock": 53475307
       },
       {
         "network": "ethereum",
@@ -4699,7 +4694,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26335107
+        "discoveredAtBlock": 26336854
       },
       {
         "network": "bsc",
@@ -5568,7 +5563,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131455149
+        "discoveredAtBlock": 131501932
       },
       {
         "network": "hyperevm",
@@ -6109,7 +6104,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50286506
+        "discoveredAtBlock": 50307910
       },
       {
         "network": "robinhood",
@@ -6601,7 +6596,7 @@
             "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
@@ -6625,7 +6620,7 @@
             "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
@@ -6633,7 +6628,7 @@
             "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           }
@@ -6644,13 +6639,13 @@
           "other": 0,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 4,
+          "certificationExpired": 1,
           "certificationUnknown": 0,
           "notPinned": 9,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 105155976
+        "discoveredAtBlock": 105362527
       }
     ]
   },
@@ -21785,19 +21780,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26335106,
+            "headBlock": 26336853,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26335106,
+            "headBlock": 26336853,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26335106,
+            "headBlock": 26336853,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21954,19 +21949,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131455123,
+            "headBlock": 131501896,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131455123,
+            "headBlock": 131501896,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131455123,
+            "headBlock": 131501896,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22123,19 +22118,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50286492,
+            "headBlock": 50307897,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50286492,
+            "headBlock": 50307897,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50286492,
+            "headBlock": 50307897,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22292,19 +22287,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 105156076,
+            "headBlock": 105362654,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105156076,
+            "headBlock": 105362654,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105156076,
+            "headBlock": 105362654,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22461,19 +22456,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53464780,
+            "headBlock": 53475307,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53464780,
+            "headBlock": 53475307,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53464780,
+            "headBlock": 53475307,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22824,14 +22819,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 37,
+    "ok": 38,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 39,
+    "atAuthoriserTarget": 40,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -23676,7 +23671,7 @@
         "symbol": "wtNKE",
         "name": "Wrapped NIKE, Inc. ST0x",
         "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
@@ -23689,13 +23684,13 @@
         "unwrapped": "0x88C3F4E2E0a977Fed97ed246c70BFD7A01070246",
         "legacy": null,
         "receipt": "0x8A0037757d67084f5431c02eE2A352593eFe2957",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -25620,7 +25615,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1051,
+      "fullSourceLoc": 1063,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -26041,19 +26036,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.2.9",
-      "latestTagIso": "2026-11-01T16:05:22Z",
+      "latestTag": "sol-v0.2.10",
+      "latestTagIso": "2026-11-03T18:49:12Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 4619,
+      "sourceLocChangedSinceAudit": 4621,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 4247,
+      "sourceLocAddedSinceAudit": 4249,
       "sourceLocRemovedSinceAudit": 372,
       "filesChangedSinceAudit": 33,
-      "commitsSinceAudit": 555,
+      "commitsSinceAudit": 565,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1199,
       "commentLocRemovedSinceAudit": 145,
-      "codeLocAddedSinceAudit": 2713,
+      "codeLocAddedSinceAudit": 2715,
       "codeLocRemovedSinceAudit": 181,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
@@ -26137,15 +26132,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:18:51Z",
-      "latestTag": "sol-v0.2.16",
-      "latestTagIso": "2026-11-02T13:46:08Z",
+      "latestTag": "sol-v0.2.18",
+      "latestTagIso": "2026-11-03T20:00:13Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 925,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 641,
       "sourceLocRemovedSinceAudit": 284,
       "filesChangedSinceAudit": 26,
-      "commitsSinceAudit": 157,
+      "commitsSinceAudit": 163,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 183,
       "commentLocRemovedSinceAudit": 63,
@@ -26215,20 +26210,20 @@
       "anchorKind": "unanchored",
       "tagConventionAbsent": true,
       "auditedDate": "2026-10-26T19:17:00Z",
-      "latestTag": "sol-v0.2.31",
-      "latestTagIso": "2026-11-02T12:26:14Z",
+      "latestTag": "sol-v0.2.32",
+      "latestTagIso": "2026-11-03T20:06:29Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 295,
+      "sourceLocChangedSinceAudit": 301,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 207,
-      "sourceLocRemovedSinceAudit": 88,
-      "filesChangedSinceAudit": 52,
-      "commitsSinceAudit": 28,
+      "sourceLocAddedSinceAudit": 210,
+      "sourceLocRemovedSinceAudit": 91,
+      "filesChangedSinceAudit": 54,
+      "commitsSinceAudit": 30,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 34,
       "commentLocRemovedSinceAudit": 7,
-      "codeLocAddedSinceAudit": 165,
-      "codeLocRemovedSinceAudit": 81,
+      "codeLocAddedSinceAudit": 168,
+      "codeLocRemovedSinceAudit": 84,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/86d054219ac36d0e648146352bc26e64e509a156...main",
       "daysSinceAudit": 8
@@ -26329,15 +26324,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-10-07T16:17:36Z",
-      "latestTag": "sol-v0.1.29",
-      "latestTagIso": "2026-10-29T11:16:26Z",
+      "latestTag": "sol-v0.1.30",
+      "latestTagIso": "2026-11-03T16:40:08Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": null,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 112,
-      "commitsSinceAudit": 1118,
+      "filesChangedSinceAudit": 115,
+      "commitsSinceAudit": 1121,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -26421,7 +26416,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 166,
-      "commitsSinceAudit": 633,
+      "commitsSinceAudit": 642,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -27500,7 +27495,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 38,
-      "testFiles": 200,
+      "testFiles": 203,
       "sourcesUnparsed": 1,
       "untested": []
     }
