@@ -249,14 +249,25 @@ mod tests {
 name: Deploy subgraph
 jobs:
   deploy:
-    env:
-      SUBGRAPH_NAME: st0x-rbac
+    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main
+    with:
+      subgraph-name: st0x-rbac
       # Public query base for this Ormi account.
-      ORMI_QUERY_BASE: https://subgraph.api.ormilabs.com/api/public/9f4f/
+      ormi-query-base: https://subgraph.api.ormilabs.com/api/public/9f4f/
+    secrets:
+      ORMI_DEPLOY_KEY: ${{ secrets.ORMI_DEPLOY_KEY }}
 "#;
 
     fn src() -> SubgraphSource {
         parse_deploy_workflow(WORKFLOW).unwrap()
+    }
+
+    fn reusable_caller(inputs: &[&str]) -> String {
+        let mut y = "jobs:\n  deploy:\n    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main\n    with:\n".to_string();
+        for i in inputs {
+            y.push_str(&format!("      {i}\n"));
+        }
+        y
     }
 
     #[test]
@@ -272,23 +283,58 @@ jobs:
 
     #[test]
     fn workflow_missing_either_value_is_unread() {
-        assert_eq!(parse_deploy_workflow("SUBGRAPH_NAME: x\n"), None);
-        assert_eq!(parse_deploy_workflow("ORMI_QUERY_BASE: https://a\n"), None);
+        assert_eq!(
+            parse_deploy_workflow(&reusable_caller(&["subgraph-name: x"])),
+            None
+        );
+        assert_eq!(
+            parse_deploy_workflow(&reusable_caller(&["ormi-query-base: https://a"])),
+            None
+        );
     }
 
     #[test]
     fn workflow_with_a_plain_http_base_is_refused() {
         assert_eq!(
-            parse_deploy_workflow("SUBGRAPH_NAME: x\nORMI_QUERY_BASE: http://a\n"),
+            parse_deploy_workflow(&reusable_caller(&[
+                "subgraph-name: x",
+                "ormi-query-base: http://a",
+            ])),
             None
         );
     }
 
     #[test]
     fn workflow_values_may_be_quoted() {
-        let s =
-            parse_deploy_workflow("SUBGRAPH_NAME: \"x\"\nORMI_QUERY_BASE: 'https://a'\n").unwrap();
+        let s = parse_deploy_workflow(&reusable_caller(&[
+            "subgraph-name: \"x\"",
+            "ormi-query-base: 'https://a'",
+        ]))
+        .unwrap();
         assert_eq!((s.name.as_str(), s.query_base.as_str()), ("x", "https://a"));
+    }
+
+    #[test]
+    fn workflow_passing_the_values_as_env_not_reusable_inputs_is_unread() {
+        let env_form = r#"
+name: Deploy subgraph
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUBGRAPH_NAME: rain-deploy-registry
+      ORMI_QUERY_BASE: https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71
+    steps:
+      - run: nix develop github:rainlanguage/rainix#subgraph-shell -c subgraph-deploy
+"#;
+        assert_eq!(parse_deploy_workflow(env_form), None);
+        assert_eq!(
+            build_location("o", "r", parse_deploy_workflow(env_form).as_ref(), Some(&[]))
+                ["unavailable"],
+            "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml"
+        );
     }
 
     #[test]
@@ -445,7 +491,7 @@ jobs:
                 "org": "o",
                 "repo": "r",
                 "tag": "prod",
-                "unavailable": "could not read SUBGRAPH_NAME / ORMI_QUERY_BASE from .github/workflows/deploy-subgraph.yaml",
+                "unavailable": "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml",
             })
         );
         let nets = vec!["base".to_string()];
@@ -527,13 +573,15 @@ on:
   workflow_dispatch:
 jobs:
   deploy:
-    runs-on: ubuntu-latest
-    env:
-      SUBGRAPH_NAME: rain-deploy-registry
-      # subgraph-deploy probes this public query base and skips a version that already answers.
-      ORMI_QUERY_BASE: https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71
-    steps:
-      - run: nix develop github:rainlanguage/rainix#subgraph-shell -c subgraph-deploy
+    permissions:
+      contents: read
+    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main
+    with:
+      subgraph-name: rain-deploy-registry
+      ormi-query-base: https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71
+    secrets:
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      ORMI_DEPLOY_KEY: ${{ secrets.ORMI_DEPLOY_KEY }}
 "#;
     const REGISTRY_NETWORKS: [(&str, u64, u64); 9] = [
         ("arbitrum-one", 519115682, 519119422),
@@ -676,7 +724,10 @@ jobs:
 
     #[test]
     fn registry_doc_fetches_rain_deploys_workflow_and_networks_each_for_its_part() {
-        let workflow = "SUBGRAPH_NAME: from-the-workflow\nORMI_QUERY_BASE: https://q.example/api\n";
+        let workflow = reusable_caller(&[
+            "subgraph-name: from-the-workflow",
+            "ormi-query-base: https://q.example/api",
+        ]);
         let networks = json!({
             "base": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
             "flare": {"MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31"}},
@@ -786,13 +837,13 @@ jobs:
     #[test]
     fn registry_doc_says_which_rain_deploy_source_was_unread() {
         let networks_src = registry_networks_json();
-        let workflow_unread = "could not read SUBGRAPH_NAME / ORMI_QUERY_BASE from .github/workflows/deploy-subgraph.yaml";
+        let workflow_unread = "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml";
         let networks_unread = "could not read subgraph/networks.json";
         let plain_http = REGISTRY_WORKFLOW.replace("https://", "http://");
-        let name_only = "SUBGRAPH_NAME: rain-deploy-registry\n";
+        let name_only = reusable_caller(&["subgraph-name: rain-deploy-registry"]);
         for (workflow, networks, why, subgraph) in [
             ("", networks_src.as_str(), workflow_unread, None),
-            (name_only, networks_src.as_str(), workflow_unread, None),
+            (name_only.as_str(), networks_src.as_str(), workflow_unread, None),
             (
                 plain_http.as_str(),
                 networks_src.as_str(),
