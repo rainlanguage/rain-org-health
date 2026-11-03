@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-03T13:58:05Z",
+  "generatedAt": "2026-11-03T15:14:18Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4150,7 +4150,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53462497
+        "discoveredAtBlock": 53464777
       },
       {
         "network": "ethereum",
@@ -4699,7 +4699,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26334726
+        "discoveredAtBlock": 26335107
       },
       {
         "network": "bsc",
@@ -5568,7 +5568,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131445019
+        "discoveredAtBlock": 131455149
       },
       {
         "network": "hyperevm",
@@ -6109,7 +6109,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50281873
+        "discoveredAtBlock": 50286506
       },
       {
         "network": "robinhood",
@@ -6650,7 +6650,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 105111196
+        "discoveredAtBlock": 105155976
       }
     ]
   },
@@ -21785,19 +21785,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26334726,
+            "headBlock": 26335106,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26334726,
+            "headBlock": 26335106,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26334726,
+            "headBlock": 26335106,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21954,19 +21954,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131444982,
+            "headBlock": 131455123,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131444982,
+            "headBlock": 131455123,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131444982,
+            "headBlock": 131455123,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22123,19 +22123,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50281853,
+            "headBlock": 50286492,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50281853,
+            "headBlock": 50286492,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50281853,
+            "headBlock": 50286492,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22292,19 +22292,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 105111265,
+            "headBlock": 105156076,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105111265,
+            "headBlock": 105156076,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105111265,
+            "headBlock": 105156076,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22461,19 +22461,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53462498,
+            "headBlock": 53464780,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53462498,
+            "headBlock": 53464780,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53462498,
+            "headBlock": 53464780,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22824,14 +22824,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 51,
-    "ok": 32,
+    "ok": 37,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 51,
-    "atAuthoriserTarget": 37,
+    "atAuthoriserTarget": 39,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -23520,14 +23520,14 @@
         "symbol": "wtLRCX",
         "name": "Wrapped Lam Research Corporation ST0x",
         "address": "0x328B9aFFa511fE26673edBb4fEa37eDaF908A3bc",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
-        "decimalsOk": null,
+        "decimalsOk": true,
         "liveName": "Wrapped Lam Research Corporation ST0x",
         "liveSymbol": "wtLRCX",
-        "liveDecimals": null,
+        "liveDecimals": 18,
         "assetOk": true,
         "asset": "0xdde9346107609a05439a0b59ab6ed4f7f81a1fbf",
         "unwrapped": "0xDdE9346107609A05439A0B59Ab6eD4f7F81a1FBF",
@@ -23598,12 +23598,12 @@
         "symbol": "wtMSFT",
         "name": "Wrapped Microsoft Corporation ST0x",
         "address": "0x515A3Ac2a6aB590bDFa970caFFFd7fAdC680886E",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
+        "nameOk": true,
         "symbolOk": true,
         "decimalsOk": true,
-        "liveName": null,
+        "liveName": "Wrapped Microsoft Corporation ST0x",
         "liveSymbol": "wtMSFT",
         "liveDecimals": 18,
         "assetOk": true,
@@ -23614,10 +23614,10 @@
         "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -23678,10 +23678,10 @@
         "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
         "status": "unknown",
         "wrapped": true,
-        "nameOk": null,
+        "nameOk": true,
         "symbolOk": true,
         "decimalsOk": true,
-        "liveName": null,
+        "liveName": "Wrapped NIKE, Inc. ST0x",
         "liveSymbol": "wtNKE",
         "liveDecimals": 18,
         "assetOk": true,
@@ -23689,13 +23689,13 @@
         "unwrapped": "0x88C3F4E2E0a977Fed97ed246c70BFD7A01070246",
         "legacy": null,
         "receipt": "0x8A0037757d67084f5431c02eE2A352593eFe2957",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-        "authoriserLabel": "target",
+        "receiptDeployed": true,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": true,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -23754,7 +23754,7 @@
         "symbol": "wtPLBY",
         "name": "Wrapped Playboy, Inc. ST0x",
         "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
@@ -23769,7 +23769,7 @@
         "receipt": "0x5978B2FA7B3DDA36847eb7D2003EC7AE112258AA",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
+        "receiptDeployed": true,
         "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
         "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -23936,39 +23936,39 @@
         "symbol": "wtSMCI",
         "name": "Wrapped Super Micro Computer, Inc. ST0x",
         "address": "0xA759FAbbD866e6DB8bF76613C35825dC2e380bf0",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
-        "nameOk": null,
+        "nameOk": true,
         "symbolOk": true,
         "decimalsOk": true,
-        "liveName": null,
+        "liveName": "Wrapped Super Micro Computer, Inc. ST0x",
         "liveSymbol": "wtSMCI",
         "liveDecimals": 18,
-        "assetOk": null,
-        "asset": null,
+        "assetOk": true,
+        "asset": "0x8518931497d2a8f07bc607d1d3295b398d065a65",
         "unwrapped": "0x8518931497d2A8f07Bc607D1D3295b398D065A65",
         "legacy": null,
         "receipt": "0xC23aC719988d2ABeffEE8AC75C790E328c44Fe79",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
         "symbol": "wtSPCX",
         "name": "Wrapped Space Exploration Technologies Corp. ST0x",
         "address": "0x19F89aaEf8a93f38A974beca9776f09aB844887F",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
         "nameOk": true,
-        "symbolOk": null,
+        "symbolOk": true,
         "decimalsOk": true,
         "liveName": "Wrapped Space Exploration Technologies Corp. ST0x",
-        "liveSymbol": null,
+        "liveSymbol": "wtSPCX",
         "liveDecimals": 18,
         "assetOk": true,
         "asset": "0xc585aeb8b76c5f5e4215470a7625258e86ed7746",
@@ -23977,11 +23977,11 @@
         "receipt": "0xba81B21F8a22bD99900E00Ed1373EC77C0772F55",
         "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -26337,7 +26337,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 112,
-      "commitsSinceAudit": 1109,
+      "commitsSinceAudit": 1118,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -26420,8 +26420,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 167,
-      "commitsSinceAudit": 629,
+      "filesChangedSinceAudit": 166,
+      "commitsSinceAudit": 633,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -27167,7 +27167,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 9,
-      "testFiles": 215,
+      "testFiles": 220,
       "sourcesUnparsed": 1,
       "untested": []
     },
