@@ -843,7 +843,12 @@ jobs:
         let name_only = reusable_caller(&["subgraph-name: rain-deploy-registry"]);
         for (workflow, networks, why, subgraph) in [
             ("", networks_src.as_str(), workflow_unread, None),
-            (name_only.as_str(), networks_src.as_str(), workflow_unread, None),
+            (
+                name_only.as_str(),
+                networks_src.as_str(),
+                workflow_unread,
+                None,
+            ),
             (
                 plain_http.as_str(),
                 networks_src.as_str(),
