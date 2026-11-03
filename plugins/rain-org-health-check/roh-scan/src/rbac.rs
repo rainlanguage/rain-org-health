@@ -14,9 +14,9 @@
 //!
 //! Everything that locates the subgraph is read from the deploy repo, not typed
 //! here: the networks are `subgraph/networks.json`'s keys, and the deployment
-//! name and query base are the `SUBGRAPH_NAME` / `ORMI_QUERY_BASE` its deploy
-//! workflow passes to rainix's `subgraph-deploy`. That task publishes each
-//! network as `<SUBGRAPH_NAME>-<network>` at version label
+//! name and query base are the `subgraph-name` / `ormi-query-base` inputs its
+//! deploy workflow passes to rainix's `rainix-subgraph-deploy` reusable. That
+//! publishes each network as `<subgraph-name>-<network>` at version label
 //! `<address>-<commit>`, which changes on every redeploy, and keeps the name
 //! shape so a tag can move between versions. Consumers address the tag —
 //! raindex's own settings read `…/raindex-base/prod/gn` — so this does too.
@@ -32,13 +32,14 @@ pub const PROD_TAG: &str = "prod";
 /// Where the subgraph is published, as the deploy workflow names it.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SubgraphSource {
-    /// `SUBGRAPH_NAME` — each network is published as `<name>-<network>`.
+    /// `subgraph-name` — each network is published as `<name>-<network>`.
     pub name: String,
-    /// `ORMI_QUERY_BASE` — the public query root for the Ormi account.
+    /// `ormi-query-base` — the public query root for the Ormi account.
     pub query_base: String,
 }
 
-/// Read `SUBGRAPH_NAME` and `ORMI_QUERY_BASE` out of the deploy workflow.
+/// Read the `subgraph-name` and `ormi-query-base` inputs out of the deploy
+/// workflow.
 /// `None` unless both are present: half a location is not a location.
 pub fn parse_deploy_workflow(yaml: &str) -> Option<SubgraphSource> {
     let value = |key: &str| -> Option<String> {
@@ -47,8 +48,8 @@ pub fn parse_deploy_workflow(yaml: &str) -> Option<SubgraphSource> {
             .and_then(|c| c.get(1))
             .map(|m| m.as_str().to_string())
     };
-    let name = value("SUBGRAPH_NAME")?;
-    let query_base = value("ORMI_QUERY_BASE")?.trim_end_matches('/').to_string();
+    let name = value("subgraph-name")?;
+    let query_base = value("ormi-query-base")?.trim_end_matches('/').to_string();
     // The page POSTs to this base and renders the answer as the chain's role
     // history. Anything but https is refused for the reason rainix's
     // `ormi-probe` refuses it: a response rewritten in transit would be shown
@@ -170,7 +171,7 @@ pub fn build_location(
     });
     let Some(src) = source else {
         doc["unavailable"] = Value::from(
-            "could not read SUBGRAPH_NAME / ORMI_QUERY_BASE from .github/workflows/deploy-subgraph.yaml",
+            "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml",
         );
         return doc;
     };
