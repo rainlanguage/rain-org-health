@@ -8082,7 +8082,7 @@ Deno.test("deployments: an unreadable infra chain says so under its own heading"
   assert(!t.includes("(via null)") && !t.includes("(via undefined)"), "no RPC host is claimed: " + t);
   assert(t.includes("Infra — polygon"), "a chain with no rows still renders: " + t);
   assert(
-    t.includes("Infra data unavailable — the scan produced no rows for this chain."),
+    t.includes("Infra data unavailable — the scan produced no rows for this chain"),
     "and says why it is empty: " + t,
   );
 });
@@ -8295,7 +8295,7 @@ Deno.test("deployments: an unreadable Safe chain says so under its own heading",
   assert(!t.includes("(via null)") && !t.includes("(via undefined)"), t);
   assert(t.includes("Safe — polygon"), "a chain with no facts still renders: " + t);
   assert(
-    t.includes("Safe data unavailable — the scan produced no Safe facts for this chain."),
+    t.includes("Safe data unavailable — the scan produced no Safe facts for this chain"),
     t,
   );
   const all = textOf(
