@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T09:21:56Z",
+  "generatedAt": "2026-11-04T18:02:01Z",
   "auditGraph": {
     "nodes": [
       {
@@ -551,7 +551,7 @@
           {
             "repo": "rain.vats",
             "pinned": "0.2.12",
-            "latest": "0.2.18"
+            "latest": "0.2.19"
           }
         ]
       },
@@ -817,6 +817,11 @@
             "repo": "rain.tofu.erc20-decimals",
             "pinned": "0.1.4",
             "latest": "0.1.5"
+          },
+          {
+            "repo": "rain.vats",
+            "pinned": "0.2.18",
+            "latest": "0.2.19"
           }
         ]
       },
@@ -1567,7 +1572,7 @@
         "to": "rain.vats",
         "stale": true,
         "pinned": "0.2.12",
-        "latest": "0.2.18"
+        "latest": "0.2.19"
       },
       {
         "from": "rain.verify",
@@ -1957,9 +1962,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.vats",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.18",
-        "latest": "0.2.18"
+        "latest": "0.2.19"
       },
       {
         "from": "st0x.deploy",
@@ -3429,6 +3434,30 @@
             "onChain": true
           },
           {
+            "vault": "0x90687ba21da53189047cd168a66ecc76282bf800",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0x6540478507ab063b03a704ac2c8e9118f1760848",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": false,
+            "pinned": true,
+            "onChain": true
+          },
+          {
             "vault": "0x01c07a1d4f569e0aae674b3509b3aab57ee73bd4",
             "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
             "label": "safe",
@@ -3525,14 +3554,6 @@
             "onChain": true
           },
           {
-            "vault": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe",
-            "certificationExpired": false,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0x3d28020d2531a7d1d1152a8fa3e6763f508226b2",
             "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
             "label": "safe",
@@ -3608,14 +3629,6 @@
             "vault": "0x5e3fb85b57eb233a5e13d9a53f1f9ce08c24a5e6",
             "owner": "0x669845c29d9b1a64fff66a55aa13eb4adb889a88",
             "label": "other",
-            "certificationExpired": false,
-            "pinned": false,
-            "onChain": true
-          },
-          {
-            "vault": "0x6540478507ab063b03a704ac2c8e9118f1760848",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe",
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
@@ -3744,14 +3757,6 @@
             "vault": "0x8c1e16a91d016e0251486c1bdbc57eba4f0a61e6",
             "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
             "label": "other",
-            "certificationExpired": false,
-            "pinned": false,
-            "onChain": true
-          },
-          {
-            "vault": "0x90687ba21da53189047cd168a66ecc76282bf800",
-            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
-            "label": "safe",
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
@@ -4141,11 +4146,11 @@
           "unpinned": 0,
           "certificationExpired": 53,
           "certificationUnknown": 0,
-          "notPinned": 88,
+          "notPinned": 85,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53497407
+        "discoveredAtBlock": 53513134
       },
       {
         "network": "ethereum",
@@ -4602,6 +4607,30 @@
             "onChain": true
           },
           {
+            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
             "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
@@ -4634,14 +4663,6 @@
             "onChain": true
           },
           {
-            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
@@ -4664,22 +4685,6 @@
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
-          },
-          {
-            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
-          },
-          {
-            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
           }
         ],
         "counts": {
@@ -4690,11 +4695,11 @@
           "unpinned": 0,
           "certificationExpired": 4,
           "certificationUnknown": 0,
-          "notPinned": 10,
+          "notPinned": 7,
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26340523
+        "discoveredAtBlock": 26343137
       },
       {
         "network": "bsc",
@@ -5151,6 +5156,30 @@
             "onChain": true
           },
           {
+            "vault": "0x2c5374933d1e7208b2184fa1a45119fdcac13123",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xc361da5ac6523fbc40a1b160ce98d1e84667325b",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0x21ebe855f15c2e1badea603c1cb07b964096a616",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
             "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
             "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
             "label": "safe",
@@ -5191,25 +5220,9 @@
             "onChain": true
           },
           {
-            "vault": "0x21ebe855f15c2e1badea603c1cb07b964096a616",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
             "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
             "label": "safe",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
-          },
-          {
-            "vault": "0x2c5374933d1e7208b2184fa1a45119fdcac13123",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
             "certificationExpired": true,
             "pinned": false,
             "onChain": true
@@ -5439,14 +5452,6 @@
             "onChain": true
           },
           {
-            "vault": "0xc361da5ac6523fbc40a1b160ce98d1e84667325b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
             "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
             "label": "safe",
@@ -5559,11 +5564,11 @@
           "unpinned": 0,
           "certificationExpired": 45,
           "certificationUnknown": 0,
-          "notPinned": 50,
+          "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131600139
+        "discoveredAtBlock": 131670013
       },
       {
         "network": "hyperevm",
@@ -6020,6 +6025,30 @@
             "onChain": true
           },
           {
+            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
+            "pinned": true,
+            "onChain": true
+          },
+          {
             "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
@@ -6052,14 +6081,6 @@
             "onChain": true
           },
           {
-            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
@@ -6074,22 +6095,6 @@
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
-          },
-          {
-            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
-          },
-          {
-            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
-            "pinned": false,
-            "onChain": true
           }
         ],
         "counts": {
@@ -6100,11 +6105,11 @@
           "unpinned": 0,
           "certificationExpired": 4,
           "certificationUnknown": 0,
-          "notPinned": 9,
+          "notPinned": 6,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50352855
+        "discoveredAtBlock": 50384834
       },
       {
         "network": "robinhood",
@@ -6561,6 +6566,30 @@
             "onChain": true
           },
           {
+            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": true,
+            "onChain": true
+          },
+          {
+            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
+            "pinned": true,
+            "onChain": true
+          },
+          {
             "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
@@ -6593,14 +6622,6 @@
             "onChain": true
           },
           {
-            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
-            "pinned": false,
-            "onChain": true
-          },
-          {
             "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
@@ -6610,22 +6631,6 @@
           },
           {
             "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
-            "pinned": false,
-            "onChain": true
-          },
-          {
-            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
-            "pinned": false,
-            "onChain": true
-          },
-          {
-            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
             "certificationExpired": false,
@@ -6641,11 +6646,11 @@
           "unpinned": 0,
           "certificationExpired": 1,
           "certificationUnknown": 0,
-          "notPinned": 9,
+          "notPinned": 6,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 105791765
+        "discoveredAtBlock": 106097520
       }
     ]
   },
@@ -8183,6 +8188,69 @@
             "path": "src/lib/LibTokenInvariants.sol"
           }
         ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
         "0xb9dcd744b0413dff0edc70a5b229c7aa03734613": [
           {
             "name": "ST0X_ORCHESTRATOR_BEACON",
@@ -9663,6 +9731,69 @@
             "path": "src/lib/LibTokenInvariants.sol"
           }
         ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
         "0xb9dcd744b0413dff0edc70a5b229c7aa03734613": [
           {
             "name": "ST0X_ORCHESTRATOR_BEACON",
@@ -11132,6 +11263,69 @@
         "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
           {
             "name": "DIS_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -12616,6 +12810,69 @@
             "path": "src/lib/LibTokenInvariants.sol"
           }
         ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
         "0xb9dcd744b0413dff0edc70a5b229c7aa03734613": [
           {
             "name": "ST0X_ORCHESTRATOR_BEACON",
@@ -14092,6 +14349,69 @@
         "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
           {
             "name": "DIS_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -15670,6 +15990,69 @@
             "path": "src/lib/LibTokenInvariants.sol"
           }
         ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
         "0xb9dcd744b0413dff0edc70a5b229c7aa03734613": [
           {
             "name": "ST0X_ORCHESTRATOR_BEACON",
@@ -17150,6 +17533,69 @@
             "path": "src/lib/LibTokenInvariants.sol"
           }
         ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
         "0xb9dcd744b0413dff0edc70a5b229c7aa03734613": [
           {
             "name": "ST0X_ORCHESTRATOR_BEACON",
@@ -18619,6 +19065,69 @@
         "0x8ea3c97d23872ec4fae1ca3189039056b77bc703": [
           {
             "name": "DIS_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
             "contract": "LibTokenInvariants",
             "path": "src/lib/LibTokenInvariants.sol"
           }
@@ -20103,6 +20612,69 @@
             "path": "src/lib/LibTokenInvariants.sol"
           }
         ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
         "0xb9dcd744b0413dff0edc70a5b229c7aa03734613": [
           {
             "name": "ST0X_ORCHESTRATOR_BEACON",
@@ -21583,6 +22155,69 @@
             "path": "src/lib/LibTokenInvariants.sol"
           }
         ],
+        "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588": [
+          {
+            "name": "IFX_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x90687ba21da53189047cd168a66ecc76282bf800": [
+          {
+            "name": "IFX_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x339ad5e0d1cc8b014eb6acacbe8991214c5a9325": [
+          {
+            "name": "IFX_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x12e14806559f80d6def4040e4d0bda5953f4f6f0": [
+          {
+            "name": "SOI_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x6540478507ab063b03a704ac2c8e9118f1760848": [
+          {
+            "name": "SOI_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xd50020eca7caac05ba7e7571c7b498781ca98d47": [
+          {
+            "name": "SOI_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2": [
+          {
+            "name": "TPRO_RECEIPT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x37a2b2d6fe9cfc474692a3a0016519332bd49509": [
+          {
+            "name": "TPRO_RECEIPT_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
+        "0x5ed9f297f10e2b72950f5abc2c2b770ee831805b": [
+          {
+            "name": "TPRO_WRAPPED_TOKEN_VAULT",
+            "contract": "LibTokenInvariants",
+            "path": "src/lib/LibTokenInvariants.sol"
+          }
+        ],
         "0xb9dcd744b0413dff0edc70a5b229c7aa03734613": [
           {
             "name": "ST0X_ORCHESTRATOR_BEACON",
@@ -21780,19 +22415,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26340523,
+            "headBlock": 26343135,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26340523,
+            "headBlock": 26343135,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26340523,
+            "headBlock": 26343135,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21949,19 +22584,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131600120,
+            "headBlock": 131669984,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131600120,
+            "headBlock": 131669984,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131600120,
+            "headBlock": 131669984,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22118,19 +22753,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50352840,
+            "headBlock": 50384815,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50352840,
+            "headBlock": 50384815,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50352840,
+            "headBlock": 50384815,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22287,19 +22922,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 105792023,
+            "headBlock": 106097413,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105792023,
+            "headBlock": 106097413,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105792023,
+            "headBlock": 106097413,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22456,19 +23091,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53497410,
+            "headBlock": 53513136,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53497410,
+            "headBlock": 53513136,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53497410,
+            "headBlock": 53513136,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22818,31 +23453,31 @@
     "repo": "st0x.registry",
     "network": "base",
     "rpcHost": "mainnet.base.org",
-    "total": 51,
-    "ok": 38,
+    "total": 54,
+    "ok": 40,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
-    "wrappedCount": 51,
+    "wrappedCount": 54,
     "atAuthoriserTarget": 40,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
       "error": null,
-      "governedCount": 56,
+      "governedCount": 59,
       "registryTokenCount": 54,
       "extraVaults": [
         {
           "address": "0x3c0f093aa1ed511910279b2c8d56ef5c96f1a6cf",
-          "name": null,
-          "symbol": null,
-          "deployed": null,
-          "authoriser": null,
-          "authoriserLabel": "unknown",
+          "name": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
+          "symbol": "tIBHG",
+          "deployed": true,
+          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+          "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": null
+          "atAuthoriserTarget": true
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
@@ -22856,13 +23491,13 @@
         },
         {
           "address": "0x22e99389f5ef6fa110317e2aec0a95d8aa39efd4",
-          "name": "Smartbird, Inc. ST0x",
-          "symbol": "tBIRD",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
+          "name": null,
+          "symbol": null,
+          "deployed": null,
+          "authoriser": null,
+          "authoriserLabel": "unknown",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "atAuthoriserTarget": null
         },
         {
           "address": "0x6c5c451672e9d0cef8728cb511c01e5cdd096563",
@@ -22876,41 +23511,16 @@
         },
         {
           "address": "0x40584fbad768ff46f299cf50cae5b3d437e213fa",
-          "name": null,
+          "name": "The Walt Disney Company ST0x",
           "symbol": "tDIS",
-          "deployed": null,
-          "authoriser": null,
-          "authoriserLabel": "unknown",
+          "deployed": true,
+          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+          "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": null
+          "atAuthoriserTarget": true
         }
       ],
-      "missingFromMigration": [
-        {
-          "symbol": "wtIFX",
-          "name": "Wrapped Infineon Technologies AG ST0x",
-          "address": "0x339ad5e0d1Cc8B014eB6aCacbE8991214C5A9325",
-          "receiptVault": "0x90687ba21da53189047cd168a66ecc76282bf800",
-          "wrapped": true,
-          "reason": "receipt vault not in migration set"
-        },
-        {
-          "symbol": "wtSOI",
-          "name": "Wrapped Soitec SA ST0x",
-          "address": "0xD50020eCA7CAAC05Ba7E7571C7B498781ca98d47",
-          "receiptVault": "0x6540478507ab063b03a704ac2c8e9118f1760848",
-          "wrapped": true,
-          "reason": "receipt vault not in migration set"
-        },
-        {
-          "symbol": "wtTPRO",
-          "name": "Wrapped Technoprobe S.p.A. ST0x",
-          "address": "0x5ED9f297f10e2b72950F5abc2c2B770ee831805b",
-          "receiptVault": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
-          "wrapped": true,
-          "reason": "receipt vault not in migration set"
-        }
-      ]
+      "missingFromMigration": []
     },
     "tokens": [
       {
@@ -23460,6 +24070,32 @@
         "inMigrationSet": true
       },
       {
+        "symbol": "wtIFX",
+        "name": "Wrapped Infineon Technologies AG ST0x",
+        "address": "0x339ad5e0d1Cc8B014eB6aCacbE8991214C5A9325",
+        "status": "unknown",
+        "wrapped": true,
+        "nameOk": null,
+        "symbolOk": null,
+        "decimalsOk": null,
+        "liveName": null,
+        "liveSymbol": null,
+        "liveDecimals": null,
+        "assetOk": null,
+        "asset": null,
+        "unwrapped": "0x90687ba21da53189047cd168a66ecc76282bf800",
+        "legacy": null,
+        "receipt": "0x2ce6d030a8d32bce36b4502870eef59c7dbf8588",
+        "unwrappedDeployed": null,
+        "legacyDeployed": null,
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
+        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+        "atAuthoriserTarget": null,
+        "inMigrationSet": true
+      },
+      {
         "symbol": "wtINTC",
         "name": "Wrapped Intel Corporation ST0x",
         "address": "0xf567652fC2d7Db8D5469fD06AEbe8C9c4372d722",
@@ -23954,6 +24590,32 @@
         "inMigrationSet": true
       },
       {
+        "symbol": "wtSOI",
+        "name": "Wrapped Soitec SA ST0x",
+        "address": "0xD50020eCA7CAAC05Ba7E7571C7B498781ca98d47",
+        "status": "ok",
+        "wrapped": true,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Soitec SA ST0x",
+        "liveSymbol": "wtSOI",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6540478507ab063b03a704ac2c8e9118f1760848",
+        "unwrapped": "0x6540478507ab063b03a704ac2c8e9118f1760848",
+        "legacy": null,
+        "receipt": "0x12e14806559f80d6def4040e4d0bda5953f4f6f0",
+        "unwrappedDeployed": true,
+        "legacyDeployed": null,
+        "receiptDeployed": true,
+        "authoriser": "0xdb9152e46c1d140db6a6f814461f21c571f3275e",
+        "authoriserLabel": "foreign",
+        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+        "atAuthoriserTarget": false,
+        "inMigrationSet": true
+      },
+      {
         "symbol": "wtSPCX",
         "name": "Wrapped Space Exploration Technologies Corp. ST0x",
         "address": "0x19F89aaEf8a93f38A974beca9776f09aB844887F",
@@ -24029,6 +24691,32 @@
         "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
         "atAuthoriserTarget": null,
+        "inMigrationSet": true
+      },
+      {
+        "symbol": "wtTPRO",
+        "name": "Wrapped Technoprobe S.p.A. ST0x",
+        "address": "0x5ED9f297f10e2b72950F5abc2c2B770ee831805b",
+        "status": "ok",
+        "wrapped": true,
+        "nameOk": true,
+        "symbolOk": true,
+        "decimalsOk": true,
+        "liveName": "Wrapped Technoprobe S.p.A. ST0x",
+        "liveSymbol": "wtTPRO",
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
+        "unwrapped": "0x37a2b2d6fe9cfc474692a3a0016519332bd49509",
+        "legacy": null,
+        "receipt": "0xee91994c5fede5bd9a2d6ed17cdeda12680b3ca2",
+        "unwrappedDeployed": true,
+        "legacyDeployed": null,
+        "receiptDeployed": true,
+        "authoriser": "0xdb9152e46c1d140db6a6f814461f21c571f3275e",
+        "authoriserLabel": "foreign",
+        "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+        "atAuthoriserTarget": false,
         "inMigrationSet": true
       },
       {
@@ -26132,20 +26820,20 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-20T14:18:51Z",
-      "latestTag": "sol-v0.2.18",
-      "latestTagIso": "2026-11-03T20:00:13Z",
+      "latestTag": "sol-v0.2.19",
+      "latestTagIso": "2026-11-04T10:41:19Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 925,
+      "sourceLocChangedSinceAudit": 1000,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 641,
-      "sourceLocRemovedSinceAudit": 284,
+      "sourceLocAddedSinceAudit": 714,
+      "sourceLocRemovedSinceAudit": 286,
       "filesChangedSinceAudit": 26,
-      "commitsSinceAudit": 165,
+      "commitsSinceAudit": 178,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 183,
-      "commentLocRemovedSinceAudit": 63,
-      "codeLocAddedSinceAudit": 434,
-      "codeLocRemovedSinceAudit": 196,
+      "commentLocAddedSinceAudit": 212,
+      "commentLocRemovedSinceAudit": 64,
+      "codeLocAddedSinceAudit": 470,
+      "codeLocRemovedSinceAudit": 197,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
       "daysSinceAudit": 168
@@ -26416,7 +27104,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 169,
-      "commitsSinceAudit": 679,
+      "commitsSinceAudit": 693,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -27414,7 +28102,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 23,
-      "testFiles": 149,
+      "testFiles": 150,
       "sourcesUnparsed": 0,
       "untested": []
     },
