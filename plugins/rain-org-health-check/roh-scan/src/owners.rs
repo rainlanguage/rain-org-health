@@ -1238,6 +1238,23 @@ mod tests {
             .map(str::to_string)
             .to_vec(),
             threshold: 3,
+            proxy_codehashes: vec![
+                "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c".into(),
+            ],
+            singletons: vec![
+                "0x41675C099F32341bf84BFc5382aF534df5C7461a".into(),
+                "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762".into(),
+            ],
+            singleton_codehashes: vec![
+                "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4".into(),
+                "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4".into(),
+            ],
+            version: "1.4.1".into(),
+            modules: vec![],
+            guard: None,
+            fallback_handler: "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99".into(),
+            fallback_handler_codehash:
+                "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4".into(),
         }
     }
 

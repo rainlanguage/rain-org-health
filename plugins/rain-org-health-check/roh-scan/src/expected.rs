@@ -64,6 +64,17 @@ pub struct ExpectedSafe {
     pub address: String,
     pub owners: Vec<String>,
     pub threshold: u64,
+    /// Any one of these is on target.
+    pub proxy_codehashes: Vec<String>,
+    /// Index-paired with `singleton_codehashes`; any one pair is on target.
+    pub singletons: Vec<String>,
+    pub singleton_codehashes: Vec<String>,
+    pub version: String,
+    pub modules: Vec<String>,
+    /// `None` when the file carries the zero address: no guard set.
+    pub guard: Option<String>,
+    pub fallback_handler: String,
+    pub fallback_handler_codehash: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -180,6 +191,9 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 codehash: codehash(&v["codehash"], hash_field)?,
             })
         };
+        let list = |v: &serde_json::Value, field: &'static str| {
+            v.as_array().cloned().ok_or_else(|| bad(field))
+        };
         let chain_id = key.parse::<u64>().map_err(|_| bad("chain id"))?;
         let network = c["network"]
             .as_str()
@@ -228,10 +242,52 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             .as_u64()
             .filter(|t| *t >= 1 && *t as usize <= owners.len())
             .ok_or_else(|| bad("safe.threshold"))?;
+        let proxy_codehashes = list(&s["proxyCodehashes"], "safe.proxyCodehashes")?
+            .iter()
+            .map(|h| codehash(h, "safe.proxyCodehashes"))
+            .collect::<Result<Vec<_>, _>>()?;
+        if proxy_codehashes.is_empty() {
+            return Err(bad("safe.proxyCodehashes"));
+        }
+        let singletons = list(&s["singletons"], "safe.singletons")?
+            .iter()
+            .map(|a| nonzero(a, "safe.singletons"))
+            .collect::<Result<Vec<_>, _>>()?;
+        if singletons.is_empty() {
+            return Err(bad("safe.singletons"));
+        }
+        let singleton_codehashes = list(&s["singletonCodehashes"], "safe.singletonCodehashes")?
+            .iter()
+            .map(|h| codehash(h, "safe.singletonCodehashes"))
+            .collect::<Result<Vec<_>, _>>()?;
+        if singleton_codehashes.len() != singletons.len() {
+            return Err(bad("safe.singletonCodehashes"));
+        }
+        let version = s["version"]
+            .as_str()
+            .filter(|v| !v.is_empty())
+            .ok_or_else(|| bad("safe.version"))?
+            .to_string();
+        let modules = list(&s["modules"], "safe.modules")?
+            .iter()
+            .map(|a| nonzero(a, "safe.modules"))
+            .collect::<Result<Vec<_>, _>>()?;
+        let guard = addr(&s["guard"], "safe.guard")?;
         let safe = ExpectedSafe {
             address: nonzero(&s["address"], "safe.address")?,
             owners,
             threshold,
+            proxy_codehashes,
+            singletons,
+            singleton_codehashes,
+            version,
+            modules,
+            guard: (!is_zero(&guard)).then_some(guard),
+            fallback_handler: nonzero(&s["fallbackHandler"], "safe.fallbackHandler")?,
+            fallback_handler_codehash: codehash(
+                &s["fallbackHandlerCodehash"],
+                "safe.fallbackHandlerCodehash",
+            )?,
         };
         let t = &c["timelock"];
         let timelock = ExpectedTimelock {
@@ -302,6 +358,8 @@ mod tests {
     const EU_CLONE: &str = "0xDB9152e46c1D140DB6a6f814461f21c571F3275e";
     const V4_CLONE: &str = "0x315b16faa6eE413faBCa877d3851B3818369f0cD";
     const MC_VAULT: &str = "0x6eC2421d74F2AF61b7EE7bCCAE25A3b6a7961Aa0";
+    const PROXY_HASH: &str = "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c";
+    const SINGLETON_HASH: &str = "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4";
 
     fn beacon(b: &str, imp: &str, owner: &str) -> String {
         format!(r#"{{"beacon": "{b}", "implementation": "{imp}", "owner": "{owner}"}}"#)
@@ -320,7 +378,13 @@ mod tests {
             r#"{{"network": "{network}", "beaconSetDeployer": "{deployer}", "beacons": [{}],
                 "safe": {{"address": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
                           "owners": ["0x4746095B1Ea1A84446d34448f44e74D3d51f92F2", "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d", "{owner}"],
-                          "threshold": 2}},
+                          "threshold": 2,
+                          "proxyCodehashes": ["{PROXY_HASH}"],
+                          "singletons": ["0x41675C099F32341bf84BFc5382aF534df5C7461a", "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762"],
+                          "singletonCodehashes": ["{SINGLETON_HASH}", "{SINGLETON_HASH}"],
+                          "version": "1.4.1", "modules": [], "guard": "{ZERO}",
+                          "fallbackHandler": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+                          "fallbackHandlerCodehash": "{SINGLETON_HASH}"}},
                 "tokens": [{{"underlying": "MC", "receiptVault": "{MC_VAULT}", "authoriser": "{EU_CLONE}"}},
                            {{"underlying": "MSTR", "receiptVault": "0x8500189061e2206Bc33Bf04DC10fFB1Fe7dED637", "authoriser": "{V4_CLONE}"}}]
                 {extra}}}"#,
