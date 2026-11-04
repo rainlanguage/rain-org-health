@@ -2784,24 +2784,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 
         let deployment_owners = {
             let (org, repo) = (deploy_org, deploy_repo);
-            // Read the live Base Safe (getOwners + getThreshold) the expectation
-            // names, so the page can show expected vs on-chain. Best-effort: on any
-            // RPC failure the fields stay None.
-            let onchain = expected_base.as_ref().ok().map(|c| {
-                let safe_addr = c.safe.address.clone();
-                let s = rpc_session(Chain::Base);
-                let owners_live = eth_call(s, &safe_addr, &rpc::get_owners_calldata())
-                    .and_then(|hex| rpc::decode_owners(&hex));
-                let threshold_live = eth_call(s, &safe_addr, &rpc::get_threshold_calldata())
-                    .and_then(|hex| rpc::decode_uint(&hex));
-                owners::OnChainSafe {
-                    network: "base".into(),
-                    safe: safe_addr,
-                    rpc_host: Chain::Base.rpc_host().into(),
-                    owners: owners_live,
-                    threshold: threshold_live,
-                }
-            });
             // Which authoriser clone is LIVE, read from a production receipt
             // vault rather than asserted from a constant. The two Base clones
             // trade places during the V4 migration, so a hardcoded
@@ -2820,7 +2802,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 repo,
                 &deploy_sources,
                 expected_base.as_ref().map(|c| &c.safe),
-                onchain.as_ref(),
                 live_authoriser.as_deref(),
             )
             .unwrap_or(serde_json::Value::Null)

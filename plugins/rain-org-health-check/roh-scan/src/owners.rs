@@ -15,7 +15,7 @@
 //! deploy repo — because the thing it reports on is a set that grows, and a
 //! curated list of hot keys is only ever as complete as somebody's memory.
 
-use crate::expected::{ExpectedError, ExpectedSafe, EXPECTED_STATE_PATH};
+use crate::expected::{ExpectedError, ExpectedSafe};
 use crate::privileged::{PrivilegedChain, PrivilegedError, PRIVILEGED_ADDRESSES_PATH};
 use crate::vaultdiscovery::{Discovered, DiscoveryError};
 use alloy_primitives::hex;
@@ -39,17 +39,6 @@ pub fn parse_address_constant(src: &str, name: &str) -> Option<String> {
     re.captures(src)
         .and_then(|c| c.get(1))
         .map(|m| m.as_str().to_string())
-}
-
-/// On-chain readback of a Safe, for the declared-vs-actual provenance view. Each
-/// field is `None` when its RPC call failed, so the dashboard can show "on-chain
-/// unavailable" without dropping the declared constants.
-pub struct OnChainSafe {
-    pub network: String,
-    pub safe: String,
-    pub rpc_host: String,
-    pub owners: Option<Vec<String>>,
-    pub threshold: Option<u64>,
 }
 
 /// Live readback of one chain's Safe for the `expected-state.json` check. Each
@@ -250,10 +239,6 @@ pub struct OwnerSources<'a> {
 /// resolved — i.e. the repo was unreachable or the constant moved — so the page
 /// shows an honest "unavailable" state instead of a table of nulls.
 ///
-/// `expected` is the Base Safe's owners and threshold as st0x.deploy's CI
-/// asserts them (`expected-state.json`). When it could not be read the signers
-/// group says why and carries no roster, threshold or verification.
-///
 /// `live_authoriser` is the `authorizer()` a production vault actually returns;
 /// `None` when that read failed, which leaves every clone's status `unknown`
 /// rather than falling back to a literal.
@@ -262,110 +247,20 @@ pub fn build_owners(
     repo: &str,
     src: &OwnerSources,
     expected: Result<&ExpectedSafe, &ExpectedError>,
-    onchain: Option<&OnChainSafe>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
     let (safe_lib, auth_lib, v4_lib, overrides) =
         (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
-    // Anchor: without the Base Safe there is nothing meaningful to show. The
-    // file's Safe is the one the signers are verified against, so it names the row.
+    // Anchor: without the Base Safe there is nothing meaningful to show.
     let base_safe = match expected {
         Ok(exp) => exp.address.clone(),
         Err(_) => addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?,
     };
     let eth_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
 
-    // The live owner set (lowercased — getOwners returns unchecksummed) for the
-    // expected-vs-actual comparison, or None when the RPC didn't answer.
-    let onchain_owners: Option<Vec<String>> = onchain
-        .and_then(|o| o.owners.as_ref())
-        .map(|v| v.iter().map(|a| a.to_lowercase()).collect());
-
-    let (safe_note, signers_group, threshold, signer_count) = match expected {
-        Err(e) => (
-            "Gnosis Safe, replicated per chain. Holder of every authoriser admin role; production beacons belong to each chain's timelock, never the Safe.".to_string(),
-            json!({
-                "id": "signers",
-                "title": "Safe signers",
-                "note": format!("Expected owners unavailable — {e}."),
-                "verification": null,
-                "entries": [],
-            }),
-            None,
-            None,
-        ),
-        Ok(exp) => {
-            let threshold = exp.threshold;
-            let expected_lower: Vec<String> =
-                exp.owners.iter().map(|a| a.to_lowercase()).collect();
-            let mut signers: Vec<serde_json::Value> = exp
-                .owners
-                .iter()
-                .zip(&expected_lower)
-                .enumerate()
-                .map(|(i, (a, al))| {
-                    let on_chain = match &onchain_owners {
-                        None => "unverified",
-                        Some(set) if set.contains(al) => "match",
-                        Some(_) => "missing",
-                    };
-                    json!({
-                        "role": format!("Signer {}", i + 1), "address": a, "network": "",
-                        "status": "active", "note": "", "onChain": on_chain,
-                    })
-                })
-                .collect();
-            let signer_count = signers.len();
-            if let Some(set) = &onchain_owners {
-                for oc in set.iter().filter(|oc| !expected_lower.contains(oc)) {
-                    signers.push(json!({
-                        "role": "Unexpected on-chain owner", "address": oc, "network": "base",
-                        "status": "extra", "onChain": "extra",
-                        "note": format!("present in the live Safe getOwners() but not in {EXPECTED_STATE_PATH}"),
-                    }));
-                }
-            }
-            // The roster matches iff the live set is the expected set: same size,
-            // every expected owner present.
-            let verification = onchain.map(|o| {
-                let signer_match = onchain_owners.as_ref().map(|set| {
-                    set.len() == signer_count && expected_lower.iter().all(|d| set.contains(d))
-                });
-                let threshold_match = o.threshold.map(|t| t == threshold);
-                // `reachable` needs both calls; `match` needs roster AND threshold.
-                let reachable = signer_match.is_some() && threshold_match.is_some();
-                json!({
-                    "reachable": reachable,
-                    "network": o.network,
-                    "safe": o.safe,
-                    "rpcHost": o.rpc_host,
-                    "onChainCount": o.owners.as_ref().map(|v| v.len()),
-                    "match": signer_match
-                        .zip(threshold_match)
-                        .map(|(owners, thr)| owners && thr),
-                    "threshold": {
-                        "declared": threshold,
-                        "onChain": o.threshold,
-                        "match": threshold_match,
-                    },
-                })
-            });
-            (
-                format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Holder of every authoriser admin role; production beacons belong to each chain's timelock, never the Safe."),
-                json!({
-                    "id": "signers",
-                    "title": format!("Safe signers ({threshold}-of-{signer_count})"),
-                    "note": format!("Expected by st0x.deploy's CI ({EXPECTED_STATE_PATH}) and checked against the live Safe getOwners() on Base."),
-                    "verification": verification,
-                    "entries": signers,
-                }),
-                Some(threshold),
-                Some(signer_count),
-            )
-        }
-    };
+    let safe_note = "Gnosis Safe, replicated per chain. Holder of every authoriser admin role; production beacons belong to each chain's timelock, never the Safe.";
 
     let safe = json!({
         "id": "safe",
@@ -426,9 +321,7 @@ pub fn build_owners(
     Some(json!({
         "repo": repo,
         "org": org,
-        "threshold": threshold,
-        "signerCount": signer_count,
-        "groups": [safe, signers_group, authoriser, historical],
+        "groups": [safe, authoriser, historical],
     }))
 }
 
