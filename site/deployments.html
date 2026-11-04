@@ -208,7 +208,6 @@
   .own-verify-ok .own-verify-msg::before { content: "✓ "; color: var(--clean); font-weight: 700; }
   .own-verify-drift .own-verify-msg::before { content: "⚠ "; color: var(--crit); font-weight: 700; }
   .own-verify-error .own-verify-msg::before { content: "✗ "; color: var(--crit); font-weight: 700; }
-  .own-verify-thr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-2); }
   .own-verify-src { color: var(--ink-3); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 11.5px; }
   .own-prov { display: flex; flex-wrap: wrap; gap: 5px; align-items: center; justify-content: flex-end; }
   .own-chip { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.03em; font-weight: 650;
@@ -326,38 +325,6 @@ function renderDeployments(document, $, data, io) {
   const addrNode = (cls, address, network) => {
     const href = explorer(address, network);
     return href ? link(cls, address, href) : el("span", cls, address);
-  };
-  // Declared-vs-on-chain verdict banner for a group that carries a verification.
-  const verifyBanner = (v) => {
-    let cls, msg;
-    if (!v.reachable) {
-      cls = "down";
-      msg = "On-chain check incomplete — an RPC call didn't return; treat as unverified.";
-    } else if (v.match) {
-      cls = "ok";
-      msg =
-        `Expected roster matches the live Safe — ${v.onChainCount} of ${v.onChainCount} ` +
-        `owners confirmed by getOwners() on ${v.network}.`;
-    } else {
-      cls = "drift";
-      msg = "Drift — the expected roster differs from the live Safe; see the flagged rows.";
-    }
-    const b = el("div", `own-verify own-verify-${cls}`);
-    b.append(el("span", "own-verify-msg", msg));
-    const t = v.threshold;
-    if (t) {
-      b.append(
-        el(
-          "span",
-          "own-verify-thr",
-          t.onChain == null
-            ? `threshold ${t.declared} (expected)`
-            : `threshold ${t.declared} (expected) · ${t.onChain} (on-chain)${t.match ? " ✓" : " ✗"}`,
-        ),
-      );
-    }
-    if (v.safe) b.append(el("span", "own-verify-src", `Safe ${v.safe} · via ${v.rpcHost}`));
-    return b;
   };
   const box = $("deployments");
   box.textContent = "";
@@ -3355,14 +3322,13 @@ function renderDeployments(document, $, data, io) {
     link("", `${owners.org}/${owners.repo}`, `https://github.com/${owners.org}/${owners.repo}`),
   );
   sub.append(
-    ` deploy constants — who controls production.${owners.threshold != null && owners.signerCount != null ? ` Governed by a ${owners.threshold}-of-${owners.signerCount} Safe on Base.` : ""}`,
+    " deploy constants — who controls production.",
   );
   sink.append(sub);
   for (const g of owners.groups) {
     const grp = el("div", "own-group");
     grp.append(el("div", "own-grouphead", g.title));
     if (g.note) grp.append(el("div", "own-groupnote", g.note));
-    if (g.verification) grp.append(verifyBanner(g.verification));
     const table = el("div", "own-table");
     for (const e of g.entries || []) {
       const status = e.status || "active";
@@ -3377,32 +3343,7 @@ function renderDeployments(document, $, data, io) {
         ac.append(el("span", "own-addr own-missing", "— not found"));
       }
       if (e.network) ac.append(el("span", "own-net", e.network));
-      // Where a row was checked on-chain, show its two provenances side by side as
-      // independent ✓/✗ per source — the declared constant and the getOwners()
-      // result; otherwise a plain status pill.
-      let tail;
-      if (e.onChain) {
-        const oc = e.onChain;
-        tail = el("div", "own-prov");
-        // constant source: present unless this owner was only seen on-chain.
-        tail.append(
-          oc === "extra"
-            ? el("span", "own-chip own-chip-no", "expected ✗")
-            : el("span", "own-chip own-chip-yes", "expected ✓"),
-        );
-        // on-chain source: present for match/extra, absent for missing, unknown
-        // when the RPC didn't answer.
-        tail.append(
-          oc === "missing"
-            ? el("span", "own-chip own-chip-no", "on-chain ✗")
-            : oc === "unverified"
-              ? el("span", "own-chip own-chip-dim", "on-chain —")
-              : el("span", "own-chip own-chip-yes", "on-chain ✓"),
-        );
-      } else {
-        tail = el("span", `own-status own-status-${status}`, status);
-      }
-      row.append(rc, ac, tail);
+      row.append(rc, ac, el("span", `own-status own-status-${status}`, status));
       table.append(row);
     }
     grp.append(table);
