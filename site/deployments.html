@@ -153,13 +153,13 @@
   .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
   .own-row.own-extra { background: var(--debt-bg); }
   .own-row.hlth-missing, .own-row.hlth-mismatch, .own-row.hlth-drift { background: var(--debt-bg); }
-  .own-row.hlth-behind, .own-row.hlth-wiring, .own-row.hlth-extra { background: var(--debt-bg); }
+  .own-row.hlth-behind { background: var(--debt-bg); }
+  .own-lines { white-space: pre-line; }
   .own-row.hlth-unknown { opacity: 0.7; }
   .bcn-detail { display: flex; flex-direction: column; gap: 4px; min-width: 0; }
   .bcn-line { display: flex; flex-wrap: wrap; align-items: center; gap: 6px; }
   .bcn-key { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em;
              color: var(--ink-3); width: 78px; flex-shrink: 0; }
-  .tok-val { font-size: 12px; word-break: break-word; }
   .tok-h3 { font-size: 15px; font-weight: 650; margin: 22px 0 2px; }
   .own-role { font-size: 14px; font-weight: 600; color: var(--ink); overflow-wrap: anywhere; }
   .own-note { color: var(--ink-3); font-size: 12px; margin-top: 3px; line-height: 1.5; }
@@ -593,13 +593,13 @@ function renderDeployments(document, $, data, io) {
       el(
         "div",
         "own-sub",
-        `Every ${title.toLowerCase()} fact st0x.deploy pins (${f.source ?? "expected-state.json"}) — ${blurb} — read live on-chain.`,
+        `Every ${title} fact st0x.deploy pins (${f.source ?? "expected-state.json"}) — ${blurb} — read live on-chain.`,
       ),
     );
     const allHealthy = f.healthy === f.total;
     const banner = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
     banner.append(
-      el("span", "own-verify-msg", `${f.healthy} of ${f.total} ${title.toLowerCase()} facts as expected on ${f.network}.`),
+      el("span", "own-verify-msg", `${f.healthy} of ${f.total} ${title} facts as expected on ${f.network}.`),
     );
     banner.append(el("span", "own-verify-src", `via ${f.rpcHost}`));
     sink.append(banner);
@@ -669,7 +669,7 @@ function renderDeployments(document, $, data, io) {
     banner.append(el("span", "own-verify-src", `via ${f.rpcHost}`));
     sink.append(banner);
     const fmt = (v, none) =>
-      v == null ? none : Array.isArray(v) ? (v.length ? v.join(", ") : "none") : String(v);
+      v == null ? none : Array.isArray(v) ? (v.length ? v.join("\n") : "none") : String(v);
     const table = el("div", "own-table");
     for (const r of f.facts) {
       const st = r.status || "unknown";
@@ -683,7 +683,7 @@ function renderDeployments(document, $, data, io) {
       ]) {
         const line = el("div", "bcn-line");
         line.append(el("span", "bcn-key", key));
-        line.append(el("span", "own-addr", fmt(val, none)));
+        line.append(el("span", "own-addr own-lines", fmt(val, none)));
         detail.append(line);
       }
       const stCls = st === "match" ? "yes" : st === "unknown" ? "dim" : "no";
