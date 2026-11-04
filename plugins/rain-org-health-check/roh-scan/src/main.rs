@@ -2993,10 +2993,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 
         let deployment_registry = rbac::build_registry(&deployment_rbac, gh_file);
 
+        let migrations_src = gh_file(deploy_org, deploy_repo, migrations::PATH);
         let deployment_migrations = migrations::build(
             deploy_org,
             deploy_repo,
-            &gh_file(deploy_org, deploy_repo, migrations::PATH),
+            &migrations_src,
             &|network| Chain::from_network(network).map(|ch| ch.rpc_host().to_string()),
             &|net, records| match Chain::from_network(&net.name) {
                 Some(chain) => migrations::read_applied(net, records, &|calls| {
@@ -3408,10 +3409,18 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                             .as_deref()
                             .and_then(|d| call_addr(d, rpc::receipt_vault_beacon_calldata())),
                     };
-                    // Live matching the renamed value means the rename landed.
-                    let either = |live: &Option<String>, name: &str, renamed: &str| match live {
-                        Some(l) if l == renamed => renamed.to_string(),
-                        _ => name.to_string(),
+                    let renamed =
+                        migrations::locate(&migrations_src, &c.network, &c.rename_migration)
+                            .and_then(|(net, r)| {
+                                migrations::read_applied(&net, &[r], &|calls| {
+                                    eth_call_batch(s, calls)
+                                })
+                                .pop()
+                                .flatten()
+                            })
+                            .map(|t| t > 0);
+                    let either = |name: &str, renamed_name: &str| {
+                        renamed.map(|r| if r { renamed_name } else { name }.to_string())
                     };
                     let mut rows = Vec::new();
                     for z in &c.zoltu {
@@ -3428,17 +3437,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         let rv = t.receipt_vault.as_str();
                         let wv = t.wrapped_token_vault.as_str();
                         let rc = t.receipt.as_str();
-                        let rv_name = call_str(rv, rpc::name_calldata());
-                        let rv_name_pin = either(&rv_name, &t.name, &t.renamed_name);
-                        let wv_name = call_str(wv, rpc::name_calldata());
-                        let wv_name_pin = either(
-                            &wv_name,
-                            &t.wrapped_token_vault_name,
-                            &t.wrapped_token_vault_renamed_name,
-                        );
-                        let wv_symbol = call_str(wv, rpc::symbol_calldata());
+                        let rv_name_pin = either(&t.name, &t.renamed_name);
+                        let wv_name_pin =
+                            either(&t.wrapped_token_vault_name, &t.wrapped_token_vault_renamed_name);
                         let wv_symbol_pin = either(
-                            &wv_symbol,
                             &t.wrapped_token_vault_symbol,
                             &t.wrapped_token_vault_renamed_symbol,
                         );
@@ -3447,7 +3449,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         let rv_beacon = beacon_at(&t.receipt_vault_beacon);
                         let rc_beacon = beacon_at(&t.receipt_beacon);
                         let checks: Vec<(&str, &str, Option<&str>, Option<String>)> = vec![
-                            ("receiptVault name", rv, Some(&rv_name_pin), rv_name),
+                            (
+                                "receiptVault name",
+                                rv,
+                                rv_name_pin.as_deref(),
+                                call_str(rv, rpc::name_calldata()),
+                            ),
                             (
                                 "receiptVault symbol",
                                 rv,
@@ -3482,8 +3489,18 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                             ),
                             ("receipt beacon", rc, rc_beacon.as_deref(), beacon_slot(rc)),
                             ("receipt codehash", rc, pin(&t.receipt_codehash), codehash(rc)),
-                            ("wrappedTokenVault name", wv, Some(&wv_name_pin), wv_name),
-                            ("wrappedTokenVault symbol", wv, Some(&wv_symbol_pin), wv_symbol),
+                            (
+                                "wrappedTokenVault name",
+                                wv,
+                                wv_name_pin.as_deref(),
+                                call_str(wv, rpc::name_calldata()),
+                            ),
+                            (
+                                "wrappedTokenVault symbol",
+                                wv,
+                                wv_symbol_pin.as_deref(),
+                                call_str(wv, rpc::symbol_calldata()),
+                            ),
                             ("wrappedTokenVault decimals", wv, Some(&wv_decimals), decimals(wv)),
                             (
                                 "wrappedTokenVault asset",

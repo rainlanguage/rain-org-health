@@ -198,6 +198,34 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
         .collect()
 }
 
+/// The registry and `appliedV5` key for migration `id` on `network`; the writer is that migration's entry on the chain, else its namespace's line there.
+pub fn locate(src: &str, network: &str, id: &str) -> Option<(Network, Record)> {
+    let m = parse(src).ok()?;
+    let net = m.networks.iter().find(|n| n.name == network)?.clone();
+    let mig = m.migrations.iter().find(|x| {
+        x.key
+            .as_ref()
+            .is_some_and(|(_, i)| i.eq_ignore_ascii_case(id))
+    })?;
+    let (namespace, _) = mig.key.clone()?;
+    let writer = match mig.on(net.chain_id) {
+        Some(e) => e.writer.clone(),
+        None => m.migrations.iter().find_map(|x| {
+            let (ns, _) = x.key.as_ref()?;
+            let e = x.on(net.chain_id)?;
+            ns.eq_ignore_ascii_case(&namespace).then(|| e.writer.clone())
+        })?,
+    };
+    Some((
+        net,
+        Record {
+            writer,
+            namespace,
+            id: id.to_string(),
+        },
+    ))
+}
+
 /// The block the heads were read at, and one slot per `(writer, namespace)` line; `None` where the read did not answer.
 pub type ReadHeads<'a> =
     &'a dyn Fn(&Network, &[(String, String)]) -> (Option<u64>, Vec<Option<String>>);
