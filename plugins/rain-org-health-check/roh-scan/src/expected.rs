@@ -1,7 +1,8 @@
 //! st0x.deploy's published `expected-state.json`: per chain, what its CI asserts
 //! live — each beacon's codehash, implementation and owner, the token-owner
 //! Safe's owners and threshold, the timelock, the orchestrator, both authoriser
-//! clones, and each token's authoriser. The scan expects exactly these.
+//! clones, every Zoltu suite, and each token's metadata, legs, beacons, proxy
+//! codehashes, owner and authoriser. The scan expects exactly these.
 
 use crate::owners::REFERENCE_NETWORK;
 
@@ -77,6 +78,41 @@ pub struct ExpectedSafe {
     pub fallback_handler_codehash: String,
 }
 
+/// A released Zoltu suite declared on the chain.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedZoltu {
+    pub key: String,
+    pub code: ExpectedCode,
+}
+
+/// Each `renamed_*` applies once the chain records `rename_migration`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedToken {
+    pub underlying: String,
+    pub name: String,
+    pub renamed_name: String,
+    pub symbol: String,
+    pub decimals: u64,
+    pub wrapped_token_vault_name: String,
+    pub wrapped_token_vault_renamed_name: String,
+    pub wrapped_token_vault_symbol: String,
+    pub wrapped_token_vault_renamed_symbol: String,
+    pub wrapped_token_vault_decimals: u64,
+    pub receipt_vault: String,
+    pub receipt: String,
+    pub wrapped_token_vault: String,
+    pub receipt_vault_receipt: String,
+    pub wrapped_token_vault_asset: String,
+    pub receipt_vault_beacon: BeaconAt,
+    pub receipt_beacon: BeaconAt,
+    pub wrapped_token_vault_beacon: String,
+    pub receipt_vault_codehash: String,
+    pub receipt_codehash: String,
+    pub wrapped_token_vault_codehash: String,
+    pub owner: String,
+    pub authoriser: String,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExpectedChain {
     pub chain_id: u64,
@@ -89,16 +125,18 @@ pub struct ExpectedChain {
     pub orchestrator: ExpectedOrchestrator,
     pub authoriser: ExpectedCode,
     pub eu_authoriser: ExpectedCode,
-    /// `(receipt vault lowercased, authoriser)`, in file order.
-    pub authorisers: Vec<(String, String)>,
+    pub zoltu: Vec<ExpectedZoltu>,
+    pub rename_migration: String,
+    /// In file order.
+    pub tokens: Vec<ExpectedToken>,
 }
 
 impl ExpectedChain {
     pub fn authoriser_for(&self, receipt_vault: &str) -> Option<&str> {
-        self.authorisers
+        self.tokens
             .iter()
-            .find(|(v, _)| v.eq_ignore_ascii_case(receipt_vault))
-            .map(|(_, a)| a.as_str())
+            .find(|t| t.receipt_vault.eq_ignore_ascii_case(receipt_vault))
+            .map(|t| t.authoriser.as_str())
     }
 }
 
@@ -311,15 +349,104 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             "euAuthoriser.address",
             "euAuthoriser.codehash",
         )?;
-        let authorisers = c["tokens"]
-            .as_array()
-            .ok_or_else(|| bad("tokens"))?
+        let zoltu = list(&c["zoltu"], "zoltu")?
+            .iter()
+            .map(|z| {
+                Ok(ExpectedZoltu {
+                    key: z["key"]
+                        .as_str()
+                        .filter(|k| !k.is_empty())
+                        .ok_or_else(|| bad("zoltu[].key"))?
+                        .to_string(),
+                    code: code(z, "zoltu[].address", "zoltu[].codehash")?,
+                })
+            })
+            .collect::<Result<Vec<_>, _>>()?;
+        let rename_migration = codehash(&c["renameMigration"], "renameMigration")?;
+        let text = |v: &serde_json::Value, field: &'static str| {
+            v.as_str()
+                .filter(|s| !s.is_empty())
+                .map(str::to_string)
+                .ok_or_else(|| bad(field))
+        };
+        let leg = |v: &serde_json::Value, field: &'static str, via: BeaconAt| {
+            let a = addr(v, field)?;
+            match (is_zero(&a), &beacon_set_deployer) {
+                (false, _) => Ok(BeaconAt::Address(a)),
+                (true, Some(_)) => Ok(via),
+                (true, None) => Err(bad(field)),
+            }
+        };
+        let tokens = list(&c["tokens"], "tokens")?
             .iter()
             .map(|t| {
-                Ok((
-                    nonzero(&t["receiptVault"], "tokens[].receiptVault")?.to_lowercase(),
-                    nonzero(&t["authoriser"], "tokens[].authoriser")?,
-                ))
+                Ok(ExpectedToken {
+                    underlying: text(&t["underlying"], "tokens[].underlying")?,
+                    name: text(&t["name"], "tokens[].name")?,
+                    renamed_name: text(&t["renamedName"], "tokens[].renamedName")?,
+                    symbol: text(&t["symbol"], "tokens[].symbol")?,
+                    decimals: t["decimals"]
+                        .as_u64()
+                        .ok_or_else(|| bad("tokens[].decimals"))?,
+                    wrapped_token_vault_name: text(
+                        &t["wrappedTokenVaultName"],
+                        "tokens[].wrappedTokenVaultName",
+                    )?,
+                    wrapped_token_vault_renamed_name: text(
+                        &t["wrappedTokenVaultRenamedName"],
+                        "tokens[].wrappedTokenVaultRenamedName",
+                    )?,
+                    wrapped_token_vault_symbol: text(
+                        &t["wrappedTokenVaultSymbol"],
+                        "tokens[].wrappedTokenVaultSymbol",
+                    )?,
+                    wrapped_token_vault_renamed_symbol: text(
+                        &t["wrappedTokenVaultRenamedSymbol"],
+                        "tokens[].wrappedTokenVaultRenamedSymbol",
+                    )?,
+                    wrapped_token_vault_decimals: t["wrappedTokenVaultDecimals"]
+                        .as_u64()
+                        .ok_or_else(|| bad("tokens[].wrappedTokenVaultDecimals"))?,
+                    receipt_vault: nonzero(&t["receiptVault"], "tokens[].receiptVault")?,
+                    receipt: nonzero(&t["receipt"], "tokens[].receipt")?,
+                    wrapped_token_vault: nonzero(
+                        &t["wrappedTokenVault"],
+                        "tokens[].wrappedTokenVault",
+                    )?,
+                    receipt_vault_receipt: nonzero(
+                        &t["receiptVaultReceipt"],
+                        "tokens[].receiptVaultReceipt",
+                    )?,
+                    wrapped_token_vault_asset: nonzero(
+                        &t["wrappedTokenVaultAsset"],
+                        "tokens[].wrappedTokenVaultAsset",
+                    )?,
+                    receipt_vault_beacon: leg(
+                        &t["receiptVaultBeacon"],
+                        "tokens[].receiptVaultBeacon",
+                        BeaconAt::DeployerReceiptVault,
+                    )?,
+                    receipt_beacon: leg(
+                        &t["receiptBeacon"],
+                        "tokens[].receiptBeacon",
+                        BeaconAt::DeployerReceipt,
+                    )?,
+                    wrapped_token_vault_beacon: nonzero(
+                        &t["wrappedTokenVaultBeacon"],
+                        "tokens[].wrappedTokenVaultBeacon",
+                    )?,
+                    receipt_vault_codehash: codehash(
+                        &t["receiptVaultCodehash"],
+                        "tokens[].receiptVaultCodehash",
+                    )?,
+                    receipt_codehash: codehash(&t["receiptCodehash"], "tokens[].receiptCodehash")?,
+                    wrapped_token_vault_codehash: codehash(
+                        &t["wrappedTokenVaultCodehash"],
+                        "tokens[].wrappedTokenVaultCodehash",
+                    )?,
+                    owner: nonzero(&t["owner"], "tokens[].owner")?,
+                    authoriser: nonzero(&t["authoriser"], "tokens[].authoriser")?,
+                })
             })
             .collect::<Result<Vec<_>, _>>()?;
         out.push(ExpectedChain {
@@ -332,7 +459,9 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             orchestrator,
             authoriser,
             eu_authoriser,
-            authorisers,
+            zoltu,
+            rename_migration,
+            tokens,
         });
     }
     out.sort_by_key(|c| (c.network != REFERENCE_NETWORK, c.chain_id));

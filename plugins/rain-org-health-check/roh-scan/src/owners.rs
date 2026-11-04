@@ -52,6 +52,115 @@ pub struct OnChainSafe {
     pub threshold: Option<u64>,
 }
 
+/// Live readback of one chain's Safe for the `expected-state.json` check. Each
+/// field is `None` when its RPC read failed.
+#[derive(Default)]
+pub struct LiveSafe {
+    pub owners: Option<Vec<String>>,
+    pub threshold: Option<u64>,
+    pub proxy_codehash: Option<String>,
+    pub singleton: Option<String>,
+    pub singleton_codehash: Option<String>,
+    pub version: Option<String>,
+    pub modules: Option<Vec<String>>,
+    pub guard: Option<String>,
+    pub fallback_handler: Option<String>,
+    pub fallback_handler_codehash: Option<String>,
+}
+
+fn fact(name: &str, expected: serde_json::Value, live: Option<serde_json::Value>, ok: Option<bool>) -> serde_json::Value {
+    let status = match ok {
+        Some(true) => "match",
+        Some(false) => "mismatch",
+        None => "unknown",
+    };
+    json!({"fact": name, "expected": expected, "live": live, "status": status})
+}
+
+/// Every Safe fact `expected-state.json` carries for one chain, checked against
+/// its live readback.
+pub fn safe_facts(exp: &ExpectedSafe, live: &LiveSafe) -> serde_json::Value {
+    let eq = |a: &str, b: &str| a.eq_ignore_ascii_case(b);
+    let lower = |v: &[String]| v.iter().map(|a| a.to_lowercase()).collect::<Vec<_>>();
+    let owners_ok = live.owners.as_ref().map(|o| {
+        let (mut a, mut b) = (lower(o), lower(&exp.owners));
+        a.sort();
+        b.sort();
+        a == b
+    });
+    let pair = live.singleton.as_ref().and_then(|l| {
+        exp.singletons
+            .iter()
+            .zip(&exp.singleton_codehashes)
+            .find(|(s, _)| eq(s, l))
+    });
+    let singleton_codehash_ok = match (&live.singleton, &live.singleton_codehash) {
+        (Some(_), Some(h)) => Some(pair.is_some_and(|(_, e)| eq(e, h))),
+        _ => None,
+    };
+    let guard_ok = live.guard.as_ref().map(|g| match &exp.guard {
+        Some(e) => eq(e, g),
+        None => g.trim_start_matches("0x").chars().all(|c| c == '0'),
+    });
+    let facts = vec![
+        fact("owners", json!(exp.owners), live.owners.as_ref().map(|o| json!(o)), owners_ok),
+        fact(
+            "threshold",
+            json!(exp.threshold),
+            live.threshold.map(|t| json!(t)),
+            live.threshold.map(|t| t == exp.threshold),
+        ),
+        fact(
+            "proxyCodehash",
+            json!(exp.proxy_codehashes),
+            live.proxy_codehash.as_ref().map(|h| json!(h)),
+            live.proxy_codehash
+                .as_ref()
+                .map(|h| exp.proxy_codehashes.iter().any(|e| eq(e, h))),
+        ),
+        fact(
+            "singleton",
+            json!(exp.singletons),
+            live.singleton.as_ref().map(|s| json!(s)),
+            live.singleton.as_ref().map(|_| pair.is_some()),
+        ),
+        fact(
+            "singletonCodehash",
+            json!(exp.singleton_codehashes),
+            live.singleton_codehash.as_ref().map(|h| json!(h)),
+            singleton_codehash_ok,
+        ),
+        fact(
+            "version",
+            json!(exp.version),
+            live.version.as_ref().map(|v| json!(v)),
+            live.version.as_ref().map(|v| *v == exp.version),
+        ),
+        fact(
+            "modules",
+            json!(exp.modules),
+            live.modules.as_ref().map(|m| json!(m)),
+            live.modules.as_ref().map(|m| lower(m) == lower(&exp.modules)),
+        ),
+        fact("guard", json!(exp.guard), live.guard.as_ref().map(|g| json!(g)), guard_ok),
+        fact(
+            "fallbackHandler",
+            json!(exp.fallback_handler),
+            live.fallback_handler.as_ref().map(|f| json!(f)),
+            live.fallback_handler.as_ref().map(|f| eq(f, &exp.fallback_handler)),
+        ),
+        fact(
+            "fallbackHandlerCodehash",
+            json!(exp.fallback_handler_codehash),
+            live.fallback_handler_codehash.as_ref().map(|h| json!(h)),
+            live.fallback_handler_codehash
+                .as_ref()
+                .map(|h| eq(h, &exp.fallback_handler_codehash)),
+        ),
+    ];
+    json!({"address": exp.address, "facts": facts})
+}
+
 fn entry(
     role: &str,
     address: Option<String>,
