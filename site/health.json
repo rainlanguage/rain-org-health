@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-04T01:26:58Z",
+  "generatedAt": "2026-11-04T09:21:56Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4145,7 +4145,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53483159
+        "discoveredAtBlock": 53497407
       },
       {
         "network": "ethereum",
@@ -4694,7 +4694,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26338158
+        "discoveredAtBlock": 26340523
       },
       {
         "network": "bsc",
@@ -4904,41 +4904,41 @@
           },
           {
             "vault": "0x516d6c697c40e24de9d17811e642a07a6d70cf07",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x012ec0436407b8ade9a00614e01abf1faab69755",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xe319e212860ef85c4082b3b73641bd25721c88b2",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2c594750dbe8e5b2d8d155b4fcb39fed307a91b9",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x925eb169ed82889a7afe5292d97998acb26b6233",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -5384,81 +5384,81 @@
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xc361da5ac6523fbc40a1b160ce98d1e84667325b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xc6e584f4341e418962a0dde3f2969b6be58f1920",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
@@ -5552,18 +5552,18 @@
           }
         ],
         "counts": {
-          "safe": 34,
-          "timelock": 57,
+          "safe": 41,
+          "timelock": 65,
           "other": 0,
-          "unknown": 15,
+          "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 37,
-          "certificationUnknown": 15,
+          "certificationExpired": 45,
+          "certificationUnknown": 0,
           "notPinned": 50,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131536814
+        "discoveredAtBlock": 131600139
       },
       {
         "network": "hyperevm",
@@ -6104,7 +6104,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50323874
+        "discoveredAtBlock": 50352855
       },
       {
         "network": "robinhood",
@@ -6645,7 +6645,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 105515457
+        "discoveredAtBlock": 105791765
       }
     ]
   },
@@ -21780,19 +21780,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26338157,
+            "headBlock": 26340523,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26338157,
+            "headBlock": 26340523,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26338157,
+            "headBlock": 26340523,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -21949,19 +21949,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131536795,
+            "headBlock": 131600120,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131536795,
+            "headBlock": 131600120,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131536795,
+            "headBlock": 131600120,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22118,19 +22118,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50323864,
+            "headBlock": 50352840,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50323864,
+            "headBlock": 50352840,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50323864,
+            "headBlock": 50352840,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22287,19 +22287,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 105515564,
+            "headBlock": 105792023,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105515564,
+            "headBlock": 105792023,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 105515564,
+            "headBlock": 105792023,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22456,19 +22456,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53483160,
+            "headBlock": 53497410,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53483160,
+            "headBlock": 53497410,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53483160,
+            "headBlock": 53497410,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22877,7 +22877,7 @@
         {
           "address": "0x40584fbad768ff46f299cf50cae5b3d437e213fa",
           "name": null,
-          "symbol": null,
+          "symbol": "tDIS",
           "deployed": null,
           "authoriser": null,
           "authoriserLabel": "unknown",
@@ -26140,7 +26140,7 @@
       "sourceLocAddedSinceAudit": 641,
       "sourceLocRemovedSinceAudit": 284,
       "filesChangedSinceAudit": 26,
-      "commitsSinceAudit": 163,
+      "commitsSinceAudit": 165,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 183,
       "commentLocRemovedSinceAudit": 63,
