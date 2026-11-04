@@ -1637,27 +1637,22 @@ mod tests {
             },
             Ok(&exp_safe()),
             None,
-            None,
         )
         .expect("anchor resolves");
         assert_eq!(v["repo"], "st0x.deploy");
-        assert_eq!(v["threshold"], 3);
-        assert_eq!(v["signerCount"], 6);
         let groups = v["groups"].as_array().unwrap();
         let ids: Vec<&str> = groups.iter().map(|g| g["id"].as_str().unwrap()).collect();
-        assert_eq!(ids, ["safe", "signers", "authoriser", "historical"]);
+        assert_eq!(ids, ["safe", "authoriser", "historical"]);
         // Base Safe address surfaced in the safe group.
         assert_eq!(
             groups[0]["entries"][0]["address"],
             "0xe70d821f3462a074e63b42d0AaC6523faAe1d611"
         );
-        // All six signers.
-        assert_eq!(groups[1]["entries"].as_array().unwrap().len(), 6);
         // Bricked V2 owners carry the bricked status.
-        assert_eq!(groups[3]["entries"][2]["status"], "bricked");
-        assert_eq!(groups[3]["entries"][3]["status"], "bricked");
+        assert_eq!(groups[2]["entries"][2]["status"], "bricked");
+        assert_eq!(groups[2]["entries"][3]["status"], "bricked");
         // Without a live authorizer() reading no clone claims to be active.
-        let auth = groups[2]["entries"].as_array().unwrap();
+        let auth = groups[1]["entries"].as_array().unwrap();
         let v4 = auth
             .iter()
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "base")
@@ -1679,7 +1674,6 @@ mod tests {
                 overrides: OVERRIDES,
             },
             Ok(&exp_safe()),
-            None,
             live,
         )
         .unwrap()
@@ -1890,10 +1884,9 @@ mod tests {
             },
             Ok(&exp_safe()),
             None,
-            None,
         )
         .unwrap();
-        let auth = v["groups"][2]["entries"].as_array().unwrap();
+        let auth = v["groups"][1]["entries"].as_array().unwrap();
         let eth = auth
             .iter()
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "ethereum")
@@ -1923,11 +1916,11 @@ mod tests {
             overrides: OVERRIDES,
         };
         assert_eq!(
-            build_owners("o", "r", &src, Err(&ExpectedError::Empty), None, None),
+            build_owners("o", "r", &src, Err(&ExpectedError::Empty), None),
             None
         );
         // The file's Safe anchors the view when the constant is gone.
-        let v = build_owners("o", "r", &src, Ok(&exp_safe()), None, None).unwrap();
+        let v = build_owners("o", "r", &src, Ok(&exp_safe()), None).unwrap();
         assert_eq!(
             v["groups"][0]["entries"][0]["address"],
             exp_safe().address.as_str()
@@ -1950,7 +1943,6 @@ mod tests {
             },
             Ok(&exp_safe()),
             None,
-            None,
         )
         .unwrap();
         let eth = &v["groups"][0]["entries"][1];
@@ -1960,301 +1952,6 @@ mod tests {
 
     /// #217: the roster and threshold are the expectation's, never the
     /// `_OWNER_{i}` constants — SAFE_LIB declares six, the expectation three.
-    #[test]
-    fn signers_and_threshold_come_from_the_expectation_not_the_constants() {
-        let mut exp = exp_safe();
-        exp.owners.truncate(2);
-        exp.owners
-            .push("0x1111111111111111111111111111111111111111".into());
-        exp.threshold = 2;
-        exp.address = "0x2222222222222222222222222222222222222222".into();
-        let oc = onchain(
-            Some(vec![
-                LIVE_ROSTER[0],
-                LIVE_ROSTER[1],
-                "0x1111111111111111111111111111111111111111",
-            ]),
-            Some(2),
-        );
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        assert_eq!(v["signerCount"], 3);
-        assert_eq!(v["threshold"], 2);
-        let sg = &v["groups"][1];
-        assert_eq!(sg["title"], "Safe signers (2-of-3)");
-        assert_eq!(sg["verification"]["match"], true);
-        assert_eq!(sg["verification"]["threshold"]["declared"], 2);
-        let entries = sg["entries"].as_array().unwrap();
-        assert_eq!(entries.len(), 3);
-        assert_eq!(
-            entries[2]["address"],
-            "0x1111111111111111111111111111111111111111"
-        );
-        assert!(entries.iter().all(|e| e["onChain"] == "match"));
-        // The Base Safe row names the file's Safe, the one the signers are checked on.
-        assert_eq!(
-            v["groups"][0]["entries"][0]["address"],
-            "0x2222222222222222222222222222222222222222"
-        );
-    }
-
-    /// No expectation: the signers group says why and claims no roster,
-    /// threshold or verdict, while the rest of the document still renders.
-    #[test]
-    fn an_unavailable_expectation_is_reported_not_guessed() {
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Err(&ExpectedError::Empty),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        assert!(v["threshold"].is_null());
-        assert!(v["signerCount"].is_null());
-        let sg = &v["groups"][1];
-        assert_eq!(sg["id"], "signers");
-        assert_eq!(
-            sg["note"],
-            "Expected owners unavailable — expected-state.json could not be fetched."
-        );
-        assert!(sg["verification"].is_null());
-        assert_eq!(sg["entries"].as_array().unwrap().len(), 0);
-        assert!(!v["groups"][0]["note"].as_str().unwrap().contains("-of-"));
-        assert_eq!(v["groups"].as_array().unwrap().len(), 4);
-    }
-
-    // ---- declared-vs-actual verification ----
-
-    fn onchain(owners: Option<Vec<&str>>, threshold: Option<u64>) -> OnChainSafe {
-        OnChainSafe {
-            network: "base".into(),
-            safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into(),
-            rpc_host: "mainnet.base.org".into(),
-            owners: owners.map(|v| v.into_iter().map(str::to_string).collect()),
-            threshold,
-        }
-    }
-
-    // The SAFE_LIB roster, lowercased as getOwners returns it.
-    const LIVE_ROSTER: [&str; 6] = [
-        "0x4746095b1ea1a84446d34448f44e74d3d51f92f2",
-        "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d",
-        "0x8d5901d8ae48101b59400235ad8614a2e0510466",
-        "0xc1c89b7f5448f447d59f920456a9610f6b2544bc",
-        "0xab92b327c97a6e7461cbd76e2a789e5e106ff87e",
-        "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2",
-    ];
-
-    #[test]
-    fn onchain_match_marks_every_signer_verified() {
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["match"], true);
-        assert_eq!(sg["verification"]["reachable"], true);
-        assert_eq!(sg["verification"]["threshold"]["match"], true);
-        let entries = sg["entries"].as_array().unwrap();
-        assert_eq!(entries.len(), 6);
-        assert!(entries.iter().all(|e| e["onChain"] == "match"));
-    }
-
-    #[test]
-    fn onchain_drift_flags_missing_and_extra_owners() {
-        // Live set drops signer 6 and adds an owner not in the constants; on-chain
-        // threshold (2) also differs from the declared 3.
-        let mut live: Vec<&str> = LIVE_ROSTER[..5].to_vec();
-        live.push("0xdeadbeef00000000000000000000000000000001");
-        let oc = onchain(Some(live), Some(2));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["match"], false);
-        assert_eq!(sg["verification"]["threshold"]["match"], false);
-        let entries = sg["entries"].as_array().unwrap();
-        let s6 = entries.iter().find(|e| e["role"] == "Signer 6").unwrap();
-        assert_eq!(s6["onChain"], "missing", "declared but absent on-chain");
-        let extra = entries.iter().find(|e| e["status"] == "extra").unwrap();
-        assert_eq!(
-            extra["address"],
-            "0xdeadbeef00000000000000000000000000000001"
-        );
-        assert_eq!(extra["onChain"], "extra");
-    }
-
-    #[test]
-    fn a_live_superset_of_the_expected_roster_is_drift() {
-        // Every expected owner is present, plus one more: still not the expected Safe.
-        let mut live: Vec<&str> = LIVE_ROSTER.to_vec();
-        live.push("0xdeadbeef00000000000000000000000000000001");
-        let oc = onchain(Some(live), Some(3));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["threshold"]["match"], true);
-        assert_eq!(sg["verification"]["match"], false);
-    }
-    #[test]
-    fn unreachable_rpc_leaves_signers_unverified() {
-        let oc = onchain(None, None); // RPC failed
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["reachable"], false);
-        assert!(sg["verification"]["match"].is_null());
-        let entries = sg["entries"].as_array().unwrap();
-        assert!(entries.iter().all(|e| e["onChain"] == "unverified"));
-        assert_eq!(entries.len(), 6, "still shows the declared roster");
-    }
-
-    #[test]
-    fn no_onchain_omits_verification() {
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            None,
-            None,
-        )
-        .unwrap();
-        assert!(v["groups"][1]["verification"].is_null());
-    }
-
-    #[test]
-    fn threshold_mismatch_alone_fails_the_verdict() {
-        // Roster fully matches but the on-chain threshold differs: the overall
-        // verdict must be false — never a green "verified" — even though every
-        // signer row is a match.
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(4));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["reachable"], true);
-        assert_eq!(
-            sg["verification"]["match"], false,
-            "threshold drift fails the verdict"
-        );
-        assert_eq!(sg["verification"]["threshold"]["match"], false);
-        let entries = sg["entries"].as_array().unwrap();
-        assert!(
-            entries.iter().all(|e| e["onChain"] == "match"),
-            "roster itself is fine"
-        );
-    }
-
-    #[test]
-    fn partial_rpc_is_not_reachable() {
-        // Owners answered but the threshold call didn't: not reachable and no
-        // verdict, so the page shows "incomplete" rather than a green banner.
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), None);
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(
-            sg["verification"]["reachable"], false,
-            "one call missing => not reachable"
-        );
-        assert!(sg["verification"]["match"].is_null());
-        assert!(sg["verification"]["threshold"]["onChain"].is_null());
-    }
 
     // ---- authoriser role grants (#143) ----
 
@@ -2377,10 +2074,9 @@ mod tests {
             },
             Ok(&exp_safe()),
             None,
-            None,
         )
         .unwrap();
-        let auth = v["groups"][2]["entries"].as_array().unwrap();
+        let auth = v["groups"][1]["entries"].as_array().unwrap();
         assert!(
             !auth
                 .iter()
