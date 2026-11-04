@@ -22,7 +22,7 @@ another repo's tooling. Every data source is owned + emitted by its
 | st0x root registry (delegations, config, migration records) | rain.deploy's registry subgraph on Ormi (`roh-scan` emits its location, `deploymentRegistry`) | runtime GraphQL POST         |
 | st0x root registry delegate recognition (Safe / timelock)   | the RBAC subgraph's `contracts` for the same network (`deploymentRbac`)                       | runtime GraphQL POST         |
 | st0x migrations, run or not                                 | `roh-scan` reads st0x.deploy's `migrations.json` + each registry's `appliedV5`                | same-origin fetch            |
-| st0x expected live state                                    | `roh-scan` reads st0x.deploy's `expected-state.json` (beacons, Safe, authorisers)             | same-origin fetch            |
+| st0x expected live state                                    | `roh-scan` reads st0x.deploy's `expected-state.json` per chain: beacons, Safe policy, infra (beacon set deployer, timelock, orchestrator, authorisers), zoltu, tokens | same-origin fetch            |
 
 Do not regress this:
 
