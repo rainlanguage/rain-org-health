@@ -1,4 +1,4 @@
-//! The deploy repo's migrations joined with each registry's `appliedV3`; the page has no RPC.
+//! The deploy repo's migrations joined with each registry's `appliedV5` and each line's `headV5`; the page has no RPC.
 
 use crate::rpc;
 use alloy_primitives::{Address, FixedBytes};
@@ -185,7 +185,7 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
     let Some(calls) = records
         .iter()
         .map(|r| {
-            rpc::applied_v3_calldata(&r.writer, &r.namespace, &r.id)
+            rpc::applied_v5_calldata(&r.writer, &r.namespace, &r.id)
                 .map(|data| (net.registry.clone(), data))
         })
         .collect::<Option<Vec<_>>>()
@@ -195,6 +195,35 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
     call(&calls)
         .into_iter()
         .map(|hex| hex.as_deref().and_then(rpc::decode_uint))
+        .collect()
+}
+
+/// The block the heads were read at, and one slot per `(writer, namespace)` line; `None` where the read did not answer.
+pub type ReadHeads<'a> =
+    &'a dyn Fn(&Network, &[(String, String)]) -> (Option<u64>, Vec<Option<String>>);
+
+pub fn read_heads(
+    net: &Network,
+    lines: &[(String, String)],
+    call: EthCalls,
+) -> Vec<Option<String>> {
+    let encoded: Vec<Option<String>> = lines
+        .iter()
+        .map(|(w, ns)| rpc::head_v5_calldata(w, ns))
+        .collect();
+    let calls: Vec<(String, String)> = encoded
+        .iter()
+        .flatten()
+        .map(|data| (net.registry.clone(), data.clone()))
+        .collect();
+    let mut answers = call(&calls).into_iter();
+    encoded
+        .iter()
+        .map(|data| {
+            data.as_ref()
+                .and_then(|_| answers.next().flatten())
+                .and_then(|hex| rpc::decode_word(&hex))
+        })
         .collect()
 }
 
@@ -216,7 +245,13 @@ fn when(t: u64) -> Value {
     }
 }
 
-fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: ReadApplied) -> Value {
+fn network_json(
+    m: &Manifest,
+    net: &Network,
+    rpc_host: Option<String>,
+    read: ReadApplied,
+    heads: ReadHeads,
+) -> Value {
     let genesis = |r: &Record| r.id.eq_ignore_ascii_case(&m.genesis);
     let mut asked: Vec<Record> = Vec::new();
     for mig in &m.migrations {
@@ -235,6 +270,15 @@ fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: Rea
         }
     }
     let answers = read(net, &asked);
+    let mut lines: Vec<(String, String)> = Vec::new();
+    for r in &asked {
+        if !lines.iter().any(|(w, ns)| {
+            w.eq_ignore_ascii_case(&r.writer) && ns.eq_ignore_ascii_case(&r.namespace)
+        }) {
+            lines.push((r.writer.clone(), r.namespace.clone()));
+        }
+    }
+    let (head_block, head_answers) = heads(net, &lines);
     let applied = |r: &Record| {
         asked
             .iter()
@@ -324,6 +368,19 @@ fn network_json(m: &Manifest, net: &Network, rpc_host: Option<String>, read: Rea
         "rpcHost": rpc_host,
         "unread": (0..asked.len()).filter(|i| answers.get(*i).copied().flatten().is_none()).count(),
         "migrations": rows,
+        "lines": lines
+            .iter()
+            .enumerate()
+            .map(|(i, (w, ns))| {
+                let head = head_answers.get(i).cloned().flatten();
+                json!({
+                    "writer": w,
+                    "namespace": ns,
+                    "headBlock": head.as_ref().and(head_block),
+                    "head": head,
+                })
+            })
+            .collect::<Vec<_>>(),
     })
 }
 
@@ -333,6 +390,7 @@ pub fn build(
     src: &str,
     rpc_host: &dyn Fn(&str) -> Option<String>,
     read: ReadApplied,
+    heads: ReadHeads,
 ) -> Value {
     let mut doc = json!({"org": org, "repo": repo, "path": PATH});
     let parsed = if src.trim().is_empty() {
@@ -347,7 +405,7 @@ pub fn build(
             doc["networks"] = m
                 .networks
                 .iter()
-                .map(|n| network_json(&m, n, rpc_host(&n.name), read))
+                .map(|n| network_json(&m, n, rpc_host(&n.name), read, heads))
                 .collect();
         }
     }
@@ -456,8 +514,19 @@ mod tests {
         (name != "tenchain").then(|| format!("rpc.{name}"))
     }
 
+    fn no_heads(_: &Network, lines: &[(String, String)]) -> (Option<u64>, Vec<Option<String>>) {
+        (None, vec![None; lines.len()])
+    }
+
     fn render(src: &str, registry: &Registry) -> Value {
-        build("acme", "deploy", src, &host, &|n, r| registry.answer(n, r))
+        build(
+            "acme",
+            "deploy",
+            src,
+            &host,
+            &|n, r| registry.answer(n, r),
+            &no_heads,
+        )
     }
 
     fn net<'a>(doc: &'a Value, name: &str) -> &'a Value {
@@ -611,7 +680,7 @@ mod tests {
             .map(|r| {
                 (
                     REGISTRY.to_string(),
-                    rpc::applied_v3_calldata(&r.writer, &r.namespace, &r.id).unwrap(),
+                    rpc::applied_v5_calldata(&r.writer, &r.namespace, &r.id).unwrap(),
                 )
             })
             .collect();
@@ -644,6 +713,167 @@ mod tests {
         });
         assert_eq!(got, vec![None, None]);
         assert!(!*called.borrow());
+    }
+
+    #[test]
+    fn each_line_the_asked_records_sit_on_is_listed_once_with_its_head() {
+        let mut f = fixture();
+        f["migrations"][3]["chains"]["7"]["writer"] = Value::from(SAFE_X.to_lowercase());
+        f["migrations"][3]["chains"]["7"]["prerequisites"] = json!([pre(SAFE_Y, NS_B, ID_2)]);
+        let ns_a_upper = format!("0x{}", NS_A[2..].to_uppercase());
+        f["migrations"][3]["chains"]["10"]["prerequisites"] =
+            json!([pre(SAFE_Y, &ns_a_upper, ID_2)]);
+        let head = format!("0x{}", "ab".repeat(32));
+        let asked = RefCell::new(Vec::new());
+        let doc = build(
+            "acme",
+            "deploy",
+            &f.to_string(),
+            &host,
+            &|_, r| vec![None; r.len()],
+            &|n, l| {
+                asked.borrow_mut().push((n.name.clone(), l.to_vec()));
+                (Some(77), vec![Some(head.clone()), None])
+            },
+        );
+        let line = |w: &str, ns: &str| (w.to_string(), ns.to_string());
+        assert_eq!(
+            *asked.borrow(),
+            vec![
+                (
+                    "sevenchain".to_string(),
+                    vec![line(SAFE_X, NS_A), line(SAFE_X, NS_B), line(SAFE_Y, NS_B)]
+                ),
+                (
+                    "tenchain".to_string(),
+                    vec![line(SAFE_Y, NS_A), line(SAFE_Y, NS_B)]
+                ),
+            ]
+        );
+        assert_eq!(
+            net(&doc, "sevenchain")["lines"],
+            json!([
+                {"writer": SAFE_X, "namespace": NS_A, "headBlock": 77, "head": head},
+                {"writer": SAFE_X, "namespace": NS_B, "headBlock": null, "head": null},
+                {"writer": SAFE_Y, "namespace": NS_B, "headBlock": null, "head": null}
+            ])
+        );
+        assert_eq!(
+            net(&doc, "tenchain")["lines"],
+            json!([
+                {"writer": SAFE_Y, "namespace": NS_A, "headBlock": 77, "head": head},
+                {"writer": SAFE_Y, "namespace": NS_B, "headBlock": null, "head": null}
+            ])
+        );
+    }
+
+    #[test]
+    fn a_head_read_at_no_known_block_carries_no_block() {
+        let head = format!("0x{}", "ab".repeat(32));
+        let doc = build(
+            "acme",
+            "deploy",
+            &fixture().to_string(),
+            &host,
+            &|_, r| vec![None; r.len()],
+            &|_, l| (None, vec![Some(head.clone()); l.len()]),
+        );
+        for n in ["sevenchain", "tenchain"] {
+            let lines = net(&doc, n)["lines"].as_array().unwrap().clone();
+            assert!(!lines.is_empty(), "{n}");
+            for l in lines {
+                assert_eq!(l["head"], Value::from(head.clone()), "{n}");
+                assert_eq!(l["headBlock"], Value::Null, "{n}");
+            }
+        }
+    }
+
+    #[test]
+    fn heads_are_asked_of_the_registry_and_decoded() {
+        let net = Network {
+            chain_id: 7,
+            name: "sevenchain".to_string(),
+            registry: REGISTRY.to_string(),
+        };
+        let lines = vec![
+            (SAFE_X.to_string(), NS_A.to_string()),
+            (SAFE_Y.to_string(), NS_B.to_string()),
+            (SAFE_Y.to_string(), NS_A.to_string()),
+        ];
+        let sent = RefCell::new(Vec::new());
+        let got = read_heads(&net, &lines, &|calls| {
+            sent.borrow_mut().extend_from_slice(calls);
+            vec![
+                Some(format!("0x{}", "AB".repeat(32))),
+                None,
+                Some("0x01".to_string()),
+            ]
+        });
+        assert_eq!(
+            got,
+            vec![Some(format!("0x{}", "ab".repeat(32))), None, None]
+        );
+        let want: Vec<(String, String)> = lines
+            .iter()
+            .map(|(w, ns)| (REGISTRY.to_string(), rpc::head_v5_calldata(w, ns).unwrap()))
+            .collect();
+        assert_eq!(*sent.borrow(), want);
+    }
+
+    #[test]
+    fn an_unencodable_line_is_unread_and_unasked_while_the_others_are_read() {
+        let net = Network {
+            chain_id: 7,
+            name: "sevenchain".to_string(),
+            registry: REGISTRY.to_string(),
+        };
+        let lines = vec![
+            (SAFE_X.to_string(), NS_A.to_string()),
+            ("safe".to_string(), NS_A.to_string()),
+            (SAFE_Y.to_string(), NS_B.to_string()),
+        ];
+        let sent = RefCell::new(Vec::new());
+        let got = read_heads(&net, &lines, &|calls| {
+            sent.borrow_mut().extend_from_slice(calls);
+            calls
+                .iter()
+                .enumerate()
+                .map(|(i, _)| Some(format!("0x{}", ["ab", "cd", "ef"][i].repeat(32))))
+                .collect()
+        });
+        assert_eq!(
+            got,
+            vec![
+                Some(format!("0x{}", "ab".repeat(32))),
+                None,
+                Some(format!("0x{}", "cd".repeat(32))),
+            ]
+        );
+        let want: Vec<(String, String)> = [&lines[0], &lines[2]]
+            .iter()
+            .map(|(w, ns)| (REGISTRY.to_string(), rpc::head_v5_calldata(w, ns).unwrap()))
+            .collect();
+        assert_eq!(*sent.borrow(), want);
+    }
+
+    #[test]
+    fn lines_none_of_which_encode_are_all_unread_and_none_asked() {
+        let net = Network {
+            chain_id: 7,
+            name: "sevenchain".to_string(),
+            registry: REGISTRY.to_string(),
+        };
+        let lines = vec![
+            ("safe".to_string(), NS_A.to_string()),
+            (SAFE_X.to_string(), "ns".to_string()),
+        ];
+        let sent = RefCell::new(Vec::new());
+        let got = read_heads(&net, &lines, &|calls| {
+            sent.borrow_mut().extend_from_slice(calls);
+            vec![Some(format!("0x{}", "ab".repeat(32))); 2]
+        });
+        assert_eq!(got, vec![None, None]);
+        assert!(sent.borrow().is_empty());
     }
 
     #[test]
@@ -735,9 +965,14 @@ mod tests {
 
     #[test]
     fn an_unanswered_read_is_unknown_never_not_applied() {
-        let doc = build("acme", "deploy", &fixture().to_string(), &host, &|_, r| {
-            vec![None; r.len()]
-        });
+        let doc = build(
+            "acme",
+            "deploy",
+            &fixture().to_string(),
+            &host,
+            &|_, r| vec![None; r.len()],
+            &no_heads,
+        );
         for n in ["sevenchain", "tenchain"] {
             assert_eq!(net(&doc, n)["unread"], 3);
             assert_eq!(row(&doc, n, "script/two.s.sol")["state"], "unknown");
@@ -755,9 +990,14 @@ mod tests {
 
     #[test]
     fn a_short_answer_leaves_the_tail_unknown() {
-        let doc = build("acme", "deploy", &fixture().to_string(), &host, &|_, _| {
-            vec![Some(9)]
-        });
+        let doc = build(
+            "acme",
+            "deploy",
+            &fixture().to_string(),
+            &host,
+            &|_, _| vec![Some(9)],
+            &no_heads,
+        );
         let n = "sevenchain";
         assert_eq!(row(&doc, n, "script/one.s.sol")["state"], "applied");
         assert_eq!(row(&doc, n, "script/two.s.sol")["state"], "unknown");

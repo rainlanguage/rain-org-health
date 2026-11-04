@@ -8,11 +8,15 @@
 //! per-network query URLs, and the role-id → name map, whose preimages live in
 //! Solidity sources rather than in any log.
 //!
+//! The "Root registry" tab reads rain.deploy's registry subgraph, located the
+//! same way from that repo's workflow and `networks.json`; see
+//! [`build_location`].
+//!
 //! Everything that locates the subgraph is read from the deploy repo, not typed
 //! here: the networks are `subgraph/networks.json`'s keys, and the deployment
-//! name and query base are the `SUBGRAPH_NAME` / `ORMI_QUERY_BASE` its deploy
-//! workflow passes to rainix's `subgraph-deploy`. That task publishes each
-//! network as `<SUBGRAPH_NAME>-<network>` at version label
+//! name and query base are the `subgraph-name` / `ormi-query-base` inputs its
+//! deploy workflow passes to rainix's `rainix-subgraph-deploy` reusable. That
+//! publishes each network as `<subgraph-name>-<network>` at version label
 //! `<address>-<commit>`, which changes on every redeploy, and keeps the name
 //! shape so a tag can move between versions. Consumers address the tag —
 //! raindex's own settings read `…/raindex-base/prod/gn` — so this does too.
@@ -28,13 +32,14 @@ pub const PROD_TAG: &str = "prod";
 /// Where the subgraph is published, as the deploy workflow names it.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SubgraphSource {
-    /// `SUBGRAPH_NAME` — each network is published as `<name>-<network>`.
+    /// `subgraph-name` — each network is published as `<name>-<network>`.
     pub name: String,
-    /// `ORMI_QUERY_BASE` — the public query root for the Ormi account.
+    /// `ormi-query-base` — the public query root for the Ormi account.
     pub query_base: String,
 }
 
-/// Read `SUBGRAPH_NAME` and `ORMI_QUERY_BASE` out of the deploy workflow.
+/// Read the `subgraph-name` and `ormi-query-base` inputs out of the deploy
+/// workflow.
 /// `None` unless both are present: half a location is not a location.
 pub fn parse_deploy_workflow(yaml: &str) -> Option<SubgraphSource> {
     let value = |key: &str| -> Option<String> {
@@ -43,8 +48,8 @@ pub fn parse_deploy_workflow(yaml: &str) -> Option<SubgraphSource> {
             .and_then(|c| c.get(1))
             .map(|m| m.as_str().to_string())
     };
-    let name = value("SUBGRAPH_NAME")?;
-    let query_base = value("ORMI_QUERY_BASE")?.trim_end_matches('/').to_string();
+    let name = value("subgraph-name")?;
+    let query_base = value("ormi-query-base")?.trim_end_matches('/').to_string();
     // The page POSTs to this base and renders the answer as the chain's role
     // history. Anything but https is refused for the reason rainix's
     // `ormi-probe` refuses it: a response rewritten in transit would be shown
@@ -60,6 +65,20 @@ pub fn parse_deploy_workflow(yaml: &str) -> Option<SubgraphSource> {
 pub fn parse_networks(json_src: &str) -> Option<Vec<String>> {
     let v: Value = serde_json::from_str(json_src).ok()?;
     Some(v.as_object()?.keys().cloned().collect())
+}
+
+/// Each network's V5 `ConfigRegistry`, as `networks.json` declares it for the
+/// subgraph to index, lowercased.
+pub fn config_registries(json_src: &str) -> Map<String, Value> {
+    let Ok(Value::Object(v)) = serde_json::from_str::<Value>(json_src) else {
+        return Map::new();
+    };
+    v.iter()
+        .filter_map(|(n, c)| {
+            let a = c.get("ConfigRegistryV5")?.get("address")?.as_str()?;
+            Some((n.clone(), Value::from(a.to_lowercase())))
+        })
+        .collect()
 }
 
 /// The page's chain name for a subgraph network name.
@@ -92,9 +111,10 @@ pub fn endpoint(src: &SubgraphSource, network: &str) -> String {
 ///
 /// The subgraph stores role ids, never names — the preimage is not in the log.
 /// So a name is shown only where a source this scan reads writes
-/// `keccak256("NAME")` for it, plus `DEFAULT_ADMIN_ROLE` where a source pins it
-/// as `bytes32(0)`. Upper-case identifiers only: the same sources hash EIP-712
-/// type strings and storage-slot labels, which are not roles.
+/// `keccak256("NAME")` for it, plus each `bytes32` `*_ROLE` constant a source
+/// defines as zero (`= 0x00` or `= bytes32(0)`), by its own name. Upper-case
+/// identifiers only: the same sources hash EIP-712 type strings and storage-slot
+/// labels, which are not roles.
 /// @return `(0x-id, name)` pairs, deduplicated, first appearance wins.
 pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     let mut out: Vec<(String, String)> = Vec::new();
@@ -105,16 +125,15 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     };
     let (Ok(hashed), Ok(zero)) = (
         Regex::new(r#"keccak256\(\s*"([A-Z][A-Z0-9_]*)"\s*\)"#),
-        Regex::new(r"\bDEFAULT_ADMIN_ROLE\s*=\s*bytes32\(\s*0\s*\)"),
+        Regex::new(
+            r"\bbytes32\s+(?:(?:public|internal|private)\s+)?constant\s+([A-Z][A-Z0-9_]*_ROLE)\s*=\s*(?:0x0+|bytes32\(\s*0\s*\))\s*;",
+        ),
     ) else {
         return out;
     };
     for src in sources {
-        if zero.is_match(src) {
-            push(
-                format!("0x{}", "0".repeat(64)),
-                "DEFAULT_ADMIN_ROLE".to_string(),
-            );
+        for c in zero.captures_iter(src) {
+            push(format!("0x{}", "0".repeat(64)), c[1].to_string());
         }
         for c in hashed.captures_iter(src) {
             push(crate::rpc::role_id_hex(&c[1]), c[1].to_string());
@@ -123,53 +142,27 @@ pub fn role_names(sources: &[&str]) -> Vec<(String, String)> {
     out
 }
 
-/// Names from the deploy repo's `ideal-roles.json`: each `(role, roleName)` pair
-/// whose name hashes to its role, or is `DEFAULT_ADMIN_ROLE` for `bytes32(0)`. A
-/// pair whose name is not its role's is dropped, never shown.
-pub fn ideal_role_names(json: &str) -> Vec<(String, String)> {
-    let mut out: Vec<(String, String)> = Vec::new();
-    let Ok(doc) = serde_json::from_str::<serde_json::Value>(json) else {
-        return out;
-    };
-    let zero = format!("0x{}", "0".repeat(64));
-    let chains = doc.get("chains").and_then(|c| c.as_object());
-    for chain in chains.into_iter().flat_map(|c| c.values()) {
-        let contracts = chain.get("contracts").and_then(|c| c.as_array());
-        for contract in contracts.into_iter().flatten() {
-            let pairs = contract.get("expected").and_then(|e| e.as_array());
-            for pair in pairs.into_iter().flatten() {
-                let (Some(role), Some(name)) = (
-                    pair.get("role").and_then(|r| r.as_str()),
-                    pair.get("roleName").and_then(|n| n.as_str()),
-                ) else {
-                    continue;
-                };
-                let role = role.to_lowercase();
-                let hashes = if name == "DEFAULT_ADMIN_ROLE" {
-                    role == zero
-                } else {
-                    crate::rpc::role_id_hex(name) == role
-                };
-                if hashes && !out.iter().any(|(i, _)| *i == role) {
-                    out.push((role, name.to_string()));
-                }
-            }
-        }
-    }
-    out
+/// `AccessControl.sol` at the OpenZeppelin tag the deploy repo's `foundry.toml` pins.
+pub fn openzeppelin_access_control_path(foundry: &str) -> Option<String> {
+    let version = crate::graph::foundry_dependencies(foundry)
+        .ok()?
+        .into_iter()
+        .find(|d| d.package == "@openzeppelin-contracts")?
+        .version_req;
+    (!version.is_empty()).then(|| format!("contracts/access/AccessControl.sol?ref=v{version}"))
 }
 
-/// The `deploymentRbac` document.
+/// Where a repo's subgraph is published per network: the location part of the
+/// `deploymentRbac` and `deploymentRegistry` documents.
 ///
-/// `source` / `networks` are `None` when the deploy repo's workflow or
-/// `networks.json` could not be read; the document then says which, rather than
-/// listing no networks.
-pub fn build_rbac(
+/// `source` / `networks` are `None` when the repo's workflow or `networks.json`
+/// could not be read; the document then says which, rather than listing no
+/// networks.
+pub fn build_location(
     org: &str,
     repo: &str,
     source: Option<&SubgraphSource>,
     networks: Option<&[String]>,
-    names: &[(String, String)],
 ) -> Value {
     let mut doc = json!({
         "org": org,
@@ -178,7 +171,7 @@ pub fn build_rbac(
     });
     let Some(src) = source else {
         doc["unavailable"] = Value::from(
-            "could not read SUBGRAPH_NAME / ORMI_QUERY_BASE from .github/workflows/deploy-subgraph.yaml",
+            "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml",
         );
         return doc;
     };
@@ -198,12 +191,53 @@ pub fn build_rbac(
             })
             .collect::<Vec<_>>(),
     );
+    doc
+}
+
+/// The `deploymentRbac` document: [`build_location`] plus the role names.
+pub fn build_rbac(
+    org: &str,
+    repo: &str,
+    source: Option<&SubgraphSource>,
+    networks: Option<&[String]>,
+    names: &[(String, String)],
+) -> Value {
+    let mut doc = build_location(org, repo, source, networks);
+    if source.is_none() || networks.is_none() {
+        return doc;
+    }
     doc["roleNames"] = Value::Object(
         names
             .iter()
             .map(|(id, name)| (id.clone(), Value::from(name.clone())))
             .collect::<Map<_, _>>(),
     );
+    doc
+}
+
+/// The repo whose registry subgraph the "Root registry" tab reads.
+pub const REGISTRY_ORG: &str = "rainlanguage";
+pub const REGISTRY_REPO: &str = "rain.deploy";
+
+/// The `deploymentRegistry` document: [`build_location`] for the registry repo,
+/// its config registries, and the address names `rbac_doc` holds.
+pub fn build_registry(rbac_doc: &Value, fetch: impl Fn(&str, &str, &str) -> String) -> Value {
+    let workflow_src = fetch(
+        REGISTRY_ORG,
+        REGISTRY_REPO,
+        ".github/workflows/deploy-subgraph.yaml",
+    );
+    let networks_src = fetch(REGISTRY_ORG, REGISTRY_REPO, "subgraph/networks.json");
+    let mut doc = build_location(
+        REGISTRY_ORG,
+        REGISTRY_REPO,
+        parse_deploy_workflow(&workflow_src).as_ref(),
+        parse_networks(&networks_src).as_deref(),
+    );
+    doc["configRegistries"] = Value::Object(config_registries(&networks_src));
+    if let Some(names) = rbac_doc.get("addressNames") {
+        doc["addressNames"] = names.clone();
+    }
     doc
 }
 
@@ -215,14 +249,25 @@ mod tests {
 name: Deploy subgraph
 jobs:
   deploy:
-    env:
-      SUBGRAPH_NAME: st0x-rbac
+    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main
+    with:
+      subgraph-name: st0x-rbac
       # Public query base for this Ormi account.
-      ORMI_QUERY_BASE: https://subgraph.api.ormilabs.com/api/public/9f4f/
+      ormi-query-base: https://subgraph.api.ormilabs.com/api/public/9f4f/
+    secrets:
+      ORMI_DEPLOY_KEY: ${{ secrets.ORMI_DEPLOY_KEY }}
 "#;
 
     fn src() -> SubgraphSource {
         parse_deploy_workflow(WORKFLOW).unwrap()
+    }
+
+    fn reusable_caller(inputs: &[&str]) -> String {
+        let mut y = "jobs:\n  deploy:\n    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main\n    with:\n".to_string();
+        for i in inputs {
+            y.push_str(&format!("      {i}\n"));
+        }
+        y
     }
 
     #[test]
@@ -238,23 +283,58 @@ jobs:
 
     #[test]
     fn workflow_missing_either_value_is_unread() {
-        assert_eq!(parse_deploy_workflow("SUBGRAPH_NAME: x\n"), None);
-        assert_eq!(parse_deploy_workflow("ORMI_QUERY_BASE: https://a\n"), None);
+        assert_eq!(
+            parse_deploy_workflow(&reusable_caller(&["subgraph-name: x"])),
+            None
+        );
+        assert_eq!(
+            parse_deploy_workflow(&reusable_caller(&["ormi-query-base: https://a"])),
+            None
+        );
     }
 
     #[test]
     fn workflow_with_a_plain_http_base_is_refused() {
         assert_eq!(
-            parse_deploy_workflow("SUBGRAPH_NAME: x\nORMI_QUERY_BASE: http://a\n"),
+            parse_deploy_workflow(&reusable_caller(&[
+                "subgraph-name: x",
+                "ormi-query-base: http://a",
+            ])),
             None
         );
     }
 
     #[test]
     fn workflow_values_may_be_quoted() {
-        let s =
-            parse_deploy_workflow("SUBGRAPH_NAME: \"x\"\nORMI_QUERY_BASE: 'https://a'\n").unwrap();
+        let s = parse_deploy_workflow(&reusable_caller(&[
+            "subgraph-name: \"x\"",
+            "ormi-query-base: 'https://a'",
+        ]))
+        .unwrap();
         assert_eq!((s.name.as_str(), s.query_base.as_str()), ("x", "https://a"));
+    }
+
+    #[test]
+    fn workflow_passing_the_values_as_env_not_reusable_inputs_is_unread() {
+        let env_form = r#"
+name: Deploy subgraph
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    env:
+      SUBGRAPH_NAME: rain-deploy-registry
+      ORMI_QUERY_BASE: https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71
+    steps:
+      - run: nix develop github:rainlanguage/rainix#subgraph-shell -c subgraph-deploy
+"#;
+        assert_eq!(parse_deploy_workflow(env_form), None);
+        assert_eq!(
+            build_location("o", "r", parse_deploy_workflow(env_form).as_ref(), Some(&[]))
+                ["unavailable"],
+            "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml"
+        );
     }
 
     #[test]
@@ -281,6 +361,32 @@ jobs:
     }
 
     #[test]
+    fn config_registries_are_each_networks_v5_config_registry_lowercased() {
+        let src = r#"{
+            "base": {
+                "ConfigRegistry": {"address": "0x2222222222222222222222222222222222222222", "startBlock": 52910632},
+                "ConfigRegistryV5": {"address": "0x82b7e6FDfD25EF64b013F98e8F2c1fC1D1872eC9", "startBlock": 53210195},
+                "MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31", "startBlock": 53210703}
+            },
+            "mainnet": {"ConfigRegistry": {"address": "0x2222222222222222222222222222222222222222"}},
+            "bsc": {"ConfigRegistryV5": {"startBlock": 1}},
+            "hyperevm": {"ConfigRegistryV5": {"address": 7}},
+            "robinhood": [1]
+        }"#;
+        let got = config_registries(src);
+        assert_eq!(
+            got,
+            serde_json::from_str::<Map<String, Value>>(
+                r#"{"base": "0x82b7e6fdfd25ef64b013f98e8f2c1fc1d1872ec9"}"#
+            )
+            .unwrap()
+        );
+        for bad in ["", "not json", "[1]", "null"] {
+            assert!(config_registries(bad).is_empty(), "{bad}");
+        }
+    }
+
+    #[test]
     fn chain_names_translate_graph_cli_names() {
         assert_eq!(chain_name("mainnet"), Some("ethereum"));
         assert_eq!(chain_name("hyper-evm"), Some("hyperevm"));
@@ -289,33 +395,6 @@ jobs:
         assert_eq!(chain_name("robinhood"), Some("robinhood"));
         assert_eq!(chain_name("bsc"), Some("bsc"));
         assert_eq!(chain_name("arbitrum-one"), None);
-    }
-
-    #[test]
-    fn ideal_role_names_keep_only_names_that_are_their_roles() {
-        let zero = format!("0x{}", "0".repeat(64));
-        let emergency = crate::rpc::role_id_hex("EMERGENCY");
-        let mint = crate::rpc::role_id_hex("MINT");
-        let json = json!({"version": 1, "chains": {"1": {"network": "ethereum", "contracts": [
-            {"address": "0x01", "expected": [
-                {"role": zero, "roleName": "DEFAULT_ADMIN_ROLE", "grantee": "0x02"},
-                {"role": emergency.to_uppercase().replace("0X", "0x"), "roleName": "EMERGENCY", "grantee": "0x02"},
-                {"role": mint, "roleName": "BURN", "grantee": "0x02"},
-                {"role": crate::rpc::role_id_hex("CERTIFY"), "grantee": "0x02"}
-            ]},
-            {"address": "0x03", "expected": [
-                {"role": zero, "roleName": "DEFAULT_ADMIN_ROLE", "grantee": "0x04"}
-            ]}
-        ]}}})
-        .to_string();
-        assert_eq!(
-            ideal_role_names(&json),
-            vec![
-                (zero, "DEFAULT_ADMIN_ROLE".to_string()),
-                (emergency, "EMERGENCY".to_string()),
-            ]
-        );
-        assert!(ideal_role_names("not json").is_empty());
     }
 
     #[test]
@@ -341,6 +420,17 @@ jobs:
                     "DEPOSIT_ADMIN".to_string()
                 ),
             ]
+        );
+    }
+
+    #[test]
+    fn a_zero_role_is_named_by_its_open_zeppelin_constant() {
+        assert_eq!(
+            role_names(&["bytes32 public constant DEFAULT_ADMIN_ROLE = 0x00;"]),
+            vec![(
+                format!("0x{}", "0".repeat(64)),
+                "DEFAULT_ADMIN_ROLE".to_string()
+            )]
         );
     }
 
@@ -390,5 +480,456 @@ jobs:
             ])
         );
         assert_eq!(d["roleNames"], json!({"0xaa": "MINT", "0xbb": "BURN"}));
+    }
+
+    #[test]
+    fn location_doc_says_which_source_was_unread_and_lists_no_networks() {
+        let d = build_location("o", "r", None, None);
+        assert_eq!(
+            d,
+            json!({
+                "org": "o",
+                "repo": "r",
+                "tag": "prod",
+                "unavailable": "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml",
+            })
+        );
+        let nets = vec!["base".to_string()];
+        assert_eq!(
+            build_location("o", "r", None, Some(&nets)),
+            d,
+            "networks without a source are no location"
+        );
+        assert_eq!(
+            build_location("o", "r", Some(&src()), None),
+            json!({
+                "org": "o",
+                "repo": "r",
+                "tag": "prod",
+                "subgraph": "st0x-rbac",
+                "unavailable": "could not read subgraph/networks.json",
+            })
+        );
+    }
+
+    #[test]
+    fn location_doc_lists_each_network_with_its_chain_and_tagged_endpoint_and_nothing_else() {
+        let nets = vec!["mainnet".to_string(), "arbitrum-one".to_string()];
+        assert_eq!(
+            build_location("o", "r", Some(&src()), Some(&nets)),
+            json!({
+                "org": "o",
+                "repo": "r",
+                "tag": "prod",
+                "subgraph": "st0x-rbac",
+                "networks": [
+                    {
+                        "network": "mainnet",
+                        "chain": "ethereum",
+                        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4f/subgraphs/st0x-rbac-mainnet/prod/gn",
+                    },
+                    {
+                        "network": "arbitrum-one",
+                        "chain": null,
+                        "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4f/subgraphs/st0x-rbac-arbitrum-one/prod/gn",
+                    },
+                ],
+            })
+        );
+        assert_eq!(
+            build_location("o", "r", Some(&src()), Some(&[]))["networks"],
+            json!([])
+        );
+    }
+
+    #[test]
+    fn rbac_doc_is_its_location_plus_role_names_only_when_located() {
+        let names = vec![("0xaa".to_string(), "MINT".to_string())];
+        let nets = vec!["base".to_string()];
+        let s = src();
+        for (source, networks) in [(None, None), (None, Some(&nets)), (Some(&s), None)] {
+            let networks = networks.map(|n| n.as_slice());
+            assert_eq!(
+                build_rbac("o", "r", source, networks, &names),
+                build_location("o", "r", source, networks),
+                "an unlocated doc carries no role names"
+            );
+        }
+        let mut want = build_location("o", "r", Some(&s), Some(&nets));
+        want["roleNames"] = json!({"0xaa": "MINT"});
+        assert_eq!(build_rbac("o", "r", Some(&s), Some(&nets), &names), want);
+        assert_eq!(
+            build_rbac("o", "r", Some(&s), Some(&nets), &[])["roleNames"],
+            json!({}),
+            "a located doc with no names says so with an empty map"
+        );
+    }
+
+    /// rain.deploy's `.github/workflows/deploy-subgraph.yaml` and
+    /// `subgraph/networks.json` on main.
+    const REGISTRY_WORKFLOW: &str = r#"
+name: Deploy subgraph
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    permissions:
+      contents: read
+    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main
+    with:
+      subgraph-name: rain-deploy-registry
+      ormi-query-base: https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71
+    secrets:
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      ORMI_DEPLOY_KEY: ${{ secrets.ORMI_DEPLOY_KEY }}
+"#;
+    const REGISTRY_NETWORKS: [(&str, u64, u64); 9] = [
+        ("arbitrum-one", 519115682, 519119422),
+        ("base", 53210195, 53210703),
+        ("base-sepolia", 51439343, 51444423),
+        ("bsc", 130324009, 130326266),
+        ("flare", 73190792, 73191741),
+        ("mainnet", 26292829, 26292913),
+        ("hyperevm", 49768958, 49769995),
+        ("matic", 96336285, 96336965),
+        ("robinhood", 100259389, 100268990),
+    ];
+    const REGISTRY_CONFIG_V5: &str = "0x82b7e6FDfD25EF64b013F98e8F2c1fC1D1872eC9";
+
+    fn registry_networks_json() -> String {
+        let mut doc = Map::new();
+        for (n, config_block, migration_block) in REGISTRY_NETWORKS {
+            doc.insert(
+                n.to_string(),
+                json!({
+                    "ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5, "startBlock": config_block},
+                    "MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31", "startBlock": migration_block},
+                }),
+            );
+        }
+        Value::Object(doc).to_string()
+    }
+
+    #[test]
+    fn registry_location_reads_rain_deploys_workflow_and_all_nine_networks() {
+        let source = parse_deploy_workflow(REGISTRY_WORKFLOW).unwrap();
+        let networks_src = registry_networks_json();
+        let networks = parse_networks(&networks_src).unwrap();
+        let d = build_location(
+            "rainlanguage",
+            "rain.deploy",
+            Some(&source),
+            Some(&networks),
+        );
+        let base =
+            "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
+        let chains = [
+            None,
+            Some("base"),
+            None,
+            Some("bsc"),
+            None,
+            Some("ethereum"),
+            Some("hyperevm"),
+            None,
+            Some("robinhood"),
+        ];
+        let want: Vec<Value> = REGISTRY_NETWORKS
+            .iter()
+            .zip(chains)
+            .map(|((n, _, _), chain)| {
+                json!({
+                    "network": n,
+                    "chain": chain,
+                    "endpoint": format!("{base}/subgraphs/rain-deploy-registry-{n}/prod/gn"),
+                })
+            })
+            .collect();
+        assert_eq!(
+            d,
+            json!({
+                "org": "rainlanguage",
+                "repo": "rain.deploy",
+                "tag": "prod",
+                "subgraph": "rain-deploy-registry",
+                "networks": want,
+            })
+        );
+        let registries = config_registries(&networks_src);
+        assert_eq!(
+            registries.keys().map(String::as_str).collect::<Vec<_>>(),
+            REGISTRY_NETWORKS
+                .iter()
+                .map(|(n, _, _)| *n)
+                .collect::<Vec<_>>()
+        );
+        for (n, a) in &registries {
+            assert_eq!(a, &Value::from(REGISTRY_CONFIG_V5.to_lowercase()), "{n}");
+        }
+    }
+
+    fn rbac_doc_with_address_names() -> Value {
+        let mut d = build_rbac(
+            "o",
+            "r",
+            Some(&src()),
+            Some(&["base".to_string()]),
+            &[("0xaa".to_string(), "MINT".to_string())],
+        );
+        d["configRegistries"] = json!({"base": "0x2222222222222222222222222222222222222222"});
+        d["addressNames"] = json!({
+            "base": {
+                "0x5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a5a": [
+                    {"name": "TOKEN_OWNER_SAFE", "contract": "LibSafeInvariants"}
+                ]
+            },
+            "ethereum": {},
+        });
+        d["addressNamesUnread"] = json!(["src/lib/LibUnread.sol"]);
+        d
+    }
+
+    #[test]
+    fn registry_doc_is_rain_deploys_location_its_config_registries_and_the_rbac_docs_address_names()
+    {
+        let networks_src = registry_networks_json();
+        let rbac_doc = rbac_doc_with_address_names();
+        let mut want = build_location(
+            "rainlanguage",
+            "rain.deploy",
+            parse_deploy_workflow(REGISTRY_WORKFLOW).as_ref(),
+            parse_networks(&networks_src).as_deref(),
+        );
+        want["configRegistries"] = Value::Object(
+            REGISTRY_NETWORKS
+                .iter()
+                .map(|(n, _, _)| {
+                    (
+                        n.to_string(),
+                        Value::from(REGISTRY_CONFIG_V5.to_lowercase()),
+                    )
+                })
+                .collect(),
+        );
+        want["addressNames"] = rbac_doc["addressNames"].clone();
+        let d = build_registry(&rbac_doc, |_: &str, _: &str, path: &str| match path {
+            ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
+            "subgraph/networks.json" => networks_src.clone(),
+            _ => String::new(),
+        });
+        assert_eq!(d, want);
+        assert_eq!(d["subgraph"], "rain-deploy-registry");
+        assert_eq!(d["networks"].as_array().map(Vec::len), Some(9));
+    }
+
+    #[test]
+    fn registry_doc_fetches_rain_deploys_workflow_and_networks_each_for_its_part() {
+        let workflow = reusable_caller(&[
+            "subgraph-name: from-the-workflow",
+            "ormi-query-base: https://q.example/api",
+        ]);
+        let networks = json!({
+            "base": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
+            "flare": {"MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31"}},
+        })
+        .to_string();
+        let asked = std::cell::RefCell::new(Vec::new());
+        let rbac_doc = rbac_doc_with_address_names();
+        let d = build_registry(&rbac_doc, |org: &str, repo: &str, path: &str| {
+            asked
+                .borrow_mut()
+                .push((org.to_string(), repo.to_string(), path.to_string()));
+            match (org, repo, path) {
+                ("rainlanguage", "rain.deploy", ".github/workflows/deploy-subgraph.yaml") => {
+                    workflow.to_string()
+                }
+                ("rainlanguage", "rain.deploy", "subgraph/networks.json") => networks.clone(),
+                _ => String::new(),
+            }
+        });
+        let mut asked = asked.into_inner();
+        asked.sort();
+        assert_eq!(
+            asked,
+            [
+                ".github/workflows/deploy-subgraph.yaml",
+                "subgraph/networks.json"
+            ]
+            .map(|p| (
+                "rainlanguage".to_string(),
+                "rain.deploy".to_string(),
+                p.to_string()
+            ))
+        );
+        assert_eq!(
+            d,
+            json!({
+                "org": "rainlanguage",
+                "repo": "rain.deploy",
+                "tag": "prod",
+                "subgraph": "from-the-workflow",
+                "networks": [
+                    {
+                        "network": "base",
+                        "chain": "base",
+                        "endpoint": "https://q.example/api/subgraphs/from-the-workflow-base/prod/gn",
+                    },
+                    {
+                        "network": "flare",
+                        "chain": null,
+                        "endpoint": "https://q.example/api/subgraphs/from-the-workflow-flare/prod/gn",
+                    },
+                ],
+                "configRegistries": {"base": REGISTRY_CONFIG_V5.to_lowercase()},
+                "addressNames": rbac_doc["addressNames"],
+            })
+        );
+    }
+
+    #[test]
+    fn registry_doc_lists_a_network_without_a_v5_config_registry_and_declares_none_for_it() {
+        let networks_src = json!({
+            "base": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
+            "flare": {"MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31"}},
+        })
+        .to_string();
+        let d = build_registry(&json!({}), |_: &str, _: &str, path: &str| match path {
+            ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
+            "subgraph/networks.json" => networks_src.clone(),
+            _ => String::new(),
+        });
+        assert_eq!(
+            d["networks"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|n| n["network"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            vec!["base", "flare"]
+        );
+        assert_eq!(
+            d["configRegistries"],
+            json!({"base": REGISTRY_CONFIG_V5.to_lowercase()})
+        );
+    }
+
+    #[test]
+    fn registry_doc_carries_no_address_names_when_the_rbac_doc_has_none() {
+        let networks_src = registry_networks_json();
+        let mut located = rbac_doc_with_address_names();
+        located.as_object_mut().unwrap().remove("addressNames");
+        for rbac_doc in [
+            json!({}),
+            Value::Null,
+            build_rbac("o", "r", None, None, &[]),
+            located,
+        ] {
+            let d = build_registry(&rbac_doc, |_: &str, _: &str, path: &str| match path {
+                ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
+                "subgraph/networks.json" => networks_src.clone(),
+                _ => String::new(),
+            });
+            assert!(d.get("addressNames").is_none(), "{rbac_doc}");
+            assert_eq!(d["networks"].as_array().map(Vec::len), Some(9));
+        }
+    }
+
+    #[test]
+    fn registry_doc_says_which_rain_deploy_source_was_unread() {
+        let networks_src = registry_networks_json();
+        let workflow_unread = "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml";
+        let networks_unread = "could not read subgraph/networks.json";
+        let plain_http = REGISTRY_WORKFLOW.replace("https://", "http://");
+        let name_only = reusable_caller(&["subgraph-name: rain-deploy-registry"]);
+        for (workflow, networks, why, subgraph) in [
+            ("", networks_src.as_str(), workflow_unread, None),
+            (
+                name_only.as_str(),
+                networks_src.as_str(),
+                workflow_unread,
+                None,
+            ),
+            (
+                plain_http.as_str(),
+                networks_src.as_str(),
+                workflow_unread,
+                None,
+            ),
+            ("", "", workflow_unread, None),
+            (
+                REGISTRY_WORKFLOW,
+                "",
+                networks_unread,
+                Some("rain-deploy-registry"),
+            ),
+            (
+                REGISTRY_WORKFLOW,
+                "[1]",
+                networks_unread,
+                Some("rain-deploy-registry"),
+            ),
+            (
+                REGISTRY_WORKFLOW,
+                "not json",
+                networks_unread,
+                Some("rain-deploy-registry"),
+            ),
+        ] {
+            let d = build_registry(
+                &rbac_doc_with_address_names(),
+                |_: &str, _: &str, path: &str| match path {
+                    ".github/workflows/deploy-subgraph.yaml" => workflow.to_string(),
+                    "subgraph/networks.json" => networks.to_string(),
+                    _ => String::new(),
+                },
+            );
+            let case = format!("{workflow:?} / {networks:?}");
+            assert_eq!(d["org"], "rainlanguage", "{case}");
+            assert_eq!(d["repo"], "rain.deploy", "{case}");
+            assert_eq!(d["tag"], "prod", "{case}");
+            assert_eq!(d["unavailable"], why, "{case}");
+            assert_eq!(
+                d.get("subgraph").and_then(Value::as_str),
+                subgraph,
+                "{case}"
+            );
+            assert!(d.get("networks").is_none(), "{case}");
+        }
+    }
+
+    #[test]
+    fn openzeppelin_path_follows_the_foundry_pin() {
+        let foundry = r#"
+[profile.default]
+src = "src"
+
+[dependencies]
+forge-std = "1.9.7"
+"@openzeppelin-contracts" = "5.7.0"
+"#;
+        assert_eq!(
+            openzeppelin_access_control_path(foundry).as_deref(),
+            Some("contracts/access/AccessControl.sol?ref=v5.7.0")
+        );
+        assert_eq!(
+            openzeppelin_access_control_path(&foundry.replace("5.7.0", "5.8.1")).as_deref(),
+            Some("contracts/access/AccessControl.sol?ref=v5.8.1")
+        );
+    }
+
+    #[test]
+    fn openzeppelin_path_is_none_without_a_readable_pin() {
+        for foundry in [
+            "",
+            "not toml {{{",
+            "[dependencies]\nforge-std = \"1.9.7\"\n",
+            "[dependencies]\n\"@openzeppelin-contracts\" = { git = \"https://x\" }\n",
+        ] {
+            assert_eq!(
+                openzeppelin_access_control_path(foundry),
+                None,
+                "{foundry:?}"
+            );
+        }
     }
 }

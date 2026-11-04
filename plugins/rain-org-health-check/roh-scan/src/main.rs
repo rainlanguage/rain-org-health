@@ -399,9 +399,21 @@ fn post_json(url: &str, body: &str) -> Option<Vec<u8>> {
 
 /// Build the `eth_call` JSON-RPC payload for `to` with `data` (0x-hex calldata).
 fn eth_call_payload(to: &str, data: &str) -> String {
+    eth_call_payload_at(to, data, "latest")
+}
+
+fn eth_call_payload_at(to: &str, data: &str, tag: &str) -> String {
     format!(
-        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"{tag}"]}}"#
     )
+}
+
+fn eth_block_number(session: Session) -> Option<u64> {
+    let body = curl_json(
+        session,
+        r#"{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}"#,
+    )?;
+    rpc::decode_quantity(&rpc::result_hex(&body)?)
 }
 
 /// A read-only `eth_call` on Base within `session` — the `result` hex, or `None`
@@ -463,6 +475,24 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
     calls: &[(String, String)],
     post: &F,
 ) -> Vec<Option<String>> {
+    eth_call_batch_at_via(rpcs, cursor, calls, "latest", post)
+}
+
+fn eth_call_batch_at(
+    session: Session,
+    calls: &[(String, String)],
+    tag: &str,
+) -> Vec<Option<String>> {
+    eth_call_batch_at_via(session.chain.rpcs(), session.cursor, calls, tag, &curl_post)
+}
+
+fn eth_call_batch_at_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
+    rpcs: &[&str],
+    cursor: usize,
+    calls: &[(String, String)],
+    tag: &str,
+    post: &F,
+) -> Vec<Option<String>> {
     let mut out: Vec<Option<String>> = Vec::with_capacity(calls.len());
     for chunk in calls.chunks(ETH_CALL_BATCH_CHUNK) {
         let body = chunk
@@ -470,7 +500,7 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
             .enumerate()
             .map(|(i, (to, data))| {
                 format!(
-                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"latest"]}}"#
+                    r#"{{"jsonrpc":"2.0","id":{i},"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"{tag}"]}}"#
                 )
             })
             .collect::<Vec<_>>()
@@ -484,7 +514,7 @@ fn eth_call_batch_via<F: Fn(&str, &str) -> Option<Vec<u8>>>(
         match answered {
             Some(slots) => out.extend(slots),
             None => out.extend(chunk.iter().map(|(to, data)| {
-                first_body(rpcs, cursor, &eth_call_payload(to, data), post)
+                first_body(rpcs, cursor, &eth_call_payload_at(to, data, tag), post)
                     .and_then(|b| rpc::result_hex(&b))
             })),
         }
@@ -2736,39 +2766,80 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             c.rpc_host = Chain::from_network(&c.network).map(|ch| ch.rpc_host().to_string());
         }
 
-        let deployment_grants = {
-            // One session per chain, so every `hasRole` for a chain hits the same
-            // endpoint and the map cannot be answered by two nodes disagreeing.
-            let sessions: Vec<(String, Session)> = chains
-                .iter()
-                .filter_map(|c| {
-                    Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
-                })
-                .collect();
-            let check = |network: &str, authoriser: &str, role: &str, grantee: &str| {
-                let Some((_, session)) = sessions.iter().find(|(n, _)| n == network) else {
-                    return owners::GrantOnChain::Unknown;
-                };
-                // An address that will not parse is not asked about as address(0)
-                // — that would come back `false` and read as a revoked grant.
-                let Some(data) = rpc::has_role_calldata(rpc::role_id(role), grantee) else {
-                    return owners::GrantOnChain::Unknown;
-                };
-                match curl_json(*session, &eth_call_payload(authoriser, &data)) {
-                    Some(body) => match rpc::classify_bool(&body) {
-                        rpc::CallClass::True => owners::GrantOnChain::Granted,
-                        rpc::CallClass::False => owners::GrantOnChain::NotGranted,
-                        // A revert is not a `false`: an authoriser that does not
-                        // answer `hasRole` at all has told us nothing about the
-                        // grant, and saying "not granted" would invent an answer.
-                        _ => owners::GrantOnChain::Unknown,
-                    },
-                    None => owners::GrantOnChain::Unknown,
-                }
-            };
-            owners::build_grants(deploy_org, deploy_repo, &deploy_sources, &chains, &check)
-                .unwrap_or(serde_json::Value::Null)
+        let orchestrator_lib = gh_file(deploy_org, deploy_repo, owners::ORCHESTRATOR_GRANTS_PATH);
+        // Role names the deploy repo spells out, keyed by id. Shared by the grant
+        // maps (which write `DEFAULT_ADMIN_ROLE` as `bytes32(0)`) and the RBAC tab.
+        let role_names = {
+            let orchestrator =
+                gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
+            let authorizer = gh_file(
+                deploy_org,
+                deploy_repo,
+                "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
+            );
+            let access_control = rbac::openzeppelin_access_control_path(&gh_file(
+                deploy_org,
+                deploy_repo,
+                "foundry.toml",
+            ))
+            .map(|path| gh_file("OpenZeppelin", "openzeppelin-contracts", &path))
+            .unwrap_or_default();
+            rbac::role_names(&[
+                &auth,
+                &timelock,
+                &orchestrator,
+                &authorizer,
+                &access_control,
+            ])
         };
+
+        // One session per chain, so every `hasRole` for a chain hits the same
+        // endpoint and the map cannot be answered by two nodes disagreeing.
+        let grant_sessions: Vec<(String, Session)> = chains
+            .iter()
+            .filter_map(|c| {
+                Chain::from_network(&c.network).map(|ch| (c.network.clone(), rpc_session(ch)))
+            })
+            .collect();
+        let check_grant = |network: &str, target: &str, role: [u8; 32], grantee: &str| {
+            let Some((_, session)) = grant_sessions.iter().find(|(n, _)| n == network) else {
+                return owners::GrantOnChain::Unknown;
+            };
+            // An address that will not parse is not asked about as address(0)
+            // — that would come back `false` and read as a revoked grant.
+            let Some(data) = rpc::has_role_calldata(role, grantee) else {
+                return owners::GrantOnChain::Unknown;
+            };
+            match curl_json(*session, &eth_call_payload(target, &data)) {
+                Some(body) => match rpc::classify_bool(&body) {
+                    rpc::CallClass::True => owners::GrantOnChain::Granted,
+                    rpc::CallClass::False => owners::GrantOnChain::NotGranted,
+                    // A revert is not a `false`: a contract that does not answer
+                    // `hasRole` at all has told us nothing about the grant, and
+                    // saying "not granted" would invent an answer.
+                    _ => owners::GrantOnChain::Unknown,
+                },
+                None => owners::GrantOnChain::Unknown,
+            }
+        };
+        let deployment_grants = owners::build_grants(
+            deploy_org,
+            deploy_repo,
+            &deploy_sources,
+            &owners::GrantSpec::authoriser(&auth, &role_names),
+            &chains,
+            &check_grant,
+        )
+        .unwrap_or(serde_json::Value::Null);
+        let deployment_orchestrator_grants = owners::build_grants(
+            deploy_org,
+            deploy_repo,
+            &deploy_sources,
+            &owners::GrantSpec::orchestrator(&orchestrator_lib, &deploy_sources, &role_names),
+            &chains,
+            &check_grant,
+        )
+        .unwrap_or(serde_json::Value::Null);
 
         // Where the deploy repo's RBAC subgraph is published per network, and
         // the role names its sources spell out. The role history itself is read
@@ -2779,39 +2850,27 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             ".github/workflows/deploy-subgraph.yaml",
         );
         let subgraph = rbac::parse_deploy_workflow(&subgraph_workflow);
-        let subgraph_networks =
-            rbac::parse_networks(&gh_file(deploy_org, deploy_repo, "subgraph/networks.json"));
+        let subgraph_networks_src = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
+        let subgraph_networks = rbac::parse_networks(&subgraph_networks_src);
         let deployment_rbac = {
-            let orchestrator =
-                gh_file(deploy_org, deploy_repo, "src/concrete/ST0xOrchestrator.sol");
-            let authorizer = gh_file(
-                deploy_org,
-                deploy_repo,
-                "src/concrete/authorize/StoxOffchainAssetReceiptVaultAuthorizerV1.sol",
-            );
-            let mut names = rbac::role_names(&[&auth, &timelock, &orchestrator, &authorizer]);
-            let ideal_names =
-                rbac::ideal_role_names(&gh_file(deploy_org, deploy_repo, "ideal-roles.json"));
-            for (id, name) in ideal_names {
-                if !names.iter().any(|(i, _)| *i == id) {
-                    names.push((id, name));
-                }
-            }
             let mut doc = rbac::build_rbac(
                 deploy_org,
                 deploy_repo,
                 subgraph.as_ref(),
                 subgraph_networks.as_deref(),
-                &names,
+                &role_names,
             );
+            doc["configRegistries"] =
+                serde_json::Value::Object(rbac::config_registries(&subgraph_networks_src));
             // Who each address on the tab is: every `address` constant in the
             // deploy repo's libraries, per chain. Every `.sol` the two
             // directories list is read, so a new library or pin is named
             // without a change here. Bodies this scan already fetched are
             // reused rather than fetched again.
-            let fetched: [(&str, &str); 6] = [
+            let fetched: [(&str, &str); 7] = [
+                (owners::ORCHESTRATOR_GRANTS_PATH, &orchestrator_lib),
                 ("src/lib/LibSafeInvariants.sol", &safe),
-                ("src/lib/LibAuthoriserInvariants.sol", &auth),
+                (owners::AUTHORISER_GRANTS_PATH, &auth),
                 ("src/generated/LibProdDeployV4.sol", &v4),
                 ("src/lib/LibTokenInvariants.sol", &governed_tok_lib),
                 ("src/lib/LibTimelockInvariants.sol", &timelock),
@@ -2850,6 +2909,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             doc
         };
 
+        let deployment_registry = rbac::build_registry(&deployment_rbac, gh_file);
+
         let deployment_migrations = migrations::build(
             deploy_org,
             deploy_repo,
@@ -2860,6 +2921,23 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     eth_call_batch(rpc_session(chain), calls)
                 }),
                 None => vec![None; records.len()],
+            },
+            &|net, lines| {
+                let unread = (None, vec![None; lines.len()]);
+                let Some(chain) = Chain::from_network(&net.name) else {
+                    return unread;
+                };
+                let session = rpc_session(chain);
+                let Some(block) = eth_block_number(session) else {
+                    return unread;
+                };
+                let tag = rpc::block_tag(block);
+                (
+                    Some(block),
+                    migrations::read_heads(net, lines, &|calls| {
+                        eth_call_batch_at(session, calls, &tag)
+                    }),
+                )
             },
         );
 
@@ -3275,8 +3353,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "auditGraph": audit_graph,
             "deploymentOwners": deployment_owners,
             "deploymentGrants": deployment_grants,
+            "deploymentOrchestratorGrants": deployment_orchestrator_grants,
             "deploymentVaultOwners": deployment_vault_owners,
             "deploymentRbac": deployment_rbac,
+            "deploymentRegistry": deployment_registry,
             "deploymentMigrations": deployment_migrations,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
@@ -3457,6 +3537,77 @@ mod tests {
             vec![Some("0xaa".to_string()), Some("0xbb".to_string())]
         );
         assert_eq!(singles.get(), 0);
+    }
+
+    #[test]
+    fn a_batch_at_a_block_asks_every_call_at_that_block_batched_or_single() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 1);
+        let sent = std::cell::RefCell::new(Vec::new());
+        let post = |_: &str, payload: &str| {
+            sent.borrow_mut().push(payload.to_string());
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_at_via(&["a"], 0, &calls, "0x2a", &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+        let sent = sent.borrow();
+        assert_eq!(
+            sent.iter().filter(|p| !p.starts_with('[')).count(),
+            calls.len()
+        );
+        assert_every_call_asked_at(&sent, "0x2a");
+    }
+
+    #[test]
+    fn a_batch_asks_every_call_at_the_latest_block_batched_or_single() {
+        let calls = calls(ETH_CALL_BATCH_CHUNK + 1);
+        let sent = std::cell::RefCell::new(Vec::new());
+        let post = |_: &str, payload: &str| {
+            sent.borrow_mut().push(payload.to_string());
+            if payload.starts_with('[') {
+                Some(REFUSED.to_vec())
+            } else {
+                single_answer(payload)
+            }
+        };
+        let got = eth_call_batch_via(&["a"], 0, &calls, &post);
+        let want: Vec<Option<String>> = calls.iter().map(|(to, _)| Some(to.clone())).collect();
+        assert_eq!(got, want);
+        let sent = sent.borrow();
+        assert_eq!(
+            sent.iter().filter(|p| !p.starts_with('[')).count(),
+            calls.len()
+        );
+        assert_every_call_asked_at(&sent, "latest");
+    }
+
+    #[test]
+    fn a_single_call_is_asked_at_the_latest_block() {
+        let p = eth_call_payload("0xab", "0x8da5cb5b");
+        let v: serde_json::Value = serde_json::from_str(&p).unwrap();
+        assert_eq!(
+            v["params"][0],
+            serde_json::json!({"to": "0xab", "data": "0x8da5cb5b"})
+        );
+        assert_every_call_asked_at(&[p], "latest");
+    }
+
+    fn assert_every_call_asked_at(sent: &[String], tag: &str) {
+        for p in sent {
+            let v: serde_json::Value = serde_json::from_str(p).unwrap();
+            let asks: Vec<serde_json::Value> = match v {
+                serde_json::Value::Array(a) => a,
+                one => vec![one],
+            };
+            for a in asks {
+                assert_eq!(a["method"], "eth_call", "{p}");
+                assert_eq!(a["params"][1], tag, "{p}");
+            }
+        }
     }
 
     // ---- chain endpoint coverage ----
