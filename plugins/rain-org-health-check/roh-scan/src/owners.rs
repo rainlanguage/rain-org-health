@@ -1347,24 +1347,294 @@ mod tests {
             .map(str::to_string)
             .to_vec(),
             threshold: 3,
-            proxy_codehashes: vec![
-                "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c".into(),
-            ],
-            singletons: vec![
-                "0x41675C099F32341bf84BFc5382aF534df5C7461a".into(),
-                "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762".into(),
-            ],
-            singleton_codehashes: vec![
-                "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4".into(),
-                "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4".into(),
-            ],
+            proxy_codehashes: vec![SAFE_PROXY_1_4_1_HASH.into(), SAFE_PROXY_1_3_0_HASH.into()],
+            singletons: vec![SAFE_L1_SINGLETON.into(), SAFE_L2_SINGLETON.into()],
+            singleton_codehashes: vec![SAFE_L1_SINGLETON_HASH.into(), SAFE_L2_SINGLETON_HASH.into()],
             version: "1.4.1".into(),
             modules: vec![],
             guard: None,
-            fallback_handler: "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99".into(),
-            fallback_handler_codehash:
-                "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4".into(),
+            fallback_handler: SAFE_FALLBACK_HANDLER.into(),
+            fallback_handler_codehash: SAFE_FALLBACK_HANDLER_HASH.into(),
         }
+    }
+
+    const SAFE_PROXY_1_4_1_HASH: &str =
+        "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c";
+    const SAFE_PROXY_1_3_0_HASH: &str =
+        "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000";
+    const SAFE_L1_SINGLETON: &str = "0x41675C099F32341bf84BFc5382aF534df5C7461a";
+    const SAFE_L2_SINGLETON: &str = "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762";
+    const SAFE_L1_SINGLETON_HASH: &str =
+        "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4";
+    const SAFE_L2_SINGLETON_HASH: &str =
+        "0xb1f926978a0f44a2c0ec8fe822418ae969bd8c3f18d61e5103100339894f81ff";
+    const SAFE_FALLBACK_HANDLER: &str = "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99";
+    const SAFE_FALLBACK_HANDLER_HASH: &str =
+        "0x7c6007a5d711cea8dfd5d91f5940ec29c7f200fe511eb1fc1397b367af3c42f9";
+    const SAFE_ZERO: &str = "0x0000000000000000000000000000000000000000";
+    const OTHER: &str = "0xdead000000000000000000000000000000000001";
+
+    /// The Base Safe on target, read back as an RPC answers: lowercase, owners
+    /// in another order, the L2 singleton.
+    fn live_on_target() -> LiveSafe {
+        let mut owners: Vec<String> = exp_safe().owners.iter().map(|o| o.to_lowercase()).collect();
+        owners.reverse();
+        LiveSafe {
+            owners: Some(owners),
+            threshold: Some(3),
+            proxy_codehash: Some(SAFE_PROXY_1_4_1_HASH.into()),
+            singleton: Some(SAFE_L2_SINGLETON.to_lowercase()),
+            singleton_codehash: Some(SAFE_L2_SINGLETON_HASH.into()),
+            version: Some("1.4.1".into()),
+            modules: Some(vec![]),
+            guard: Some(SAFE_ZERO.into()),
+            fallback_handler: Some(SAFE_FALLBACK_HANDLER.to_lowercase()),
+            fallback_handler_codehash: Some(SAFE_FALLBACK_HANDLER_HASH.into()),
+        }
+    }
+
+    fn statuses(doc: &serde_json::Value) -> Vec<(String, String)> {
+        doc["facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| {
+                (
+                    f["fact"].as_str().unwrap().to_string(),
+                    f["status"].as_str().unwrap().to_string(),
+                )
+            })
+            .collect()
+    }
+
+    fn status_of(doc: &serde_json::Value, fact: &str) -> String {
+        statuses(doc)
+            .into_iter()
+            .find(|(f, _)| f == fact)
+            .unwrap_or_else(|| panic!("no {fact}"))
+            .1
+    }
+
+    const SAFE_FACTS: [&str; 10] = [
+        "owners",
+        "threshold",
+        "proxyCodehash",
+        "singleton",
+        "singletonCodehash",
+        "version",
+        "modules",
+        "guard",
+        "fallbackHandler",
+        "fallbackHandlerCodehash",
+    ];
+
+    #[test]
+    fn every_safe_fact_matches_a_safe_on_target() {
+        let doc = safe_facts(&exp_safe(), &live_on_target());
+        assert_eq!(doc["address"], "0xe70d821f3462a074e63b42d0AaC6523faAe1d611");
+        assert_eq!(
+            statuses(&doc),
+            SAFE_FACTS.map(|f| (f.to_string(), "match".to_string()))
+        );
+        let facts = doc["facts"].as_array().unwrap();
+        assert_eq!(facts[1]["expected"], 3);
+        assert_eq!(facts[1]["live"], 3);
+        assert_eq!(facts[2]["expected"], json!([SAFE_PROXY_1_4_1_HASH, SAFE_PROXY_1_3_0_HASH]));
+        assert_eq!(facts[2]["live"], SAFE_PROXY_1_4_1_HASH);
+        assert!(facts[7]["expected"].is_null(), "no guard is expected");
+        assert_eq!(facts[7]["live"], SAFE_ZERO);
+    }
+
+    /// A failed read is unknown, never a match and never a mismatch.
+    #[test]
+    fn an_unread_safe_fact_is_unknown() {
+        let doc = safe_facts(&exp_safe(), &LiveSafe::default());
+        assert_eq!(
+            statuses(&doc),
+            SAFE_FACTS.map(|f| (f.to_string(), "unknown".to_string()))
+        );
+        for f in doc["facts"].as_array().unwrap() {
+            assert!(f["live"].is_null(), "{f}");
+            assert!(!f["expected"].is_null() || f["fact"] == "guard", "{f}");
+        }
+    }
+
+    #[test]
+    fn each_drifted_safe_fact_mismatches_alone() {
+        let swapped_owner = {
+            let mut o = live_on_target().owners.unwrap();
+            o[0] = OTHER.into();
+            o
+        };
+        let missing_owner = {
+            let mut o = live_on_target().owners.unwrap();
+            o.pop();
+            o
+        };
+        let extra_owner = {
+            let mut o = live_on_target().owners.unwrap();
+            o.push(OTHER.into());
+            o
+        };
+        let cases: [(&str, LiveSafe); 13] = [
+            ("owners", LiveSafe { owners: Some(swapped_owner), ..live_on_target() }),
+            ("owners", LiveSafe { owners: Some(missing_owner), ..live_on_target() }),
+            ("owners", LiveSafe { owners: Some(extra_owner), ..live_on_target() }),
+            ("threshold", LiveSafe { threshold: Some(2), ..live_on_target() }),
+            (
+                "proxyCodehash",
+                LiveSafe { proxy_codehash: Some(SAFE_L1_SINGLETON_HASH.into()), ..live_on_target() },
+            ),
+            (
+                "singletonCodehash",
+                LiveSafe { singleton_codehash: Some(SAFE_L1_SINGLETON_HASH.into()), ..live_on_target() },
+            ),
+            ("version", LiveSafe { version: Some("1.3.0".into()), ..live_on_target() }),
+            ("modules", LiveSafe { modules: Some(vec![OTHER.into()]), ..live_on_target() }),
+            ("guard", LiveSafe { guard: Some(OTHER.into()), ..live_on_target() }),
+            (
+                "fallbackHandler",
+                LiveSafe { fallback_handler: Some(OTHER.into()), ..live_on_target() },
+            ),
+            (
+                "fallbackHandlerCodehash",
+                LiveSafe {
+                    fallback_handler_codehash: Some(SAFE_PROXY_1_4_1_HASH.into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "fallbackHandlerCodehash",
+                LiveSafe { fallback_handler_codehash: Some("none".into()), ..live_on_target() },
+            ),
+            (
+                "proxyCodehash",
+                LiveSafe { proxy_codehash: Some("none".into()), ..live_on_target() },
+            ),
+        ];
+        for (fact, live) in cases {
+            let doc = safe_facts(&exp_safe(), &live);
+            for (f, s) in statuses(&doc) {
+                let want = if f == fact { "mismatch" } else { "match" };
+                assert_eq!(s, want, "{fact} drifted, {f} is {s}");
+            }
+        }
+    }
+
+    #[test]
+    fn the_proxy_codehash_may_be_any_listed_one() {
+        let live = LiveSafe {
+            proxy_codehash: Some(SAFE_PROXY_1_3_0_HASH.to_uppercase().replace("0X", "0x")),
+            ..live_on_target()
+        };
+        assert_eq!(status_of(&safe_facts(&exp_safe(), &live), "proxyCodehash"), "match");
+    }
+
+    /// The singleton and its codehash are a pair: each singleton's own codehash
+    /// is the only one on target for it.
+    #[test]
+    fn a_singleton_codehash_must_be_its_own_singletons() {
+        let l1 = LiveSafe {
+            singleton: Some(SAFE_L1_SINGLETON.into()),
+            singleton_codehash: Some(SAFE_L1_SINGLETON_HASH.into()),
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &l1);
+        assert_eq!(status_of(&doc, "singleton"), "match");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "match");
+        let crossed = LiveSafe {
+            singleton_codehash: Some(SAFE_L2_SINGLETON_HASH.into()),
+            ..l1
+        };
+        let doc = safe_facts(&exp_safe(), &crossed);
+        assert_eq!(status_of(&doc, "singleton"), "match");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "mismatch");
+    }
+
+    #[test]
+    fn an_unlisted_singleton_fails_its_codehash_too() {
+        let live = LiveSafe {
+            singleton: Some(OTHER.into()),
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &live);
+        assert_eq!(status_of(&doc, "singleton"), "mismatch");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "mismatch");
+    }
+
+    /// A codehash read without knowing whose code it is cannot be paired.
+    #[test]
+    fn a_singleton_codehash_without_its_singleton_is_unknown() {
+        let live = LiveSafe {
+            singleton: None,
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &live);
+        assert_eq!(status_of(&doc, "singleton"), "unknown");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "unknown");
+        let live = LiveSafe {
+            singleton_codehash: None,
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &live);
+        assert_eq!(status_of(&doc, "singleton"), "match");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "unknown");
+    }
+
+    #[test]
+    fn no_expected_guard_matches_only_the_zero_address() {
+        let doc = safe_facts(&exp_safe(), &live_on_target());
+        assert_eq!(status_of(&doc, "guard"), "match");
+        let live = LiveSafe {
+            guard: Some("0x0000000000000000000000000000000000000002".into()),
+            ..live_on_target()
+        };
+        assert_eq!(status_of(&safe_facts(&exp_safe(), &live), "guard"), "mismatch");
+    }
+
+    #[test]
+    fn an_expected_guard_matches_only_itself() {
+        let exp = ExpectedSafe {
+            guard: Some(OTHER.to_uppercase().replace("0X", "0x")),
+            ..exp_safe()
+        };
+        let set = LiveSafe {
+            guard: Some(OTHER.into()),
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp, &set);
+        assert_eq!(status_of(&doc, "guard"), "match");
+        assert_eq!(doc["facts"][7]["expected"], OTHER.to_uppercase().replace("0X", "0x"));
+        let unset = live_on_target();
+        assert_eq!(status_of(&safe_facts(&exp, &unset), "guard"), "mismatch");
+    }
+
+    #[test]
+    fn expected_modules_match_their_live_list_ignoring_case() {
+        let module = "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286";
+        let exp = ExpectedSafe {
+            modules: vec![module.into()],
+            ..exp_safe()
+        };
+        let live = LiveSafe {
+            modules: Some(vec![module.to_lowercase()]),
+            ..live_on_target()
+        };
+        assert_eq!(status_of(&safe_facts(&exp, &live), "modules"), "match");
+        let none = live_on_target();
+        assert_eq!(status_of(&safe_facts(&exp, &none), "modules"), "mismatch");
+    }
+
+    /// A Safe answering its owners with one listed twice is not the expected set.
+    #[test]
+    fn a_repeated_owner_does_not_stand_in_for_a_missing_one() {
+        let mut o = live_on_target().owners.unwrap();
+        o[0] = o[1].clone();
+        let live = LiveSafe {
+            owners: Some(o),
+            ..live_on_target()
+        };
+        assert_eq!(status_of(&safe_facts(&exp_safe(), &live), "owners"), "mismatch");
     }
 
     #[test]
