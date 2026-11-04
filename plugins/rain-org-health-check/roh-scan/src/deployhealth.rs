@@ -349,7 +349,7 @@ pub fn authoriser_summary(
 ) -> serde_json::Value {
     let mut targets: Vec<&str> = Vec::new();
     if let Ok(c) = expected {
-        for (_, a) in &c.authorisers {
+        for a in c.tokens.iter().map(|t| t.authoriser.as_str()) {
             if !targets.iter().any(|t| t.eq_ignore_ascii_case(a)) {
                 targets.push(a);
             }
