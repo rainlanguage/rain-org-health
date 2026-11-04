@@ -531,6 +531,31 @@ fn eth_get_code(session: Session, address: &str) -> Option<String> {
     curl_json(session, &payload).and_then(|b| rpc::result_hex(&b))
 }
 
+/// ERC-1967 `bytes32(uint256(keccak256("eip1967.proxy.beacon")) - 1)`.
+const ERC1967_BEACON_SLOT: &str =
+    "0xa3f0ad74e5423aebfd80d3ef4346578335a9a72aeaee59ff6cb3582b35133d50";
+
+/// `eth_getStorageAt` for `slot` (within `session`) → the 32-byte word hex, or
+/// `None` on failure.
+fn eth_get_storage_at(session: Session, address: &str, slot: &str) -> Option<String> {
+    let payload = format!(
+        r#"{{"jsonrpc":"2.0","id":1,"method":"eth_getStorageAt","params":["{address}","{slot}","latest"]}}"#
+    );
+    curl_json(session, &payload).and_then(|b| rpc::result_hex(&b))
+}
+
+/// Live runtime codehash of `address`: `Some(None)` when it has no code,
+/// `None` on RPC failure.
+fn live_codehash(session: Session, address: &str) -> Option<Option<String>> {
+    eth_get_code(session, address).map(|code| {
+        let hex = code.strip_prefix("0x").unwrap_or(&code);
+        hex.chars()
+            .any(|c| c != '0')
+            .then(|| rpc::keccak256_hex(&code))
+            .flatten()
+    })
+}
+
 /// Whether `address` has deployed runtime code on Base (within `session`):
 /// `Some(true)` if `eth_getCode` returns non-empty bytecode, `Some(false)` for
 /// `0x` (an EOA / nothing there), `None` on RPC failure.
@@ -3147,6 +3172,138 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             }
         };
 
+        // Every infra fact `expected-state.json` pins per chain, read live.
+        let infra_sets: Vec<serde_json::Value> = match &expected_state {
+            Err(e) => vec![deployhealth::beacons_unavailable(None, None, &e.to_string())],
+            Ok(chains) => chains
+                .iter()
+                .map(|c| {
+                    let Some(chain) = Chain::from_network(&c.network) else {
+                        return deployhealth::beacons_unavailable(
+                            Some(&c.network),
+                            None,
+                            "this scanner has no RPC endpoints for this chain",
+                        );
+                    };
+                    let s = rpc_session(chain);
+                    fn pin(p: &str) -> Option<&str> {
+                        Some(p).filter(|p| deployhealth::hydrated_pin(p))
+                    }
+                    let has_code = |a: &str| code_deployed(s, a).map(|b| b.to_string());
+                    let codehash = |a: &str| {
+                        live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
+                    };
+                    let call_addr = |a: &str, data: String| {
+                        eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
+                    };
+                    let mut rows = Vec::new();
+                    if let Some(d) = c.beacon_set_deployer.as_deref() {
+                        rows.push(deployhealth::infra_row(
+                            "beaconSetDeployer",
+                            "hasCode",
+                            Some(d),
+                            Some("true"),
+                            has_code(d),
+                        ));
+                    }
+                    for b in &c.beacons {
+                        let addr = match &b.at {
+                            expected::BeaconAt::Address(a) => Some(a.clone()),
+                            expected::BeaconAt::DeployerReceipt => c
+                                .beacon_set_deployer
+                                .as_deref()
+                                .and_then(|d| call_addr(d, rpc::receipt_beacon_calldata())),
+                            expected::BeaconAt::DeployerReceiptVault => c
+                                .beacon_set_deployer
+                                .as_deref()
+                                .and_then(|d| call_addr(d, rpc::receipt_vault_beacon_calldata())),
+                        };
+                        rows.push(deployhealth::infra_row(
+                            b.name,
+                            "codehash",
+                            addr.as_deref(),
+                            pin(&b.codehash),
+                            addr.as_deref().and_then(codehash),
+                        ));
+                    }
+                    let tl = &c.timelock.code.address;
+                    rows.push(deployhealth::infra_row(
+                        "timelock",
+                        "codehash",
+                        Some(tl),
+                        pin(&c.timelock.code.codehash),
+                        codehash(tl),
+                    ));
+                    let min_delay = c.timelock.min_delay.to_string();
+                    rows.push(deployhealth::infra_row(
+                        "timelock",
+                        "minDelay",
+                        Some(tl),
+                        Some(&min_delay),
+                        eth_call(s, tl, &rpc::min_delay_calldata())
+                            .and_then(|h| rpc::decode_uint(&h))
+                            .map(|d| d.to_string()),
+                    ));
+                    let o = &c.orchestrator;
+                    rows.push(deployhealth::infra_row(
+                        "orchestrator",
+                        "setDeployer hasCode",
+                        Some(&o.set_deployer),
+                        Some("true"),
+                        has_code(&o.set_deployer),
+                    ));
+                    rows.push(deployhealth::infra_row(
+                        "orchestrator",
+                        "beacon codehash",
+                        Some(&o.beacon),
+                        pin(&o.beacon_codehash),
+                        codehash(&o.beacon),
+                    ));
+                    rows.push(deployhealth::infra_row(
+                        "orchestrator",
+                        "beacon implementation",
+                        Some(&o.beacon),
+                        pin(&o.implementation),
+                        call_addr(&o.beacon, rpc::implementation_calldata()),
+                    ));
+                    rows.push(deployhealth::infra_row(
+                        "orchestrator",
+                        "beacon owner",
+                        Some(&o.beacon),
+                        pin(&o.owner),
+                        call_addr(&o.beacon, rpc::owner_calldata()),
+                    ));
+                    rows.push(deployhealth::infra_row(
+                        "orchestrator",
+                        "instance beacon",
+                        Some(&o.instance),
+                        pin(&o.beacon),
+                        eth_get_storage_at(s, &o.instance, ERC1967_BEACON_SLOT)
+                            .and_then(|h| rpc::decode_address(&h)),
+                    ));
+                    for (name, a) in [
+                        ("authoriser", &c.authoriser),
+                        ("euAuthoriser", &c.eu_authoriser),
+                    ] {
+                        rows.push(deployhealth::infra_row(
+                            name,
+                            "codehash",
+                            Some(&a.address),
+                            pin(&a.codehash),
+                            codehash(&a.address),
+                        ));
+                    }
+                    deployhealth::build_infra(
+                        deploy_org,
+                        deploy_repo,
+                        &c.network,
+                        chain.rpc_host(),
+                        rows,
+                    )
+                })
+                .collect(),
+        };
+
         // Registry token wiring on Base (#90): for each token in the
         // st0x.registry Base list, confirm the deployed wrapper's
         // name()/symbol()/decimals() match the registry VERBATIM, its asset()
@@ -3360,6 +3517,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentMigrations": deployment_migrations,
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
+            "deploymentInfra": infra_sets,
             "deploymentTokens": deployment_tokens,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.

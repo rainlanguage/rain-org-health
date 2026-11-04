@@ -546,6 +546,54 @@ pub fn build_tokens(
     }))
 }
 
+/// One infra fact `expected-state.json` pins, checked live. `live` is `None`
+/// when the read failed; a codehash row's `Some("none")` means no code.
+/// status: `healthy` on a case-insensitive match, `drift` on a mismatch,
+/// `unknown` when the read failed or there is no pin.
+pub fn infra_row(
+    component: &str,
+    field: &str,
+    address: Option<&str>,
+    pin: Option<&str>,
+    live: Option<String>,
+) -> serde_json::Value {
+    let status = match (live.as_deref(), pin) {
+        (Some(l), Some(e)) if l.eq_ignore_ascii_case(e) => "healthy",
+        (Some(_), Some(_)) => "drift",
+        _ => "unknown",
+    };
+    json!({
+        "component": component,
+        "field": field,
+        "address": address,
+        "expected": pin,
+        "live": live,
+        "status": status,
+    })
+}
+
+/// Assemble one chain's `deploymentInfra` document.
+pub fn build_infra(
+    org: &str,
+    repo: &str,
+    network: &str,
+    rpc_host: &str,
+    rows: Vec<serde_json::Value>,
+) -> serde_json::Value {
+    let total = rows.len();
+    let healthy = rows.iter().filter(|r| r["status"] == "healthy").count();
+    json!({
+        "org": org,
+        "repo": repo,
+        "network": network,
+        "rpcHost": rpc_host,
+        "source": EXPECTED_STATE_PATH,
+        "total": total,
+        "healthy": healthy,
+        "rows": rows,
+    })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
