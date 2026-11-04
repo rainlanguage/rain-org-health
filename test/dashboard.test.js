@@ -7802,7 +7802,14 @@ Deno.test("deployments: the health and Zoltu + tokens sections link their own ch
     deploymentHealth: null,
     deploymentCodeTokens: [
       factsDoc("bsc", [
-        factRow("token wtNVDA", "receiptVault symbol", T, "wtNVDA", "wtNVDA", "healthy"),
+        factRow(
+          "token wtNVDA",
+          "receiptVault symbol",
+          T,
+          "wtNVDA",
+          "wtNVDA",
+          "healthy",
+        ),
       ]),
     ],
   });
@@ -7982,9 +7989,23 @@ Deno.test("deployments: infra rows show live beside expected and flag drift and 
   const box = deploymentsBox({
     deploymentInfra: [
       factsDoc("base", [
-        factRow("timelock", "codehash", EXP_TIMELOCK, HASH_A, HASH_A, "healthy"),
+        factRow(
+          "timelock",
+          "codehash",
+          EXP_TIMELOCK,
+          HASH_A,
+          HASH_A,
+          "healthy",
+        ),
         factRow("timelock", "minDelay", EXP_TIMELOCK, "172800", "0", "drift"),
-        factRow("orchestrator", "beacon owner", BEACON, EXP_TIMELOCK, null, "unknown"),
+        factRow(
+          "orchestrator",
+          "beacon owner",
+          BEACON,
+          EXP_TIMELOCK,
+          null,
+          "unknown",
+        ),
         factRow("euAuthoriser", "codehash", EU, HASH_B, "none", "drift"),
       ]),
     ],
@@ -8016,18 +8037,33 @@ Deno.test("deployments: infra rows show live beside expected and flag drift and 
   assert(minDelay.className.includes("hlth-drift"), minDelay.className);
   const ml = factLines(minDelay);
   assert(ml.live === "0" && ml.expected === "172800", JSON.stringify(ml));
-  assert(statusChip(minDelay).className.includes("own-chip-no"), "drift chip is red");
+  assert(
+    statusChip(minDelay).className.includes("own-chip-no"),
+    "drift chip is red",
+  );
   assert(statusChip(minDelay).textContent === "drift", "drift chip says drift");
   const owner = rowByRole(panels.contracts, "orchestrator — beacon owner");
   assert(owner.className.includes("hlth-unknown"), owner.className);
-  assert(factLines(owner).live === "—", "an unread live value is a dash, never blank or null");
-  assert(factLines(owner).expected === EXP_TIMELOCK, JSON.stringify(factLines(owner)));
-  assert(statusChip(owner).className.includes("own-chip-dim"), "unknown chip is dim");
+  assert(
+    factLines(owner).live === "—",
+    "an unread live value is a dash, never blank or null",
+  );
+  assert(
+    factLines(owner).expected === EXP_TIMELOCK,
+    JSON.stringify(factLines(owner)),
+  );
+  assert(
+    statusChip(owner).className.includes("own-chip-dim"),
+    "unknown chip is dim",
+  );
   const eu = rowByRole(panels.contracts, "euAuthoriser — codehash");
   assert(factLines(eu).live === "none", "an address with no code reads none");
   const tl = rowByRole(panels.contracts, "timelock — codehash");
   assert(tl.className.includes("hlth-healthy"), tl.className);
-  assert(statusChip(tl).className.includes("own-chip-yes"), "healthy chip is green");
+  assert(
+    statusChip(tl).className.includes("own-chip-yes"),
+    "healthy chip is green",
+  );
   assert(
     collect(tl, "own-note").some((n) => textOf(n) === EXP_TIMELOCK),
     "the row's address is shown",
@@ -8042,7 +8078,14 @@ Deno.test("deployments: every chain in the infra list gets its own section and v
         factRow("timelock", "minDelay", EXP_TIMELOCK, "172800", "0", "drift"),
       ]),
       factsDoc("ethereum", [
-        factRow("timelock", "minDelay", EXP_TIMELOCK, "172800", "172800", "healthy"),
+        factRow(
+          "timelock",
+          "minDelay",
+          EXP_TIMELOCK,
+          "172800",
+          "172800",
+          "healthy",
+        ),
       ]),
     ],
   });
@@ -8055,9 +8098,17 @@ Deno.test("deployments: every chain in the infra list gets its own section and v
   const banners = collect(panels.contracts, "own-verify");
   const eth = banners.find((b) => textOf(b).includes("on ethereum."));
   const base = banners.find((b) => textOf(b).includes("on base."));
-  assert(eth.className.includes("own-verify-ok"), "all-healthy chain is ok: " + eth.className);
-  assert(base.className.includes("own-verify-drift"), "drifted chain is drift: " + base.className);
-  const hrefs = collect(panels.contracts, "own-addr").map((a) => a.href).filter(Boolean);
+  assert(
+    eth.className.includes("own-verify-ok"),
+    "all-healthy chain is ok: " + eth.className,
+  );
+  assert(
+    base.className.includes("own-verify-drift"),
+    "drifted chain is drift: " + base.className,
+  );
+  const hrefs = collect(panels.contracts, "own-addr").map((a) => a.href).filter(
+    Boolean,
+  );
   assert(
     hrefs.some((x) => x.startsWith("https://etherscan.io/address/")) &&
       hrefs.some((x) => x.startsWith("https://basescan.org/address/")),
@@ -8069,20 +8120,33 @@ Deno.test("deployments: an unreadable infra chain says so under its own heading"
   const t = textOf(
     deploymentsBox({
       deploymentInfra: [
-        unreadableChain("flare", "this scanner has no RPC endpoints for this chain"),
+        unreadableChain(
+          "flare",
+          "this scanner has no RPC endpoints for this chain",
+        ),
         factsDoc("polygon", []),
       ],
     }),
   );
   assert(t.includes("Infra — flare"), "the unreadable chain is named: " + t);
   assert(
-    t.includes("Infra data unavailable — this scanner has no RPC endpoints for this chain."),
+    t.includes(
+      "Infra data unavailable — this scanner has no RPC endpoints for this chain.",
+    ),
     "the reason is stated: " + t,
   );
-  assert(!t.includes("(via null)") && !t.includes("(via undefined)"), "no RPC host is claimed: " + t);
-  assert(t.includes("Infra — polygon"), "a chain with no rows still renders: " + t);
   assert(
-    t.includes("Infra data unavailable — the scan produced no rows for this chain"),
+    !t.includes("(via null)") && !t.includes("(via undefined)"),
+    "no RPC host is claimed: " + t,
+  );
+  assert(
+    t.includes("Infra — polygon"),
+    "a chain with no rows still renders: " + t,
+  );
+  assert(
+    t.includes(
+      "Infra data unavailable — the scan produced no rows for this chain",
+    ),
     "and says why it is empty: " + t,
   );
 });
@@ -8093,8 +8157,14 @@ Deno.test("deployments: an unreadable expected-state file is one all-chains infr
       deploymentInfra: [unreadableChain(null, "expected-state.json: HTTP 404")],
     }),
   );
-  assert(t.includes("Infra — all chains"), "the notice covers all chains: " + t);
-  assert(t.includes("expected-state.json: HTTP 404"), "the file error is the reason: " + t);
+  assert(
+    t.includes("Infra — all chains"),
+    "the notice covers all chains: " + t,
+  );
+  assert(
+    t.includes("expected-state.json: HTTP 404"),
+    "the file error is the reason: " + t,
+  );
 });
 
 Deno.test("deployments: Zoltu and token-leg rows render under their own heading, mismatches flagged", () => {
@@ -8115,15 +8185,35 @@ Deno.test("deployments: Zoltu and token-leg rows render under their own heading,
           "NVIDIA Corp ST0x",
           "drift",
         ),
-        factRow("token wtNVDA", "receiptVault authoriser", RV, AUTH, OTHER, "drift"),
-        factRow("token wtNVDA", "wrappedTokenVault name", WV, null, "Wrapped NVIDIA ST0x", "unknown"),
+        factRow(
+          "token wtNVDA",
+          "receiptVault authoriser",
+          RV,
+          AUTH,
+          OTHER,
+          "drift",
+        ),
+        factRow(
+          "token wtNVDA",
+          "wrappedTokenVault name",
+          WV,
+          null,
+          "Wrapped NVIDIA ST0x",
+          "unknown",
+        ),
       ]),
     ],
   });
   const panels = panelsOf(box);
   const h = headings(panels.contracts);
-  assert(h.includes("Zoltu + tokens — base"), "own heading on the contracts tab: " + h.join(" | "));
-  assert(!h.includes("Infra — base"), "token rows are not filed under Infra: " + h.join(" | "));
+  assert(
+    h.includes("Zoltu + tokens — base"),
+    "own heading on the contracts tab: " + h.join(" | "),
+  );
+  assert(
+    !h.includes("Infra — base"),
+    "token rows are not filed under Infra: " + h.join(" | "),
+  );
   const banner = collect(panels.contracts, "own-verify")[0];
   assert(
     textOf(banner).includes("1 of 4 zoltu + tokens facts as expected on base."),
@@ -8131,19 +8221,32 @@ Deno.test("deployments: Zoltu and token-leg rows render under their own heading,
   );
   assert(banner.className.includes("own-verify-drift"), banner.className);
   const name = rowByRole(panels.contracts, "token wtNVDA — receiptVault name");
-  assert(name && name.className.includes("hlth-drift"), "a name mismatch is a drift row");
+  assert(
+    name && name.className.includes("hlth-drift"),
+    "a name mismatch is a drift row",
+  );
   const nl = factLines(name);
   assert(
     nl.live === "NVIDIA Corp ST0x" && nl.expected === "NVIDIA Corporation ST0x",
     "the on-chain name shows beside the pinned one: " + JSON.stringify(nl),
   );
-  const auth = rowByRole(panels.contracts, "token wtNVDA — receiptVault authoriser");
+  const auth = rowByRole(
+    panels.contracts,
+    "token wtNVDA — receiptVault authoriser",
+  );
   assert(
     factLines(auth).live === OTHER && factLines(auth).expected === AUTH,
-    "a foreign authoriser shows beside the expected one: " + JSON.stringify(factLines(auth)),
+    "a foreign authoriser shows beside the expected one: " +
+      JSON.stringify(factLines(auth)),
   );
-  assert(statusChip(auth).className.includes("own-chip-no"), "the authoriser drift chip is red");
-  const unpinned = rowByRole(panels.contracts, "token wtNVDA — wrappedTokenVault name");
+  assert(
+    statusChip(auth).className.includes("own-chip-no"),
+    "the authoriser drift chip is red",
+  );
+  const unpinned = rowByRole(
+    panels.contracts,
+    "token wtNVDA — wrappedTokenVault name",
+  );
   assert(unpinned.className.includes("hlth-unknown"), unpinned.className);
   assert(factLines(unpinned).expected === "—", "no pin reads as a dash");
   assert(
@@ -8158,7 +8261,10 @@ Deno.test("deployments: an unreadable Zoltu + tokens chain says so under its own
     deploymentsBox({
       deploymentOwners: OWNERS.deploymentOwners,
       deploymentCodeTokens: [
-        unreadableChain("arbitrum", "this scanner has no RPC endpoints for this chain"),
+        unreadableChain(
+          "arbitrum",
+          "this scanner has no RPC endpoints for this chain",
+        ),
       ],
     }),
   );
@@ -8171,7 +8277,9 @@ Deno.test("deployments: an unreadable Zoltu + tokens chain says so under its own
   );
   const all = textOf(
     deploymentsBox({
-      deploymentCodeTokens: [unreadableChain(null, "expected-state.json: HTTP 404")],
+      deploymentCodeTokens: [
+        unreadableChain(null, "expected-state.json: HTTP 404"),
+      ],
     }),
   );
   assert(all.includes("Zoltu + tokens — all chains"), all);
@@ -8204,7 +8312,10 @@ Deno.test("deployments: each chain's Safe facts show live beside expected and fl
     headings(panels.safe).includes("Safe — base"),
     "Safe facts are on the Safe tab: " + headings(panels.safe).join(" | "),
   );
-  assert(!headings(panels.contracts).includes("Safe — base"), "and not on the contracts tab");
+  assert(
+    !headings(panels.contracts).includes("Safe — base"),
+    "and not on the contracts tab",
+  );
   const banner = collect(panels.safe, "own-verify").find((b) =>
     textOf(b).includes("Safe facts as expected")
   );
@@ -8215,7 +8326,9 @@ Deno.test("deployments: each chain's Safe facts show live beside expected and fl
   assert(banner.className.includes("own-verify-drift"), banner.className);
   assert(
     collect(panels.safe, "own-sub").some((s) =>
-      collect(s, "own-addr").some((a) => a.href === "https://basescan.org/address/" + EXP_SAFE)
+      collect(s, "own-addr").some((a) =>
+        a.href === "https://basescan.org/address/" + EXP_SAFE
+      )
     ),
     "the Safe address is linked on its chain's explorer",
   );
@@ -8225,20 +8338,32 @@ Deno.test("deployments: each chain's Safe facts show live beside expected and fl
     factLines(thr).live === "2" && factLines(thr).expected === "3",
     JSON.stringify(factLines(thr)),
   );
-  assert(statusChip(thr).className.includes("own-chip-no"), "mismatch chip is red");
-  assert(statusChip(thr).textContent === "mismatch", statusChip(thr).textContent);
+  assert(
+    statusChip(thr).className.includes("own-chip-no"),
+    "mismatch chip is red",
+  );
+  assert(
+    statusChip(thr).textContent === "mismatch",
+    statusChip(thr).textContent,
+  );
   const owners = factLines(rowByRole(panels.safe, "owners"));
   assert(
-    owners.expected === [O1, O2, O3].join(", ") && owners.live === [O3, O1, O2].join(", "),
+    owners.expected === [O1, O2, O3].join(", ") &&
+      owners.live === [O3, O1, O2].join(", "),
     "an address list is shown in full: " + JSON.stringify(owners),
   );
   assert(
-    statusChip(rowByRole(panels.safe, "owners")).className.includes("own-chip-yes"),
+    statusChip(rowByRole(panels.safe, "owners")).className.includes(
+      "own-chip-yes",
+    ),
     "match chip is green",
   );
   const version = rowByRole(panels.safe, "version");
   assert(factLines(version).live === "—", "an unread fact reads as a dash");
-  assert(statusChip(version).className.includes("own-chip-dim"), "unknown chip is dim");
+  assert(
+    statusChip(version).className.includes("own-chip-dim"),
+    "unknown chip is dim",
+  );
   assert(
     factLines(rowByRole(panels.safe, "modules")).expected === "none",
     "an empty module list reads none",
@@ -8246,7 +8371,8 @@ Deno.test("deployments: each chain's Safe facts show live beside expected and fl
   const guard = factLines(rowByRole(panels.safe, "guard"));
   assert(
     guard.expected === "none" && guard.live === ZERO,
-    "no expected guard reads none, the live zero slot is shown: " + JSON.stringify(guard),
+    "no expected guard reads none, the live zero slot is shown: " +
+      JSON.stringify(guard),
   );
   assert(
     factLines(rowByRole(panels.safe, "fallbackHandler")).live === OTHER,
@@ -8264,11 +8390,21 @@ Deno.test("deployments: every chain's Safe renders, even with no owner data", ()
   });
   const panels = panelsOf(box);
   const h = headings(panels.safe);
-  assert(h.includes("Safe — base") && h.includes("Safe — ethereum"), h.join(" | "));
+  assert(
+    h.includes("Safe — base") && h.includes("Safe — ethereum"),
+    h.join(" | "),
+  );
   const banners = collect(panels.safe, "own-verify");
-  const eth = banners.find((b) => textOf(b).includes("Safe facts as expected on ethereum."));
-  const base = banners.find((b) => textOf(b).includes("Safe facts as expected on base."));
-  assert(eth.className.includes("own-verify-ok"), "all-match chain is ok: " + eth.className);
+  const eth = banners.find((b) =>
+    textOf(b).includes("Safe facts as expected on ethereum.")
+  );
+  const base = banners.find((b) =>
+    textOf(b).includes("Safe facts as expected on base.")
+  );
+  assert(
+    eth.className.includes("own-verify-ok"),
+    "all-match chain is ok: " + eth.className,
+  );
   assert(base.className.includes("own-verify-drift"), base.className);
   assert(
     collect(panels.safe, "own-addr").some((a) =>
@@ -8282,20 +8418,30 @@ Deno.test("deployments: an unreadable Safe chain says so under its own heading",
   const t = textOf(
     deploymentsBox({
       deploymentSafes: [
-        unreadableChain("flare", "this scanner has no RPC endpoints for this chain"),
+        unreadableChain(
+          "flare",
+          "this scanner has no RPC endpoints for this chain",
+        ),
         safeDoc("polygon", EXP_SAFE, []),
       ],
     }),
   );
   assert(t.includes("Safe — flare"), t);
   assert(
-    t.includes("Safe data unavailable — this scanner has no RPC endpoints for this chain."),
+    t.includes(
+      "Safe data unavailable — this scanner has no RPC endpoints for this chain.",
+    ),
     t,
   );
   assert(!t.includes("(via null)") && !t.includes("(via undefined)"), t);
-  assert(t.includes("Safe — polygon"), "a chain with no facts still renders: " + t);
   assert(
-    t.includes("Safe data unavailable — the scan produced no Safe facts for this chain"),
+    t.includes("Safe — polygon"),
+    "a chain with no facts still renders: " + t,
+  );
+  assert(
+    t.includes(
+      "Safe data unavailable — the scan produced no Safe facts for this chain",
+    ),
     t,
   );
   const all = textOf(
