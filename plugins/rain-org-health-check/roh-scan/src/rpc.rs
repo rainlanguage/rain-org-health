@@ -25,6 +25,7 @@ sol! {
     function headV5(address writer, bytes32 namespace) external view returns (bytes32);
     function isCertificationExpired() external view returns (bool);
     function getMinDelay() external view returns (uint256);
+    function receipt() external view returns (address);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -113,6 +114,9 @@ pub fn authorizer_calldata() -> String {
 }
 pub fn min_delay_calldata() -> String {
     to_hex(getMinDelayCall {}.abi_encode())
+}
+pub fn receipt_calldata() -> String {
+    to_hex(receiptCall {}.abi_encode())
 }
 /// `None` unless `writer` is an address and both words are 32-byte hex.
 pub fn applied_v5_calldata(writer: &str, namespace: &str, migration: &str) -> Option<String> {

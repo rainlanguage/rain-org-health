@@ -3304,6 +3304,170 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .collect(),
         };
 
+        // Every Zoltu suite and every token leg `expected-state.json` pins per
+        // chain, read live.
+        let code_token_sets: Vec<serde_json::Value> = match &expected_state {
+            Err(e) => vec![deployhealth::beacons_unavailable(None, None, &e.to_string())],
+            Ok(chains) => chains
+                .iter()
+                .map(|c| {
+                    let Some(chain) = Chain::from_network(&c.network) else {
+                        return deployhealth::beacons_unavailable(
+                            Some(&c.network),
+                            None,
+                            "this scanner has no RPC endpoints for this chain",
+                        );
+                    };
+                    let s = rpc_session(chain);
+                    fn pin(p: &str) -> Option<&str> {
+                        Some(p).filter(|p| deployhealth::hydrated_pin(p))
+                    }
+                    let codehash = |a: &str| {
+                        live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
+                    };
+                    let call_addr = |a: &str, data: String| {
+                        eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
+                    };
+                    let call_str = |a: &str, data: String| {
+                        eth_call(s, a, &data).and_then(|h| rpc::decode_string(&h))
+                    };
+                    let decimals = |a: &str| {
+                        eth_call(s, a, &rpc::decimals_calldata())
+                            .and_then(|h| rpc::decode_u8(&h))
+                            .map(|d| d.to_string())
+                    };
+                    let beacon_slot = |a: &str| {
+                        eth_get_storage_at(s, a, ERC1967_BEACON_SLOT)
+                            .and_then(|h| rpc::decode_address(&h))
+                    };
+                    let beacon_at = |at: &expected::BeaconAt| match at {
+                        expected::BeaconAt::Address(a) => Some(a.clone()),
+                        expected::BeaconAt::DeployerReceipt => c
+                            .beacon_set_deployer
+                            .as_deref()
+                            .and_then(|d| call_addr(d, rpc::receipt_beacon_calldata())),
+                        expected::BeaconAt::DeployerReceiptVault => c
+                            .beacon_set_deployer
+                            .as_deref()
+                            .and_then(|d| call_addr(d, rpc::receipt_vault_beacon_calldata())),
+                    };
+                    // Live matching the renamed value means the rename landed.
+                    let either = |live: &Option<String>, name: &str, renamed: &str| match live {
+                        Some(l) if l == renamed => renamed.to_string(),
+                        _ => name.to_string(),
+                    };
+                    let mut rows = Vec::new();
+                    for z in &c.zoltu {
+                        rows.push(deployhealth::infra_row(
+                            &format!("zoltu {}", z.key),
+                            "codehash",
+                            Some(&z.code.address),
+                            pin(&z.code.codehash),
+                            codehash(&z.code.address),
+                        ));
+                    }
+                    for t in &c.tokens {
+                        let id = format!("token {}", t.symbol);
+                        let rv = t.receipt_vault.as_str();
+                        let wv = t.wrapped_token_vault.as_str();
+                        let rc = t.receipt.as_str();
+                        let rv_name = call_str(rv, rpc::name_calldata());
+                        let rv_name_pin = either(&rv_name, &t.name, &t.renamed_name);
+                        let wv_name = call_str(wv, rpc::name_calldata());
+                        let wv_name_pin = either(
+                            &wv_name,
+                            &t.wrapped_token_vault_name,
+                            &t.wrapped_token_vault_renamed_name,
+                        );
+                        let wv_symbol = call_str(wv, rpc::symbol_calldata());
+                        let wv_symbol_pin = either(
+                            &wv_symbol,
+                            &t.wrapped_token_vault_symbol,
+                            &t.wrapped_token_vault_renamed_symbol,
+                        );
+                        let rv_decimals = t.decimals.to_string();
+                        let wv_decimals = t.wrapped_token_vault_decimals.to_string();
+                        let rv_beacon = beacon_at(&t.receipt_vault_beacon);
+                        let rc_beacon = beacon_at(&t.receipt_beacon);
+                        let checks: Vec<(&str, &str, Option<&str>, Option<String>)> = vec![
+                            ("receiptVault name", rv, Some(&rv_name_pin), rv_name),
+                            (
+                                "receiptVault symbol",
+                                rv,
+                                Some(&t.symbol),
+                                call_str(rv, rpc::symbol_calldata()),
+                            ),
+                            ("receiptVault decimals", rv, Some(&rv_decimals), decimals(rv)),
+                            (
+                                "receiptVault receipt",
+                                rv,
+                                pin(&t.receipt_vault_receipt),
+                                call_addr(rv, rpc::receipt_calldata()),
+                            ),
+                            (
+                                "receiptVault owner",
+                                rv,
+                                pin(&t.owner),
+                                call_addr(rv, rpc::owner_calldata()),
+                            ),
+                            (
+                                "receiptVault authoriser",
+                                rv,
+                                pin(&t.authoriser),
+                                call_addr(rv, rpc::authorizer_calldata()),
+                            ),
+                            ("receiptVault beacon", rv, rv_beacon.as_deref(), beacon_slot(rv)),
+                            (
+                                "receiptVault codehash",
+                                rv,
+                                pin(&t.receipt_vault_codehash),
+                                codehash(rv),
+                            ),
+                            ("receipt beacon", rc, rc_beacon.as_deref(), beacon_slot(rc)),
+                            ("receipt codehash", rc, pin(&t.receipt_codehash), codehash(rc)),
+                            ("wrappedTokenVault name", wv, Some(&wv_name_pin), wv_name),
+                            ("wrappedTokenVault symbol", wv, Some(&wv_symbol_pin), wv_symbol),
+                            ("wrappedTokenVault decimals", wv, Some(&wv_decimals), decimals(wv)),
+                            (
+                                "wrappedTokenVault asset",
+                                wv,
+                                pin(&t.wrapped_token_vault_asset),
+                                call_addr(wv, rpc::asset_calldata()),
+                            ),
+                            (
+                                "wrappedTokenVault beacon",
+                                wv,
+                                pin(&t.wrapped_token_vault_beacon),
+                                beacon_slot(wv),
+                            ),
+                            (
+                                "wrappedTokenVault codehash",
+                                wv,
+                                pin(&t.wrapped_token_vault_codehash),
+                                codehash(wv),
+                            ),
+                        ];
+                        for (field, address, expected, live) in checks {
+                            rows.push(deployhealth::infra_row(
+                                &id,
+                                field,
+                                Some(address),
+                                expected,
+                                live,
+                            ));
+                        }
+                    }
+                    deployhealth::build_infra(
+                        deploy_org,
+                        deploy_repo,
+                        &c.network,
+                        chain.rpc_host(),
+                        rows,
+                    )
+                })
+                .collect(),
+        };
+
         // Registry token wiring on Base (#90): for each token in the
         // st0x.registry Base list, confirm the deployed wrapper's
         // name()/symbol()/decimals() match the registry VERBATIM, its asset()
@@ -3518,6 +3682,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentInfra": infra_sets,
+            "deploymentCodeTokens": code_token_sets,
             "deploymentTokens": deployment_tokens,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.

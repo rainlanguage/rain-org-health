@@ -575,31 +575,31 @@ function renderDeployments(document, $, data, io) {
   const renderBeacons = (b) => {
     for (const set of Array.isArray(b) ? b : b ? [b] : []) renderBeaconSet(set);
   };
-  const renderInfraSet = (f) => {
+  const renderInfraSet = (f, title = "Infra", blurb = "code, codehash, minDelay, orchestrator wiring") => {
     if (!f) return;
     if (f.unavailable || !Array.isArray(f.rows) || f.rows.length === 0) {
-      sink.append(el("h2", null, `Infra — ${f.network ?? "all chains"}`));
+      sink.append(el("h2", null, `${title} — ${f.network ?? "all chains"}`));
       sink.append(
         el(
           "div",
           "own-sub",
-          `Infra data unavailable — ${f.reason ?? "the scan produced no infra rows for this chain"}${f.rpcHost ? ` (via ${f.rpcHost})` : ""}.`,
+          `${title} data unavailable — ${f.reason ?? "the scan produced no rows for this chain"}${f.rpcHost ? ` (via ${f.rpcHost})` : ""}.`,
         ),
       );
       return;
     }
-    sink.append(el("h2", null, `Infra — ${f.network}`));
+    sink.append(el("h2", null, `${title} — ${f.network}`));
     sink.append(
       el(
         "div",
         "own-sub",
-        `Every infra fact st0x.deploy pins (${f.source ?? "expected-state.json"}) — code, codehash, minDelay, orchestrator wiring — read live on-chain.`,
+        `Every ${title.toLowerCase()} fact st0x.deploy pins (${f.source ?? "expected-state.json"}) — ${blurb} — read live on-chain.`,
       ),
     );
     const allHealthy = f.healthy === f.total;
     const banner = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
     banner.append(
-      el("span", "own-verify-msg", `${f.healthy} of ${f.total} infra facts as expected on ${f.network}.`),
+      el("span", "own-verify-msg", `${f.healthy} of ${f.total} ${title.toLowerCase()} facts as expected on ${f.network}.`),
     );
     banner.append(el("span", "own-verify-src", `via ${f.rpcHost}`));
     sink.append(banner);
@@ -629,6 +629,14 @@ function renderDeployments(document, $, data, io) {
   };
   const renderInfra = (f) => {
     for (const set of Array.isArray(f) ? f : f ? [f] : []) renderInfraSet(set);
+  };
+  const renderCodeTokens = (f) => {
+    for (const set of Array.isArray(f) ? f : f ? [f] : [])
+      renderInfraSet(
+        set,
+        "Zoltu + tokens",
+        "Zoltu codehashes; each token leg's name, symbol, decimals, wiring, owner, authoriser, beacon and codehash",
+      );
   };
   // Registry tokens: each wrapper's on-chain identity must match the registry and
   // its asset() must point at the declared unwrapped underlying, with the linked
@@ -3555,6 +3563,7 @@ function renderDeployments(document, $, data, io) {
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderInfra(data.deploymentInfra);
+    renderCodeTokens(data.deploymentCodeTokens);
     renderTokens(data.deploymentTokens);
     sink = panels.migrations;
     renderMigrations(data.deploymentMigrations);
@@ -3634,6 +3643,7 @@ function renderDeployments(document, $, data, io) {
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderInfra(data.deploymentInfra);
+  renderCodeTokens(data.deploymentCodeTokens);
   renderTokens(data.deploymentTokens);
   sink = panels.migrations;
   renderMigrations(data.deploymentMigrations);
