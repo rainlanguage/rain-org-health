@@ -630,6 +630,63 @@ function renderDeployments(document, $, data, io) {
   const renderInfra = (f) => {
     for (const set of Array.isArray(f) ? f : f ? [f] : []) renderInfraSet(set);
   };
+  const renderSafeSet = (f) => {
+    if (!f) return;
+    if (f.unavailable || !Array.isArray(f.facts) || f.facts.length === 0) {
+      sink.append(el("h2", null, `Safe — ${f.network ?? "all chains"}`));
+      sink.append(
+        el(
+          "div",
+          "own-sub",
+          `Safe data unavailable — ${f.reason ?? "the scan produced no Safe facts for this chain"}${f.rpcHost ? ` (via ${f.rpcHost})` : ""}.`,
+        ),
+      );
+      return;
+    }
+    sink.append(el("h2", null, `Safe — ${f.network}`));
+    const sub = el("div", "own-sub");
+    sub.append(addrNode("own-addr", f.address, f.network));
+    sub.append(
+      ` — every Safe fact st0x.deploy pins (expected-state.json): owners, threshold, proxy and singleton codehash, version, modules, guard, fallback handler — read live on-chain.`,
+    );
+    sink.append(sub);
+    const matched = f.facts.filter((r) => r.status === "match").length;
+    const banner = el(
+      "div",
+      `own-verify ${matched === f.facts.length ? "own-verify-ok" : "own-verify-drift"}`,
+    );
+    banner.append(
+      el("span", "own-verify-msg", `${matched} of ${f.facts.length} Safe facts as expected on ${f.network}.`),
+    );
+    banner.append(el("span", "own-verify-src", `via ${f.rpcHost}`));
+    sink.append(banner);
+    const fmt = (v, none) =>
+      v == null ? none : Array.isArray(v) ? (v.length ? v.join(", ") : "none") : String(v);
+    const table = el("div", "own-table");
+    for (const r of f.facts) {
+      const st = r.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", r.fact));
+      const detail = el("div", "bcn-detail");
+      for (const [key, val, none] of [
+        ["live", r.live, "—"],
+        ["expected", r.expected, r.fact === "guard" ? "none" : "—"],
+      ]) {
+        const line = el("div", "bcn-line");
+        line.append(el("span", "bcn-key", key));
+        line.append(el("span", "own-addr", fmt(val, none)));
+        detail.append(line);
+      }
+      const stCls = st === "match" ? "yes" : st === "unknown" ? "dim" : "no";
+      row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
+      table.append(row);
+    }
+    sink.append(table);
+  };
+  const renderSafes = (f) => {
+    for (const set of Array.isArray(f) ? f : f ? [f] : []) renderSafeSet(set);
+  };
   // Registry tokens: each wrapper's on-chain identity must match the registry and
   // its asset() must point at the declared unwrapped underlying, with the linked
   // unwrapped/legacy/receipt addresses all deployed.
@@ -3548,6 +3605,7 @@ function renderDeployments(document, $, data, io) {
     // The grant map is parsed independently of the owner constants, so it can
     // still be readable when they are not — and it is the half of this page
     // that says who can move value.
+    renderSafes(data.deploymentSafes);
     renderVaultOwners(data.deploymentVaultOwners);
     sink = panels.contracts;
     renderGrants(data.deploymentGrants);
@@ -3627,6 +3685,7 @@ function renderDeployments(document, $, data, io) {
   // Safe tab: who holds production, and whether it is still the Safe or has
   // moved to the governance timelock. Contracts tab: everything the Safe
   // governs rather than the Safe itself.
+  renderSafes(data.deploymentSafes);
   renderVaultOwners(data.deploymentVaultOwners);
   sink = panels.contracts;
   renderGrants(data.deploymentGrants);
