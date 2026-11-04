@@ -603,8 +603,7 @@ function renderDeployments(document, $, data, io) {
     );
     banner.append(el("span", "own-verify-src", `via ${f.rpcHost}`));
     sink.append(banner);
-    const table = el("div", "own-table");
-    for (const r of f.rows) {
+    const row = (r) => {
       const st = r.status || "unknown";
       const row = el("div", `own-row hlth-${st}`);
       const rc = el("div", "own-rc");
@@ -623,9 +622,23 @@ function renderDeployments(document, $, data, io) {
       }
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
-      table.append(row);
+      return row;
+    };
+    const flagged = f.rows.filter((r) => r.status !== "healthy");
+    if (flagged.length > 0) {
+      const table = el("div", "own-table");
+      for (const r of flagged) table.append(row(r));
+      sink.append(table);
     }
-    sink.append(table);
+    const ok = f.rows.filter((r) => r.status === "healthy");
+    if (ok.length > 0) {
+      const d = el("details", "vault-clean");
+      d.append(el("summary", null, `${ok.length} healthy`));
+      const table = el("div", "own-table");
+      for (const r of ok) table.append(row(r));
+      d.append(table);
+      sink.append(d);
+    }
   };
   const renderInfra = (f) => {
     for (const set of Array.isArray(f) ? f : f ? [f] : []) renderInfraSet(set);
