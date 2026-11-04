@@ -4,7 +4,7 @@
 //! layer (calldata builders, return decoders, the JSON-RPC result/error split)
 //! and is unit-tested against known encodings.
 
-use alloy_primitives::{hex, keccak256, Address, FixedBytes};
+use alloy_primitives::{hex, keccak256, Address, FixedBytes, U256};
 use alloy_sol_types::{sol, SolCall};
 
 sol! {
@@ -25,6 +25,8 @@ sol! {
     function headV5(address writer, bytes32 namespace) external view returns (bytes32);
     function isCertificationExpired() external view returns (bool);
     function getMinDelay() external view returns (uint256);
+    function VERSION() external view returns (string);
+    function getModulesPaginated(address start, uint256 pageSize) external view returns (address[] array, address next);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -113,6 +115,19 @@ pub fn authorizer_calldata() -> String {
 }
 pub fn min_delay_calldata() -> String {
     to_hex(getMinDelayCall {}.abi_encode())
+}
+pub fn version_calldata() -> String {
+    to_hex(VERSIONCall {}.abi_encode())
+}
+/// `None` unless `start` is an address.
+pub fn get_modules_paginated_calldata(start: &str, page_size: u64) -> Option<String> {
+    Some(to_hex(
+        getModulesPaginatedCall {
+            start: start.parse().ok()?,
+            pageSize: U256::from(page_size),
+        }
+        .abi_encode(),
+    ))
 }
 /// `None` unless `writer` is an address and both words are 32-byte hex.
 pub fn applied_v5_calldata(writer: &str, namespace: &str, migration: &str) -> Option<String> {
@@ -213,6 +228,20 @@ pub fn decode_string(result_hex: &str) -> Option<String> {
     nameCall::abi_decode_returns(&bytes, false)
         .ok()
         .map(|r| r._0)
+}
+
+/// Decode a `getModulesPaginated` return → (the page's modules, `next`), both
+/// lowercase `0x…`.
+pub fn decode_modules_page(result_hex: &str) -> Option<(Vec<String>, String)> {
+    let bytes = result_bytes(result_hex)?;
+    getModulesPaginatedCall::abi_decode_returns(&bytes, false)
+        .ok()
+        .map(|r| {
+            (
+                r.array.iter().map(|a| a.to_string().to_lowercase()).collect(),
+                r.next.to_string().to_lowercase(),
+            )
+        })
 }
 
 /// Decode a `uint8` return (`decimals()`).
