@@ -1,6 +1,7 @@
 //! st0x.deploy's published `expected-state.json`: per chain, what its CI asserts
-//! live — each beacon's implementation and owner, the token-owner Safe's owners
-//! and threshold, and each token's authoriser. The scan expects exactly these.
+//! live — each beacon's codehash, implementation and owner, the token-owner
+//! Safe's owners and threshold, the timelock, the orchestrator, both authoriser
+//! clones, and each token's authoriser. The scan expects exactly these.
 
 use crate::owners::REFERENCE_NETWORK;
 
@@ -30,8 +31,32 @@ pub enum BeaconAt {
 pub struct ExpectedBeacon {
     pub name: &'static str,
     pub at: BeaconAt,
+    pub codehash: String,
     pub implementation: String,
     pub owner: String,
+}
+
+/// A contract the file pins by address and runtime codehash.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedCode {
+    pub address: String,
+    pub codehash: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedTimelock {
+    pub code: ExpectedCode,
+    pub min_delay: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedOrchestrator {
+    pub set_deployer: String,
+    pub beacon: String,
+    pub beacon_codehash: String,
+    pub implementation: String,
+    pub owner: String,
+    pub instance: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -49,6 +74,10 @@ pub struct ExpectedChain {
     pub beacon_set_deployer: Option<String>,
     pub beacons: Vec<ExpectedBeacon>,
     pub safe: ExpectedSafe,
+    pub timelock: ExpectedTimelock,
+    pub orchestrator: ExpectedOrchestrator,
+    pub authoriser: ExpectedCode,
+    pub eu_authoriser: ExpectedCode,
     /// `(receipt vault lowercased, authoriser)`, in file order.
     pub authorisers: Vec<(String, String)>,
 }
@@ -98,6 +127,10 @@ fn is_address(s: &str) -> bool {
     s.len() == 42 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit())
 }
 
+fn is_bytes32(s: &str) -> bool {
+    s.len() == 66 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit())
+}
+
 fn is_zero(s: &str) -> bool {
     s[2..].chars().all(|c| c == '0')
 }
@@ -105,7 +138,8 @@ fn is_zero(s: &str) -> bool {
 /// Parse the file. Base first, then by chain id.
 ///
 /// Every expected value must be a non-zero address: a zero expectation would
-/// match a contract answering the zero address and report it as on target.
+/// match a contract answering the zero address and report it as on target, and
+/// a zero codehash would match an address with no account.
 pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
     if body.trim().is_empty() {
         return Err(ExpectedError::Empty);
@@ -133,6 +167,18 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
         };
         let nonzero = |v: &serde_json::Value, field: &'static str| {
             addr(v, field).and_then(|a| if is_zero(&a) { Err(bad(field)) } else { Ok(a) })
+        };
+        let codehash = |v: &serde_json::Value, field: &'static str| {
+            v.as_str()
+                .filter(|h| is_bytes32(h) && !is_zero(h))
+                .map(str::to_string)
+                .ok_or_else(|| bad(field))
+        };
+        let code = |v: &serde_json::Value, field: &'static str, hash_field: &'static str| {
+            Ok::<_, ExpectedError>(ExpectedCode {
+                address: nonzero(&v["address"], field)?,
+                codehash: codehash(&v["codehash"], hash_field)?,
+            })
         };
         let chain_id = key.parse::<u64>().map_err(|_| bad("chain id"))?;
         let network = c["network"]
@@ -164,6 +210,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 Ok(ExpectedBeacon {
                     name,
                     at,
+                    codehash: codehash(&b["codehash"], "beacons[].codehash")?,
                     implementation: nonzero(&b["implementation"], "beacons[].implementation")?,
                     owner: nonzero(&b["owner"], "beacons[].owner")?,
                 })
@@ -186,6 +233,28 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             owners,
             threshold,
         };
+        let t = &c["timelock"];
+        let timelock = ExpectedTimelock {
+            code: code(t, "timelock.address", "timelock.codehash")?,
+            min_delay: t["minDelay"]
+                .as_u64()
+                .ok_or_else(|| bad("timelock.minDelay"))?,
+        };
+        let o = &c["orchestrator"];
+        let orchestrator = ExpectedOrchestrator {
+            set_deployer: nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
+            beacon: nonzero(&o["beacon"], "orchestrator.beacon")?,
+            beacon_codehash: codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
+            implementation: nonzero(&o["implementation"], "orchestrator.implementation")?,
+            owner: nonzero(&o["owner"], "orchestrator.owner")?,
+            instance: nonzero(&o["instance"], "orchestrator.instance")?,
+        };
+        let authoriser = code(&c["authoriser"], "authoriser.address", "authoriser.codehash")?;
+        let eu_authoriser = code(
+            &c["euAuthoriser"],
+            "euAuthoriser.address",
+            "euAuthoriser.codehash",
+        )?;
         let authorisers = c["tokens"]
             .as_array()
             .ok_or_else(|| bad("tokens"))?
@@ -203,6 +272,10 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             beacon_set_deployer,
             beacons,
             safe,
+            timelock,
+            orchestrator,
+            authoriser,
+            eu_authoriser,
             authorisers,
         });
     }
