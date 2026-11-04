@@ -131,15 +131,6 @@ pub struct ExpectedChain {
     pub tokens: Vec<ExpectedToken>,
 }
 
-impl ExpectedChain {
-    pub fn authoriser_for(&self, receipt_vault: &str) -> Option<&str> {
-        self.tokens
-            .iter()
-            .find(|t| t.receipt_vault.eq_ignore_ascii_case(receipt_vault))
-            .map(|t| t.authoriser.as_str())
-    }
-}
-
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ExpectedError {
     Empty,
@@ -643,26 +634,6 @@ mod tests {
             BeaconAt::Address("0xb9DCd744b0413Dff0EDC70A5B229c7aa03734613".into())
         );
         assert!(eth.beacons.iter().all(|b| b.owner == ETH_TIMELOCK));
-    }
-
-    /// #218: each token's own authoriser, matched by receipt vault in any case.
-    #[test]
-    fn authoriser_for_routes_by_receipt_vault() {
-        let got = parse(&good()).unwrap();
-        let base = reference(&got).unwrap();
-        assert_eq!(base.authoriser_for(MC_VAULT), Some(EU_CLONE));
-        assert_eq!(
-            base.authoriser_for(&MC_VAULT.to_uppercase().replace("0X", "0x")),
-            Some(EU_CLONE)
-        );
-        assert_eq!(
-            base.authoriser_for("0x8500189061e2206bc33bf04dc10ffb1fe7ded637"),
-            Some(V4_CLONE)
-        );
-        assert_eq!(
-            base.authoriser_for("0x0000000000000000000000000000000000000001"),
-            None
-        );
     }
 
     #[test]
