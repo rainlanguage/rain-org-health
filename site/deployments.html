@@ -575,6 +575,61 @@ function renderDeployments(document, $, data, io) {
   const renderBeacons = (b) => {
     for (const set of Array.isArray(b) ? b : b ? [b] : []) renderBeaconSet(set);
   };
+  const renderInfraSet = (f) => {
+    if (!f) return;
+    if (f.unavailable || !Array.isArray(f.rows) || f.rows.length === 0) {
+      sink.append(el("h2", null, `Infra — ${f.network ?? "all chains"}`));
+      sink.append(
+        el(
+          "div",
+          "own-sub",
+          `Infra data unavailable — ${f.reason ?? "the scan produced no infra rows for this chain"}${f.rpcHost ? ` (via ${f.rpcHost})` : ""}.`,
+        ),
+      );
+      return;
+    }
+    sink.append(el("h2", null, `Infra — ${f.network}`));
+    sink.append(
+      el(
+        "div",
+        "own-sub",
+        `Every infra fact st0x.deploy pins (${f.source ?? "expected-state.json"}) — code, codehash, minDelay, orchestrator wiring — read live on-chain.`,
+      ),
+    );
+    const allHealthy = f.healthy === f.total;
+    const banner = el("div", `own-verify ${allHealthy ? "own-verify-ok" : "own-verify-drift"}`);
+    banner.append(
+      el("span", "own-verify-msg", `${f.healthy} of ${f.total} infra facts as expected on ${f.network}.`),
+    );
+    banner.append(el("span", "own-verify-src", `via ${f.rpcHost}`));
+    sink.append(banner);
+    const table = el("div", "own-table");
+    for (const r of f.rows) {
+      const st = r.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", `${r.component} — ${r.field}`));
+      if (r.address) {
+        const note = el("div", "own-note");
+        note.append(addrNode("own-addr", r.address, f.network));
+        rc.append(note);
+      }
+      const detail = el("div", "bcn-detail");
+      for (const [key, val] of [["live", r.live], ["expected", r.expected]]) {
+        const line = el("div", "bcn-line");
+        line.append(el("span", "bcn-key", key));
+        line.append(el("span", "own-addr", val ?? "—"));
+        detail.append(line);
+      }
+      const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
+      row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
+      table.append(row);
+    }
+    sink.append(table);
+  };
+  const renderInfra = (f) => {
+    for (const set of Array.isArray(f) ? f : f ? [f] : []) renderInfraSet(set);
+  };
   // Registry tokens: each wrapper's on-chain identity must match the registry and
   // its asset() must point at the declared unwrapped underlying, with the linked
   // unwrapped/legacy/receipt addresses all deployed.
@@ -3499,6 +3554,7 @@ function renderDeployments(document, $, data, io) {
     renderGrants(data.deploymentOrchestratorGrants);
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
+    renderInfra(data.deploymentInfra);
     renderTokens(data.deploymentTokens);
     sink = panels.migrations;
     renderMigrations(data.deploymentMigrations);
@@ -3577,6 +3633,7 @@ function renderDeployments(document, $, data, io) {
   renderGrants(data.deploymentOrchestratorGrants);
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
+  renderInfra(data.deploymentInfra);
   renderTokens(data.deploymentTokens);
   sink = panels.migrations;
   renderMigrations(data.deploymentMigrations);
