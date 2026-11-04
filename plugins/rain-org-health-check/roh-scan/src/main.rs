@@ -3383,9 +3383,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         );
                     };
                     let s = rpc_session(chain);
-                    fn pin(p: &str) -> Option<&str> {
-                        Some(p).filter(|p| deployhealth::hydrated_pin(p))
-                    }
                     let codehash = |a: &str| {
                         live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
                     };
@@ -3396,25 +3393,19 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         eth_call(s, a, &data).and_then(|h| rpc::decode_string(&h))
                     };
                     let decimals = |a: &str| {
-                        eth_call(s, a, &rpc::decimals_calldata())
-                            .and_then(|h| rpc::decode_u8(&h))
-                            .map(|d| d.to_string())
+                        eth_call(s, a, &rpc::decimals_calldata()).and_then(|h| rpc::decode_u8(&h))
                     };
                     let beacon_slot = |a: &str| {
                         eth_get_storage_at(s, a, ERC1967_BEACON_SLOT)
                             .and_then(|h| rpc::decode_address(&h))
                     };
-                    let beacon_at = |at: &expected::BeaconAt| match at {
-                        expected::BeaconAt::Address(a) => Some(a.clone()),
-                        expected::BeaconAt::DeployerReceipt => c
-                            .beacon_set_deployer
-                            .as_deref()
-                            .and_then(|d| call_addr(d, rpc::receipt_beacon_calldata())),
-                        expected::BeaconAt::DeployerReceiptVault => c
-                            .beacon_set_deployer
-                            .as_deref()
-                            .and_then(|d| call_addr(d, rpc::receipt_vault_beacon_calldata())),
-                    };
+                    let deployer = c.beacon_set_deployer.as_deref().map_or_else(
+                        deployhealth::DeployerBeacons::default,
+                        |d| deployhealth::DeployerBeacons {
+                            receipt_vault: call_addr(d, rpc::receipt_vault_beacon_calldata()),
+                            receipt: call_addr(d, rpc::receipt_beacon_calldata()),
+                        },
+                    );
                     let renamed =
                         migrations::locate(&migrations_src, &c.network, &c.rename_migration)
                             .and_then(|(net, r)| {
@@ -3425,139 +3416,34 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 .flatten()
                             })
                             .map(|t| t > 0);
-                    let either = |name: &str, renamed_name: &str| {
-                        renamed.map(|r| if r { renamed_name } else { name }.to_string())
-                    };
-                    let mut rows = Vec::new();
-                    for z in &c.zoltu {
-                        rows.push(deployhealth::infra_row(
-                            &format!("zoltu {}", z.key),
-                            "codehash",
-                            Some(&z.code.address),
-                            pin(&z.code.codehash),
-                            codehash(&z.code.address),
-                        ));
-                    }
+                    let mut rows: Vec<serde_json::Value> = c
+                        .zoltu
+                        .iter()
+                        .map(|z| deployhealth::zoltu_row(z, codehash(&z.code.address)))
+                        .collect();
                     for t in &c.tokens {
-                        let id = format!("token {}", t.symbol);
                         let rv = t.receipt_vault.as_str();
-                        let wv = t.wrapped_token_vault.as_str();
                         let rc = t.receipt.as_str();
-                        let rv_name_pin = either(&t.name, &t.renamed_name);
-                        let wv_name_pin = either(
-                            &t.wrapped_token_vault_name,
-                            &t.wrapped_token_vault_renamed_name,
-                        );
-                        let wv_symbol_pin = either(
-                            &t.wrapped_token_vault_symbol,
-                            &t.wrapped_token_vault_renamed_symbol,
-                        );
-                        let rv_decimals = t.decimals.to_string();
-                        let wv_decimals = t.wrapped_token_vault_decimals.to_string();
-                        let rv_beacon = beacon_at(&t.receipt_vault_beacon);
-                        let rc_beacon = beacon_at(&t.receipt_beacon);
-                        let checks: Vec<(&str, &str, Option<&str>, Option<String>)> = vec![
-                            (
-                                "receiptVault name",
-                                rv,
-                                rv_name_pin.as_deref(),
-                                call_str(rv, rpc::name_calldata()),
-                            ),
-                            (
-                                "receiptVault symbol",
-                                rv,
-                                Some(&t.symbol),
-                                call_str(rv, rpc::symbol_calldata()),
-                            ),
-                            (
-                                "receiptVault decimals",
-                                rv,
-                                Some(&rv_decimals),
-                                decimals(rv),
-                            ),
-                            (
-                                "receiptVault receipt",
-                                rv,
-                                pin(&t.receipt_vault_receipt),
-                                call_addr(rv, rpc::receipt_calldata()),
-                            ),
-                            (
-                                "receiptVault owner",
-                                rv,
-                                pin(&t.owner),
-                                call_addr(rv, rpc::owner_calldata()),
-                            ),
-                            (
-                                "receiptVault authoriser",
-                                rv,
-                                pin(&t.authoriser),
-                                call_addr(rv, rpc::authorizer_calldata()),
-                            ),
-                            (
-                                "receiptVault beacon",
-                                rv,
-                                rv_beacon.as_deref(),
-                                beacon_slot(rv),
-                            ),
-                            (
-                                "receiptVault codehash",
-                                rv,
-                                pin(&t.receipt_vault_codehash),
-                                codehash(rv),
-                            ),
-                            ("receipt beacon", rc, rc_beacon.as_deref(), beacon_slot(rc)),
-                            (
-                                "receipt codehash",
-                                rc,
-                                pin(&t.receipt_codehash),
-                                codehash(rc),
-                            ),
-                            (
-                                "wrappedTokenVault name",
-                                wv,
-                                wv_name_pin.as_deref(),
-                                call_str(wv, rpc::name_calldata()),
-                            ),
-                            (
-                                "wrappedTokenVault symbol",
-                                wv,
-                                wv_symbol_pin.as_deref(),
-                                call_str(wv, rpc::symbol_calldata()),
-                            ),
-                            (
-                                "wrappedTokenVault decimals",
-                                wv,
-                                Some(&wv_decimals),
-                                decimals(wv),
-                            ),
-                            (
-                                "wrappedTokenVault asset",
-                                wv,
-                                pin(&t.wrapped_token_vault_asset),
-                                call_addr(wv, rpc::asset_calldata()),
-                            ),
-                            (
-                                "wrappedTokenVault beacon",
-                                wv,
-                                pin(&t.wrapped_token_vault_beacon),
-                                beacon_slot(wv),
-                            ),
-                            (
-                                "wrappedTokenVault codehash",
-                                wv,
-                                pin(&t.wrapped_token_vault_codehash),
-                                codehash(wv),
-                            ),
-                        ];
-                        for (field, address, expected, live) in checks {
-                            rows.push(deployhealth::infra_row(
-                                &id,
-                                field,
-                                Some(address),
-                                expected,
-                                live,
-                            ));
-                        }
+                        let wv = t.wrapped_token_vault.as_str();
+                        let live = deployhealth::TokenLive {
+                            receipt_vault_name: call_str(rv, rpc::name_calldata()),
+                            receipt_vault_symbol: call_str(rv, rpc::symbol_calldata()),
+                            receipt_vault_decimals: decimals(rv),
+                            receipt_vault_receipt: call_addr(rv, rpc::receipt_calldata()),
+                            receipt_vault_owner: call_addr(rv, rpc::owner_calldata()),
+                            receipt_vault_authoriser: call_addr(rv, rpc::authorizer_calldata()),
+                            receipt_vault_beacon: beacon_slot(rv),
+                            receipt_vault_codehash: codehash(rv),
+                            receipt_beacon: beacon_slot(rc),
+                            receipt_codehash: codehash(rc),
+                            wrapped_token_vault_name: call_str(wv, rpc::name_calldata()),
+                            wrapped_token_vault_symbol: call_str(wv, rpc::symbol_calldata()),
+                            wrapped_token_vault_decimals: decimals(wv),
+                            wrapped_token_vault_asset: call_addr(wv, rpc::asset_calldata()),
+                            wrapped_token_vault_beacon: beacon_slot(wv),
+                            wrapped_token_vault_codehash: codehash(wv),
+                        };
+                        rows.extend(deployhealth::token_rows(t, renamed, &deployer, live));
                     }
                     deployhealth::build_infra(
                         deploy_org,
