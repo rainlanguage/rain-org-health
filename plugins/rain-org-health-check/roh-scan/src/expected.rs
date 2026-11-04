@@ -334,7 +334,11 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             owner: nonzero(&o["owner"], "orchestrator.owner")?,
             instance: nonzero(&o["instance"], "orchestrator.instance")?,
         };
-        let authoriser = code(&c["authoriser"], "authoriser.address", "authoriser.codehash")?;
+        let authoriser = code(
+            &c["authoriser"],
+            "authoriser.address",
+            "authoriser.codehash",
+        )?;
         let eu_authoriser = code(
             &c["euAuthoriser"],
             "euAuthoriser.address",

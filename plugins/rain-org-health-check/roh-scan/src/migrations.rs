@@ -213,7 +213,8 @@ pub fn locate(src: &str, network: &str, id: &str) -> Option<(Network, Record)> {
         None => m.migrations.iter().find_map(|x| {
             let (ns, _) = x.key.as_ref()?;
             let e = x.on(net.chain_id)?;
-            ns.eq_ignore_ascii_case(&namespace).then(|| e.writer.clone())
+            ns.eq_ignore_ascii_case(&namespace)
+                .then(|| e.writer.clone())
         })?,
     };
     Some((

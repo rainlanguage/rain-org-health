@@ -561,8 +561,7 @@ const SAFE_SENTINEL: &str = "0x0000000000000000000000000000000000000001";
 const SAFE_SINGLETON_SLOT: &str =
     "0x0000000000000000000000000000000000000000000000000000000000000000";
 /// `keccak256("guard_manager.guard.address")`.
-const SAFE_GUARD_SLOT: &str =
-    "0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8";
+const SAFE_GUARD_SLOT: &str = "0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8";
 /// `keccak256("fallback_manager.handler.address")`.
 const SAFE_FALLBACK_HANDLER_SLOT: &str =
     "0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5";
@@ -589,9 +588,8 @@ fn safe_modules(session: Session, safe: &str) -> Option<Vec<String>> {
 fn live_safe(session: Session, safe: &str) -> owners::LiveSafe {
     let codehash =
         |a: &str| live_codehash(session, a).map(|h| h.unwrap_or_else(|| "none".to_string()));
-    let slot = |key: &str| {
-        eth_get_storage_at(session, safe, key).and_then(|h| rpc::decode_address(&h))
-    };
+    let slot =
+        |key: &str| eth_get_storage_at(session, safe, key).and_then(|h| rpc::decode_address(&h));
     let singleton = slot(SAFE_SINGLETON_SLOT);
     let singleton_codehash = singleton.as_deref().and_then(codehash);
     let fallback_handler = slot(SAFE_FALLBACK_HANDLER_SLOT);
@@ -3232,7 +3230,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 
         // Every infra fact `expected-state.json` pins per chain, read live.
         let infra_sets: Vec<serde_json::Value> = match &expected_state {
-            Err(e) => vec![deployhealth::beacons_unavailable(None, None, &e.to_string())],
+            Err(e) => vec![deployhealth::beacons_unavailable(
+                None,
+                None,
+                &e.to_string(),
+            )],
             Ok(chains) => chains
                 .iter()
                 .map(|c| {
@@ -3365,7 +3367,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // Every Zoltu suite and every token leg `expected-state.json` pins per
         // chain, read live.
         let code_token_sets: Vec<serde_json::Value> = match &expected_state {
-            Err(e) => vec![deployhealth::beacons_unavailable(None, None, &e.to_string())],
+            Err(e) => vec![deployhealth::beacons_unavailable(
+                None,
+                None,
+                &e.to_string(),
+            )],
             Ok(chains) => chains
                 .iter()
                 .map(|c| {
@@ -3438,8 +3444,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         let wv = t.wrapped_token_vault.as_str();
                         let rc = t.receipt.as_str();
                         let rv_name_pin = either(&t.name, &t.renamed_name);
-                        let wv_name_pin =
-                            either(&t.wrapped_token_vault_name, &t.wrapped_token_vault_renamed_name);
+                        let wv_name_pin = either(
+                            &t.wrapped_token_vault_name,
+                            &t.wrapped_token_vault_renamed_name,
+                        );
                         let wv_symbol_pin = either(
                             &t.wrapped_token_vault_symbol,
                             &t.wrapped_token_vault_renamed_symbol,
@@ -3461,7 +3469,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 Some(&t.symbol),
                                 call_str(rv, rpc::symbol_calldata()),
                             ),
-                            ("receiptVault decimals", rv, Some(&rv_decimals), decimals(rv)),
+                            (
+                                "receiptVault decimals",
+                                rv,
+                                Some(&rv_decimals),
+                                decimals(rv),
+                            ),
                             (
                                 "receiptVault receipt",
                                 rv,
@@ -3480,7 +3493,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 pin(&t.authoriser),
                                 call_addr(rv, rpc::authorizer_calldata()),
                             ),
-                            ("receiptVault beacon", rv, rv_beacon.as_deref(), beacon_slot(rv)),
+                            (
+                                "receiptVault beacon",
+                                rv,
+                                rv_beacon.as_deref(),
+                                beacon_slot(rv),
+                            ),
                             (
                                 "receiptVault codehash",
                                 rv,
@@ -3488,7 +3506,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 codehash(rv),
                             ),
                             ("receipt beacon", rc, rc_beacon.as_deref(), beacon_slot(rc)),
-                            ("receipt codehash", rc, pin(&t.receipt_codehash), codehash(rc)),
+                            (
+                                "receipt codehash",
+                                rc,
+                                pin(&t.receipt_codehash),
+                                codehash(rc),
+                            ),
                             (
                                 "wrappedTokenVault name",
                                 wv,
@@ -3501,7 +3524,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 wv_symbol_pin.as_deref(),
                                 call_str(wv, rpc::symbol_calldata()),
                             ),
-                            ("wrappedTokenVault decimals", wv, Some(&wv_decimals), decimals(wv)),
+                            (
+                                "wrappedTokenVault decimals",
+                                wv,
+                                Some(&wv_decimals),
+                                decimals(wv),
+                            ),
                             (
                                 "wrappedTokenVault asset",
                                 wv,
@@ -3544,7 +3572,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 
         // Every Safe fact `expected-state.json` pins per chain, read live.
         let safe_sets: Vec<serde_json::Value> = match &expected_state {
-            Err(e) => vec![deployhealth::beacons_unavailable(None, None, &e.to_string())],
+            Err(e) => vec![deployhealth::beacons_unavailable(
+                None,
+                None,
+                &e.to_string(),
+            )],
             Ok(chains) => chains
                 .iter()
                 .map(|c| {

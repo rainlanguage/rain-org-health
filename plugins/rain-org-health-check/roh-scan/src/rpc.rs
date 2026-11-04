@@ -242,7 +242,10 @@ pub fn decode_modules_page(result_hex: &str) -> Option<(Vec<String>, String)> {
         .ok()
         .map(|r| {
             (
-                r.array.iter().map(|a| a.to_string().to_lowercase()).collect(),
+                r.array
+                    .iter()
+                    .map(|a| a.to_string().to_lowercase())
+                    .collect(),
                 r.next.to_string().to_lowercase(),
             )
         })
