@@ -556,6 +556,63 @@ fn live_codehash(session: Session, address: &str) -> Option<Option<String>> {
     })
 }
 
+/// Safe `SENTINEL_MODULES`: the module list's head and end marker.
+const SAFE_SENTINEL: &str = "0x0000000000000000000000000000000000000001";
+const SAFE_SINGLETON_SLOT: &str =
+    "0x0000000000000000000000000000000000000000000000000000000000000000";
+/// `keccak256("guard_manager.guard.address")`.
+const SAFE_GUARD_SLOT: &str =
+    "0x4a204f620c8c5ccdca3fd54d003badd85ba500436a431f0cbda4f558c93c34c8";
+/// `keccak256("fallback_manager.handler.address")`.
+const SAFE_FALLBACK_HANDLER_SLOT: &str =
+    "0x6c9a6c4a39284e37ed1cf53d337577d14212a4870fb976a4366c693b939918d5";
+
+/// Every enabled module of `safe`, paged from the sentinel; `None` on any
+/// failed read or a list longer than ten pages.
+fn safe_modules(session: Session, safe: &str) -> Option<Vec<String>> {
+    let mut out = Vec::new();
+    let mut start = SAFE_SENTINEL.to_string();
+    for _ in 0..10 {
+        let data = rpc::get_modules_paginated_calldata(&start, 100)?;
+        let (page, next) =
+            eth_call(session, safe, &data).and_then(|h| rpc::decode_modules_page(&h))?;
+        out.extend(page);
+        if next.eq_ignore_ascii_case(SAFE_SENTINEL) {
+            return Some(out);
+        }
+        start = next;
+    }
+    None
+}
+
+/// Live readback of `safe`'s every `expected-state.json` fact.
+fn live_safe(session: Session, safe: &str) -> owners::LiveSafe {
+    let codehash =
+        |a: &str| live_codehash(session, a).map(|h| h.unwrap_or_else(|| "none".to_string()));
+    let slot = |key: &str| {
+        eth_get_storage_at(session, safe, key).and_then(|h| rpc::decode_address(&h))
+    };
+    let singleton = slot(SAFE_SINGLETON_SLOT);
+    let singleton_codehash = singleton.as_deref().and_then(codehash);
+    let fallback_handler = slot(SAFE_FALLBACK_HANDLER_SLOT);
+    let fallback_handler_codehash = fallback_handler.as_deref().and_then(codehash);
+    owners::LiveSafe {
+        owners: eth_call(session, safe, &rpc::get_owners_calldata())
+            .and_then(|h| rpc::decode_owners(&h)),
+        threshold: eth_call(session, safe, &rpc::get_threshold_calldata())
+            .and_then(|h| rpc::decode_uint(&h)),
+        proxy_codehash: codehash(safe),
+        singleton,
+        singleton_codehash,
+        version: eth_call(session, safe, &rpc::version_calldata())
+            .and_then(|h| rpc::decode_string(&h)),
+        modules: safe_modules(session, safe),
+        guard: slot(SAFE_GUARD_SLOT),
+        fallback_handler,
+        fallback_handler_codehash,
+    }
+}
+
 /// Whether `address` has deployed runtime code on Base (within `session`):
 /// `Some(true)` if `eth_getCode` returns non-empty bytecode, `Some(false)` for
 /// `0x` (an EOA / nothing there), `None` on RPC failure.
@@ -3468,6 +3525,28 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .collect(),
         };
 
+        // Every Safe fact `expected-state.json` pins per chain, read live.
+        let safe_sets: Vec<serde_json::Value> = match &expected_state {
+            Err(e) => vec![deployhealth::beacons_unavailable(None, None, &e.to_string())],
+            Ok(chains) => chains
+                .iter()
+                .map(|c| {
+                    let Some(chain) = Chain::from_network(&c.network) else {
+                        return deployhealth::beacons_unavailable(
+                            Some(&c.network),
+                            None,
+                            "this scanner has no RPC endpoints for this chain",
+                        );
+                    };
+                    let live = live_safe(rpc_session(chain), &c.safe.address);
+                    let mut doc = owners::safe_facts(&c.safe, &live);
+                    doc["network"] = json!(c.network);
+                    doc["rpcHost"] = json!(chain.rpc_host());
+                    doc
+                })
+                .collect(),
+        };
+
         // Registry token wiring on Base (#90): for each token in the
         // st0x.registry Base list, confirm the deployed wrapper's
         // name()/symbol()/decimals() match the registry VERBATIM, its asset()
@@ -3683,6 +3762,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentBeacons": beacon_sets,
             "deploymentInfra": infra_sets,
             "deploymentCodeTokens": code_token_sets,
+            "deploymentSafes": safe_sets,
             "deploymentTokens": deployment_tokens,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
