@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-05T06:54:44Z",
+  "generatedAt": "2026-11-05T15:34:48Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4150,7 +4150,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53536196
+        "discoveredAtBlock": 53551795
       },
       {
         "network": "ethereum",
@@ -4699,7 +4699,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26346974
+        "discoveredAtBlock": 26349567
       },
       {
         "network": "bsc",
@@ -5568,7 +5568,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131772479
+        "discoveredAtBlock": 131841800
       },
       {
         "network": "hyperevm",
@@ -6109,7 +6109,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50431725
+        "discoveredAtBlock": 50463451
       },
       {
         "network": "robinhood",
@@ -6650,7 +6650,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 106544049
+        "discoveredAtBlock": 106846585
       }
     ]
   },
@@ -22415,19 +22415,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26346974,
+            "headBlock": 26349566,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26346974,
+            "headBlock": 26349566,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26346974,
+            "headBlock": 26349566,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22584,19 +22584,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131772453,
+            "headBlock": 131841762,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131772453,
+            "headBlock": 131841762,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131772453,
+            "headBlock": 131841762,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22753,19 +22753,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50431707,
+            "headBlock": 50463427,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50431707,
+            "headBlock": 50463427,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50431707,
+            "headBlock": 50463427,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22922,19 +22922,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 106543903,
+            "headBlock": 106846506,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 106543903,
+            "headBlock": 106846506,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 106543903,
+            "headBlock": 106846506,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -23091,19 +23091,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53536198,
+            "headBlock": 53551798,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53536198,
+            "headBlock": 53551798,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53536198,
+            "headBlock": 53551798,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -23454,7 +23454,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 54,
-    "ok": 40,
+    "ok": 39,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -24193,10 +24193,10 @@
         "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "authoriser": "0xdb9152e46c1d140db6a6f814461f21c571f3275e",
+        "authoriserLabel": "foreign",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": false,
         "inMigrationSet": true
       },
       {
@@ -24307,7 +24307,7 @@
         "symbol": "wtNKE",
         "name": "Wrapped NIKE, Inc. ST0x",
         "address": "0x0883f32d23Ed5535057a4B5E3eB1970FE08606AF",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
@@ -24320,7 +24320,7 @@
         "unwrapped": "0x88C3F4E2E0a977Fed97ed246c70BFD7A01070246",
         "legacy": null,
         "receipt": "0x8A0037757d67084f5431c02eE2A352593eFe2957",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
         "receiptDeployed": true,
         "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
