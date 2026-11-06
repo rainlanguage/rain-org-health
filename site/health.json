@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-06T10:59:56Z",
+  "generatedAt": "2026-11-06T18:02:11Z",
   "auditGraph": {
     "nodes": [
       {
@@ -674,7 +674,7 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 2,
+        "openAuditIssues": 16,
         "lastMutation": null,
         "blockedBy": [
           "rain.deploy",
@@ -806,6 +806,7 @@
           "rain.extrospection.deploy",
           "rain.factory",
           "rain.factory.deploy",
+          "rain.lib.leakybucket",
           "rain.math.float",
           "rain.math.float.deploy",
           "rain.tofu.erc20-decimals.deploy",
@@ -1909,6 +1910,13 @@
         "stale": false,
         "pinned": "0.1.4",
         "latest": "0.1.4"
+      },
+      {
+        "from": "st0x.deploy",
+        "to": "rain.lib.leakybucket",
+        "stale": false,
+        "pinned": "0.5.3",
+        "latest": "0.5.3"
       },
       {
         "from": "st0x.deploy",
@@ -3549,15 +3557,15 @@
             "vault": "0x306f3f1bbad9b8a680217f9a49353bad95546d0f",
             "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
             "label": "other",
-            "certificationExpired": null,
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x3d28020d2531a7d1d1152a8fa3e6763f508226b2",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -3565,7 +3573,7 @@
             "vault": "0x3ee8455a2ce06830218c87de27a859d4a428a79d",
             "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
             "label": "safe",
-            "certificationExpired": null,
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -3573,15 +3581,15 @@
             "vault": "0x3f2957da3cedce37e2295d030e913a8d7d48ab5f",
             "owner": "0x691accd4c6dc147e3cf983bcbf3198896e794451",
             "label": "other",
-            "certificationExpired": null,
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x41c151375344882848685b344bf8f6b8e4188d86",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
+            "label": "other",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -4139,18 +4147,18 @@
           }
         ],
         "counts": {
-          "safe": 28,
+          "safe": 29,
           "timelock": 59,
-          "other": 55,
-          "unknown": 2,
+          "other": 56,
+          "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 48,
-          "certificationUnknown": 5,
+          "certificationExpired": 53,
+          "certificationUnknown": 0,
           "notPinned": 85,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 53862359
+        "discoveredAtBlock": 53989015
       },
       {
         "network": "ethereum",
@@ -4699,7 +4707,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26355376
+        "discoveredAtBlock": 26357477
       },
       {
         "network": "bsc",
@@ -5389,41 +5397,41 @@
           },
           {
             "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5469,41 +5477,41 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5557,18 +5565,18 @@
           }
         ],
         "counts": {
-          "safe": 41,
-          "timelock": 65,
+          "safe": 32,
+          "timelock": 64,
           "other": 0,
-          "unknown": 0,
+          "unknown": 10,
           "unpinned": 0,
-          "certificationExpired": 45,
-          "certificationUnknown": 0,
+          "certificationExpired": 36,
+          "certificationUnknown": 10,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 131997121
+        "discoveredAtBlock": 132053357
       },
       {
         "network": "hyperevm",
@@ -6109,7 +6117,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50534520
+        "discoveredAtBlock": 50560271
       },
       {
         "network": "robinhood",
@@ -6650,7 +6658,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 107527244
+        "discoveredAtBlock": 107775551
       }
     ]
   },
@@ -6706,8 +6714,11 @@
       "0xd8aa0f3194971a2a116679f7c2090f6939c8d4e01a2a8d7e41d55e5351469e63": "EXECUTOR_ROLE",
       "0xfd643c72710c63c0180259aba6b2d05451e3591a24e58b62239378085726f783": "CANCELLER_ROLE",
       "0xfdf81848136595c31bb5f76217767372bc4bf906663038eb38381131ea27ecba": "MINT",
+      "0x230f3a7dbe90c4a23d0b230112e8031766ddca226ea9aea2cc2be311643fb793": "MINT_ADMIN",
       "0x04c6a47ae7910ef8b295215a97e8495a9eaf57b7b05bfd8bf951edb3fd4a16a3": "BURN",
+      "0x1b0f0ce4d041808feb89843804db638e6e73186d75761d03f75b7e954e337d9d": "BURN_ADMIN",
       "0x76b1a12ac8d9ed64de3c0f66c2a19b21c0a3f9a1afec3f75bcd45f7b0794a1de": "EMERGENCY",
+      "0x5c91514091af31f62f596a314af7d5be40146b2f2355969392f055e12e0982fb": "EMERGENCY_ADMIN",
       "0x97c877e40edb41710f0baf588c878ee15a04499b06ae8c98cf488875d91a7213": "MY_ROLE"
     },
     "configRegistries": {
@@ -6803,11 +6814,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -7003,13 +7009,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -8346,11 +8345,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -8546,13 +8540,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -9882,11 +9869,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -10082,13 +10064,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -11425,11 +11400,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -11625,13 +11595,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -12968,11 +12931,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -13168,13 +13126,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -14605,11 +14556,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -14805,13 +14751,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -16148,11 +16087,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -16348,13 +16282,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -17684,11 +17611,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -17884,13 +17806,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -19227,11 +19142,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -19427,13 +19337,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -20770,11 +20673,6 @@
             "name": "BEACON_INITIAL_OWNER",
             "contract": "LibProdDeployV4",
             "path": "src/generated/LibProdDeployV4.sol"
-          },
-          {
-            "name": "BEACON_INITIAL_OWNER",
-            "contract": "LibProdDeployCurrent",
-            "path": "src/generated/LibProdDeployCurrent.sol"
           }
         ],
         "0x2191981ca2477b745870cc307cbeb4cb2967ace3": [
@@ -20970,13 +20868,6 @@
             "name": "SAFE_PAYMENT_RECEIVER",
             "contract": "LibSafeInvariants",
             "path": "src/lib/LibSafeInvariants.sol"
-          }
-        ],
-        "0x0b300013cd54a8f1ac40981f80faaa18b8cc1e4c": [
-          {
-            "name": "ROOT_AUTHORITY",
-            "contract": "LibStoxConfig",
-            "path": "src/lib/LibStoxConfig.sol"
           }
         ],
         "0x1c1fef6f7b8e576219554b1d11c8af29d00c0cec": [
@@ -22415,19 +22306,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26355376,
+            "headBlock": 26357476,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26355376,
+            "headBlock": 26357476,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 26355376,
+            "headBlock": 26357476,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22584,19 +22475,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 131997094,
+            "headBlock": 132053335,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131997094,
+            "headBlock": 132053335,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 131997094,
+            "headBlock": 132053335,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22753,19 +22644,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 50534503,
+            "headBlock": 50560259,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50534503,
+            "headBlock": 50560259,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 50534503,
+            "headBlock": 50560259,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22922,19 +22813,19 @@
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 107527076,
+            "headBlock": 107775432,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 107527076,
+            "headBlock": 107775432,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 107527076,
+            "headBlock": 107775432,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -23091,19 +22982,19 @@
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 53862390,
+            "headBlock": 53989054,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0x48ba1371A78E6cC54157c63721756ab444510DB3",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53862390,
+            "headBlock": 53989054,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           },
           {
             "writer": "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
             "namespace": "0x26998333d4fabc67ed3c46d4f2e01ff3f153eeb0be08f554266c1b9f8d9bdcb3",
-            "headBlock": 53862390,
+            "headBlock": 53989054,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -23454,14 +23345,14 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 54,
-    "ok": 39,
+    "ok": 40,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
       "targetDeployed": true
     },
     "wrappedCount": 54,
-    "atAuthoriserTarget": 40,
+    "atAuthoriserTarget": 42,
     "reconcile": {
       "source": "S01-Issuer/st0x.deploy",
       "function": "privileged-addresses.json (base receiptVaults)",
@@ -23492,7 +23383,7 @@
         {
           "address": "0x22e99389f5ef6fa110317e2aec0a95d8aa39efd4",
           "name": null,
-          "symbol": null,
+          "symbol": "tBIRD",
           "deployed": null,
           "authoriser": null,
           "authoriserLabel": "unknown",
@@ -23619,8 +23510,8 @@
         "legacy": "0x8d8c315db61f60dcc3c66cdb48ca87fc643e35ea",
         "receipt": "0x3c4895df971e5c1fdca81bf74adb8eee94f24721",
         "unwrappedDeployed": null,
-        "legacyDeployed": null,
-        "receiptDeployed": null,
+        "legacyDeployed": true,
+        "receiptDeployed": true,
         "authoriser": null,
         "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -23722,9 +23613,9 @@
         "unwrapped": "0x6B8fa7288dBEc7C1c62BfE59Cbd7Bec7EBF846C5",
         "legacy": null,
         "receipt": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
+        "receiptDeployed": true,
         "authoriser": null,
         "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -23906,7 +23797,7 @@
         "receipt": "0x728734768a772c137a5364b10e61943de13921c4",
         "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": null,
+        "receiptDeployed": true,
         "authoriser": null,
         "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -24140,7 +24031,7 @@
         "receipt": "0x7b345A02d56f989420EbEd4df647D1C673608F3C",
         "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": null,
+        "receiptDeployed": true,
         "authoriser": null,
         "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -24177,22 +24068,22 @@
         "symbol": "wtMC",
         "name": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
         "address": "0x378a04202D25659763A02dA5FE77c0a35e64Ce1D",
-        "status": "unknown",
+        "status": "ok",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
-        "decimalsOk": null,
+        "decimalsOk": true,
         "liveName": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
         "liveSymbol": "wtMC",
-        "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "liveDecimals": 18,
+        "assetOk": true,
+        "asset": "0x6ec2421d74f2af61b7ee7bccae25a3b6a7961aa0",
         "unwrapped": "0x6ec2421d74f2af61b7ee7bccae25a3b6a7961aa0",
         "legacy": null,
         "receipt": "0xc3fd55a007cb7e4549a4b5064691c75609b1411b",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
+        "receiptDeployed": true,
         "authoriser": "0xdb9152e46c1d140db6a6f814461f21c571f3275e",
         "authoriserLabel": "foreign",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -24294,7 +24185,7 @@
         "unwrapped": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
         "legacy": null,
         "receipt": "0x0CC8b07E5bb99Ef8C227a6C995c907b8448ED9A8",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": null,
         "authoriser": null,
@@ -24471,18 +24362,18 @@
         "liveName": null,
         "liveSymbol": null,
         "liveDecimals": null,
-        "assetOk": null,
-        "asset": null,
+        "assetOk": true,
+        "asset": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "unwrapped": "0x09ee803ba675052e10a54bfc8e18c0f67793056b",
         "legacy": null,
         "receipt": "0x6dcca0af274eb97f15ecc22d01a4f980f23f5e56",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -24829,10 +24720,10 @@
         "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
         "status": "unknown",
         "wrapped": true,
-        "nameOk": null,
+        "nameOk": true,
         "symbolOk": null,
         "decimalsOk": null,
-        "liveName": null,
+        "liveName": "Wrapped Take-Two Interactive Software, Inc. ST0x",
         "liveSymbol": null,
         "liveDecimals": null,
         "assetOk": null,
@@ -24840,13 +24731,13 @@
         "unwrapped": "0x1a29eD11DF8295D5F3B5F59849FD94caD615E024",
         "legacy": null,
         "receipt": "0x0162Bd328D45fae647FdA01C33Be54709b314c48",
-        "unwrappedDeployed": null,
+        "unwrappedDeployed": true,
         "legacyDeployed": null,
-        "receiptDeployed": null,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "receiptDeployed": true,
+        "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
+        "authoriserLabel": "target",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": true,
         "inMigrationSet": true
       },
       {
@@ -25805,7 +25696,7 @@
       "name": "raindex.governance",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 2,
+      "openAuditIssues": 16,
       "lastMutation": null
     },
     {
@@ -27103,8 +26994,8 @@
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 169,
-      "commitsSinceAudit": 694,
+      "filesChangedSinceAudit": 177,
+      "commitsSinceAudit": 895,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
@@ -28182,8 +28073,8 @@
       "name": "st0x.deploy",
       "org": "S01-Issuer",
       "state": "analyzed",
-      "externalFunctions": 38,
-      "testFiles": 203,
+      "externalFunctions": 44,
+      "testFiles": 220,
       "sourcesUnparsed": 1,
       "untested": []
     }
