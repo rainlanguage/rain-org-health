@@ -15,6 +15,7 @@
 //! deploy repo — because the thing it reports on is a set that grows, and a
 //! curated list of hot keys is only ever as complete as somebody's memory.
 
+use crate::expected::{ExpectedError, ExpectedSafe};
 use crate::privileged::{PrivilegedChain, PrivilegedError, PRIVILEGED_ADDRESSES_PATH};
 use crate::vaultdiscovery::{Discovered, DiscoveryError};
 use alloy_primitives::hex;
@@ -40,67 +41,132 @@ pub fn parse_address_constant(src: &str, name: &str) -> Option<String> {
         .map(|m| m.as_str().to_string())
 }
 
-/// Extract a `uint256 [visibility] constant NAME = <n>;` integer. Used for the
-/// Safe signature threshold.
-pub fn parse_uint_constant(src: &str, name: &str) -> Option<u64> {
-    let pattern = format!(r"\b{}\b\s*=\s*(\d+)", regex::escape(name));
-    let re = Regex::new(&pattern).ok()?;
-    re.captures(src)
-        .and_then(|c| c.get(1))
-        .and_then(|m| m.as_str().parse().ok())
-}
-
-/// The declared Safe roster: each constant `expectedOwners()` assigns to an
-/// indexed element (any index expression), in assignment order, resolved by
-/// `parse_address_constant`. The body is that of the first declaration with
-/// one; a body-less `function expectedOwners(...) ...;` is skipped. `None` when
-/// no declaration has a body, a constant it assigns is undefined, or it assigns
-/// none; an assignment of anything but a bare constant is not read.
-pub fn parse_expected_owners(src: &str) -> Option<Vec<String>> {
-    let code = Regex::new(r"(?s)//[^\n]*|/\*.*?\*/")
-        .ok()?
-        .replace_all(src, "");
-    let open = Regex::new(r"\bfunction\s+expectedOwners\s*\(")
-        .ok()?
-        .find_iter(&code)
-        .find_map(|m| {
-            let rest = &code[m.end()..];
-            let i = rest.find(['{', ';'])?;
-            (rest.as_bytes()[i] == b'{').then_some(m.end() + i)
-        })?;
-    let mut depth = 0usize;
-    let mut close = None;
-    for (i, c) in code[open..].char_indices() {
-        match c {
-            '{' => depth += 1,
-            '}' => {
-                depth -= 1;
-                if depth == 0 {
-                    close = Some(open + i);
-                    break;
-                }
-            }
-            _ => {}
-        }
-    }
-    let body = &code[open + 1..close?];
-    let assign = Regex::new(r"\b\w+\s*\[[^;]*?\]\s*=\s*([A-Za-z_]\w*)\s*;").ok()?;
-    let owners: Option<Vec<String>> = assign
-        .captures_iter(body)
-        .map(|c| parse_address_constant(src, &c[1]))
-        .collect();
-    owners.filter(|v| !v.is_empty())
-}
-
-/// On-chain readback of a Safe, for the declared-vs-actual provenance view. Each
-/// field is `None` when its RPC call failed, so the dashboard can show "on-chain
-/// unavailable" without dropping the declared constants.
-pub struct OnChainSafe {
-    pub network: String,
-    pub safe: String,
-    pub rpc_host: String,
+/// Live readback of one chain's Safe for the `expected-state.json` check. Each
+/// field is `None` when its RPC read failed.
+#[derive(Default)]
+pub struct LiveSafe {
     pub owners: Option<Vec<String>>,
     pub threshold: Option<u64>,
+    pub proxy_codehash: Option<String>,
+    pub singleton: Option<String>,
+    pub singleton_codehash: Option<String>,
+    pub version: Option<String>,
+    pub modules: Option<Vec<String>>,
+    pub guard: Option<String>,
+    pub fallback_handler: Option<String>,
+    pub fallback_handler_codehash: Option<String>,
+}
+
+fn fact(
+    name: &str,
+    expected: serde_json::Value,
+    live: Option<serde_json::Value>,
+    ok: Option<bool>,
+) -> serde_json::Value {
+    let status = match ok {
+        Some(true) => "match",
+        Some(false) => "mismatch",
+        None => "unknown",
+    };
+    json!({"fact": name, "expected": expected, "live": live, "status": status})
+}
+
+/// Every Safe fact `expected-state.json` carries for one chain, checked against
+/// its live readback.
+pub fn safe_facts(exp: &ExpectedSafe, live: &LiveSafe) -> serde_json::Value {
+    let eq = |a: &str, b: &str| a.eq_ignore_ascii_case(b);
+    let lower = |v: &[String]| v.iter().map(|a| a.to_lowercase()).collect::<Vec<_>>();
+    let owners_ok = live.owners.as_ref().map(|o| {
+        let (mut a, mut b) = (lower(o), lower(&exp.owners));
+        a.sort();
+        b.sort();
+        a == b
+    });
+    let pair = live.singleton.as_ref().and_then(|l| {
+        exp.singletons
+            .iter()
+            .zip(&exp.singleton_codehashes)
+            .find(|(s, _)| eq(s, l))
+    });
+    let singleton_codehash_ok = match (&live.singleton, &live.singleton_codehash) {
+        (Some(_), Some(h)) => Some(pair.is_some_and(|(_, e)| eq(e, h))),
+        _ => None,
+    };
+    let guard_ok = live.guard.as_ref().map(|g| match &exp.guard {
+        Some(e) => eq(e, g),
+        None => g.trim_start_matches("0x").chars().all(|c| c == '0'),
+    });
+    let facts = vec![
+        fact(
+            "owners",
+            json!(exp.owners),
+            live.owners.as_ref().map(|o| json!(o)),
+            owners_ok,
+        ),
+        fact(
+            "threshold",
+            json!(exp.threshold),
+            live.threshold.map(|t| json!(t)),
+            live.threshold.map(|t| t == exp.threshold),
+        ),
+        fact(
+            "proxyCodehash",
+            json!(exp.proxy_codehashes),
+            live.proxy_codehash.as_ref().map(|h| json!(h)),
+            live.proxy_codehash
+                .as_ref()
+                .map(|h| exp.proxy_codehashes.iter().any(|e| eq(e, h))),
+        ),
+        fact(
+            "singleton",
+            json!(exp.singletons),
+            live.singleton.as_ref().map(|s| json!(s)),
+            live.singleton.as_ref().map(|_| pair.is_some()),
+        ),
+        fact(
+            "singletonCodehash",
+            json!(exp.singleton_codehashes),
+            live.singleton_codehash.as_ref().map(|h| json!(h)),
+            singleton_codehash_ok,
+        ),
+        fact(
+            "version",
+            json!(exp.version),
+            live.version.as_ref().map(|v| json!(v)),
+            live.version.as_ref().map(|v| *v == exp.version),
+        ),
+        fact(
+            "modules",
+            json!(exp.modules),
+            live.modules.as_ref().map(|m| json!(m)),
+            live.modules
+                .as_ref()
+                .map(|m| lower(m) == lower(&exp.modules)),
+        ),
+        fact(
+            "guard",
+            json!(exp.guard),
+            live.guard.as_ref().map(|g| json!(g)),
+            guard_ok,
+        ),
+        fact(
+            "fallbackHandler",
+            json!(exp.fallback_handler),
+            live.fallback_handler.as_ref().map(|f| json!(f)),
+            live.fallback_handler
+                .as_ref()
+                .map(|f| eq(f, &exp.fallback_handler)),
+        ),
+        fact(
+            "fallbackHandlerCodehash",
+            json!(exp.fallback_handler_codehash),
+            live.fallback_handler_codehash.as_ref().map(|h| json!(h)),
+            live.fallback_handler_codehash
+                .as_ref()
+                .map(|h| eq(h, &exp.fallback_handler_codehash)),
+        ),
+    ];
+    json!({"address": exp.address, "facts": facts})
 }
 
 fn entry(
@@ -180,7 +246,7 @@ pub fn build_owners(
     org: &str,
     repo: &str,
     src: &OwnerSources,
-    onchain: Option<&OnChainSafe>,
+    expected: Result<&ExpectedSafe, &ExpectedError>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
     let (safe_lib, auth_lib, v4_lib, overrides) =
@@ -188,90 +254,22 @@ pub fn build_owners(
     let addr = parse_address_constant;
 
     // Anchor: without the Base Safe there is nothing meaningful to show.
-    let base_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?;
+    let base_safe = match expected {
+        Ok(exp) => exp.address.clone(),
+        Err(_) => addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?,
+    };
     let eth_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
-    let threshold = parse_uint_constant(safe_lib, "STOX_TOKEN_OWNER_SAFE_THRESHOLD").unwrap_or(3);
 
-    // The live owner set (lowercased — getOwners returns unchecksummed) for the
-    // declared-vs-actual comparison, or None when the RPC didn't answer.
-    let onchain_owners: Option<Vec<String>> = onchain
-        .and_then(|o| o.owners.as_ref())
-        .map(|v| v.iter().map(|a| a.to_lowercase()).collect());
-
-    let declared = parse_expected_owners(safe_lib).unwrap_or_default();
-    let mut signers: Vec<serde_json::Value> = Vec::new();
-    let mut declared_lower: Vec<String> = Vec::new();
-    for (i, a) in declared.iter().enumerate() {
-        let al = a.to_lowercase();
-        let on_chain = match &onchain_owners {
-            None => "unverified",
-            Some(set) if set.contains(&al) => "match",
-            Some(_) => "missing",
-        };
-        declared_lower.push(al);
-        signers.push(json!({
-            "role": format!("Signer {}", i + 1), "address": a, "network": "",
-            "status": "active", "note": "", "onChain": on_chain,
-        }));
-    }
-    let signer_count = signers.len();
-
-    // Any live owner NOT in the declared set is unexpected — surface the drift
-    // rather than hide it.
-    if let Some(set) = &onchain_owners {
-        for oc in set.iter().filter(|oc| !declared_lower.contains(oc)) {
-            signers.push(json!({
-                "role": "Unexpected on-chain owner", "address": oc, "network": "base",
-                "status": "extra", "onChain": "extra",
-                "note": "present in the live Safe getOwners() but not in the declared expectedOwners()",
-            }));
-        }
-    }
-
-    // Provenance verdict for the roster + threshold: the declared set matches the
-    // live set iff they are the same size and every declared owner is on-chain.
-    let verification = onchain.map(|o| {
-        let signer_match = onchain_owners
-            .as_ref()
-            .map(|set| set.len() == signer_count && declared_lower.iter().all(|d| set.contains(d)));
-        let threshold_match = o.threshold.map(|t| t == threshold);
-        // The verdict needs BOTH calls: a threshold mismatch — or a threshold RPC
-        // that didn't answer — must not read as verified. So `reachable` means both
-        // answered, and `match` requires the roster AND the threshold to agree.
-        let reachable = signer_match.is_some() && threshold_match.is_some();
-        json!({
-            "reachable": reachable,
-            "network": o.network,
-            "safe": o.safe,
-            "rpcHost": o.rpc_host,
-            "onChainCount": o.owners.as_ref().map(|v| v.len()),
-            "match": signer_match
-                .zip(threshold_match)
-                .map(|(owners, thr)| owners && thr),
-            "threshold": {
-                "declared": threshold,
-                "onChain": o.threshold,
-                "match": threshold_match,
-            },
-        })
-    });
+    let safe_note = "Gnosis Safe, replicated per chain. Holder of every authoriser admin role; production beacons belong to each chain's timelock, never the Safe.";
 
     let safe = json!({
         "id": "safe",
         "title": "Upgrade authority — token-owner Safe",
-        "note": format!("{threshold}-of-{signer_count} Gnosis Safe, replicated per chain. Current owner of every production beacon (power to upgrade all proxies) and holder of every authoriser admin role."),
+        "note": safe_note,
         "entries": [
-            entry("Base Safe", Some(base_safe), "base", "active", "beacon owner + authoriser admin"),
+            entry("Base Safe", Some(base_safe), "base", "active", "authoriser admin"),
             entry("Ethereum Safe", eth_safe, "ethereum", "active", "same policy, per-chain address"),
         ],
-    });
-
-    let signers_group = json!({
-        "id": "signers",
-        "title": format!("Safe signers ({threshold}-of-{signer_count})"),
-        "note": "Declared by st0x.deploy's expectedOwners() and checked against the live Safe getOwners() on Base.",
-        "verification": verification,
-        "entries": signers,
     });
 
     // Which clone is live is READ FROM THE CHAIN, not asserted here.
@@ -323,9 +321,7 @@ pub fn build_owners(
     Some(json!({
         "repo": repo,
         "org": org,
-        "threshold": threshold,
-        "signerCount": signer_count,
-        "groups": [safe, signers_group, authoriser, historical],
+        "groups": [safe, authoriser, historical],
     }))
 }
 
@@ -1188,15 +1184,6 @@ mod tests {
         }
     "#;
 
-    // The SAFE_LIB `expectedOwners()` roster in assignment order, as declared.
-    const DECLARED_ROSTER: [&str; 6] = [
-        "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2",
-        "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d",
-        "0x8D5901d8aE48101B59400235ad8614A2e0510466",
-        "0xC1C89b7f5448F447d59f920456A9610f6b2544bC",
-        "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
-        "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2",
-    ];
     const AUTH_LIB: &str = r#"
         address internal constant STOX_PROD_AUTHORISER = 0x35f9fA9d80aAF2B0fB27f0FF015641B3408d7456;
         address internal constant STOX_PROD_AUTHORISER_IMPL = 0x2B4A510c3619d5E888095BFE9f95902D32dA5556;
@@ -1257,281 +1244,384 @@ mod tests {
         assert_eq!(parse_address_constant(SAFE_LIB, "NOPE_NOT_HERE"), None);
     }
 
+    /// The Base Safe expectation as `expected-state.json` carries it.
+    fn exp_safe() -> ExpectedSafe {
+        ExpectedSafe {
+            address: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into(),
+            owners: [
+                "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2",
+                "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d",
+                "0x8D5901d8aE48101B59400235ad8614A2e0510466",
+                "0xC1C89b7f5448F447d59f920456A9610f6b2544bC",
+                "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
+                "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2",
+            ]
+            .map(str::to_string)
+            .to_vec(),
+            threshold: 3,
+            proxy_codehashes: vec![SAFE_PROXY_1_4_1_HASH.into(), SAFE_PROXY_1_3_0_HASH.into()],
+            singletons: vec![SAFE_L1_SINGLETON.into(), SAFE_L2_SINGLETON.into()],
+            singleton_codehashes: vec![
+                SAFE_L1_SINGLETON_HASH.into(),
+                SAFE_L2_SINGLETON_HASH.into(),
+            ],
+            version: "1.4.1".into(),
+            modules: vec![],
+            guard: None,
+            fallback_handler: SAFE_FALLBACK_HANDLER.into(),
+            fallback_handler_codehash: SAFE_FALLBACK_HANDLER_HASH.into(),
+        }
+    }
+
+    const SAFE_PROXY_1_4_1_HASH: &str =
+        "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c";
+    const SAFE_PROXY_1_3_0_HASH: &str =
+        "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000";
+    const SAFE_L1_SINGLETON: &str = "0x41675C099F32341bf84BFc5382aF534df5C7461a";
+    const SAFE_L2_SINGLETON: &str = "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762";
+    const SAFE_L1_SINGLETON_HASH: &str =
+        "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4";
+    const SAFE_L2_SINGLETON_HASH: &str =
+        "0xb1f926978a0f44a2c0ec8fe822418ae969bd8c3f18d61e5103100339894f81ff";
+    const SAFE_FALLBACK_HANDLER: &str = "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99";
+    const SAFE_FALLBACK_HANDLER_HASH: &str =
+        "0x7c6007a5d711cea8dfd5d91f5940ec29c7f200fe511eb1fc1397b367af3c42f9";
+    const SAFE_ZERO: &str = "0x0000000000000000000000000000000000000000";
+    const OTHER: &str = "0xdead000000000000000000000000000000000001";
+
+    /// The Base Safe on target, read back as an RPC answers: lowercase, owners
+    /// in another order, the L2 singleton.
+    fn live_on_target() -> LiveSafe {
+        let mut owners: Vec<String> = exp_safe().owners.iter().map(|o| o.to_lowercase()).collect();
+        owners.reverse();
+        LiveSafe {
+            owners: Some(owners),
+            threshold: Some(3),
+            proxy_codehash: Some(SAFE_PROXY_1_4_1_HASH.into()),
+            singleton: Some(SAFE_L2_SINGLETON.to_lowercase()),
+            singleton_codehash: Some(SAFE_L2_SINGLETON_HASH.into()),
+            version: Some("1.4.1".into()),
+            modules: Some(vec![]),
+            guard: Some(SAFE_ZERO.into()),
+            fallback_handler: Some(SAFE_FALLBACK_HANDLER.to_lowercase()),
+            fallback_handler_codehash: Some(SAFE_FALLBACK_HANDLER_HASH.into()),
+        }
+    }
+
+    fn statuses(doc: &serde_json::Value) -> Vec<(String, String)> {
+        doc["facts"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|f| {
+                (
+                    f["fact"].as_str().unwrap().to_string(),
+                    f["status"].as_str().unwrap().to_string(),
+                )
+            })
+            .collect()
+    }
+
+    fn status_of(doc: &serde_json::Value, fact: &str) -> String {
+        statuses(doc)
+            .into_iter()
+            .find(|(f, _)| f == fact)
+            .unwrap_or_else(|| panic!("no {fact}"))
+            .1
+    }
+
+    const SAFE_FACTS: [&str; 10] = [
+        "owners",
+        "threshold",
+        "proxyCodehash",
+        "singleton",
+        "singletonCodehash",
+        "version",
+        "modules",
+        "guard",
+        "fallbackHandler",
+        "fallbackHandlerCodehash",
+    ];
+
     #[test]
-    fn threshold_parses_as_uint() {
+    fn every_safe_fact_matches_a_safe_on_target() {
+        let doc = safe_facts(&exp_safe(), &live_on_target());
+        assert_eq!(doc["address"], "0xe70d821f3462a074e63b42d0AaC6523faAe1d611");
         assert_eq!(
-            parse_uint_constant(SAFE_LIB, "STOX_TOKEN_OWNER_SAFE_THRESHOLD"),
-            Some(3)
+            statuses(&doc),
+            SAFE_FACTS.map(|f| (f.to_string(), "match".to_string()))
         );
-    }
-
-    #[test]
-    fn expected_owners_are_every_assigned_constant_in_assignment_order() {
+        let facts = doc["facts"].as_array().unwrap();
+        assert_eq!(facts[1]["expected"], 3);
+        assert_eq!(facts[1]["live"], 3);
         assert_eq!(
-            parse_expected_owners(SAFE_LIB),
-            Some(DECLARED_ROSTER.map(str::to_string).to_vec())
+            facts[2]["expected"],
+            json!([SAFE_PROXY_1_4_1_HASH, SAFE_PROXY_1_3_0_HASH])
         );
+        assert_eq!(facts[2]["live"], SAFE_PROXY_1_4_1_HASH);
+        assert!(facts[7]["expected"].is_null(), "no guard is expected");
+        assert_eq!(facts[7]["live"], SAFE_ZERO);
     }
 
+    /// A failed read is unknown, never a match and never a mismatch.
     #[test]
-    fn expected_owners_is_none_without_the_function() {
-        let renamed = SAFE_LIB.replace("function expectedOwners(", "function retiredOwners(");
-        assert_ne!(renamed, SAFE_LIB);
-        assert_eq!(parse_expected_owners(&renamed), None);
-    }
-
-    #[test]
-    fn expected_owners_is_none_when_an_assigned_constant_is_undefined() {
-        let undefined = SAFE_LIB.replace(
-            "address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_TDM = 0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2;",
-            "",
-        );
-        assert_ne!(undefined, SAFE_LIB);
-        assert_eq!(parse_expected_owners(&undefined), None);
-    }
-
-    #[test]
-    fn expected_owners_is_none_when_it_assigns_nothing() {
-        let empty = "
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_1 = 0x4746095B1Ea1A84446d34448f44e74D3d51f92F2;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](0);
-                return owners;
-            }
-            function tokenOwnerSafeCreationOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](1);
-                owners[0] = STOX_TOKEN_OWNER_SAFE_OWNER_1;
-                return owners;
-            }
-        ";
-        assert_eq!(parse_expected_owners(empty), None);
-    }
-
-    const OWNER_A: &str = "0x1111111111111111111111111111111111111111";
-    const OWNER_B: &str = "0x2222222222222222222222222222222222222222";
-    const OWNER_C: &str = "0x3333333333333333333333333333333333333333";
-
-    fn roster(owners: &[&str]) -> Option<Vec<String>> {
-        Some(owners.iter().map(|o| o.to_string()).collect())
-    }
-
-    #[test]
-    fn expected_owners_reads_an_array_of_any_name() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory signers = new address[](1);
-                signers[0] = OWNER_A;
-                return signers;
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
-    }
-
-    #[test]
-    fn expected_owners_ignores_whitespace() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-            address internal constant OWNER_C = 0x3333333333333333333333333333333333333333;
-            function  expectedOwners ()
-                internal pure returns (address[] memory)
-            {
-                address[] memory owners = new address[](3);
-                owners [ 0 ]=OWNER_A ;
-                owners[1]\t=\tOWNER_B;
-                owners[
-                    2
-                ]
-                    = OWNER_C;
-                return owners;
-            }
-        ";
+    fn an_unread_safe_fact_is_unknown() {
+        let doc = safe_facts(&exp_safe(), &LiveSafe::default());
         assert_eq!(
-            parse_expected_owners(src),
-            roster(&[OWNER_A, OWNER_B, OWNER_C])
+            statuses(&doc),
+            SAFE_FACTS.map(|f| (f.to_string(), "unknown".to_string()))
         );
+        for f in doc["facts"].as_array().unwrap() {
+            assert!(f["live"].is_null(), "{f}");
+            assert!(!f["expected"].is_null() || f["fact"] == "guard", "{f}");
+        }
     }
 
     #[test]
-    fn expected_owners_skips_multi_line_and_successive_block_comments() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](2);
-                /* owners[0] = OWNER_RETIRED;
-                   owners[1] = OWNER_RETIRED; */
-                owners[0] = OWNER_A;
-                /* rotated in */ owners[1] = OWNER_B;
-                return owners;
+    fn each_drifted_safe_fact_mismatches_alone() {
+        let swapped_owner = {
+            let mut o = live_on_target().owners.unwrap();
+            o[0] = OTHER.into();
+            o
+        };
+        let missing_owner = {
+            let mut o = live_on_target().owners.unwrap();
+            o.pop();
+            o
+        };
+        let extra_owner = {
+            let mut o = live_on_target().owners.unwrap();
+            o.push(OTHER.into());
+            o
+        };
+        let cases: [(&str, LiveSafe); 13] = [
+            (
+                "owners",
+                LiveSafe {
+                    owners: Some(swapped_owner),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "owners",
+                LiveSafe {
+                    owners: Some(missing_owner),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "owners",
+                LiveSafe {
+                    owners: Some(extra_owner),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "threshold",
+                LiveSafe {
+                    threshold: Some(2),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "proxyCodehash",
+                LiveSafe {
+                    proxy_codehash: Some(SAFE_L1_SINGLETON_HASH.into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "singletonCodehash",
+                LiveSafe {
+                    singleton_codehash: Some(SAFE_L1_SINGLETON_HASH.into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "version",
+                LiveSafe {
+                    version: Some("1.3.0".into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "modules",
+                LiveSafe {
+                    modules: Some(vec![OTHER.into()]),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "guard",
+                LiveSafe {
+                    guard: Some(OTHER.into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "fallbackHandler",
+                LiveSafe {
+                    fallback_handler: Some(OTHER.into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "fallbackHandlerCodehash",
+                LiveSafe {
+                    fallback_handler_codehash: Some(SAFE_PROXY_1_4_1_HASH.into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "fallbackHandlerCodehash",
+                LiveSafe {
+                    fallback_handler_codehash: Some("none".into()),
+                    ..live_on_target()
+                },
+            ),
+            (
+                "proxyCodehash",
+                LiveSafe {
+                    proxy_codehash: Some("none".into()),
+                    ..live_on_target()
+                },
+            ),
+        ];
+        for (fact, live) in cases {
+            let doc = safe_facts(&exp_safe(), &live);
+            for (f, s) in statuses(&doc) {
+                let want = if f == fact { "mismatch" } else { "match" };
+                assert_eq!(s, want, "{fact} drifted, {f} is {s}");
             }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_B]));
+        }
     }
 
     #[test]
-    fn expected_owners_is_not_read_from_a_function_sharing_its_prefix() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-            function expectedOwnersEthereum() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](1);
-                owners[0] = OWNER_B;
-                return owners;
-            }
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](1);
-                owners[0] = OWNER_A;
-                return owners;
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
-    }
-
-    #[test]
-    fn expected_owners_reads_past_a_nested_block() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](2);
-                {
-                    owners[0] = OWNER_A;
-                }
-                owners[1] = OWNER_B;
-                return owners;
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_B]));
-    }
-
-    #[test]
-    fn expected_owners_is_none_when_its_body_is_unterminated() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](1);
-                owners[0] = OWNER_A;
-        ";
-        assert_eq!(parse_expected_owners(src), None);
-    }
-
-    #[test]
-    fn expected_owners_reads_a_body_holding_non_ascii_text() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-            function expectedOwners() internal pure returns (address[] memory) {
-                string memory rule = unicode\"————————————————————————————————\";
-                address[] memory owners = new address[](2);
-                owners[0] = OWNER_A;
-                owners[1] = OWNER_B;
-                return owners;
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_B]));
-    }
-
-    #[test]
-    fn expected_owners_skips_an_assignment_that_is_not_a_bare_constant() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_C = 0x3333333333333333333333333333333333333333;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](5);
-                owners[0] = OWNER_A;
-                owners[1] = 0x2222222222222222222222222222222222222222;
-                owners[2] = address(0x4444444444444444444444444444444444444444);
-                owners[3] = LibOther.OWNER_B;
-                owners[4] = OWNER_C;
-                return owners;
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A, OWNER_C]));
-    }
-
-    #[test]
-    fn expected_owners_reads_an_assignment_at_any_index_expression() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-            address internal constant OWNER_C = 0x3333333333333333333333333333333333333333;
-            uint256 internal constant LAST = 2;
-            function expectedOwners() internal pure returns (address[] memory) {
-                uint256[2] memory slot = [uint256(0), 1];
-                address[] memory owners = new address[](LAST + 1);
-                owners[0] = OWNER_A;
-                owners[slot[1]] = OWNER_B;
-                owners[LAST] = OWNER_C;
-                return owners;
-            }
-        ";
+    fn the_proxy_codehash_may_be_any_listed_one() {
+        let live = LiveSafe {
+            proxy_codehash: Some(SAFE_PROXY_1_3_0_HASH.to_uppercase().replace("0X", "0x")),
+            ..live_on_target()
+        };
         assert_eq!(
-            parse_expected_owners(src),
-            roster(&[OWNER_A, OWNER_B, OWNER_C])
+            status_of(&safe_facts(&exp_safe(), &live), "proxyCodehash"),
+            "match"
+        );
+    }
+
+    /// The singleton and its codehash are a pair: each singleton's own codehash
+    /// is the only one on target for it.
+    #[test]
+    fn a_singleton_codehash_must_be_its_own_singletons() {
+        let l1 = LiveSafe {
+            singleton: Some(SAFE_L1_SINGLETON.into()),
+            singleton_codehash: Some(SAFE_L1_SINGLETON_HASH.into()),
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &l1);
+        assert_eq!(status_of(&doc, "singleton"), "match");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "match");
+        let crossed = LiveSafe {
+            singleton_codehash: Some(SAFE_L2_SINGLETON_HASH.into()),
+            ..l1
+        };
+        let doc = safe_facts(&exp_safe(), &crossed);
+        assert_eq!(status_of(&doc, "singleton"), "match");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "mismatch");
+    }
+
+    #[test]
+    fn an_unlisted_singleton_fails_its_codehash_too() {
+        let live = LiveSafe {
+            singleton: Some(OTHER.into()),
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &live);
+        assert_eq!(status_of(&doc, "singleton"), "mismatch");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "mismatch");
+    }
+
+    /// A codehash read without knowing whose code it is cannot be paired.
+    #[test]
+    fn a_singleton_codehash_without_its_singleton_is_unknown() {
+        let live = LiveSafe {
+            singleton: None,
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &live);
+        assert_eq!(status_of(&doc, "singleton"), "unknown");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "unknown");
+        let live = LiveSafe {
+            singleton_codehash: None,
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp_safe(), &live);
+        assert_eq!(status_of(&doc, "singleton"), "match");
+        assert_eq!(status_of(&doc, "singletonCodehash"), "unknown");
+    }
+
+    #[test]
+    fn no_expected_guard_matches_only_the_zero_address() {
+        let doc = safe_facts(&exp_safe(), &live_on_target());
+        assert_eq!(status_of(&doc, "guard"), "match");
+        let live = LiveSafe {
+            guard: Some("0x0000000000000000000000000000000000000002".into()),
+            ..live_on_target()
+        };
+        assert_eq!(
+            status_of(&safe_facts(&exp_safe(), &live), "guard"),
+            "mismatch"
         );
     }
 
     #[test]
-    fn expected_owners_skips_a_body_less_declaration() {
-        let src = "
-            interface IRoster {
-                function expectedOwners() external pure returns (address[] memory);
-            }
-            library LibRoster {
-                address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-                address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-                function expectedOwners() internal pure returns (address[] memory) {
-                    address[] memory owners = new address[](1);
-                    owners[0] = OWNER_A;
-                    return owners;
-                }
-                function creationOwners() internal pure returns (address[] memory) {
-                    address[] memory owners = new address[](1);
-                    owners[0] = OWNER_B;
-                    return owners;
-                }
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
+    fn an_expected_guard_matches_only_itself() {
+        let exp = ExpectedSafe {
+            guard: Some(OTHER.to_uppercase().replace("0X", "0x")),
+            ..exp_safe()
+        };
+        let set = LiveSafe {
+            guard: Some(OTHER.into()),
+            ..live_on_target()
+        };
+        let doc = safe_facts(&exp, &set);
+        assert_eq!(status_of(&doc, "guard"), "match");
+        assert_eq!(
+            doc["facts"][7]["expected"],
+            OTHER.to_uppercase().replace("0X", "0x")
+        );
+        let unset = live_on_target();
+        assert_eq!(status_of(&safe_facts(&exp, &unset), "guard"), "mismatch");
     }
 
     #[test]
-    fn expected_owners_reads_the_first_declaration_with_a_body() {
-        let src = "
-            address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-            address internal constant OWNER_B = 0x2222222222222222222222222222222222222222;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](1);
-                owners[0] = OWNER_A;
-                return owners;
-            }
-            function expectedOwners(uint256 chainId) internal pure returns (address[] memory) {
-                address[] memory owners = new address[](1);
-                owners[0] = OWNER_B;
-                return owners;
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), roster(&[OWNER_A]));
+    fn expected_modules_match_their_live_list_ignoring_case() {
+        let module = "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286";
+        let exp = ExpectedSafe {
+            modules: vec![module.into()],
+            ..exp_safe()
+        };
+        let live = LiveSafe {
+            modules: Some(vec![module.to_lowercase()]),
+            ..live_on_target()
+        };
+        assert_eq!(status_of(&safe_facts(&exp, &live), "modules"), "match");
+        let none = live_on_target();
+        assert_eq!(status_of(&safe_facts(&exp, &none), "modules"), "mismatch");
     }
 
+    /// A Safe answering its owners with one listed twice is not the expected set.
     #[test]
-    fn expected_owners_is_none_when_every_declaration_is_body_less() {
-        let src = "
-            interface IRoster {
-                function expectedOwners() external pure returns (address[] memory);
-            }
-            library LibRoster {
-                address internal constant OWNER_A = 0x1111111111111111111111111111111111111111;
-                function creationOwners() internal pure returns (address[] memory) {
-                    address[] memory owners = new address[](1);
-                    owners[0] = OWNER_A;
-                    return owners;
-                }
-            }
-        ";
-        assert_eq!(parse_expected_owners(src), None);
+    fn a_repeated_owner_does_not_stand_in_for_a_missing_one() {
+        let mut o = live_on_target().owners.unwrap();
+        o[0] = o[1].clone();
+        let live = LiveSafe {
+            owners: Some(o),
+            ..live_on_target()
+        };
+        assert_eq!(
+            status_of(&safe_facts(&exp_safe(), &live), "owners"),
+            "mismatch"
+        );
     }
 
     #[test]
@@ -1545,28 +1635,24 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            None,
+            Ok(&exp_safe()),
             None,
         )
         .expect("anchor resolves");
         assert_eq!(v["repo"], "st0x.deploy");
-        assert_eq!(v["threshold"], 3);
-        assert_eq!(v["signerCount"], 6);
         let groups = v["groups"].as_array().unwrap();
         let ids: Vec<&str> = groups.iter().map(|g| g["id"].as_str().unwrap()).collect();
-        assert_eq!(ids, ["safe", "signers", "authoriser", "historical"]);
+        assert_eq!(ids, ["safe", "authoriser", "historical"]);
         // Base Safe address surfaced in the safe group.
         assert_eq!(
             groups[0]["entries"][0]["address"],
             "0xe70d821f3462a074e63b42d0AaC6523faAe1d611"
         );
-        // All six signers.
-        assert_eq!(groups[1]["entries"].as_array().unwrap().len(), 6);
         // Bricked V2 owners carry the bricked status.
-        assert_eq!(groups[3]["entries"][2]["status"], "bricked");
-        assert_eq!(groups[3]["entries"][3]["status"], "bricked");
+        assert_eq!(groups[2]["entries"][2]["status"], "bricked");
+        assert_eq!(groups[2]["entries"][3]["status"], "bricked");
         // Without a live authorizer() reading no clone claims to be active.
-        let auth = groups[2]["entries"].as_array().unwrap();
+        let auth = groups[1]["entries"].as_array().unwrap();
         let v4 = auth
             .iter()
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "base")
@@ -1587,7 +1673,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            None,
+            Ok(&exp_safe()),
             live,
         )
         .unwrap()
@@ -1796,11 +1882,11 @@ mod tests {
                 v4_lib: &v4_zero,
                 overrides: OVERRIDES,
             },
-            None,
+            Ok(&exp_safe()),
             None,
         )
         .unwrap();
-        let auth = v["groups"][2]["entries"].as_array().unwrap();
+        let auth = v["groups"][1]["entries"].as_array().unwrap();
         let eth = auth
             .iter()
             .find(|e| e["role"] == "V4 authoriser clone" && e["network"] == "ethereum")
@@ -1821,22 +1907,23 @@ mod tests {
     }
 
     #[test]
-    fn build_owners_is_none_without_the_anchor() {
-        // Repo unreachable / anchor constant moved → no owners doc at all.
+    fn build_owners_is_none_without_any_anchor() {
+        // No expectation and the anchor constant unreadable → no owners doc at all.
+        let src = OwnerSources {
+            safe_lib: "",
+            auth_lib: AUTH_LIB,
+            v4_lib: V4_LIB,
+            overrides: OVERRIDES,
+        };
         assert_eq!(
-            build_owners(
-                "o",
-                "r",
-                &OwnerSources {
-                    safe_lib: "",
-                    auth_lib: AUTH_LIB,
-                    v4_lib: V4_LIB,
-                    overrides: OVERRIDES
-                },
-                None,
-                None
-            ),
+            build_owners("o", "r", &src, Err(&ExpectedError::Empty), None),
             None
+        );
+        // The file's Safe anchors the view when the constant is gone.
+        let v = build_owners("o", "r", &src, Ok(&exp_safe()), None).unwrap();
+        assert_eq!(
+            v["groups"][0]["entries"][0]["address"],
+            exp_safe().address.as_str()
         );
     }
 
@@ -1854,7 +1941,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            None,
+            Ok(&exp_safe()),
             None,
         )
         .unwrap();
@@ -1863,312 +1950,8 @@ mod tests {
         assert!(eth["address"].is_null());
     }
 
-    #[test]
-    fn signer_count_is_the_expected_owners_length_not_a_fixed_six() {
-        // Threshold absent -> 3.
-        let three = "
-            address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_1 = 0x1111111111111111111111111111111111111111;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_2 = 0x2222222222222222222222222222222222222222;
-            address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_3 = 0x3333333333333333333333333333333333333333;
-            function expectedOwners() internal pure returns (address[] memory) {
-                address[] memory owners = new address[](3);
-                owners[0] = STOX_TOKEN_OWNER_SAFE_OWNER_1;
-                owners[1] = STOX_TOKEN_OWNER_SAFE_OWNER_2;
-                owners[2] = STOX_TOKEN_OWNER_SAFE_OWNER_3;
-                return owners;
-            }
-        ";
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: three,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .unwrap();
-        assert_eq!(v["signerCount"], 3);
-        assert_eq!(v["groups"][1]["entries"].as_array().unwrap().len(), 3);
-        assert_eq!(v["groups"][1]["title"], "Safe signers (3-of-3)");
-    }
-
-    // ---- declared-vs-actual verification ----
-
-    fn onchain(owners: Option<Vec<&str>>, threshold: Option<u64>) -> OnChainSafe {
-        OnChainSafe {
-            network: "base".into(),
-            safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611".into(),
-            rpc_host: "mainnet.base.org".into(),
-            owners: owners.map(|v| v.into_iter().map(str::to_string).collect()),
-            threshold,
-        }
-    }
-
-    // The SAFE_LIB roster, lowercased as getOwners returns it.
-    const LIVE_ROSTER: [&str; 6] = [
-        "0x4746095b1ea1a84446d34448f44e74d3d51f92f2",
-        "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d",
-        "0x8d5901d8ae48101b59400235ad8614a2e0510466",
-        "0xc1c89b7f5448f447d59f920456a9610f6b2544bc",
-        "0xab92b327c97a6e7461cbd76e2a789e5e106ff87e",
-        "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2",
-    ];
-
-    #[test]
-    fn onchain_match_marks_every_signer_verified() {
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["match"], true);
-        assert_eq!(sg["verification"]["reachable"], true);
-        assert_eq!(sg["verification"]["threshold"]["match"], true);
-        let entries = sg["entries"].as_array().unwrap();
-        assert_eq!(entries.len(), 6);
-        assert!(entries.iter().all(|e| e["onChain"] == "match"));
-    }
-
-    #[test]
-    fn onchain_drift_flags_missing_and_extra_owners() {
-        // Live set drops signer 6 and adds an owner not in the constants; on-chain
-        // threshold (2) also differs from the declared 3.
-        let mut live: Vec<&str> = LIVE_ROSTER[..5].to_vec();
-        live.push("0xdeadbeef00000000000000000000000000000001");
-        let oc = onchain(Some(live), Some(2));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["match"], false);
-        assert_eq!(sg["verification"]["threshold"]["match"], false);
-        let entries = sg["entries"].as_array().unwrap();
-        let s6 = entries.iter().find(|e| e["role"] == "Signer 6").unwrap();
-        assert_eq!(s6["onChain"], "missing", "declared but absent on-chain");
-        let extra = entries.iter().find(|e| e["status"] == "extra").unwrap();
-        assert_eq!(
-            extra["address"],
-            "0xdeadbeef00000000000000000000000000000001"
-        );
-        assert_eq!(extra["onChain"], "extra");
-    }
-
-    #[test]
-    fn unreachable_rpc_leaves_signers_unverified() {
-        let oc = onchain(None, None); // RPC failed
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["reachable"], false);
-        assert!(sg["verification"]["match"].is_null());
-        let entries = sg["entries"].as_array().unwrap();
-        assert!(entries.iter().all(|e| e["onChain"] == "unverified"));
-        assert_eq!(entries.len(), 6, "still shows the declared roster");
-    }
-
-    #[test]
-    fn no_onchain_omits_verification() {
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            None,
-            None,
-        )
-        .unwrap();
-        assert!(v["groups"][1]["verification"].is_null());
-    }
-
-    #[test]
-    fn threshold_mismatch_alone_fails_the_verdict() {
-        // Roster fully matches but the on-chain threshold differs: the overall
-        // verdict must be false — never a green "verified" — even though every
-        // signer row is a match.
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(4));
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["reachable"], true);
-        assert_eq!(
-            sg["verification"]["match"], false,
-            "threshold drift fails the verdict"
-        );
-        assert_eq!(sg["verification"]["threshold"]["match"], false);
-        let entries = sg["entries"].as_array().unwrap();
-        assert!(
-            entries.iter().all(|e| e["onChain"] == "match"),
-            "roster itself is fine"
-        );
-    }
-
-    #[test]
-    fn partial_rpc_is_not_reachable() {
-        // Owners answered but the threshold call didn't: not reachable and no
-        // verdict, so the page shows "incomplete" rather than a green banner.
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), None);
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: SAFE_LIB,
-                auth_lib: AUTH_LIB,
-                v4_lib: V4_LIB,
-                overrides: OVERRIDES,
-            },
-            Some(&oc),
-            None,
-        )
-        .unwrap();
-        let sg = &v["groups"][1];
-        assert_eq!(
-            sg["verification"]["reachable"], false,
-            "one call missing => not reachable"
-        );
-        assert!(sg["verification"]["match"].is_null());
-        assert!(sg["verification"]["threshold"]["onChain"].is_null());
-    }
-
-    fn with_safe_lib(safe_lib: &str) -> OwnerSources<'_> {
-        OwnerSources {
-            safe_lib,
-            auth_lib: AUTH_LIB,
-            v4_lib: V4_LIB,
-            overrides: OVERRIDES,
-        }
-    }
-
-    #[test]
-    fn a_live_safe_matching_expected_owners_is_a_verified_3_of_6() {
-        let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
-        let v = build_owners("o", "r", &with_safe_lib(SAFE_LIB), Some(&oc), None).unwrap();
-        assert_eq!(v["signerCount"], 6);
-        let safe_note = v["groups"][0]["note"].as_str().unwrap();
-        assert!(safe_note.starts_with("3-of-6 "), "{safe_note}");
-        let sg = &v["groups"][1];
-        assert_eq!(sg["title"], "Safe signers (3-of-6)");
-        assert!(sg["note"].as_str().unwrap().contains("expectedOwners()"));
-        assert_eq!(sg["verification"]["match"], true);
-        let entries = sg["entries"].as_array().unwrap();
-        let roles: Vec<&str> = entries
-            .iter()
-            .map(|e| e["role"].as_str().unwrap())
-            .collect();
-        assert_eq!(
-            roles,
-            ["Signer 1", "Signer 2", "Signer 3", "Signer 4", "Signer 5", "Signer 6"]
-        );
-        let addresses: Vec<&str> = entries
-            .iter()
-            .map(|e| e["address"].as_str().unwrap())
-            .collect();
-        assert_eq!(addresses, DECLARED_ROSTER);
-        assert!(entries.iter().all(|e| e["onChain"] == "match"));
-    }
-
-    #[test]
-    fn a_live_owner_outside_expected_owners_is_flagged() {
-        let mut live = LIVE_ROSTER.to_vec();
-        live.push("0xdeadbeef00000000000000000000000000000002");
-        let oc = onchain(Some(live), Some(3));
-        let v = build_owners("o", "r", &with_safe_lib(SAFE_LIB), Some(&oc), None).unwrap();
-        assert_eq!(v["signerCount"], 6);
-        let sg = &v["groups"][1];
-        assert_eq!(sg["verification"]["match"], false);
-        let entries = sg["entries"].as_array().unwrap();
-        let (unexpected, declared): (Vec<_>, Vec<_>) = entries
-            .iter()
-            .partition(|e| e["role"] == "Unexpected on-chain owner");
-        assert_eq!(unexpected.len(), 1);
-        assert_eq!(
-            unexpected[0]["address"],
-            "0xdeadbeef00000000000000000000000000000002"
-        );
-        assert_eq!(unexpected[0]["status"], "extra");
-        assert!(unexpected[0]["note"]
-            .as_str()
-            .unwrap()
-            .contains("expectedOwners()"));
-        assert_eq!(declared.len(), 6);
-        assert!(declared.iter().all(|e| e["onChain"] == "match"));
-    }
-
-    #[test]
-    fn an_unreadable_roster_flags_every_live_owner() {
-        let no_function = SAFE_LIB.replace("function expectedOwners(", "function retiredOwners(");
-        let undefined = SAFE_LIB.replace(
-            "address internal constant STOX_TOKEN_OWNER_SAFE_OWNER_TDM = 0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2;",
-            "",
-        );
-        for safe_lib in [&no_function, &undefined] {
-            assert_ne!(safe_lib, SAFE_LIB);
-            let oc = onchain(Some(LIVE_ROSTER.to_vec()), Some(3));
-            let v = build_owners("o", "r", &with_safe_lib(safe_lib), Some(&oc), None).unwrap();
-            assert_eq!(v["signerCount"], 0);
-            let sg = &v["groups"][1];
-            assert_eq!(sg["verification"]["match"], false);
-            let entries = sg["entries"].as_array().unwrap();
-            assert!(entries
-                .iter()
-                .all(|e| e["role"] == "Unexpected on-chain owner" && e["status"] == "extra"));
-            let flagged: Vec<&str> = entries
-                .iter()
-                .map(|e| e["address"].as_str().unwrap())
-                .collect();
-            assert_eq!(flagged, LIVE_ROSTER);
-        }
-    }
+    /// #217: the roster and threshold are the expectation's, never the
+    /// `_OWNER_{i}` constants — SAFE_LIB declares six, the expectation three.
 
     // ---- authoriser role grants (#143) ----
 
@@ -2289,11 +2072,11 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            None,
+            Ok(&exp_safe()),
             None,
         )
         .unwrap();
-        let auth = v["groups"][2]["entries"].as_array().unwrap();
+        let auth = v["groups"][1]["entries"].as_array().unwrap();
         assert!(
             !auth
                 .iter()
