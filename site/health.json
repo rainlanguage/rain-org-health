@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T01:37:23Z",
+  "generatedAt": "2026-11-10T09:58:30Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4166,7 +4166,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 55421657
+        "discoveredAtBlock": 55571927
       },
       {
         "network": "ethereum",
@@ -4715,7 +4715,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26381271
+        "discoveredAtBlock": 26383768
       },
       {
         "network": "bsc",
@@ -5405,41 +5405,41 @@
           },
           {
             "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5485,41 +5485,41 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5573,18 +5573,18 @@
           }
         ],
         "counts": {
-          "safe": 37,
-          "timelock": 64,
+          "safe": 36,
+          "timelock": 65,
           "other": 0,
           "unknown": 5,
           "unpinned": 0,
-          "certificationExpired": 41,
+          "certificationExpired": 40,
           "certificationUnknown": 5,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 132689750
+        "discoveredAtBlock": 132756499
       },
       {
         "network": "hyperevm",
@@ -6082,17 +6082,17 @@
           },
           {
             "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": null,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
@@ -6108,7 +6108,7 @@
             "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": null,
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           }
@@ -6120,12 +6120,12 @@
           "unknown": 1,
           "unpinned": 0,
           "certificationExpired": 4,
-          "certificationUnknown": 2,
+          "certificationUnknown": 0,
           "notPinned": 6,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50851512
+        "discoveredAtBlock": 50882066
       },
       {
         "network": "robinhood",
@@ -6666,7 +6666,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 110515576
+        "discoveredAtBlock": 110795058
       }
     ]
   },
@@ -22506,7 +22506,7 @@
     "network": "base",
     "rpcHost": "mainnet.base.org",
     "total": 54,
-    "ok": 40,
+    "ok": 38,
     "authoriser": {
       "current": null,
       "target": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -22533,13 +22533,13 @@
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
-          "name": "Rocket Lab USA Inc ST0x",
-          "symbol": "tRKLB",
-          "deployed": true,
-          "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
-          "authoriserLabel": "target",
+          "name": null,
+          "symbol": null,
+          "deployed": null,
+          "authoriser": null,
+          "authoriserLabel": "unknown",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-          "atAuthoriserTarget": true
+          "atAuthoriserTarget": null
         },
         {
           "address": "0x22e99389f5ef6fa110317e2aec0a95d8aa39efd4",
@@ -23229,26 +23229,26 @@
         "symbol": "wtMC",
         "name": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
         "address": "0x378a04202D25659763A02dA5FE77c0a35e64Ce1D",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
-        "nameOk": true,
+        "nameOk": null,
         "symbolOk": true,
-        "decimalsOk": true,
-        "liveName": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
+        "decimalsOk": null,
+        "liveName": null,
         "liveSymbol": "wtMC",
-        "liveDecimals": 18,
+        "liveDecimals": null,
         "assetOk": true,
         "asset": "0x6ec2421d74f2af61b7ee7bccae25a3b6a7961aa0",
         "unwrapped": "0x6ec2421d74f2af61b7ee7bccae25a3b6a7961aa0",
         "legacy": null,
         "receipt": "0xc3fd55a007cb7e4549a4b5064691c75609b1411b",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
-        "receiptDeployed": true,
-        "authoriser": "0xdb9152e46c1d140db6a6f814461f21c571f3275e",
-        "authoriserLabel": "foreign",
+        "receiptDeployed": null,
+        "authoriser": null,
+        "authoriserLabel": "unknown",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": false,
+        "atAuthoriserTarget": null,
         "inMigrationSet": true
       },
       {
@@ -23437,7 +23437,7 @@
         "symbol": "wtPLBY",
         "name": "Wrapped Playboy, Inc. ST0x",
         "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
-        "status": "ok",
+        "status": "unknown",
         "wrapped": true,
         "nameOk": true,
         "symbolOk": true,
@@ -23450,7 +23450,7 @@
         "unwrapped": "0xe9bc7eF69f123cA2bcA1021D1BE30224271a9217",
         "legacy": null,
         "receipt": "0x5978B2FA7B3DDA36847eb7D2003EC7AE112258AA",
-        "unwrappedDeployed": true,
+        "unwrappedDeployed": null,
         "legacyDeployed": null,
         "receiptDeployed": true,
         "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
