@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T17:55:06Z",
+  "generatedAt": "2026-11-10T23:27:43Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2782,9 +2782,9 @@
         "target": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "rpc.hyperliquid.xyz/evm",
-        "granted": 2,
+        "granted": 3,
         "missing": 1,
-        "unknown": 1,
+        "unknown": 0,
         "total": 4,
         "state": "partial",
         "safeKept": [
@@ -2934,7 +2934,7 @@
               {
                 "network": "hyperevm",
                 "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -4166,7 +4166,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 55714917
+        "discoveredAtBlock": 55814648
       },
       {
         "network": "ethereum",
@@ -4715,7 +4715,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26386145
+        "discoveredAtBlock": 26387800
       },
       {
         "network": "bsc",
@@ -5005,41 +5005,41 @@
           },
           {
             "vault": "0x0d2029ed7497a8cc5c65e808393ced0af2259385",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x683dd1c36169b25355c8c110942a820f395ffb7d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x185ccb3c9c09300b3877f71e747f041604f7603f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcb8b0c80560a66c96a25297cc98b23fa1d7acc6a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcd49da53d0570e6d34ab786aa4eb4f9e0e6ab045",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -5574,17 +5574,17 @@
         ],
         "counts": {
           "safe": 41,
-          "timelock": 60,
+          "timelock": 65,
           "other": 0,
-          "unknown": 5,
+          "unknown": 0,
           "unpinned": 0,
           "certificationExpired": 45,
-          "certificationUnknown": 5,
+          "certificationUnknown": 0,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 132820032
+        "discoveredAtBlock": 132864365
       },
       {
         "network": "hyperevm",
@@ -5684,7 +5684,7 @@
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": false,
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5698,8 +5698,8 @@
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
@@ -5708,14 +5708,14 @@
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": false,
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
@@ -5890,24 +5890,24 @@
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
@@ -6115,17 +6115,17 @@
         ],
         "counts": {
           "safe": 0,
-          "timelock": 65,
+          "timelock": 60,
           "other": 0,
-          "unknown": 0,
+          "unknown": 5,
           "unpinned": 0,
           "certificationExpired": 4,
-          "certificationUnknown": 0,
+          "certificationUnknown": 2,
           "notPinned": 6,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50911142
+        "discoveredAtBlock": 50931427
       },
       {
         "network": "robinhood",
@@ -6666,7 +6666,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 111072362
+        "discoveredAtBlock": 111263648
       }
     ]
   },
