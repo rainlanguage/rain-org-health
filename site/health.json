@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-10T23:27:43Z",
+  "generatedAt": "2026-11-11T06:32:05Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2196,11 +2196,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "rpc.hyperliquid.xyz/evm",
-        "granted": 13,
+        "granted": 12,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 1,
         "total": 13,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -2594,7 +2594,7 @@
               {
                 "network": "hyperevm",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -3243,9 +3243,9 @@
           },
           {
             "vault": "0xd36056a4a03707d3743fce4e9c08852820adcfdc",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -3259,25 +3259,25 @@
           },
           {
             "vault": "0xa41ce7b8255a01062ed1af23ea5e8137b9300554",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb6021810971714cd48572af527307acc324ecf61",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xbdc237aa3b67cc3088adaf117913f30bf08157a3",
-            "owner": "0x48ba1371a78e6cc54157c63721756ab444510db3",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -4156,17 +4156,17 @@
         ],
         "counts": {
           "safe": 29,
-          "timelock": 59,
+          "timelock": 55,
           "other": 56,
-          "unknown": 0,
+          "unknown": 4,
           "unpinned": 0,
           "certificationExpired": 53,
-          "certificationUnknown": 0,
+          "certificationUnknown": 4,
           "notPinned": 85,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 55814648
+        "discoveredAtBlock": 55941950
       },
       {
         "network": "ethereum",
@@ -4715,7 +4715,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 66,
-        "discoveredAtBlock": 26387800
+        "discoveredAtBlock": 26389908
       },
       {
         "network": "bsc",
@@ -5085,81 +5085,81 @@
           },
           {
             "vault": "0x543e33e9276cf00b74689c8e41fd7fc921128ba0",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xe2593db54e7893d311cbf5087cdb7a9027b9a7fd",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xc67038bbff91f2568b902ff171e9f9c06ed98815",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xbca97cc57916734130c9f05ea8b217682a249b75",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x042dfd33de6766a8858f188dfcf207d311da6488",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcc23ef9e1e74c22ab2a9b73e253af01531385b08",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5245,81 +5245,81 @@
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5365,41 +5365,41 @@
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5485,81 +5485,81 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5573,18 +5573,18 @@
           }
         ],
         "counts": {
-          "safe": 41,
-          "timelock": 65,
+          "safe": 19,
+          "timelock": 52,
           "other": 0,
-          "unknown": 0,
+          "unknown": 35,
           "unpinned": 0,
-          "certificationExpired": 45,
-          "certificationUnknown": 0,
+          "certificationExpired": 22,
+          "certificationUnknown": 35,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 132864365
+        "discoveredAtBlock": 132920909
       },
       {
         "network": "hyperevm",
@@ -5684,7 +5684,7 @@
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": null,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -5698,8 +5698,8 @@
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
@@ -5708,14 +5708,14 @@
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": null,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
@@ -5890,24 +5890,24 @@
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": null,
-            "label": "unknown",
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
             "certificationExpired": false,
             "pinned": true,
             "onChain": true
@@ -5956,7 +5956,7 @@
             "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": false,
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -6115,17 +6115,17 @@
         ],
         "counts": {
           "safe": 0,
-          "timelock": 60,
+          "timelock": 65,
           "other": 0,
-          "unknown": 5,
+          "unknown": 0,
           "unpinned": 0,
           "certificationExpired": 4,
-          "certificationUnknown": 2,
+          "certificationUnknown": 1,
           "notPinned": 6,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 50931427
+        "discoveredAtBlock": 50957298
       },
       {
         "network": "robinhood",
@@ -6666,7 +6666,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 111263648
+        "discoveredAtBlock": 111500294
       }
     ]
   },
@@ -25792,7 +25792,7 @@
       "codeLocRemovedSinceAudit": 181,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.1.5...main",
-      "daysSinceAudit": 121
+      "daysSinceAudit": 122
     },
     {
       "name": "rain.extrospection",
@@ -25840,7 +25840,7 @@
       "codeLocRemovedSinceAudit": 122,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 182
+      "daysSinceAudit": 183
     },
     {
       "name": "rain.vats",
@@ -25888,7 +25888,7 @@
       "codeLocRemovedSinceAudit": 197,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 174
+      "daysSinceAudit": 175
     },
     {
       "name": "rainlang",
@@ -25930,7 +25930,7 @@
       "codeLocRemovedSinceAudit": 136,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/86d054219ac36d0e648146352bc26e64e509a156...main",
-      "daysSinceAudit": 15
+      "daysSinceAudit": 16
     },
     {
       "name": "rain.merkle.deploy",
@@ -25966,7 +25966,7 @@
       "codeLocRemovedSinceAudit": 109,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
-      "daysSinceAudit": 296
+      "daysSinceAudit": 297
     },
     {
       "name": "rain.lib.leakybucket",
@@ -26002,7 +26002,7 @@
       "codeLocRemovedSinceAudit": 70,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.leakybucket/compare/06baa59b15b0b4ad51189288e3137eee677db37d...main",
-      "daysSinceAudit": 49
+      "daysSinceAudit": 50
     },
     {
       "name": "rain.math.float",
@@ -26038,7 +26038,7 @@
       "codeLocRemovedSinceAudit": 1450,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/1a3a88ad580be0d8ddd50e6084c18b612f56107f...main",
-      "daysSinceAudit": 344
+      "daysSinceAudit": 345
     },
     {
       "name": "rain.deploy",
@@ -26080,7 +26080,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
-      "daysSinceAudit": 34
+      "daysSinceAudit": 35
     },
     {
       "name": "raindex.deploy",
@@ -26122,7 +26122,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/raindex.deploy/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 148
+      "daysSinceAudit": 149
     },
     {
       "name": "st0x.deploy",
@@ -26164,7 +26164,7 @@
       "codeLocRemovedSinceAudit": null,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
-      "daysSinceAudit": 75
+      "daysSinceAudit": 76
     },
     {
       "name": "rain.lib.typecast",
@@ -26200,7 +26200,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
-      "daysSinceAudit": 296
+      "daysSinceAudit": 297
     },
     {
       "name": "rain.math.saturating",
@@ -26236,7 +26236,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
-      "daysSinceAudit": 344
+      "daysSinceAudit": 345
     },
     {
       "name": "rain.intorastring",
@@ -26272,7 +26272,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
-      "daysSinceAudit": 279
+      "daysSinceAudit": 280
     },
     {
       "name": "rain.math.binary",
@@ -26308,7 +26308,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
-      "daysSinceAudit": 295
+      "daysSinceAudit": 296
     },
     {
       "name": "rain.datacontract",
@@ -26362,7 +26362,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/sol-v0.2.0...main",
-      "daysSinceAudit": 77
+      "daysSinceAudit": 78
     },
     {
       "name": "rain.lib.hash",
@@ -26404,7 +26404,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/092293e9f180a6df6c4fdfae5461870c117c0fb9...main",
-      "daysSinceAudit": 55
+      "daysSinceAudit": 56
     },
     {
       "name": "rain.lib.memkv",
@@ -26446,7 +26446,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/05dd78183e919872924ee061b855e29424bc43b4...main",
-      "daysSinceAudit": 53
+      "daysSinceAudit": 54
     },
     {
       "name": "rain.math.fixedpoint",
@@ -26488,7 +26488,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/sol-v0.2.2...main",
-      "daysSinceAudit": 40
+      "daysSinceAudit": 41
     },
     {
       "name": "rain.metadata",
@@ -26530,7 +26530,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/sol-v0.1.43...main",
-      "daysSinceAudit": 68
+      "daysSinceAudit": 69
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -26566,7 +26566,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.binmaskflag/compare/41d8dfb2edf9695d1344e8d56ddae7c1789690c4...main",
-      "daysSinceAudit": 285
+      "daysSinceAudit": 286
     },
     {
       "name": "rain.sol.codegen",
@@ -26614,7 +26614,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/sol-v0.1.39...main",
-      "daysSinceAudit": 40
+      "daysSinceAudit": 41
     },
     {
       "name": "rain.solmem",
@@ -26656,7 +26656,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.solmem/compare/e75080f460876f4070c4e127c8668d778df93e94...main",
-      "daysSinceAudit": 84
+      "daysSinceAudit": 85
     },
     {
       "name": "rain.string",
@@ -26698,7 +26698,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.string/compare/79b2f4fd3fbd0e21b8e757d94abd361178cefa62...main",
-      "daysSinceAudit": 77
+      "daysSinceAudit": 78
     },
     {
       "name": "rain.tofu.erc20-decimals",
@@ -26740,7 +26740,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/sol-v0.1.4...main",
-      "daysSinceAudit": 81
+      "daysSinceAudit": 82
     },
     {
       "name": "rain.verify.interface",
@@ -26776,7 +26776,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
-      "daysSinceAudit": 281
+      "daysSinceAudit": 282
     }
   ],
   "untestedExternals": [
