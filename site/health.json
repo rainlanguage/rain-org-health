@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-14T03:22:02Z",
+  "generatedAt": "2026-11-14T11:35:38Z",
   "auditGraph": {
     "nodes": [
       {
@@ -3643,16 +3643,16 @@
           },
           {
             "vault": "0x53b6febebfe755b37607088f3ba536416146ca2e",
-            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
-            "label": "other",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5409b0413b5d2062a1b913a01afc0475aaaaa4bf",
-            "owner": "0x21cc8a5fe957a167cb92f12f4e658d755b00be53",
-            "label": "other",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": true,
             "pinned": false,
             "onChain": true
@@ -3779,8 +3779,8 @@
           },
           {
             "vault": "0x8ac090daefe825fd04a2cd7309fcf9b2805735a8",
-            "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
-            "label": "other",
+            "owner": null,
+            "label": "unknown",
             "certificationExpired": true,
             "pinned": false,
             "onChain": true
@@ -3789,7 +3789,7 @@
             "vault": "0x8c1e16a91d016e0251486c1bdbc57eba4f0a61e6",
             "owner": "0xd2843d9e7738d46d90cb6dff8d6c83db58b9c165",
             "label": "other",
-            "certificationExpired": false,
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -3805,7 +3805,7 @@
             "vault": "0x936c906e9839b09f874090624d57bc20ca562189",
             "owner": "0xe70d821f3462a074e63b42d0aac6523faae1d611",
             "label": "safe",
-            "certificationExpired": true,
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -4173,16 +4173,16 @@
         "counts": {
           "safe": 29,
           "timelock": 59,
-          "other": 56,
-          "unknown": 0,
+          "other": 53,
+          "unknown": 3,
           "unpinned": 0,
-          "certificationExpired": 53,
-          "certificationUnknown": 0,
+          "certificationExpired": 52,
+          "certificationUnknown": 2,
           "notPinned": 85,
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 57180918
+        "discoveredAtBlock": 57328987
       },
       {
         "network": "ethereum",
@@ -4739,7 +4739,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26410505
+        "discoveredAtBlock": 26412964
       },
       {
         "network": "bsc",
@@ -5608,7 +5608,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 133471015
+        "discoveredAtBlock": 133536776
       },
       {
         "network": "hyperevm",
@@ -6149,7 +6149,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51209179
+        "discoveredAtBlock": 51239216
       },
       {
         "network": "robinhood",
@@ -6690,7 +6690,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 113863380
+        "discoveredAtBlock": 114127728
       }
     ]
   },
@@ -22837,9 +22837,9 @@
         },
         {
           "address": "0xf6744fd94e27c2f58f6110aa9fdc77a87e41766b",
-          "name": null,
-          "symbol": null,
-          "deployed": null,
+          "name": "Rocket Lab USA Inc ST0x",
+          "symbol": "tRKLB",
+          "deployed": true,
           "authoriser": "0x315b16faa6ee413fabca877d3851b3818369f0cd",
           "authoriserLabel": "target",
           "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -23549,10 +23549,10 @@
         "unwrappedDeployed": true,
         "legacyDeployed": null,
         "receiptDeployed": true,
-        "authoriser": null,
-        "authoriserLabel": "unknown",
+        "authoriser": "0xdb9152e46c1d140db6a6f814461f21c571f3275e",
+        "authoriserLabel": "foreign",
         "authoriserTarget": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
-        "atAuthoriserTarget": null,
+        "atAuthoriserTarget": false,
         "inMigrationSet": true
       },
       {
