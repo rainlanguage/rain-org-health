@@ -75,13 +75,12 @@ fn fact(
 /// its live readback.
 pub fn safe_facts(exp: &ExpectedSafe, live: &LiveSafe) -> serde_json::Value {
     let eq = |a: &str, b: &str| a.eq_ignore_ascii_case(b);
-    let lower = |v: &[String]| v.iter().map(|a| a.to_lowercase()).collect::<Vec<_>>();
-    let owners_ok = live.owners.as_ref().map(|o| {
-        let (mut a, mut b) = (lower(o), lower(&exp.owners));
-        a.sort();
-        b.sort();
-        a == b
-    });
+    let set = |v: &[String]| {
+        let mut s = v.iter().map(|a| a.to_lowercase()).collect::<Vec<_>>();
+        s.sort();
+        s
+    };
+    let owners_ok = live.owners.as_ref().map(|o| set(o) == set(&exp.owners));
     let pair = live.singleton.as_ref().and_then(|l| {
         exp.singletons
             .iter()
@@ -139,9 +138,7 @@ pub fn safe_facts(exp: &ExpectedSafe, live: &LiveSafe) -> serde_json::Value {
             "modules",
             json!(exp.modules),
             live.modules.as_ref().map(|m| json!(m)),
-            live.modules
-                .as_ref()
-                .map(|m| lower(m) == lower(&exp.modules)),
+            live.modules.as_ref().map(|m| set(m) == set(&exp.modules)),
         ),
         fact(
             "guard",
