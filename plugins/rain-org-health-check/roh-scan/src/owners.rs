@@ -15,7 +15,7 @@
 //! deploy repo — because the thing it reports on is a set that grows, and a
 //! curated list of hot keys is only ever as complete as somebody's memory.
 
-use crate::expected::{ExpectedError, ExpectedSafe};
+use crate::expected::{ExpectedChain, ExpectedError, ExpectedSafe};
 use crate::privileged::{PrivilegedChain, PrivilegedError, PRIVILEGED_ADDRESSES_PATH};
 use crate::vaultdiscovery::{Discovered, DiscoveryError};
 use alloy_primitives::hex;
@@ -232,9 +232,8 @@ pub struct OwnerSources<'a> {
 }
 
 /// Assemble the `deploymentOwners` document from the st0x.deploy library
-/// sources. Returns `None` when the anchor (the Base token-owner Safe) can't be
-/// resolved — i.e. the repo was unreachable or the constant moved — so the page
-/// shows an honest "unavailable" state instead of a table of nulls.
+/// sources and the parsed `expected-state.json` chains. Returns `None` when
+/// expected-state is unreadable, so the page shows its "unavailable" state.
 ///
 /// `live_authoriser` is the `authorizer()` a production vault actually returns;
 /// `None` when that read failed, which leaves every clone's status `unknown`
@@ -243,19 +242,24 @@ pub fn build_owners(
     org: &str,
     repo: &str,
     src: &OwnerSources,
-    expected: Result<&ExpectedSafe, &ExpectedError>,
+    expected: Result<&[ExpectedChain], &ExpectedError>,
     live_authoriser: Option<&str>,
 ) -> Option<serde_json::Value> {
-    let (safe_lib, auth_lib, v4_lib, overrides) =
-        (src.safe_lib, src.auth_lib, src.v4_lib, src.overrides);
+    let (auth_lib, v4_lib, overrides) = (src.auth_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
-    // Anchor: without the Base Safe there is nothing meaningful to show.
-    let base_safe = match expected {
-        Ok(exp) => exp.address.clone(),
-        Err(_) => addr(safe_lib, "STOX_TOKEN_OWNER_SAFE")?,
-    };
-    let eth_safe = addr(safe_lib, "STOX_TOKEN_OWNER_SAFE_ETHEREUM");
+    let safe_entries: Vec<serde_json::Value> = expected
+        .ok()?
+        .iter()
+        .map(|c| {
+            let note = if c.network == REFERENCE_NETWORK {
+                "authoriser admin"
+            } else {
+                "same policy, per-chain address"
+            };
+            entry("Safe", Some(c.safe.address.clone()), &c.network, "active", note)
+        })
+        .collect();
 
     let safe_note = "Gnosis Safe, replicated per chain. Holder of every authoriser admin role; production beacons belong to each chain's timelock, never the Safe.";
 
@@ -263,10 +267,7 @@ pub fn build_owners(
         "id": "safe",
         "title": "Upgrade authority — token-owner Safe",
         "note": safe_note,
-        "entries": [
-            entry("Base Safe", Some(base_safe), "base", "active", "authoriser admin"),
-            entry("Ethereum Safe", eth_safe, "ethereum", "active", "same policy, per-chain address"),
-        ],
+        "entries": safe_entries,
     });
 
     // Which clone is live is READ FROM THE CHAIN, not asserted here.
