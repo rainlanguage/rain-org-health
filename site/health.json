@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-15T17:01:26Z",
+  "generatedAt": "2026-11-15T17:46:53Z",
   "auditGraph": {
     "nodes": [
       {
@@ -688,6 +688,11 @@
             "latest": "0.3.12"
           },
           {
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.9",
+            "latest": "0.1.10"
+          },
+          {
             "repo": "rain.metadata",
             "pinned": "0.1.43",
             "latest": "0.1.46"
@@ -801,6 +806,11 @@
             "latest": "0.3.12"
           },
           {
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.9",
+            "latest": "0.1.10"
+          },
+          {
             "repo": "rain.string",
             "pinned": "0.3.9",
             "latest": "0.3.10"
@@ -836,6 +846,11 @@
             "repo": "rain.extrospection",
             "pinned": "0.1.16",
             "latest": "0.1.19"
+          },
+          {
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.9",
+            "latest": "0.1.10"
           },
           {
             "repo": "rain.metadata",
@@ -920,6 +935,11 @@
             "repo": "rain.math.float",
             "pinned": "0.3.11",
             "latest": "0.3.12"
+          },
+          {
+            "repo": "rain.math.float.deploy",
+            "pinned": "0.1.9",
+            "latest": "0.1.10"
           },
           {
             "repo": "rain.metadata",
@@ -1779,9 +1799,9 @@
       {
         "from": "raindex.deploy",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.9",
-        "latest": "0.1.9"
+        "latest": "0.1.10"
       },
       {
         "from": "raindex.deploy",
@@ -1919,9 +1939,9 @@
       {
         "from": "rainlang",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.9",
-        "latest": "0.1.9"
+        "latest": "0.1.10"
       },
       {
         "from": "rainlang",
@@ -1975,9 +1995,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.9",
-        "latest": "0.1.9"
+        "latest": "0.1.10"
       },
       {
         "from": "rainlang.deploy",
@@ -2080,9 +2100,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.math.float.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.9",
-        "latest": "0.1.9"
+        "latest": "0.1.10"
       },
       {
         "from": "st0x.deploy",
@@ -4310,7 +4330,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 57858826
+        "discoveredAtBlock": 57872472
       },
       {
         "network": "ethereum",
@@ -4867,7 +4887,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26421769
+        "discoveredAtBlock": 26421996
       },
       {
         "network": "bsc",
@@ -5736,7 +5756,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 133772216
+        "discoveredAtBlock": 133778243
       },
       {
         "network": "hyperevm",
@@ -6277,7 +6297,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51346967
+        "discoveredAtBlock": 51349726
       },
       {
         "network": "robinhood",
@@ -6818,7 +6838,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 115111838
+        "discoveredAtBlock": 115136472
       }
     ]
   },
@@ -25845,7 +25865,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1287,
+      "fullSourceLoc": 1334,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
