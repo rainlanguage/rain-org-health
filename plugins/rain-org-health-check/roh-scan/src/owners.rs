@@ -1978,7 +1978,10 @@ mod tests {
                 ExpectedError::UnsupportedVersion(None),
                 "expected-state.json has schema version none, this scanner reads 1",
             ),
-            (ExpectedError::NoChains, "expected-state.json lists no chains"),
+            (
+                ExpectedError::NoChains,
+                "expected-state.json lists no chains",
+            ),
             (
                 ExpectedError::Malformed {
                     chain: "8453".into(),
