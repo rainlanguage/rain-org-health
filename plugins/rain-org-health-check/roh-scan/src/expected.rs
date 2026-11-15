@@ -29,6 +29,18 @@ pub struct ExpectedBeacon {
     pub owner: String,
 }
 
+impl ExpectedBeacon {
+    /// The implementation pinned for whether the chain records the rename;
+    /// `None` (unread) pins nothing.
+    pub fn expected_implementation(&self, renamed: Option<bool>) -> &str {
+        match renamed {
+            Some(true) => &self.renamed_implementation,
+            Some(false) => &self.implementation,
+            None => "",
+        }
+    }
+}
+
 /// A contract the file pins by address and runtime codehash.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExpectedCode {

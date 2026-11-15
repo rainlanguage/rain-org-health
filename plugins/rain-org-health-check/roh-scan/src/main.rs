@@ -3173,13 +3173,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                         safe: Some(&c.safe.address),
                                         legacy: legacy_owner.as_deref(),
                                     },
-                                    renamed.map_or("", |r| {
-                                        if r {
-                                            &b.renamed_implementation
-                                        } else {
-                                            &b.implementation
-                                        }
-                                    }),
+                                    b.expected_implementation(renamed),
                                     v1_impl.as_deref(),
                                     live_owner,
                                     live_impl,
@@ -3402,8 +3396,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         rows.extend(deployhealth::token_rows(t, renamed, live));
                     }
                     if let Some(q) = &c.qsep {
-                        let live = token_live(q.into());
-                        rows.extend(deployhealth::leg_rows("qsep", q.into(), &live));
+                        rows.extend(deployhealth::qsep_rows(q, &token_live(q.into())));
                     }
                     deployhealth::build_infra(
                         deploy_org,
@@ -3440,28 +3433,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     let call_addr = |a: &str, data: String| {
                         eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
                     };
-                    let mut rows: Vec<serde_json::Value> = c
-                        .deployments
-                        .iter()
-                        .map(|z| deployhealth::zoltu_row(z, codehash(&z.code.address)))
-                        .collect();
-                    for b in &c.beacons {
-                        let a = b.address.as_str();
-                        rows.push(deployhealth::infra_row(
-                            b.name,
-                            "implementation",
-                            Some(a),
-                            Some(b.implementation.as_str()),
-                            call_addr(a, rpc::implementation_calldata()),
-                        ));
-                        rows.push(deployhealth::infra_row(
-                            b.name,
-                            "owner",
-                            Some(a),
-                            Some(b.owner.as_str()),
-                            call_addr(a, rpc::owner_calldata()),
-                        ));
-                    }
+                    let rows = deployhealth::v2_rows(
+                        c,
+                        c.deployments.iter().map(|z| codehash(&z.code.address)).collect(),
+                        c.beacons
+                            .iter()
+                            .map(|b| deployhealth::V2BeaconLive {
+                                implementation: call_addr(&b.address, rpc::implementation_calldata()),
+                                owner: call_addr(&b.address, rpc::owner_calldata()),
+                            })
+                            .collect(),
+                    );
                     deployhealth::build_infra(
                         deploy_org,
                         deploy_repo,

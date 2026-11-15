@@ -7,7 +7,7 @@
 //! chain: a `RUNTIME_CODE` that disagrees with its own `BYTECODE_HASH`, or either
 //! disagreeing with the deployed code, is a finding.
 
-use crate::expected::{ExpectedQsep, ExpectedToken, ExpectedZoltu, EXPECTED_STATE_PATH};
+use crate::expected::{ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu, EXPECTED_STATE_PATH};
 use crate::rpc::{keccak256_hex, CallClass};
 use regex::Regex;
 use serde_json::json;
@@ -473,6 +473,38 @@ pub fn token_rows(t: &ExpectedToken, renamed: Option<bool>, live: TokenLive) -> 
         })
         .collect();
     rows.extend(leg_rows(&id, t.into(), &live));
+    rows
+}
+
+/// The qsep's rows.
+pub fn qsep_rows(q: &ExpectedQsep, live: &TokenLive) -> Vec<serde_json::Value> {
+    leg_rows("qsep", q.into(), live)
+}
+
+/// One v2 beacon's live `implementation()` and `owner()`.
+pub struct V2BeaconLive {
+    pub implementation: Option<String>,
+    pub owner: Option<String>,
+}
+
+/// One chain's v2 rows; `codehashes` and `beacons` are the live reads in the
+/// order of `v.deployments` and `v.beacons`.
+pub fn v2_rows(
+    v: &ExpectedV2,
+    codehashes: Vec<Option<String>>,
+    beacons: Vec<V2BeaconLive>,
+) -> Vec<serde_json::Value> {
+    let mut rows: Vec<serde_json::Value> = v
+        .deployments
+        .iter()
+        .zip(codehashes)
+        .map(|(z, live)| zoltu_row(z, live))
+        .collect();
+    for (b, live) in v.beacons.iter().zip(beacons) {
+        let a = Some(b.address.as_str());
+        rows.push(infra_row(b.name, "implementation", a, Some(&b.implementation), live.implementation));
+        rows.push(infra_row(b.name, "owner", a, Some(&b.owner), live.owner));
+    }
     rows
 }
 
