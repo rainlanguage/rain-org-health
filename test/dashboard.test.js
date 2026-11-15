@@ -5969,8 +5969,8 @@ const panelsByTab = (box) =>
   Object.fromEntries(collect(box, "tabpanel").map((p) => [p.dataset.tab, p]));
 const groupHeads = (node) =>
   collect(node, "own-grouphead").map((h) => h.textContent);
-const OWNERS_UNAVAILABLE =
-  "Owner data unavailable — the scan could not read the st0x.deploy constants.";
+const OWNERS_NO_GROUPS =
+  "Owner data unavailable — the scan produced no owner groups.";
 
 Deno.test("deployments: the Historical & bricked group is on the Historical tab, the other owner groups on Safe & ownership", () => {
   const panels = panelsByTab(deploymentsBox(OWNERS));
@@ -6020,12 +6020,39 @@ Deno.test("deployments: no owner data says so on both Safe & ownership and Histo
   for (const tab of ["safe", "historical"]) {
     const empty = collect(panels[tab], "empty").map((e) => e.textContent);
     assert(
-      empty.length === 1 && empty[0] === OWNERS_UNAVAILABLE,
+      empty.length === 1 && empty[0] === OWNERS_NO_GROUPS,
       tab + ": the unavailable message, once: " + empty.join("|"),
     );
   }
   assert(collect(box, "empty").length === 2, "and nowhere else");
   assert(collect(box, "own-group").length === 0, "no owner groups rendered");
+});
+
+Deno.test("deployments: an unavailable owners doc shows its reason on both Safe & ownership and Historical, with no groups", () => {
+  const box = deploymentsBox({
+    deploymentOwners: {
+      repo: "st0x.deploy",
+      org: "S01-Issuer",
+      unavailable: true,
+      reason: "expected-state.json is not valid JSON",
+    },
+  });
+  const panels = panelsByTab(box);
+  for (const tab of ["safe", "historical"]) {
+    const empty = collect(panels[tab], "empty").map((e) => e.textContent);
+    assert(
+      empty.length === 1 &&
+        empty[0] ===
+          "Owner data unavailable — expected-state.json is not valid JSON.",
+      tab + ": the reason, once: " + empty.join("|"),
+    );
+  }
+  assert(collect(box, "empty").length === 2, "and nowhere else");
+  assert(collect(box, "own-group").length === 0, "no owner groups rendered");
+  assert(
+    !textOf(box).includes("could not read the st0x.deploy constants"),
+    "the constants message is gone: " + textOf(box),
+  );
 });
 
 // ---- deployments.html: authoriser role grants (#143) ----
@@ -6330,10 +6357,10 @@ Deno.test("deployments: a partly-live chain names the unread grants apart from t
   );
 });
 
-// The grant map is parsed independently of the owner constants, and it is the
-// half of this page that says who can move value — so it must survive the
-// owners read failing rather than disappearing with it.
-Deno.test("deployments: the grants section renders even when the owner constants could not be read", () => {
+// The grant map is parsed independently of the owners doc, and it is the half
+// of this page that says who can move value — so it must survive the owners
+// read failing rather than disappearing with it.
+Deno.test("deployments: the grants section renders even when the owner data is unavailable", () => {
   const d = grantsData();
   d.deploymentOwners = null;
   const box = deploymentsBox(d);
@@ -6341,7 +6368,7 @@ Deno.test("deployments: the grants section renders even when the owner constants
   assert(
     ["safe", "historical"].every((t) =>
       collect(panels[t], "empty").map((e) => e.textContent).join("|") ===
-        OWNERS_UNAVAILABLE
+        OWNERS_NO_GROUPS
     ) && collect(box, "empty").length === 2,
     "owners report themselves absent on Safe & ownership and Historical",
   );

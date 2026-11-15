@@ -1684,8 +1684,7 @@ mod tests {
             },
             Ok(fixture_chains().as_slice()),
             None,
-        )
-        .expect("anchor resolves");
+        );
         assert_eq!(v["repo"], "st0x.deploy");
         let groups = v["groups"].as_array().unwrap();
         let ids: Vec<&str> = groups.iter().map(|g| g["id"].as_str().unwrap()).collect();
@@ -1723,7 +1722,6 @@ mod tests {
             Ok(fixture_chains().as_slice()),
             live,
         )
-        .unwrap()
     }
 
     fn group_entries<'a>(v: &'a serde_json::Value, id: &str) -> &'a Vec<serde_json::Value> {
@@ -1931,8 +1929,7 @@ mod tests {
             },
             Ok(fixture_chains().as_slice()),
             None,
-        )
-        .unwrap();
+        );
         let auth = v["groups"][1]["entries"].as_array().unwrap();
         let eth = auth
             .iter()
@@ -1953,22 +1950,53 @@ mod tests {
         );
     }
 
-    /// An unreadable expected-state is no owners doc, even with the Safe
-    /// constants readable: they are never a fallback.
+    /// An unreadable expected-state is an unavailable owners doc carrying the
+    /// error text and no groups, even with the Safe constants readable: they
+    /// are never a fallback.
     #[test]
-    fn build_owners_is_none_when_expected_state_is_unreadable() {
+    fn build_owners_is_unavailable_with_the_error_text_when_expected_state_is_unreadable() {
         let src = OwnerSources {
             safe_lib: SAFE_LIB,
             auth_lib: AUTH_LIB,
             v4_lib: V4_LIB,
             overrides: OVERRIDES,
         };
-        for e in [
-            ExpectedError::Empty,
-            ExpectedError::NotJson,
-            ExpectedError::NoChains,
+        for (e, reason) in [
+            (
+                ExpectedError::Empty,
+                "expected-state.json could not be fetched",
+            ),
+            (
+                ExpectedError::NotJson,
+                "expected-state.json is not valid JSON",
+            ),
+            (
+                ExpectedError::UnsupportedVersion(Some(2)),
+                "expected-state.json has schema version 2, this scanner reads 1",
+            ),
+            (
+                ExpectedError::UnsupportedVersion(None),
+                "expected-state.json has schema version none, this scanner reads 1",
+            ),
+            (ExpectedError::NoChains, "expected-state.json lists no chains"),
+            (
+                ExpectedError::Malformed {
+                    chain: "8453".into(),
+                    field: "safe.owners",
+                },
+                "expected-state.json chain 8453 has a missing or malformed safe.owners",
+            ),
         ] {
-            assert_eq!(build_owners("o", "r", &src, Err(&e), None), None, "{e}");
+            assert_eq!(
+                build_owners("o", "r", &src, Err(&e), None),
+                json!({
+                    "repo": "r",
+                    "org": "o",
+                    "unavailable": true,
+                    "reason": reason,
+                }),
+                "{e:?}"
+            );
         }
     }
 
@@ -1987,7 +2015,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             };
-            let v = build_owners("o", "r", &src, Ok(chains.as_slice()), None).unwrap();
+            let v = build_owners("o", "r", &src, Ok(chains.as_slice()), None);
             let got: Vec<(&str, &str, &str, &str)> = group_entries(&v, "safe")
                 .iter()
                 .map(|e| {
@@ -2142,8 +2170,7 @@ mod tests {
             },
             Ok(fixture_chains().as_slice()),
             None,
-        )
-        .unwrap();
+        );
         let auth = v["groups"][1]["entries"].as_array().unwrap();
         assert!(
             !auth
