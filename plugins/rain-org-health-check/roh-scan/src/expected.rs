@@ -196,79 +196,101 @@ fn is_zero(s: &str) -> bool {
     s[2..].chars().all(|c| c == '0')
 }
 
+/// The `section` object's chain entries from a body of the supported version.
+fn chain_entries(
+    body: &str,
+    section: &str,
+) -> Result<serde_json::Map<String, serde_json::Value>, ExpectedError> {
+    if body.trim().is_empty() {
+        return Err(ExpectedError::Empty);
+    }
+    let mut doc: serde_json::Value =
+        serde_json::from_str(body).map_err(|_| ExpectedError::NotJson)?;
+    let version = doc["version"].as_u64();
+    if version != Some(SCHEMA_VERSION) {
+        return Err(ExpectedError::UnsupportedVersion(version));
+    }
+    match doc[section].take() {
+        serde_json::Value::Object(chains) if !chains.is_empty() => Ok(chains),
+        _ => Err(ExpectedError::NoChains),
+    }
+}
+
+/// Field validators for one chain entry, keyed by its chain id.
+struct ChainFields<'a>(&'a str);
+
+impl ChainFields<'_> {
+    fn bad(&self, field: &'static str) -> ExpectedError {
+        ExpectedError::Malformed {
+            chain: self.0.to_string(),
+            field,
+        }
+    }
+
+    fn addr(&self, v: &serde_json::Value, field: &'static str) -> Result<String, ExpectedError> {
+        v.as_str()
+            .filter(|a| is_address(a))
+            .map(str::to_string)
+            .ok_or_else(|| self.bad(field))
+    }
+
+    fn nonzero(&self, v: &serde_json::Value, field: &'static str) -> Result<String, ExpectedError> {
+        self.addr(v, field)
+            .and_then(|a| if is_zero(&a) { Err(self.bad(field)) } else { Ok(a) })
+    }
+
+    fn codehash(&self, v: &serde_json::Value, field: &'static str) -> Result<String, ExpectedError> {
+        v.as_str()
+            .filter(|h| is_bytes32(h) && !is_zero(h))
+            .map(str::to_string)
+            .ok_or_else(|| self.bad(field))
+    }
+}
+
 /// Parse the file. Base first, then by chain id.
 ///
 /// Every expected value must be a non-zero address: a zero expectation would
 /// match a contract answering the zero address and report it as on target, and
 /// a zero codehash would match an address with no account.
 pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
-    if body.trim().is_empty() {
-        return Err(ExpectedError::Empty);
-    }
-    let doc: serde_json::Value = serde_json::from_str(body).map_err(|_| ExpectedError::NotJson)?;
-    let version = doc["version"].as_u64();
-    if version != Some(SCHEMA_VERSION) {
-        return Err(ExpectedError::UnsupportedVersion(version));
-    }
-    let chains = doc["chains"]
-        .as_object()
-        .filter(|m| !m.is_empty())
-        .ok_or(ExpectedError::NoChains)?;
+    let chains = chain_entries(body, "chains")?;
     let mut out = Vec::with_capacity(chains.len());
-    for (key, c) in chains {
-        let bad = |field| ExpectedError::Malformed {
-            chain: key.clone(),
-            field,
-        };
-        let addr = |v: &serde_json::Value, field: &'static str| -> Result<String, ExpectedError> {
-            v.as_str()
-                .filter(|a| is_address(a))
-                .map(str::to_string)
-                .ok_or_else(|| bad(field))
-        };
-        let nonzero = |v: &serde_json::Value, field: &'static str| {
-            addr(v, field).and_then(|a| if is_zero(&a) { Err(bad(field)) } else { Ok(a) })
-        };
-        let codehash = |v: &serde_json::Value, field: &'static str| {
-            v.as_str()
-                .filter(|h| is_bytes32(h) && !is_zero(h))
-                .map(str::to_string)
-                .ok_or_else(|| bad(field))
-        };
+    for (key, c) in &chains {
+        let f = ChainFields(key);
         let code = |v: &serde_json::Value, field: &'static str, hash_field: &'static str| {
             Ok::<_, ExpectedError>(ExpectedCode {
-                address: nonzero(&v["address"], field)?,
-                codehash: codehash(&v["codehash"], hash_field)?,
+                address: f.nonzero(&v["address"], field)?,
+                codehash: f.codehash(&v["codehash"], hash_field)?,
             })
         };
         let list = |v: &serde_json::Value, field: &'static str| {
-            v.as_array().cloned().ok_or_else(|| bad(field))
+            v.as_array().cloned().ok_or_else(|| f.bad(field))
         };
-        let chain_id = key.parse::<u64>().map_err(|_| bad("chain id"))?;
+        let chain_id = key.parse::<u64>().map_err(|_| f.bad("chain id"))?;
         let network = c["network"]
             .as_str()
             .filter(|n| !n.is_empty())
-            .ok_or_else(|| bad("network"))?
+            .ok_or_else(|| f.bad("network"))?
             .to_string();
-        let beacon_set_deployer = nonzero(&c["beaconSetDeployer"], "beaconSetDeployer")?;
+        let beacon_set_deployer = f.nonzero(&c["beaconSetDeployer"], "beaconSetDeployer")?;
         let beacons_raw = c["beacons"]
             .as_array()
             .filter(|b| b.len() == BEACON_NAMES.len())
-            .ok_or_else(|| bad("beacons"))?;
+            .ok_or_else(|| f.bad("beacons"))?;
         let beacons = beacons_raw
             .iter()
             .zip(BEACON_NAMES)
             .map(|(b, name)| {
                 Ok(ExpectedBeacon {
                     name,
-                    address: nonzero(&b["beacon"], "beacons[].beacon")?,
-                    codehash: codehash(&b["codehash"], "beacons[].codehash")?,
-                    implementation: nonzero(&b["implementation"], "beacons[].implementation")?,
-                    renamed_implementation: nonzero(
+                    address: f.nonzero(&b["beacon"], "beacons[].beacon")?,
+                    codehash: f.codehash(&b["codehash"], "beacons[].codehash")?,
+                    implementation: f.nonzero(&b["implementation"], "beacons[].implementation")?,
+                    renamed_implementation: f.nonzero(
                         &b["renamedImplementation"],
                         "beacons[].renamedImplementation",
                     )?,
-                    owner: nonzero(&b["owner"], "beacons[].owner")?,
+                    owner: f.nonzero(&b["owner"], "beacons[].owner")?,
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -276,47 +298,47 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
         let owners = s["owners"]
             .as_array()
             .filter(|o| !o.is_empty())
-            .ok_or_else(|| bad("safe.owners"))?
+            .ok_or_else(|| f.bad("safe.owners"))?
             .iter()
-            .map(|o| nonzero(o, "safe.owners"))
+            .map(|o| f.nonzero(o, "safe.owners"))
             .collect::<Result<Vec<_>, _>>()?;
         let threshold = s["threshold"]
             .as_u64()
             .filter(|t| *t >= 1 && *t as usize <= owners.len())
-            .ok_or_else(|| bad("safe.threshold"))?;
+            .ok_or_else(|| f.bad("safe.threshold"))?;
         let proxy_codehashes = list(&s["proxyCodehashes"], "safe.proxyCodehashes")?
             .iter()
-            .map(|h| codehash(h, "safe.proxyCodehashes"))
+            .map(|h| f.codehash(h, "safe.proxyCodehashes"))
             .collect::<Result<Vec<_>, _>>()?;
         if proxy_codehashes.is_empty() {
-            return Err(bad("safe.proxyCodehashes"));
+            return Err(f.bad("safe.proxyCodehashes"));
         }
         let singletons = list(&s["singletons"], "safe.singletons")?
             .iter()
-            .map(|a| nonzero(a, "safe.singletons"))
+            .map(|a| f.nonzero(a, "safe.singletons"))
             .collect::<Result<Vec<_>, _>>()?;
         if singletons.is_empty() {
-            return Err(bad("safe.singletons"));
+            return Err(f.bad("safe.singletons"));
         }
         let singleton_codehashes = list(&s["singletonCodehashes"], "safe.singletonCodehashes")?
             .iter()
-            .map(|h| codehash(h, "safe.singletonCodehashes"))
+            .map(|h| f.codehash(h, "safe.singletonCodehashes"))
             .collect::<Result<Vec<_>, _>>()?;
         if singleton_codehashes.len() != singletons.len() {
-            return Err(bad("safe.singletonCodehashes"));
+            return Err(f.bad("safe.singletonCodehashes"));
         }
         let version = s["version"]
             .as_str()
             .filter(|v| !v.is_empty())
-            .ok_or_else(|| bad("safe.version"))?
+            .ok_or_else(|| f.bad("safe.version"))?
             .to_string();
         let modules = list(&s["modules"], "safe.modules")?
             .iter()
-            .map(|a| nonzero(a, "safe.modules"))
+            .map(|a| f.nonzero(a, "safe.modules"))
             .collect::<Result<Vec<_>, _>>()?;
-        let guard = addr(&s["guard"], "safe.guard")?;
+        let guard = f.addr(&s["guard"], "safe.guard")?;
         let safe = ExpectedSafe {
-            address: nonzero(&s["address"], "safe.address")?,
+            address: f.nonzero(&s["address"], "safe.address")?,
             owners,
             threshold,
             proxy_codehashes,
@@ -325,8 +347,8 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             version,
             modules,
             guard: (!is_zero(&guard)).then_some(guard),
-            fallback_handler: nonzero(&s["fallbackHandler"], "safe.fallbackHandler")?,
-            fallback_handler_codehash: codehash(
+            fallback_handler: f.nonzero(&s["fallbackHandler"], "safe.fallbackHandler")?,
+            fallback_handler_codehash: f.codehash(
                 &s["fallbackHandlerCodehash"],
                 "safe.fallbackHandlerCodehash",
             )?,
@@ -336,16 +358,16 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             code: code(t, "timelock.address", "timelock.codehash")?,
             min_delay: t["minDelay"]
                 .as_u64()
-                .ok_or_else(|| bad("timelock.minDelay"))?,
+                .ok_or_else(|| f.bad("timelock.minDelay"))?,
         };
         let o = &c["orchestrator"];
         let orchestrator = ExpectedOrchestrator {
-            set_deployer: nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
-            beacon: nonzero(&o["beacon"], "orchestrator.beacon")?,
-            beacon_codehash: codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
-            implementation: nonzero(&o["implementation"], "orchestrator.implementation")?,
-            owner: nonzero(&o["owner"], "orchestrator.owner")?,
-            instance: nonzero(&o["instance"], "orchestrator.instance")?,
+            set_deployer: f.nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
+            beacon: f.nonzero(&o["beacon"], "orchestrator.beacon")?,
+            beacon_codehash: f.codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
+            implementation: f.nonzero(&o["implementation"], "orchestrator.implementation")?,
+            owner: f.nonzero(&o["owner"], "orchestrator.owner")?,
+            instance: f.nonzero(&o["instance"], "orchestrator.instance")?,
         };
         let authoriser = code(
             &c["authoriser"],
@@ -364,18 +386,18 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                     key: z["key"]
                         .as_str()
                         .filter(|k| !k.is_empty())
-                        .ok_or_else(|| bad("zoltu[].key"))?
+                        .ok_or_else(|| f.bad("zoltu[].key"))?
                         .to_string(),
                     code: code(z, "zoltu[].address", "zoltu[].codehash")?,
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let rename_migration = codehash(&c["renameMigration"], "renameMigration")?;
+        let rename_migration = f.codehash(&c["renameMigration"], "renameMigration")?;
         let text = |v: &serde_json::Value, field: &'static str| {
             v.as_str()
                 .filter(|s| !s.is_empty())
                 .map(str::to_string)
-                .ok_or_else(|| bad(field))
+                .ok_or_else(|| f.bad(field))
         };
         let tokens = list(&c["tokens"], "tokens")?
             .iter()
@@ -387,7 +409,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                     symbol: text(&t["symbol"], "tokens[].symbol")?,
                     decimals: t["decimals"]
                         .as_u64()
-                        .ok_or_else(|| bad("tokens[].decimals"))?,
+                        .ok_or_else(|| f.bad("tokens[].decimals"))?,
                     wrapped_token_vault_name: text(
                         &t["wrappedTokenVaultName"],
                         "tokens[].wrappedTokenVaultName",
@@ -406,78 +428,78 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                     )?,
                     wrapped_token_vault_decimals: t["wrappedTokenVaultDecimals"]
                         .as_u64()
-                        .ok_or_else(|| bad("tokens[].wrappedTokenVaultDecimals"))?,
-                    receipt_vault: nonzero(&t["receiptVault"], "tokens[].receiptVault")?,
-                    receipt: nonzero(&t["receipt"], "tokens[].receipt")?,
-                    wrapped_token_vault: nonzero(
+                        .ok_or_else(|| f.bad("tokens[].wrappedTokenVaultDecimals"))?,
+                    receipt_vault: f.nonzero(&t["receiptVault"], "tokens[].receiptVault")?,
+                    receipt: f.nonzero(&t["receipt"], "tokens[].receipt")?,
+                    wrapped_token_vault: f.nonzero(
                         &t["wrappedTokenVault"],
                         "tokens[].wrappedTokenVault",
                     )?,
-                    receipt_vault_receipt: nonzero(
+                    receipt_vault_receipt: f.nonzero(
                         &t["receiptVaultReceipt"],
                         "tokens[].receiptVaultReceipt",
                     )?,
-                    receipt_manager: nonzero(&t["receiptManager"], "tokens[].receiptManager")?,
-                    wrapped_token_vault_asset: nonzero(
+                    receipt_manager: f.nonzero(&t["receiptManager"], "tokens[].receiptManager")?,
+                    wrapped_token_vault_asset: f.nonzero(
                         &t["wrappedTokenVaultAsset"],
                         "tokens[].wrappedTokenVaultAsset",
                     )?,
-                    receipt_vault_beacon: nonzero(
+                    receipt_vault_beacon: f.nonzero(
                         &t["receiptVaultBeacon"],
                         "tokens[].receiptVaultBeacon",
                     )?,
-                    receipt_beacon: nonzero(&t["receiptBeacon"], "tokens[].receiptBeacon")?,
-                    wrapped_token_vault_beacon: nonzero(
+                    receipt_beacon: f.nonzero(&t["receiptBeacon"], "tokens[].receiptBeacon")?,
+                    wrapped_token_vault_beacon: f.nonzero(
                         &t["wrappedTokenVaultBeacon"],
                         "tokens[].wrappedTokenVaultBeacon",
                     )?,
-                    receipt_vault_codehash: codehash(
+                    receipt_vault_codehash: f.codehash(
                         &t["receiptVaultCodehash"],
                         "tokens[].receiptVaultCodehash",
                     )?,
-                    receipt_codehash: codehash(&t["receiptCodehash"], "tokens[].receiptCodehash")?,
-                    wrapped_token_vault_codehash: codehash(
+                    receipt_codehash: f.codehash(&t["receiptCodehash"], "tokens[].receiptCodehash")?,
+                    wrapped_token_vault_codehash: f.codehash(
                         &t["wrappedTokenVaultCodehash"],
                         "tokens[].wrappedTokenVaultCodehash",
                     )?,
-                    owner: nonzero(&t["owner"], "tokens[].owner")?,
-                    authoriser: nonzero(&t["authoriser"], "tokens[].authoriser")?,
+                    owner: f.nonzero(&t["owner"], "tokens[].owner")?,
+                    authoriser: f.nonzero(&t["authoriser"], "tokens[].authoriser")?,
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
         let qsep = match (network == REFERENCE_NETWORK, &c["qsep"]) {
             (false, serde_json::Value::Null) => None,
-            (false, _) => return Err(bad("qsep")),
+            (false, _) => return Err(f.bad("qsep")),
             (true, q) => Some(ExpectedQsep {
-                receipt_vault: nonzero(&q["receiptVault"], "qsep.receiptVault")?,
-                receipt: nonzero(&q["receipt"], "qsep.receipt")?,
-                wrapped_token_vault: nonzero(&q["wrappedTokenVault"], "qsep.wrappedTokenVault")?,
-                receipt_vault_receipt: nonzero(
+                receipt_vault: f.nonzero(&q["receiptVault"], "qsep.receiptVault")?,
+                receipt: f.nonzero(&q["receipt"], "qsep.receipt")?,
+                wrapped_token_vault: f.nonzero(&q["wrappedTokenVault"], "qsep.wrappedTokenVault")?,
+                receipt_vault_receipt: f.nonzero(
                     &q["receiptVaultReceipt"],
                     "qsep.receiptVaultReceipt",
                 )?,
-                receipt_manager: nonzero(&q["receiptManager"], "qsep.receiptManager")?,
-                wrapped_token_vault_asset: nonzero(
+                receipt_manager: f.nonzero(&q["receiptManager"], "qsep.receiptManager")?,
+                wrapped_token_vault_asset: f.nonzero(
                     &q["wrappedTokenVaultAsset"],
                     "qsep.wrappedTokenVaultAsset",
                 )?,
-                receipt_vault_beacon: nonzero(&q["receiptVaultBeacon"], "qsep.receiptVaultBeacon")?,
-                receipt_beacon: nonzero(&q["receiptBeacon"], "qsep.receiptBeacon")?,
-                wrapped_token_vault_beacon: nonzero(
+                receipt_vault_beacon: f.nonzero(&q["receiptVaultBeacon"], "qsep.receiptVaultBeacon")?,
+                receipt_beacon: f.nonzero(&q["receiptBeacon"], "qsep.receiptBeacon")?,
+                wrapped_token_vault_beacon: f.nonzero(
                     &q["wrappedTokenVaultBeacon"],
                     "qsep.wrappedTokenVaultBeacon",
                 )?,
-                receipt_vault_codehash: codehash(
+                receipt_vault_codehash: f.codehash(
                     &q["receiptVaultCodehash"],
                     "qsep.receiptVaultCodehash",
                 )?,
-                receipt_codehash: codehash(&q["receiptCodehash"], "qsep.receiptCodehash")?,
-                wrapped_token_vault_codehash: codehash(
+                receipt_codehash: f.codehash(&q["receiptCodehash"], "qsep.receiptCodehash")?,
+                wrapped_token_vault_codehash: f.codehash(
                     &q["wrappedTokenVaultCodehash"],
                     "qsep.wrappedTokenVaultCodehash",
                 )?,
-                owner: nonzero(&q["owner"], "qsep.owner")?,
-                authoriser: nonzero(&q["authoriser"], "qsep.authoriser")?,
+                owner: f.nonzero(&q["owner"], "qsep.owner")?,
+                authoriser: f.nonzero(&q["authoriser"], "qsep.authoriser")?,
             }),
         };
         out.push(ExpectedChain {
@@ -527,51 +549,25 @@ pub struct ExpectedV2 {
 
 /// Parse the file's `v2`, by chain id.
 pub fn parse_v2(body: &str) -> Result<Vec<ExpectedV2>, ExpectedError> {
-    if body.trim().is_empty() {
-        return Err(ExpectedError::Empty);
-    }
-    let doc: serde_json::Value = serde_json::from_str(body).map_err(|_| ExpectedError::NotJson)?;
-    let version = doc["version"].as_u64();
-    if version != Some(SCHEMA_VERSION) {
-        return Err(ExpectedError::UnsupportedVersion(version));
-    }
-    let chains = doc["v2"]
-        .as_object()
-        .filter(|m| !m.is_empty())
-        .ok_or(ExpectedError::NoChains)?;
+    let chains = chain_entries(body, "v2")?;
     let mut out = Vec::with_capacity(chains.len());
-    for (key, c) in chains {
-        let bad = |field| ExpectedError::Malformed {
-            chain: key.clone(),
-            field,
-        };
-        let nonzero = |v: &serde_json::Value, field: &'static str| {
-            v.as_str()
-                .filter(|a| is_address(a) && !is_zero(a))
-                .map(str::to_string)
-                .ok_or_else(|| bad(field))
-        };
-        let codehash = |v: &serde_json::Value, field: &'static str| {
-            v.as_str()
-                .filter(|h| is_bytes32(h) && !is_zero(h))
-                .map(str::to_string)
-                .ok_or_else(|| bad(field))
-        };
+    for (key, c) in &chains {
+        let f = ChainFields(key);
         let deployments = c["deployments"]
             .as_array()
             .filter(|d| !d.is_empty())
-            .ok_or_else(|| bad("v2.deployments"))?
+            .ok_or_else(|| f.bad("v2.deployments"))?
             .iter()
             .map(|d| {
                 Ok(ExpectedZoltu {
                     key: d["key"]
                         .as_str()
                         .filter(|k| !k.is_empty())
-                        .ok_or_else(|| bad("v2.deployments[].key"))?
+                        .ok_or_else(|| f.bad("v2.deployments[].key"))?
                         .to_string(),
                     code: ExpectedCode {
-                        address: nonzero(&d["address"], "v2.deployments[].address")?,
-                        codehash: codehash(&d["codehash"], "v2.deployments[].codehash")?,
+                        address: f.nonzero(&d["address"], "v2.deployments[].address")?,
+                        codehash: f.codehash(&d["codehash"], "v2.deployments[].codehash")?,
                     },
                 })
             })
@@ -582,20 +578,20 @@ pub fn parse_v2(body: &str) -> Result<Vec<ExpectedV2>, ExpectedError> {
                 let b = &c[field];
                 Ok(ExpectedV2Beacon {
                     name,
-                    address: nonzero(&b["beacon"], "v2 beacon")?,
-                    implementation: nonzero(&b["implementation"], "v2 beacon implementation")?,
-                    owner: nonzero(&b["owner"], "v2 beacon owner")?,
+                    address: f.nonzero(&b["beacon"], "v2 beacon")?,
+                    implementation: f.nonzero(&b["implementation"], "v2 beacon implementation")?,
+                    owner: f.nonzero(&b["owner"], "v2 beacon owner")?,
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
         out.push(ExpectedV2 {
-            chain_id: key.parse::<u64>().map_err(|_| bad("chain id"))?,
+            chain_id: key.parse::<u64>().map_err(|_| f.bad("chain id"))?,
             network: c["network"]
                 .as_str()
                 .filter(|n| !n.is_empty())
-                .ok_or_else(|| bad("v2.network"))?
+                .ok_or_else(|| f.bad("v2.network"))?
                 .to_string(),
-            beacon_set_deployer: nonzero(&c["beaconSetDeployer"], "v2.beaconSetDeployer")?,
+            beacon_set_deployer: f.nonzero(&c["beaconSetDeployer"], "v2.beaconSetDeployer")?,
             deployments,
             beacons,
         });
