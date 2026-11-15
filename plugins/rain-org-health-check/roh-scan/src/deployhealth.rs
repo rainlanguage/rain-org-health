@@ -882,7 +882,7 @@ mod tests {
             "Receipt beacon",
             Some("0x86e9".into()),
             owners,
-            target,
+            Some(target),
             Some(V1),
             owner.map(str::to_string),
             imp.map(str::to_string),
@@ -974,10 +974,11 @@ mod tests {
         assert_eq!(b["status"], "healthy");
     }
 
-    /// An all-zero pin is a placeholder, not an address: a beacon answering the
-    /// zero address must never match one, in any spelling.
+    /// An unhydrated Solidity constant is a placeholder, not an address: a
+    /// beacon answering the zero address is never labelled legacy or V1 by one,
+    /// in any spelling.
     #[test]
-    fn an_unhydrated_pin_never_adopts_a_zero_owner_or_impl() {
+    fn an_unhydrated_constant_never_labels_a_zero_owner_or_impl() {
         for spelling in [
             ZERO,
             "0X0000000000000000000000000000000000000000",
@@ -985,21 +986,21 @@ mod tests {
             "",
         ] {
             let zeros = BeaconOwners {
-                expected: spelling,
-                safe: Some(spelling),
                 legacy: Some(spelling),
+                ..OWNERS
             };
-            let b = bh_with(&zeros, TARGET, Some(ZERO), Some(TARGET));
-            assert_eq!(
-                b["ownerLabel"], "foreign",
-                "zero owner matched {spelling:?}"
+            let b = beacon_health(
+                "Receipt beacon",
+                Some("0x86e9".into()),
+                &zeros,
+                Some(TARGET),
+                Some(spelling),
+                Some(ZERO.into()),
+                Some(ZERO.into()),
             );
+            assert_eq!(b["ownerLabel"], "foreign", "{spelling:?}");
+            assert_eq!(b["implVersion"], "unknown", "{spelling:?}");
             assert_eq!(b["status"], "drift");
-            assert!(b["targetOwner"].is_null());
-            let t = bh_with(&OWNERS, spelling, Some(TIMELOCK), Some(ZERO));
-            assert!(t["atTarget"].is_null(), "zero impl matched {spelling:?}");
-            assert!(t["targetImpl"].is_null());
-            assert_eq!(t["status"], "unknown");
         }
     }
 
@@ -1020,7 +1021,7 @@ mod tests {
             "Alpha",
             Some("0x1".into()),
             &OWNERS,
-            TARGET,
+            Some(TARGET),
             None,
             Some(SAFE.into()),
             Some(TARGET.into()),
@@ -1045,12 +1046,8 @@ mod tests {
         };
         let a = bh(Some(TIMELOCK), Some(TARGET));
         let b = bh_with(&other, TARGET, Some(TIMELOCK), Some(TARGET));
-        let v = build_beacons("o", "r", "base", "host", Some(ZERO), vec![a, b]).unwrap();
+        let v = build_beacons("o", "r", "base", "host", Some(SAFE), vec![a, b]).unwrap();
         assert!(v["timelockOwner"].is_null());
-        assert!(
-            v["safeOwner"].is_null(),
-            "zero Safe pin emitted as a holder"
-        );
     }
 
     /// An unreadable chain is REPORTED, not dropped. A dropped chain renders
@@ -1077,8 +1074,11 @@ mod tests {
     const OTHER: &str = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
 
     fn base() -> crate::expected::ExpectedChain {
-        let chains = crate::expected::parse(FIXTURE).unwrap();
-        crate::expected::reference(&chains).unwrap().clone()
+        crate::expected::parse(FIXTURE)
+            .unwrap()
+            .into_iter()
+            .find(|c| c.network == "base")
+            .unwrap()
     }
 
     fn base_v2() -> ExpectedV2 {
@@ -1388,8 +1388,7 @@ mod tests {
         );
     }
 
-    /// A Zoltu suite's codehash is its row; no code reads `none` and drifts, and
-    /// a zero codehash is no pin.
+    /// A Zoltu suite's codehash is its row; no code reads `none` and drifts.
     #[test]
     fn zoltu_row_checks_the_suite_codehash() {
         let v = base_v2();
@@ -1402,11 +1401,6 @@ mod tests {
         assert_eq!(r["status"], "healthy");
         assert_eq!(zoltu_row(z, Some("none".into()))["status"], "drift");
         assert_eq!(zoltu_row(z, None)["status"], "unknown");
-        let mut zero = z.clone();
-        zero.code.codehash = format!("0x{}", "0".repeat(64));
-        let r = zoltu_row(&zero, Some(zero.code.codehash.clone()));
-        assert!(r["expected"].is_null());
-        assert_eq!(r["status"], "unknown");
     }
 
     /// Base's v2 rows: every deployment's codehash in file order, then each

@@ -1248,6 +1248,10 @@ mod tests {
         assert_eq!(parse_address_constant(SAFE_LIB, "NOPE_NOT_HERE"), None);
     }
 
+    fn fixture_chains() -> Vec<ExpectedChain> {
+        crate::expected::parse(include_str!("../testdata/expected-state.json")).unwrap()
+    }
+
     /// The Base Safe expectation as `expected-state.json` carries it.
     fn exp_safe() -> ExpectedSafe {
         ExpectedSafe {
@@ -1639,7 +1643,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            Ok(&exp_safe()),
+            Ok(fixture_chains().as_slice()),
             None,
         )
         .expect("anchor resolves");
@@ -1677,7 +1681,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            Ok(&exp_safe()),
+            Ok(fixture_chains().as_slice()),
             live,
         )
         .unwrap()
@@ -1780,8 +1784,11 @@ mod tests {
         "#;
         let v = owners_from_auth_lib(auth_lib, Some(V4_CLONE_BASE));
         let expected: Vec<(&str, String, &str)> = vec![
-            ("safe", "Base Safe".into(), "base"),
-            ("safe", "Ethereum Safe".into(), "ethereum"),
+            ("safe", "Safe".into(), "base"),
+            ("safe", "Safe".into(), "ethereum"),
+            ("safe", "Safe".into(), "bsc"),
+            ("safe", "Safe".into(), "hyperevm"),
+            ("safe", "Safe".into(), "robinhood"),
             ("authoriser", "Authoriser implementation".into(), "base"),
             ("authoriser", "V4 authoriser clone".into(), "base"),
             ("authoriser", "V4 authoriser clone".into(), "ethereum"),
@@ -1883,7 +1890,7 @@ mod tests {
                 v4_lib: &v4_zero,
                 overrides: OVERRIDES,
             },
-            Ok(&exp_safe()),
+            Ok(fixture_chains().as_slice()),
             None,
         )
         .unwrap();
@@ -1907,48 +1914,72 @@ mod tests {
         );
     }
 
+    /// An unreadable expected-state is no owners doc, even with the Safe
+    /// constants readable: they are never a fallback.
     #[test]
-    fn build_owners_is_none_without_any_anchor() {
-        // No expectation and the anchor constant unreadable → no owners doc at all.
+    fn build_owners_is_none_when_expected_state_is_unreadable() {
         let src = OwnerSources {
-            safe_lib: "",
+            safe_lib: SAFE_LIB,
             auth_lib: AUTH_LIB,
             v4_lib: V4_LIB,
             overrides: OVERRIDES,
         };
-        assert_eq!(
-            build_owners("o", "r", &src, Err(&ExpectedError::Empty), None),
-            None
-        );
-        // The file's Safe anchors the view when the constant is gone.
-        let v = build_owners("o", "r", &src, Ok(&exp_safe()), None).unwrap();
-        assert_eq!(
-            v["groups"][0]["entries"][0]["address"],
-            exp_safe().address.as_str()
-        );
+        for e in [
+            ExpectedError::Empty,
+            ExpectedError::NotJson,
+            ExpectedError::NoChains,
+        ] {
+            assert_eq!(build_owners("o", "r", &src, Err(&e), None), None, "{e}");
+        }
     }
 
+    /// One Safe row per chain expected-state lists, in its order and at its
+    /// address, whatever the Safe constants say.
     #[test]
-    fn unresolved_entry_becomes_null_not_dropped() {
-        // The Ethereum Safe missing from the source surfaces as a null address in
-        // its row rather than vanishing.
-        let safe_no_eth = "address internal constant STOX_TOKEN_OWNER_SAFE = 0xe70d821f3462a074e63b42d0AaC6523faAe1d611;";
-        let v = build_owners(
-            "o",
-            "r",
-            &OwnerSources {
-                safe_lib: safe_no_eth,
+    fn the_safe_group_lists_every_expected_state_chain_safe() {
+        let mut chains = fixture_chains();
+        for (i, c) in chains.iter_mut().enumerate() {
+            c.safe.address = format!("0x{:040x}", 0xa11ce + i);
+        }
+        for safe_lib in [SAFE_LIB, ""] {
+            let src = OwnerSources {
+                safe_lib,
                 auth_lib: AUTH_LIB,
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
-            },
-            Ok(&exp_safe()),
-            None,
-        )
-        .unwrap();
-        let eth = &v["groups"][0]["entries"][1];
-        assert_eq!(eth["role"], "Ethereum Safe");
-        assert!(eth["address"].is_null());
+            };
+            let v = build_owners("o", "r", &src, Ok(chains.as_slice()), None).unwrap();
+            let got: Vec<(&str, &str, &str, &str)> = group_entries(&v, "safe")
+                .iter()
+                .map(|e| {
+                    (
+                        e["role"].as_str().unwrap(),
+                        e["network"].as_str().unwrap(),
+                        e["address"].as_str().unwrap(),
+                        e["status"].as_str().unwrap(),
+                    )
+                })
+                .collect();
+            let want: Vec<(&str, &str, &str, &str)> = chains
+                .iter()
+                .map(|c| {
+                    (
+                        "Safe",
+                        c.network.as_str(),
+                        c.safe.address.as_str(),
+                        "active",
+                    )
+                })
+                .collect();
+            assert_eq!(got, want);
+        }
+        assert_eq!(
+            chains
+                .iter()
+                .map(|c| c.network.as_str())
+                .collect::<Vec<_>>(),
+            ["base", "ethereum", "bsc", "hyperevm", "robinhood"]
+        );
     }
 
     // ---- authoriser role grants (#143) ----
@@ -2070,7 +2101,7 @@ mod tests {
                 v4_lib: V4_LIB,
                 overrides: OVERRIDES,
             },
-            Ok(&exp_safe()),
+            Ok(fixture_chains().as_slice()),
             None,
         )
         .unwrap();

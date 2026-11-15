@@ -607,6 +607,7 @@ mod tests {
 
     const ZERO: &str = "0x0000000000000000000000000000000000000000";
     const DEPLOYER: &str = "0xd64246e6b25F745f005E6233e050C9B879E660Dc";
+    const BASE_DEPLOYER: &str = "0x2191981Ca2477B745870cC307cbEB4cB2967ACe3";
     const ETH_TIMELOCK: &str = "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B";
     const BASE_TIMELOCK: &str = "0x48ba1371A78E6cC54157c63721756ab444510DB3";
     const ETH_SAFE: &str = "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329";
@@ -902,7 +903,7 @@ mod tests {
     };
     const BASE: Chain = Chain {
         network: "base",
-        deployer: ZERO,
+        deployer: BASE_DEPLOYER,
         timelock: BASE_TIMELOCK,
         safe: BASE_SAFE,
         beacons: [
@@ -967,7 +968,7 @@ mod tests {
         );
         let base = &got[0];
         assert_eq!(base.network, "base");
-        assert_eq!(base.beacon_set_deployer, DEPLOYER);
+        assert_eq!(base.beacon_set_deployer, BASE_DEPLOYER);
         assert_eq!(
             base.beacons.iter().map(|b| b.name).collect::<Vec<_>>(),
             BEACON_NAMES
@@ -1014,10 +1015,13 @@ mod tests {
         let b = &got[0].beacons[1];
         assert_eq!(
             b.expected_implementation(Some(true)),
-            RECEIPT_VAULT_RENAMED_IMPL
+            Some(RECEIPT_VAULT_RENAMED_IMPL)
         );
-        assert_eq!(b.expected_implementation(Some(false)), RECEIPT_VAULT_IMPL);
-        assert_eq!(b.expected_implementation(None), "");
+        assert_eq!(
+            b.expected_implementation(Some(false)),
+            Some(RECEIPT_VAULT_IMPL)
+        );
+        assert_eq!(b.expected_implementation(None), None);
     }
 
     #[test]
@@ -1272,15 +1276,6 @@ mod tests {
             assert_eq!(malformed(&with(&at, json!("0x4A9a"))), field, "{at} short");
             assert_eq!(malformed(&without(&at)), field, "{at} missing");
         }
-    }
-
-    #[test]
-    fn reference_needs_a_base_chain() {
-        let only_eth = doc(&[("1", chain(&ETHEREUM))]);
-        let got = parse(&only_eth.to_string()).unwrap();
-        assert_eq!(reference(&got), Err(ExpectedError::NoReferenceChain));
-        let both = parse(&good().to_string()).unwrap();
-        assert_eq!(reference(&both).map(|c| c.chain_id), Ok(8453));
     }
 
     #[test]
@@ -1662,6 +1657,77 @@ mod tests {
         }
     }
 
+    #[test]
+    fn a_zero_beacon_set_deployer_is_malformed_on_every_chain() {
+        for id in ["1", "8453"] {
+            let body = with(&format!("/chains/{id}/beaconSetDeployer"), json!(ZERO));
+            match parse(&body.to_string()) {
+                Err(ExpectedError::Malformed { chain, field }) => {
+                    assert_eq!((chain.as_str(), field), (id, "beaconSetDeployer"));
+                }
+                other => panic!("chain {id}: expected Malformed, got {other:?}"),
+            }
+        }
+    }
+
+    /// `parse` and `parse_v2` share one address and one codehash validator, so
+    /// each rejects exactly the same values and accepts the same mixed case.
+    #[test]
+    fn parse_and_parse_v2_reject_the_same_zero_and_malformed_values() {
+        let mut both = good();
+        both["v2"] = v2_good()["v2"].clone();
+        let field = |r: Result<usize, ExpectedError>| match r {
+            Err(ExpectedError::Malformed { field, .. }) => Some(field),
+            Ok(_) => None,
+            Err(e) => panic!("expected Malformed, got {e:?}"),
+        };
+        let v1 = |at: &str, v: &Value| {
+            field(parse(&set(both.clone(), at, v.clone()).to_string()).map(|c| c.len()))
+        };
+        let v2 = |at: &str, v: &Value| {
+            field(parse_v2(&set(both.clone(), at, v.clone()).to_string()).map(|c| c.len()))
+        };
+        let hex = |n: usize| format!("0x{}", "aB".repeat(n / 2));
+        let bad_addresses = [
+            json!(ZERO),
+            json!(hex(38)),
+            json!(hex(42)),
+            json!(format!("0X{}", "aB".repeat(20))),
+            json!(format!("0x{}gA", "aB".repeat(19))),
+            json!(format!("00{}", "aB".repeat(20))),
+            json!(8453),
+            Value::Null,
+        ];
+        let bad_hashes = [
+            json!(format!("0x{}", "0".repeat(64))),
+            json!(hex(62)),
+            json!(hex(66)),
+            json!(format!("0X{}", "aB".repeat(32))),
+            json!(format!("0x{}gA", "aB".repeat(31))),
+            json!(1),
+            Value::Null,
+        ];
+        let (addr1, addr2) = (
+            "/chains/8453/beaconSetDeployer",
+            "/v2/8453/beaconSetDeployer",
+        );
+        let (hash1, hash2) = (
+            "/chains/8453/zoltu/0/codehash",
+            "/v2/8453/deployments/0/codehash",
+        );
+        for v in &bad_addresses {
+            assert_eq!(v1(addr1, v), Some("beaconSetDeployer"), "{v}");
+            assert_eq!(v2(addr2, v), Some("v2.beaconSetDeployer"), "{v}");
+        }
+        for v in &bad_hashes {
+            assert_eq!(v1(hash1, v), Some("zoltu[].codehash"), "{v}");
+            assert_eq!(v2(hash2, v), Some("v2.deployments[].codehash"), "{v}");
+        }
+        let (addr, hash) = (json!(hex(40)), json!(hex(64)));
+        assert_eq!((v1(addr1, &addr), v2(addr2, &addr)), (None, None));
+        assert_eq!((v1(hash1, &hash), v2(hash2, &hash)), (None, None));
+    }
+
     /// The file names every beacon by address, so a zero beacon or token leg
     /// beacon is malformed even on a chain with a beacon-set deployer.
     #[test]
@@ -1697,7 +1763,7 @@ mod tests {
             .unwrap()
             .pop();
         assert_eq!(malformed(&short), "beacons");
-        let body = r#"{"version": 1, "chains": {"8453": {"network": "base", "beaconSetDeployer": "0x0000000000000000000000000000000000000000"}}}"#;
+        let body = r#"{"version": 1, "chains": {"8453": {"network": "base", "beaconSetDeployer": "0x2191981Ca2477B745870cC307cbEB4cB2967ACe3"}}}"#;
         assert_eq!(malformed(&serde_json::from_str(body).unwrap()), "beacons");
     }
 
@@ -1732,10 +1798,6 @@ mod tests {
         assert_eq!(
             ExpectedError::UnsupportedVersion(None).to_string(),
             "expected-state.json has schema version none, this scanner reads 1"
-        );
-        assert_eq!(
-            ExpectedError::NoReferenceChain.to_string(),
-            "expected-state.json has no base chain"
         );
         assert_eq!(
             ExpectedError::Malformed {
