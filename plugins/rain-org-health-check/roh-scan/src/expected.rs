@@ -162,7 +162,6 @@ pub enum ExpectedError {
     NotJson,
     UnsupportedVersion(Option<u64>),
     NoChains,
-    NoReferenceChain,
     Malformed { chain: String, field: &'static str },
 }
 
@@ -177,9 +176,6 @@ impl std::fmt::Display for ExpectedError {
                 v.map_or("none".to_string(), |v| v.to_string())
             ),
             ExpectedError::NoChains => write!(f, "{EXPECTED_STATE_PATH} lists no chains"),
-            ExpectedError::NoReferenceChain => {
-                write!(f, "{EXPECTED_STATE_PATH} has no {REFERENCE_NETWORK} chain")
-            }
             ExpectedError::Malformed { chain, field } => write!(
                 f,
                 "{EXPECTED_STATE_PATH} chain {chain} has a missing or malformed {field}"
@@ -606,14 +602,6 @@ pub fn parse_v2(body: &str) -> Result<Vec<ExpectedV2>, ExpectedError> {
     }
     out.sort_by_key(|c| (c.network != REFERENCE_NETWORK, c.chain_id));
     Ok(out)
-}
-
-/// The reference chain's entry, which the Base-only sections read.
-pub fn reference(chains: &[ExpectedChain]) -> Result<&ExpectedChain, ExpectedError> {
-    chains
-        .iter()
-        .find(|c| c.network == REFERENCE_NETWORK)
-        .ok_or(ExpectedError::NoReferenceChain)
 }
 
 #[cfg(test)]

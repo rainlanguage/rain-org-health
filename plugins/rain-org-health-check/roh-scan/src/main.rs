@@ -2751,11 +2751,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let expected_body = gh_file(deploy_org, deploy_repo, expected::EXPECTED_STATE_PATH);
         let expected_state = expected::parse(&expected_body);
         let expected_v2 = expected::parse_v2(&expected_body);
-        let expected_base: Result<&expected::ExpectedChain, expected::ExpectedError> =
-            expected_state
-                .as_ref()
-                .map_err(Clone::clone)
-                .and_then(|cs| expected::reference(cs));
         let base_vaults: &[String] = privileged
             .as_ref()
             .ok()
@@ -2797,7 +2792,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 org,
                 repo,
                 &deploy_sources,
-                expected_base.as_ref().map(|c| &c.safe),
+                expected_state.as_deref(),
                 live_authoriser.as_deref(),
             )
             .unwrap_or(serde_json::Value::Null)
