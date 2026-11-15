@@ -6847,7 +6847,10 @@ Deno.test("deployments: beacons resolve owner (Safe/legacy) + impl and flag a Sa
     addrs.includes(TARGET),
     "the target impl address is shown for checking a proposed upgrade",
   );
-  assert(chips.includes("expected ✓"), "the at-target beacon confirms the expected impl");
+  assert(
+    chips.includes("expected ✓"),
+    "the at-target beacon confirms the expected impl",
+  );
   assert(chips.filter((c) => c === "drift").length === 2, "two drift statuses");
   assert(
     collect(box, "own-verify-drift").length === 1,
@@ -6892,7 +6895,12 @@ Deno.test("deployments: an all-chains beacon failure says all chains, not unknow
     deploymentOwners: null,
     deploymentHealth: null,
     deploymentBeacons: [
-      { network: null, rpcHost: null, unavailable: true, reason: "expected-state.json: HTTP 404" },
+      {
+        network: null,
+        rpcHost: null,
+        unavailable: true,
+        reason: "expected-state.json: HTTP 404",
+      },
     ],
   };
   const box = deploymentsBox(data);
@@ -8163,6 +8171,75 @@ Deno.test("deployments: an unreadable Zoltu + tokens chain says so under its own
   );
   assert(all.includes("Zoltu + tokens — all chains"), all);
   assert(all.includes("expected-state.json: HTTP 404"), all);
+});
+
+Deno.test("deployments: v2 rows render per chain on the contracts tab after Zoltu + tokens, mismatches flagged", () => {
+  const RECEIPT = "0xbab0e6b7b5dda86fb8ba81c00aea0ceb8b73686b";
+  const BEACON = "0x7efecb081f3a14bc86cfa45373a23121a5d90ec1";
+  const IMPL = "0xe7573879d73455dc92cb4087fa8177594387cbcd";
+  const OTHER = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+  const box = deploymentsBox({
+    deploymentCodeTokens: [factsDoc("base", [])],
+    deploymentV2: [
+      factsDoc("base", [
+        factRow(
+          "zoltu StoxReceipt",
+          "codehash",
+          RECEIPT,
+          HASH_A,
+          HASH_A,
+          "healthy",
+        ),
+        factRow(
+          "Receipt beacon",
+          "implementation",
+          BEACON,
+          IMPL,
+          OTHER,
+          "drift",
+        ),
+      ]),
+      factsDoc("polygon", [
+        factRow("Receipt beacon", "owner", BEACON, RECEIPT, null, "unknown"),
+      ]),
+      unreadableChain(
+        "arbitrum",
+        "this scanner has no RPC endpoints for this chain",
+      ),
+    ],
+  });
+  const panels = panelsOf(box);
+  const h = headings(panels.contracts);
+  const at = (t) => h.indexOf(t);
+  assert(
+    at("V2 — base") > at("Zoltu + tokens — base") &&
+      at("V2 — polygon") > at("V2 — base") &&
+      at("V2 — arbitrum") > at("V2 — polygon"),
+    "each v2 chain has its own section after Zoltu + tokens: " + h.join(" | "),
+  );
+  const banners = collect(panels.contracts, "own-verify").map(textOf);
+  assert(
+    banners.some((b) => b.includes("1 of 2 V2 facts as expected on base.")),
+    banners.join(" | "),
+  );
+  assert(
+    banners.some((b) => b.includes("0 of 1 V2 facts as expected on polygon.")),
+    banners.join(" | "),
+  );
+  const impl = rowByRole(panels.contracts, "Receipt beacon — implementation");
+  assert(impl.className.includes("hlth-drift"), impl.className);
+  const il = factLines(impl);
+  assert(il.live === OTHER && il.expected === IMPL, JSON.stringify(il));
+  const zoltu = rowByRole(panels.contracts, "zoltu StoxReceipt — codehash");
+  assert(zoltu.className.includes("hlth-healthy"), zoltu.className);
+  const owner = rowByRole(panels.contracts, "Receipt beacon — owner");
+  assert(factLines(owner).live === "—", JSON.stringify(factLines(owner)));
+  assert(
+    textOf(panels.contracts).includes(
+      "V2 data unavailable — this scanner has no RPC endpoints for this chain.",
+    ),
+    "an unreadable v2 chain says so",
+  );
 });
 
 Deno.test("deployments: each chain's Safe facts show live beside expected and flag a mismatch", () => {
