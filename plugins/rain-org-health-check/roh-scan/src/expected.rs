@@ -122,8 +122,7 @@ pub struct ExpectedToken {
 pub struct ExpectedChain {
     pub chain_id: u64,
     pub network: String,
-    /// `None` when the file carries the zero address.
-    pub beacon_set_deployer: Option<String>,
+    pub beacon_set_deployer: String,
     pub beacons: Vec<ExpectedBeacon>,
     pub safe: ExpectedSafe,
     pub timelock: ExpectedTimelock,
@@ -255,8 +254,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             .filter(|n| !n.is_empty())
             .ok_or_else(|| bad("network"))?
             .to_string();
-        let deployer = addr(&c["beaconSetDeployer"], "beaconSetDeployer")?;
-        let beacon_set_deployer = (!is_zero(&deployer)).then_some(deployer);
+        let beacon_set_deployer = nonzero(&c["beaconSetDeployer"], "beaconSetDeployer")?;
         let beacons_raw = c["beacons"]
             .as_array()
             .filter(|b| b.len() == BEACON_NAMES.len())
@@ -987,7 +985,7 @@ mod tests {
         );
         let base = &got[0];
         assert_eq!(base.network, "base");
-        assert_eq!(base.beacon_set_deployer, None);
+        assert_eq!(base.beacon_set_deployer, DEPLOYER);
         assert_eq!(
             base.beacons.iter().map(|b| b.name).collect::<Vec<_>>(),
             BEACON_NAMES
@@ -1010,7 +1008,7 @@ mod tests {
         assert!(base.beacons.iter().all(|b| b.owner == BASE_TIMELOCK));
 
         let eth = &got[1];
-        assert_eq!(eth.beacon_set_deployer.as_deref(), Some(DEPLOYER));
+        assert_eq!(eth.beacon_set_deployer, DEPLOYER);
         assert_eq!(
             eth.beacons
                 .iter()

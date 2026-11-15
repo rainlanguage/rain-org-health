@@ -3229,15 +3229,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
                     };
                     let mut rows = Vec::new();
-                    if let Some(d) = c.beacon_set_deployer.as_deref() {
-                        rows.push(deployhealth::infra_row(
-                            "beaconSetDeployer",
-                            "hasCode",
-                            Some(d),
-                            Some("true"),
-                            has_code(d),
-                        ));
-                    }
+                    rows.push(deployhealth::infra_row(
+                        "beaconSetDeployer",
+                        "hasCode",
+                        Some(&c.beacon_set_deployer),
+                        Some("true"),
+                        has_code(&c.beacon_set_deployer),
+                    ));
                     for b in &c.beacons {
                         let addr = Some(b.address.as_str());
                         rows.push(deployhealth::infra_row(
