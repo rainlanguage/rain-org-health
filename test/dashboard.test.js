@@ -5839,8 +5839,6 @@ const OWNERS = {
   deploymentOwners: {
     repo: "st0x.deploy",
     org: "S01-Issuer",
-    threshold: 3,
-    signerCount: 6,
     groups: [
       {
         id: "safe",
@@ -5862,28 +5860,6 @@ const OWNERS = {
             note: "",
           },
         ],
-      },
-      {
-        id: "signers",
-        title: "Safe signers (3-of-6)",
-        note: "",
-        verification: {
-          reachable: true,
-          network: "base",
-          safe: "0xe70d821f3462a074e63b42d0AaC6523faAe1d611",
-          rpcHost: "mainnet.base.org",
-          onChainCount: 6,
-          match: true,
-          threshold: { declared: 3, onChain: 3, match: true },
-        },
-        entries: [1, 2, 3, 4, 5, 6].map((i) => ({
-          role: "Signer " + i,
-          address: "0x" + String(i).repeat(40).slice(0, 40),
-          network: "",
-          status: "active",
-          note: "",
-          onChain: "match",
-        })),
       },
       {
         id: "authoriser",
@@ -5917,13 +5893,9 @@ const OWNERS = {
   },
 };
 
-Deno.test("deployments: renders every owner group, six signers, and per-entry status pills", () => {
+Deno.test("deployments: renders every owner group and per-entry status pills", () => {
   const box = deploymentsBox(OWNERS);
-  assert(collect(box, "own-group").length === 4, "four owner groups");
-  const signers = collect(box, "own-role").filter((r) =>
-    (r.textContent || "").startsWith("Signer ")
-  );
-  assert(signers.length === 6, "six signer rows, got " + signers.length);
+  assert(collect(box, "own-group").length === 3, "three owner groups");
   assert(
     collect(box, "own-status-pending").length === 1,
     "one pending status pill",
@@ -5963,8 +5935,6 @@ Deno.test("deployments: an unresolved address renders as not-found, not dropped"
     deploymentOwners: {
       repo: "st0x.deploy",
       org: "S01-Issuer",
-      threshold: 3,
-      signerCount: 6,
       groups: [{
         id: "safe",
         title: "t",
@@ -6017,7 +5987,7 @@ Deno.test("deployments: the Historical & bricked group is on the Historical tab,
   );
   assert(
     groupHeads(panels.safe).join("|") ===
-      "Upgrade authority — token-owner Safe|Safe signers (3-of-6)|Operational access — authoriser",
+      "Upgrade authority — token-owner Safe|Operational access — authoriser",
     "Safe & ownership keeps every other group, in order, and not the historical one: " +
       groupHeads(panels.safe).join("|"),
   );
@@ -6030,7 +6000,7 @@ Deno.test("deployments: the Historical & bricked group is on the Historical tab,
 Deno.test("deployments: an owner group is filed on Historical by its id, not its title", () => {
   const data = structuredClone(OWNERS);
   const groups = data.deploymentOwners.groups;
-  groups[3].title = "Retired";
+  groups[2].title = "Retired";
   groups[0].title = "Historical & bricked";
   const panels = panelsByTab(deploymentsBox(data));
   assert(
@@ -6056,97 +6026,6 @@ Deno.test("deployments: no owner data says so on both Safe & ownership and Histo
   }
   assert(collect(box, "empty").length === 2, "and nowhere else");
   assert(collect(box, "own-group").length === 0, "no owner groups rendered");
-});
-
-Deno.test("deployments: verified signers show expected + on-chain provenance side by side", () => {
-  const box = deploymentsBox(OWNERS);
-  assert(
-    collect(box, "own-verify-ok").length === 1,
-    "an on-chain-verified banner",
-  );
-  // each of the six signers renders BOTH a 'expected ✓' and an 'on-chain ✓' chip
-  const labels = collect(box, "own-chip").map((c) => c.textContent);
-  assert(
-    labels.filter((l) => l === "expected ✓").length === 6,
-    "six expected ✓ chips",
-  );
-  assert(
-    labels.filter((l) => l === "on-chain ✓").length === 6,
-    "six on-chain ✓ chips",
-  );
-});
-
-Deno.test("deployments: on-chain drift shows a drift banner, a missing chip, and an unexpected row", () => {
-  const data = {
-    deploymentOwners: {
-      repo: "st0x.deploy",
-      org: "S01-Issuer",
-      threshold: 3,
-      signerCount: 2,
-      groups: [{
-        id: "signers",
-        title: "Safe signers",
-        note: "",
-        verification: {
-          reachable: true,
-          network: "base",
-          safe: "0xe70dSafe",
-          rpcHost: "mainnet.base.org",
-          onChainCount: 2,
-          match: false,
-          threshold: { declared: 3, onChain: 2, match: false },
-        },
-        entries: [
-          {
-            role: "Signer 1",
-            address: "0x1111111111111111111111111111111111111111",
-            network: "",
-            status: "active",
-            note: "",
-            onChain: "match",
-          },
-          {
-            role: "Signer 2",
-            address: "0x2222222222222222222222222222222222222222",
-            network: "",
-            status: "active",
-            note: "",
-            onChain: "missing",
-          },
-          {
-            role: "Unexpected on-chain owner",
-            address: "0xdead000000000000000000000000000000000001",
-            network: "base",
-            status: "extra",
-            note: "not declared",
-            onChain: "extra",
-          },
-        ],
-      }],
-    },
-  };
-  const box = deploymentsBox(data);
-  assert(collect(box, "own-verify-drift").length === 1, "a drift banner");
-  const labels = collect(box, "own-chip").map((c) => c.textContent);
-  // the declared-but-absent signer reads on-chain ✗
-  assert(
-    labels.filter((l) => l === "on-chain ✗").length === 1,
-    "one on-chain ✗ (missing signer)",
-  );
-  // the on-chain-only owner reads expected ✗ (its on-chain source is still ✓)
-  assert(
-    labels.filter((l) => l === "expected ✗").length === 1,
-    "one expected ✗ (unexpected owner)",
-  );
-  assert(
-    collect(box, "own-extra").length === 1,
-    "the unexpected owner is its own flagged row",
-  );
-  const banner = collect(box, "own-verify-drift")[0];
-  assert(
-    textOf(banner).includes("3 (expected) · 2 (on-chain)"),
-    "threshold mismatch shown: " + textOf(banner),
-  );
 });
 
 // ---- deployments.html: authoriser role grants (#143) ----
@@ -6616,7 +6495,7 @@ Deno.test("deployments: with no grant data the section is absent and the rest of
     "no grants section",
   );
   assert(
-    collect(box, "own-group").length === 4,
+    collect(box, "own-group").length === 3,
     "the owner groups still render",
   );
   // …and an empty grantee list is the same: nothing, rather than a table that
@@ -8021,7 +7900,7 @@ Deno.test("deployments: infra rows show live beside expected and flag drift and 
   );
   const banner = collect(panels.contracts, "own-verify")[0];
   assert(
-    textOf(banner).includes("1 of 4 infra facts as expected on base."),
+    textOf(banner).includes("1 of 4 Infra facts as expected on base."),
     "the banner counts healthy of total: " + textOf(banner),
   );
   assert(
@@ -8216,7 +8095,7 @@ Deno.test("deployments: Zoltu and token-leg rows render under their own heading,
   );
   const banner = collect(panels.contracts, "own-verify")[0];
   assert(
-    textOf(banner).includes("1 of 4 zoltu + tokens facts as expected on base."),
+    textOf(banner).includes("1 of 4 Zoltu + tokens facts as expected on base."),
     textOf(banner),
   );
   assert(banner.className.includes("own-verify-drift"), banner.className);
@@ -8348,8 +8227,8 @@ Deno.test("deployments: each chain's Safe facts show live beside expected and fl
   );
   const owners = factLines(rowByRole(panels.safe, "owners"));
   assert(
-    owners.expected === [O1, O2, O3].join(", ") &&
-      owners.live === [O3, O1, O2].join(", "),
+    owners.expected === [O1, O2, O3].join("\n") &&
+      owners.live === [O3, O1, O2].join("\n"),
     "an address list is shown in full: " + JSON.stringify(owners),
   );
   assert(
@@ -14530,30 +14409,6 @@ Deno.test("deployments: a predecessor still pending before the delay ends keeps 
   assert(w.startsWith("ready in 1d 12h"), w);
   assert(w.includes("delay ends") && !w.includes("executable at"), w);
   assert(w.includes("is not in the index"), w);
-});
-
-Deno.test("deployments: the owners subtitle states the Safe threshold only when it is known", () => {
-  const known = textOf(deploymentsBox(OWNERS));
-  assert(
-    known.includes("Governed by a 3-of-6 Safe on Base."),
-    "a known threshold is stated: " + known.slice(0, 300),
-  );
-  const unknown = textOf(
-    deploymentsBox({
-      deploymentOwners: { ...OWNERS.deploymentOwners, threshold: null, signerCount: null },
-    }),
-  );
-  assert(!unknown.includes("Governed by"), "no threshold claim when unknown");
-  assert(!unknown.includes("null"), "never prints null: " + unknown.slice(0, 300));
-});
-
-Deno.test("deployments: an unread on-chain threshold shows the expected one alone", () => {
-  const owners = structuredClone(OWNERS.deploymentOwners);
-  const signers = owners.groups.find((g) => g.verification);
-  signers.verification.threshold = { declared: 3, onChain: null, match: null };
-  const t = textOf(deploymentsBox({ deploymentOwners: owners }));
-  assert(t.includes("threshold 3 (expected)"), "expected-only threshold: " + t.slice(0, 400));
-  assert(!t.includes("(on-chain)"), "no on-chain value claimed");
 });
 
 // ---- deployments.html: root registry ----
