@@ -326,10 +326,6 @@ pub fn decode_bool(result_hex: &str) -> Option<bool> {
 mod tests {
     use super::*;
 
-    /// The two getters are the ONLY way Ethereum's receipt and receipt-vault
-    /// beacons are addressable — they have no generated pin. A wrong selector
-    /// returns an on-chain revert, which the scan reports as an unreadable
-    /// beacon rather than as a bad selector, so the encoding is pinned here
     #[test]
     fn certification_expiry_selector_matches_its_signature() {
         assert_eq!(is_certification_expired_calldata(), "0xf5647943");

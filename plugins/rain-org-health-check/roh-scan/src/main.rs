@@ -219,8 +219,6 @@ const BASE_RPCS: &[&str] = &[
 /// read answered by the wrong chain's endpoint reports a live contract as not
 /// deployed — a silent downgrade, not an error. Hence the chain travels with
 /// the session rather than being implied by the caller.
-/// Each verified live against the 0.1.1 beacon-set deployer: all four answer
-/// `iReceiptBeacon()` with the same address the Solidity lib resolves.
 /// `eth.llamarpc.com` (HTTP 521) and `eth.merkle.io` (429 under a burst) were
 /// dropped rather than left in as endpoints that fail the whole chain's read.
 const ETHEREUM_RPCS: &[&str] = &[
