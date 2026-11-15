@@ -34,6 +34,7 @@ pub struct ExpectedBeacon {
     pub at: BeaconAt,
     pub codehash: String,
     pub implementation: String,
+    pub renamed_implementation: String,
     pub owner: String,
 }
 
@@ -102,6 +103,7 @@ pub struct ExpectedToken {
     pub receipt: String,
     pub wrapped_token_vault: String,
     pub receipt_vault_receipt: String,
+    pub receipt_manager: String,
     pub wrapped_token_vault_asset: String,
     pub receipt_vault_beacon: BeaconAt,
     pub receipt_beacon: BeaconAt,
@@ -127,8 +129,29 @@ pub struct ExpectedChain {
     pub eu_authoriser: ExpectedCode,
     pub zoltu: Vec<ExpectedZoltu>,
     pub rename_migration: String,
+    /// tQSEP, present exactly on the reference network.
+    pub qsep: Option<ExpectedQsep>,
     /// In file order.
     pub tokens: Vec<ExpectedToken>,
+}
+
+/// tQSEP: outside the production token list, on the shared reference-network beacons.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedQsep {
+    pub receipt_vault: String,
+    pub receipt: String,
+    pub wrapped_token_vault: String,
+    pub receipt_vault_receipt: String,
+    pub receipt_manager: String,
+    pub wrapped_token_vault_asset: String,
+    pub receipt_vault_beacon: String,
+    pub receipt_beacon: String,
+    pub wrapped_token_vault_beacon: String,
+    pub receipt_vault_codehash: String,
+    pub receipt_codehash: String,
+    pub wrapped_token_vault_codehash: String,
+    pub owner: String,
+    pub authoriser: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -255,6 +278,10 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                     at,
                     codehash: codehash(&b["codehash"], "beacons[].codehash")?,
                     implementation: nonzero(&b["implementation"], "beacons[].implementation")?,
+                    renamed_implementation: nonzero(
+                        &b["renamedImplementation"],
+                        "beacons[].renamedImplementation",
+                    )?,
                     owner: nonzero(&b["owner"], "beacons[].owner")?,
                 })
             })
@@ -412,6 +439,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                         &t["receiptVaultReceipt"],
                         "tokens[].receiptVaultReceipt",
                     )?,
+                    receipt_manager: nonzero(&t["receiptManager"], "tokens[].receiptManager")?,
                     wrapped_token_vault_asset: nonzero(
                         &t["wrappedTokenVaultAsset"],
                         "tokens[].wrappedTokenVaultAsset",
@@ -444,6 +472,38 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
+        let qsep = match (network == REFERENCE_NETWORK, &c["qsep"]) {
+            (false, serde_json::Value::Null) => None,
+            (false, _) => return Err(bad("qsep")),
+            (true, q) => Some(ExpectedQsep {
+                receipt_vault: nonzero(&q["receiptVault"], "qsep.receiptVault")?,
+                receipt: nonzero(&q["receipt"], "qsep.receipt")?,
+                wrapped_token_vault: nonzero(&q["wrappedTokenVault"], "qsep.wrappedTokenVault")?,
+                receipt_vault_receipt: nonzero(&q["receiptVaultReceipt"], "qsep.receiptVaultReceipt")?,
+                receipt_manager: nonzero(&q["receiptManager"], "qsep.receiptManager")?,
+                wrapped_token_vault_asset: nonzero(
+                    &q["wrappedTokenVaultAsset"],
+                    "qsep.wrappedTokenVaultAsset",
+                )?,
+                receipt_vault_beacon: nonzero(&q["receiptVaultBeacon"], "qsep.receiptVaultBeacon")?,
+                receipt_beacon: nonzero(&q["receiptBeacon"], "qsep.receiptBeacon")?,
+                wrapped_token_vault_beacon: nonzero(
+                    &q["wrappedTokenVaultBeacon"],
+                    "qsep.wrappedTokenVaultBeacon",
+                )?,
+                receipt_vault_codehash: codehash(
+                    &q["receiptVaultCodehash"],
+                    "qsep.receiptVaultCodehash",
+                )?,
+                receipt_codehash: codehash(&q["receiptCodehash"], "qsep.receiptCodehash")?,
+                wrapped_token_vault_codehash: codehash(
+                    &q["wrappedTokenVaultCodehash"],
+                    "qsep.wrappedTokenVaultCodehash",
+                )?,
+                owner: nonzero(&q["owner"], "qsep.owner")?,
+                authoriser: nonzero(&q["authoriser"], "qsep.authoriser")?,
+            }),
+        };
         out.push(ExpectedChain {
             chain_id,
             network,
@@ -456,6 +516,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             eu_authoriser,
             zoltu,
             rename_migration,
+            qsep,
             tokens,
         });
     }
