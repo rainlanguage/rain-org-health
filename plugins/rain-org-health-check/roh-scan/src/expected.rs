@@ -620,6 +620,8 @@ mod tests {
     use super::*;
     use serde_json::{json, Value};
 
+    const FIXTURE: &str = include_str!("../testdata/expected-state.json");
+
     const ZERO: &str = "0x0000000000000000000000000000000000000000";
     const DEPLOYER: &str = "0xd64246e6b25F745f005E6233e050C9B879E660Dc";
     const ETH_TIMELOCK: &str = "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B";
@@ -659,9 +661,13 @@ mod tests {
     const RECEIPT_IMPL: &str = "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E";
     const RECEIPT_VAULT_IMPL: &str = "0x52174538a83b18462c5cF898016539B086c920C7";
     const WTV_IMPL: &str = "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099";
+    const RECEIPT_VAULT_RENAMED_IMPL: &str = "0xCAA2aA64D8a599EAb2d5E7Fd30621D9Ca2f05A56";
+    const WTV_RENAMED_IMPL: &str = "0x8330588c9A52Fd2Bd5c3E05A980F12d895c91Fe4";
     const BASE_RECEIPT_BEACON: &str = "0x86e93c39B095be0B0054C8488E26466Ee027D79a";
     const BASE_RECEIPT_VAULT_BEACON: &str = "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A";
     const BASE_WTV_BEACON: &str = "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8";
+    const ETH_RECEIPT_BEACON: &str = "0xAcE121AE30D754536863a546f41b147bE11202db";
+    const ETH_RECEIPT_VAULT_BEACON: &str = "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB";
     const ETH_WTV_BEACON: &str = "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2";
     const CLONE_HASH: &str = "0x2089950d3cc1112dd66a58adcfadeadc490b50053ac67be8bc676b4a2dcd1717";
     const TIMELOCK_HASH: &str =
@@ -677,6 +683,27 @@ mod tests {
     const BASE_EU_CLONE: &str = "0xDB9152e46c1D140DB6a6f814461f21c571F3275e";
     const ETH_V4_CLONE: &str = "0x66566cc91dEAf818859bD4b09B7903ac48998157";
     const ETH_EU_CLONE: &str = "0x8Fc06579571A105C5a699FA11d95b9c73747f8eb";
+    const QSEP_RECEIPT_VAULT: &str = "0x4A9a9FC94a507559481270d0BFf3315Ab92Fcefa";
+    const QSEP_RECEIPT: &str = "0x311aA382B864799b3dE5C69478f841229D353B78";
+    const QSEP_WTV: &str = "0x849E389982209F901B7B9ffCA57ae4c9EeB11c0d";
+
+    /// The file's qsep keys, in `ExpectedQsep` field order.
+    const QSEP_KEYS: [&str; 14] = [
+        "receiptVault",
+        "receipt",
+        "wrappedTokenVault",
+        "receiptVaultReceipt",
+        "receiptManager",
+        "wrappedTokenVaultAsset",
+        "receiptVaultBeacon",
+        "receiptBeacon",
+        "wrappedTokenVaultBeacon",
+        "receiptVaultCodehash",
+        "receiptCodehash",
+        "wrappedTokenVaultCodehash",
+        "owner",
+        "authoriser",
+    ];
 
     struct Token {
         underlying: &'static str,
@@ -725,15 +752,49 @@ mod tests {
         authoriser: ETH_EU_CLONE,
     };
 
-    fn beacon(at: &str, codehash: &str, implementation: &str, owner: &str) -> Value {
-        json!({"beacon": at, "codehash": codehash, "implementation": implementation, "owner": owner})
+    fn beacon(at: &str, codehash: &str, implementation: &str, renamed: &str, owner: &str) -> Value {
+        json!({
+            "beacon": at,
+            "codehash": codehash,
+            "implementation": implementation,
+            "renamedImplementation": renamed,
+            "owner": owner,
+        })
     }
 
-    /// `legs` is `[receiptVaultBeacon, receiptBeacon, wrappedTokenVaultBeacon]`.
-    fn token(t: &Token, legs: [&str; 3], owner: &str) -> Value {
+    /// The pins a token and qsep share. `beacons` is `[receiptVaultBeacon,
+    /// receiptBeacon, wrappedTokenVaultBeacon]`; the receipt's manager is its
+    /// receipt vault.
+    fn legs(
+        receipt_vault: &str,
+        receipt: &str,
+        wrapped_token_vault: &str,
+        beacons: [&str; 3],
+        owner: &str,
+        authoriser: &str,
+    ) -> Value {
+        json!({
+            "receiptVault": receipt_vault,
+            "receipt": receipt,
+            "wrappedTokenVault": wrapped_token_vault,
+            "receiptVaultReceipt": receipt,
+            "receiptManager": receipt_vault,
+            "wrappedTokenVaultAsset": receipt_vault,
+            "receiptVaultBeacon": beacons[0],
+            "receiptBeacon": beacons[1],
+            "wrappedTokenVaultBeacon": beacons[2],
+            "receiptVaultCodehash": RECEIPT_VAULT_PROXY_HASH,
+            "receiptCodehash": RECEIPT_PROXY_HASH,
+            "wrappedTokenVaultCodehash": WTV_PROXY_HASH,
+            "owner": owner,
+            "authoriser": authoriser,
+        })
+    }
+
+    fn token(t: &Token, beacons: [&str; 3], owner: &str) -> Value {
         let symbol = format!("t{}", t.underlying);
         let renamed = format!("{} (ST0x)", t.underlying_name);
-        json!({
+        let mut v = json!({
             "underlying": t.underlying,
             "name": t.name,
             "renamedName": renamed,
@@ -744,20 +805,19 @@ mod tests {
             "wrappedTokenVaultSymbol": format!("w{symbol}"),
             "wrappedTokenVaultRenamedSymbol": format!("{}s", t.underlying),
             "wrappedTokenVaultDecimals": 18,
-            "receiptVault": t.receipt_vault,
-            "receipt": t.receipt,
-            "wrappedTokenVault": t.wrapped_token_vault,
-            "receiptVaultReceipt": t.receipt,
-            "wrappedTokenVaultAsset": t.receipt_vault,
-            "receiptVaultBeacon": legs[0],
-            "receiptBeacon": legs[1],
-            "wrappedTokenVaultBeacon": legs[2],
-            "receiptVaultCodehash": RECEIPT_VAULT_PROXY_HASH,
-            "receiptCodehash": RECEIPT_PROXY_HASH,
-            "wrappedTokenVaultCodehash": WTV_PROXY_HASH,
-            "owner": owner,
-            "authoriser": t.authoriser,
-        })
+        });
+        let l = legs(
+            t.receipt_vault,
+            t.receipt,
+            t.wrapped_token_vault,
+            beacons,
+            owner,
+            t.authoriser,
+        );
+        v.as_object_mut()
+            .unwrap()
+            .extend(l.as_object().unwrap().clone());
+        v
     }
 
     struct Chain {
@@ -772,15 +832,21 @@ mod tests {
     }
 
     /// One chain as `BuildExpectedState.sol` writes it, with two tokens and two
-    /// Zoltu suites.
+    /// Zoltu suites; the reference network also carries tQSEP.
     fn chain(c: &Chain) -> Value {
         let impls = [RECEIPT_IMPL, RECEIPT_VAULT_IMPL, WTV_IMPL, ORCH_IMPL];
+        let renamed = [
+            RECEIPT_IMPL,
+            RECEIPT_VAULT_RENAMED_IMPL,
+            WTV_RENAMED_IMPL,
+            ORCH_IMPL,
+        ];
         let hashes = [BEACON_HASH, BEACON_HASH, BEACON_HASH, ORCH_BEACON_HASH];
         let beacons: Vec<Value> = (0..4)
-            .map(|i| beacon(c.beacons[i], hashes[i], impls[i], c.timelock))
+            .map(|i| beacon(c.beacons[i], hashes[i], impls[i], renamed[i], c.timelock))
             .collect();
-        let legs = [c.beacons[1], c.beacons[0], c.beacons[2]];
-        json!({
+        let leg_beacons = [c.beacons[1], c.beacons[0], c.beacons[2]];
+        let mut v = json!({
             "network": c.network,
             "beaconSetDeployer": c.deployer,
             "beacons": beacons,
@@ -821,8 +887,19 @@ mod tests {
                 },
             ],
             "renameMigration": RENAME,
-            "tokens": c.tokens.map(|t| token(t, legs, c.timelock)),
-        })
+            "tokens": c.tokens.map(|t| token(t, leg_beacons, c.timelock)),
+        });
+        if c.network == REFERENCE_NETWORK {
+            v["qsep"] = legs(
+                QSEP_RECEIPT_VAULT,
+                QSEP_RECEIPT,
+                QSEP_WTV,
+                leg_beacons,
+                c.timelock,
+                c.authoriser,
+            );
+        }
+        v
     }
 
     const ETHEREUM: Chain = Chain {
@@ -830,7 +907,12 @@ mod tests {
         deployer: DEPLOYER,
         timelock: ETH_TIMELOCK,
         safe: ETH_SAFE,
-        beacons: [ZERO, ZERO, ETH_WTV_BEACON, ORCH_BEACON],
+        beacons: [
+            ETH_RECEIPT_BEACON,
+            ETH_RECEIPT_VAULT_BEACON,
+            ETH_WTV_BEACON,
+            ORCH_BEACON,
+        ],
         authoriser: ETH_V4_CLONE,
         eu_authoriser: ETH_EU_CLONE,
         tokens: [&ETH_MSTR, &ETH_MC],
@@ -864,20 +946,26 @@ mod tests {
         doc(&[("1", chain(&ETHEREUM)), ("8453", chain(&BASE))])
     }
 
-    fn with(at: &str, v: Value) -> Value {
-        let mut d = good();
+    fn set(mut d: Value, at: &str, v: Value) -> Value {
         *d.pointer_mut(at).unwrap_or_else(|| panic!("no {at}")) = v;
         d
     }
 
-    fn without(at: &str) -> Value {
-        let mut d = good();
+    fn remove(mut d: Value, at: &str) -> Value {
         let (parent, key) = at.rsplit_once('/').unwrap();
         d.pointer_mut(parent)
             .and_then(Value::as_object_mut)
             .and_then(|o| o.remove(key))
             .unwrap_or_else(|| panic!("no {at}"));
         d
+    }
+
+    fn with(at: &str, v: Value) -> Value {
+        set(good(), at, v)
+    }
+
+    fn without(at: &str) -> Value {
+        remove(good(), at)
     }
 
     fn malformed(body: &Value) -> &'static str {
@@ -902,20 +990,51 @@ mod tests {
             BEACON_NAMES
         );
         assert_eq!(
-            base.beacons[1].at,
-            BeaconAt::Address(BASE_RECEIPT_VAULT_BEACON.into())
+            base.beacons[1],
+            ExpectedBeacon {
+                name: "Receipt-vault beacon",
+                address: BASE_RECEIPT_VAULT_BEACON.into(),
+                codehash: BEACON_HASH.into(),
+                implementation: RECEIPT_VAULT_IMPL.into(),
+                renamed_implementation: RECEIPT_VAULT_RENAMED_IMPL.into(),
+                owner: BASE_TIMELOCK.into(),
+            }
         );
         assert_eq!(base.beacons[0].implementation, RECEIPT_IMPL);
+        assert_eq!(base.beacons[2].renamed_implementation, WTV_RENAMED_IMPL);
         assert_eq!(base.beacons[2].codehash, BEACON_HASH);
         assert_eq!(base.beacons[3].codehash, ORCH_BEACON_HASH);
         assert!(base.beacons.iter().all(|b| b.owner == BASE_TIMELOCK));
 
         let eth = &got[1];
         assert_eq!(eth.beacon_set_deployer.as_deref(), Some(DEPLOYER));
-        assert_eq!(eth.beacons[0].at, BeaconAt::DeployerReceipt);
-        assert_eq!(eth.beacons[1].at, BeaconAt::DeployerReceiptVault);
-        assert_eq!(eth.beacons[3].at, BeaconAt::Address(ORCH_BEACON.into()));
+        assert_eq!(
+            eth.beacons
+                .iter()
+                .map(|b| b.address.as_str())
+                .collect::<Vec<_>>(),
+            [
+                ETH_RECEIPT_BEACON,
+                ETH_RECEIPT_VAULT_BEACON,
+                ETH_WTV_BEACON,
+                ORCH_BEACON
+            ]
+        );
         assert!(eth.beacons.iter().all(|b| b.owner == ETH_TIMELOCK));
+    }
+
+    /// The rename moves the receipt-vault beacon onto another implementation;
+    /// an unread rename pins neither.
+    #[test]
+    fn the_rename_picks_the_implementation_a_beacon_is_expected_at() {
+        let got = parse(&good().to_string()).unwrap();
+        let b = &got[0].beacons[1];
+        assert_eq!(
+            b.expected_implementation(Some(true)),
+            RECEIPT_VAULT_RENAMED_IMPL
+        );
+        assert_eq!(b.expected_implementation(Some(false)), RECEIPT_VAULT_IMPL);
+        assert_eq!(b.expected_implementation(None), "");
     }
 
     #[test]
@@ -1037,9 +1156,10 @@ mod tests {
                 receipt: BASE_MSTR.receipt.into(),
                 wrapped_token_vault: BASE_MSTR.wrapped_token_vault.into(),
                 receipt_vault_receipt: BASE_MSTR.receipt.into(),
+                receipt_manager: BASE_MSTR.receipt_vault.into(),
                 wrapped_token_vault_asset: BASE_MSTR.receipt_vault.into(),
-                receipt_vault_beacon: BeaconAt::Address(BASE_RECEIPT_VAULT_BEACON.into()),
-                receipt_beacon: BeaconAt::Address(BASE_RECEIPT_BEACON.into()),
+                receipt_vault_beacon: BASE_RECEIPT_VAULT_BEACON.into(),
+                receipt_beacon: BASE_RECEIPT_BEACON.into(),
                 wrapped_token_vault_beacon: BASE_WTV_BEACON.into(),
                 receipt_vault_codehash: RECEIPT_VAULT_PROXY_HASH.into(),
                 receipt_codehash: RECEIPT_PROXY_HASH.into(),
@@ -1053,17 +1173,122 @@ mod tests {
             "LVMH Moët Hennessy Louis Vuitton SE ST0x"
         );
         assert_eq!(base.tokens[1].authoriser, BASE_EU_CLONE);
+        assert_eq!(got[1].tokens[0].receipt_beacon, ETH_RECEIPT_BEACON);
+        assert_eq!(
+            got[1].tokens[0].receipt_vault_beacon,
+            ETH_RECEIPT_VAULT_BEACON
+        );
     }
 
-    /// A zero leg beacon resolves through the chain's beacon-set deployer, as a
-    /// zero chain beacon does.
+    /// The manager is read from its own key, not assumed to be the receipt vault.
     #[test]
-    fn a_zero_token_leg_beacon_resolves_through_the_deployer() {
+    fn a_token_receipt_manager_is_read_from_its_own_key() {
+        let manager = "0x2191981Ca2477B745870cC307cbEB4cB2967ACe3";
+        let got = parse(&with("/chains/8453/tokens/1/receiptManager", json!(manager)).to_string())
+            .unwrap();
+        assert_eq!(got[0].tokens[1].receipt_manager, manager);
+        assert_eq!(got[0].tokens[1].receipt_vault, BASE_MC.receipt_vault);
+        assert_eq!(got[0].tokens[0].receipt_manager, BASE_MSTR.receipt_vault);
+    }
+
+    #[test]
+    fn parses_qsep_on_the_reference_network() {
         let got = parse(&good().to_string()).unwrap();
-        let eth = &got[1].tokens[0];
-        assert_eq!(eth.receipt_vault_beacon, BeaconAt::DeployerReceiptVault);
-        assert_eq!(eth.receipt_beacon, BeaconAt::DeployerReceipt);
-        assert_eq!(eth.wrapped_token_vault_beacon, ETH_WTV_BEACON);
+        assert_eq!(
+            got[0].qsep,
+            Some(ExpectedQsep {
+                receipt_vault: QSEP_RECEIPT_VAULT.into(),
+                receipt: QSEP_RECEIPT.into(),
+                wrapped_token_vault: QSEP_WTV.into(),
+                receipt_vault_receipt: QSEP_RECEIPT.into(),
+                receipt_manager: QSEP_RECEIPT_VAULT.into(),
+                wrapped_token_vault_asset: QSEP_RECEIPT_VAULT.into(),
+                receipt_vault_beacon: BASE_RECEIPT_VAULT_BEACON.into(),
+                receipt_beacon: BASE_RECEIPT_BEACON.into(),
+                wrapped_token_vault_beacon: BASE_WTV_BEACON.into(),
+                receipt_vault_codehash: RECEIPT_VAULT_PROXY_HASH.into(),
+                receipt_codehash: RECEIPT_PROXY_HASH.into(),
+                wrapped_token_vault_codehash: WTV_PROXY_HASH.into(),
+                owner: BASE_TIMELOCK.into(),
+                authoriser: BASE_V4_CLONE.into(),
+            })
+        );
+        assert_eq!(got[1].qsep, None);
+    }
+
+    #[test]
+    fn each_qsep_field_is_read_from_its_own_key() {
+        let a = |i: usize| format!("0x{i:040x}");
+        let h = |i: usize| format!("0x{i:064x}");
+        let mut d = good();
+        for (i, key) in QSEP_KEYS.into_iter().enumerate() {
+            let v = if key.ends_with("Codehash") {
+                h(i + 1)
+            } else {
+                a(i + 1)
+            };
+            d["chains"]["8453"]["qsep"][key] = json!(v);
+        }
+        let got = parse(&d.to_string()).unwrap();
+        assert_eq!(
+            got[0].qsep,
+            Some(ExpectedQsep {
+                receipt_vault: a(1),
+                receipt: a(2),
+                wrapped_token_vault: a(3),
+                receipt_vault_receipt: a(4),
+                receipt_manager: a(5),
+                wrapped_token_vault_asset: a(6),
+                receipt_vault_beacon: a(7),
+                receipt_beacon: a(8),
+                wrapped_token_vault_beacon: a(9),
+                receipt_vault_codehash: h(10),
+                receipt_codehash: h(11),
+                wrapped_token_vault_codehash: h(12),
+                owner: a(13),
+                authoriser: a(14),
+            })
+        );
+    }
+
+    /// tQSEP lives on the reference network alone: listed anywhere else it is
+    /// malformed, and the reference network without it is missing its fields.
+    #[test]
+    fn qsep_is_required_on_the_reference_network_and_rejected_elsewhere() {
+        let q = good()["chains"]["8453"]["qsep"].clone();
+        for listed in [q, json!({}), json!("none")] {
+            let mut d = good();
+            d["chains"]["1"]["qsep"] = listed.clone();
+            assert_eq!(malformed(&d), "qsep", "{listed}");
+        }
+        let mut d = good();
+        d["chains"]["1"]["qsep"] = Value::Null;
+        assert_eq!(parse(&d.to_string()).unwrap()[1].qsep, None);
+        assert_eq!(
+            malformed(&without("/chains/8453/qsep")),
+            "qsep.receiptVault"
+        );
+        assert_eq!(
+            malformed(&with("/chains/8453/qsep", Value::Null)),
+            "qsep.receiptVault"
+        );
+    }
+
+    #[test]
+    fn rejects_a_zero_or_missing_qsep_field_by_name() {
+        let zero_hash = format!("0x{}", "0".repeat(64));
+        for key in QSEP_KEYS {
+            let at = format!("/chains/8453/qsep/{key}");
+            let field = format!("qsep.{key}");
+            let zero = if key.ends_with("Codehash") {
+                json!(zero_hash)
+            } else {
+                json!(ZERO)
+            };
+            assert_eq!(malformed(&with(&at, zero)), field, "{at} zero");
+            assert_eq!(malformed(&with(&at, json!("0x4A9a"))), field, "{at} short");
+            assert_eq!(malformed(&without(&at)), field, "{at} missing");
+        }
     }
 
     #[test]
@@ -1116,6 +1341,11 @@ mod tests {
                 "beacons[].beacon",
             ),
             (
+                format!("{b}/beacons/0/beacon"),
+                json!(ZERO),
+                "beacons[].beacon",
+            ),
+            (
                 format!("{b}/beacons/0/codehash"),
                 json!(zero_hash),
                 "beacons[].codehash",
@@ -1129,6 +1359,16 @@ mod tests {
                 format!("{b}/beacons/0/implementation"),
                 json!(ZERO),
                 "beacons[].implementation",
+            ),
+            (
+                format!("{b}/beacons/1/renamedImplementation"),
+                json!(ZERO),
+                "beacons[].renamedImplementation",
+            ),
+            (
+                format!("{b}/beacons/2/renamedImplementation"),
+                json!("0x8330"),
+                "beacons[].renamedImplementation",
             ),
             (
                 format!("{b}/beacons/3/owner"),
@@ -1321,6 +1561,16 @@ mod tests {
                 "tokens[].receiptVaultReceipt",
             ),
             (
+                format!("{t}/receiptManager"),
+                json!(ZERO),
+                "tokens[].receiptManager",
+            ),
+            (
+                format!("{t}/receiptManager"),
+                json!("0x013b"),
+                "tokens[].receiptManager",
+            ),
+            (
                 format!("{t}/wrappedTokenVaultAsset"),
                 json!(ZERO),
                 "tokens[].wrappedTokenVaultAsset",
@@ -1329,6 +1579,16 @@ mod tests {
                 format!("{t}/receiptVaultBeacon"),
                 json!("0xEa08"),
                 "tokens[].receiptVaultBeacon",
+            ),
+            (
+                format!("{t}/receiptVaultBeacon"),
+                json!(ZERO),
+                "tokens[].receiptVaultBeacon",
+            ),
+            (
+                format!("{t}/receiptBeacon"),
+                json!(ZERO),
+                "tokens[].receiptBeacon",
             ),
             (
                 format!("{t}/wrappedTokenVaultBeacon"),
@@ -1369,6 +1629,10 @@ mod tests {
             ("/chains/8453/beaconSetDeployer", "beaconSetDeployer"),
             ("/chains/8453/beacons", "beacons"),
             ("/chains/8453/beacons/0/codehash", "beacons[].codehash"),
+            (
+                "/chains/8453/beacons/1/renamedImplementation",
+                "beacons[].renamedImplementation",
+            ),
             ("/chains/8453/safe/owners", "safe.owners"),
             ("/chains/8453/safe/threshold", "safe.threshold"),
             ("/chains/8453/safe/proxyCodehashes", "safe.proxyCodehashes"),
@@ -1400,50 +1664,37 @@ mod tests {
             ("/chains/8453/tokens/1/renamedName", "tokens[].renamedName"),
             ("/chains/8453/tokens/1/decimals", "tokens[].decimals"),
             (
+                "/chains/8453/tokens/1/receiptManager",
+                "tokens[].receiptManager",
+            ),
+            (
                 "/chains/8453/tokens/1/receiptBeacon",
                 "tokens[].receiptBeacon",
             ),
             ("/chains/8453/tokens/1/authoriser", "tokens[].authoriser"),
+            ("/chains/8453/qsep", "qsep.receiptVault"),
         ];
         for (at, field) in cases {
             assert_eq!(malformed(&without(at)), field, "{at}");
         }
     }
 
-    /// A zero beacon or token leg needs a deployer to resolve it from.
+    /// The file names every beacon by address, so a zero beacon or token leg
+    /// beacon is malformed even on a chain with a beacon-set deployer.
     #[test]
-    fn a_zero_beacon_without_a_deployer_is_malformed() {
-        assert_eq!(
-            malformed(&with("/chains/8453/beacons/0/beacon", json!(ZERO))),
-            "beaconSetDeployer"
-        );
-        assert_eq!(
-            malformed(&with(
-                "/chains/8453/tokens/0/receiptVaultBeacon",
-                json!(ZERO)
-            )),
-            "tokens[].receiptVaultBeacon"
-        );
-        assert_eq!(
-            malformed(&with("/chains/8453/tokens/1/receiptBeacon", json!(ZERO))),
-            "tokens[].receiptBeacon"
-        );
-    }
-
-    /// Only the receipt and receipt-vault slots resolve through the deployer.
-    #[test]
-    fn only_the_receipt_and_receipt_vault_beacons_resolve_through_the_deployer() {
-        for slot in [2, 3] {
+    fn a_zero_beacon_is_malformed_on_a_chain_with_a_deployer() {
+        for slot in 0..BEACON_NAMES.len() {
             let body = with(&format!("/chains/1/beacons/{slot}/beacon"), json!(ZERO));
             assert_eq!(malformed(&body), "beacons[].beacon", "slot {slot}");
         }
-        assert_eq!(
-            malformed(&with(
-                "/chains/1/tokens/0/wrappedTokenVaultBeacon",
-                json!(ZERO)
-            )),
-            "tokens[].wrappedTokenVaultBeacon"
-        );
+        for leg in [
+            "receiptVaultBeacon",
+            "receiptBeacon",
+            "wrappedTokenVaultBeacon",
+        ] {
+            let body = with(&format!("/chains/1/tokens/0/{leg}"), json!(ZERO));
+            assert_eq!(malformed(&body), format!("tokens[].{leg}"));
+        }
     }
 
     #[test]
@@ -1511,5 +1762,331 @@ mod tests {
             .to_string(),
             "expected-state.json chain 8453 has a missing or malformed safe.owners"
         );
+    }
+
+    const V2_DEPLOYER: &str = "0x0C5154C4861908Bd5a6FD6fFCB063e9869ceFa41";
+    const V2_RECEIPT: &str = "0xbAB0E6b7B5dDA86FB8ba81c00aEA0Ceb8b73686b";
+    const V2_RECEIPT_HASH: &str =
+        "0x14348054f718979709402d1892155361f5ea99d8e7267823fcac9c7763bcefab";
+    const V2_RECEIPT_VAULT: &str = "0xc95dB340A7a100881626475d41BFf70857Aa920D";
+    const V2_WTV_BEACON: &str = "0x846a468e6fDA529D282D60df7D1EE785EB954600";
+
+    /// `(file key, name, beacon, implementation, owner)`, as Base's v2 beacons.
+    const V2_BEACONS: [(&str, &str, &str, &str, &str); 3] = [
+        (
+            "receiptBeacon",
+            "Receipt beacon",
+            "0x7EFeCb081f3A14Bc86cFA45373a23121a5D90Ec1",
+            "0xE7573879D73455Dc92cB4087Fa8177594387CbCD",
+            V2_RECEIPT,
+        ),
+        (
+            "receiptVaultBeacon",
+            "Receipt-vault beacon",
+            "0x7328C39029f6Ee7Ff8d48932FFB4eCD44b6Fbb8C",
+            "0x8EFfCe5Ebb047F215dF1d8522c32c7C9DE239f39",
+            V2_RECEIPT_VAULT,
+        ),
+        (
+            "wrappedTokenVaultBeacon",
+            "Wrapped-token-vault beacon",
+            V2_WTV_BEACON,
+            "0xb438a1eA1550fd199d67D67a69B71F4324bB8660",
+            "0x8E4bdeec7CEB9570D440676345dA1dCe10329f5b",
+        ),
+    ];
+
+    fn v2_base_beacons() -> Vec<ExpectedV2Beacon> {
+        V2_BEACONS
+            .iter()
+            .map(
+                |&(_, name, beacon, implementation, owner)| ExpectedV2Beacon {
+                    name,
+                    address: beacon.into(),
+                    implementation: implementation.into(),
+                    owner: owner.into(),
+                },
+            )
+            .collect()
+    }
+
+    fn v2_chain(network: &str) -> Value {
+        let mut v = json!({
+            "network": network,
+            "beaconSetDeployer": V2_DEPLOYER,
+            "deployments": [
+                {"key": "StoxReceipt", "address": V2_RECEIPT, "codehash": V2_RECEIPT_HASH},
+                {"key": "StoxWrappedTokenVaultBeacon", "address": V2_WTV_BEACON, "codehash": BEACON_HASH},
+            ],
+        });
+        for (key, _, beacon, implementation, owner) in V2_BEACONS {
+            v[key] = json!({"beacon": beacon, "implementation": implementation, "owner": owner});
+        }
+        v
+    }
+
+    /// Off chain-id order, with Base keyed above two of the others.
+    fn v2_good() -> Value {
+        json!({
+            "version": 1,
+            "v2": {
+                "42161": v2_chain("arbitrum"),
+                "137": v2_chain("polygon"),
+                "8453": v2_chain("base"),
+                "14": v2_chain("flare"),
+            },
+        })
+    }
+
+    fn v2_malformed(body: &Value) -> &'static str {
+        match parse_v2(&body.to_string()) {
+            Err(ExpectedError::Malformed { field, .. }) => field,
+            other => panic!("expected Malformed, got {other:?}"),
+        }
+    }
+
+    #[test]
+    fn parses_v2_deployments_and_beacons_base_first() {
+        let got = parse_v2(&v2_good().to_string()).unwrap();
+        assert_eq!(
+            got.iter().map(|c| c.chain_id).collect::<Vec<_>>(),
+            [8453, 14, 137, 42161]
+        );
+        assert_eq!(
+            got.iter().map(|c| c.network.as_str()).collect::<Vec<_>>(),
+            ["base", "flare", "polygon", "arbitrum"]
+        );
+        let base = &got[0];
+        assert_eq!(base.beacon_set_deployer, V2_DEPLOYER);
+        assert_eq!(
+            base.deployments,
+            [
+                ExpectedZoltu {
+                    key: "StoxReceipt".into(),
+                    code: ExpectedCode {
+                        address: V2_RECEIPT.into(),
+                        codehash: V2_RECEIPT_HASH.into(),
+                    },
+                },
+                ExpectedZoltu {
+                    key: "StoxWrappedTokenVaultBeacon".into(),
+                    code: ExpectedCode {
+                        address: V2_WTV_BEACON.into(),
+                        codehash: BEACON_HASH.into(),
+                    },
+                },
+            ]
+        );
+        assert_eq!(base.beacons, v2_base_beacons());
+    }
+
+    /// The v1 chains and the v2 deployments sit side by side in one file; each
+    /// reader reads only its own.
+    #[test]
+    fn parse_and_parse_v2_each_read_only_their_own_section() {
+        let mut both = good();
+        both["v2"] = v2_good()["v2"].clone();
+        assert_eq!(parse(&both.to_string()).unwrap().len(), 2);
+        assert_eq!(parse_v2(&both.to_string()).unwrap().len(), 4);
+        assert_eq!(parse_v2(&good().to_string()), Err(ExpectedError::NoChains));
+        assert_eq!(parse(&v2_good().to_string()), Err(ExpectedError::NoChains));
+    }
+
+    #[test]
+    fn parse_v2_rejects_unreadable_files() {
+        assert_eq!(parse_v2(""), Err(ExpectedError::Empty));
+        assert_eq!(parse_v2(" \n"), Err(ExpectedError::Empty));
+        assert_eq!(parse_v2("{"), Err(ExpectedError::NotJson));
+        assert_eq!(
+            parse_v2(r#"{"v2": {}}"#),
+            Err(ExpectedError::UnsupportedVersion(None))
+        );
+        assert_eq!(
+            parse_v2(&set(v2_good(), "/version", json!(2)).to_string()),
+            Err(ExpectedError::UnsupportedVersion(Some(2)))
+        );
+        assert_eq!(
+            parse_v2(r#"{"version": 1, "v2": {}}"#),
+            Err(ExpectedError::NoChains)
+        );
+        assert_eq!(parse_v2(r#"{"version": 1}"#), Err(ExpectedError::NoChains));
+    }
+
+    #[test]
+    fn parse_v2_rejects_a_zero_or_malformed_value_in_every_field() {
+        let c = "/v2/8453";
+        let zero_hash = format!("0x{}", "0".repeat(64));
+        let cases = [
+            (format!("{c}/network"), json!(""), "v2.network"),
+            (format!("{c}/network"), json!(8453), "v2.network"),
+            (
+                format!("{c}/beaconSetDeployer"),
+                json!(ZERO),
+                "v2.beaconSetDeployer",
+            ),
+            (
+                format!("{c}/beaconSetDeployer"),
+                json!("0x0C51"),
+                "v2.beaconSetDeployer",
+            ),
+            (format!("{c}/deployments"), json!([]), "v2.deployments"),
+            (format!("{c}/deployments"), json!({}), "v2.deployments"),
+            (
+                format!("{c}/deployments/0/key"),
+                json!(""),
+                "v2.deployments[].key",
+            ),
+            (
+                format!("{c}/deployments/0/address"),
+                json!(ZERO),
+                "v2.deployments[].address",
+            ),
+            (
+                format!("{c}/deployments/1/address"),
+                json!("0x846a"),
+                "v2.deployments[].address",
+            ),
+            (
+                format!("{c}/deployments/1/codehash"),
+                json!(zero_hash),
+                "v2.deployments[].codehash",
+            ),
+            (
+                format!("{c}/deployments/0/codehash"),
+                json!("0x1434"),
+                "v2.deployments[].codehash",
+            ),
+            (
+                format!("{c}/receiptBeacon/beacon"),
+                json!(ZERO),
+                "v2 beacon",
+            ),
+            (
+                format!("{c}/receiptVaultBeacon/implementation"),
+                json!(ZERO),
+                "v2 beacon implementation",
+            ),
+            (
+                format!("{c}/wrappedTokenVaultBeacon/owner"),
+                json!(ZERO),
+                "v2 beacon owner",
+            ),
+            (
+                format!("{c}/wrappedTokenVaultBeacon/owner"),
+                json!("0x8E4b"),
+                "v2 beacon owner",
+            ),
+        ];
+        for (at, v, field) in cases {
+            assert_eq!(
+                v2_malformed(&set(v2_good(), &at, v.clone())),
+                field,
+                "{at} = {v}"
+            );
+        }
+    }
+
+    #[test]
+    fn parse_v2_rejects_a_missing_field_by_name() {
+        let cases = [
+            ("/v2/8453/network", "v2.network"),
+            ("/v2/8453/beaconSetDeployer", "v2.beaconSetDeployer"),
+            ("/v2/8453/deployments", "v2.deployments"),
+            ("/v2/8453/deployments/0/key", "v2.deployments[].key"),
+            (
+                "/v2/8453/deployments/1/codehash",
+                "v2.deployments[].codehash",
+            ),
+            ("/v2/8453/receiptBeacon", "v2 beacon"),
+            ("/v2/8453/receiptVaultBeacon/beacon", "v2 beacon"),
+            (
+                "/v2/8453/wrappedTokenVaultBeacon/implementation",
+                "v2 beacon implementation",
+            ),
+            ("/v2/8453/receiptBeacon/owner", "v2 beacon owner"),
+        ];
+        for (at, field) in cases {
+            assert_eq!(v2_malformed(&remove(v2_good(), at)), field, "{at}");
+        }
+    }
+
+    #[test]
+    fn parse_v2_rejects_a_chain_keyed_by_anything_but_its_id() {
+        let mut d = v2_good();
+        let chains = d["v2"].as_object_mut().unwrap();
+        let base = chains.remove("8453").unwrap();
+        chains.insert("base".into(), base);
+        assert_eq!(v2_malformed(&d), "chain id");
+    }
+
+    /// st0x.deploy's published file reads whole: every chain, Base first, tQSEP
+    /// on Base alone, and every beacon at its own non-zero address.
+    #[test]
+    fn parses_the_published_file() {
+        let got = parse(FIXTURE).unwrap();
+        assert_eq!(
+            got.iter().map(|c| c.chain_id).collect::<Vec<_>>(),
+            [8453, 1, 56, 999, 4663]
+        );
+        for c in &got {
+            assert_eq!(
+                c.qsep.is_some(),
+                c.network == REFERENCE_NETWORK,
+                "{}",
+                c.network
+            );
+            assert_eq!(c.safe.guard, None, "{}", c.network);
+        }
+        let base = &got[0];
+        assert_eq!(
+            base.beacons
+                .iter()
+                .map(|b| b.renamed_implementation.as_str())
+                .collect::<Vec<_>>(),
+            [
+                RECEIPT_IMPL,
+                RECEIPT_VAULT_RENAMED_IMPL,
+                WTV_RENAMED_IMPL,
+                ORCH_IMPL
+            ]
+        );
+        let mstr = &base.tokens[0];
+        assert_eq!(mstr.symbol, "tMSTR");
+        assert_eq!(mstr.receipt_manager, BASE_MSTR.receipt_vault);
+        let qsep = base.qsep.as_ref().unwrap();
+        assert_eq!(qsep.receipt_vault, QSEP_RECEIPT_VAULT);
+        assert_eq!(qsep.receipt_manager, QSEP_RECEIPT_VAULT);
+        assert_eq!(qsep.owner, BASE_TIMELOCK);
+        let eth = &got[1];
+        assert_eq!(
+            eth.beacons
+                .iter()
+                .map(|b| b.address.as_str())
+                .collect::<Vec<_>>(),
+            [
+                ETH_RECEIPT_BEACON,
+                ETH_RECEIPT_VAULT_BEACON,
+                ETH_WTV_BEACON,
+                ORCH_BEACON
+            ]
+        );
+        assert_eq!(eth.tokens[0].receipt_manager, ETH_MSTR.receipt_vault);
+    }
+
+    #[test]
+    fn parses_the_published_v2_deployments() {
+        let got = parse_v2(FIXTURE).unwrap();
+        assert_eq!(
+            got.iter().map(|c| c.chain_id).collect::<Vec<_>>(),
+            [8453, 14, 137, 42161, 84532]
+        );
+        let base = &got[0];
+        assert_eq!(base.network, "base");
+        assert_eq!(base.beacon_set_deployer, V2_DEPLOYER);
+        assert_eq!(base.deployments.len(), 9);
+        assert_eq!(base.deployments[0].key, "StoxReceipt");
+        assert_eq!(base.deployments[0].code.address, V2_RECEIPT);
+        assert_eq!(base.deployments[0].code.codehash, V2_RECEIPT_HASH);
+        assert_eq!(base.beacons, v2_base_beacons());
     }
 }

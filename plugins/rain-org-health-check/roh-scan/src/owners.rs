@@ -1775,12 +1775,9 @@ mod tests {
             address internal constant STOX_PROD_AUTHORISER_V3_CLONE = 0x7a3F5bC2e0D9e4A1b6C8d0E2f4A6b8C0d2E4f6A8;
         "#;
         let v = owners_from_auth_lib(auth_lib, Some(V4_CLONE_BASE));
-        let mut expected: Vec<(&str, String, &str)> = vec![
+        let expected: Vec<(&str, String, &str)> = vec![
             ("safe", "Base Safe".into(), "base"),
             ("safe", "Ethereum Safe".into(), "ethereum"),
-        ];
-        expected.extend((1..=6).map(|i| ("signers", format!("Signer {i}"), "")));
-        expected.extend([
             ("authoriser", "Authoriser implementation".into(), "base"),
             ("authoriser", "V4 authoriser clone".into(), "base"),
             ("authoriser", "V4 authoriser clone".into(), "ethereum"),
@@ -1788,7 +1785,7 @@ mod tests {
             ("historical", "V3-era authoriser clone".into(), "base"),
             ("historical", "V2 receipt beacon owner".into(), "base"),
             ("historical", "V2 vault beacon owner".into(), "base"),
-        ]);
+        ];
         let expected: Vec<(String, String, String)> = expected
             .into_iter()
             .map(|(g, r, n)| (g.to_string(), r, n.to_string()))
