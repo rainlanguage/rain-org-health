@@ -321,6 +321,29 @@ struct Session {
 /// across the RPC set instead of all hammering the first one.
 static RPC_CURSOR: AtomicUsize = AtomicUsize::new(0);
 
+/// One value per chain, or one unavailable entry for a set that failed to
+/// parse or a chain this scanner has no RPC for.
+fn per_chain<T>(
+    chains: &Result<Vec<T>, expected::ExpectedError>,
+    network: impl Fn(&T) -> &str,
+    f: impl Fn(&T, Chain) -> serde_json::Value,
+) -> Vec<serde_json::Value> {
+    match chains {
+        Err(e) => vec![deployhealth::beacons_unavailable(None, None, &e.to_string())],
+        Ok(chains) => chains
+            .iter()
+            .map(|c| match Chain::from_network(network(c)) {
+                Some(chain) => f(c, chain),
+                None => deployhealth::beacons_unavailable(
+                    Some(network(c)),
+                    None,
+                    "this scanner has no RPC endpoints for this chain",
+                ),
+            })
+            .collect(),
+    }
+}
+
 /// A per-entity starting endpoint. All the calls that make up ONE verdict — a
 /// beacon's `owner()` + `implementation()`, a contract's two ERC-165 probes, the
 /// Safe's `getOwners()` + `getThreshold()` — share a `session` so they hit the
@@ -3123,22 +3146,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 "STOX_WRAPPED_TOKEN_VAULT_IMPLEMENTATION",
             ]
             .map(|c| owners::parse_address_constant(&v1, c));
-            match &expected_state {
-                Err(e) => vec![deployhealth::beacons_unavailable(
-                    None,
-                    None,
-                    &e.to_string(),
-                )],
-                Ok(chains) => chains
-                    .iter()
-                    .map(|c| {
-                        let Some(chain) = Chain::from_network(&c.network) else {
-                            return deployhealth::beacons_unavailable(
-                                Some(&c.network),
-                                None,
-                                "this scanner has no RPC endpoints for this chain",
-                            );
-                        };
+            per_chain(&expected_state, |c| c.network.as_str(), |c, chain| {
                         let renamed = renamed_on(c, rpc_session(chain));
                         let beacons: Vec<_> = c
                             .beacons
@@ -3191,149 +3199,56 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                             )
                         })
                     })
-                    .collect(),
-            }
         };
 
         // Every infra fact `expected-state.json` pins per chain, read live.
-        let infra_sets: Vec<serde_json::Value> = match &expected_state {
-            Err(e) => vec![deployhealth::beacons_unavailable(
-                None,
-                None,
-                &e.to_string(),
-            )],
-            Ok(chains) => chains
-                .iter()
-                .map(|c| {
-                    let Some(chain) = Chain::from_network(&c.network) else {
-                        return deployhealth::beacons_unavailable(
-                            Some(&c.network),
-                            None,
-                            "this scanner has no RPC endpoints for this chain",
-                        );
-                    };
-                    let s = rpc_session(chain);
-                    let has_code = |a: &str| code_deployed(s, a).map(|b| b.to_string());
-                    let codehash = |a: &str| {
-                        live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
-                    };
-                    let call_addr = |a: &str, data: String| {
-                        eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
-                    };
-                    let mut rows = Vec::new();
-                    rows.push(deployhealth::infra_row(
-                        "beaconSetDeployer",
-                        "hasCode",
-                        Some(&c.beacon_set_deployer),
-                        Some("true"),
-                        has_code(&c.beacon_set_deployer),
-                    ));
-                    for b in &c.beacons {
-                        let addr = Some(b.address.as_str());
-                        rows.push(deployhealth::infra_row(
-                            b.name,
-                            "codehash",
-                            addr,
-                            Some(b.codehash.as_str()),
-                            addr.and_then(codehash),
-                        ));
-                    }
-                    let tl = &c.timelock.code.address;
-                    rows.push(deployhealth::infra_row(
-                        "timelock",
-                        "codehash",
-                        Some(tl),
-                        Some(c.timelock.code.codehash.as_str()),
-                        codehash(tl),
-                    ));
-                    let min_delay = c.timelock.min_delay.to_string();
-                    rows.push(deployhealth::infra_row(
-                        "timelock",
-                        "minDelay",
-                        Some(tl),
-                        Some(&min_delay),
-                        eth_call(s, tl, &rpc::min_delay_calldata())
-                            .and_then(|h| rpc::decode_uint(&h))
-                            .map(|d| d.to_string()),
-                    ));
-                    let o = &c.orchestrator;
-                    rows.push(deployhealth::infra_row(
-                        "orchestrator",
-                        "setDeployer hasCode",
-                        Some(&o.set_deployer),
-                        Some("true"),
-                        has_code(&o.set_deployer),
-                    ));
-                    rows.push(deployhealth::infra_row(
-                        "orchestrator",
-                        "beacon codehash",
-                        Some(&o.beacon),
-                        Some(o.beacon_codehash.as_str()),
-                        codehash(&o.beacon),
-                    ));
-                    rows.push(deployhealth::infra_row(
-                        "orchestrator",
-                        "beacon implementation",
-                        Some(&o.beacon),
-                        Some(o.implementation.as_str()),
-                        call_addr(&o.beacon, rpc::implementation_calldata()),
-                    ));
-                    rows.push(deployhealth::infra_row(
-                        "orchestrator",
-                        "beacon owner",
-                        Some(&o.beacon),
-                        Some(o.owner.as_str()),
-                        call_addr(&o.beacon, rpc::owner_calldata()),
-                    ));
-                    rows.push(deployhealth::infra_row(
-                        "orchestrator",
-                        "instance beacon",
-                        Some(&o.instance),
-                        Some(o.beacon.as_str()),
-                        eth_get_storage_at(s, &o.instance, ERC1967_BEACON_SLOT)
-                            .and_then(|h| rpc::decode_address(&h)),
-                    ));
-                    for (name, a) in [
-                        ("authoriser", &c.authoriser),
-                        ("euAuthoriser", &c.eu_authoriser),
-                    ] {
-                        rows.push(deployhealth::infra_row(
-                            name,
-                            "codehash",
-                            Some(&a.address),
-                            Some(a.codehash.as_str()),
-                            codehash(&a.address),
-                        ));
-                    }
-                    deployhealth::build_infra(
-                        deploy_org,
-                        deploy_repo,
-                        &c.network,
-                        chain.rpc_host(),
-                        rows,
+        let infra_sets: Vec<serde_json::Value> =
+            per_chain(&expected_state, |c| c.network.as_str(), |c, chain| {
+                let s = rpc_session(chain);
+                let has_code = |a: &str| code_deployed(s, a).map(|b| b.to_string());
+                let codehash = |a: &str| {
+                    live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
+                };
+                let call_addr = |a: &str, data: String| {
+                    eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
+                };
+                let tl = &c.timelock.code.address;
+                let o = &c.orchestrator;
+                let live = deployhealth::InfraLive {
+                    beacon_set_deployer_has_code: has_code(&c.beacon_set_deployer),
+                    beacon_codehashes: c.beacons.iter().map(|b| codehash(&b.address)).collect(),
+                    timelock_codehash: codehash(tl),
+                    timelock_min_delay: eth_call(s, tl, &rpc::min_delay_calldata())
+                        .and_then(|h| rpc::decode_uint(&h))
+                        .map(|d| d.to_string()),
+                    orchestrator_set_deployer_has_code: has_code(&o.set_deployer),
+                    orchestrator_beacon_codehash: codehash(&o.beacon),
+                    orchestrator_beacon_implementation: call_addr(
+                        &o.beacon,
+                        rpc::implementation_calldata(),
+                    ),
+                    orchestrator_beacon_owner: call_addr(&o.beacon, rpc::owner_calldata()),
+                    orchestrator_instance_beacon: eth_get_storage_at(
+                        s,
+                        &o.instance,
+                        ERC1967_BEACON_SLOT,
                     )
-                })
-                .collect(),
-        };
+                    .and_then(|h| rpc::decode_address(&h)),
+                    authoriser_codehash: codehash(&c.authoriser.address),
+                    eu_authoriser_codehash: codehash(&c.eu_authoriser.address),
+                };
+                deployhealth::build_infra(
+                    deploy_org,
+                    deploy_repo,
+                    &c.network,
+                    chain.rpc_host(),
+                    deployhealth::infra_rows(c, live),
+                )
+            });
 
         // Every Zoltu suite and every token leg `expected-state.json` pins per
         // chain, read live.
-        let code_token_sets: Vec<serde_json::Value> = match &expected_state {
-            Err(e) => vec![deployhealth::beacons_unavailable(
-                None,
-                None,
-                &e.to_string(),
-            )],
-            Ok(chains) => chains
-                .iter()
-                .map(|c| {
-                    let Some(chain) = Chain::from_network(&c.network) else {
-                        return deployhealth::beacons_unavailable(
-                            Some(&c.network),
-                            None,
-                            "this scanner has no RPC endpoints for this chain",
-                        );
-                    };
+        let code_token_sets: Vec<serde_json::Value> = per_chain(&expected_state, |c| c.network.as_str(), |c, chain| {
                     let s = rpc_session(chain);
                     let codehash = |a: &str| {
                         live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
@@ -3395,27 +3310,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         chain.rpc_host(),
                         rows,
                     )
-                })
-                .collect(),
-        };
+                });
 
         // Every v2 deployment and beacon `expected-state.json` pins per chain, read live.
-        let v2_sets: Vec<serde_json::Value> = match &expected_v2 {
-            Err(e) => vec![deployhealth::beacons_unavailable(
-                None,
-                None,
-                &e.to_string(),
-            )],
-            Ok(chains) => chains
-                .iter()
-                .map(|c| {
-                    let Some(chain) = Chain::from_network(&c.network) else {
-                        return deployhealth::beacons_unavailable(
-                            Some(&c.network),
-                            None,
-                            "this scanner has no RPC endpoints for this chain",
-                        );
-                    };
+        let v2_sets: Vec<serde_json::Value> = per_chain(&expected_v2, |c| c.network.as_str(), |c, chain| {
                     let s = rpc_session(chain);
                     let codehash = |a: &str| {
                         live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
@@ -3447,35 +3345,16 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         chain.rpc_host(),
                         rows,
                     )
-                })
-                .collect(),
-        };
+                });
 
         // Every Safe fact `expected-state.json` pins per chain, read live.
-        let safe_sets: Vec<serde_json::Value> = match &expected_state {
-            Err(e) => vec![deployhealth::beacons_unavailable(
-                None,
-                None,
-                &e.to_string(),
-            )],
-            Ok(chains) => chains
-                .iter()
-                .map(|c| {
-                    let Some(chain) = Chain::from_network(&c.network) else {
-                        return deployhealth::beacons_unavailable(
-                            Some(&c.network),
-                            None,
-                            "this scanner has no RPC endpoints for this chain",
-                        );
-                    };
+        let safe_sets: Vec<serde_json::Value> = per_chain(&expected_state, |c| c.network.as_str(), |c, chain| {
                     let live = live_safe(rpc_session(chain), &c.safe.address);
                     let mut doc = owners::safe_facts(&c.safe, &live);
                     doc["network"] = json!(c.network);
                     doc["rpcHost"] = json!(chain.rpc_host());
                     doc
-                })
-                .collect(),
-        };
+                });
 
         let doc = json!({
             "generatedAt": now,
