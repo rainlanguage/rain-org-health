@@ -1617,6 +1617,35 @@ mod tests {
         assert_eq!(status_of(&safe_facts(&exp, &none), "modules"), "mismatch");
     }
 
+    /// Safe returns modules in its linked-list order, not the file's, so the
+    /// same modules in any order match; a repeat never stands in for a missing one.
+    #[test]
+    fn expected_modules_match_in_any_order() {
+        let modules = [
+            "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
+            "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E",
+            "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
+        ];
+        let exp = ExpectedSafe {
+            modules: modules.map(str::to_string).to_vec(),
+            ..exp_safe()
+        };
+        let status = |live: &[&str]| {
+            let live = LiveSafe {
+                modules: Some(live.iter().map(|m| m.to_lowercase()).collect()),
+                ..live_on_target()
+            };
+            status_of(&safe_facts(&exp, &live), "modules")
+        };
+        let [a, b, c] = modules;
+        for order in [[a, b, c], [c, b, a], [b, c, a], [c, a, b]] {
+            assert_eq!(status(&order), "match", "{order:?}");
+        }
+        assert_eq!(status(&[a, b]), "mismatch");
+        assert_eq!(status(&[a, b, b]), "mismatch");
+        assert_eq!(status(&[a, b, c, OTHER]), "mismatch");
+    }
+
     /// A Safe answering its owners with one listed twice is not the expected set.
     #[test]
     fn a_repeated_owner_does_not_stand_in_for_a_missing_one() {

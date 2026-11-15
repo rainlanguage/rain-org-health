@@ -1388,6 +1388,135 @@ mod tests {
         );
     }
 
+    /// Base's infra rows, in order, at the fixture's pins: a matching read is
+    /// healthy, and each read reaches only its own row, drifting on another
+    /// value and unknown when the read failed.
+    #[test]
+    fn base_infra_rows_pin_each_fact_and_check_its_own_read() {
+        let c = base();
+        let timelock = "0x48ba1371A78E6cC54157c63721756ab444510DB3";
+        let beacon_hash = "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630";
+        let orch_beacon = "0xb9DCd744b0413Dff0EDC70A5B229c7aa03734613";
+        let orch_hash = "0x448cd06335de9e79ecdc51aa7c6647926860a1976f407de6f79f363b85ccaf2b";
+        let clone_hash = "0x2089950d3cc1112dd66a58adcfadeadc490b50053ac67be8bc676b4a2dcd1717";
+        let want: [(&str, &str, &str, &str); 14] = [
+            (
+                "beaconSetDeployer",
+                "hasCode",
+                "0x2191981Ca2477B745870cC307cbEB4cB2967ACe3",
+                "true",
+            ),
+            (
+                "Receipt beacon",
+                "codehash",
+                "0x86e93c39B095be0B0054C8488E26466Ee027D79a",
+                beacon_hash,
+            ),
+            (
+                "Receipt-vault beacon",
+                "codehash",
+                "0xEa084c8F4331CDF3328E772781b59F8A24F28F1A",
+                beacon_hash,
+            ),
+            (
+                "Wrapped-token-vault beacon",
+                "codehash",
+                "0x4c2d2d3Bf1232bf0d3FB7123007A9B8444637bC8",
+                beacon_hash,
+            ),
+            ("Orchestrator beacon", "codehash", orch_beacon, orch_hash),
+            (
+                "timelock",
+                "codehash",
+                timelock,
+                "0xb6234401d5b271d66957815831adcde1e66f80a4c7a9d01881c7eecb70e96993",
+            ),
+            ("timelock", "minDelay", timelock, "172800"),
+            (
+                "orchestrator",
+                "setDeployer hasCode",
+                "0x945D0Faf6f268e805246907507ef1044e70E75D7",
+                "true",
+            ),
+            ("orchestrator", "beacon codehash", orch_beacon, orch_hash),
+            (
+                "orchestrator",
+                "beacon implementation",
+                orch_beacon,
+                "0x1c3a4D12F88Bd39303Bb8510C6c1fa8Ad37A4b72",
+            ),
+            ("orchestrator", "beacon owner", orch_beacon, timelock),
+            (
+                "orchestrator",
+                "instance beacon",
+                "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
+                orch_beacon,
+            ),
+            (
+                "authoriser",
+                "codehash",
+                "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
+                clone_hash,
+            ),
+            (
+                "euAuthoriser",
+                "codehash",
+                "0xDB9152e46c1D140DB6a6f814461f21c571F3275e",
+                clone_hash,
+            ),
+        ];
+        let live = |v: &dyn Fn(usize) -> Option<String>| InfraLive {
+            beacon_set_deployer_has_code: v(0),
+            beacon_codehashes: (1..5).map(|i| v(i)).collect(),
+            timelock_codehash: v(5),
+            timelock_min_delay: v(6),
+            orchestrator_set_deployer_has_code: v(7),
+            orchestrator_beacon_codehash: v(8),
+            orchestrator_beacon_implementation: v(9),
+            orchestrator_beacon_owner: v(10),
+            orchestrator_instance_beacon: v(11),
+            authoriser_codehash: v(12),
+            eu_authoriser_codehash: v(13),
+        };
+        let pinned = |j: usize| Some(want[j].3.to_lowercase());
+        let statuses = |rows: &[serde_json::Value]| {
+            rows.iter()
+                .map(|r| r["status"].as_str().unwrap().to_string())
+                .collect::<Vec<_>>()
+        };
+
+        let rows = infra_rows(&c, live(&pinned));
+        let got: Vec<(&str, &str, &str, &str)> = rows
+            .iter()
+            .map(|r| {
+                (
+                    r["component"].as_str().unwrap(),
+                    r["field"].as_str().unwrap(),
+                    r["address"].as_str().unwrap(),
+                    r["expected"].as_str().unwrap(),
+                )
+            })
+            .collect();
+        assert_eq!(got, want);
+        assert_eq!(statuses(&rows), vec!["healthy"; want.len()]);
+
+        for i in 0..want.len() {
+            for (read, status) in [(Some(OTHER.to_string()), "drift"), (None, "unknown")] {
+                let rows = infra_rows(&c, live(&|j| if j == i { read.clone() } else { pinned(j) }));
+                let mut exp = vec!["healthy"; want.len()];
+                exp[i] = status;
+                assert_eq!(statuses(&rows), exp, "row {i} read {read:?}");
+            }
+        }
+
+        let mut short = live(&pinned);
+        short.beacon_codehashes.truncate(2);
+        let mut exp = vec!["healthy"; want.len()];
+        exp[3] = "unknown";
+        exp[4] = "unknown";
+        assert_eq!(statuses(&infra_rows(&c, short)), exp);
+    }
+
     /// A Zoltu suite's codehash is its row; no code reads `none` and drifts.
     #[test]
     fn zoltu_row_checks_the_suite_codehash() {
