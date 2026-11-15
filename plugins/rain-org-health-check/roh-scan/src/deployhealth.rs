@@ -8,7 +8,7 @@
 //! disagreeing with the deployed code, is a finding.
 
 use crate::expected::{
-    ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu, EXPECTED_STATE_PATH,
+    ExpectedChain, ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu, EXPECTED_STATE_PATH,
 };
 use crate::rpc::{keccak256_hex, CallClass};
 use regex::Regex;
@@ -308,6 +308,113 @@ pub fn infra_row(
         "live": live,
         "status": status,
     })
+}
+
+/// One chain's infra read live; `None` is a failed read, a codehash
+/// `Some("none")` no code. `beacon_codehashes` follows `ExpectedChain.beacons`.
+#[derive(Debug, Clone, Default)]
+pub struct InfraLive {
+    pub beacon_set_deployer_has_code: Option<String>,
+    pub beacon_codehashes: Vec<Option<String>>,
+    pub timelock_codehash: Option<String>,
+    pub timelock_min_delay: Option<String>,
+    pub orchestrator_set_deployer_has_code: Option<String>,
+    pub orchestrator_beacon_codehash: Option<String>,
+    pub orchestrator_beacon_implementation: Option<String>,
+    pub orchestrator_beacon_owner: Option<String>,
+    pub orchestrator_instance_beacon: Option<String>,
+    pub authoriser_codehash: Option<String>,
+    pub eu_authoriser_codehash: Option<String>,
+}
+
+/// Every infra row `c` pins, against `live`.
+pub fn infra_rows(c: &ExpectedChain, live: InfraLive) -> Vec<serde_json::Value> {
+    let mut rows = vec![infra_row(
+        "beaconSetDeployer",
+        "hasCode",
+        Some(&c.beacon_set_deployer),
+        Some("true"),
+        live.beacon_set_deployer_has_code,
+    )];
+    let mut beacon_codehashes = live.beacon_codehashes.into_iter();
+    for b in &c.beacons {
+        rows.push(infra_row(
+            b.name,
+            "codehash",
+            Some(&b.address),
+            Some(&b.codehash),
+            beacon_codehashes.next().flatten(),
+        ));
+    }
+    let tl = &c.timelock.code.address;
+    let min_delay = c.timelock.min_delay.to_string();
+    let o = &c.orchestrator;
+    rows.extend([
+        infra_row(
+            "timelock",
+            "codehash",
+            Some(tl),
+            Some(&c.timelock.code.codehash),
+            live.timelock_codehash,
+        ),
+        infra_row(
+            "timelock",
+            "minDelay",
+            Some(tl),
+            Some(&min_delay),
+            live.timelock_min_delay,
+        ),
+        infra_row(
+            "orchestrator",
+            "setDeployer hasCode",
+            Some(&o.set_deployer),
+            Some("true"),
+            live.orchestrator_set_deployer_has_code,
+        ),
+        infra_row(
+            "orchestrator",
+            "beacon codehash",
+            Some(&o.beacon),
+            Some(&o.beacon_codehash),
+            live.orchestrator_beacon_codehash,
+        ),
+        infra_row(
+            "orchestrator",
+            "beacon implementation",
+            Some(&o.beacon),
+            Some(&o.implementation),
+            live.orchestrator_beacon_implementation,
+        ),
+        infra_row(
+            "orchestrator",
+            "beacon owner",
+            Some(&o.beacon),
+            Some(&o.owner),
+            live.orchestrator_beacon_owner,
+        ),
+        infra_row(
+            "orchestrator",
+            "instance beacon",
+            Some(&o.instance),
+            Some(&o.beacon),
+            live.orchestrator_instance_beacon,
+        ),
+        infra_row(
+            "authoriser",
+            "codehash",
+            Some(&c.authoriser.address),
+            Some(&c.authoriser.codehash),
+            live.authoriser_codehash,
+        ),
+        infra_row(
+            "euAuthoriser",
+            "codehash",
+            Some(&c.eu_authoriser.address),
+            Some(&c.eu_authoriser.codehash),
+            live.eu_authoriser_codehash,
+        ),
+    ]);
+    rows
 }
 
 /// One Zoltu suite's codehash row; `live` as for [`infra_row`].
