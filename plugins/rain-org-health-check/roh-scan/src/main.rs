@@ -3435,11 +3435,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     };
                     let rows = deployhealth::v2_rows(
                         c,
-                        c.deployments.iter().map(|z| codehash(&z.code.address)).collect(),
+                        c.deployments
+                            .iter()
+                            .map(|z| codehash(&z.code.address))
+                            .collect(),
                         c.beacons
                             .iter()
                             .map(|b| deployhealth::V2BeaconLive {
-                                implementation: call_addr(&b.address, rpc::implementation_calldata()),
+                                implementation: call_addr(
+                                    &b.address,
+                                    rpc::implementation_calldata(),
+                                ),
                                 owner: call_addr(&b.address, rpc::owner_calldata()),
                             })
                             .collect(),

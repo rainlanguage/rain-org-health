@@ -7,7 +7,9 @@
 //! chain: a `RUNTIME_CODE` that disagrees with its own `BYTECODE_HASH`, or either
 //! disagreeing with the deployed code, is a finding.
 
-use crate::expected::{ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu, EXPECTED_STATE_PATH};
+use crate::expected::{
+    ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu, EXPECTED_STATE_PATH,
+};
 use crate::rpc::{keccak256_hex, CallClass};
 use regex::Regex;
 use serde_json::json;
@@ -409,29 +411,94 @@ impl<'a> From<&'a ExpectedQsep> for Legs<'a> {
 pub fn leg_rows(id: &str, l: Legs, live: &TokenLive) -> Vec<serde_json::Value> {
     let pin = |p: &str| Some(p.to_string()).filter(|p| hydrated_pin(p));
     let checks: [(&str, &str, &str, &Option<String>); 11] = [
-        ("receiptVault receipt", l.receipt_vault, l.receipt_vault_receipt, &live.receipt_vault_receipt),
-        ("receiptVault owner", l.receipt_vault, l.owner, &live.receipt_vault_owner),
-        ("receiptVault authoriser", l.receipt_vault, l.authoriser, &live.receipt_vault_authoriser),
-        ("receiptVault beacon", l.receipt_vault, l.receipt_vault_beacon, &live.receipt_vault_beacon),
-        ("receiptVault codehash", l.receipt_vault, l.receipt_vault_codehash, &live.receipt_vault_codehash),
-        ("receipt manager", l.receipt, l.receipt_manager, &live.receipt_manager),
-        ("receipt beacon", l.receipt, l.receipt_beacon, &live.receipt_beacon),
-        ("receipt codehash", l.receipt, l.receipt_codehash, &live.receipt_codehash),
-        ("wrappedTokenVault asset", l.wrapped_token_vault, l.wrapped_token_vault_asset, &live.wrapped_token_vault_asset),
-        ("wrappedTokenVault beacon", l.wrapped_token_vault, l.wrapped_token_vault_beacon, &live.wrapped_token_vault_beacon),
-        ("wrappedTokenVault codehash", l.wrapped_token_vault, l.wrapped_token_vault_codehash, &live.wrapped_token_vault_codehash),
+        (
+            "receiptVault receipt",
+            l.receipt_vault,
+            l.receipt_vault_receipt,
+            &live.receipt_vault_receipt,
+        ),
+        (
+            "receiptVault owner",
+            l.receipt_vault,
+            l.owner,
+            &live.receipt_vault_owner,
+        ),
+        (
+            "receiptVault authoriser",
+            l.receipt_vault,
+            l.authoriser,
+            &live.receipt_vault_authoriser,
+        ),
+        (
+            "receiptVault beacon",
+            l.receipt_vault,
+            l.receipt_vault_beacon,
+            &live.receipt_vault_beacon,
+        ),
+        (
+            "receiptVault codehash",
+            l.receipt_vault,
+            l.receipt_vault_codehash,
+            &live.receipt_vault_codehash,
+        ),
+        (
+            "receipt manager",
+            l.receipt,
+            l.receipt_manager,
+            &live.receipt_manager,
+        ),
+        (
+            "receipt beacon",
+            l.receipt,
+            l.receipt_beacon,
+            &live.receipt_beacon,
+        ),
+        (
+            "receipt codehash",
+            l.receipt,
+            l.receipt_codehash,
+            &live.receipt_codehash,
+        ),
+        (
+            "wrappedTokenVault asset",
+            l.wrapped_token_vault,
+            l.wrapped_token_vault_asset,
+            &live.wrapped_token_vault_asset,
+        ),
+        (
+            "wrappedTokenVault beacon",
+            l.wrapped_token_vault,
+            l.wrapped_token_vault_beacon,
+            &live.wrapped_token_vault_beacon,
+        ),
+        (
+            "wrappedTokenVault codehash",
+            l.wrapped_token_vault,
+            l.wrapped_token_vault_codehash,
+            &live.wrapped_token_vault_codehash,
+        ),
     ];
     checks
         .into_iter()
         .map(|(field, address, expected, live)| {
-            infra_row(id, field, Some(address), pin(expected).as_deref(), live.clone())
+            infra_row(
+                id,
+                field,
+                Some(address),
+                pin(expected).as_deref(),
+                live.clone(),
+            )
         })
         .collect()
 }
 
 /// One token's rows. `renamed` is whether the chain records the file's
 /// `renameMigration` (`None`: unread, so the renamable rows are unknown).
-pub fn token_rows(t: &ExpectedToken, renamed: Option<bool>, live: TokenLive) -> Vec<serde_json::Value> {
+pub fn token_rows(
+    t: &ExpectedToken,
+    renamed: Option<bool>,
+    live: TokenLive,
+) -> Vec<serde_json::Value> {
     let pick = |name: &str, renamed_name: &str| {
         renamed.map(|r| if r { renamed_name } else { name }.to_string())
     };
@@ -439,8 +506,18 @@ pub fn token_rows(t: &ExpectedToken, renamed: Option<bool>, live: TokenLive) -> 
     let wv = t.wrapped_token_vault.as_str();
     let id = format!("token {}", t.symbol);
     let checks: [(&str, &str, Option<String>, Option<String>); 6] = [
-        ("receiptVault name", rv, pick(&t.name, &t.renamed_name), live.receipt_vault_name.clone()),
-        ("receiptVault symbol", rv, Some(t.symbol.clone()), live.receipt_vault_symbol.clone()),
+        (
+            "receiptVault name",
+            rv,
+            pick(&t.name, &t.renamed_name),
+            live.receipt_vault_name.clone(),
+        ),
+        (
+            "receiptVault symbol",
+            rv,
+            Some(t.symbol.clone()),
+            live.receipt_vault_symbol.clone(),
+        ),
         (
             "receiptVault decimals",
             rv,
@@ -450,13 +527,19 @@ pub fn token_rows(t: &ExpectedToken, renamed: Option<bool>, live: TokenLive) -> 
         (
             "wrappedTokenVault name",
             wv,
-            pick(&t.wrapped_token_vault_name, &t.wrapped_token_vault_renamed_name),
+            pick(
+                &t.wrapped_token_vault_name,
+                &t.wrapped_token_vault_renamed_name,
+            ),
             live.wrapped_token_vault_name.clone(),
         ),
         (
             "wrappedTokenVault symbol",
             wv,
-            pick(&t.wrapped_token_vault_symbol, &t.wrapped_token_vault_renamed_symbol),
+            pick(
+                &t.wrapped_token_vault_symbol,
+                &t.wrapped_token_vault_renamed_symbol,
+            ),
             live.wrapped_token_vault_symbol.clone(),
         ),
         (
@@ -502,7 +585,13 @@ pub fn v2_rows(
         .collect();
     for (b, live) in v.beacons.iter().zip(beacons) {
         let a = Some(b.address.as_str());
-        rows.push(infra_row(b.name, "implementation", a, Some(&b.implementation), live.implementation));
+        rows.push(infra_row(
+            b.name,
+            "implementation",
+            a,
+            Some(&b.implementation),
+            live.implementation,
+        ));
         rows.push(infra_row(b.name, "owner", a, Some(&b.owner), live.owner));
     }
     rows

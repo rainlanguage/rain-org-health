@@ -458,7 +458,10 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 receipt_vault: nonzero(&q["receiptVault"], "qsep.receiptVault")?,
                 receipt: nonzero(&q["receipt"], "qsep.receipt")?,
                 wrapped_token_vault: nonzero(&q["wrappedTokenVault"], "qsep.wrappedTokenVault")?,
-                receipt_vault_receipt: nonzero(&q["receiptVaultReceipt"], "qsep.receiptVaultReceipt")?,
+                receipt_vault_receipt: nonzero(
+                    &q["receiptVaultReceipt"],
+                    "qsep.receiptVaultReceipt",
+                )?,
                 receipt_manager: nonzero(&q["receiptManager"], "qsep.receiptManager")?,
                 wrapped_token_vault_asset: nonzero(
                     &q["wrappedTokenVaultAsset"],
