@@ -968,4 +968,403 @@ mod tests {
             "an unavailable chain must not claim a beacon list"
         );
     }
+
+    const FIXTURE: &str = include_str!("../testdata/expected-state.json");
+    const OTHER: &str = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+
+    fn base() -> crate::expected::ExpectedChain {
+        let chains = crate::expected::parse(FIXTURE).unwrap();
+        crate::expected::reference(&chains).unwrap().clone()
+    }
+
+    fn base_v2() -> ExpectedV2 {
+        crate::expected::parse_v2(FIXTURE)
+            .unwrap()
+            .into_iter()
+            .find(|c| c.network == "base")
+            .unwrap()
+    }
+
+    /// Every leg read live at its pin.
+    fn matching(l: Legs) -> TokenLive {
+        let s = |v: &str| Some(v.to_string());
+        TokenLive {
+            receipt_vault_receipt: s(l.receipt_vault_receipt),
+            receipt_vault_owner: s(l.owner),
+            receipt_vault_authoriser: s(l.authoriser),
+            receipt_vault_beacon: s(l.receipt_vault_beacon),
+            receipt_vault_codehash: s(l.receipt_vault_codehash),
+            receipt_manager: s(l.receipt_manager),
+            receipt_beacon: s(l.receipt_beacon),
+            receipt_codehash: s(l.receipt_codehash),
+            wrapped_token_vault_asset: s(l.wrapped_token_vault_asset),
+            wrapped_token_vault_beacon: s(l.wrapped_token_vault_beacon),
+            wrapped_token_vault_codehash: s(l.wrapped_token_vault_codehash),
+            ..TokenLive::default()
+        }
+    }
+
+    fn row<'a>(rows: &'a [serde_json::Value], field: &str) -> &'a serde_json::Value {
+        rows.iter()
+            .find(|r| r["field"] == field)
+            .unwrap_or_else(|| panic!("no {field} row"))
+    }
+
+    const LEG_FIELDS: [&str; 11] = [
+        "receiptVault receipt",
+        "receiptVault owner",
+        "receiptVault authoriser",
+        "receiptVault beacon",
+        "receiptVault codehash",
+        "receipt manager",
+        "receipt beacon",
+        "receipt codehash",
+        "wrappedTokenVault asset",
+        "wrappedTokenVault beacon",
+        "wrappedTokenVault codehash",
+    ];
+
+    /// Base's receipt-vault beacon is pinned to its renamed implementation once
+    /// the chain records the rename, to the original before, and to neither
+    /// while the rename is unread.
+    #[test]
+    fn a_base_beacon_is_checked_against_the_implementation_the_rename_picks() {
+        let c = base();
+        let b = &c.beacons[1];
+        assert_ne!(b.implementation, b.renamed_implementation);
+        let owners = BeaconOwners {
+            expected: &b.owner,
+            safe: Some(c.safe.address.as_str()),
+            legacy: None,
+        };
+        let check = |renamed: Option<bool>, live_impl: &str| {
+            beacon_health(
+                b.name,
+                Some(b.address.clone()),
+                &owners,
+                b.expected_implementation(renamed),
+                None,
+                Some(b.owner.to_lowercase()),
+                Some(live_impl.to_lowercase()),
+            )
+        };
+        let renamed = check(Some(true), &b.renamed_implementation);
+        assert_eq!(renamed["status"], "healthy");
+        assert_eq!(renamed["implVersion"], "expected");
+        assert_eq!(renamed["ownerLabel"], "timelock");
+        assert_eq!(renamed["targetImpl"], b.renamed_implementation.as_str());
+        let original = check(Some(false), &b.implementation);
+        assert_eq!(original["status"], "healthy");
+        assert_eq!(original["targetImpl"], b.implementation.as_str());
+        assert_eq!(check(Some(true), &b.implementation)["status"], "behind");
+        assert_eq!(
+            check(Some(false), &b.renamed_implementation)["status"],
+            "behind"
+        );
+        let unread = check(None, &b.renamed_implementation);
+        assert_eq!(unread["status"], "unknown");
+        assert!(unread["targetImpl"].is_null());
+        assert!(unread["atTarget"].is_null());
+        assert_eq!(unread["implVersion"], "unknown");
+    }
+
+    /// A Base token's rows: its metadata, the renamable names at the rename's
+    /// pick, and every leg, the receipt checked against its own manager pin.
+    #[test]
+    fn a_base_token_checks_its_receipt_manager_and_the_names_the_rename_picks() {
+        let c = base();
+        let t = &c.tokens[0];
+        let live = TokenLive {
+            receipt_vault_name: Some(t.renamed_name.clone()),
+            receipt_vault_symbol: Some(t.symbol.clone()),
+            receipt_vault_decimals: Some(18),
+            wrapped_token_vault_name: Some(t.wrapped_token_vault_renamed_name.clone()),
+            wrapped_token_vault_symbol: Some(t.wrapped_token_vault_renamed_symbol.clone()),
+            wrapped_token_vault_decimals: Some(18),
+            ..matching(t.into())
+        };
+        let rows = token_rows(t, Some(true), live.clone());
+        let fields: Vec<&str> = rows.iter().map(|r| r["field"].as_str().unwrap()).collect();
+        let mut want = vec![
+            "receiptVault name",
+            "receiptVault symbol",
+            "receiptVault decimals",
+            "wrappedTokenVault name",
+            "wrappedTokenVault symbol",
+            "wrappedTokenVault decimals",
+        ];
+        want.extend(LEG_FIELDS);
+        assert_eq!(fields, want);
+        for r in &rows {
+            assert_eq!(r["component"], "token tMSTR", "{r}");
+            assert_eq!(r["status"], "healthy", "{r}");
+        }
+        let m = row(&rows, "receipt manager");
+        assert_eq!(m["address"], t.receipt.as_str());
+        assert_eq!(m["expected"], t.receipt_manager.as_str());
+
+        let before = token_rows(t, Some(false), live.clone());
+        let name = row(&before, "receiptVault name");
+        assert_eq!(name["expected"], t.name.as_str());
+        assert_eq!(name["status"], "drift");
+        assert_eq!(
+            row(&before, "wrappedTokenVault name")["expected"],
+            t.wrapped_token_vault_name.as_str()
+        );
+        assert_eq!(
+            row(&before, "wrappedTokenVault symbol")["expected"],
+            t.wrapped_token_vault_symbol.as_str()
+        );
+        assert_eq!(row(&before, "receiptVault symbol")["status"], "healthy");
+
+        let unread = token_rows(t, None, live.clone());
+        for f in [
+            "receiptVault name",
+            "wrappedTokenVault name",
+            "wrappedTokenVault symbol",
+        ] {
+            assert!(row(&unread, f)["expected"].is_null(), "{f}");
+            assert_eq!(row(&unread, f)["status"], "unknown", "{f}");
+        }
+        assert_eq!(row(&unread, "receipt manager")["status"], "healthy");
+
+        let mut managed = t.clone();
+        managed.receipt_manager = OTHER.into();
+        let m = token_rows(&managed, Some(true), live.clone());
+        assert_eq!(row(&m, "receipt manager")["expected"], OTHER);
+        assert_eq!(row(&m, "receipt manager")["status"], "drift");
+        let foreign = TokenLive {
+            receipt_manager: Some(OTHER.into()),
+            ..live
+        };
+        assert_eq!(
+            row(&token_rows(t, Some(true), foreign), "receipt manager")["status"],
+            "drift"
+        );
+    }
+
+    /// Base's tQSEP rows: its owner, authoriser and legs on the shared Base
+    /// beacons, under `qsep`.
+    #[test]
+    fn base_qsep_checks_its_owner_authoriser_and_legs() {
+        let c = base();
+        let q = c.qsep.as_ref().unwrap();
+        let live = matching(q.into());
+        let rows = qsep_rows(q, &live);
+        assert_eq!(
+            rows.iter()
+                .map(|r| r["field"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            LEG_FIELDS
+        );
+        for r in &rows {
+            assert_eq!(r["component"], "qsep", "{r}");
+            assert_eq!(r["status"], "healthy", "{r}");
+        }
+        let at = |f: &str| {
+            let r = row(&rows, f);
+            (
+                r["address"].as_str().unwrap().to_string(),
+                r["expected"].as_str().unwrap().to_string(),
+            )
+        };
+        assert_eq!(
+            at("receiptVault owner"),
+            (q.receipt_vault.clone(), c.timelock.code.address.clone())
+        );
+        assert_eq!(
+            at("receiptVault authoriser"),
+            (q.receipt_vault.clone(), c.authoriser.address.clone())
+        );
+        assert_eq!(
+            at("receiptVault beacon"),
+            (q.receipt_vault.clone(), c.beacons[1].address.clone())
+        );
+        assert_eq!(
+            at("receipt beacon"),
+            (q.receipt.clone(), c.beacons[0].address.clone())
+        );
+        assert_eq!(
+            at("wrappedTokenVault beacon"),
+            (q.wrapped_token_vault.clone(), c.beacons[2].address.clone())
+        );
+        assert_eq!(
+            at("wrappedTokenVault asset"),
+            (q.wrapped_token_vault.clone(), q.receipt_vault.clone())
+        );
+        assert_eq!(
+            at("receipt manager"),
+            (q.receipt.clone(), q.receipt_manager.clone())
+        );
+        let safe_owned = TokenLive {
+            receipt_vault_owner: Some(c.safe.address.clone()),
+            receipt_vault_authoriser: None,
+            ..live
+        };
+        let drifted = qsep_rows(q, &safe_owned);
+        assert_eq!(row(&drifted, "receiptVault owner")["status"], "drift");
+        assert_eq!(
+            row(&drifted, "receiptVault authoriser")["status"],
+            "unknown"
+        );
+    }
+
+    /// Each qsep pin reaches its own row.
+    #[test]
+    fn each_qsep_pin_reaches_its_own_row() {
+        let a = |i: usize| format!("0x{i:040x}");
+        let h = |i: usize| format!("0x{i:064x}");
+        let q = ExpectedQsep {
+            receipt_vault: a(1),
+            receipt: a(2),
+            wrapped_token_vault: a(3),
+            receipt_vault_receipt: a(4),
+            receipt_manager: a(5),
+            wrapped_token_vault_asset: a(6),
+            receipt_vault_beacon: a(7),
+            receipt_beacon: a(8),
+            wrapped_token_vault_beacon: a(9),
+            receipt_vault_codehash: h(10),
+            receipt_codehash: h(11),
+            wrapped_token_vault_codehash: h(12),
+            owner: a(13),
+            authoriser: a(14),
+        };
+        let rows = qsep_rows(&q, &TokenLive::default());
+        let got: Vec<(String, String)> = rows
+            .iter()
+            .map(|r| {
+                (
+                    r["address"].as_str().unwrap().to_string(),
+                    r["expected"].as_str().unwrap().to_string(),
+                )
+            })
+            .collect();
+        let want = [
+            (1, a(4)),
+            (1, a(13)),
+            (1, a(14)),
+            (1, a(7)),
+            (1, h(10)),
+            (2, a(5)),
+            (2, a(8)),
+            (2, h(11)),
+            (3, a(6)),
+            (3, a(9)),
+            (3, h(12)),
+        ]
+        .map(|(at, pin)| (a(at), pin));
+        assert_eq!(got, want);
+        assert!(rows.iter().all(|r| r["status"] == "unknown"));
+    }
+
+    /// A row is healthy only on a case-insensitive match to a pin; no pin or no
+    /// live read is unknown, never healthy.
+    #[test]
+    fn infra_row_compares_live_to_its_pin() {
+        let pin = "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E";
+        let r = infra_row("c", "f", Some(OTHER), Some(pin), Some(pin.to_lowercase()));
+        assert_eq!(r["status"], "healthy");
+        assert_eq!(r["component"], "c");
+        assert_eq!(r["field"], "f");
+        assert_eq!(r["address"], OTHER);
+        assert_eq!(r["expected"], pin);
+        assert_eq!(r["live"], pin.to_lowercase());
+        assert_eq!(
+            infra_row("c", "f", None, Some(pin), Some(OTHER.into()))["status"],
+            "drift"
+        );
+        assert_eq!(
+            infra_row("c", "f", None, Some(pin), None)["status"],
+            "unknown"
+        );
+        assert_eq!(
+            infra_row("c", "f", None, None, Some(pin.into()))["status"],
+            "unknown"
+        );
+    }
+
+    /// A Zoltu suite's codehash is its row; no code reads `none` and drifts, and
+    /// a zero codehash is no pin.
+    #[test]
+    fn zoltu_row_checks_the_suite_codehash() {
+        let v = base_v2();
+        let z = &v.deployments[0];
+        let r = zoltu_row(z, Some(z.code.codehash.clone()));
+        assert_eq!(r["component"], format!("zoltu {}", z.key));
+        assert_eq!(r["field"], "codehash");
+        assert_eq!(r["address"], z.code.address.as_str());
+        assert_eq!(r["expected"], z.code.codehash.as_str());
+        assert_eq!(r["status"], "healthy");
+        assert_eq!(zoltu_row(z, Some("none".into()))["status"], "drift");
+        assert_eq!(zoltu_row(z, None)["status"], "unknown");
+        let mut zero = z.clone();
+        zero.code.codehash = format!("0x{}", "0".repeat(64));
+        let r = zoltu_row(&zero, Some(zero.code.codehash.clone()));
+        assert!(r["expected"].is_null());
+        assert_eq!(r["status"], "unknown");
+    }
+
+    /// Base's v2 rows: every deployment's codehash in file order, then each
+    /// beacon's implementation and owner; the chain's document counts them.
+    #[test]
+    fn base_v2_rows_check_each_deployment_and_beacon_and_build_infra_counts_them() {
+        let v = base_v2();
+        let n = v.deployments.len();
+        let mut hashes: Vec<Option<String>> = v
+            .deployments
+            .iter()
+            .map(|z| Some(z.code.codehash.clone()))
+            .collect();
+        hashes[1] = Some("none".into());
+        hashes[2] = None;
+        let mut beacons: Vec<V2BeaconLive> = v
+            .beacons
+            .iter()
+            .map(|b| V2BeaconLive {
+                implementation: Some(b.implementation.to_lowercase()),
+                owner: Some(b.owner.to_lowercase()),
+            })
+            .collect();
+        beacons[2].owner = Some(OTHER.into());
+        let rows = v2_rows(&v, hashes, beacons);
+        assert_eq!(rows.len(), n + 6);
+        for (r, z) in rows.iter().zip(&v.deployments) {
+            assert_eq!(r["component"], format!("zoltu {}", z.key));
+            assert_eq!(r["address"], z.code.address.as_str());
+            assert_eq!(r["expected"], z.code.codehash.as_str());
+        }
+        assert_eq!(
+            rows[..3]
+                .iter()
+                .map(|r| r["status"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["healthy", "drift", "unknown"]
+        );
+        for (i, b) in v.beacons.iter().enumerate() {
+            let imp = &rows[n + 2 * i];
+            let own = &rows[n + 2 * i + 1];
+            assert_eq!(imp["component"], b.name);
+            assert_eq!(imp["field"], "implementation");
+            assert_eq!(imp["address"], b.address.as_str());
+            assert_eq!(imp["expected"], b.implementation.as_str());
+            assert_eq!(own["component"], b.name);
+            assert_eq!(own["field"], "owner");
+            assert_eq!(own["address"], b.address.as_str());
+            assert_eq!(own["expected"], b.owner.as_str());
+        }
+        assert_eq!(rows[n]["status"], "healthy");
+        assert_eq!(rows[n + 1]["status"], "healthy");
+        assert_eq!(rows[n + 5]["status"], "drift");
+
+        let doc = build_infra("S01-Issuer", "st0x.deploy", "base", "host", rows.clone());
+        assert_eq!(doc["org"], "S01-Issuer");
+        assert_eq!(doc["repo"], "st0x.deploy");
+        assert_eq!(doc["network"], "base");
+        assert_eq!(doc["rpcHost"], "host");
+        assert_eq!(doc["source"], EXPECTED_STATE_PATH);
+        assert_eq!(doc["total"], n + 6);
+        assert_eq!(doc["healthy"], n + 3);
+        assert_eq!(doc["rows"], serde_json::Value::Array(rows));
+    }
 }

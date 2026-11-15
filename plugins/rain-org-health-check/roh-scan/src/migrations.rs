@@ -1161,4 +1161,63 @@ mod tests {
             .unwrap()
             .starts_with("migrations.json: not JSON ("));
     }
+
+    #[test]
+    fn locate_names_the_network_registry_and_the_migration_record_on_it() {
+        let src = fixture().to_string();
+        let (net, rec) = locate(&src, "sevenchain", ID_2).unwrap();
+        assert_eq!(
+            net,
+            Network {
+                chain_id: 7,
+                name: "sevenchain".into(),
+                registry: REGISTRY.into(),
+            }
+        );
+        assert_eq!(
+            rec,
+            Record {
+                writer: SAFE_X.into(),
+                namespace: NS_B.into(),
+                id: ID_2.into(),
+            }
+        );
+        let (net, rec) = locate(&src, "tenchain", ID_3).unwrap();
+        assert_eq!(net.chain_id, 10);
+        assert_eq!(rec.writer, SAFE_Y);
+        assert_eq!(rec.namespace, NS_A);
+    }
+
+    /// Off the chain, the writer is the migration's namespace line there, never
+    /// another namespace's.
+    #[test]
+    fn locate_takes_the_writer_of_the_namespace_line_when_the_migration_is_not_on_the_chain() {
+        let mut f = fixture();
+        f["migrations"][3]["chains"]
+            .as_object_mut()
+            .unwrap()
+            .remove("7");
+        f["migrations"][0]["chains"]["7"]["writer"] = Value::from(SAFE_Y);
+        let (_, rec) = locate(&f.to_string(), "sevenchain", ID_3).unwrap();
+        assert_eq!(rec.writer, SAFE_Y);
+        assert_eq!(rec.namespace, NS_A);
+        assert_eq!(rec.id, ID_3);
+
+        f["migrations"][0]["chains"]
+            .as_object_mut()
+            .unwrap()
+            .remove("7");
+        assert_eq!(locate(&f.to_string(), "sevenchain", ID_3), None);
+    }
+
+    #[test]
+    fn locate_is_none_for_an_unknown_network_or_id_or_an_unreadable_file() {
+        let src = fixture().to_string();
+        assert_eq!(locate(&src, "elevenchain", ID_1), None);
+        assert_eq!(locate(&src, "sevenchain", GENESIS), None);
+        assert_eq!(locate("{", "sevenchain", ID_1), None);
+        let mut f = fixture();
+        f["version"] = Value::from(2);
+        assert_eq!(locate(&f.to_string(), "sevenchain", ID_1), None);
+    }
 }
