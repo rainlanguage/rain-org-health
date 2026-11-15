@@ -2770,7 +2770,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             deploy_repo,
             privileged::PRIVILEGED_ADDRESSES_PATH,
         ));
-        // What st0x.deploy's CI asserts live, per chain (`expected-state.json`).
+        // The facts st0x.deploy emits per chain in `expected-state.json`, checked live here.
         let expected_body = gh_file(deploy_org, deploy_repo, expected::EXPECTED_STATE_PATH);
         let expected_state = expected::parse(&expected_body);
         let expected_v2 = expected::parse_v2(&expected_body);
@@ -3131,8 +3131,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         };
 
         // Every production beacon on every chain `expected-state.json` lists,
-        // read live and checked against the implementation and owner st0x.deploy's
-        // CI asserts for it. A chain that cannot be read is reported unavailable
+        // read live and checked against the implementation and owner st0x.deploy
+        // emits for it. A chain that cannot be read is reported unavailable
         // rather than dropped: a dropped chain renders as no section at all, which
         // reads as "no production beacons" instead of "this broke".
         let beacon_sets: Vec<serde_json::Value> = {

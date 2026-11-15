@@ -157,7 +157,7 @@ pub fn hydrated_pin(pin: &str) -> bool {
 }
 
 /// The owners a beacon's live `owner()` is resolved against. `expected` is the
-/// owner st0x.deploy's CI asserts (`expected-state.json`, the chain's timelock)
+/// owner st0x.deploy emits in `expected-state.json` (the chain's timelock)
 /// and is the only healthy one; `safe` and `legacy` only name a wrong owner.
 #[derive(Clone, Copy)]
 pub struct BeaconOwners<'a> {
@@ -960,7 +960,7 @@ mod tests {
         }
     }
 
-    /// The expected owner is what CI accepts, so it wins over the Safe label
+    /// The expected owner is what expected-state.json pins, so it wins over the Safe label
     /// when both name the same address.
     #[test]
     fn the_expected_owner_wins_over_the_safe_label() {

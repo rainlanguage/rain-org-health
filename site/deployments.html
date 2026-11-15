@@ -443,7 +443,7 @@ function renderDeployments(document, $, data, io) {
     sink.append(table);
   };
   // Production beacons: each should be owned by its chain's timelock and point at
-  // the implementation st0x.deploy's CI expects.
+  // the implementation st0x.deploy emits in expected-state.json.
   const renderBeaconSet = (b) => {
     if (!b) return;
     // A chain the scan could not read says so under its own heading. Returning
@@ -465,7 +465,7 @@ function renderDeployments(document, $, data, io) {
       el(
         "div",
         "own-sub",
-        `Each production beacon should be owned by this chain's governance timelock and point at the implementation st0x.deploy's CI expects (${b.source ?? "expected-state.json"}) — owner() and implementation() read live on-chain. A Safe-owned beacon is a fault: its owner can repoint every proxy without the timelock delay.`,
+        `Each production beacon should be owned by this chain's governance timelock and point at the implementation st0x.deploy emits in ${b.source ?? "expected-state.json"} — owner() and implementation() read live on-chain. A Safe-owned beacon is a fault: its owner can repoint every proxy without the timelock delay.`,
       ),
     );
     const allHealthy = b.healthy === b.total;

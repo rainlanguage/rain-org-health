@@ -1,5 +1,5 @@
-//! st0x.deploy's published `expected-state.json`: per chain, what its CI asserts
-//! live — each beacon's codehash, implementation and owner, the token-owner
+//! st0x.deploy's published `expected-state.json`: per chain, the facts it emits,
+//! checked live here — each beacon's codehash, implementation and owner, the token-owner
 //! Safe's owners and threshold, the timelock, the orchestrator, both authoriser
 //! clones, every Zoltu suite, and each token's metadata, legs, beacons, proxy
 //! codehashes, owner and authoriser. The scan expects exactly these.
