@@ -1467,7 +1467,7 @@ mod tests {
         ];
         let live = |v: &dyn Fn(usize) -> Option<String>| InfraLive {
             beacon_set_deployer_has_code: v(0),
-            beacon_codehashes: (1..5).map(|i| v(i)).collect(),
+            beacon_codehashes: (1..5).map(v).collect(),
             timelock_codehash: v(5),
             timelock_min_delay: v(6),
             orchestrator_set_deployer_has_code: v(7),
