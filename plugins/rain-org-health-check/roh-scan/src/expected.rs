@@ -32,11 +32,11 @@ pub struct ExpectedBeacon {
 impl ExpectedBeacon {
     /// The implementation pinned for whether the chain records the rename;
     /// `None` (unread) pins nothing.
-    pub fn expected_implementation(&self, renamed: Option<bool>) -> &str {
+    pub fn expected_implementation(&self, renamed: Option<bool>) -> Option<&str> {
         match renamed {
-            Some(true) => &self.renamed_implementation,
-            Some(false) => &self.implementation,
-            None => "",
+            Some(true) => Some(&self.renamed_implementation),
+            Some(false) => Some(&self.implementation),
+            None => None,
         }
     }
 }

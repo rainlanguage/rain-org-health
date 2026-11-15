@@ -3213,9 +3213,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         );
                     };
                     let s = rpc_session(chain);
-                    fn pin(p: &str) -> Option<&str> {
-                        Some(p).filter(|p| deployhealth::hydrated_pin(p))
-                    }
                     let has_code = |a: &str| code_deployed(s, a).map(|b| b.to_string());
                     let codehash = |a: &str| {
                         live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
@@ -3237,7 +3234,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                             b.name,
                             "codehash",
                             addr,
-                            pin(&b.codehash),
+                            Some(b.codehash.as_str()),
                             addr.and_then(codehash),
                         ));
                     }
@@ -3246,7 +3243,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         "timelock",
                         "codehash",
                         Some(tl),
-                        pin(&c.timelock.code.codehash),
+                        Some(c.timelock.code.codehash.as_str()),
                         codehash(tl),
                     ));
                     let min_delay = c.timelock.min_delay.to_string();
@@ -3271,28 +3268,28 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         "orchestrator",
                         "beacon codehash",
                         Some(&o.beacon),
-                        pin(&o.beacon_codehash),
+                        Some(o.beacon_codehash.as_str()),
                         codehash(&o.beacon),
                     ));
                     rows.push(deployhealth::infra_row(
                         "orchestrator",
                         "beacon implementation",
                         Some(&o.beacon),
-                        pin(&o.implementation),
+                        Some(o.implementation.as_str()),
                         call_addr(&o.beacon, rpc::implementation_calldata()),
                     ));
                     rows.push(deployhealth::infra_row(
                         "orchestrator",
                         "beacon owner",
                         Some(&o.beacon),
-                        pin(&o.owner),
+                        Some(o.owner.as_str()),
                         call_addr(&o.beacon, rpc::owner_calldata()),
                     ));
                     rows.push(deployhealth::infra_row(
                         "orchestrator",
                         "instance beacon",
                         Some(&o.instance),
-                        pin(&o.beacon),
+                        Some(o.beacon.as_str()),
                         eth_get_storage_at(s, &o.instance, ERC1967_BEACON_SLOT)
                             .and_then(|h| rpc::decode_address(&h)),
                     ));
@@ -3304,7 +3301,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                             name,
                             "codehash",
                             Some(&a.address),
-                            pin(&a.codehash),
+                            Some(a.codehash.as_str()),
                             codehash(&a.address),
                         ));
                     }
