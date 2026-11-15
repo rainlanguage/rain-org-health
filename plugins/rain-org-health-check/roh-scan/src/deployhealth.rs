@@ -182,31 +182,29 @@ pub fn beacon_health(
     name: &str,
     address: Option<String>,
     owners: &BeaconOwners,
-    target_impl: &str,
+    target_impl: Option<&str>,
     v1_impl: Option<&str>,
     live_owner: Option<String>,
     live_impl: Option<String>,
 ) -> serde_json::Value {
-    // An all-zero pin would match a beacon answering the zero address.
-    let is = |o: &str, pin: Option<&str>| {
-        pin.is_some_and(|p| hydrated_pin(p) && o.eq_ignore_ascii_case(p))
-    };
+    let is = |o: &str, pin: Option<&str>| pin.is_some_and(|p| o.eq_ignore_ascii_case(p));
+    // An all-zero Solidity constant would match a beacon answering the zero address.
+    let is_const = |o: &str, pin: Option<&str>| is(o, pin.filter(|p| hydrated_pin(p)));
     let owner_label = match live_owner.as_deref() {
         None => "unknown",
         Some(o) if is(o, Some(owners.expected)) => "timelock",
         Some(o) if is(o, owners.safe) => "safe",
-        Some(o) if is(o, owners.legacy) => "legacy",
+        Some(o) if is_const(o, owners.legacy) => "legacy",
         Some(_) => "foreign",
     };
-    let target_pin = Some(target_impl).filter(|t| hydrated_pin(t));
-    let at_target = match (live_impl.as_deref(), target_pin) {
+    let at_target = match (live_impl.as_deref(), target_impl) {
         (Some(l), Some(t)) => Some(l.eq_ignore_ascii_case(t)),
         _ => None,
     };
     let impl_version = match live_impl.as_deref() {
         None => "unknown",
         Some(_) if at_target == Some(true) => "expected",
-        Some(l) if is(l, v1_impl) => "V1",
+        Some(l) if is_const(l, v1_impl) => "V1",
         Some(_) => "unknown",
     };
     let status = if live_owner.is_none() || at_target.is_none() {
@@ -225,8 +223,8 @@ pub fn beacon_health(
         "ownerLabel": owner_label,
         "implementation": live_impl,
         "implVersion": impl_version,
-        "targetImpl": target_pin,
-        "targetOwner": Some(owners.expected).filter(|t| hydrated_pin(t)),
+        "targetImpl": target_impl,
+        "targetOwner": owners.expected,
         "atTarget": at_target,
         "status": status,
     })
@@ -261,8 +259,7 @@ pub fn build_beacons(
         "repo": repo,
         "network": network,
         "rpcHost": rpc_host,
-        // An unhydrated pin is null, never printed as a `0x0000…` holder.
-        "safeOwner": safe.filter(|s| hydrated_pin(s)),
+        "safeOwner": safe,
         "timelockOwner": timelock,
         "source": EXPECTED_STATE_PATH,
         "total": total,
@@ -319,7 +316,7 @@ pub fn zoltu_row(z: &ExpectedZoltu, live: Option<String>) -> serde_json::Value {
         &format!("zoltu {}", z.key),
         "codehash",
         Some(&z.code.address),
-        Some(z.code.codehash.as_str()).filter(|p| hydrated_pin(p)),
+        Some(z.code.codehash.as_str()),
         live,
     )
 }
@@ -409,7 +406,7 @@ impl<'a> From<&'a ExpectedQsep> for Legs<'a> {
 
 /// The leg rows a token and qsep share, under `id`.
 pub fn leg_rows(id: &str, l: Legs, live: &TokenLive) -> Vec<serde_json::Value> {
-    let pin = |p: &str| Some(p.to_string()).filter(|p| hydrated_pin(p));
+    let pin = |p: &str| Some(p.to_string());
     let checks: [(&str, &str, &str, &Option<String>); 11] = [
         (
             "receiptVault receipt",
