@@ -235,11 +235,20 @@ impl ChainFields<'_> {
     }
 
     fn nonzero(&self, v: &serde_json::Value, field: &'static str) -> Result<String, ExpectedError> {
-        self.addr(v, field)
-            .and_then(|a| if is_zero(&a) { Err(self.bad(field)) } else { Ok(a) })
+        self.addr(v, field).and_then(|a| {
+            if is_zero(&a) {
+                Err(self.bad(field))
+            } else {
+                Ok(a)
+            }
+        })
     }
 
-    fn codehash(&self, v: &serde_json::Value, field: &'static str) -> Result<String, ExpectedError> {
+    fn codehash(
+        &self,
+        v: &serde_json::Value,
+        field: &'static str,
+    ) -> Result<String, ExpectedError> {
         v.as_str()
             .filter(|h| is_bytes32(h) && !is_zero(h))
             .map(str::to_string)
@@ -431,33 +440,26 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                         .ok_or_else(|| f.bad("tokens[].wrappedTokenVaultDecimals"))?,
                     receipt_vault: f.nonzero(&t["receiptVault"], "tokens[].receiptVault")?,
                     receipt: f.nonzero(&t["receipt"], "tokens[].receipt")?,
-                    wrapped_token_vault: f.nonzero(
-                        &t["wrappedTokenVault"],
-                        "tokens[].wrappedTokenVault",
-                    )?,
-                    receipt_vault_receipt: f.nonzero(
-                        &t["receiptVaultReceipt"],
-                        "tokens[].receiptVaultReceipt",
-                    )?,
+                    wrapped_token_vault: f
+                        .nonzero(&t["wrappedTokenVault"], "tokens[].wrappedTokenVault")?,
+                    receipt_vault_receipt: f
+                        .nonzero(&t["receiptVaultReceipt"], "tokens[].receiptVaultReceipt")?,
                     receipt_manager: f.nonzero(&t["receiptManager"], "tokens[].receiptManager")?,
                     wrapped_token_vault_asset: f.nonzero(
                         &t["wrappedTokenVaultAsset"],
                         "tokens[].wrappedTokenVaultAsset",
                     )?,
-                    receipt_vault_beacon: f.nonzero(
-                        &t["receiptVaultBeacon"],
-                        "tokens[].receiptVaultBeacon",
-                    )?,
+                    receipt_vault_beacon: f
+                        .nonzero(&t["receiptVaultBeacon"], "tokens[].receiptVaultBeacon")?,
                     receipt_beacon: f.nonzero(&t["receiptBeacon"], "tokens[].receiptBeacon")?,
                     wrapped_token_vault_beacon: f.nonzero(
                         &t["wrappedTokenVaultBeacon"],
                         "tokens[].wrappedTokenVaultBeacon",
                     )?,
-                    receipt_vault_codehash: f.codehash(
-                        &t["receiptVaultCodehash"],
-                        "tokens[].receiptVaultCodehash",
-                    )?,
-                    receipt_codehash: f.codehash(&t["receiptCodehash"], "tokens[].receiptCodehash")?,
+                    receipt_vault_codehash: f
+                        .codehash(&t["receiptVaultCodehash"], "tokens[].receiptVaultCodehash")?,
+                    receipt_codehash: f
+                        .codehash(&t["receiptCodehash"], "tokens[].receiptCodehash")?,
                     wrapped_token_vault_codehash: f.codehash(
                         &t["wrappedTokenVaultCodehash"],
                         "tokens[].wrappedTokenVaultCodehash",
@@ -473,26 +475,22 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             (true, q) => Some(ExpectedQsep {
                 receipt_vault: f.nonzero(&q["receiptVault"], "qsep.receiptVault")?,
                 receipt: f.nonzero(&q["receipt"], "qsep.receipt")?,
-                wrapped_token_vault: f.nonzero(&q["wrappedTokenVault"], "qsep.wrappedTokenVault")?,
-                receipt_vault_receipt: f.nonzero(
-                    &q["receiptVaultReceipt"],
-                    "qsep.receiptVaultReceipt",
-                )?,
+                wrapped_token_vault: f
+                    .nonzero(&q["wrappedTokenVault"], "qsep.wrappedTokenVault")?,
+                receipt_vault_receipt: f
+                    .nonzero(&q["receiptVaultReceipt"], "qsep.receiptVaultReceipt")?,
                 receipt_manager: f.nonzero(&q["receiptManager"], "qsep.receiptManager")?,
-                wrapped_token_vault_asset: f.nonzero(
-                    &q["wrappedTokenVaultAsset"],
-                    "qsep.wrappedTokenVaultAsset",
-                )?,
-                receipt_vault_beacon: f.nonzero(&q["receiptVaultBeacon"], "qsep.receiptVaultBeacon")?,
+                wrapped_token_vault_asset: f
+                    .nonzero(&q["wrappedTokenVaultAsset"], "qsep.wrappedTokenVaultAsset")?,
+                receipt_vault_beacon: f
+                    .nonzero(&q["receiptVaultBeacon"], "qsep.receiptVaultBeacon")?,
                 receipt_beacon: f.nonzero(&q["receiptBeacon"], "qsep.receiptBeacon")?,
                 wrapped_token_vault_beacon: f.nonzero(
                     &q["wrappedTokenVaultBeacon"],
                     "qsep.wrappedTokenVaultBeacon",
                 )?,
-                receipt_vault_codehash: f.codehash(
-                    &q["receiptVaultCodehash"],
-                    "qsep.receiptVaultCodehash",
-                )?,
+                receipt_vault_codehash: f
+                    .codehash(&q["receiptVaultCodehash"], "qsep.receiptVaultCodehash")?,
                 receipt_codehash: f.codehash(&q["receiptCodehash"], "qsep.receiptCodehash")?,
                 wrapped_token_vault_codehash: f.codehash(
                     &q["wrappedTokenVaultCodehash"],

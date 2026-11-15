@@ -257,7 +257,13 @@ pub fn build_owners(
             } else {
                 "same policy, per-chain address"
             };
-            entry("Safe", Some(c.safe.address.clone()), &c.network, "active", note)
+            entry(
+                "Safe",
+                Some(c.safe.address.clone()),
+                &c.network,
+                "active",
+                note,
+            )
         })
         .collect();
 
