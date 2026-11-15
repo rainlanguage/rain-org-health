@@ -2822,7 +2822,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 expected_state.as_deref(),
                 live_authoriser.as_deref(),
             )
-            .unwrap_or(serde_json::Value::Null)
         };
 
         // Who holds the ACTION roles (#143). The Safe above is the cold key that

@@ -3293,12 +3293,9 @@ function renderDeployments(document, $, data, io) {
   const owners = data.deploymentOwners;
   sink.append(el("h2", null, "Known owners"));
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
-    sink.append(
-      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
-    );
-    panels.historical.append(
-      el("div", "empty", "Owner data unavailable — the scan could not read the st0x.deploy constants."),
-    );
+    const why = owners?.unavailable === true ? owners.reason : "the scan produced no owner groups";
+    sink.append(el("div", "empty", `Owner data unavailable — ${why}.`));
+    panels.historical.append(el("div", "empty", `Owner data unavailable — ${why}.`));
     // The grant map is parsed independently of the owner constants, so it can
     // still be readable when they are not — and it is the half of this page
     // that says who can move value.

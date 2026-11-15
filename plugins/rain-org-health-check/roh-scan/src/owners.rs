@@ -232,8 +232,8 @@ pub struct OwnerSources<'a> {
 }
 
 /// Assemble the `deploymentOwners` document from the st0x.deploy library
-/// sources and the parsed `expected-state.json` chains. Returns `None` when
-/// expected-state is unreadable, so the page shows its "unavailable" state.
+/// sources and the parsed `expected-state.json` chains. An unreadable
+/// expected-state yields `unavailable: true` with its error as `reason`.
 ///
 /// `live_authoriser` is the `authorizer()` a production vault actually returns;
 /// `None` when that read failed, which leaves every clone's status `unknown`
@@ -244,12 +244,22 @@ pub fn build_owners(
     src: &OwnerSources,
     expected: Result<&[ExpectedChain], &ExpectedError>,
     live_authoriser: Option<&str>,
-) -> Option<serde_json::Value> {
+) -> serde_json::Value {
     let (auth_lib, v4_lib, overrides) = (src.auth_lib, src.v4_lib, src.overrides);
     let addr = parse_address_constant;
 
-    let safe_entries: Vec<serde_json::Value> = expected
-        .ok()?
+    let chains = match expected {
+        Ok(chains) => chains,
+        Err(e) => {
+            return json!({
+                "repo": repo,
+                "org": org,
+                "unavailable": true,
+                "reason": e.to_string(),
+            });
+        }
+    };
+    let safe_entries: Vec<serde_json::Value> = chains
         .iter()
         .map(|c| {
             let note = if c.network == REFERENCE_NETWORK {
@@ -322,11 +332,11 @@ pub fn build_owners(
         ],
     });
 
-    Some(json!({
+    json!({
         "repo": repo,
         "org": org,
         "groups": [safe, authoriser, historical],
-    }))
+    })
 }
 
 // ---------------------------------------------------------------------------
