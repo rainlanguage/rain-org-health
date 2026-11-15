@@ -1950,9 +1950,6 @@ mod tests {
         assert!(eth["address"].is_null());
     }
 
-    /// #217: the roster and threshold are the expectation's, never the
-    /// `_OWNER_{i}` constants — SAFE_LIB declares six, the expectation three.
-
     // ---- authoriser role grants (#143) ----
 
     /// The shape the real `LibAuthoriserInvariants` carries: a Safe-parametric
