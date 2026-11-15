@@ -2750,11 +2750,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             privileged::PRIVILEGED_ADDRESSES_PATH,
         ));
         // What st0x.deploy's CI asserts live, per chain (`expected-state.json`).
-        let expected_state = expected::parse(&gh_file(
-            deploy_org,
-            deploy_repo,
-            expected::EXPECTED_STATE_PATH,
-        ));
+        let expected_body = gh_file(deploy_org, deploy_repo, expected::EXPECTED_STATE_PATH);
+        let expected_state = expected::parse(&expected_body);
+        let expected_v2 = expected::parse_v2(&expected_body);
         let expected_base: Result<&expected::ExpectedChain, expected::ExpectedError> =
             expected_state
                 .as_ref()
@@ -3139,27 +3137,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                 "this scanner has no RPC endpoints for this chain",
                             );
                         };
-                        let ds = rpc_session(chain);
-                        let resolve = |calldata: String| {
-                            c.beacon_set_deployer
-                                .as_deref()
-                                .and_then(|d| eth_call(ds, d, &calldata))
-                                .and_then(|hex| rpc::decode_address(&hex))
-                        };
+                        let renamed = renamed_on(c, rpc_session(chain));
                         let beacons: Vec<_> = c
                             .beacons
                             .iter()
                             .enumerate()
                             .map(|(i, b)| {
-                                let addr = match &b.at {
-                                    expected::BeaconAt::Address(a) => Some(a.clone()),
-                                    expected::BeaconAt::DeployerReceipt => {
-                                        resolve(rpc::receipt_beacon_calldata())
-                                    }
-                                    expected::BeaconAt::DeployerReceiptVault => {
-                                        resolve(rpc::receipt_vault_beacon_calldata())
-                                    }
-                                };
+                                let addr = Some(b.address.clone());
                                 // One session per beacon so owner() + implementation()
                                 // hit the same RPC and can't disagree.
                                 let s = rpc_session(chain);
@@ -3182,7 +3166,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                         safe: Some(&c.safe.address),
                                         legacy: legacy_owner.as_deref(),
                                     },
-                                    &b.implementation,
+                                    renamed.map_or("", |r| {
+                                        if r {
+                                            &b.renamed_implementation
+                                        } else {
+                                            &b.implementation
+                                        }
+                                    }),
                                     v1_impl.as_deref(),
                                     live_owner,
                                     live_impl,
@@ -3248,23 +3238,13 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         ));
                     }
                     for b in &c.beacons {
-                        let addr = match &b.at {
-                            expected::BeaconAt::Address(a) => Some(a.clone()),
-                            expected::BeaconAt::DeployerReceipt => c
-                                .beacon_set_deployer
-                                .as_deref()
-                                .and_then(|d| call_addr(d, rpc::receipt_beacon_calldata())),
-                            expected::BeaconAt::DeployerReceiptVault => c
-                                .beacon_set_deployer
-                                .as_deref()
-                                .and_then(|d| call_addr(d, rpc::receipt_vault_beacon_calldata())),
-                        };
+                        let addr = Some(b.address.as_str());
                         rows.push(deployhealth::infra_row(
                             b.name,
                             "codehash",
-                            addr.as_deref(),
+                            addr,
                             pin(&b.codehash),
-                            addr.as_deref().and_then(codehash),
+                            addr.and_then(codehash),
                         ));
                     }
                     let tl = &c.timelock.code.address;
@@ -3380,33 +3360,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         eth_get_storage_at(s, a, ERC1967_BEACON_SLOT)
                             .and_then(|h| rpc::decode_address(&h))
                     };
-                    let deployer = c.beacon_set_deployer.as_deref().map_or_else(
-                        deployhealth::DeployerBeacons::default,
-                        |d| deployhealth::DeployerBeacons {
-                            receipt_vault: call_addr(d, rpc::receipt_vault_beacon_calldata()),
-                            receipt: call_addr(d, rpc::receipt_beacon_calldata()),
-                        },
-                    );
-                    let renamed =
-                        migrations::locate(&migrations_src, &c.network, &c.rename_migration)
-                            .and_then(|(net, r)| {
-                                migrations::read_applied(&net, &[r], &|calls| {
-                                    eth_call_batch(s, calls)
-                                })
-                                .pop()
-                                .flatten()
-                            })
-                            .map(|t| t > 0);
+                    let renamed = renamed_on(c, s);
                     let mut rows: Vec<serde_json::Value> = c
                         .zoltu
                         .iter()
                         .map(|z| deployhealth::zoltu_row(z, codehash(&z.code.address)))
                         .collect();
-                    for t in &c.tokens {
-                        let rv = t.receipt_vault.as_str();
-                        let rc = t.receipt.as_str();
-                        let wv = t.wrapped_token_vault.as_str();
-                        let live = deployhealth::TokenLive {
+                    let token_live = |l: deployhealth::Legs| {
+                        let rv = l.receipt_vault;
+                        let rc = l.receipt;
+                        let wv = l.wrapped_token_vault;
+                        deployhealth::TokenLive {
                             receipt_vault_name: call_str(rv, rpc::name_calldata()),
                             receipt_vault_symbol: call_str(rv, rpc::symbol_calldata()),
                             receipt_vault_decimals: decimals(rv),
@@ -3415,6 +3379,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                             receipt_vault_authoriser: call_addr(rv, rpc::authorizer_calldata()),
                             receipt_vault_beacon: beacon_slot(rv),
                             receipt_vault_codehash: codehash(rv),
+                            receipt_manager: call_addr(rc, rpc::manager_calldata()),
                             receipt_beacon: beacon_slot(rc),
                             receipt_codehash: codehash(rc),
                             wrapped_token_vault_name: call_str(wv, rpc::name_calldata()),
@@ -3423,8 +3388,15 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                             wrapped_token_vault_asset: call_addr(wv, rpc::asset_calldata()),
                             wrapped_token_vault_beacon: beacon_slot(wv),
                             wrapped_token_vault_codehash: codehash(wv),
-                        };
-                        rows.extend(deployhealth::token_rows(t, renamed, &deployer, live));
+                        }
+                    };
+                    for t in &c.tokens {
+                        let live = token_live(t.into());
+                        rows.extend(deployhealth::token_rows(t, renamed, live));
+                    }
+                    if let Some(q) = &c.qsep {
+                        let live = token_live(q.into());
+                        rows.extend(deployhealth::leg_rows("qsep", q.into(), &live));
                     }
                     deployhealth::build_infra(
                         deploy_org,

@@ -7,7 +7,7 @@
 //! chain: a `RUNTIME_CODE` that disagrees with its own `BYTECODE_HASH`, or either
 //! disagreeing with the deployed code, is a finding.
 
-use crate::expected::{BeaconAt, ExpectedToken, ExpectedZoltu, EXPECTED_STATE_PATH};
+use crate::expected::{ExpectedQsep, ExpectedToken, ExpectedZoltu, EXPECTED_STATE_PATH};
 use crate::rpc::{keccak256_hex, CallClass};
 use regex::Regex;
 use serde_json::json;
@@ -322,13 +322,6 @@ pub fn zoltu_row(z: &ExpectedZoltu, live: Option<String>) -> serde_json::Value {
     )
 }
 
-/// The beacon-set deployer's beacons, read live, for legs the file pins as `0x0`.
-#[derive(Debug, Clone, Default)]
-pub struct DeployerBeacons {
-    pub receipt_vault: Option<String>,
-    pub receipt: Option<String>,
-}
-
 /// One token's legs read live; `None` is a failed read, a codehash
 /// `Some("none")` no code.
 #[derive(Debug, Clone, Default)]
@@ -341,6 +334,7 @@ pub struct TokenLive {
     pub receipt_vault_authoriser: Option<String>,
     pub receipt_vault_beacon: Option<String>,
     pub receipt_vault_codehash: Option<String>,
+    pub receipt_manager: Option<String>,
     pub receipt_beacon: Option<String>,
     pub receipt_codehash: Option<String>,
     pub wrapped_token_vault_name: Option<String>,
@@ -351,39 +345,102 @@ pub struct TokenLive {
     pub wrapped_token_vault_codehash: Option<String>,
 }
 
+/// The pins a token and qsep share.
+pub struct Legs<'a> {
+    pub receipt_vault: &'a str,
+    pub receipt: &'a str,
+    pub wrapped_token_vault: &'a str,
+    pub receipt_vault_receipt: &'a str,
+    pub receipt_manager: &'a str,
+    pub wrapped_token_vault_asset: &'a str,
+    pub receipt_vault_beacon: &'a str,
+    pub receipt_beacon: &'a str,
+    pub wrapped_token_vault_beacon: &'a str,
+    pub receipt_vault_codehash: &'a str,
+    pub receipt_codehash: &'a str,
+    pub wrapped_token_vault_codehash: &'a str,
+    pub owner: &'a str,
+    pub authoriser: &'a str,
+}
+
+impl<'a> From<&'a ExpectedToken> for Legs<'a> {
+    fn from(t: &'a ExpectedToken) -> Self {
+        Legs {
+            receipt_vault: &t.receipt_vault,
+            receipt: &t.receipt,
+            wrapped_token_vault: &t.wrapped_token_vault,
+            receipt_vault_receipt: &t.receipt_vault_receipt,
+            receipt_manager: &t.receipt_manager,
+            wrapped_token_vault_asset: &t.wrapped_token_vault_asset,
+            receipt_vault_beacon: &t.receipt_vault_beacon,
+            receipt_beacon: &t.receipt_beacon,
+            wrapped_token_vault_beacon: &t.wrapped_token_vault_beacon,
+            receipt_vault_codehash: &t.receipt_vault_codehash,
+            receipt_codehash: &t.receipt_codehash,
+            wrapped_token_vault_codehash: &t.wrapped_token_vault_codehash,
+            owner: &t.owner,
+            authoriser: &t.authoriser,
+        }
+    }
+}
+
+impl<'a> From<&'a ExpectedQsep> for Legs<'a> {
+    fn from(q: &'a ExpectedQsep) -> Self {
+        Legs {
+            receipt_vault: &q.receipt_vault,
+            receipt: &q.receipt,
+            wrapped_token_vault: &q.wrapped_token_vault,
+            receipt_vault_receipt: &q.receipt_vault_receipt,
+            receipt_manager: &q.receipt_manager,
+            wrapped_token_vault_asset: &q.wrapped_token_vault_asset,
+            receipt_vault_beacon: &q.receipt_vault_beacon,
+            receipt_beacon: &q.receipt_beacon,
+            wrapped_token_vault_beacon: &q.wrapped_token_vault_beacon,
+            receipt_vault_codehash: &q.receipt_vault_codehash,
+            receipt_codehash: &q.receipt_codehash,
+            wrapped_token_vault_codehash: &q.wrapped_token_vault_codehash,
+            owner: &q.owner,
+            authoriser: &q.authoriser,
+        }
+    }
+}
+
+/// The leg rows a token and qsep share, under `id`.
+pub fn leg_rows(id: &str, l: Legs, live: &TokenLive) -> Vec<serde_json::Value> {
+    let pin = |p: &str| Some(p.to_string()).filter(|p| hydrated_pin(p));
+    let checks: [(&str, &str, &str, &Option<String>); 11] = [
+        ("receiptVault receipt", l.receipt_vault, l.receipt_vault_receipt, &live.receipt_vault_receipt),
+        ("receiptVault owner", l.receipt_vault, l.owner, &live.receipt_vault_owner),
+        ("receiptVault authoriser", l.receipt_vault, l.authoriser, &live.receipt_vault_authoriser),
+        ("receiptVault beacon", l.receipt_vault, l.receipt_vault_beacon, &live.receipt_vault_beacon),
+        ("receiptVault codehash", l.receipt_vault, l.receipt_vault_codehash, &live.receipt_vault_codehash),
+        ("receipt manager", l.receipt, l.receipt_manager, &live.receipt_manager),
+        ("receipt beacon", l.receipt, l.receipt_beacon, &live.receipt_beacon),
+        ("receipt codehash", l.receipt, l.receipt_codehash, &live.receipt_codehash),
+        ("wrappedTokenVault asset", l.wrapped_token_vault, l.wrapped_token_vault_asset, &live.wrapped_token_vault_asset),
+        ("wrappedTokenVault beacon", l.wrapped_token_vault, l.wrapped_token_vault_beacon, &live.wrapped_token_vault_beacon),
+        ("wrappedTokenVault codehash", l.wrapped_token_vault, l.wrapped_token_vault_codehash, &live.wrapped_token_vault_codehash),
+    ];
+    checks
+        .into_iter()
+        .map(|(field, address, expected, live)| {
+            infra_row(id, field, Some(address), pin(expected).as_deref(), live.clone())
+        })
+        .collect()
+}
+
 /// One token's rows. `renamed` is whether the chain records the file's
 /// `renameMigration` (`None`: unread, so the renamable rows are unknown).
-pub fn token_rows(
-    t: &ExpectedToken,
-    renamed: Option<bool>,
-    deployer: &DeployerBeacons,
-    live: TokenLive,
-) -> Vec<serde_json::Value> {
-    let pin = |p: &str| Some(p.to_string()).filter(|p| hydrated_pin(p));
+pub fn token_rows(t: &ExpectedToken, renamed: Option<bool>, live: TokenLive) -> Vec<serde_json::Value> {
     let pick = |name: &str, renamed_name: &str| {
         renamed.map(|r| if r { renamed_name } else { name }.to_string())
     };
-    let beacon = |at: &BeaconAt| match at {
-        BeaconAt::Address(a) => Some(a.clone()),
-        BeaconAt::DeployerReceipt => deployer.receipt.clone(),
-        BeaconAt::DeployerReceiptVault => deployer.receipt_vault.clone(),
-    };
     let rv = t.receipt_vault.as_str();
-    let rc = t.receipt.as_str();
     let wv = t.wrapped_token_vault.as_str();
-    let checks: [(&str, &str, Option<String>, Option<String>); 16] = [
-        (
-            "receiptVault name",
-            rv,
-            pick(&t.name, &t.renamed_name),
-            live.receipt_vault_name,
-        ),
-        (
-            "receiptVault symbol",
-            rv,
-            Some(t.symbol.clone()),
-            live.receipt_vault_symbol,
-        ),
+    let id = format!("token {}", t.symbol);
+    let checks: [(&str, &str, Option<String>, Option<String>); 6] = [
+        ("receiptVault name", rv, pick(&t.name, &t.renamed_name), live.receipt_vault_name.clone()),
+        ("receiptVault symbol", rv, Some(t.symbol.clone()), live.receipt_vault_symbol.clone()),
         (
             "receiptVault decimals",
             rv,
@@ -391,64 +448,16 @@ pub fn token_rows(
             live.receipt_vault_decimals.map(|d| d.to_string()),
         ),
         (
-            "receiptVault receipt",
-            rv,
-            pin(&t.receipt_vault_receipt),
-            live.receipt_vault_receipt,
-        ),
-        (
-            "receiptVault owner",
-            rv,
-            pin(&t.owner),
-            live.receipt_vault_owner,
-        ),
-        (
-            "receiptVault authoriser",
-            rv,
-            pin(&t.authoriser),
-            live.receipt_vault_authoriser,
-        ),
-        (
-            "receiptVault beacon",
-            rv,
-            beacon(&t.receipt_vault_beacon),
-            live.receipt_vault_beacon,
-        ),
-        (
-            "receiptVault codehash",
-            rv,
-            pin(&t.receipt_vault_codehash),
-            live.receipt_vault_codehash,
-        ),
-        (
-            "receipt beacon",
-            rc,
-            beacon(&t.receipt_beacon),
-            live.receipt_beacon,
-        ),
-        (
-            "receipt codehash",
-            rc,
-            pin(&t.receipt_codehash),
-            live.receipt_codehash,
-        ),
-        (
             "wrappedTokenVault name",
             wv,
-            pick(
-                &t.wrapped_token_vault_name,
-                &t.wrapped_token_vault_renamed_name,
-            ),
-            live.wrapped_token_vault_name,
+            pick(&t.wrapped_token_vault_name, &t.wrapped_token_vault_renamed_name),
+            live.wrapped_token_vault_name.clone(),
         ),
         (
             "wrappedTokenVault symbol",
             wv,
-            pick(
-                &t.wrapped_token_vault_symbol,
-                &t.wrapped_token_vault_renamed_symbol,
-            ),
-            live.wrapped_token_vault_symbol,
+            pick(&t.wrapped_token_vault_symbol, &t.wrapped_token_vault_renamed_symbol),
+            live.wrapped_token_vault_symbol.clone(),
         ),
         (
             "wrappedTokenVault decimals",
@@ -456,32 +465,15 @@ pub fn token_rows(
             Some(t.wrapped_token_vault_decimals.to_string()),
             live.wrapped_token_vault_decimals.map(|d| d.to_string()),
         ),
-        (
-            "wrappedTokenVault asset",
-            wv,
-            pin(&t.wrapped_token_vault_asset),
-            live.wrapped_token_vault_asset,
-        ),
-        (
-            "wrappedTokenVault beacon",
-            wv,
-            pin(&t.wrapped_token_vault_beacon),
-            live.wrapped_token_vault_beacon,
-        ),
-        (
-            "wrappedTokenVault codehash",
-            wv,
-            pin(&t.wrapped_token_vault_codehash),
-            live.wrapped_token_vault_codehash,
-        ),
     ];
-    let id = format!("token {}", t.symbol);
-    checks
+    let mut rows: Vec<serde_json::Value> = checks
         .into_iter()
         .map(|(field, address, expected, live)| {
             infra_row(&id, field, Some(address), expected.as_deref(), live)
         })
-        .collect()
+        .collect();
+    rows.extend(leg_rows(&id, t.into(), &live));
+    rows
 }
 
 /// Assemble one chain's `deploymentInfra` document.

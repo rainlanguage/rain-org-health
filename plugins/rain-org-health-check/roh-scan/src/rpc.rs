@@ -26,6 +26,7 @@ sol! {
     function isCertificationExpired() external view returns (bool);
     function getMinDelay() external view returns (uint256);
     function receipt() external view returns (address);
+    function manager() external view returns (address);
     function VERSION() external view returns (string);
     function getModulesPaginated(address start, uint256 pageSize) external view returns (address[] array, address next);
 }
@@ -116,6 +117,9 @@ pub fn authorizer_calldata() -> String {
 }
 pub fn min_delay_calldata() -> String {
     to_hex(getMinDelayCall {}.abi_encode())
+}
+pub fn manager_calldata() -> String {
+    to_hex(managerCall {}.abi_encode())
 }
 pub fn receipt_calldata() -> String {
     to_hex(receiptCall {}.abi_encode())
