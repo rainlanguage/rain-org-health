@@ -19,8 +19,6 @@ sol! {
     function decimals() external view returns (uint8);
     function asset() external view returns (address);
     function authorizer() external view returns (address);
-    function iReceiptBeacon() external view returns (address);
-    function iOffchainAssetReceiptVaultBeacon() external view returns (address);
     function appliedV5(address writer, bytes32 namespace, bytes32 migration) external view returns (uint256);
     function headV5(address writer, bytes32 namespace) external view returns (bytes32);
     function isCertificationExpired() external view returns (bool);
@@ -90,15 +88,6 @@ pub fn owner_calldata() -> String {
 }
 pub fn implementation_calldata() -> String {
     to_hex(implementationCall {}.abi_encode())
-}
-/// Ethereum's receipt and receipt-vault beacons have no generated address pin —
-/// they are created in the 0.1.1 beacon-set deployer's constructor and only
-/// readable from these two getters, so the in-use set is resolved live.
-pub fn receipt_beacon_calldata() -> String {
-    to_hex(iReceiptBeaconCall {}.abi_encode())
-}
-pub fn receipt_vault_beacon_calldata() -> String {
-    to_hex(iOffchainAssetReceiptVaultBeaconCall {}.abi_encode())
 }
 pub fn name_calldata() -> String {
     to_hex(nameCall {}.abi_encode())
@@ -341,13 +330,6 @@ mod tests {
     /// beacons are addressable — they have no generated pin. A wrong selector
     /// returns an on-chain revert, which the scan reports as an unreadable
     /// beacon rather than as a bad selector, so the encoding is pinned here
-    /// against `cast sig` output.
-    #[test]
-    fn beacon_getter_selectors_match_their_signatures() {
-        assert_eq!(receipt_beacon_calldata(), "0x2c9b7f40");
-        assert_eq!(receipt_vault_beacon_calldata(), "0x2f77a1c1");
-    }
-
     #[test]
     fn certification_expiry_selector_matches_its_signature() {
         assert_eq!(is_certification_expired_calldata(), "0xf5647943");
