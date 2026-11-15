@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-15T17:46:53Z",
+  "generatedAt": "2026-11-15T22:53:55Z",
   "auditGraph": {
     "nodes": [
       {
@@ -4330,7 +4330,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 57872472
+        "discoveredAtBlock": 57964497
       },
       {
         "network": "ethereum",
@@ -4887,7 +4887,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26421996
+        "discoveredAtBlock": 26423528
       },
       {
         "network": "bsc",
@@ -5756,7 +5756,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 133778243
+        "discoveredAtBlock": 133819173
       },
       {
         "network": "hyperevm",
@@ -6297,7 +6297,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51349726
+        "discoveredAtBlock": 51368454
       },
       {
         "network": "robinhood",
@@ -6838,7 +6838,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 115136472
+        "discoveredAtBlock": 115304073
       }
     ]
   },
