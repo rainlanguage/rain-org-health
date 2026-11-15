@@ -20,7 +20,200 @@ pub const BEACON_NAMES: [&str; 4] = [
 ];
 
 #[derive(Debug, Clone, PartialEq, Eq)]
-pub struct ExpectedBeacon        let addr = |v: &serde_json::Value, field: &'static str| -> Result<String, ExpectedError> {
+pub struct ExpectedBeacon {
+    pub name: &'static str,
+    pub address: String,
+    pub codehash: String,
+    pub implementation: String,
+    pub renamed_implementation: String,
+    pub owner: String,
+}
+
+/// A contract the file pins by address and runtime codehash.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedCode {
+    pub address: String,
+    pub codehash: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedTimelock {
+    pub code: ExpectedCode,
+    pub min_delay: u64,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedOrchestrator {
+    pub set_deployer: String,
+    pub beacon: String,
+    pub beacon_codehash: String,
+    pub implementation: String,
+    pub owner: String,
+    pub instance: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedSafe {
+    pub address: String,
+    pub owners: Vec<String>,
+    pub threshold: u64,
+    /// Any one of these is on target.
+    pub proxy_codehashes: Vec<String>,
+    /// Index-paired with `singleton_codehashes`; any one pair is on target.
+    pub singletons: Vec<String>,
+    pub singleton_codehashes: Vec<String>,
+    pub version: String,
+    pub modules: Vec<String>,
+    /// `None` when the file carries the zero address: no guard set.
+    pub guard: Option<String>,
+    pub fallback_handler: String,
+    pub fallback_handler_codehash: String,
+}
+
+/// A released Zoltu suite declared on the chain.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedZoltu {
+    pub key: String,
+    pub code: ExpectedCode,
+}
+
+/// Each `renamed_*` applies once the chain records `rename_migration`.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedToken {
+    pub underlying: String,
+    pub name: String,
+    pub renamed_name: String,
+    pub symbol: String,
+    pub decimals: u64,
+    pub wrapped_token_vault_name: String,
+    pub wrapped_token_vault_renamed_name: String,
+    pub wrapped_token_vault_symbol: String,
+    pub wrapped_token_vault_renamed_symbol: String,
+    pub wrapped_token_vault_decimals: u64,
+    pub receipt_vault: String,
+    pub receipt: String,
+    pub wrapped_token_vault: String,
+    pub receipt_vault_receipt: String,
+    pub receipt_manager: String,
+    pub wrapped_token_vault_asset: String,
+    pub receipt_vault_beacon: String,
+    pub receipt_beacon: String,
+    pub wrapped_token_vault_beacon: String,
+    pub receipt_vault_codehash: String,
+    pub receipt_codehash: String,
+    pub wrapped_token_vault_codehash: String,
+    pub owner: String,
+    pub authoriser: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedChain {
+    pub chain_id: u64,
+    pub network: String,
+    /// `None` when the file carries the zero address.
+    pub beacon_set_deployer: Option<String>,
+    pub beacons: Vec<ExpectedBeacon>,
+    pub safe: ExpectedSafe,
+    pub timelock: ExpectedTimelock,
+    pub orchestrator: ExpectedOrchestrator,
+    pub authoriser: ExpectedCode,
+    pub eu_authoriser: ExpectedCode,
+    pub zoltu: Vec<ExpectedZoltu>,
+    pub rename_migration: String,
+    /// tQSEP, present exactly on the reference network.
+    pub qsep: Option<ExpectedQsep>,
+    /// In file order.
+    pub tokens: Vec<ExpectedToken>,
+}
+
+/// tQSEP: outside the production token list, on the shared reference-network beacons.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedQsep {
+    pub receipt_vault: String,
+    pub receipt: String,
+    pub wrapped_token_vault: String,
+    pub receipt_vault_receipt: String,
+    pub receipt_manager: String,
+    pub wrapped_token_vault_asset: String,
+    pub receipt_vault_beacon: String,
+    pub receipt_beacon: String,
+    pub wrapped_token_vault_beacon: String,
+    pub receipt_vault_codehash: String,
+    pub receipt_codehash: String,
+    pub wrapped_token_vault_codehash: String,
+    pub owner: String,
+    pub authoriser: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ExpectedError {
+    Empty,
+    NotJson,
+    UnsupportedVersion(Option<u64>),
+    NoChains,
+    NoReferenceChain,
+    Malformed { chain: String, field: &'static str },
+}
+
+impl std::fmt::Display for ExpectedError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            ExpectedError::Empty => write!(f, "{EXPECTED_STATE_PATH} could not be fetched"),
+            ExpectedError::NotJson => write!(f, "{EXPECTED_STATE_PATH} is not valid JSON"),
+            ExpectedError::UnsupportedVersion(v) => write!(
+                f,
+                "{EXPECTED_STATE_PATH} has schema version {}, this scanner reads {SCHEMA_VERSION}",
+                v.map_or("none".to_string(), |v| v.to_string())
+            ),
+            ExpectedError::NoChains => write!(f, "{EXPECTED_STATE_PATH} lists no chains"),
+            ExpectedError::NoReferenceChain => {
+                write!(f, "{EXPECTED_STATE_PATH} has no {REFERENCE_NETWORK} chain")
+            }
+            ExpectedError::Malformed { chain, field } => write!(
+                f,
+                "{EXPECTED_STATE_PATH} chain {chain} has a missing or malformed {field}"
+            ),
+        }
+    }
+}
+
+fn is_address(s: &str) -> bool {
+    s.len() == 42 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit())
+}
+
+fn is_bytes32(s: &str) -> bool {
+    s.len() == 66 && s.starts_with("0x") && s[2..].chars().all(|c| c.is_ascii_hexdigit())
+}
+
+fn is_zero(s: &str) -> bool {
+    s[2..].chars().all(|c| c == '0')
+}
+
+/// Parse the file. Base first, then by chain id.
+///
+/// Every expected value must be a non-zero address: a zero expectation would
+/// match a contract answering the zero address and report it as on target, and
+/// a zero codehash would match an address with no account.
+pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
+    if body.trim().is_empty() {
+        return Err(ExpectedError::Empty);
+    }
+    let doc: serde_json::Value = serde_json::from_str(body).map_err(|_| ExpectedError::NotJson)?;
+    let version = doc["version"].as_u64();
+    if version != Some(SCHEMA_VERSION) {
+        return Err(ExpectedError::UnsupportedVersion(version));
+    }
+    let chains = doc["chains"]
+        .as_object()
+        .filter(|m| !m.is_empty())
+        .ok_or(ExpectedError::NoChains)?;
+    let mut out = Vec::with_capacity(chains.len());
+    for (key, c) in chains {
+        let bad = |field| ExpectedError::Malformed {
+            chain: key.clone(),
+            field,
+        };
+        let addr = |v: &serde_json::Value, field: &'static str| -> Result<String, ExpectedError> {
             v.as_str()
                 .filter(|a| is_address(a))
                 .map(str::to_string)
@@ -298,7 +491,6 @@ pub struct ExpectedBeacon        let addr = |v: &serde_json::Value, field: &'sta
     Ok(out)
 }
 
-/// The reference chain's entry, which the Base-only sections read.
 /// The file's v2 beacon order.
 pub const V2_BEACON_NAMES: [(&str, &str); 3] = [
     ("receiptBeacon", "Receipt beacon"),
@@ -403,6 +595,7 @@ pub fn parse_v2(body: &str) -> Result<Vec<ExpectedV2>, ExpectedError> {
     Ok(out)
 }
 
+/// The reference chain's entry, which the Base-only sections read.
 pub fn reference(chains: &[ExpectedChain]) -> Result<&ExpectedChain, ExpectedError> {
     chains
         .iter()
