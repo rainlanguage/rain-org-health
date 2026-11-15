@@ -2971,6 +2971,15 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let deployment_registry = rbac::build_registry(&deployment_rbac, gh_file);
 
         let migrations_src = gh_file(deploy_org, deploy_repo, migrations::PATH);
+        let renamed_on = |c: &expected::ExpectedChain, s: Session| {
+            migrations::locate(&migrations_src, &c.network, &c.rename_migration)
+                .and_then(|(net, r)| {
+                    migrations::read_applied(&net, &[r], &|calls| eth_call_batch(s, calls))
+                        .pop()
+                        .flatten()
+                })
+                .map(|t| t > 0)
+        };
         let deployment_migrations = migrations::build(
             deploy_org,
             deploy_repo,
@@ -3409,6 +3418,63 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 .collect(),
         };
 
+        // Every v2 deployment and beacon `expected-state.json` pins per chain, read live.
+        let v2_sets: Vec<serde_json::Value> = match &expected_v2 {
+            Err(e) => vec![deployhealth::beacons_unavailable(
+                None,
+                None,
+                &e.to_string(),
+            )],
+            Ok(chains) => chains
+                .iter()
+                .map(|c| {
+                    let Some(chain) = Chain::from_network(&c.network) else {
+                        return deployhealth::beacons_unavailable(
+                            Some(&c.network),
+                            None,
+                            "this scanner has no RPC endpoints for this chain",
+                        );
+                    };
+                    let s = rpc_session(chain);
+                    let codehash = |a: &str| {
+                        live_codehash(s, a).map(|h| h.unwrap_or_else(|| "none".to_string()))
+                    };
+                    let call_addr = |a: &str, data: String| {
+                        eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
+                    };
+                    let mut rows: Vec<serde_json::Value> = c
+                        .deployments
+                        .iter()
+                        .map(|z| deployhealth::zoltu_row(z, codehash(&z.code.address)))
+                        .collect();
+                    for b in &c.beacons {
+                        let a = b.address.as_str();
+                        rows.push(deployhealth::infra_row(
+                            b.name,
+                            "implementation",
+                            Some(a),
+                            Some(b.implementation.as_str()),
+                            call_addr(a, rpc::implementation_calldata()),
+                        ));
+                        rows.push(deployhealth::infra_row(
+                            b.name,
+                            "owner",
+                            Some(a),
+                            Some(b.owner.as_str()),
+                            call_addr(a, rpc::owner_calldata()),
+                        ));
+                    }
+                    deployhealth::build_infra(
+                        deploy_org,
+                        deploy_repo,
+                        &c.network,
+                        chain.rpc_host(),
+                        rows,
+                    )
+                })
+                .collect(),
+        };
+
         // Every Safe fact `expected-state.json` pins per chain, read live.
         let safe_sets: Vec<serde_json::Value> = match &expected_state {
             Err(e) => vec![deployhealth::beacons_unavailable(
@@ -3448,6 +3514,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentInfra": infra_sets,
+            "deploymentV2": v2_sets,
             "deploymentCodeTokens": code_token_sets,
             "deploymentSafes": safe_sets,
             // Every org scanned. `org` stays as a joined display string so any
