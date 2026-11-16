@@ -3149,16 +3149,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 &expected_state,
                 |c| c.network.as_str(),
                 |c, chain| {
-                    let renamed = match renamed_on(c, rpc_session(chain)) {
-                        Ok(r) => r,
-                        Err(e) => {
-                            return deployhealth::beacons_unavailable(
-                                Some(&c.network),
-                                Some(chain.rpc_host()),
-                                &e.to_string(),
-                            )
-                        }
-                    };
+                    let renamed = renamed_on(c, rpc_session(chain));
                     let beacons: Vec<_> = c
                         .beacons
                         .iter()
@@ -3187,7 +3178,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                     safe: Some(&c.safe.address),
                                     legacy: legacy_owner.as_deref(),
                                 },
-                                b.expected_implementation(renamed),
+                                renamed.as_ref().map(|r| b.expected_implementation(*r)),
                                 v1_impl.as_deref(),
                                 live_owner,
                                 live_impl,
@@ -3282,16 +3273,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     eth_get_storage_at(s, a, ERC1967_BEACON_SLOT)
                         .and_then(|h| rpc::decode_address(&h))
                 };
-                let renamed = match renamed_on(c, s) {
-                    Ok(r) => r,
-                    Err(e) => {
-                        return deployhealth::beacons_unavailable(
-                            Some(&c.network),
-                            Some(chain.rpc_host()),
-                            &e.to_string(),
-                        )
-                    }
-                };
+                let renamed = renamed_on(c, s);
                 let mut rows: Vec<serde_json::Value> = c
                     .zoltu
                     .iter()
@@ -3323,7 +3305,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 };
                 for t in &c.tokens {
                     let live = token_live(t.into());
-                    rows.extend(deployhealth::token_rows(t, renamed, live));
+                    rows.extend(deployhealth::token_rows(t, renamed.as_ref().copied(), live));
                 }
                 if let Some(q) = &c.qsep {
                     rows.extend(deployhealth::qsep_rows(q, &token_live(q.into())));

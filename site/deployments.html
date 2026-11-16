@@ -152,7 +152,7 @@
   .own-row:last-child { border-bottom: 0; }
   .own-row.own-migrated, .own-row.own-bricked { opacity: 0.7; }
   .own-row.own-extra { background: var(--debt-bg); }
-  .own-row.hlth-missing, .own-row.hlth-mismatch, .own-row.hlth-drift { background: var(--debt-bg); }
+  .own-row.hlth-missing, .own-row.hlth-mismatch, .own-row.hlth-drift, .own-row.hlth-error { background: var(--debt-bg); }
   .own-row.hlth-behind { background: var(--debt-bg); }
   .own-lines { white-space: pre-line; }
   .own-row.hlth-unknown { opacity: 0.7; }
@@ -530,6 +530,7 @@ function renderDeployments(document, $, data, io) {
           detail.append(detailLine("target", "expected", "target", bc.targetImpl));
         }
       }
+      if (bc.reason) detail.append(el("div", "own-note", bc.reason));
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
       table.append(row);
@@ -587,6 +588,7 @@ function renderDeployments(document, $, data, io) {
         line.append(el("span", "own-addr", val ?? "—"));
         detail.append(line);
       }
+      if (r.reason) detail.append(el("div", "own-note", r.reason));
       const stCls = st === "healthy" ? "yes" : st === "unknown" ? "dim" : "no";
       row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
       return row;

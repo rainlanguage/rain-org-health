@@ -10,6 +10,7 @@
 use crate::expected::{
     ExpectedChain, ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu, EXPECTED_STATE_PATH,
 };
+use crate::migrations::RenameUnlocated;
 use crate::rpc::{keccak256_hex, CallClass};
 use regex::Regex;
 use serde_json::json;
@@ -174,7 +175,8 @@ pub struct BeaconOwners<'a> {
 ///   pre-Zoltu impl, else `unknown`.
 /// - status: `healthy` when owned by the expected owner AND at the expected
 ///   implementation; `drift` on any other owner; `behind` on the expected owner
-///   but another implementation; `unknown` when a live read failed.
+///   but another implementation; `unknown` when a live read failed; `error`
+///   when the target implementation could not be resolved.
 ///
 /// A Safe-owned beacon is drift: a beacon owner can repoint every production
 /// proxy in one transaction, so a beacon on the Safe bypasses the timelock delay.
@@ -182,7 +184,7 @@ pub fn beacon_health(
     name: &str,
     address: Option<String>,
     owners: &BeaconOwners,
-    target_impl: Option<&str>,
+    target_impl: Result<Option<&str>, &RenameUnlocated>,
     v1_impl: Option<&str>,
     live_owner: Option<String>,
     live_impl: Option<String>,
@@ -197,6 +199,8 @@ pub fn beacon_health(
         Some(o) if is_const(o, owners.legacy) => "legacy",
         Some(_) => "foreign",
     };
+    let reason = target_impl.err().map(|e| e.to_string());
+    let target_impl = target_impl.ok().flatten();
     let at_target = match (live_impl.as_deref(), target_impl) {
         (Some(l), Some(t)) => Some(l.eq_ignore_ascii_case(t)),
         _ => None,
@@ -207,7 +211,9 @@ pub fn beacon_health(
         Some(l) if is_const(l, v1_impl) => "V1",
         Some(_) => "unknown",
     };
-    let status = if live_owner.is_none() || at_target.is_none() {
+    let status = if reason.is_some() {
+        "error"
+    } else if live_owner.is_none() || at_target.is_none() {
         "unknown"
     } else if owner_label != "timelock" {
         "drift"
@@ -227,6 +233,7 @@ pub fn beacon_health(
         "targetOwner": owners.expected,
         "atTarget": at_target,
         "status": status,
+        "reason": reason,
     })
 }
 
@@ -597,19 +604,25 @@ pub fn leg_rows(id: &str, l: Legs, live: &TokenLive) -> Vec<serde_json::Value> {
 }
 
 /// One token's rows. `renamed` is whether the chain records the file's
-/// `renameMigration` (`None`: unread, so the renamable rows are unknown).
+/// `renameMigration` (`Ok(None)`: unread, so the renamable rows are unknown;
+/// `Err`: the renamable rows are `error`).
 pub fn token_rows(
     t: &ExpectedToken,
-    renamed: Option<bool>,
+    renamed: Result<Option<bool>, &RenameUnlocated>,
     live: TokenLive,
 ) -> Vec<serde_json::Value> {
     let pick = |name: &str, renamed_name: &str| {
-        renamed.map(|r| if r { renamed_name } else { name }.to_string())
+        renamed.map(|r| r.map(|r| if r { renamed_name } else { name }.to_string()))
     };
     let rv = t.receipt_vault.as_str();
     let wv = t.wrapped_token_vault.as_str();
     let id = format!("token {}", t.symbol);
-    let checks: [(&str, &str, Option<String>, Option<String>); 6] = [
+    let checks: [(
+        &str,
+        &str,
+        Result<Option<String>, &RenameUnlocated>,
+        Option<String>,
+    ); 6] = [
         (
             "receiptVault name",
             rv,
@@ -619,13 +632,13 @@ pub fn token_rows(
         (
             "receiptVault symbol",
             rv,
-            Some(t.symbol.clone()),
+            Ok(Some(t.symbol.clone())),
             live.receipt_vault_symbol.clone(),
         ),
         (
             "receiptVault decimals",
             rv,
-            Some(t.decimals.to_string()),
+            Ok(Some(t.decimals.to_string())),
             live.receipt_vault_decimals.map(|d| d.to_string()),
         ),
         (
@@ -649,14 +662,20 @@ pub fn token_rows(
         (
             "wrappedTokenVault decimals",
             wv,
-            Some(t.wrapped_token_vault_decimals.to_string()),
+            Ok(Some(t.wrapped_token_vault_decimals.to_string())),
             live.wrapped_token_vault_decimals.map(|d| d.to_string()),
         ),
     ];
     let mut rows: Vec<serde_json::Value> = checks
         .into_iter()
-        .map(|(field, address, expected, live)| {
-            infra_row(&id, field, Some(address), expected.as_deref(), live)
+        .map(|(field, address, expected, live)| match expected {
+            Ok(e) => infra_row(&id, field, Some(address), e.as_deref(), live),
+            Err(e) => {
+                let mut row = infra_row(&id, field, Some(address), None, live);
+                row["status"] = json!("error");
+                row["reason"] = json!(e.to_string());
+                row
+            }
         })
         .collect();
     rows.extend(leg_rows(&id, t.into(), &live));
