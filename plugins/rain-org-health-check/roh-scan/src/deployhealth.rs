@@ -901,7 +901,7 @@ mod tests {
             "Receipt beacon",
             Some("0x86e9".into()),
             owners,
-            Some(target),
+            Ok(Some(target)),
             Some(V1),
             owner.map(str::to_string),
             imp.map(str::to_string),
@@ -1012,7 +1012,7 @@ mod tests {
                 "Receipt beacon",
                 Some("0x86e9".into()),
                 &zeros,
-                Some(TARGET),
+                Ok(Some(TARGET)),
                 Some(spelling),
                 Some(ZERO.into()),
                 Some(ZERO.into()),
@@ -1040,7 +1040,7 @@ mod tests {
             "Alpha",
             Some("0x1".into()),
             &OWNERS,
-            Some(TARGET),
+            Ok(Some(TARGET)),
             None,
             Some(SAFE.into()),
             Some(TARGET.into()),
@@ -1165,7 +1165,7 @@ mod tests {
                 b.name,
                 Some(b.address.clone()),
                 &owners,
-                b.expected_implementation(renamed),
+                Ok(b.expected_implementation(renamed)),
                 None,
                 Some(b.owner.to_lowercase()),
                 Some(live_impl.to_lowercase()),
@@ -1206,7 +1206,7 @@ mod tests {
             wrapped_token_vault_decimals: Some(18),
             ..matching(t.into())
         };
-        let rows = token_rows(t, Some(true), live.clone());
+        let rows = token_rows(t, Ok(Some(true)), live.clone());
         let fields: Vec<&str> = rows.iter().map(|r| r["field"].as_str().unwrap()).collect();
         let mut want = vec![
             "receiptVault name",
@@ -1226,7 +1226,7 @@ mod tests {
         assert_eq!(m["address"], t.receipt.as_str());
         assert_eq!(m["expected"], t.receipt_manager.as_str());
 
-        let before = token_rows(t, Some(false), live.clone());
+        let before = token_rows(t, Ok(Some(false)), live.clone());
         let name = row(&before, "receiptVault name");
         assert_eq!(name["expected"], t.name.as_str());
         assert_eq!(name["status"], "drift");
@@ -1240,7 +1240,7 @@ mod tests {
         );
         assert_eq!(row(&before, "receiptVault symbol")["status"], "healthy");
 
-        let unread = token_rows(t, None, live.clone());
+        let unread = token_rows(t, Ok(None), live.clone());
         for f in [
             "receiptVault name",
             "wrappedTokenVault name",
@@ -1253,7 +1253,7 @@ mod tests {
 
         let mut managed = t.clone();
         managed.receipt_manager = OTHER.into();
-        let m = token_rows(&managed, Some(true), live.clone());
+        let m = token_rows(&managed, Ok(Some(true)), live.clone());
         assert_eq!(row(&m, "receipt manager")["expected"], OTHER);
         assert_eq!(row(&m, "receipt manager")["status"], "drift");
         let foreign = TokenLive {
@@ -1261,7 +1261,7 @@ mod tests {
             ..live
         };
         assert_eq!(
-            row(&token_rows(t, Some(true), foreign), "receipt manager")["status"],
+            row(&token_rows(t, Ok(Some(true)), foreign), "receipt manager")["status"],
             "drift"
         );
     }
