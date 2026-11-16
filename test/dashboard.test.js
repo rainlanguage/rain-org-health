@@ -8568,6 +8568,123 @@ Deno.test("deployments: an unreadable registry list or expected-state shows its 
   }
 });
 
+Deno.test("deployments: registry banner drifts on either direction alone, and a clean chain adds no table", () => {
+  const VAULT = "0x8500189061e2206bc33bf04dc10ffb1fe7ded637";
+  const box = deploymentsBox({
+    deploymentTokens: [
+      registryDoc("base", [2, 1], [{ address: VAULT }], []),
+      registryDoc("ethereum", [1, 1], [], []),
+    ],
+  });
+  const panels = panelsOf(box);
+  const banners = collect(panels.contracts, "own-verify");
+  const base = banners.find((b) => b.textContent?.startsWith("2 governed"));
+  assert(base.className === "own-verify own-verify-drift", base.className);
+  assert(
+    rowByRole(panels.contracts, "(unknown)") !== undefined,
+    "a governed vault without a symbol still gets a row",
+  );
+  assert(
+    collect(panels.contracts, "own-table").length === 1,
+    "only the drifting chain appends a table",
+  );
+});
+
+Deno.test("deployments: registry rows ignore non-array extraVaults and missingFromMigration", () => {
+  const box = deploymentsBox({
+    deploymentTokens: [registryDoc("base", [0, 0], "junk", { a: 1 })],
+  });
+  const panels = panelsOf(box);
+  const banner = collect(panels.contracts, "own-verify")[0];
+  assert(
+    banner.textContent ===
+      "0 governed receipt vaults · 0 registry tokens — 0 governed vault(s) not in the registry, 0 registry token(s) not governed.",
+    banner.textContent,
+  );
+  assert(collect(panels.contracts, "own-row").length === 0, "no rows");
+});
+
+Deno.test("deployments: a single registry, v2 or infra document renders like a one-element list", () => {
+  const H = "0x" + "ab".repeat(32);
+  const doc = {
+    ...factsDoc("base", [
+      factRow("zoltu x", "codehash", null, H, H, "healthy"),
+    ]),
+    source: "st0x.deploy/expected-state.json",
+  };
+  const box = deploymentsBox({
+    deploymentTokens: registryDoc("base", [0, 0], [], []),
+    deploymentV2: doc,
+  });
+  const h = headings(panelsOf(box).contracts);
+  assert(h.includes("Registry tokens — base"), h.join(" | "));
+  assert(h.includes("V2 — base"), h.join(" | "));
+  assert(
+    textOf(box).includes("(st0x.deploy/expected-state.json)"),
+    "the infra blurb names the document's source",
+  );
+});
+
+Deno.test("deployments: the healthy fold counts only healthy infra rows", () => {
+  const H = "0x" + "ab".repeat(32);
+  const box = deploymentsBox({
+    deploymentInfra: [
+      factsDoc("base", [
+        factRow("a", "codehash", null, H, H, "healthy"),
+        factRow("b", "codehash", null, H, H, "healthy"),
+        factRow("c", "codehash", null, H, null, "unknown"),
+      ]),
+    ],
+  });
+  const s = tags(box, "summary").map((x) => x.textContent);
+  assert(s.includes("2 healthy"), s.join(" | "));
+});
+
+Deno.test("deployments: an unavailable infra or Safe chain says why and via which rpc, even when it carries rows", () => {
+  const H = "0x" + "ab".repeat(32);
+  const SAFE = "0x9d8b7c6a5f4e3d2c1b0a9f8e7d6c5b4a3f2e1d0c";
+  const box = deploymentsBox({
+    deploymentInfra: [{
+      ...factsDoc("base", [factRow("a", "codehash", null, H, H, "healthy")]),
+      unavailable: true,
+      reason: "boom",
+    }],
+    deploymentSafes: [{
+      ...safeDoc("base", SAFE, [safeFact("threshold", 2, 2, "match")]),
+      unavailable: true,
+      reason: "bang",
+    }],
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Infra data unavailable — boom (via base-rpc.example)."),
+    "infra unavailable names reason and rpc",
+  );
+  assert(
+    t.includes("Safe data unavailable — bang (via base-rpc.example)."),
+    "Safe unavailable names reason and rpc",
+  );
+  assert(
+    !t.includes("facts as expected on base"),
+    "an unavailable chain renders no verified banner",
+  );
+});
+
+Deno.test("deployments: an owner reason without the unavailable flag is not shown as the cause", () => {
+  const box = deploymentsBox({
+    deploymentOwners: { groups: [], reason: "stale" },
+  });
+  const t = textOf(box);
+  assert(
+    t.includes("Owner data unavailable — the scan produced no owner groups."),
+    t,
+  );
+  assert(
+    !t.includes("stale"),
+    "the reason is only read with unavailable: true",
+  );
+});
+
 Deno.test("deployments: each chain's Safe facts show live beside expected and flag a mismatch", () => {
   const O1 = "0x1111111111111111111111111111111111111111";
   const O2 = "0x2222222222222222222222222222222222222222";
