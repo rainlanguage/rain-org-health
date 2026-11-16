@@ -3369,7 +3369,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         );
 
         let registry_sets = deployhealth::registry_reconcile(&expected_state, |path| {
-            gh_file(deployhealth::REGISTRY_ORG, deployhealth::REGISTRY_REPO, path)
+            gh_file(
+                deployhealth::REGISTRY_ORG,
+                deployhealth::REGISTRY_REPO,
+                path,
+            )
         });
 
         let doc = json!({
