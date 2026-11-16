@@ -1594,6 +1594,25 @@ mod tests {
                 json!(ZERO),
                 "tokens[].authoriser",
             ),
+            (
+                format!("{b}/beacons/0/beacon"),
+                json!(BEACON_HASH),
+                "beacons[].beacon",
+            ),
+            (
+                format!("{b}/beacons/0/codehash"),
+                json!(BASE_SAFE),
+                "beacons[].codehash",
+            ),
+            (
+                format!("{s}/singletonCodehashes"),
+                json!([
+                    SAFE_SINGLETON_HASHES[0],
+                    SAFE_SINGLETON_HASHES[1],
+                    BEACON_HASH
+                ]),
+                "safe.singletonCodehashes",
+            ),
         ];
         for (at, v, field) in cases {
             assert_eq!(malformed(&with(&at, v.clone())), field, "{at} = {v}");
@@ -1763,6 +1782,13 @@ mod tests {
             .unwrap()
             .pop();
         assert_eq!(malformed(&short), "beacons");
+        let mut long = good();
+        let extra = long["chains"]["8453"]["beacons"][0].clone();
+        long["chains"]["8453"]["beacons"]
+            .as_array_mut()
+            .unwrap()
+            .push(extra);
+        assert_eq!(malformed(&long), "beacons");
         let body = r#"{"version": 1, "chains": {"8453": {"network": "base", "beaconSetDeployer": "0x2191981Ca2477B745870cC307cbEB4cB2967ACe3"}}}"#;
         assert_eq!(malformed(&serde_json::from_str(body).unwrap()), "beacons");
     }

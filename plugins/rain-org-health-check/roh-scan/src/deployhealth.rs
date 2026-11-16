@@ -1383,7 +1383,8 @@ mod tests {
         0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2 \
         is not in migrations.json for base";
 
-    /// With no target to compare against, every live reading is `error`, the owner still labelled.
+    /// With no target to compare against, every reading on the expected or an unread owner is
+    /// `error`, the owner still labelled.
     #[test]
     fn an_unlocated_rename_makes_a_beacon_error_with_the_reason() {
         let c = base();
@@ -1407,7 +1408,6 @@ mod tests {
                 imp.map(str::to_string),
             )
         };
-        let safe = c.safe.address.as_str();
         for (owner, imp, label, version) in [
             (
                 Some(b.owner.as_str()),
@@ -1422,7 +1422,7 @@ mod tests {
                 "unknown",
             ),
             (Some(b.owner.as_str()), Some(V1), "timelock", "V1"),
-            (Some(safe), Some(V1), "safe", "V1"),
+            (None, Some(V1), "unknown", "V1"),
             (None, None, "unknown", "unknown"),
         ] {
             let at = format!("{owner:?} {imp:?}");
@@ -1447,6 +1447,47 @@ mod tests {
             );
             assert_ne!(got["status"], "error", "{got}");
             assert!(got["reason"].is_null(), "{got}");
+        }
+    }
+
+    /// Any read owner other than the expected one is drift before error or unknown: an unlocated
+    /// rename, an unread implementation or no target never mask a Safe, legacy or foreign owner.
+    #[test]
+    fn a_wrong_owner_is_drift_whatever_the_implementation_state() {
+        let c = base();
+        let b = &c.beacons[1];
+        let e = unlocated(&c);
+        let owners = BeaconOwners {
+            expected: &b.owner,
+            safe: Some(c.safe.address.as_str()),
+            legacy: Some(LEGACY),
+        };
+        for (owner, label) in [
+            (c.safe.address.as_str(), "safe"),
+            (LEGACY, "legacy"),
+            (OTHER, "foreign"),
+        ] {
+            for (target, imp, reason) in [
+                (Err(&e), Some(V1), json!(BASE_UNLOCATED)),
+                (Err(&e), None, json!(BASE_UNLOCATED)),
+                (Ok(Some(b.implementation.as_str())), None, json!(null)),
+                (Ok(None), Some(b.implementation.as_str()), json!(null)),
+                (Ok(None), None, json!(null)),
+            ] {
+                let at = format!("{label} {target:?} {imp:?}");
+                let got = beacon_health(
+                    b.name,
+                    Some(b.address.clone()),
+                    &owners,
+                    target,
+                    Some(V1),
+                    Some(owner.to_string()),
+                    imp.map(str::to_string),
+                );
+                assert_eq!(got["status"], "drift", "{at}");
+                assert_eq!(got["ownerLabel"], label, "{at}");
+                assert_eq!(got["reason"], reason, "{at}");
+            }
         }
     }
 
@@ -1634,6 +1675,100 @@ mod tests {
         .map(|(at, pin)| (a(at), pin));
         assert_eq!(got, want);
         assert!(rows.iter().all(|r| r["status"] == "unknown"));
+    }
+
+    /// Each token pin and live read reaches its own row.
+    #[test]
+    fn each_token_pin_and_read_reaches_its_own_row() {
+        let a = |i: usize| format!("0x{i:040x}");
+        let h = |i: usize| format!("0x{i:064x}");
+        let t = ExpectedToken {
+            underlying: "U".into(),
+            name: "N".into(),
+            renamed_name: "RN".into(),
+            symbol: "S".into(),
+            decimals: 6,
+            wrapped_token_vault_name: "WN".into(),
+            wrapped_token_vault_renamed_name: "WRN".into(),
+            wrapped_token_vault_symbol: "WS".into(),
+            wrapped_token_vault_renamed_symbol: "WRS".into(),
+            wrapped_token_vault_decimals: 18,
+            receipt_vault: a(1),
+            receipt: a(2),
+            wrapped_token_vault: a(3),
+            receipt_vault_receipt: a(4),
+            receipt_manager: a(5),
+            wrapped_token_vault_asset: a(6),
+            receipt_vault_beacon: a(7),
+            receipt_beacon: a(8),
+            wrapped_token_vault_beacon: a(9),
+            receipt_vault_codehash: h(10),
+            receipt_codehash: h(11),
+            wrapped_token_vault_codehash: h(12),
+            owner: a(13),
+            authoriser: a(14),
+        };
+        let r = |i: usize| Some(format!("r{i}"));
+        let live = TokenLive {
+            receipt_vault_name: r(1),
+            receipt_vault_symbol: r(2),
+            receipt_vault_decimals: Some(1),
+            receipt_vault_receipt: r(4),
+            receipt_vault_owner: r(5),
+            receipt_vault_authoriser: r(6),
+            receipt_vault_beacon: r(7),
+            receipt_vault_codehash: r(8),
+            receipt_manager: r(9),
+            receipt_beacon: r(10),
+            receipt_codehash: r(11),
+            wrapped_token_vault_name: r(12),
+            wrapped_token_vault_symbol: r(13),
+            wrapped_token_vault_decimals: Some(2),
+            wrapped_token_vault_asset: r(15),
+            wrapped_token_vault_beacon: r(16),
+            wrapped_token_vault_codehash: r(17),
+        };
+        let rows = token_rows(&t, Ok(Some(false)), live);
+        let got: Vec<[String; 4]> = rows
+            .iter()
+            .map(|r| {
+                ["field", "address", "expected", "live"].map(|k| r[k].as_str().unwrap().to_string())
+            })
+            .collect();
+        let want = [
+            ("receiptVault name", 1, "N".to_string(), "r1"),
+            ("receiptVault symbol", 1, "S".to_string(), "r2"),
+            ("receiptVault decimals", 1, "6".to_string(), "1"),
+            ("wrappedTokenVault name", 3, "WN".to_string(), "r12"),
+            ("wrappedTokenVault symbol", 3, "WS".to_string(), "r13"),
+            ("wrappedTokenVault decimals", 3, "18".to_string(), "2"),
+            ("receiptVault receipt", 1, a(4), "r4"),
+            ("receiptVault owner", 1, a(13), "r5"),
+            ("receiptVault authoriser", 1, a(14), "r6"),
+            ("receiptVault beacon", 1, a(7), "r7"),
+            ("receiptVault codehash", 1, h(10), "r8"),
+            ("receipt manager", 2, a(5), "r9"),
+            ("receipt beacon", 2, a(8), "r10"),
+            ("receipt codehash", 2, h(11), "r11"),
+            ("wrappedTokenVault asset", 3, a(6), "r15"),
+            ("wrappedTokenVault beacon", 3, a(9), "r16"),
+            ("wrappedTokenVault codehash", 3, h(12), "r17"),
+        ]
+        .map(|(f, at, pin, l)| [f.to_string(), a(at), pin, l.to_string()]);
+        assert_eq!(got, want);
+    }
+
+    /// The authoriser and EU authoriser rows each carry their own codehash pin.
+    #[test]
+    fn authoriser_rows_carry_their_own_codehash() {
+        let mut c = base();
+        c.eu_authoriser.codehash = format!("0x{:064x}", 1);
+        let rows = infra_rows(&c, InfraLive::default());
+        let pin = |component: &str| {
+            rows.iter().find(|r| r["component"] == component).unwrap()["expected"].clone()
+        };
+        assert_eq!(pin("authoriser"), c.authoriser.codehash.as_str());
+        assert_eq!(pin("euAuthoriser"), c.eu_authoriser.codehash.as_str());
     }
 
     /// A row is healthy only on a case-insensitive match to a pin; no pin or no
@@ -2108,6 +2243,30 @@ mod tests {
                 .map(|v| v["symbol"].as_str().unwrap())
                 .collect::<Vec<_>>(),
             [c.tokens[0].symbol.as_str(), c.tokens[1].symbol.as_str()]
+        );
+    }
+
+    /// Two tokens on one receipt vault (in any case) are one governed vault, and
+    /// an unlisted governed vault is reported at its receipt vault.
+    #[test]
+    fn governed_count_is_distinct_vaults_and_extras_carry_the_receipt_vault() {
+        let mut c = base();
+        c.tokens.truncate(2);
+        c.tokens[0].receipt_manager = OTHER.to_string();
+        c.tokens[1].receipt_vault = format!("0x{}", c.tokens[0].receipt_vault[2..].to_uppercase());
+        let d = reconcile_one(&c, list_of(vec![]));
+        assert_eq!(d["governedCount"], 1);
+        assert_eq!(
+            d["extraVaults"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v["address"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            [
+                c.tokens[0].receipt_vault.as_str(),
+                c.tokens[1].receipt_vault.as_str()
+            ]
         );
     }
 }
