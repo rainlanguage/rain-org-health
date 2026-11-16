@@ -3368,6 +3368,10 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             },
         );
 
+        let registry_sets = deployhealth::registry_reconcile(&expected_state, |path| {
+            gh_file(deployhealth::REGISTRY_ORG, deployhealth::REGISTRY_REPO, path)
+        });
+
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
@@ -3384,6 +3388,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentV2": v2_sets,
             "deploymentCodeTokens": code_token_sets,
             "deploymentSafes": safe_sets,
+            "deploymentTokens": registry_sets,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,

@@ -8,7 +8,8 @@
 //! disagreeing with the deployed code, is a finding.
 
 use crate::expected::{
-    ExpectedChain, ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu, EXPECTED_STATE_PATH,
+    ExpectedChain, ExpectedError, ExpectedQsep, ExpectedToken, ExpectedV2, ExpectedZoltu,
+    EXPECTED_STATE_PATH,
 };
 use crate::migrations::RenameUnlocated;
 use crate::rpc::{keccak256_hex, CallClass};
@@ -737,6 +738,113 @@ pub fn build_infra(
         "healthy": healthy,
         "rows": rows,
     })
+}
+
+pub const REGISTRY_ORG: &str = "ST0x-Technology";
+pub const REGISTRY_REPO: &str = "st0x.registry";
+
+pub fn registry_list_path(network: &str) -> String {
+    format!("token-lists/{network}.json")
+}
+
+/// Per expected-state chain, its st0x.registry token list against its governed
+/// receipt vaults, both ways. `list` returns a path's body ("" if unreadable).
+pub fn registry_reconcile(
+    chains: &Result<Vec<ExpectedChain>, ExpectedError>,
+    list: impl Fn(&str) -> String,
+) -> Vec<serde_json::Value> {
+    let chains = match chains {
+        Err(e) => {
+            return vec![json!({
+                "registryOrg": REGISTRY_ORG,
+                "registryRepo": REGISTRY_REPO,
+                "expectedState": EXPECTED_STATE_PATH,
+                "unavailable": true,
+                "reason": e.to_string(),
+            })]
+        }
+        Ok(chains) => chains,
+    };
+    chains
+        .iter()
+        .map(|c| {
+            let path = registry_list_path(&c.network);
+            let mut doc = json!({
+                "network": c.network,
+                "registryOrg": REGISTRY_ORG,
+                "registryRepo": REGISTRY_REPO,
+                "registryPath": path,
+                "expectedState": EXPECTED_STATE_PATH,
+            });
+            let body = list(&path);
+            let tokens = if body.is_empty() {
+                Err(format!("no readable registry list at {path}"))
+            } else {
+                serde_json::from_str::<serde_json::Value>(&body)
+                    .map_err(|_| format!("{path} is not valid JSON"))
+                    .and_then(|v| {
+                        v["tokens"]
+                            .as_array()
+                            .cloned()
+                            .ok_or_else(|| format!("{path} has no tokens array"))
+                    })
+            };
+            let tokens = match tokens {
+                Err(reason) => {
+                    doc["unavailable"] = json!(true);
+                    doc["reason"] = json!(reason);
+                    return doc;
+                }
+                Ok(t) => t,
+            };
+            let vault = |t: &serde_json::Value| {
+                t["extensions"]["unwrappedAddress"]
+                    .as_str()
+                    .filter(|s| !s.is_empty())
+                    .map(str::to_lowercase)
+            };
+            let governed: std::collections::HashSet<String> = c
+                .tokens
+                .iter()
+                .map(|t| t.receipt_vault.to_lowercase())
+                .collect();
+            let registry: std::collections::HashSet<String> =
+                tokens.iter().filter_map(vault).collect();
+            let missing: Vec<serde_json::Value> = tokens
+                .iter()
+                .filter_map(|t| {
+                    let v = vault(t);
+                    if v.as_ref().is_some_and(|v| governed.contains(v)) {
+                        return None;
+                    }
+                    let reason = if v.is_none() {
+                        "no receipt vault (collateral)"
+                    } else {
+                        "receipt vault not in expected-state"
+                    };
+                    Some(json!({
+                        "symbol": t["symbol"],
+                        "name": t["name"],
+                        "address": t["address"],
+                        "receiptVault": v,
+                        "wrapped": v.is_some(),
+                        "reason": reason,
+                    }))
+                })
+                .collect();
+            let extra: Vec<serde_json::Value> = c
+                .tokens
+                .iter()
+                .filter(|t| !registry.contains(&t.receipt_vault.to_lowercase()))
+                .map(|t| json!({ "symbol": t.symbol, "address": t.receipt_vault }))
+                .collect();
+            doc["governedCount"] = json!(governed.len());
+            doc["registryTokenCount"] = json!(tokens.len());
+            doc["missingFromMigration"] = json!(missing);
+            doc["extraVaults"] = json!(extra);
+            doc
+        })
+        .collect()
 }
 
 #[cfg(test)]
