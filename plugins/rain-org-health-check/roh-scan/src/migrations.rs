@@ -198,6 +198,71 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
         .collect()
 }
 
+/// The registry and `appliedV5` key for migration `id` on `network`; the writer is that migration's entry on the chain, else its namespace's line there.
+pub fn locate(src: &str, network: &str, id: &str) -> Option<(Network, Record)> {
+    let m = parse(src).ok()?;
+    let net = m.networks.iter().find(|n| n.name == network)?.clone();
+    let mig = m.migrations.iter().find(|x| {
+        x.key
+            .as_ref()
+            .is_some_and(|(_, i)| i.eq_ignore_ascii_case(id))
+    })?;
+    let (namespace, _) = mig.key.clone()?;
+    let writer = match mig.on(net.chain_id) {
+        Some(e) => e.writer.clone(),
+        None => m.migrations.iter().find_map(|x| {
+            let (ns, _) = x.key.as_ref()?;
+            let e = x.on(net.chain_id)?;
+            ns.eq_ignore_ascii_case(&namespace)
+                .then(|| e.writer.clone())
+        })?,
+    };
+    Some((
+        net,
+        Record {
+            writer,
+            namespace,
+            id: id.to_string(),
+        },
+    ))
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RenameUnlocated {
+    pub id: String,
+    pub network: String,
+}
+
+impl std::fmt::Display for RenameUnlocated {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "expected-state.json renameMigration {} is not in migrations.json for {}",
+            self.id, self.network
+        )
+    }
+}
+
+/// Whether `id` is applied on `network`: `Ok(None)` when migrations.json or `appliedV5` could not be read.
+pub fn renamed(
+    src: &str,
+    network: &str,
+    id: &str,
+    call: EthCalls,
+) -> Result<Option<bool>, RenameUnlocated> {
+    if parse(src).is_err() {
+        return Ok(None);
+    }
+    let (net, r) = locate(src, network, id).ok_or_else(|| RenameUnlocated {
+        id: id.to_string(),
+        network: network.to_string(),
+    })?;
+    Ok(read_applied(&net, &[r], call)
+        .pop()
+        .flatten()
+        .map(|t| t > 0))
+}
+
 /// The block the heads were read at, and one slot per `(writer, namespace)` line; `None` where the read did not answer.
 pub type ReadHeads<'a> =
     &'a dyn Fn(&Network, &[(String, String)]) -> (Option<u64>, Vec<Option<String>>);
@@ -1131,5 +1196,205 @@ mod tests {
             .as_str()
             .unwrap()
             .starts_with("migrations.json: not JSON ("));
+    }
+
+    #[test]
+    fn locate_names_the_network_registry_and_the_migration_record_on_it() {
+        let src = fixture().to_string();
+        let (net, rec) = locate(&src, "sevenchain", ID_2).unwrap();
+        assert_eq!(
+            net,
+            Network {
+                chain_id: 7,
+                name: "sevenchain".into(),
+                registry: REGISTRY.into(),
+            }
+        );
+        assert_eq!(
+            rec,
+            Record {
+                writer: SAFE_X.into(),
+                namespace: NS_B.into(),
+                id: ID_2.into(),
+            }
+        );
+        let (net, rec) = locate(&src, "tenchain", ID_3).unwrap();
+        assert_eq!(net.chain_id, 10);
+        assert_eq!(rec.writer, SAFE_Y);
+        assert_eq!(rec.namespace, NS_A);
+    }
+
+    /// The migration id matches in any case and the record keeps the id as asked.
+    #[test]
+    fn locate_matches_the_migration_id_ignoring_case() {
+        let mut f = fixture();
+        let upper = format!("0x{}", ID_2[2..].to_uppercase().replace('2', "A"));
+        let lower = upper.to_lowercase();
+        f["migrations"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .for_each(|m| {
+                if m["id"] == ID_2 {
+                    m["id"] = json!(upper);
+                }
+            });
+        let (_, rec) = locate(&f.to_string(), "sevenchain", &lower).unwrap();
+        assert_eq!(rec.writer, SAFE_X);
+        assert_eq!(rec.namespace, NS_B);
+        assert_eq!(rec.id, lower);
+    }
+
+    /// Off the chain, the writer is the migration's namespace line there, never
+    /// another namespace's.
+    #[test]
+    fn locate_takes_the_writer_of_the_namespace_line_when_the_migration_is_not_on_the_chain() {
+        let mut f = fixture();
+        f["migrations"][3]["chains"]
+            .as_object_mut()
+            .unwrap()
+            .remove("7");
+        f["migrations"][0]["chains"]["7"]["writer"] = Value::from(SAFE_Y);
+        let (_, rec) = locate(&f.to_string(), "sevenchain", ID_3).unwrap();
+        assert_eq!(rec.writer, SAFE_Y);
+        assert_eq!(rec.namespace, NS_A);
+        assert_eq!(rec.id, ID_3);
+
+        f["migrations"][0]["chains"]
+            .as_object_mut()
+            .unwrap()
+            .remove("7");
+        assert_eq!(locate(&f.to_string(), "sevenchain", ID_3), None);
+    }
+
+    #[test]
+    fn locate_is_none_for_an_unknown_network_or_id_or_an_unreadable_file() {
+        let src = fixture().to_string();
+        assert_eq!(locate(&src, "elevenchain", ID_1), None);
+        assert_eq!(locate(&src, "sevenchain", GENESIS), None);
+        assert_eq!(locate("{", "sevenchain", ID_1), None);
+        let mut f = fixture();
+        f["version"] = Value::from(2);
+        assert_eq!(locate(&f.to_string(), "sevenchain", ID_1), None);
+    }
+
+    fn applied_at(t: u64) -> Option<String> {
+        Some(format!("0x{t:064x}"))
+    }
+
+    #[test]
+    fn renamed_is_unlocated_when_the_file_places_no_record_for_the_id_on_the_network() {
+        let src = fixture().to_string();
+        let asked = RefCell::new(0);
+        let call = |c: &[(String, String)]| {
+            *asked.borrow_mut() += 1;
+            vec![applied_at(1); c.len()]
+        };
+        let err = renamed(&src, "sevenchain", GENESIS, &call).unwrap_err();
+        assert_eq!(
+            err,
+            RenameUnlocated {
+                id: GENESIS.into(),
+                network: "sevenchain".into(),
+            }
+        );
+        assert_eq!(
+            err.to_string(),
+            "expected-state.json renameMigration \
+             0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f \
+             is not in migrations.json for sevenchain"
+        );
+        assert_eq!(
+            renamed(&src, "elevenchain", ID_1, &call),
+            Err(RenameUnlocated {
+                id: ID_1.into(),
+                network: "elevenchain".into(),
+            })
+        );
+        let mut f = fixture();
+        for m in [0, 3] {
+            f["migrations"][m]["chains"]
+                .as_object_mut()
+                .unwrap()
+                .remove("7");
+        }
+        assert_eq!(
+            renamed(&f.to_string(), "sevenchain", ID_3, &call),
+            Err(RenameUnlocated {
+                id: ID_3.into(),
+                network: "sevenchain".into(),
+            })
+        );
+        assert_eq!(*asked.borrow(), 0);
+    }
+
+    /// An unreadable file is a failed read, never an unlocated id.
+    #[test]
+    fn renamed_is_unread_when_the_file_cannot_be_read() {
+        let mut off_schema = fixture();
+        off_schema["version"] = Value::from(2);
+        let mut no_registry = fixture();
+        no_registry["networks"]["7"]["registry"] = Value::from("nope");
+        let asked = RefCell::new(0);
+        let call = |c: &[(String, String)]| {
+            *asked.borrow_mut() += 1;
+            vec![applied_at(1); c.len()]
+        };
+        for src in [
+            String::new(),
+            "{".to_string(),
+            off_schema.to_string(),
+            no_registry.to_string(),
+        ] {
+            assert_eq!(renamed(&src, "sevenchain", ID_1, &call), Ok(None), "{src}");
+            assert_eq!(
+                renamed(&src, "sevenchain", GENESIS, &call),
+                Ok(None),
+                "{src}"
+            );
+        }
+        assert_eq!(*asked.borrow(), 0);
+    }
+
+    #[test]
+    fn renamed_is_unread_when_applied_does_not_answer() {
+        let src = fixture().to_string();
+        for answer in [vec![], vec![None], vec![Some("0x01".to_string())]] {
+            assert_eq!(
+                renamed(&src, "sevenchain", ID_2, &|_| answer.clone()),
+                Ok(None),
+                "{answer:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn renamed_is_whether_the_chains_registry_records_the_id_applied() {
+        let src = fixture().to_string();
+        let sent = RefCell::new(Vec::new());
+        let ask = |network: &str, id: &str, t: u64| {
+            renamed(&src, network, id, &|c| {
+                sent.borrow_mut().extend_from_slice(c);
+                vec![applied_at(t)]
+            })
+        };
+        assert_eq!(ask("sevenchain", ID_2, 1_791_457_413), Ok(Some(true)));
+        assert_eq!(ask("sevenchain", ID_2, 1), Ok(Some(true)));
+        assert_eq!(ask("sevenchain", ID_2, 0), Ok(Some(false)));
+        let seven = (
+            REGISTRY.to_string(),
+            rpc::applied_v5_calldata(SAFE_X, NS_B, ID_2).unwrap(),
+        );
+        assert_eq!(*sent.borrow(), vec![seven.clone(), seven.clone(), seven]);
+
+        sent.borrow_mut().clear();
+        assert_eq!(ask("tenchain", ID_3, 1_700_000_000), Ok(Some(true)));
+        assert_eq!(
+            *sent.borrow(),
+            vec![(
+                REGISTRY.to_string(),
+                rpc::applied_v5_calldata(SAFE_Y, NS_A, ID_3).unwrap(),
+            )]
+        );
     }
 }

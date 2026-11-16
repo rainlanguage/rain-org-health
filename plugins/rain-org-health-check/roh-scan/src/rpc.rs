@@ -4,7 +4,7 @@
 //! layer (calldata builders, return decoders, the JSON-RPC result/error split)
 //! and is unit-tested against known encodings.
 
-use alloy_primitives::{hex, keccak256, Address, FixedBytes};
+use alloy_primitives::{hex, keccak256, Address, FixedBytes, U256};
 use alloy_sol_types::{sol, SolCall};
 
 sol! {
@@ -19,11 +19,14 @@ sol! {
     function decimals() external view returns (uint8);
     function asset() external view returns (address);
     function authorizer() external view returns (address);
-    function iReceiptBeacon() external view returns (address);
-    function iOffchainAssetReceiptVaultBeacon() external view returns (address);
     function appliedV5(address writer, bytes32 namespace, bytes32 migration) external view returns (uint256);
     function headV5(address writer, bytes32 namespace) external view returns (bytes32);
     function isCertificationExpired() external view returns (bool);
+    function getMinDelay() external view returns (uint256);
+    function receipt() external view returns (address);
+    function manager() external view returns (address);
+    function VERSION() external view returns (string);
+    function getModulesPaginated(address start, uint256 pageSize) external view returns (address[] array, address next);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -86,15 +89,6 @@ pub fn owner_calldata() -> String {
 pub fn implementation_calldata() -> String {
     to_hex(implementationCall {}.abi_encode())
 }
-/// Ethereum's receipt and receipt-vault beacons have no generated address pin —
-/// they are created in the 0.1.1 beacon-set deployer's constructor and only
-/// readable from these two getters, so the in-use set is resolved live.
-pub fn receipt_beacon_calldata() -> String {
-    to_hex(iReceiptBeaconCall {}.abi_encode())
-}
-pub fn receipt_vault_beacon_calldata() -> String {
-    to_hex(iOffchainAssetReceiptVaultBeaconCall {}.abi_encode())
-}
 pub fn name_calldata() -> String {
     to_hex(nameCall {}.abi_encode())
 }
@@ -109,6 +103,28 @@ pub fn asset_calldata() -> String {
 }
 pub fn authorizer_calldata() -> String {
     to_hex(authorizerCall {}.abi_encode())
+}
+pub fn min_delay_calldata() -> String {
+    to_hex(getMinDelayCall {}.abi_encode())
+}
+pub fn manager_calldata() -> String {
+    to_hex(managerCall {}.abi_encode())
+}
+pub fn receipt_calldata() -> String {
+    to_hex(receiptCall {}.abi_encode())
+}
+pub fn version_calldata() -> String {
+    to_hex(VERSIONCall {}.abi_encode())
+}
+/// `None` unless `start` is an address.
+pub fn get_modules_paginated_calldata(start: &str, page_size: u64) -> Option<String> {
+    Some(to_hex(
+        getModulesPaginatedCall {
+            start: start.parse().ok()?,
+            pageSize: U256::from(page_size),
+        }
+        .abi_encode(),
+    ))
 }
 /// `None` unless `writer` is an address and both words are 32-byte hex.
 pub fn applied_v5_calldata(writer: &str, namespace: &str, migration: &str) -> Option<String> {
@@ -211,6 +227,23 @@ pub fn decode_string(result_hex: &str) -> Option<String> {
         .map(|r| r._0)
 }
 
+/// Decode a `getModulesPaginated` return → (the page's modules, `next`), both
+/// lowercase `0x…`.
+pub fn decode_modules_page(result_hex: &str) -> Option<(Vec<String>, String)> {
+    let bytes = result_bytes(result_hex)?;
+    getModulesPaginatedCall::abi_decode_returns(&bytes, false)
+        .ok()
+        .map(|r| {
+            (
+                r.array
+                    .iter()
+                    .map(|a| a.to_string().to_lowercase())
+                    .collect(),
+                r.next.to_string().to_lowercase(),
+            )
+        })
+}
+
 /// Decode a `uint8` return (`decimals()`).
 pub fn decode_u8(result_hex: &str) -> Option<u8> {
     let bytes = result_bytes(result_hex)?;
@@ -292,17 +325,6 @@ pub fn decode_bool(result_hex: &str) -> Option<bool> {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    /// The two getters are the ONLY way Ethereum's receipt and receipt-vault
-    /// beacons are addressable — they have no generated pin. A wrong selector
-    /// returns an on-chain revert, which the scan reports as an unreadable
-    /// beacon rather than as a bad selector, so the encoding is pinned here
-    /// against `cast sig` output.
-    #[test]
-    fn beacon_getter_selectors_match_their_signatures() {
-        assert_eq!(receipt_beacon_calldata(), "0x2c9b7f40");
-        assert_eq!(receipt_vault_beacon_calldata(), "0x2f77a1c1");
-    }
 
     #[test]
     fn certification_expiry_selector_matches_its_signature() {
