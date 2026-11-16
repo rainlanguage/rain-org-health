@@ -1326,7 +1326,11 @@ mod tests {
             no_registry.to_string(),
         ] {
             assert_eq!(renamed(&src, "sevenchain", ID_1, &call), Ok(None), "{src}");
-            assert_eq!(renamed(&src, "sevenchain", GENESIS, &call), Ok(None), "{src}");
+            assert_eq!(
+                renamed(&src, "sevenchain", GENESIS, &call),
+                Ok(None),
+                "{src}"
+            );
         }
         assert_eq!(*asked.borrow(), 0);
     }
