@@ -8361,6 +8361,205 @@ Deno.test("deployments: v2 rows render per chain on the contracts tab after Zolt
   );
 });
 
+// One chain of `deploymentTokens`: `deployhealth::registry_reconcile`.
+const REGISTRY = {
+  registryOrg: "ST0x-Technology",
+  registryRepo: "st0x.registry",
+  expectedState: "expected-state.json",
+};
+
+function registryDoc(network, counts, extraVaults, missingFromMigration) {
+  return {
+    network,
+    ...REGISTRY,
+    registryPath: `token-lists/${network}.json`,
+    governedCount: counts[0],
+    registryTokenCount: counts[1],
+    extraVaults,
+    missingFromMigration,
+  };
+}
+
+function notes(row) {
+  return collect(row, "own-note").map((n) => n.textContent);
+}
+
+Deno.test("deployments: registry tokens reconcile per chain on the contracts tab with ok and drift banners and both row kinds", () => {
+  const VAULT = "0x8500189061e2206bc33bf04dc10ffb1fe7ded637";
+  const OTHER = "0x35f9fa9d80aaf2b0fb27f0ff015641b3408d7456";
+  const WRAPPED = "0x4c3df5a6ef6a7d2b0c1e8f9a0b1c2d3e4f5a6b7c";
+  const USDC = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+  for (const owners of [OWNERS, {}]) {
+    const box = deploymentsBox({
+      ...owners,
+      deploymentTokens: [
+        registryDoc("ethereum", [3, 3], [], []),
+        registryDoc("base", [4, 5], [{ symbol: "tMSTR", address: VAULT }], [
+          {
+            symbol: "wtXYZ",
+            name: "XYZ ST0x",
+            address: WRAPPED,
+            receiptVault: OTHER,
+            wrapped: true,
+            reason: "receipt vault not in expected-state",
+          },
+          {
+            symbol: "USDC",
+            name: "USD Coin",
+            address: USDC,
+            receiptVault: null,
+            wrapped: false,
+            reason: "no receipt vault (collateral)",
+          },
+        ]),
+      ],
+    });
+    const panels = panelsOf(box);
+    const h = headings(panels.contracts);
+    assert(
+      h.includes("Registry tokens — ethereum") &&
+        h.includes("Registry tokens — base"),
+      "each chain has its own section on the contracts tab: " + h.join(" | "),
+    );
+    const banners = collect(panels.contracts, "own-verify");
+    const ok = banners.find((b) =>
+      b.textContent?.startsWith("3 governed receipt vaults")
+    );
+    assert(
+      ok?.textContent ===
+        "3 governed receipt vaults · 3 registry tokens — 0 governed vault(s) not in the registry, 0 registry token(s) not governed.",
+      "the ok banner states both counts and no drift: " + ok?.textContent,
+    );
+    assert(ok.className === "own-verify own-verify-ok", ok.className);
+    const drift = banners.find((b) =>
+      b.textContent?.startsWith("4 governed receipt vaults")
+    );
+    assert(
+      drift?.textContent ===
+        "4 governed receipt vaults · 5 registry tokens — 1 governed vault(s) not in the registry, 2 registry token(s) not governed.",
+      "the drift banner counts both directions: " + drift?.textContent,
+    );
+    assert(drift.className === "own-verify own-verify-drift", drift.className);
+    const sub = collect(panels.contracts, "own-sub").find((s) =>
+      textOf(s).includes("token-lists/base.json")
+    );
+    assert(
+      textOf(sub) ===
+        "ST0x-Technology/st0x.registry token-lists/base.json against the receipt vaults in expected-state.json.",
+      textOf(sub),
+    );
+    assert(
+      tags(sub, "a")[0].href === "https://github.com/ST0x-Technology/st0x.registry",
+      "the registry repo is linked",
+    );
+    assert(
+      collect(panels.contracts, "own-row").length === 3,
+      "only the drifting chain has rows",
+    );
+
+    const unlisted = rowByRole(panels.contracts, "tMSTR");
+    assert(unlisted.className === "own-row hlth-extra", unlisted.className);
+    assert(
+      collect(unlisted, "own-addr")[0].href ===
+        "https://basescan.org/address/" + VAULT,
+      "the governed vault links on its chain's explorer",
+    );
+    assert(notes(unlisted).join("|") === "not in registry", notes(unlisted));
+    const uc = statusChip(unlisted);
+    assert(
+      uc.textContent === "unlisted" && uc.className === "own-chip own-chip-no",
+      uc.className,
+    );
+
+    const ungoverned = rowByRole(panels.contracts, "wtXYZ");
+    assert(
+      ungoverned.className === "own-row hlth-mismatch",
+      ungoverned.className,
+    );
+    assert(
+      collect(ungoverned, "own-addr")[0].href ===
+        "https://basescan.org/address/" + OTHER,
+      "a wrapped token shows its receipt vault, not its own address",
+    );
+    assert(
+      notes(ungoverned).join("|") ===
+        "XYZ ST0x|receipt vault not in expected-state",
+      notes(ungoverned),
+    );
+    const gc = statusChip(ungoverned);
+    assert(
+      gc.textContent === "ungoverned" &&
+        gc.className === "own-chip own-chip-no",
+      gc.className,
+    );
+
+    const collateral = rowByRole(panels.contracts, "USDC");
+    assert(
+      collateral.className === "own-row hlth-extra",
+      collateral.className,
+    );
+    assert(
+      collect(collateral, "own-addr")[0].href ===
+        "https://basescan.org/address/" + USDC,
+      "collateral has no receipt vault, so its own address shows",
+    );
+    assert(
+      notes(collateral).join("|") === "USD Coin|no receipt vault (collateral)",
+      notes(collateral),
+    );
+    const cc = statusChip(collateral);
+    assert(
+      cc.textContent === "collateral" &&
+        cc.className === "own-chip own-chip-dim",
+      cc.className,
+    );
+  }
+});
+
+Deno.test("deployments: an unreadable registry list or expected-state shows its reason, not counts", () => {
+  for (const owners of [OWNERS, {}]) {
+    const box = deploymentsBox({
+      ...owners,
+      deploymentTokens: [
+        {
+          network: "robinhood",
+          ...REGISTRY,
+          registryPath: "token-lists/robinhood.json",
+          unavailable: true,
+          reason: "no readable registry list at token-lists/robinhood.json",
+        },
+        {
+          ...REGISTRY,
+          unavailable: true,
+          reason: "expected-state.json could not be fetched",
+        },
+      ],
+    });
+    const panels = panelsOf(box);
+    const h = headings(panels.contracts);
+    assert(
+      h.includes("Registry tokens — robinhood") &&
+        h.includes("Registry tokens — all chains"),
+      h.join(" | "),
+    );
+    const banners = collect(panels.contracts, "own-verify");
+    assert(
+      banners.map((b) => b.textContent).join("|") ===
+        "Registry reconciliation unavailable — no readable registry list at token-lists/robinhood.json.|Registry reconciliation unavailable — expected-state.json could not be fetched.",
+      "each reason is stated and no counts are claimed: " +
+        banners.map((b) => b.textContent).join("|"),
+    );
+    assert(
+      banners.every((b) => b.className === "own-verify own-verify-drift"),
+      "unavailable is drift, not ok",
+    );
+    assert(
+      collect(panels.contracts, "own-row").length === 0,
+      "no rows for an unreadable list",
+    );
+  }
+});
+
 Deno.test("deployments: each chain's Safe facts show live beside expected and flag a mismatch", () => {
   const O1 = "0x1111111111111111111111111111111111111111";
   const O2 = "0x2222222222222222222222222222222222222222";
@@ -10695,6 +10894,84 @@ Deno.test("hostile input: a Safe fact's name, values, address and chain render a
   assert(
     a && a.href === "https://basescan.org/address/" + XSS_SCRIPT,
     "the hostile Safe address stays inside the href path, got " + (a && a.href),
+  );
+});
+
+// st0x.registry's token list is another org's file: every token field, and
+// every field of the reconciliation doc that carries it, gets its own payload.
+Deno.test("hostile input: a registry token's symbol, name, addresses, reason and chain render as text", () => {
+  const p = (k) => `<img src=x onerror="alert('${k}')">`;
+  const box = deploymentsBox({
+    deploymentTokens: [
+      {
+        network: "base",
+        registryOrg: XSS_ATTR,
+        registryRepo: p("repo"),
+        registryPath: p("path"),
+        expectedState: p("expectedState"),
+        governedCount: p("governedCount"),
+        registryTokenCount: p("registryTokenCount"),
+        extraVaults: [{ symbol: XSS_IMG, address: XSS_SCRIPT }],
+        missingFromMigration: [
+          {
+            symbol: XSS_SVG,
+            name: XSS_OBJ,
+            address: p("wrapped address"),
+            receiptVault: p("receiptVault"),
+            wrapped: true,
+            reason: XSS_EMBED,
+          },
+          {
+            symbol: p("collateral symbol"),
+            name: p("collateral name"),
+            address: p("collateral address"),
+            receiptVault: null,
+            wrapped: false,
+            reason: p("collateral reason"),
+          },
+        ],
+      },
+      {
+        network: XSS_STYLE,
+        ...REGISTRY,
+        unavailable: true,
+        reason: p("unavailable reason"),
+      },
+    ],
+  });
+  for (
+    const [payload, where] of [
+      [XSS_ATTR, "registry org"],
+      [p("repo"), "registry repo"],
+      [p("path"), "registry path"],
+      [p("expectedState"), "expected-state path"],
+      [p("governedCount"), "governed count"],
+      [p("registryTokenCount"), "registry token count"],
+      [XSS_IMG, "unlisted vault symbol"],
+      [XSS_SCRIPT, "unlisted vault address"],
+      [XSS_SVG, "ungoverned token symbol"],
+      [XSS_OBJ, "ungoverned token name"],
+      [p("receiptVault"), "ungoverned receipt vault"],
+      [XSS_EMBED, "ungoverned reason"],
+      [p("collateral symbol"), "collateral symbol"],
+      [p("collateral name"), "collateral name"],
+      [p("collateral address"), "collateral address"],
+      [p("collateral reason"), "collateral reason"],
+      [XSS_STYLE, "unavailable chain"],
+      [p("unavailable reason"), "unavailable reason"],
+    ]
+  ) assertInert(box, payload, where);
+  const a = tags(box, "a").find((x) => x.textContent === XSS_SCRIPT);
+  assert(
+    a && a.href === "https://basescan.org/address/" + XSS_SCRIPT,
+    "the hostile vault address stays inside the href path, got " +
+      (a && a.href),
+  );
+  const repo = tags(box, "a").find((x) => x.textContent?.startsWith(XSS_ATTR));
+  assert(
+    repo && repo.href === `https://github.com/${XSS_ATTR}/${p("repo")}`,
+    "the hostile registry org stays inside the href path, got " +
+      (repo && repo.href),
   );
 });
 
