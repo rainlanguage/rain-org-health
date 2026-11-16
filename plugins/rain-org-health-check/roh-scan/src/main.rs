@@ -2991,13 +2991,9 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
 
         let migrations_src = gh_file(deploy_org, deploy_repo, migrations::PATH);
         let renamed_on = |c: &expected::ExpectedChain, s: Session| {
-            migrations::locate(&migrations_src, &c.network, &c.rename_migration)
-                .and_then(|(net, r)| {
-                    migrations::read_applied(&net, &[r], &|calls| eth_call_batch(s, calls))
-                        .pop()
-                        .flatten()
-                })
-                .map(|t| t > 0)
+            migrations::renamed(&migrations_src, &c.network, &c.rename_migration, &|calls| {
+                eth_call_batch(s, calls)
+            })
         };
         let deployment_migrations = migrations::build(
             deploy_org,
@@ -3153,7 +3149,16 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 &expected_state,
                 |c| c.network.as_str(),
                 |c, chain| {
-                    let renamed = renamed_on(c, rpc_session(chain));
+                    let renamed = match renamed_on(c, rpc_session(chain)) {
+                        Ok(r) => r,
+                        Err(e) => {
+                            return deployhealth::beacons_unavailable(
+                                Some(&c.network),
+                                Some(chain.rpc_host()),
+                                &e.to_string(),
+                            )
+                        }
+                    };
                     let beacons: Vec<_> = c
                         .beacons
                         .iter()
@@ -3277,7 +3282,16 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     eth_get_storage_at(s, a, ERC1967_BEACON_SLOT)
                         .and_then(|h| rpc::decode_address(&h))
                 };
-                let renamed = renamed_on(c, s);
+                let renamed = match renamed_on(c, s) {
+                    Ok(r) => r,
+                    Err(e) => {
+                        return deployhealth::beacons_unavailable(
+                            Some(&c.network),
+                            Some(chain.rpc_host()),
+                            &e.to_string(),
+                        )
+                    }
+                };
                 let mut rows: Vec<serde_json::Value> = c
                     .zoltu
                     .iter()

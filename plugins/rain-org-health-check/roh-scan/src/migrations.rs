@@ -227,6 +227,42 @@ pub fn locate(src: &str, network: &str, id: &str) -> Option<(Network, Record)> {
     ))
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct RenameUnlocated {
+    pub id: String,
+    pub network: String,
+}
+
+impl std::fmt::Display for RenameUnlocated {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "expected-state.json renameMigration {} is not in migrations.json for {}",
+            self.id, self.network
+        )
+    }
+}
+
+/// Whether `id` is applied on `network`: `Ok(None)` when migrations.json or `appliedV5` could not be read.
+pub fn renamed(
+    src: &str,
+    network: &str,
+    id: &str,
+    call: EthCalls,
+) -> Result<Option<bool>, RenameUnlocated> {
+    if parse(src).is_err() {
+        return Ok(None);
+    }
+    let (net, r) = locate(src, network, id).ok_or_else(|| RenameUnlocated {
+        id: id.to_string(),
+        network: network.to_string(),
+    })?;
+    Ok(read_applied(&net, &[r], call)
+        .pop()
+        .flatten()
+        .map(|t| t > 0))
+}
+
 /// The block the heads were read at, and one slot per `(writer, namespace)` line; `None` where the read did not answer.
 pub type ReadHeads<'a> =
     &'a dyn Fn(&Network, &[(String, String)]) -> (Option<u64>, Vec<Option<String>>);
