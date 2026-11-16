@@ -624,6 +624,58 @@ function renderDeployments(document, $, data, io) {
     for (const set of Array.isArray(f) ? f : f ? [f] : [])
       renderInfraSet(set, "V2", "v2 deployment codehashes; each v2 beacon's implementation and owner");
   };
+  const renderTokens = (f) => {
+    for (const r of Array.isArray(f) ? f : f ? [f] : []) {
+      sink.append(el("h2", null, `Registry tokens — ${r.network ?? "all chains"}`));
+      const sub = el("div", "own-sub");
+      sub.append(
+        link("", `${r.registryOrg}/${r.registryRepo}`, `https://github.com/${r.registryOrg}/${r.registryRepo}`),
+      );
+      sub.append(` ${r.registryPath ?? ""} against the receipt vaults in ${r.expectedState}.`);
+      sink.append(sub);
+      if (r.unavailable) {
+        sink.append(
+          el("div", "own-verify own-verify-drift", `Registry reconciliation unavailable — ${r.reason}.`),
+        );
+        continue;
+      }
+      const extra = Array.isArray(r.extraVaults) ? r.extraVaults : [];
+      const missing = Array.isArray(r.missingFromMigration) ? r.missingFromMigration : [];
+      sink.append(
+        el(
+          "div",
+          `own-verify ${extra.length || missing.length ? "own-verify-drift" : "own-verify-ok"}`,
+          `${r.governedCount} governed receipt vaults · ${r.registryTokenCount} registry tokens — ${extra.length} governed vault(s) not in the registry, ${missing.length} registry token(s) not governed.`,
+        ),
+      );
+      const table = el("div", "own-table");
+      for (const v of extra) {
+        const row = el("div", "own-row hlth-extra");
+        const rc = el("div", "own-rc");
+        rc.append(el("div", "own-role", v.symbol || "(unknown)"));
+        rc.append(addrNode("own-addr", v.address, r.network));
+        rc.append(el("div", "own-note", "not in registry"));
+        row.append(rc, el("span", "own-chip own-chip-no", "unlisted"));
+        table.append(row);
+      }
+      for (const m of missing) {
+        const row = el("div", `own-row ${m.wrapped ? "hlth-mismatch" : "hlth-extra"}`);
+        const rc = el("div", "own-rc");
+        rc.append(el("div", "own-role", m.symbol || "(unknown)"));
+        if (m.name) rc.append(el("div", "own-note", m.name));
+        rc.append(addrNode("own-addr", m.receiptVault || m.address, r.network));
+        rc.append(el("div", "own-note", m.reason));
+        row.append(
+          rc,
+          m.wrapped
+            ? el("span", "own-chip own-chip-no", "ungoverned")
+            : el("span", "own-chip own-chip-dim", "collateral"),
+        );
+        table.append(row);
+      }
+      if (extra.length || missing.length) sink.append(table);
+    }
+  };
   const renderSafeSet = (f) => {
     if (!f) return;
     if (f.unavailable || !Array.isArray(f.facts) || f.facts.length === 0) {
@@ -3308,6 +3360,7 @@ function renderDeployments(document, $, data, io) {
     renderGrants(data.deploymentOrchestratorGrants);
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
+    renderTokens(data.deploymentTokens);
     renderInfra(data.deploymentInfra);
     renderCodeTokens(data.deploymentCodeTokens);
     renderV2(data.deploymentV2);
@@ -3363,6 +3416,7 @@ function renderDeployments(document, $, data, io) {
   renderGrants(data.deploymentOrchestratorGrants);
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
+  renderTokens(data.deploymentTokens);
   renderInfra(data.deploymentInfra);
   renderCodeTokens(data.deploymentCodeTokens);
   renderV2(data.deploymentV2);
