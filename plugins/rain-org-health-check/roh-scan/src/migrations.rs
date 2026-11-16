@@ -1256,4 +1256,120 @@ mod tests {
         f["version"] = Value::from(2);
         assert_eq!(locate(&f.to_string(), "sevenchain", ID_1), None);
     }
+
+    fn applied_at(t: u64) -> Option<String> {
+        Some(format!("0x{t:064x}"))
+    }
+
+    #[test]
+    fn renamed_is_unlocated_when_the_file_places_no_record_for_the_id_on_the_network() {
+        let src = fixture().to_string();
+        let asked = RefCell::new(0);
+        let call = |c: &[(String, String)]| {
+            *asked.borrow_mut() += 1;
+            vec![applied_at(1); c.len()]
+        };
+        let err = renamed(&src, "sevenchain", GENESIS, &call).unwrap_err();
+        assert_eq!(
+            err,
+            RenameUnlocated {
+                id: GENESIS.into(),
+                network: "sevenchain".into(),
+            }
+        );
+        assert_eq!(
+            err.to_string(),
+            "expected-state.json renameMigration \
+             0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f \
+             is not in migrations.json for sevenchain"
+        );
+        assert_eq!(
+            renamed(&src, "elevenchain", ID_1, &call),
+            Err(RenameUnlocated {
+                id: ID_1.into(),
+                network: "elevenchain".into(),
+            })
+        );
+        let mut f = fixture();
+        for m in [0, 3] {
+            f["migrations"][m]["chains"]
+                .as_object_mut()
+                .unwrap()
+                .remove("7");
+        }
+        assert_eq!(
+            renamed(&f.to_string(), "sevenchain", ID_3, &call),
+            Err(RenameUnlocated {
+                id: ID_3.into(),
+                network: "sevenchain".into(),
+            })
+        );
+        assert_eq!(*asked.borrow(), 0);
+    }
+
+    /// An unreadable file is a failed read, never an unlocated id.
+    #[test]
+    fn renamed_is_unread_when_the_file_cannot_be_read() {
+        let mut off_schema = fixture();
+        off_schema["version"] = Value::from(2);
+        let mut no_registry = fixture();
+        no_registry["networks"]["7"]["registry"] = Value::from("nope");
+        let asked = RefCell::new(0);
+        let call = |c: &[(String, String)]| {
+            *asked.borrow_mut() += 1;
+            vec![applied_at(1); c.len()]
+        };
+        for src in [
+            String::new(),
+            "{".to_string(),
+            off_schema.to_string(),
+            no_registry.to_string(),
+        ] {
+            assert_eq!(renamed(&src, "sevenchain", ID_1, &call), Ok(None), "{src}");
+            assert_eq!(renamed(&src, "sevenchain", GENESIS, &call), Ok(None), "{src}");
+        }
+        assert_eq!(*asked.borrow(), 0);
+    }
+
+    #[test]
+    fn renamed_is_unread_when_applied_does_not_answer() {
+        let src = fixture().to_string();
+        for answer in [vec![], vec![None], vec![Some("0x01".to_string())]] {
+            assert_eq!(
+                renamed(&src, "sevenchain", ID_2, &|_| answer.clone()),
+                Ok(None),
+                "{answer:?}"
+            );
+        }
+    }
+
+    #[test]
+    fn renamed_is_whether_the_chains_registry_records_the_id_applied() {
+        let src = fixture().to_string();
+        let sent = RefCell::new(Vec::new());
+        let ask = |network: &str, id: &str, t: u64| {
+            renamed(&src, network, id, &|c| {
+                sent.borrow_mut().extend_from_slice(c);
+                vec![applied_at(t)]
+            })
+        };
+        assert_eq!(ask("sevenchain", ID_2, 1_791_457_413), Ok(Some(true)));
+        assert_eq!(ask("sevenchain", ID_2, 1), Ok(Some(true)));
+        assert_eq!(ask("sevenchain", ID_2, 0), Ok(Some(false)));
+        let seven = (
+            REGISTRY.to_string(),
+            rpc::applied_v5_calldata(SAFE_X, NS_B, ID_2).unwrap(),
+        );
+        assert_eq!(*sent.borrow(), vec![seven.clone(), seven.clone(), seven]);
+
+        sent.borrow_mut().clear();
+        assert_eq!(ask("tenchain", ID_3, 1_700_000_000), Ok(Some(true)));
+        assert_eq!(
+            *sent.borrow(),
+            vec![(
+                REGISTRY.to_string(),
+                rpc::applied_v5_calldata(SAFE_Y, NS_A, ID_3).unwrap(),
+            )]
+        );
+    }
 }

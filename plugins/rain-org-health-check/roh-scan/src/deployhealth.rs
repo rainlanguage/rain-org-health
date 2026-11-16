@@ -1266,6 +1266,155 @@ mod tests {
         );
     }
 
+    fn unlocated(c: &crate::expected::ExpectedChain) -> RenameUnlocated {
+        RenameUnlocated {
+            id: c.rename_migration.clone(),
+            network: c.network.clone(),
+        }
+    }
+
+    const BASE_UNLOCATED: &str = "expected-state.json renameMigration \
+        0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2 \
+        is not in migrations.json for base";
+
+    /// With no target to compare against, every live reading is `error`, the owner still labelled.
+    #[test]
+    fn an_unlocated_rename_makes_a_beacon_error_with_the_reason() {
+        let c = base();
+        let b = &c.beacons[1];
+        let e = unlocated(&c);
+        let owners = BeaconOwners {
+            expected: &b.owner,
+            safe: Some(c.safe.address.as_str()),
+            legacy: Some(LEGACY),
+        };
+        let check = |target: Result<Option<&str>, &RenameUnlocated>,
+                     owner: Option<&str>,
+                     imp: Option<&str>| {
+            beacon_health(
+                b.name,
+                Some(b.address.clone()),
+                &owners,
+                target,
+                Some(V1),
+                owner.map(str::to_string),
+                imp.map(str::to_string),
+            )
+        };
+        let safe = c.safe.address.as_str();
+        for (owner, imp, label, version) in [
+            (
+                Some(b.owner.as_str()),
+                Some(b.renamed_implementation.as_str()),
+                "timelock",
+                "unknown",
+            ),
+            (
+                Some(b.owner.as_str()),
+                Some(b.implementation.as_str()),
+                "timelock",
+                "unknown",
+            ),
+            (Some(b.owner.as_str()), Some(V1), "timelock", "V1"),
+            (Some(safe), Some(V1), "safe", "V1"),
+            (None, None, "unknown", "unknown"),
+        ] {
+            let at = format!("{owner:?} {imp:?}");
+            let got = check(Err(&e), owner, imp);
+            assert_eq!(got["status"], "error", "{at}");
+            assert_eq!(got["reason"], BASE_UNLOCATED, "{at}");
+            assert_eq!(got["ownerLabel"], label, "{at}");
+            assert_eq!(got["owner"], json!(owner), "{at}");
+            assert_eq!(got["implementation"], json!(imp), "{at}");
+            assert_eq!(got["implVersion"], version, "{at}");
+            assert!(got["targetImpl"].is_null(), "{at}");
+            assert!(got["atTarget"].is_null(), "{at}");
+            assert_eq!(got["targetOwner"], b.owner.as_str(), "{at}");
+            assert_eq!(got["name"], b.name, "{at}");
+            assert_eq!(got["address"], b.address.as_str(), "{at}");
+        }
+        for target in [Ok(Some(b.implementation.as_str())), Ok(None)] {
+            let got = check(
+                target,
+                Some(b.owner.as_str()),
+                Some(b.implementation.as_str()),
+            );
+            assert_ne!(got["status"], "error", "{got}");
+            assert!(got["reason"].is_null(), "{got}");
+        }
+    }
+
+    /// Only the renamable rows depend on the rename; every other row is the row a located rename gives.
+    #[test]
+    fn an_unlocated_rename_makes_only_a_tokens_renamable_rows_error() {
+        let c = base();
+        let t = &c.tokens[0];
+        let e = unlocated(&c);
+        let live = TokenLive {
+            receipt_vault_name: Some(t.renamed_name.clone()),
+            receipt_vault_symbol: Some(t.symbol.clone()),
+            receipt_vault_decimals: Some(18),
+            wrapped_token_vault_name: Some(t.wrapped_token_vault_renamed_name.clone()),
+            wrapped_token_vault_symbol: Some(t.wrapped_token_vault_renamed_symbol.clone()),
+            wrapped_token_vault_decimals: Some(7),
+            receipt_manager: Some(OTHER.into()),
+            receipt_codehash: None,
+            ..matching(t.into())
+        };
+        let renamable = [
+            ("receiptVault name", t.renamed_name.as_str()),
+            (
+                "wrappedTokenVault name",
+                t.wrapped_token_vault_renamed_name.as_str(),
+            ),
+            (
+                "wrappedTokenVault symbol",
+                t.wrapped_token_vault_renamed_symbol.as_str(),
+            ),
+        ];
+        let rows = token_rows(t, Err(&e), live.clone());
+        for (field, live_name) in renamable {
+            let r = row(&rows, field);
+            assert_eq!(r["status"], "error", "{field}");
+            assert_eq!(r["reason"], BASE_UNLOCATED, "{field}");
+            assert!(r["expected"].is_null(), "{field}");
+            assert_eq!(r["live"], live_name, "{field}");
+            assert_eq!(r["component"], "token tMSTR", "{field}");
+        }
+        assert_eq!(
+            rows.iter().filter(|r| r["status"] == "error").count(),
+            renamable.len()
+        );
+        for located in [Ok(Some(true)), Ok(Some(false)), Ok(None)] {
+            let want = token_rows(t, located, live.clone());
+            assert_eq!(rows.len(), want.len());
+            for (got, want) in rows.iter().zip(&want) {
+                let field = want["field"].as_str().unwrap();
+                assert_eq!(got["field"], field);
+                if renamable.iter().all(|(f, _)| *f != field) {
+                    assert_eq!(got, want, "{field}");
+                }
+            }
+        }
+        assert_eq!(row(&rows, "receiptVault symbol")["status"], "healthy");
+        assert_eq!(row(&rows, "wrappedTokenVault decimals")["status"], "drift");
+        assert_eq!(row(&rows, "receipt manager")["status"], "drift");
+        assert_eq!(row(&rows, "receipt codehash")["status"], "unknown");
+
+        let unread = token_rows(
+            t,
+            Err(&e),
+            TokenLive {
+                receipt_vault_name: None,
+                ..live
+            },
+        );
+        let name = row(&unread, "receiptVault name");
+        assert_eq!(name["status"], "error");
+        assert_eq!(name["reason"], BASE_UNLOCATED);
+        assert!(name["live"].is_null());
+    }
+
     /// Base's tQSEP rows: its owner, authoriser and legs on the shared Base
     /// beacons, under `qsep`.
     #[test]
