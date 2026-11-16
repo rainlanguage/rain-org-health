@@ -603,6 +603,8 @@ pub fn leg_rows(id: &str, l: Legs, live: &TokenLive) -> Vec<serde_json::Value> {
         .collect()
 }
 
+type RowExpected<'a> = Result<Option<String>, &'a RenameUnlocated>;
+
 /// One token's rows. `renamed` is whether the chain records the file's
 /// `renameMigration` (`Ok(None)`: unread, so the renamable rows are unknown;
 /// `Err`: the renamable rows are `error`).
@@ -617,12 +619,7 @@ pub fn token_rows(
     let rv = t.receipt_vault.as_str();
     let wv = t.wrapped_token_vault.as_str();
     let id = format!("token {}", t.symbol);
-    let checks: [(
-        &str,
-        &str,
-        Result<Option<String>, &RenameUnlocated>,
-        Option<String>,
-    ); 6] = [
+    let checks: [(&str, &str, RowExpected, Option<String>); 6] = [
         (
             "receiptVault name",
             rv,
