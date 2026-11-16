@@ -8029,7 +8029,14 @@ Deno.test("deployments: an error beacon or fact row renders like drift, with its
           ),
           reason: REASON,
         },
-        factRow("token tMSTR", "receiptVault symbol", RV, "tMSTR", "x", "drift"),
+        factRow(
+          "token tMSTR",
+          "receiptVault symbol",
+          RV,
+          "tMSTR",
+          "x",
+          "drift",
+        ),
       ]),
     ],
   });
@@ -8449,7 +8456,8 @@ Deno.test("deployments: registry tokens reconcile per chain on the contracts tab
       textOf(sub),
     );
     assert(
-      tags(sub, "a")[0].href === "https://github.com/ST0x-Technology/st0x.registry",
+      tags(sub, "a")[0].href ===
+        "https://github.com/ST0x-Technology/st0x.registry",
       "the registry repo is linked",
     );
     assert(
