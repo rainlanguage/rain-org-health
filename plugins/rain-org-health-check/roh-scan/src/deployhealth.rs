@@ -1867,4 +1867,239 @@ mod tests {
         assert_eq!(doc["healthy"], n + 3);
         assert_eq!(doc["rows"], serde_json::Value::Array(rows));
     }
+
+    const WRAPPED: &str = "0x4c3df5a6ef6a7d2b0c1e8f9a0b1c2d3e4f5a6b7c";
+    const COLLATERAL: &str = "0x833589fcd6edb6e08f4c7c32d4f71b54bda02913";
+
+    /// How st0x.registry lists a governed token: its receipt vault as `unwrappedAddress`.
+    fn listed(t: &ExpectedToken) -> serde_json::Value {
+        json!({
+            "symbol": t.wrapped_token_vault_symbol,
+            "name": t.wrapped_token_vault_name,
+            "address": t.wrapped_token_vault,
+            "extensions": { "unwrappedAddress": t.receipt_vault },
+        })
+    }
+
+    fn list_of(tokens: Vec<serde_json::Value>) -> String {
+        json!({ "name": "ST0x", "tokens": tokens }).to_string()
+    }
+
+    fn reconcile_one(c: &ExpectedChain, body: String) -> serde_json::Value {
+        let docs = registry_reconcile(&Ok(vec![c.clone()]), |p| {
+            assert_eq!(p, format!("token-lists/{}.json", c.network));
+            body.clone()
+        });
+        assert_eq!(docs.len(), 1);
+        docs.into_iter().next().unwrap()
+    }
+
+    #[test]
+    fn an_expected_state_error_is_one_unavailable_doc_with_its_reason() {
+        for e in [
+            ExpectedError::Empty,
+            ExpectedError::Malformed {
+                chain: "8453".into(),
+                field: "tokens",
+            },
+        ] {
+            let docs = registry_reconcile(&Err(e.clone()), |p| panic!("read {p}"));
+            assert_eq!(docs.len(), 1);
+            let d = &docs[0];
+            assert_eq!(d["unavailable"], true);
+            assert_eq!(d["reason"], e.to_string());
+            assert_eq!(d["registryOrg"], "ST0x-Technology");
+            assert_eq!(d["registryRepo"], "st0x.registry");
+            assert_eq!(d["expectedState"], EXPECTED_STATE_PATH);
+            assert!(d["network"].is_null());
+            assert!(d["missingFromMigration"].is_null());
+            assert!(d["extraVaults"].is_null());
+        }
+    }
+
+    #[test]
+    fn a_chain_without_a_readable_list_is_unavailable_with_its_reason_not_skipped() {
+        let chains = crate::expected::parse(FIXTURE).unwrap();
+        let networks: Vec<String> = chains.iter().map(|c| c.network.clone()).collect();
+        assert_eq!(networks, ["ethereum", "robinhood", "bsc", "base", "hyperevm"]);
+        let read = std::cell::RefCell::new(Vec::new());
+        let docs = registry_reconcile(&Ok(chains.clone()), |p| {
+            read.borrow_mut().push(p.to_string());
+            match p {
+                "token-lists/ethereum.json" => String::new(),
+                "token-lists/robinhood.json" => "not json".to_string(),
+                "token-lists/bsc.json" => r#"{"name":"ST0x"}"#.to_string(),
+                "token-lists/hyperevm.json" => r#"{"tokens":{}}"#.to_string(),
+                _ => list_of(vec![]),
+            }
+        });
+        let paths: Vec<String> = networks
+            .iter()
+            .map(|n| format!("token-lists/{n}.json"))
+            .collect();
+        assert_eq!(*read.borrow(), paths);
+        assert_eq!(docs.len(), chains.len());
+        for (d, (n, p)) in docs.iter().zip(networks.iter().zip(&paths)) {
+            assert_eq!(d["network"], n.as_str());
+            assert_eq!(d["registryPath"], p.as_str());
+            assert_eq!(d["registryOrg"], "ST0x-Technology");
+            assert_eq!(d["registryRepo"], "st0x.registry");
+            assert_eq!(d["expectedState"], EXPECTED_STATE_PATH);
+        }
+        for (i, reason) in [
+            (0, "no readable registry list at token-lists/ethereum.json"),
+            (1, "token-lists/robinhood.json is not valid JSON"),
+            (2, "token-lists/bsc.json has no tokens array"),
+            (4, "token-lists/hyperevm.json has no tokens array"),
+        ] {
+            let d = &docs[i];
+            assert_eq!(d["unavailable"], true, "{}", networks[i]);
+            assert_eq!(d["reason"], reason);
+            for k in [
+                "governedCount",
+                "registryTokenCount",
+                "missingFromMigration",
+                "extraVaults",
+            ] {
+                assert!(d[k].is_null(), "{} carries {k}", networks[i]);
+            }
+        }
+        let base = &docs[3];
+        assert!(base["unavailable"].is_null());
+        assert!(base["reason"].is_null());
+        assert_eq!(base["registryTokenCount"], 0);
+        assert_eq!(
+            base["extraVaults"].as_array().unwrap().len(),
+            chains[3].tokens.len()
+        );
+    }
+
+    #[test]
+    fn a_governed_vault_missing_from_the_registry_is_an_extra_vault() {
+        let c = base();
+        let mut tokens: Vec<_> = c.tokens.iter().map(listed).collect();
+        tokens.remove(1);
+        let d = reconcile_one(&c, list_of(tokens));
+        assert_eq!(
+            d["extraVaults"],
+            json!([{ "symbol": c.tokens[1].symbol, "address": c.tokens[1].receipt_vault }])
+        );
+        assert_eq!(d["missingFromMigration"], json!([]));
+    }
+
+    #[test]
+    fn a_registry_token_whose_vault_is_not_governed_is_missing_from_migration() {
+        let c = base();
+        let mut tokens: Vec<_> = c.tokens.iter().map(listed).collect();
+        tokens.insert(
+            2,
+            json!({
+                "symbol": "wtXYZ",
+                "name": "XYZ ST0x",
+                "address": WRAPPED,
+                "extensions": { "unwrappedAddress": OTHER },
+            }),
+        );
+        let d = reconcile_one(&c, list_of(tokens));
+        assert_eq!(
+            d["missingFromMigration"],
+            json!([{
+                "symbol": "wtXYZ",
+                "name": "XYZ ST0x",
+                "address": WRAPPED,
+                "receiptVault": OTHER,
+                "wrapped": true,
+                "reason": "receipt vault not in expected-state",
+            }])
+        );
+        assert_eq!(d["extraVaults"], json!([]));
+    }
+
+    #[test]
+    fn an_empty_unwrapped_address_is_collateral() {
+        let c = base();
+        let mut tokens: Vec<_> = c.tokens.iter().map(listed).collect();
+        tokens.push(json!({
+            "symbol": "USDC",
+            "name": "USD Coin",
+            "address": COLLATERAL,
+            "extensions": { "unwrappedAddress": "" },
+        }));
+        let d = reconcile_one(&c, list_of(tokens));
+        assert_eq!(
+            d["missingFromMigration"],
+            json!([{
+                "symbol": "USDC",
+                "name": "USD Coin",
+                "address": COLLATERAL,
+                "receiptVault": null,
+                "wrapped": false,
+                "reason": "no receipt vault (collateral)",
+            }])
+        );
+        assert_eq!(d["extraVaults"], json!([]));
+    }
+
+    #[test]
+    fn registry_vaults_match_governed_vaults_case_insensitively() {
+        let c = base();
+        assert!(c
+            .tokens
+            .iter()
+            .all(|t| t.receipt_vault[2..] != t.receipt_vault[2..].to_lowercase()
+                && t.receipt_vault[2..] != t.receipt_vault[2..].to_uppercase()));
+        let cases: [fn(&str) -> String; 2] = [
+            |a| format!("0x{}", a[2..].to_uppercase()),
+            |a| a.to_lowercase(),
+        ];
+        for case in cases {
+            let tokens = c
+                .tokens
+                .iter()
+                .map(|t| {
+                    let mut e = listed(t);
+                    e["extensions"]["unwrappedAddress"] = json!(case(&t.receipt_vault));
+                    e
+                })
+                .collect();
+            let d = reconcile_one(&c, list_of(tokens));
+            assert_eq!(d["missingFromMigration"], json!([]));
+            assert_eq!(d["extraVaults"], json!([]));
+        }
+    }
+
+    #[test]
+    fn counts_are_governed_vaults_and_every_registry_token() {
+        let c = base();
+        let n = c.tokens.len();
+        assert!(n > 5);
+        let mut tokens: Vec<_> = c.tokens.iter().skip(2).map(listed).collect();
+        tokens.push(json!({ "symbol": "wtXYZ", "address": WRAPPED, "extensions": { "unwrappedAddress": OTHER } }));
+        tokens.push(json!({ "symbol": "USDC", "address": COLLATERAL, "extensions": { "unwrappedAddress": "" } }));
+        tokens.push(json!({ "symbol": "WETH", "address": OTHER, "extensions": { "unwrappedAddress": "" } }));
+        let d = reconcile_one(&c, list_of(tokens));
+        assert_eq!(d["network"], "base");
+        assert_eq!(d["registryPath"], "token-lists/base.json");
+        assert!(d["unavailable"].is_null());
+        assert_eq!(d["governedCount"], n);
+        assert_eq!(d["registryTokenCount"], n + 1);
+        assert_eq!(
+            d["missingFromMigration"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|m| m["symbol"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            ["wtXYZ", "USDC", "WETH"]
+        );
+        assert_eq!(
+            d["extraVaults"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .map(|v| v["symbol"].as_str().unwrap())
+                .collect::<Vec<_>>(),
+            [c.tokens[0].symbol.as_str(), c.tokens[1].symbol.as_str()]
+        );
+    }
 }
