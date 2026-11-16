@@ -3513,6 +3513,45 @@ mod tests {
     use super::*;
     use std::collections::HashMap;
 
+    // ---- per_chain ----
+
+    /// An unreadable expected-state is one unavailable entry carrying its error.
+    #[test]
+    fn per_chain_reports_an_unreadable_expected_state_with_its_error() {
+        let err: Result<Vec<String>, _> = Err(expected::ExpectedError::NoChains);
+        let got = per_chain(&err, |c| c.as_str(), |_, _| json!("read"));
+        assert_eq!(
+            got,
+            [json!({
+                "network": null,
+                "rpcHost": null,
+                "unavailable": true,
+                "reason": "expected-state.json lists no chains",
+            })]
+        );
+    }
+
+    /// A chain this scanner has no RPC endpoints for is reported by name, in order, never dropped.
+    #[test]
+    fn per_chain_reports_a_chain_without_rpc_endpoints_by_name() {
+        let chains: Result<Vec<String>, expected::ExpectedError> =
+            Ok(vec!["base".into(), "nochain".into(), "ethereum".into()]);
+        let got = per_chain(&chains, |c| c.as_str(), |c, _| json!({ "read": c }));
+        assert_eq!(
+            got,
+            [
+                json!({ "read": "base" }),
+                json!({
+                    "network": "nochain",
+                    "rpcHost": null,
+                    "unavailable": true,
+                    "reason": "this scanner has no RPC endpoints for this chain",
+                }),
+                json!({ "read": "ethereum" }),
+            ]
+        );
+    }
+
     // ---- batch failover ----
 
     const REFUSED: &[u8] =
