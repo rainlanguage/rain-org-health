@@ -1224,6 +1224,27 @@ mod tests {
         assert_eq!(rec.namespace, NS_A);
     }
 
+    /// The migration id matches in any case and the record keeps the id as asked.
+    #[test]
+    fn locate_matches_the_migration_id_ignoring_case() {
+        let mut f = fixture();
+        let upper = format!("0x{}", ID_2[2..].to_uppercase().replace('2', "A"));
+        let lower = upper.to_lowercase();
+        f["migrations"]
+            .as_array_mut()
+            .unwrap()
+            .iter_mut()
+            .for_each(|m| {
+                if m["id"] == ID_2 {
+                    m["id"] = json!(upper);
+                }
+            });
+        let (_, rec) = locate(&f.to_string(), "sevenchain", &lower).unwrap();
+        assert_eq!(rec.writer, SAFE_X);
+        assert_eq!(rec.namespace, NS_B);
+        assert_eq!(rec.id, lower);
+    }
+
     /// Off the chain, the writer is the migration's namespace line there, never
     /// another namespace's.
     #[test]

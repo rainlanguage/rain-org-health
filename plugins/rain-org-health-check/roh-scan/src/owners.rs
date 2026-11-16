@@ -1370,6 +1370,7 @@ mod tests {
             SAFE_FACTS.map(|f| (f.to_string(), "match".to_string()))
         );
         let facts = doc["facts"].as_array().unwrap();
+        assert_eq!(facts[0]["expected"], json!(exp_safe().owners));
         assert_eq!(facts[1]["expected"], 3);
         assert_eq!(facts[1]["live"], 3);
         assert_eq!(
@@ -2019,7 +2020,7 @@ mod tests {
                 overrides: OVERRIDES,
             };
             let v = build_owners("o", "r", &src, Ok(chains.as_slice()), None);
-            let got: Vec<(&str, &str, &str, &str)> = group_entries(&v, "safe")
+            let got: Vec<(&str, &str, &str, &str, &str)> = group_entries(&v, "safe")
                 .iter()
                 .map(|e| {
                     (
@@ -2027,10 +2028,11 @@ mod tests {
                         e["network"].as_str().unwrap(),
                         e["address"].as_str().unwrap(),
                         e["status"].as_str().unwrap(),
+                        e["note"].as_str().unwrap(),
                     )
                 })
                 .collect();
-            let want: Vec<(&str, &str, &str, &str)> = chains
+            let want: Vec<(&str, &str, &str, &str, &str)> = chains
                 .iter()
                 .map(|c| {
                     (
@@ -2038,6 +2040,11 @@ mod tests {
                         c.network.as_str(),
                         c.safe.address.as_str(),
                         "active",
+                        if c.network == "base" {
+                            "authoriser admin"
+                        } else {
+                            "same policy, per-chain address"
+                        },
                     )
                 })
                 .collect();
