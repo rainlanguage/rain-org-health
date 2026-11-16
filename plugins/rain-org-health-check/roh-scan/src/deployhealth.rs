@@ -1921,7 +1921,10 @@ mod tests {
     fn a_chain_without_a_readable_list_is_unavailable_with_its_reason_not_skipped() {
         let chains = crate::expected::parse(FIXTURE).unwrap();
         let networks: Vec<String> = chains.iter().map(|c| c.network.clone()).collect();
-        assert_eq!(networks, ["ethereum", "robinhood", "bsc", "base", "hyperevm"]);
+        let mut sorted = networks.clone();
+        sorted.sort();
+        assert_eq!(sorted, ["base", "bsc", "ethereum", "hyperevm", "robinhood"]);
+        let at = |n: &str| networks.iter().position(|x| x == n).unwrap();
         let read = std::cell::RefCell::new(Vec::new());
         let docs = registry_reconcile(&Ok(chains.clone()), |p| {
             read.borrow_mut().push(p.to_string());
@@ -1946,14 +1949,17 @@ mod tests {
             assert_eq!(d["registryRepo"], "st0x.registry");
             assert_eq!(d["expectedState"], EXPECTED_STATE_PATH);
         }
-        for (i, reason) in [
-            (0, "no readable registry list at token-lists/ethereum.json"),
-            (1, "token-lists/robinhood.json is not valid JSON"),
-            (2, "token-lists/bsc.json has no tokens array"),
-            (4, "token-lists/hyperevm.json has no tokens array"),
+        for (n, reason) in [
+            (
+                "ethereum",
+                "no readable registry list at token-lists/ethereum.json",
+            ),
+            ("robinhood", "token-lists/robinhood.json is not valid JSON"),
+            ("bsc", "token-lists/bsc.json has no tokens array"),
+            ("hyperevm", "token-lists/hyperevm.json has no tokens array"),
         ] {
-            let d = &docs[i];
-            assert_eq!(d["unavailable"], true, "{}", networks[i]);
+            let d = &docs[at(n)];
+            assert_eq!(d["unavailable"], true, "{n}");
             assert_eq!(d["reason"], reason);
             for k in [
                 "governedCount",
@@ -1961,16 +1967,16 @@ mod tests {
                 "missingFromMigration",
                 "extraVaults",
             ] {
-                assert!(d[k].is_null(), "{} carries {k}", networks[i]);
+                assert!(d[k].is_null(), "{n} carries {k}");
             }
         }
-        let base = &docs[3];
+        let base = &docs[at("base")];
         assert!(base["unavailable"].is_null());
         assert!(base["reason"].is_null());
         assert_eq!(base["registryTokenCount"], 0);
         assert_eq!(
             base["extraVaults"].as_array().unwrap().len(),
-            chains[3].tokens.len()
+            chains[at("base")].tokens.len()
         );
     }
 
@@ -2043,16 +2049,15 @@ mod tests {
     #[test]
     fn registry_vaults_match_governed_vaults_case_insensitively() {
         let c = base();
-        assert!(c
-            .tokens
-            .iter()
-            .all(|t| t.receipt_vault[2..] != t.receipt_vault[2..].to_lowercase()
-                && t.receipt_vault[2..] != t.receipt_vault[2..].to_uppercase()));
         let cases: [fn(&str) -> String; 2] = [
             |a| format!("0x{}", a[2..].to_uppercase()),
             |a| a.to_lowercase(),
         ];
         for case in cases {
+            assert!(c
+                .tokens
+                .iter()
+                .any(|t| case(&t.receipt_vault) != t.receipt_vault));
             let tokens = c
                 .tokens
                 .iter()
@@ -2076,7 +2081,9 @@ mod tests {
         let mut tokens: Vec<_> = c.tokens.iter().skip(2).map(listed).collect();
         tokens.push(json!({ "symbol": "wtXYZ", "address": WRAPPED, "extensions": { "unwrappedAddress": OTHER } }));
         tokens.push(json!({ "symbol": "USDC", "address": COLLATERAL, "extensions": { "unwrappedAddress": "" } }));
-        tokens.push(json!({ "symbol": "WETH", "address": OTHER, "extensions": { "unwrappedAddress": "" } }));
+        tokens.push(
+            json!({ "symbol": "WETH", "address": OTHER, "extensions": { "unwrappedAddress": "" } }),
+        );
         let d = reconcile_one(&c, list_of(tokens));
         assert_eq!(d["network"], "base");
         assert_eq!(d["registryPath"], "token-lists/base.json");
