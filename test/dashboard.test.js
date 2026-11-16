@@ -7984,6 +7984,98 @@ Deno.test("deployments: infra rows show live beside expected and flag drift and 
   );
 });
 
+Deno.test("deployments: an error beacon or fact row renders like drift, with its reason", () => {
+  const REASON = "expected-state.json renameMigration " +
+    "0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2 " +
+    "is not in migrations.json for base";
+  const IMPL = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const RV = "0x5e4d55a5b5e3b7d1c0f1a2b3c4d5e6f708090a0b";
+  const beacon = (name, ownerLabel, status, reason) => ({
+    name,
+    owner: ownerLabel === "safe" ? EXP_SAFE : EXP_TIMELOCK,
+    ownerLabel,
+    implementation: IMPL,
+    implVersion: "unknown",
+    targetImpl: null,
+    targetOwner: EXP_TIMELOCK,
+    atTarget: null,
+    status,
+    reason,
+  });
+  const box = deploymentsBox({
+    deploymentOwners: null,
+    deploymentHealth: null,
+    deploymentBeacons: {
+      network: "base",
+      timelockOwner: EXP_TIMELOCK,
+      source: "expected-state.json",
+      total: 2,
+      healthy: 0,
+      beacons: [
+        beacon("Receipt beacon", "timelock", "error", REASON),
+        beacon("Vault beacon", "safe", "drift", null),
+      ],
+    },
+    deploymentCodeTokens: [
+      factsDoc("base", [
+        {
+          ...factRow(
+            "token tMSTR",
+            "receiptVault name",
+            RV,
+            null,
+            "MicroStrategy ST0x",
+            "error",
+          ),
+          reason: REASON,
+        },
+        factRow("token tMSTR", "receiptVault symbol", RV, "tMSTR", "x", "drift"),
+      ]),
+    ],
+  });
+  const pairs = [
+    [rowByRole(box, "Receipt beacon"), rowByRole(box, "Vault beacon")],
+    [
+      rowByRole(box, "token tMSTR — receiptVault name"),
+      rowByRole(box, "token tMSTR — receiptVault symbol"),
+    ],
+  ];
+  for (const [error, drift] of pairs) {
+    assert(error && drift, textOf(box));
+    const role = collect(error, "own-role")[0].textContent;
+    assert(error.className === "own-row hlth-error", error.className);
+    assert(
+      statusChip(error).textContent === "error",
+      role + ": " + statusChip(error).textContent,
+    );
+    assert(
+      statusChip(error).className === statusChip(drift).className &&
+        statusChip(drift).className === "own-chip own-chip-no",
+      role + ": " + statusChip(error).className,
+    );
+    assert(
+      deployStyle(error, "background") === deployStyle(drift, "background") &&
+        deployStyle(drift, "background") === "var(--debt-bg)",
+      role + ": " + deployStyle(error, "background"),
+    );
+    const detail = collect(error, "bcn-detail")[0];
+    const notes = collect(detail, "own-note").map((n) => n.textContent);
+    assert(
+      notes.length === 1 && notes[0] === REASON,
+      role + ": " + notes.join(" | "),
+    );
+    assert(
+      collect(collect(drift, "bcn-detail")[0], "own-note").length === 0,
+      role + ": a row with no reason shows none",
+    );
+  }
+  assert(
+    factLines(pairs[1][0]).live === "MicroStrategy ST0x" &&
+      factLines(pairs[1][0]).expected === "—",
+    JSON.stringify(factLines(pairs[1][0])),
+  );
+});
+
 Deno.test("deployments: every chain in the infra list gets its own section and verdict", () => {
   const box = deploymentsBox({
     deploymentOwners: OWNERS.deploymentOwners,
