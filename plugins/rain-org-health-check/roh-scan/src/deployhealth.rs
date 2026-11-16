@@ -175,9 +175,10 @@ pub struct BeaconOwners<'a> {
 /// - impl is labelled `expected` at the expected implementation, `V1` at the
 ///   pre-Zoltu impl, else `unknown`.
 /// - status: `healthy` when owned by the expected owner AND at the expected
-///   implementation; `drift` on any other owner; `behind` on the expected owner
-///   but another implementation; `unknown` when a live read failed; `error`
-///   when the target implementation could not be resolved.
+///   implementation; `drift` on any other read owner, whatever the
+///   implementation; else `error` when the target implementation could not be
+///   resolved; `unknown` when a live read failed; `behind` on another
+///   implementation.
 ///
 /// A Safe-owned beacon is drift: a beacon owner can repoint every production
 /// proxy in one transaction, so a beacon on the Safe bypasses the timelock delay.
@@ -212,12 +213,12 @@ pub fn beacon_health(
         Some(l) if is_const(l, v1_impl) => "V1",
         Some(_) => "unknown",
     };
-    let status = if reason.is_some() {
+    let status = if live_owner.is_some() && owner_label != "timelock" {
+        "drift"
+    } else if reason.is_some() {
         "error"
     } else if live_owner.is_none() || at_target.is_none() {
         "unknown"
-    } else if owner_label != "timelock" {
-        "drift"
     } else if at_target != Some(true) {
         "behind"
     } else {
