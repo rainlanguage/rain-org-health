@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-17T04:35:43Z",
+  "generatedAt": "2026-11-17T13:13:05Z",
   "auditGraph": {
     "nodes": [
       {
@@ -488,23 +488,7 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.25",
-            "latest": "0.1.33"
-          },
-          {
-            "repo": "rain.factory",
-            "pinned": "0.2.5",
-            "latest": "0.2.14"
-          },
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.30",
-            "latest": "0.2.36"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.verify.interface",
@@ -739,73 +723,7 @@
           "rainlang",
           "rainlang.deploy"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.30",
-            "latest": "0.1.33"
-          },
-          {
-            "repo": "rain.extrospection",
-            "pinned": "0.1.16",
-            "latest": "0.1.19"
-          },
-          {
-            "repo": "rain.extrospection.deploy",
-            "pinned": "0.1.2",
-            "latest": "0.1.3"
-          },
-          {
-            "repo": "rain.factory",
-            "pinned": "0.2.11",
-            "latest": "0.2.14"
-          },
-          {
-            "repo": "rain.factory.deploy",
-            "pinned": "0.2.8",
-            "latest": "0.2.11"
-          },
-          {
-            "repo": "rain.lib.leakybucket",
-            "pinned": "0.5.3",
-            "latest": "0.5.4"
-          },
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.3.11",
-            "latest": "0.3.12"
-          },
-          {
-            "repo": "rain.math.float.deploy",
-            "pinned": "0.1.9",
-            "latest": "0.1.10"
-          },
-          {
-            "repo": "rain.metadata",
-            "pinned": "0.1.45",
-            "latest": "0.1.46"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals",
-            "pinned": "0.1.4",
-            "latest": "0.1.5"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals.deploy",
-            "pinned": "0.1.4",
-            "latest": "0.1.6"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.2.20",
-            "latest": "0.2.22"
-          },
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.32",
-            "latest": "0.2.36"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.math.binary",
@@ -1570,15 +1488,15 @@
       {
         "from": "rain.verify",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.25",
+        "stale": false,
+        "pinned": "0.1.33",
         "latest": "0.1.33"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.2.5",
+        "stale": false,
+        "pinned": "0.2.14",
         "latest": "0.2.14"
       },
       {
@@ -1598,8 +1516,8 @@
       {
         "from": "rain.verify",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.30",
+        "stale": false,
+        "pinned": "0.2.36",
         "latest": "0.2.36"
       },
       {
@@ -1864,36 +1782,36 @@
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.30",
+        "stale": false,
+        "pinned": "0.1.33",
         "latest": "0.1.33"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection",
-        "stale": true,
-        "pinned": "0.1.16",
+        "stale": false,
+        "pinned": "0.1.19",
         "latest": "0.1.19"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection.deploy",
-        "stale": true,
-        "pinned": "0.1.2",
+        "stale": false,
+        "pinned": "0.1.3",
         "latest": "0.1.3"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
-        "stale": true,
-        "pinned": "0.2.11",
+        "stale": false,
+        "pinned": "0.2.14",
         "latest": "0.2.14"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.factory.deploy",
-        "stale": true,
-        "pinned": "0.2.8",
+        "stale": false,
+        "pinned": "0.2.11",
         "latest": "0.2.11"
       },
       {
@@ -1906,8 +1824,8 @@
       {
         "from": "st0x.deploy",
         "to": "rain.lib.leakybucket",
-        "stale": true,
-        "pinned": "0.5.3",
+        "stale": false,
+        "pinned": "0.5.4",
         "latest": "0.5.4"
       },
       {
@@ -1920,22 +1838,22 @@
       {
         "from": "st0x.deploy",
         "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.3.11",
+        "stale": false,
+        "pinned": "0.3.12",
         "latest": "0.3.12"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.math.float.deploy",
-        "stale": true,
-        "pinned": "0.1.9",
+        "stale": false,
+        "pinned": "0.1.10",
         "latest": "0.1.10"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.metadata",
-        "stale": true,
-        "pinned": "0.1.45",
+        "stale": false,
+        "pinned": "0.1.46",
         "latest": "0.1.46"
       },
       {
@@ -1948,22 +1866,22 @@
       {
         "from": "st0x.deploy",
         "to": "rain.tofu.erc20-decimals",
-        "stale": true,
-        "pinned": "0.1.4",
+        "stale": false,
+        "pinned": "0.1.5",
         "latest": "0.1.5"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.tofu.erc20-decimals.deploy",
-        "stale": true,
-        "pinned": "0.1.4",
+        "stale": false,
+        "pinned": "0.1.6",
         "latest": "0.1.6"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.2.20",
+        "stale": false,
+        "pinned": "0.2.22",
         "latest": "0.2.22"
       },
       {
@@ -1976,8 +1894,8 @@
       {
         "from": "st0x.deploy",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.32",
+        "stale": false,
+        "pinned": "0.2.36",
         "latest": "0.2.36"
       },
       {
@@ -2710,9 +2628,9 @@
         "target": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 2,
+        "granted": 3,
         "missing": 1,
-        "unknown": 1,
+        "unknown": 0,
         "total": 4,
         "state": "partial",
         "safeKept": [
@@ -2907,7 +2825,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -4108,7 +4026,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 58499235
+        "discoveredAtBlock": 58654404
       },
       {
         "network": "ethereum",
@@ -4665,7 +4583,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26432418
+        "discoveredAtBlock": 26434994
       },
       {
         "network": "bsc",
@@ -5534,7 +5452,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134056764
+        "discoveredAtBlock": 134125688
       },
       {
         "network": "hyperevm",
@@ -6075,7 +5993,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51477182
+        "discoveredAtBlock": 51508726
       },
       {
         "network": "robinhood",
@@ -6616,7 +6534,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 116313387
+        "discoveredAtBlock": 116603654
       }
     ]
   },
@@ -22563,8 +22481,8 @@
         {
           "name": "Orchestrator beacon",
           "address": "0xb9DCd744b0413Dff0EDC70A5B229c7aa03734613",
-          "owner": null,
-          "ownerLabel": "unknown",
+          "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "ownerLabel": "timelock",
           "implementation": "0x1c3a4d12f88bd39303bb8510c6c1fa8ad37a4b72",
           "implVersion": "unknown",
           "targetImpl": null,
@@ -48169,7 +48087,7 @@
       "rpcHost": "rpc.hyperliquid.xyz/evm",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 776,
+      "healthy": 722,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -50504,7 +50422,7 @@
           "field": "wrappedTokenVault name",
           "address": "0xC32C8166164E2cA18BB5fbf3E82CB776943d97FB",
           "expected": null,
-          "live": "Wrapped Space Exploration Technologies Corp. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -50544,48 +50462,48 @@
           "field": "receiptVault authoriser",
           "address": "0x659Ea9dd1C833fc76E5328E0E616d8b9D9836dc3",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSPCX",
           "field": "receiptVault beacon",
           "address": "0x659Ea9dd1C833fc76E5328E0E616d8b9D9836dc3",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSPCX",
           "field": "receiptVault codehash",
           "address": "0x659Ea9dd1C833fc76E5328E0E616d8b9D9836dc3",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSPCX",
           "field": "receipt manager",
           "address": "0x46dC08972b1d5D5876d244292c551dbbbC7d7e80",
           "expected": "0x659Ea9dd1C833fc76E5328E0E616d8b9D9836dc3",
-          "live": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSPCX",
           "field": "receipt beacon",
           "address": "0x46dC08972b1d5D5876d244292c551dbbbC7d7e80",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": "0xace121ae30d754536863a546f41b147be11202db",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSPCX",
           "field": "receipt codehash",
           "address": "0x46dC08972b1d5D5876d244292c551dbbbC7d7e80",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSPCX",
@@ -50664,16 +50582,16 @@
           "field": "receiptVault receipt",
           "address": "0x6240E93f1A08d43002e52b210cD49c54C813D780",
           "expected": "0x99Ffbf38E7c0D9C440BA629D0108E7d0E96cB710",
-          "live": "0x99ffbf38e7c0d9c440ba629d0108e7d0e96cb710",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCEG",
           "field": "receiptVault owner",
           "address": "0x6240E93f1A08d43002e52b210cD49c54C813D780",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCEG",
@@ -50912,7 +50830,7 @@
           "field": "wrappedTokenVault name",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
           "expected": null,
-          "live": "Wrapped Taiwan Semiconductor Manufacturing Company Limited ADR ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -50920,7 +50838,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
           "expected": null,
-          "live": "wtTSM",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -50928,8 +50846,8 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTSM",
@@ -50968,16 +50886,16 @@
           "field": "receiptVault codehash",
           "address": "0x7Ac659f601bEa2d9f490E0D0D8a68c4282fD9B21",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTSM",
           "field": "receipt manager",
           "address": "0x2Ce6A6B9E573ec0444C00103ACEee9dC23223621",
           "expected": "0x7Ac659f601bEa2d9f490E0D0D8a68c4282fD9B21",
-          "live": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTSM",
@@ -50992,39 +50910,39 @@
           "field": "receipt codehash",
           "address": "0x2Ce6A6B9E573ec0444C00103ACEee9dC23223621",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTSM",
           "field": "wrappedTokenVault asset",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
           "expected": "0x7Ac659f601bEa2d9f490E0D0D8a68c4282fD9B21",
-          "live": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTSM",
           "field": "wrappedTokenVault beacon",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTSM",
           "field": "wrappedTokenVault codehash",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receiptVault name",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "expected": null,
-          "live": "SK hynix Inc. ADR ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -51032,23 +50950,23 @@
           "field": "receiptVault symbol",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "expected": "tSKHY",
-          "live": "tSKHY",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receiptVault decimals",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "wrappedTokenVault name",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
           "expected": null,
-          "live": "Wrapped SK hynix Inc. ADR ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -51056,7 +50974,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
           "expected": null,
-          "live": "wtSKHY",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -51064,40 +50982,40 @@
           "field": "wrappedTokenVault decimals",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receiptVault receipt",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "expected": "0xd3150728FFDb338eFd9b07ae90A7D5e688bc3B20",
-          "live": "0xd3150728ffdb338efd9b07ae90a7d5e688bc3b20",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receiptVault owner",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receiptVault authoriser",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receiptVault beacon",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
@@ -51112,55 +51030,55 @@
           "field": "receipt manager",
           "address": "0xd3150728FFDb338eFd9b07ae90A7D5e688bc3B20",
           "expected": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
-          "live": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receipt beacon",
           "address": "0xd3150728FFDb338eFd9b07ae90A7D5e688bc3B20",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": "0xace121ae30d754536863a546f41b147be11202db",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "receipt codehash",
           "address": "0xd3150728FFDb338eFd9b07ae90A7D5e688bc3B20",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "wrappedTokenVault asset",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
           "expected": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
-          "live": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "wrappedTokenVault beacon",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSKHY",
           "field": "wrappedTokenVault codehash",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tASML",
           "field": "receiptVault name",
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
           "expected": null,
-          "live": "ASML Holding N.V. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -51168,16 +51086,16 @@
           "field": "receiptVault symbol",
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
           "expected": "tASML",
-          "live": "tASML",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tASML",
           "field": "receiptVault decimals",
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tASML",
@@ -51208,24 +51126,24 @@
           "field": "receiptVault receipt",
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
           "expected": "0x6AEBd84df448d2E25080590797075b399Ca43549",
-          "live": "0x6aebd84df448d2e25080590797075b399ca43549",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tASML",
           "field": "receiptVault owner",
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tASML",
           "field": "receiptVault authoriser",
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tASML",
@@ -52816,7 +52734,7 @@
           "field": "wrappedTokenVault name",
           "address": "0xc80730995D2C53114BAaFd2736E02f4E274D5B83",
           "expected": null,
-          "live": null,
+          "live": "Wrapped PIMCO Corporate & Income Opportunity Fund ST0x",
           "status": "unknown"
         },
         {
@@ -52888,16 +52806,16 @@
           "field": "receipt beacon",
           "address": "0x7b66449B3d7cD6569F1e235f6E4A664C24538EA8",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": null,
-          "status": "unknown"
+          "live": "0xace121ae30d754536863a546f41b147be11202db",
+          "status": "healthy"
         },
         {
           "component": "token tPTY",
           "field": "receipt codehash",
           "address": "0x7b66449B3d7cD6569F1e235f6E4A664C24538EA8",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tPTY",
@@ -53152,8 +53070,8 @@
           "field": "receipt manager",
           "address": "0x9e2C9bE59aEB0D9ea7bF070B37fc02AF8a5af239",
           "expected": "0xDA52106FC0D44096Fd500E096b9045FdAc1d27B9",
-          "live": null,
-          "status": "unknown"
+          "live": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
+          "status": "healthy"
         },
         {
           "component": "token tHOOD",
@@ -53360,7 +53278,7 @@
           "field": "wrappedTokenVault name",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
           "expected": null,
-          "live": null,
+          "live": "Wrapped Super Micro Computer, Inc. ST0x",
           "status": "unknown"
         },
         {
@@ -53368,7 +53286,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
           "expected": null,
-          "live": null,
+          "live": "wtSMCI",
           "status": "unknown"
         },
         {
@@ -53376,8 +53294,8 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
@@ -53392,87 +53310,87 @@
           "field": "receiptVault owner",
           "address": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": null,
-          "status": "unknown"
+          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "receiptVault authoriser",
           "address": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "receiptVault beacon",
           "address": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": null,
-          "status": "unknown"
+          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "receiptVault codehash",
           "address": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": null,
-          "status": "unknown"
+          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "receipt manager",
           "address": "0x1B5df34bD6397Ba7d9A365263692A006e7a2972a",
           "expected": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
-          "live": null,
-          "status": "unknown"
+          "live": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "receipt beacon",
           "address": "0x1B5df34bD6397Ba7d9A365263692A006e7a2972a",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": null,
-          "status": "unknown"
+          "live": "0xace121ae30d754536863a546f41b147be11202db",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "receipt codehash",
           "address": "0x1B5df34bD6397Ba7d9A365263692A006e7a2972a",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "wrappedTokenVault asset",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
           "expected": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
-          "live": null,
-          "status": "unknown"
+          "live": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "wrappedTokenVault beacon",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": null,
-          "status": "unknown"
+          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
+          "status": "healthy"
         },
         {
           "component": "token tSMCI",
           "field": "wrappedTokenVault codehash",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": null,
-          "status": "unknown"
+          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
           "field": "receiptVault name",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": null,
-          "live": null,
+          "live": "Alibaba Group Holding Limited ADR ST0x",
           "status": "unknown"
         },
         {
@@ -53480,16 +53398,16 @@
           "field": "receiptVault symbol",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "tBABA",
-          "live": null,
-          "status": "unknown"
+          "live": "tBABA",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
           "field": "receiptVault decimals",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
@@ -53520,40 +53438,40 @@
           "field": "receiptVault receipt",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "0xB7D42b94A8E51b098270ac92ceD23fDC8042FDB3",
-          "live": null,
-          "status": "unknown"
+          "live": "0xb7d42b94a8e51b098270ac92ced23fdc8042fdb3",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
           "field": "receiptVault owner",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": null,
-          "status": "unknown"
+          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
           "field": "receiptVault authoriser",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
           "field": "receiptVault beacon",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": null,
-          "status": "unknown"
+          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
           "field": "receiptVault codehash",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": null,
-          "status": "unknown"
+          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
@@ -53720,31 +53638,31 @@
           "field": "wrappedTokenVault asset",
           "address": "0x04eE4ED5FF6643eA955503f966012b684f479966",
           "expected": "0xf3875383506677BCdA6b9F12c48Ff7fE300970D7",
-          "live": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTQQQ",
           "field": "wrappedTokenVault beacon",
           "address": "0x04eE4ED5FF6643eA955503f966012b684f479966",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTQQQ",
           "field": "wrappedTokenVault codehash",
           "address": "0x04eE4ED5FF6643eA955503f966012b684f479966",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault name",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": null,
-          "live": "Franklin Limited Duration Income Trust ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -53752,23 +53670,23 @@
           "field": "receiptVault symbol",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "tFTF",
-          "live": "tFTF",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault decimals",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "wrappedTokenVault name",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": null,
-          "live": "Wrapped Franklin Limited Duration Income Trust ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -53776,7 +53694,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": null,
-          "live": "wtFTF",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -53784,103 +53702,103 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault receipt",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x05215bE061F61d341703a6b63AcFDFf396965425",
-          "live": "0x05215be061f61d341703a6b63acfdff396965425",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault owner",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault authoriser",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault beacon",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault codehash",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receipt manager",
           "address": "0x05215bE061F61d341703a6b63AcFDFf396965425",
           "expected": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
-          "live": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receipt beacon",
           "address": "0x05215bE061F61d341703a6b63AcFDFf396965425",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": "0xace121ae30d754536863a546f41b147be11202db",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "receipt codehash",
           "address": "0x05215bE061F61d341703a6b63AcFDFf396965425",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "wrappedTokenVault asset",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
-          "live": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "wrappedTokenVault beacon",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tFTF",
           "field": "wrappedTokenVault codehash",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCBRS",
           "field": "receiptVault name",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": null,
-          "live": "Cerebras Systems Inc. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -53888,16 +53806,16 @@
           "field": "receiptVault symbol",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "tCBRS",
-          "live": "tCBRS",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCBRS",
           "field": "receiptVault decimals",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCBRS",
@@ -53928,16 +53846,16 @@
           "field": "receiptVault receipt",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x8Ea1ba9Fc0CF7338B41DdDa5B778a9118274AEA8",
-          "live": "0x8ea1ba9fc0cf7338b41ddda5b778a9118274aea8",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCBRS",
           "field": "receiptVault owner",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCBRS",
@@ -54144,8 +54062,8 @@
           "field": "wrappedTokenVault codehash",
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": null,
-          "status": "unknown"
+          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
@@ -54176,7 +54094,7 @@
           "field": "wrappedTokenVault name",
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
           "expected": null,
-          "live": null,
+          "live": "Wrapped NIKE, Inc. ST0x",
           "status": "unknown"
         },
         {
@@ -54184,7 +54102,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
           "expected": null,
-          "live": null,
+          "live": "wtNKE",
           "status": "unknown"
         },
         {
@@ -54192,8 +54110,8 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
@@ -54208,8 +54126,8 @@
           "field": "receiptVault owner",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": null,
-          "status": "unknown"
+          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
@@ -54232,32 +54150,32 @@
           "field": "receiptVault codehash",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": null,
-          "status": "unknown"
+          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
           "field": "receipt manager",
           "address": "0x6884986776e2e221B7Cd5c566bBD9338051F24fB",
           "expected": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
-          "live": null,
-          "status": "unknown"
+          "live": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
           "field": "receipt beacon",
           "address": "0x6884986776e2e221B7Cd5c566bBD9338051F24fB",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": null,
-          "status": "unknown"
+          "live": "0xace121ae30d754536863a546f41b147be11202db",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
           "field": "receipt codehash",
           "address": "0x6884986776e2e221B7Cd5c566bBD9338051F24fB",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
@@ -54312,7 +54230,7 @@
           "field": "wrappedTokenVault name",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
           "expected": null,
-          "live": "Wrapped Grindr Inc. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54320,7 +54238,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
           "expected": null,
-          "live": "wtGRND",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54328,103 +54246,103 @@
           "field": "wrappedTokenVault decimals",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receiptVault receipt",
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
           "expected": "0x9765A993735a639191ea2AAd2ac92eb122Bd394c",
-          "live": "0x9765a993735a639191ea2aad2ac92eb122bd394c",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receiptVault owner",
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receiptVault authoriser",
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receiptVault beacon",
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receiptVault codehash",
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receipt manager",
           "address": "0x9765A993735a639191ea2AAd2ac92eb122Bd394c",
           "expected": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
-          "live": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receipt beacon",
           "address": "0x9765A993735a639191ea2AAd2ac92eb122Bd394c",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": "0xace121ae30d754536863a546f41b147be11202db",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "receipt codehash",
           "address": "0x9765A993735a639191ea2AAd2ac92eb122Bd394c",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "wrappedTokenVault asset",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
           "expected": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
-          "live": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "wrappedTokenVault beacon",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tGRND",
           "field": "wrappedTokenVault codehash",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receiptVault name",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": null,
-          "live": "Krispy Kreme, Inc. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54432,23 +54350,23 @@
           "field": "receiptVault symbol",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": "tDNUT",
-          "live": "tDNUT",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receiptVault decimals",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "wrappedTokenVault name",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "expected": null,
-          "live": "Wrapped Krispy Kreme, Inc. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54456,7 +54374,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "expected": null,
-          "live": "wtDNUT",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54464,103 +54382,103 @@
           "field": "wrappedTokenVault decimals",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receiptVault receipt",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": "0x0eE9d8bB4D7d035b5Dc33937573Cc03BDb419c6e",
-          "live": "0x0ee9d8bb4d7d035b5dc33937573cc03bdb419c6e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receiptVault owner",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receiptVault authoriser",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receiptVault beacon",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receiptVault codehash",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receipt manager",
           "address": "0x0eE9d8bB4D7d035b5Dc33937573Cc03BDb419c6e",
           "expected": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
-          "live": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receipt beacon",
           "address": "0x0eE9d8bB4D7d035b5Dc33937573Cc03BDb419c6e",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": "0xace121ae30d754536863a546f41b147be11202db",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "receipt codehash",
           "address": "0x0eE9d8bB4D7d035b5Dc33937573Cc03BDb419c6e",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "wrappedTokenVault asset",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "expected": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
-          "live": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "wrappedTokenVault beacon",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tDNUT",
           "field": "wrappedTokenVault codehash",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receiptVault name",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": null,
-          "live": "Playboy, Inc. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54568,23 +54486,23 @@
           "field": "receiptVault symbol",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": "tPLBY",
-          "live": "tPLBY",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receiptVault decimals",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "wrappedTokenVault name",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
           "expected": null,
-          "live": "Wrapped Playboy, Inc. ST0x",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54592,7 +54510,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
           "expected": null,
-          "live": "wtPLBY",
+          "live": null,
           "status": "unknown"
         },
         {
@@ -54600,96 +54518,96 @@
           "field": "wrappedTokenVault decimals",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receiptVault receipt",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": "0xea8AF911CE3582d8fB5d6F1cd4695Ba115d1BdCA",
-          "live": "0xea8af911ce3582d8fb5d6f1cd4695ba115d1bdca",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receiptVault owner",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receiptVault authoriser",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receiptVault beacon",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receiptVault codehash",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receipt manager",
           "address": "0xea8AF911CE3582d8fB5d6F1cd4695Ba115d1BdCA",
           "expected": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
-          "live": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receipt beacon",
           "address": "0xea8AF911CE3582d8fB5d6F1cd4695Ba115d1BdCA",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": "0xace121ae30d754536863a546f41b147be11202db",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "receipt codehash",
           "address": "0xea8AF911CE3582d8fB5d6F1cd4695Ba115d1BdCA",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "wrappedTokenVault asset",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
           "expected": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
-          "live": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "wrappedTokenVault beacon",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tPLBY",
           "field": "wrappedTokenVault codehash",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTR",
@@ -56216,7 +56134,7 @@
           "field": "wrappedTokenVault name",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": null,
-          "live": null,
+          "live": "Wrapped Technoprobe S.p.A. ST0x",
           "status": "unknown"
         },
         {
@@ -56224,7 +56142,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": null,
-          "live": null,
+          "live": "wtTPRO",
           "status": "unknown"
         },
         {
@@ -56232,96 +56150,96 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receiptVault receipt",
           "address": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
           "expected": "0xe26C011A6dcFd8286a3Cf47718F14299d33f9478",
-          "live": null,
-          "status": "unknown"
+          "live": "0xe26c011a6dcfd8286a3cf47718f14299d33f9478",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receiptVault owner",
           "address": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": null,
-          "status": "unknown"
+          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receiptVault authoriser",
           "address": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
           "expected": "0x8Fc06579571A105C5a699FA11d95b9c73747f8eb",
-          "live": null,
-          "status": "unknown"
+          "live": "0x8fc06579571a105c5a699fa11d95b9c73747f8eb",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receiptVault beacon",
           "address": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": null,
-          "status": "unknown"
+          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receiptVault codehash",
           "address": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": null,
-          "status": "unknown"
+          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receipt manager",
           "address": "0xe26C011A6dcFd8286a3Cf47718F14299d33f9478",
           "expected": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
-          "live": null,
-          "status": "unknown"
+          "live": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receipt beacon",
           "address": "0xe26C011A6dcFd8286a3Cf47718F14299d33f9478",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": null,
-          "status": "unknown"
+          "live": "0xace121ae30d754536863a546f41b147be11202db",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "receipt codehash",
           "address": "0xe26C011A6dcFd8286a3Cf47718F14299d33f9478",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "wrappedTokenVault asset",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
-          "live": null,
-          "status": "unknown"
+          "live": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "wrappedTokenVault beacon",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": null,
-          "status": "unknown"
+          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
           "field": "wrappedTokenVault codehash",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": null,
-          "status": "unknown"
+          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
+          "status": "healthy"
         }
       ]
     },
@@ -66716,7 +66634,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1213,
+      "fullSourceLoc": 1199,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -67352,7 +67270,7 @@
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": 191,
-      "commitsSinceAudit": 1510,
+      "commitsSinceAudit": 1523,
       "sourceDriftTruncated": true,
       "commentLocAddedSinceAudit": null,
       "commentLocRemovedSinceAudit": null,
