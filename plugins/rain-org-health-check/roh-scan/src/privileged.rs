@@ -116,6 +116,39 @@ pub fn parse(body: &str) -> Result<Vec<PrivilegedChain>, PrivilegedError> {
     Ok(out)
 }
 
+/// Every key holding a nonzero address, as `(key, lowercase address)`: the
+/// top-level keys, then those of each chain entry whose `network` is `network`.
+pub fn address_keys(body: &str, network: &str) -> Vec<(String, String)> {
+    let Ok(doc) = serde_json::from_str::<serde_json::Value>(body) else {
+        return Vec::new();
+    };
+    let mut out = Vec::new();
+    let mut take = |obj: &serde_json::Map<String, serde_json::Value>| {
+        for (k, v) in obj {
+            let vals: Vec<&serde_json::Value> = match v {
+                serde_json::Value::Array(a) => a.iter().collect(),
+                _ => vec![v],
+            };
+            for a in vals.into_iter().filter_map(serde_json::Value::as_str) {
+                if is_address(a) && !is_zero(a) {
+                    out.push((k.clone(), a.to_lowercase()));
+                }
+            }
+        }
+    };
+    if let Some(top) = doc.as_object() {
+        take(top);
+    }
+    if let Some(chains) = doc["chains"].as_object() {
+        for c in chains.values().filter(|c| c["network"].as_str() == Some(network)) {
+            if let Some(o) = c.as_object() {
+                take(o);
+            }
+        }
+    }
+    out
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
