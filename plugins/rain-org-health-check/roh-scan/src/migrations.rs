@@ -672,11 +672,21 @@ mod tests {
         let doc = render(&f.to_string(), &Registry::new(vec![]));
         assert_eq!(
             scripts(&doc, "tenchain"),
-            ["script/a.s.sol", "script/b.s.sol", "script/c.s.sol", "script/d.s.sol"]
+            [
+                "script/a.s.sol",
+                "script/b.s.sol",
+                "script/c.s.sol",
+                "script/d.s.sol"
+            ]
         );
         assert_eq!(
             scripts(&doc, "sevenchain"),
-            ["script/a.s.sol", "script/c.s.sol", "script/b.s.sol", "script/d.s.sol"]
+            [
+                "script/a.s.sol",
+                "script/c.s.sol",
+                "script/b.s.sol",
+                "script/d.s.sol"
+            ]
         );
         for n in ["tenchain", "sevenchain"] {
             assert_eq!(net(&doc, n)["lineOrder"], true, "{n}");
@@ -693,7 +703,9 @@ mod tests {
         assert_eq!(seven["lineOrder"], false);
         assert_eq!(
             seven["lineOrderReason"],
-            format!("the line forks at {ID_1}: script/three.s.sol, script/two.s.sol all go onto it")
+            format!(
+                "the line forks at {ID_1}: script/three.s.sol, script/two.s.sol all go onto it"
+            )
         );
         assert_eq!(
             scripts(&doc, "sevenchain"),
