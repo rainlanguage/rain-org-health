@@ -50,6 +50,20 @@ impl LineDrift {
     }
 }
 
+/// Lines added and removed going from `base` to `head`.
+pub fn line_diff(base: &str, head: &str) -> (u64, u64) {
+    let mut added = 0;
+    let mut removed = 0;
+    for change in TextDiff::from_lines(base, head).iter_all_changes() {
+        match change.tag() {
+            ChangeTag::Insert => added += 1,
+            ChangeTag::Delete => removed += 1,
+            ChangeTag::Equal => {}
+        }
+    }
+    (added, removed)
+}
+
 /// The byte range each comment occupies, via the Solidity lexer.
 /// `None` if the source could not be lexed at all.
 fn comment_spans(src: &str) -> Option<Vec<(usize, usize)>> {
@@ -268,5 +282,32 @@ contract C {
     fn identical_sources_have_no_drift() {
         let src = "contract C {\n    /// doc\n    uint256 x = 1;\n}";
         assert_eq!(file_drift(src, src).unwrap(), LineDrift::default());
+    }
+
+    // ---- line_diff ----
+
+    #[test]
+    fn line_diff_of_identical_text_is_zero() {
+        assert_eq!(line_diff("a\nb\nc\n", "a\nb\nc\n"), (0, 0));
+    }
+
+    #[test]
+    fn line_diff_counts_a_pure_insertion_as_added_only() {
+        assert_eq!(line_diff("a\nc\n", "a\nb\nc\n"), (1, 0));
+    }
+
+    #[test]
+    fn line_diff_counts_a_pure_deletion_as_removed_only() {
+        assert_eq!(line_diff("a\nb\nc\n", "a\nc\n"), (0, 1));
+    }
+
+    #[test]
+    fn line_diff_counts_a_modified_line_as_one_add_and_one_remove() {
+        assert_eq!(line_diff("a\nb\nc\n", "a\nB\nc\n"), (1, 1));
+    }
+
+    #[test]
+    fn line_diff_from_an_empty_base_adds_every_line() {
+        assert_eq!(line_diff("", "x\ny\nz\n"), (3, 0));
     }
 }

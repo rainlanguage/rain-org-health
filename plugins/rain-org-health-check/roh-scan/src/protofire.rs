@@ -310,17 +310,16 @@ pub fn source_drift_split(files: &[SourceVersions]) -> (crate::commentloc::LineD
     (total, fully_classified)
 }
 
-/// Count non-test Solidity files that differ between two git trees — the accurate
-/// drift-file count when a `compare` diff is TRUNCATED at GitHub's 300-file cap.
-/// A large repo whose `.sol` sorts past the cap otherwise reads as a false zero
-/// drift; the tree blob-sha diff sidesteps the cap and distinguishes a real zero
-/// (no `.sol` changed) from "the `.sol` files weren't in the truncated page".
-/// Each input is `(path, blob_sha)` for every blob in a recursive tree. A non-test
-/// `.sol` path counts when it is added, removed, or its blob sha changed. Line
-/// counts are NOT recoverable from trees, so this reports the file count only.
-pub fn changed_source_file_count(base: &[(String, String)], head: &[(String, String)]) -> u64 {
-    use std::collections::HashMap;
-    let src = |files: &[(String, String)]| -> HashMap<String, String> {
+/// Non-test Solidity files that differ between two git trees, as
+/// `(path, status)` with the compare API's `added`/`removed`/`modified` status.
+/// The tree blob-sha diff is not subject to the compare API's 300-file cap.
+/// Each input is `(path, blob_sha)` for every blob in a recursive tree.
+pub fn changed_source_files(
+    base: &[(String, String)],
+    head: &[(String, String)],
+) -> Vec<(String, String)> {
+    use std::collections::BTreeMap;
+    let src = |files: &[(String, String)]| -> BTreeMap<String, String> {
         files
             .iter()
             .filter(|(p, _)| counts_as_source_drift(p))
@@ -329,19 +328,40 @@ pub fn changed_source_file_count(base: &[(String, String)], head: &[(String, Str
     };
     let base_map = src(base);
     let head_map = src(head);
-    let mut changed = 0u64;
+    let mut changed = Vec::new();
     for (path, sha) in &head_map {
-        // Added (absent in base) or content-modified (blob sha differs).
-        if base_map.get(path) != Some(sha) {
-            changed += 1;
+        match base_map.get(path) {
+            None => changed.push((path.clone(), "added".to_string())),
+            Some(b) if b != sha => changed.push((path.clone(), "modified".to_string())),
+            Some(_) => {}
         }
     }
     for path in base_map.keys() {
         if !head_map.contains_key(path) {
-            changed += 1; // removed
+            changed.push((path.clone(), "removed".to_string()));
         }
     }
     changed
+}
+
+/// Fill each file's +/− from a line diff of its two versions and sum them.
+/// `None` when any version is missing: a partial sum would read as exact.
+pub fn line_diffed(files: Vec<SourceVersions>) -> Option<(u64, u64, Vec<SourceVersions>)> {
+    let files = files
+        .into_iter()
+        .map(|f| {
+            let (additions, deletions) =
+                crate::commentloc::line_diff(f.base.as_deref()?, f.head.as_deref()?);
+            Some(SourceVersions {
+                additions,
+                deletions,
+                ..f
+            })
+        })
+        .collect::<Option<Vec<_>>>()?;
+    let added = files.iter().map(|f| f.additions).sum();
+    let removed = files.iter().map(|f| f.deletions).sum();
+    Some((added, removed, files))
 }
 
 /// Index of the reference (newest) audit PDF, by the AUDITED commit/tag date
@@ -839,9 +859,9 @@ mod tests {
         assert_eq!(added + removed, 18);
     }
 
-    // ---- changed_source_file_count (tree diff) ----
+    // ---- changed_source_files (tree diff) ----
     #[test]
-    fn changed_source_file_count_counts_added_removed_modified_non_test_sol() {
+    fn changed_source_files_counts_added_removed_modified_non_test_sol() {
         let b = |p: &str, s: &str| (p.to_string(), s.to_string());
         let base = vec![
             b("src/Keep.sol", "aaa"),       // unchanged
@@ -864,11 +884,11 @@ mod tests {
         // Changed non-test .sol: Modify (mod), New (add), deploy/D (add),
         // Removed (del), Old (del from rename) = 5. Keep is unchanged; the test,
         // Rust, and README churn are all excluded on both sides.
-        assert_eq!(changed_source_file_count(&base, &head), 5);
+        assert_eq!(changed_source_files(&base, &head).len(), 5);
     }
 
     #[test]
-    fn changed_source_file_count_zero_when_only_non_sol_churn() {
+    fn changed_source_files_zero_when_only_non_sol_churn() {
         let b = |p: &str, s: &str| (p.to_string(), s.to_string());
         // A repo where only non-Solidity churned: a real, legitimate zero — the
         // count must be 0, NOT conflated with a truncated-compare unknown.
@@ -882,7 +902,85 @@ mod tests {
             b("docs/readme.md", "d2"),
             b("crates/a/src/l.rs", "r2"),
         ];
-        assert_eq!(changed_source_file_count(&base, &head), 0);
+        assert_eq!(changed_source_files(&base, &head).len(), 0);
+    }
+
+    #[test]
+    fn changed_source_files_reports_compare_style_status() {
+        let b = |p: &str, s: &str| (p.to_string(), s.to_string());
+        let base = vec![
+            b("src/Keep.sol", "k"),
+            b("src/Mod.sol", "m1"),
+            b("src/Gone.sol", "g"),
+            b("test/Mod.t.sol", "t1"),
+            b("test/Gone.sol", "tg"),
+        ];
+        let head = vec![
+            b("src/Keep.sol", "k"),
+            b("src/Mod.sol", "m2"),
+            b("src/New.sol", "n"),
+            b("test/Mod.t.sol", "t2"),
+            b("src/New.t.sol", "tn"),
+        ];
+        let mut got = changed_source_files(&base, &head);
+        got.sort();
+        assert_eq!(
+            got,
+            vec![
+                b("src/Gone.sol", "removed"),
+                b("src/Mod.sol", "modified"),
+                b("src/New.sol", "added"),
+            ]
+        );
+    }
+
+    // ---- line_diffed (per-pair line diff, summed) ----
+    #[test]
+    fn line_diffed_sums_per_pair_line_diffs() {
+        let files = vec![
+            // One line replaced, one appended: +2 −1.
+            sv("src/Mod.sol", Some("a\nb\nc\n"), Some("a\nB\nc\nd\n"), 0, 0),
+            // Added: every head line is an addition.
+            sv("src/New.sol", Some(""), Some("x\ny\nz\n"), 0, 0),
+            // Removed: every base line is a deletion.
+            sv("src/Gone.sol", Some("p\nq\n"), Some(""), 0, 0),
+        ];
+        let (added, removed, files) = line_diffed(files).expect("all versions present");
+        let per_file: Vec<_> = files
+            .iter()
+            .map(|f| (f.path.as_str(), f.additions, f.deletions))
+            .collect();
+        assert_eq!(
+            per_file,
+            vec![
+                ("src/Mod.sol", 2, 1),
+                ("src/New.sol", 3, 0),
+                ("src/Gone.sol", 0, 2)
+            ]
+        );
+        assert_eq!((added, removed), (5, 3));
+    }
+
+    #[test]
+    fn line_diffed_overwrites_stale_counts() {
+        let (added, removed, files) =
+            line_diffed(vec![sv("src/A.sol", Some("a\n"), Some("a\n"), 7, 9)]).unwrap();
+        assert_eq!((added, removed), (0, 0));
+        assert_eq!((files[0].additions, files[0].deletions), (0, 0));
+    }
+
+    #[test]
+    fn line_diffed_is_none_when_any_version_is_missing() {
+        let ok = sv("src/A.sol", Some("a\n"), Some("b\n"), 0, 0);
+        assert!(line_diffed(vec![ok.clone(), sv("src/B.sol", None, Some("x\n"), 0, 0)]).is_none());
+        assert!(line_diffed(vec![ok, sv("src/B.sol", Some("x\n"), None, 0, 0)]).is_none());
+    }
+
+    #[test]
+    fn line_diffed_of_nothing_is_zero() {
+        let (added, removed, files) = line_diffed(Vec::new()).unwrap();
+        assert_eq!((added, removed), (0, 0));
+        assert!(files.is_empty());
     }
 
     // ---- newest_pdf_index ----

@@ -31,7 +31,7 @@ mod untested;
 mod vaultdiscovery;
 use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
-    anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
+    anchor_ref, changed_source_files, classify_anchor, classify_external_audit,
     counts_as_source_drift, days_between, is_stale, newest_pdf_index, source_drift, AuditAnchor,
     AuditPdf, CompareFile,
 };
@@ -796,7 +796,8 @@ fn open_audit_issues(
 /// that ref, the object was not a text blob, GitHub truncated it, or the query
 /// itself failed. Callers charge unknowns to code, so no failure here can read
 /// as "unchanged".
-fn gh_blobs(
+fn gh_blobs<F: GhApi>(
+    gh: &F,
     org: &str,
     repo: &str,
     wants: &[blobs::Want],
@@ -804,7 +805,9 @@ fn gh_blobs(
     let mut out = std::collections::BTreeMap::new();
     for chunk in wants.chunks(blobs::BATCH) {
         let query = blobs::blob_query(org, repo, chunk);
-        let Some(raw) = gh_stdout(&["api", "graphql", "-f", &format!("query={query}")]) else {
+        let FetchOutcome::Found(raw) =
+            gh.api_jq(&["api", "graphql", "-f", &format!("query={query}")])
+        else {
             eprintln!(
                 "::warning::blob batch failed for {org}/{repo} ({} files); \
                  their drift is charged to code and reported unclassified",
@@ -831,7 +834,8 @@ fn gh_blobs(
 /// REMOVED has no head version; those are passed as an empty string rather than
 /// `None`, because absence there is a fact, not a failed lookup. Only a genuine
 /// fetch failure yields `None`, which the split charges to code.
-fn fetch_source_versions(
+fn fetch_source_versions<F: GhApi>(
+    gh: &F,
     org: &str,
     repo: &str,
     base: &str,
@@ -856,7 +860,7 @@ fn fetch_source_versions(
     }
     wants.sort();
     wants.dedup();
-    let fetched = gh_blobs(org, repo, &wants);
+    let fetched = gh_blobs(gh, org, repo, &wants);
 
     sources
         .into_iter()
@@ -891,7 +895,7 @@ fn fetch_last_mutation(org: &str, repo: &str) -> Option<mutation::LastMutation> 
     mutation::parse_mutation_scans(&src)
 }
 
-fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
+fn fetch_last_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> Option<LastAudit> {
     // Parse with no HEAD first: a scoped/malformed/absent stamp returns None here,
     // so the extra `commits/HEAD` API call is skipped in those cases (org scale).
     let runs = gh_file(org, repo, ".audit/runs.jsonl");
@@ -935,7 +939,7 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
             let (listed, compare_truncated) = audit::parse_compare_files(&v);
             // Non-source paths keep the old filename-only meaning (any change
             // outside `.audit/` counts); Solidity gets the comment-aware verdict.
-            let versions = fetch_source_versions(org, repo, &audit.audited_commit, h, &listed);
+            let versions = fetch_source_versions(gh, org, repo, &audit.audited_commit, h, &listed);
             let classified: Vec<(String, Option<commentloc::LineDrift>)> = listed
                 .iter()
                 .map(|(path, _, _, _)| {
@@ -1241,20 +1245,18 @@ fn fetch_tree_blobs<F: GhApi>(
     Some(blobs)
 }
 
-/// Accurate count of non-test `.sol` files changed `base…head` via two recursive
-/// tree reads (the blob-sha diff, not the 300-file-capped compare). `None` when
-/// either tree is unavailable or truncated — the caller then reports drift as
-/// indeterminate rather than a false zero.
-fn changed_sol_count<F: GhApi>(
+/// Non-test `.sol` files changed `base…head` with their status, via two recursive
+/// tree reads. `None` when either tree is unavailable or truncated.
+fn changed_sol_files<F: GhApi>(
     gh: &F,
     org: &str,
     repo: &str,
     base: &str,
     head: &str,
-) -> Option<u64> {
+) -> Option<Vec<(String, String)>> {
     let base_tree = fetch_tree_blobs(gh, org, repo, base)?;
     let head_tree = fetch_tree_blobs(gh, org, repo, head)?;
-    Some(changed_source_file_count(&base_tree, &head_tree))
+    Some(changed_source_files(&base_tree, &head_tree))
 }
 
 /// Sum non-test Solidity LOC under a directory tree (skips `.git`). The pure
@@ -1492,25 +1494,65 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         // Comment-vs-code split of the same drift, when the patches were available.
         line_split,
     ) = match &cmp {
-        // Compare truncated at GitHub's 300-file cap: its per-file +/− misses any
-        // `.sol` sorted beyond the cap (a false zero for large repos like raindex).
-        // Fall back to a tree blob-sha diff for an ACCURATE changed-`.sol` FILE
-        // count; line-level drift isn't recoverable from trees, so leave +/− unknown.
-        Some((base_date, _files, total, trunc)) if *trunc => (
-            base_date.clone(),
-            None,
-            None,
-            None,
-            changed_sol_count(gh, org, repo, &base, &default_branch),
-            Some(*total),
-            true,
-            None,
-        ),
+        // Compare truncated at GitHub's 300-file cap, which can't be paginated: the
+        // tree blob-sha diff gives the changed `.sol` set, and a line diff of both
+        // versions of each file gives exact +/−. Truncated when a tree or blob read fails.
+        Some((base_date, _files, total, trunc)) if *trunc => {
+            match changed_sol_files(gh, org, repo, &base, &default_branch) {
+                None => (
+                    base_date.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(*total),
+                    true,
+                    None,
+                ),
+                Some(changed) => {
+                    let n = changed.len() as u64;
+                    let versions = fetch_source_versions(
+                        gh,
+                        org,
+                        repo,
+                        &base,
+                        &default_branch,
+                        &changed
+                            .into_iter()
+                            .map(|(path, status)| (path, status, 0, 0))
+                            .collect::<Vec<_>>(),
+                    );
+                    match protofire::line_diffed(versions) {
+                        Some((added, removed, versions)) => (
+                            base_date.clone(),
+                            Some(added + removed),
+                            Some(added),
+                            Some(removed),
+                            Some(n),
+                            Some(*total),
+                            false,
+                            Some(protofire::source_drift_split(&versions)),
+                        ),
+                        None => (
+                            base_date.clone(),
+                            None,
+                            None,
+                            None,
+                            Some(n),
+                            Some(*total),
+                            true,
+                            None,
+                        ),
+                    }
+                }
+            }
+        }
         Some((base_date, files, total, _)) => {
             let (added, removed, n) = source_drift(files);
             // Lexing both versions of each changed .sol is what makes the
             // comment/code split possible; a diff hunk cannot answer it.
             let versions = fetch_source_versions(
+                gh,
                 org,
                 repo,
                 &base,
@@ -2392,7 +2434,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // already retrieves, so this gate adds no extra request (#54).
         let has_foundry = !inputs.foundry.trim().is_empty();
         let mut signals = detect_signals(&inputs);
-        let last_audit = fetch_last_audit(org, repo);
+        let last_audit = fetch_last_audit(&gh, org, repo);
         let last_mutation = fetch_last_mutation(org, repo);
         let protofire = fetch_protofire_audit(&gh, org, repo);
         // ONE shallow clone per Foundry repo feeds both clone-based facts:
@@ -4261,10 +4303,10 @@ mod tests {
         FetchOutcome::Found(json!({"truncated": truncated, "tree": tree}).to_string())
     }
 
-    // ---- tree-diff drift fallback: changed_sol_count / fetch_tree_blobs ----
+    // ---- tree-diff drift fallback: changed_sol_files / fetch_tree_blobs ----
 
     #[test]
-    fn changed_sol_count_diffs_trees_accurately() {
+    fn changed_sol_files_diffs_trees_accurately() {
         // Mod.sol modified, New.sol added, Gone.sol removed → 3 changed non-test
         // .sol. Keep.sol is unchanged; the test-file and .rs churn are excluded.
         let base = tree_json(
@@ -4288,20 +4330,151 @@ mod tests {
             false,
         );
         let gh = FakeGh::new(vec![("git/trees/base", base), ("git/trees/head", head)]);
-        assert_eq!(changed_sol_count(&gh, "o", "r", "base", "head"), Some(3));
+        assert_eq!(
+            changed_sol_files(&gh, "o", "r", "base", "head").map(|f| f.len()),
+            Some(3)
+        );
     }
 
     #[test]
-    fn changed_sol_count_is_none_when_a_tree_is_truncated_or_failed() {
+    fn changed_sol_files_is_none_when_a_tree_is_truncated_or_failed() {
         // A truncated tree can't give a reliable diff → None (never a false 0).
         let gh = FakeGh::new(vec![
             ("git/trees/base", tree_json(&[("src/A.sol", "a")], true)),
             ("git/trees/head", tree_json(&[("src/A.sol", "b")], false)),
         ]);
-        assert_eq!(changed_sol_count(&gh, "o", "r", "base", "head"), None);
+        assert_eq!(changed_sol_files(&gh, "o", "r", "base", "head"), None);
         // A failed fetch is likewise indeterminate, not zero.
         let gh2 = FakeGh::new(vec![("git/trees/base", FetchOutcome::Failed)]);
-        assert_eq!(changed_sol_count(&gh2, "o", "r", "base", "head"), None);
+        assert_eq!(changed_sol_files(&gh2, "o", "r", "base", "head"), None);
+    }
+
+    // ---- truncated compare: drift from tree diff + blob line diff ----
+
+    const MOD_BASE: &str = "pragma solidity ^0.8.25;\ncontract Mod {\n    uint256 a = 1;\n}\n";
+    const MOD_HEAD: &str =
+        "pragma solidity ^0.8.25;\ncontract Mod {\n    uint256 a = 2;\n    uint256 b = 3;\n}\n";
+    const NEW_HEAD: &str = "pragma solidity ^0.8.25;\ncontract New {}\n";
+    const GONE_BASE: &str = "pragma solidity ^0.8.25;\ncontract Gone {}\n";
+
+    /// Aliases follow the scanner's sorted want order; `None` answers null.
+    fn blob_response(blobs: &[(&str, &str, Option<&str>)]) -> FetchOutcome {
+        let mut sorted = blobs.to_vec();
+        sorted.sort_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
+        let mut repo = serde_json::Map::new();
+        let mut errors = Vec::new();
+        for (i, (git_ref, path, body)) in sorted.iter().enumerate() {
+            match body {
+                Some(text) => {
+                    repo.insert(format!("b{i}"), json!({"text": text, "isTruncated": false}));
+                }
+                None => {
+                    repo.insert(format!("b{i}"), serde_json::Value::Null);
+                    errors.push(json!({"message": format!("could not resolve {git_ref}:{path}")}));
+                }
+            }
+        }
+        let mut body = json!({"data": {"repository": repo}});
+        if !errors.is_empty() {
+            body["errors"] = serde_json::Value::from(errors);
+        }
+        FetchOutcome::Found(body.to_string())
+    }
+
+    /// Compare counts are huge so using them instead of the line diff shows.
+    fn truncated_compare_gh(blobs: FetchOutcome) -> FakeGh {
+        let files: Vec<serde_json::Value> = (0..audit::COMPARE_FILE_CAP)
+            .map(|i| {
+                json!({
+                    "filename": format!("src/F{i}.sol"),
+                    "status": "modified",
+                    "additions": 1000,
+                    "deletions": 1000,
+                })
+            })
+            .collect();
+        let compare = json!({
+            "base_commit": {"commit": {"committer": {"date": "2026-01-01T00:00:00Z"}}},
+            "total_commits": 42,
+            "files": files,
+        });
+        let base_tree = tree_json(
+            &[
+                ("src/Keep.sol", "k"),
+                ("src/Mod.sol", "m1"),
+                ("src/Gone.sol", "g"),
+                ("test/T.t.sol", "t1"),
+            ],
+            false,
+        );
+        let head_tree = tree_json(
+            &[
+                ("src/Keep.sol", "k"),
+                ("src/Mod.sol", "m2"),
+                ("src/New.sol", "n"),
+                ("test/T.t.sol", "t2"),
+            ],
+            false,
+        );
+        FakeGh::new(vec![
+            (
+                "contents/audit/protofire",
+                pdf_row("rain.example.v1.2.3.jun-2026.pdf"),
+            ),
+            (
+                "commits/v1.2.3",
+                FetchOutcome::Found("2026-01-01T00:00:00Z".into()),
+            ),
+            (
+                "defaultBranchRef",
+                FetchOutcome::Found("main\tv1.2.4\t2026-06-01T00:00:00Z".into()),
+            ),
+            (
+                "compare/v1.2.3...main",
+                FetchOutcome::Found(compare.to_string()),
+            ),
+            ("git/trees/v1.2.3", base_tree),
+            ("git/trees/main", head_tree),
+            ("object(expression", blobs),
+        ])
+    }
+
+    #[test]
+    fn truncated_compare_gives_exact_loc_from_the_blob_line_diff() {
+        let gh = truncated_compare_gh(blob_response(&[
+            ("v1.2.3", "src/Mod.sol", Some(MOD_BASE)),
+            ("main", "src/Mod.sol", Some(MOD_HEAD)),
+            ("main", "src/New.sol", Some(NEW_HEAD)),
+            ("v1.2.3", "src/Gone.sol", Some(GONE_BASE)),
+        ]));
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        // Mod.sol: `a = 1` -> `a = 2` plus `b = 3` is +2 -1; New.sol is +2;
+        // Gone.sol is -2.
+        assert_eq!(r.source_loc_added, Some(4));
+        assert_eq!(r.source_loc_removed, Some(3));
+        assert_eq!(r.source_loc, Some(7));
+        assert_eq!(r.files_changed, Some(3));
+        assert_eq!(r.commits_since, Some(42));
+        assert!(!r.source_drift_truncated);
+        assert_eq!(gh.count("object(expression"), 1);
+    }
+
+    #[test]
+    fn truncated_compare_with_a_failed_blob_leaves_loc_unknown_and_flags_truncated() {
+        let gh = truncated_compare_gh(blob_response(&[
+            ("v1.2.3", "src/Mod.sol", Some(MOD_BASE)),
+            ("main", "src/Mod.sol", None),
+            ("main", "src/New.sol", Some(NEW_HEAD)),
+            ("v1.2.3", "src/Gone.sol", Some(GONE_BASE)),
+        ]));
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        assert_eq!(r.source_loc_added, None);
+        assert_eq!(r.source_loc_removed, None);
+        assert_eq!(r.source_loc, None);
+        assert_eq!(r.files_changed, Some(3));
+        assert_eq!(r.commits_since, Some(42));
+        assert!(r.source_drift_truncated);
+        assert_eq!(gh.count("object(expression"), 1);
     }
 
     // ---- Protofire-report membership gate (#54) ----
