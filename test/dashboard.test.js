@@ -14531,6 +14531,27 @@ Deno.test("deployments: listing facts list only inconsistent rows and count unav
   assert(textOf(rows[0]).includes("st0x.registry"), textOf(rows[0]));
 });
 
+Deno.test("deployments: an inconsistent registry row shows the registry's value and a Nasdaq row shows none", () => {
+  const box = deploymentsBox({
+    deploymentListings: [
+      {
+        network: "base",
+        rows: [
+          { token: "tNVDA", field: "listingName", value: "NVIDIA", source: "st0x.registry", status: "inconsistent", theirs: "NVIDIA Corporation" },
+          { token: "tNVDA", field: "listingTicker", value: "NVDX", source: "Nasdaq", status: "inconsistent" },
+        ],
+      },
+    ],
+  });
+  const rows = collect(panelsOf(box).contracts, "own-row");
+  assert(rows.length === 2, `both inconsistent rows are listed, got ${rows.length}`);
+  const notes = (r) => collect(r, "own-note").map((n) => n.textContent);
+  const registry = notes(rows.find((r) => textOf(r).includes("listingName")));
+  assert(registry.includes("st0x.registry: NVIDIA Corporation"), registry.join(" | "));
+  const nasdaq = notes(rows.find((r) => textOf(r).includes("listingTicker")));
+  assert(nasdaq.length === 1 && nasdaq[0] === "ours: NVDX", nasdaq.join(" | "));
+});
+
 // ---- pipeline.html: issue worklist (issue-pr-cron#348 `issueWorklist`) ----
 
 function worklistBox(hq) {
