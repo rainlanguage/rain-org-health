@@ -144,6 +144,31 @@ fn compare(ours: Option<&str>, theirs: Option<Option<&str>>) -> Status {
     }
 }
 
+// Nasdaq's Security Name appends a class description ("NVIDIA Corporation - Common Stock").
+fn compare_nasdaq_name(ours: Option<&str>, theirs: Option<Option<&str>>) -> Status {
+    match (ours, theirs) {
+        (Some(o), Some(Some(t)))
+            if t.strip_prefix(o)
+                .is_some_and(|rest| rest.is_empty() || rest.starts_with(' ')) =>
+        {
+            Status::Consistent
+        }
+        (Some(_), Some(Some(_))) => Status::Inconsistent,
+        _ => Status::Unavailable,
+    }
+}
+
+fn registry_row(
+    t: &Declared,
+    field: &str,
+    ours: Option<&str>,
+    theirs: Option<Option<&str>>,
+) -> serde_json::Value {
+    let mut r = row(t, field, ours, "st0x.registry", compare(ours, theirs));
+    r["theirs"] = json!(theirs.flatten());
+    r
+}
+
 fn row(
     t: &Declared,
     field: &str,
@@ -160,7 +185,8 @@ fn row(
     })
 }
 
-/// Every (field, source) row for one token. Nasdaq's text is never emitted.
+/// Every (field, source) row for one token. Registry rows carry the registry's
+/// value as `theirs`; Nasdaq's text is never emitted.
 pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
     let reg = s
         .registry
@@ -191,20 +217,13 @@ pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
         _ => Status::Unavailable,
     };
     vec![
-        row(
-            t,
-            "assetId",
-            t.asset_id,
-            "st0x.registry",
-            compare(t.asset_id, reg_field(|e| e.isin.as_deref())),
-        ),
+        registry_row(t, "assetId", t.asset_id, reg_field(|e| e.isin.as_deref())),
         row(t, "assetId", t.asset_id, "GLEIF", gleif),
-        row(
+        registry_row(
             t,
             "listingTicker",
             t.listing_ticker,
-            "st0x.registry",
-            compare(t.listing_ticker, reg_field(|e| e.ticker.as_deref())),
+            reg_field(|e| e.ticker.as_deref()),
         ),
         row(
             t,
@@ -213,19 +232,18 @@ pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
             "Nasdaq",
             nasdaq_ticker,
         ),
-        row(
+        registry_row(
             t,
             "listingName",
             t.listing_name,
-            "st0x.registry",
-            compare(t.listing_name, reg_field(|e| e.name.as_deref())),
+            reg_field(|e| e.name.as_deref()),
         ),
         row(
             t,
             "listingName",
             t.listing_name,
             "Nasdaq",
-            compare(t.listing_name, nasdaq_name),
+            compare_nasdaq_name(t.listing_name, nasdaq_name),
         ),
     ]
 }
@@ -295,7 +313,7 @@ mod tests {
     }
 
     #[test]
-    fn matching_sources_are_consistent_except_a_differing_nasdaq_name() {
+    fn matching_sources_are_consistent() {
         let rows = token_rows(&nvda(), &sources());
         assert_eq!(status(&rows, "assetId", "st0x.registry"), "consistent");
         assert_eq!(status(&rows, "assetId", "GLEIF"), "consistent");
@@ -305,7 +323,75 @@ mod tests {
         );
         assert_eq!(status(&rows, "listingTicker", "Nasdaq"), "consistent");
         assert_eq!(status(&rows, "listingName", "st0x.registry"), "consistent");
-        assert_eq!(status(&rows, "listingName", "Nasdaq"), "inconsistent");
+        assert_eq!(status(&rows, "listingName", "Nasdaq"), "consistent");
+    }
+
+    fn nasdaq_name_status(ours: &str, security_name: &str) -> String {
+        let t = Declared {
+            listing_name: Some(ours),
+            ..nvda()
+        };
+        let s = Sources {
+            nasdaq: Some(HashMap::from([(
+                "NVDA".to_string(),
+                security_name.to_string(),
+            )])),
+            ..Sources::default()
+        };
+        status(&token_rows(&t, &s), "listingName", "Nasdaq")
+    }
+
+    #[test]
+    fn nasdaq_name_is_consistent_when_ours_prefixes_the_security_name_at_a_word_boundary() {
+        assert_eq!(
+            nasdaq_name_status("NVIDIA Corporation", "NVIDIA Corporation - Common Stock"),
+            "consistent"
+        );
+        assert_eq!(
+            nasdaq_name_status("Nike, Inc.", "Nike, Inc. Common Stock"),
+            "consistent"
+        );
+        assert_eq!(
+            nasdaq_name_status("NVIDIA Corporation", "NVIDIA Corporation"),
+            "consistent"
+        );
+        assert_eq!(
+            nasdaq_name_status("Tesla Inc", "Tesla, Inc. - Common Stock"),
+            "inconsistent"
+        );
+        assert_eq!(
+            nasdaq_name_status("NVIDIA Corp", "NVIDIA Corporation - Common Stock"),
+            "inconsistent"
+        );
+        assert_eq!(
+            nasdaq_name_status("Corporation", "NVIDIA Corporation - Common Stock"),
+            "inconsistent"
+        );
+    }
+
+    #[test]
+    fn registry_rows_carry_the_registry_value_and_nasdaq_rows_do_not() {
+        let t = Declared {
+            listing_name: Some("Other"),
+            ..nvda()
+        };
+        let rows = token_rows(&t, &sources());
+        let get = |field: &str, source: &str| {
+            rows.iter()
+                .find(|r| r["field"] == field && r["source"] == source)
+                .unwrap()
+                .clone()
+        };
+        let name = get("listingName", "st0x.registry");
+        assert_eq!(name["status"], "inconsistent");
+        assert_eq!(name["value"], "Other");
+        assert_eq!(name["theirs"], "NVIDIA Corporation");
+        assert_eq!(get("listingTicker", "st0x.registry")["theirs"], "NVDA");
+        assert_eq!(get("assetId", "st0x.registry")["theirs"], "US67066G1040");
+        for f in ["listingName", "listingTicker"] {
+            assert!(get(f, "Nasdaq").get("theirs").is_none(), "{f}");
+        }
+        assert!(get("assetId", "GLEIF").get("theirs").is_none());
     }
 
     #[test]

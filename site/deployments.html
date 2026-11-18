@@ -699,6 +699,7 @@ function renderDeployments(document, $, data, io) {
         const rc = el("div", "own-rc");
         rc.append(el("div", "own-role", `${x.token} ${x.field}`));
         rc.append(el("div", "own-note", `ours: ${x.value ?? "(none)"}`));
+        if ("theirs" in x) rc.append(el("div", "own-note", `${x.source}: ${x.theirs ?? "(none)"}`));
         row.append(rc, el("span", "own-chip own-chip-no", x.source));
         table.append(row);
       }
