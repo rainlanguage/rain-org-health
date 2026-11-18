@@ -251,6 +251,21 @@
     .own-row { grid-template-columns: 1fr; gap: 5px; }
     .own-prov { justify-content: flex-start; }
   }
+  .tvl-total { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; margin: 14px 0 18px; }
+  .tvl-total .tvl-usd { font-size: 26px; font-weight: 650; letter-spacing: -0.02em; }
+  .tvl-net { border: 1px solid var(--border); border-radius: 11px; margin-bottom: 14px; overflow: hidden; }
+  .tvl-net-head { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; padding: 10px 14px; background: var(--surface); }
+  .tvl-net-name { font-weight: 600; }
+  .tvl-raindex { padding: 8px 14px; border-top: 1px solid var(--border); }
+  .tvl-raindex-head, .tvl-token { display: flex; align-items: baseline; gap: 12px; flex-wrap: wrap; }
+  .tvl-addr { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); overflow-wrap: anywhere; }
+  .tvl-token { padding: 3px 0 3px 16px; font-size: 13.5px; }
+  .tvl-sym { min-width: 90px; overflow-wrap: anywhere; }
+  .tvl-amt { font-variant-numeric: tabular-nums; color: var(--ink-2); overflow-wrap: anywhere; }
+  .tvl-usd { font-variant-numeric: tabular-nums; }
+  .tvl-note, .tvl-none { color: var(--ink-3); font-size: 12.5px; }
+  .tvl-unpriced { color: var(--debt); font-size: 12.5px; }
+  .tvl-err { color: var(--crit); font-size: 12.5px; }
 </style>
 </head>
 <body>
@@ -344,6 +359,7 @@ function renderDeployments(document, $, data, io) {
     ["registry", "Root registry"],
     ["migrations", "Migrations"],
     ["historical", "Historical"],
+    ["tvl", "Dex TVL"],
   ];
   const subnav = el("div", "subnav");
   const panels = {};
@@ -3346,6 +3362,79 @@ function renderDeployments(document, $, data, io) {
   };
   const owners = data.deploymentOwners;
   sink.append(el("h2", null, "Known owners"));
+  // Dex TVL tab (#248): what every recorded raindex holds, network → raindex →
+  // token. roh-scan computes it (balanceOf at a stated block, one price source);
+  // this only renders. An unpriced token is shown unpriced and counted, never
+  // valued at zero; anything unreadable shows its reason.
+  const renderDexTvl = (tvl) => {
+    const p = panels.tvl;
+    p.append(el("h2", null, "Dex TVL"));
+    const sub = el("div", "own-sub");
+    sub.append(
+      "Every raindex recorded in ",
+      link("", "raindex.deploy", "https://github.com/rainlanguage/raindex.deploy/blob/main/deployments/raindex.json"),
+      "; tokens from its tokens subgraph; each amount is the token's balanceOf the raindex at the block shown.",
+    );
+    p.append(sub);
+    if (!tvl) {
+      p.append(el("div", "tvl-none", "No dex TVL in this scan."));
+      return;
+    }
+    if (tvl.error) {
+      p.append(el("div", "tvl-err", `Not read: ${tvl.error}`));
+      return;
+    }
+    const usd = (n) =>
+      typeof n === "number" && Number.isFinite(n)
+        ? "$" + n.toLocaleString("en-US", { maximumFractionDigits: 0 })
+        : "—";
+    const excludedNote = (x) => (x > 0 ? ` · excludes ${x} unpriced or unread token${x === 1 ? "" : "s"}` : "");
+    const total = el("div", "tvl-total");
+    total.append(el("span", "tvl-usd", usd(tvl.usd)));
+    total.append(
+      el(
+        "span",
+        "tvl-note",
+        `org total${excludedNote(tvl.excludedTokens || 0)}` +
+          (tvl.unreadableNetworks > 0 ? ` · ${tvl.unreadableNetworks} network(s) unreadable` : "") +
+          ` · prices: ${tvl.priceSource}`,
+      ),
+    );
+    p.append(total);
+    for (const n of Array.isArray(tvl.networks) ? tvl.networks : []) {
+      const sec = el("div", "tvl-net");
+      const head = el("div", "tvl-net-head");
+      head.append(el("span", "tvl-net-name", String(n.network)));
+      if (n.error) {
+        head.append(el("span", "tvl-err", `not read: ${n.error}`));
+      } else {
+        head.append(el("span", "tvl-usd", usd(n.usd)));
+        head.append(el("span", "tvl-note", `at block ${n.block}${excludedNote(n.excludedTokens || 0)}`));
+      }
+      sec.append(head);
+      for (const r of Array.isArray(n.raindexes) ? n.raindexes : []) {
+        const rd = el("div", "tvl-raindex");
+        const rh = el("div", "tvl-raindex-head");
+        rh.append(el("span", "tvl-addr", String(r.address)));
+        if (!n.error) rh.append(el("span", "tvl-usd", usd(r.usd)));
+        rd.append(rh);
+        const held = (Array.isArray(r.tokens) ? r.tokens : []).filter((t) => t.error || t.balance !== "0");
+        for (const t of held) {
+          const row = el("div", "tvl-token");
+          row.append(el("span", "tvl-sym", t.symbol ? String(t.symbol) : String(t.token)));
+          row.append(el("span", "tvl-amt", t.amount !== undefined ? String(t.amount) : "—"));
+          if (t.error) row.append(el("span", "tvl-err", String(t.error)));
+          else if (t.unpriced) row.append(el("span", "tvl-unpriced", `unpriced: ${t.unpriced}`));
+          else row.append(el("span", "tvl-usd", usd(t.usd)));
+          rd.append(row);
+        }
+        if (!n.error && held.length === 0) rd.append(el("div", "tvl-none", "holds nothing"));
+        sec.append(rd);
+      }
+      p.append(sec);
+    }
+  };
+  renderDexTvl(data.dexTvl);
   if (!owners || !Array.isArray(owners.groups) || owners.groups.length === 0) {
     const why = owners?.unavailable === true ? owners.reason : "the scan produced no owner groups";
     sink.append(el("div", "empty", `Owner data unavailable — ${why}.`));

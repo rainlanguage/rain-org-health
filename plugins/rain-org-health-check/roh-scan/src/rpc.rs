@@ -27,6 +27,7 @@ sol! {
     function manager() external view returns (address);
     function VERSION() external view returns (string);
     function getModulesPaginated(address start, uint256 pageSize) external view returns (address[] array, address next);
+    function balanceOf(address account) external view returns (uint256);
 }
 
 /// The outcome of a `bool`-returning `eth_call` (i.e. `supportsInterface`): a
@@ -242,6 +243,24 @@ pub fn decode_modules_page(result_hex: &str) -> Option<(Vec<String>, String)> {
                 r.next.to_string().to_lowercase(),
             )
         })
+}
+
+/// `balanceOf(account)`; `None` unless `account` is an address.
+pub fn balance_of_calldata(account: &str) -> Option<String> {
+    Some(to_hex(
+        balanceOfCall {
+            account: account.parse().ok()?,
+        }
+        .abi_encode(),
+    ))
+}
+
+/// Decode a `uint256` return of any size as its decimal digits.
+pub fn decode_u256_decimal(result_hex: &str) -> Option<String> {
+    let bytes = result_bytes(result_hex)?;
+    balanceOfCall::abi_decode_returns(&bytes, false)
+        .ok()
+        .map(|r| r._0.to_string())
 }
 
 /// Decode a `uint8` return (`decimals()`).
