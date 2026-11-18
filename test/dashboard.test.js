@@ -18384,3 +18384,14 @@ Deno.test("worklist: untrusted strings land as text and a non-GitHub url is not 
   assert(textOf(box).includes(XSS_IMG) && textOf(box).includes(XSS_SCRIPT), "payload as text");
   for (const tag of MARKUP_TAGS) assert(tags(box, tag).length === 0, "no " + tag);
 });
+
+Deno.test("worklist: an empty issueWorklist says there are no open issues", () => {
+  const box = worklistBox({ issueWorklist: [] });
+  assert(collect(box, "wl-row").length === 0, "no rows");
+  assert(textOf(box).includes("No open issues."), textOf(box));
+});
+
+Deno.test("worklist: the page bootstrap renders the worklist from the fetched snapshot", () => {
+  const boot = pageScript("pipeline.html").split("Promise.all([")[1] || "";
+  assert(/renderWorklist\(hq\);/.test(boot), "bootstrap calls renderWorklist(hq)");
+});
