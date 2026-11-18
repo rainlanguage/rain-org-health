@@ -3197,6 +3197,34 @@ function renderDeployments(document, $, data, io) {
     unknown: ["unknown", "dim"],
   };
   const MIG_OWED = ["notApplied", "notRecorded"];
+  const privKeysRead = async (url) => {
+    try {
+      const r = await io.fetch(url, { cache: "no-store" });
+      if (r.ok === false) return null;
+      const body = await r.json();
+      return body && typeof body === "object" ? body : null;
+    } catch {
+      return null;
+    }
+  };
+  // Address → every privileged-addresses.json key holding it: top-level keys plus the named network's chain entry.
+  const privKeys = (doc, network) => {
+    const out = new Map();
+    const take = (obj) => {
+      for (const [k, val] of Object.entries(obj)) {
+        for (const a of Array.isArray(val) ? val : [val]) {
+          if (typeof a !== "string" || !/^0x[0-9a-fA-F]{40}$/.test(a)) continue;
+          const key = a.toLowerCase();
+          if (!out.has(key)) out.set(key, []);
+          if (!out.get(key).includes(k)) out.get(key).push(k);
+        }
+      }
+    };
+    take(doc);
+    const chains = doc.chains && typeof doc.chains === "object" ? Object.values(doc.chains) : [];
+    for (const c of chains) if (c && typeof c === "object" && c.network === network) take(c);
+    return out;
+  };
   const renderMigrations = (v) => {
     sink.append(el("h2", null, "Migrations — run or not, per network"));
     if (!v || typeof v !== "object" || !Array.isArray(v.networks) || v.networks.length === 0) {
@@ -3222,6 +3250,13 @@ function renderDeployments(document, $, data, io) {
         '"Unknown" means the registry read did not answer, never that it has not run.',
     );
     sink.append(sub);
+    const labelled = [];
+    const whoMig = (address, network) => {
+      const box = el("span", "rbac-who");
+      box.append(addrNode("own-addr", address, network));
+      labelled.push({ box, address: address.toLowerCase(), network });
+      return box;
+    };
     const nets = v.networks
       .filter((n) => n && typeof n === "object")
       .map((n) => ({
@@ -3310,7 +3345,7 @@ function renderDeployments(document, $, data, io) {
         const ac = el("div", "bcn-detail");
         if (str(m.writer)) {
           const line = el("div", "bcn-line");
-          line.append(el("span", "bcn-key", "writer"), addrNode("own-addr", m.writer, network));
+          line.append(el("span", "bcn-key", "writer"), whoMig(m.writer, network));
           ac.append(line);
         }
         for (const w of Array.isArray(m.waitsOn) ? m.waitsOn : []) {
@@ -3320,6 +3355,7 @@ function renderDeployments(document, $, data, io) {
           if (w.state === "genesis") {
             line.append(el("span", "own-note", "nothing — it opens its namespace's line in the registry"));
           } else {
+            if (str(w.writer)) line.append(whoMig(w.writer, network));
             line.append(
               str(w.script) ? scriptNode(w.script, "mig-wait") : el("span", "mig-hash", str(w.id) || "an unnamed record"),
               chip(w.state),
@@ -3344,6 +3380,17 @@ function renderDeployments(document, $, data, io) {
       }
       sink.append(table);
     }
+    if (!repo || labelled.length === 0) return Promise.resolve();
+    return privKeysRead(`https://raw.githubusercontent.com/${repo}/main/privileged-addresses.json`).then((doc) => {
+      if (!doc) return;
+      for (const { box, address, network } of labelled) {
+        const keys = privKeys(doc, network).get(address) || [];
+        if (!keys.length) continue;
+        const name = el("span", "rbac-name", keys[0]);
+        name.title = keys.join("\n");
+        box.prepend(name);
+      }
+    });
   };
   const owners = data.deploymentOwners;
   sink.append(el("h2", null, "Known owners"));
