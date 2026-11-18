@@ -1722,7 +1722,9 @@ fn curl_text(url: &str) -> Option<String> {
 /// ticker absent from one file may be in the other.
 fn fetch_nasdaq() -> Option<std::collections::HashMap<String, String>> {
     let mut all = listing::parse_nasdaq(&curl_text(listing::NASDAQ_LISTED_URL)?)?;
-    all.extend(listing::parse_nasdaq(&curl_text(listing::NASDAQ_OTHER_URL)?)?);
+    all.extend(listing::parse_nasdaq(&curl_text(
+        listing::NASDAQ_OTHER_URL,
+    )?)?);
     Some(all)
 }
 

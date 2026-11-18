@@ -44,7 +44,9 @@ pub fn parse_registry(body: &str) -> Option<HashMap<String, RegistryListing>> {
             .filter_map(|t| {
                 let address = t["address"].as_str()?.to_lowercase();
                 let ext = &t["extensions"];
-                let s = |v: &serde_json::Value| v.as_str().filter(|s| !s.is_empty()).map(str::to_string);
+                let s = |v: &serde_json::Value| {
+                    v.as_str().filter(|s| !s.is_empty()).map(str::to_string)
+                };
                 // The ticker lives only in `EXCHANGE:TICKER`.
                 let ticker = s(&ext["tradingViewSymbol"])
                     .map(|tv| tv.rsplit(':').next().unwrap_or_default().to_string());
@@ -142,7 +144,13 @@ fn compare(ours: Option<&str>, theirs: Option<Option<&str>>) -> Status {
     }
 }
 
-fn row(t: &Declared, field: &str, ours: Option<&str>, source: &str, status: Status) -> serde_json::Value {
+fn row(
+    t: &Declared,
+    field: &str,
+    ours: Option<&str>,
+    source: &str,
+    status: Status,
+) -> serde_json::Value {
     json!({
         "token": t.symbol,
         "field": field,
@@ -159,9 +167,9 @@ pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
         .as_ref()
         .map(|r| r.get(&t.wrapped_token_vault.to_lowercase()));
     let reg_field = |f: fn(&RegistryListing) -> Option<&str>| reg.map(|e| e.and_then(f));
-    let nasdaq_name = t.listing_ticker.and_then(|tk| {
-        s.nasdaq.as_ref().map(|n| n.get(tk).map(String::as_str))
-    });
+    let nasdaq_name = t
+        .listing_ticker
+        .and_then(|tk| s.nasdaq.as_ref().map(|n| n.get(tk).map(String::as_str)));
     let nasdaq_ticker = match (t.listing_ticker, s.nasdaq.as_ref()) {
         (Some(tk), Some(n)) => {
             if n.contains_key(tk) {
@@ -183,12 +191,42 @@ pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
         _ => Status::Unavailable,
     };
     vec![
-        row(t, "assetId", t.asset_id, "st0x.registry", compare(t.asset_id, reg_field(|e| e.isin.as_deref()))),
+        row(
+            t,
+            "assetId",
+            t.asset_id,
+            "st0x.registry",
+            compare(t.asset_id, reg_field(|e| e.isin.as_deref())),
+        ),
         row(t, "assetId", t.asset_id, "GLEIF", gleif),
-        row(t, "listingTicker", t.listing_ticker, "st0x.registry", compare(t.listing_ticker, reg_field(|e| e.ticker.as_deref()))),
-        row(t, "listingTicker", t.listing_ticker, "Nasdaq", nasdaq_ticker),
-        row(t, "listingName", t.listing_name, "st0x.registry", compare(t.listing_name, reg_field(|e| e.name.as_deref()))),
-        row(t, "listingName", t.listing_name, "Nasdaq", compare(t.listing_name, nasdaq_name)),
+        row(
+            t,
+            "listingTicker",
+            t.listing_ticker,
+            "st0x.registry",
+            compare(t.listing_ticker, reg_field(|e| e.ticker.as_deref())),
+        ),
+        row(
+            t,
+            "listingTicker",
+            t.listing_ticker,
+            "Nasdaq",
+            nasdaq_ticker,
+        ),
+        row(
+            t,
+            "listingName",
+            t.listing_name,
+            "st0x.registry",
+            compare(t.listing_name, reg_field(|e| e.name.as_deref())),
+        ),
+        row(
+            t,
+            "listingName",
+            t.listing_name,
+            "Nasdaq",
+            compare(t.listing_name, nasdaq_name),
+        ),
     ]
 }
 
@@ -250,7 +288,9 @@ mod tests {
 
     #[test]
     fn gleif_requires_its_header() {
-        assert!(gleif_present(GLEIF.as_bytes(), &wanted()).unwrap().contains("US67066G1040"));
+        assert!(gleif_present(GLEIF.as_bytes(), &wanted())
+            .unwrap()
+            .contains("US67066G1040"));
         assert!(gleif_present("ISIN\nUS67066G1040\n".as_bytes(), &wanted()).is_none());
     }
 
@@ -259,7 +299,10 @@ mod tests {
         let rows = token_rows(&nvda(), &sources());
         assert_eq!(status(&rows, "assetId", "st0x.registry"), "consistent");
         assert_eq!(status(&rows, "assetId", "GLEIF"), "consistent");
-        assert_eq!(status(&rows, "listingTicker", "st0x.registry"), "consistent");
+        assert_eq!(
+            status(&rows, "listingTicker", "st0x.registry"),
+            "consistent"
+        );
         assert_eq!(status(&rows, "listingTicker", "Nasdaq"), "consistent");
         assert_eq!(status(&rows, "listingName", "st0x.registry"), "consistent");
         assert_eq!(status(&rows, "listingName", "Nasdaq"), "inconsistent");
