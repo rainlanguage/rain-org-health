@@ -1,10 +1,10 @@
 name: deploy-health-dashboard
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths: [site/**, .github/workflows/pages.yml]
   # scan.yml commits health.json with [skip ci], so the `push` event above does
-  # not fire for it — a fresh scan would land on master but never deploy. Also
+  # not fire for it — a fresh scan would land on main but never deploy. Also
   # run when the scan workflow completes, so the refreshed data actually ships.
   workflow_run:
     workflows: [scan]

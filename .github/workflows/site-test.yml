@@ -4,7 +4,7 @@ name: site-test
 # pages testable without a browser or third-party deps.
 on:
   push:
-    branches: [master]
+    branches: [main]
     paths: [site/**, test/**, flake.nix, .github/workflows/site-test.yml]
   pull_request:
     paths: [site/**, test/**, flake.nix, .github/workflows/site-test.yml]
