@@ -716,6 +716,88 @@ mod tests {
             &reads_fixture(&pairs, &prices, &calls_fixture),
         );
         assert_eq!(doc["usd"], json!(1.5));
+        // Not read, not counted, not listed: the pair is not this section's.
+        assert_eq!(doc["excludedTokens"], json!(0));
+        let listed: Vec<&str> = doc["networks"][0]["raindexes"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|r| r["address"].as_str().unwrap())
+            .collect();
+        assert_eq!(listed, vec![R1, R2]);
+    }
+
+    #[test]
+    fn a_held_token_with_unread_decimals_is_a_reason_and_excluded() {
+        let pairs = |_: &str| Ok((vec![pair(R1, T1)], 990));
+        let prices = |_: &str, _: &[String]| Ok(BTreeMap::from([(T1.to_string(), 1.0)]));
+        let calls = |n: &str, c: &[(String, String)], at: Option<u64>| {
+            let mut out = calls_fixture(n, c, at);
+            if at.is_none() {
+                // decimals() is the first of each token's two metadata calls.
+                out[0] = None;
+            }
+            out
+        };
+        let doc = build(Ok(vec![net()]), &reads_fixture(&pairs, &prices, &calls));
+        assert_eq!(doc["usd"], json!(0.0));
+        assert_eq!(doc["excludedTokens"], json!(1));
+        let row = &doc["networks"][0]["raindexes"][0]["tokens"][0];
+        assert_eq!(row["balance"], json!("1500000"));
+        assert!(row["error"].as_str().unwrap().contains("decimals()"));
+    }
+
+    #[test]
+    fn discover_pages_past_a_full_page_at_the_first_page_block() {
+        let first: Vec<(String, String)> = (0..PAGE)
+            .map(|i| (R1.to_string(), format!("0x{:040x}", i + 1)))
+            .collect();
+        let first_refs: Vec<(&str, &str)> =
+            first.iter().map(|(r, t)| (r.as_str(), t.as_str())).collect();
+        let last_token = format!("0x{:040x}", PAGE + 1);
+        let queries = RefCell::new(Vec::<String>::new());
+        let post = |q: &str| {
+            queries.borrow_mut().push(q.to_string());
+            Some(if queries.borrow().len() == 1 {
+                page_body(&first_refs, 50)
+            } else {
+                page_body(&[(R1, last_token.as_str())], 50)
+            })
+        };
+        let (pairs, block) = discover(&post).unwrap();
+        assert_eq!(pairs.len(), PAGE + 1);
+        assert_eq!(block, 50);
+        assert_eq!(queries.borrow().len(), 2);
+        assert!(queries.borrow()[1].contains("block:{number:50}"));
+    }
+
+    #[test]
+    fn discover_refuses_pages_at_different_blocks_or_out_of_order() {
+        let full: Vec<(String, String)> = (0..PAGE)
+            .map(|i| (R1.to_string(), format!("0x{:040x}", i + 1)))
+            .collect();
+        let full_refs: Vec<(&str, &str)> =
+            full.iter().map(|(r, t)| (r.as_str(), t.as_str())).collect();
+        let n = RefCell::new(0);
+        let drift = |_: &str| {
+            *n.borrow_mut() += 1;
+            Some(if *n.borrow() == 1 {
+                page_body(&full_refs, 50)
+            } else {
+                page_body(&[(R1, "0x00000000000000000000000000000000000fffff")], 51)
+            })
+        };
+        assert!(discover(&drift).unwrap_err().contains("different blocks"));
+        let unordered = |_: &str| Some(page_body(&[(R1, T2), (R1, T1)], 50));
+        assert!(discover(&unordered).unwrap_err().contains("id order"));
+    }
+
+    #[test]
+    fn a_negative_or_non_finite_price_is_no_price() {
+        let body = br#"{"coins":{"base:0x0000000000000000000000000000000000000001":{"price":-1.0},"base:0x0000000000000000000000000000000000000002":{"price":1.0}}}"#;
+        let p = parse_llama("base", body).unwrap();
+        assert_eq!(p.len(), 1);
+        assert!(p.contains_key("0x0000000000000000000000000000000000000002"));
     }
 
     #[test]
