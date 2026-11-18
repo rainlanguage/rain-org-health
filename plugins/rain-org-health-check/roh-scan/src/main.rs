@@ -4349,6 +4349,134 @@ mod tests {
         assert_eq!(changed_sol_files(&gh2, "o", "r", "base", "head"), None);
     }
 
+    // ---- truncated compare: drift from tree diff + blob line diff ----
+
+    const MOD_BASE: &str = "pragma solidity ^0.8.25;\ncontract Mod {\n    uint256 a = 1;\n}\n";
+    const MOD_HEAD: &str =
+        "pragma solidity ^0.8.25;\ncontract Mod {\n    uint256 a = 2;\n    uint256 b = 3;\n}\n";
+    const NEW_HEAD: &str = "pragma solidity ^0.8.25;\ncontract New {}\n";
+    const GONE_BASE: &str = "pragma solidity ^0.8.25;\ncontract Gone {}\n";
+
+    /// Aliases follow the scanner's sorted want order; `None` answers null.
+    fn blob_response(blobs: &[(&str, &str, Option<&str>)]) -> FetchOutcome {
+        let mut sorted = blobs.to_vec();
+        sorted.sort_by(|a, b| (a.0, a.1).cmp(&(b.0, b.1)));
+        let mut repo = serde_json::Map::new();
+        let mut errors = Vec::new();
+        for (i, (git_ref, path, body)) in sorted.iter().enumerate() {
+            match body {
+                Some(text) => {
+                    repo.insert(format!("b{i}"), json!({"text": text, "isTruncated": false}));
+                }
+                None => {
+                    repo.insert(format!("b{i}"), serde_json::Value::Null);
+                    errors.push(json!({"message": format!("could not resolve {git_ref}:{path}")}));
+                }
+            }
+        }
+        let mut body = json!({"data": {"repository": repo}});
+        if !errors.is_empty() {
+            body["errors"] = serde_json::Value::from(errors);
+        }
+        FetchOutcome::Found(body.to_string())
+    }
+
+    /// Compare counts are huge so using them instead of the line diff shows.
+    fn truncated_compare_gh(blobs: FetchOutcome) -> FakeGh {
+        let files: Vec<serde_json::Value> = (0..audit::COMPARE_FILE_CAP)
+            .map(|i| {
+                json!({
+                    "filename": format!("src/F{i}.sol"),
+                    "status": "modified",
+                    "additions": 1000,
+                    "deletions": 1000,
+                })
+            })
+            .collect();
+        let compare = json!({
+            "base_commit": {"commit": {"committer": {"date": "2026-01-01T00:00:00Z"}}},
+            "total_commits": 42,
+            "files": files,
+        });
+        let base_tree = tree_json(
+            &[
+                ("src/Keep.sol", "k"),
+                ("src/Mod.sol", "m1"),
+                ("src/Gone.sol", "g"),
+                ("test/T.t.sol", "t1"),
+            ],
+            false,
+        );
+        let head_tree = tree_json(
+            &[
+                ("src/Keep.sol", "k"),
+                ("src/Mod.sol", "m2"),
+                ("src/New.sol", "n"),
+                ("test/T.t.sol", "t2"),
+            ],
+            false,
+        );
+        FakeGh::new(vec![
+            (
+                "contents/audit/protofire",
+                pdf_row("rain.example.v1.2.3.jun-2026.pdf"),
+            ),
+            (
+                "commits/v1.2.3",
+                FetchOutcome::Found("2026-01-01T00:00:00Z".into()),
+            ),
+            (
+                "defaultBranchRef",
+                FetchOutcome::Found("main\tv1.2.4\t2026-06-01T00:00:00Z".into()),
+            ),
+            (
+                "compare/v1.2.3...main",
+                FetchOutcome::Found(compare.to_string()),
+            ),
+            ("git/trees/v1.2.3", base_tree),
+            ("git/trees/main", head_tree),
+            ("object(expression", blobs),
+        ])
+    }
+
+    #[test]
+    fn truncated_compare_gives_exact_loc_from_the_blob_line_diff() {
+        let gh = truncated_compare_gh(blob_response(&[
+            ("v1.2.3", "src/Mod.sol", Some(MOD_BASE)),
+            ("main", "src/Mod.sol", Some(MOD_HEAD)),
+            ("main", "src/New.sol", Some(NEW_HEAD)),
+            ("v1.2.3", "src/Gone.sol", Some(GONE_BASE)),
+        ]));
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        // Mod.sol: `a = 1` -> `a = 2` plus `b = 3` is +2 -1; New.sol is +2;
+        // Gone.sol is -2.
+        assert_eq!(r.source_loc_added, Some(4));
+        assert_eq!(r.source_loc_removed, Some(3));
+        assert_eq!(r.source_loc, Some(7));
+        assert_eq!(r.files_changed, Some(3));
+        assert_eq!(r.commits_since, Some(42));
+        assert!(!r.source_drift_truncated);
+        assert_eq!(gh.count("object(expression"), 1);
+    }
+
+    #[test]
+    fn truncated_compare_with_a_failed_blob_leaves_loc_unknown_and_flags_truncated() {
+        let gh = truncated_compare_gh(blob_response(&[
+            ("v1.2.3", "src/Mod.sol", Some(MOD_BASE)),
+            ("main", "src/Mod.sol", None),
+            ("main", "src/New.sol", Some(NEW_HEAD)),
+            ("v1.2.3", "src/Gone.sol", Some(GONE_BASE)),
+        ]));
+        let r = fetch_protofire_audit(&gh, "rainlanguage", "example");
+        assert_eq!(r.source_loc_added, None);
+        assert_eq!(r.source_loc_removed, None);
+        assert_eq!(r.source_loc, None);
+        assert_eq!(r.files_changed, Some(3));
+        assert_eq!(r.commits_since, Some(42));
+        assert!(r.source_drift_truncated);
+        assert_eq!(gh.count("object(expression"), 1);
+    }
+
     // ---- Protofire-report membership gate (#54) ----
     #[test]
     fn protofire_report_includes_solidity_projects_and_audited_repos_only() {
