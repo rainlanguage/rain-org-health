@@ -7195,7 +7195,8 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   );
 });
 
-const migNotes = (panel) => collect(panel, "own-groupnote").map(textOf);
+const migNotes = (panel) =>
+  collect(panel, "own-groupnote").map((n) => n.textContent ?? textOf(n));
 const MIG_FORK =
   `the line forks at ${MIG_ID_1}: script/three.s.sol, script/two.s.sol all go onto it`;
 
@@ -7240,7 +7241,9 @@ Deno.test("deployments: a network in line order carries no file-order note", () 
 });
 
 Deno.test("deployments: a file-order network with no reason says the scan gave none", () => {
-  for (const reason of [{ lineOrderReason: null }, {}, { lineOrderReason: "" }]) {
+  for (
+    const reason of [{ lineOrderReason: null }, {}, { lineOrderReason: "" }]
+  ) {
     const box = deploymentsBox(migData([
       migNetwork({ lineOrder: false, ...reason, migrations: [migRow()] }),
     ]));
