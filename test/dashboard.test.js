@@ -18314,6 +18314,8 @@ function worklistBox(hq) {
   return box;
 }
 
+const wlText = (n) => (n._text !== undefined ? n._text : textOf(n));
+
 function wlRow(n, ageDays, prs = []) {
   return {
     repo: "o/r",
@@ -18329,7 +18331,7 @@ Deno.test("worklist: keeps the tool's order and cuts at 20", () => {
   const rows = [];
   for (let i = 1; i <= 25; i++) rows.push(wlRow(i, 100 - i));
   const box = worklistBox({ issueWorklist: rows });
-  const refs = collect(box, "wl-ref").map(textOf);
+  const refs = collect(box, "wl-ref").map(wlText);
   assert(refs.length === 20, "20 rows, got " + refs.length);
   assert(refs[0] === "o/r#1" && refs[19] === "o/r#20", "tool order kept: " + refs);
 });
@@ -18339,7 +18341,7 @@ Deno.test("worklist: the summary counts every row and every claimed row, not jus
   for (let i = 1; i <= 22; i++) {
     rows.push(wlRow(i, 10, i <= 21 ? ["https://github.com/o/r/pull/" + i] : []));
   }
-  const sum = textOf(collect(worklistBox({ issueWorklist: rows }), "wl-sum")[0]);
+  const sum = wlText(collect(worklistBox({ issueWorklist: rows }), "wl-sum")[0]);
   assert(sum.includes("Top 20 of 22"), sum);
   assert(sum.includes("21 have an open PR"), sum);
 });
@@ -18351,11 +18353,11 @@ Deno.test("worklist: a row shows its rounded age, its PR links, or no PR", () =>
       wlRow(2, undefined),
     ],
   });
-  const ages = collect(box, "wl-age").map(textOf);
+  const ages = collect(box, "wl-age").map(wlText);
   assert(ages[0] === "13d" && ages[1] === "age ?", "ages: " + ages);
   const prs = collect(box, "wl-pr");
   assert(prs.length === 2 && prs[0].tagName === "a", "two PR links");
-  assert(textOf(prs[0]) === "PR #7" && prs[1].href === "https://github.com/o/r/pull/9", "PR text/href");
+  assert(wlText(prs[0]) === "PR #7" && prs[1].href === "https://github.com/o/r/pull/9", "PR text/href");
   assert(collect(box, "wl-none").length === 1, "the unclaimed row says no PR");
 });
 
