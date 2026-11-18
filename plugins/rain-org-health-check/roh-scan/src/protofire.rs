@@ -905,6 +905,68 @@ mod tests {
         assert_eq!(changed_source_files(&base, &head).len(), 0);
     }
 
+    #[test]
+    fn changed_source_files_reports_compare_style_status() {
+        let b = |p: &str, s: &str| (p.to_string(), s.to_string());
+        let base = vec![b("src/Keep.sol", "k"), b("src/Mod.sol", "m1"), b("src/Gone.sol", "g")];
+        let head = vec![b("src/Keep.sol", "k"), b("src/Mod.sol", "m2"), b("src/New.sol", "n")];
+        let mut got = changed_source_files(&base, &head);
+        got.sort();
+        assert_eq!(
+            got,
+            vec![
+                b("src/Gone.sol", "removed"),
+                b("src/Mod.sol", "modified"),
+                b("src/New.sol", "added"),
+            ]
+        );
+    }
+
+    // ---- line_diffed (per-pair line diff, summed) ----
+    #[test]
+    fn line_diffed_sums_per_pair_line_diffs() {
+        let files = vec![
+            // One line replaced, one appended: +2 −1.
+            sv("src/Mod.sol", Some("a\nb\nc\n"), Some("a\nB\nc\nd\n"), 0, 0),
+            // Added: every head line is an addition.
+            sv("src/New.sol", Some(""), Some("x\ny\nz\n"), 0, 0),
+            // Removed: every base line is a deletion.
+            sv("src/Gone.sol", Some("p\nq\n"), Some(""), 0, 0),
+        ];
+        let (added, removed, files) = line_diffed(files).expect("all versions present");
+        let per_file: Vec<_> = files
+            .iter()
+            .map(|f| (f.path.as_str(), f.additions, f.deletions))
+            .collect();
+        assert_eq!(
+            per_file,
+            vec![("src/Mod.sol", 2, 1), ("src/New.sol", 3, 0), ("src/Gone.sol", 0, 2)]
+        );
+        assert_eq!((added, removed), (5, 3));
+    }
+
+    #[test]
+    fn line_diffed_overwrites_stale_counts() {
+        let (added, removed, files) =
+            line_diffed(vec![sv("src/A.sol", Some("a\n"), Some("a\n"), 7, 9)]).unwrap();
+        assert_eq!((added, removed), (0, 0));
+        assert_eq!((files[0].additions, files[0].deletions), (0, 0));
+    }
+
+    #[test]
+    fn line_diffed_is_none_when_any_version_is_missing() {
+        let ok = sv("src/A.sol", Some("a\n"), Some("b\n"), 0, 0);
+        assert!(line_diffed(vec![ok.clone(), sv("src/B.sol", None, Some("x\n"), 0, 0)]).is_none());
+        assert!(line_diffed(vec![ok, sv("src/B.sol", Some("x\n"), None, 0, 0)]).is_none());
+    }
+
+    #[test]
+    fn line_diffed_of_nothing_is_zero() {
+        let (added, removed, files) = line_diffed(Vec::new()).unwrap();
+        assert_eq!((added, removed), (0, 0));
+        assert!(files.is_empty());
+    }
+
     // ---- newest_pdf_index ----
     #[test]
     fn newest_pdf_is_by_audit_date_not_file_commit_date() {
