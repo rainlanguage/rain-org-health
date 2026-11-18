@@ -952,7 +952,11 @@ mod tests {
             .collect();
         assert_eq!(
             per_file,
-            vec![("src/Mod.sol", 2, 1), ("src/New.sol", 3, 0), ("src/Gone.sol", 0, 2)]
+            vec![
+                ("src/Mod.sol", 2, 1),
+                ("src/New.sol", 3, 0),
+                ("src/Gone.sol", 0, 2)
+            ]
         );
         assert_eq!((added, removed), (5, 3));
     }
