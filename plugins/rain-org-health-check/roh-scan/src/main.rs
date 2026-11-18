@@ -3461,6 +3461,59 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             )
         });
 
+        let listing_sets: Vec<serde_json::Value> = match &expected_state {
+            Err(e) => vec![json!({
+                "expectedState": expected::EXPECTED_STATE_PATH,
+                "unavailable": true,
+                "reason": e.to_string(),
+            })],
+            Ok(chains) => {
+                let nasdaq = fetch_nasdaq();
+                let wanted: std::collections::HashSet<String> = chains
+                    .iter()
+                    .flat_map(|c| &c.tokens)
+                    .filter_map(|t| t.asset_id.clone())
+                    .collect();
+                // No declared ISIN leaves every GLEIF row unavailable, so skip the download.
+                let gleif = if wanted.is_empty() {
+                    None
+                } else {
+                    fetch_gleif(&wanted)
+                };
+                chains
+                    .iter()
+                    .map(|c| {
+                        let sources = listing::Sources {
+                            registry: listing::parse_registry(&gh_file(
+                                deployhealth::REGISTRY_ORG,
+                                deployhealth::REGISTRY_REPO,
+                                &deployhealth::registry_list_path(&c.network),
+                            )),
+                            nasdaq: nasdaq.clone(),
+                            gleif: gleif.clone(),
+                        };
+                        let rows: Vec<serde_json::Value> = c
+                            .tokens
+                            .iter()
+                            .flat_map(|t| {
+                                listing::token_rows(
+                                    &listing::Declared {
+                                        symbol: &t.symbol,
+                                        wrapped_token_vault: &t.wrapped_token_vault,
+                                        asset_id: t.asset_id.as_deref(),
+                                        listing_ticker: t.listing_ticker.as_deref(),
+                                        listing_name: t.listing_name.as_deref(),
+                                    },
+                                    &sources,
+                                )
+                            })
+                            .collect();
+                        json!({ "network": c.network, "rows": rows })
+                    })
+                    .collect()
+            }
+        };
+
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
@@ -3478,6 +3531,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentCodeTokens": code_token_sets,
             "deploymentSafes": safe_sets,
             "deploymentTokens": registry_sets,
+            "deploymentListings": listing_sets,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,
