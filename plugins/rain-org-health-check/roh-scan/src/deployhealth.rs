@@ -1710,6 +1710,7 @@ mod tests {
             asset_id: None,
             listing_ticker: None,
             listing_name: None,
+            region: None,
         };
         let r = |i: usize| Some(format!("r{i}"));
         let live = TokenLive {

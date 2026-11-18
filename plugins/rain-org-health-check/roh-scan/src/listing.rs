@@ -126,6 +126,7 @@ pub struct Declared<'a> {
     pub asset_id: Option<&'a str>,
     pub listing_ticker: Option<&'a str>,
     pub listing_name: Option<&'a str>,
+    pub region: Option<&'a str>,
 }
 
 /// What each source returned at scan time; `None` is an unreadable source.
@@ -186,7 +187,9 @@ fn row(
 }
 
 /// Every (field, source) row for one token. Registry rows carry the registry's
-/// value as `theirs`; Nasdaq's text is never emitted.
+/// value as `theirs`; Nasdaq's text is never emitted. Nasdaq lists only US
+/// securities, so its rows exist only for `US` tokens and are `unavailable`
+/// when no region is declared.
 pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
     let reg = s
         .registry
@@ -216,7 +219,12 @@ pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
         }
         _ => Status::Unavailable,
     };
-    vec![
+    let nasdaq = match t.region {
+        Some("US") => Some((nasdaq_ticker, compare_nasdaq_name(t.listing_name, nasdaq_name))),
+        Some(_) => None,
+        None => Some((Status::Unavailable, Status::Unavailable)),
+    };
+    let mut rows = vec![
         registry_row(t, "assetId", t.asset_id, reg_field(|e| e.isin.as_deref())),
         row(t, "assetId", t.asset_id, "GLEIF", gleif),
         registry_row(
@@ -225,27 +233,18 @@ pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
             t.listing_ticker,
             reg_field(|e| e.ticker.as_deref()),
         ),
-        row(
-            t,
-            "listingTicker",
-            t.listing_ticker,
-            "Nasdaq",
-            nasdaq_ticker,
-        ),
         registry_row(
             t,
             "listingName",
             t.listing_name,
             reg_field(|e| e.name.as_deref()),
         ),
-        row(
-            t,
-            "listingName",
-            t.listing_name,
-            "Nasdaq",
-            compare_nasdaq_name(t.listing_name, nasdaq_name),
-        ),
-    ]
+    ];
+    if let Some((ticker, name)) = nasdaq {
+        rows.push(row(t, "listingTicker", t.listing_ticker, "Nasdaq", ticker));
+        rows.push(row(t, "listingName", t.listing_name, "Nasdaq", name));
+    }
+    rows
 }
 
 #[cfg(test)]
@@ -264,6 +263,7 @@ mod tests {
             asset_id: Some("US67066G1040"),
             listing_ticker: Some("NVDA"),
             listing_name: Some("NVIDIA Corporation"),
+            region: Some("US"),
         }
     }
 
@@ -426,6 +426,60 @@ mod tests {
         };
         let rows = token_rows(&t, &sources());
         assert!(rows.iter().all(|r| r["status"] == "unavailable"));
+    }
+
+    fn nasdaq_rows(t: &Declared) -> Vec<serde_json::Value> {
+        let s = Sources {
+            nasdaq: Some(HashMap::from([(
+                "MC".to_string(),
+                "Moelis & Company Class A Common Stock".to_string(),
+            )])),
+            ..sources()
+        };
+        token_rows(t, &s)
+            .into_iter()
+            .filter(|r| r["source"] == "Nasdaq")
+            .collect()
+    }
+
+    fn mc(region: Option<&'static str>) -> Declared<'static> {
+        Declared {
+            symbol: "tMC",
+            listing_ticker: Some("MC"),
+            listing_name: Some("Moelis & Company"),
+            region,
+            ..nvda()
+        }
+    }
+
+    #[test]
+    fn eu_token_has_no_nasdaq_rows_even_when_a_us_security_shares_its_ticker() {
+        assert!(nasdaq_rows(&mc(Some("EU"))).is_empty());
+        let rows = token_rows(&mc(Some("EU")), &sources());
+        for (f, s) in [
+            ("assetId", "st0x.registry"),
+            ("assetId", "GLEIF"),
+            ("listingTicker", "st0x.registry"),
+            ("listingName", "st0x.registry"),
+        ] {
+            assert!(rows.iter().any(|r| r["field"] == f && r["source"] == s), "{f} {s}");
+        }
+    }
+
+    #[test]
+    fn us_token_keeps_its_nasdaq_rows() {
+        let rows = nasdaq_rows(&mc(Some("US")));
+        assert_eq!(rows.len(), 2);
+        assert_eq!(status(&rows, "listingTicker", "Nasdaq"), "consistent");
+        assert_eq!(status(&rows, "listingName", "Nasdaq"), "consistent");
+    }
+
+    #[test]
+    fn token_without_a_region_has_unavailable_nasdaq_rows() {
+        let rows = nasdaq_rows(&mc(None));
+        assert_eq!(rows.len(), 2);
+        assert_eq!(status(&rows, "listingTicker", "Nasdaq"), "unavailable");
+        assert_eq!(status(&rows, "listingName", "Nasdaq"), "unavailable");
     }
 
     #[test]

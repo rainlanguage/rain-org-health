@@ -119,6 +119,7 @@ pub struct ExpectedToken {
     pub asset_id: Option<String>,
     pub listing_ticker: Option<String>,
     pub listing_name: Option<String>,
+    pub region: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -475,6 +476,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                     asset_id: opt_text(&t["assetId"]),
                     listing_ticker: opt_text(&t["listingTicker"]),
                     listing_name: opt_text(&t["listingName"]),
+                    region: opt_text(&t["region"]),
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
@@ -1165,6 +1167,7 @@ mod tests {
                 asset_id: None,
                 listing_ticker: None,
                 listing_name: None,
+                region: None,
             }
         );
         assert_eq!(

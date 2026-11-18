@@ -3505,6 +3505,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                                         asset_id: t.asset_id.as_deref(),
                                         listing_ticker: t.listing_ticker.as_deref(),
                                         listing_name: t.listing_name.as_deref(),
+                                        region: t.region.as_deref(),
                                     },
                                     &sources,
                                 )
