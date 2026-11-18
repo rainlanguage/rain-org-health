@@ -220,7 +220,10 @@ pub fn token_rows(t: &Declared, s: &Sources) -> Vec<serde_json::Value> {
         _ => Status::Unavailable,
     };
     let nasdaq = match t.region {
-        Some("US") => Some((nasdaq_ticker, compare_nasdaq_name(t.listing_name, nasdaq_name))),
+        Some("US") => Some((
+            nasdaq_ticker,
+            compare_nasdaq_name(t.listing_name, nasdaq_name),
+        )),
         Some(_) => None,
         None => Some((Status::Unavailable, Status::Unavailable)),
     };
@@ -462,7 +465,10 @@ mod tests {
             ("listingTicker", "st0x.registry"),
             ("listingName", "st0x.registry"),
         ] {
-            assert!(rows.iter().any(|r| r["field"] == f && r["source"] == s), "{f} {s}");
+            assert!(
+                rows.iter().any(|r| r["field"] == f && r["source"] == s),
+                "{f} {s}"
+            );
         }
     }
 
