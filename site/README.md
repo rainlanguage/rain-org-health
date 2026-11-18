@@ -4,8 +4,9 @@ Static, dependency-free dashboard for the org-health scan.
 
 **Live: <https://rainlanguage.github.io/rain-org-health/>**
 
-- `pipeline.html` — the open-issue KPIs (count, mean / median / oldest age) and the
-  top 20 issues to close next, fetched from `issue-pr-cron`'s `human-queue.json`.
+- `pipeline.html` — the open-issue KPIs (count, mean / median / oldest age) and
+  the top 20 issues to close next, fetched from `issue-pr-cron`'s
+  `human-queue.json`.
 - `repositories.html` — self-contained (inline CSS/JS, no build, no external
   requests), fetches `health.json` and renders per-repo modernization-debt
   signals — a per-signal magnitude summary and a filterable repo list. Theme
