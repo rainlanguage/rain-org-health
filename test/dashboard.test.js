@@ -7195,6 +7195,99 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   );
 });
 
+const migNotes = (panel) => collect(panel, "own-groupnote").map(textOf);
+const MIG_FORK =
+  `the line forks at ${MIG_ID_1}: script/three.s.sol, script/two.s.sol all go onto it`;
+
+Deno.test("deployments: a network the scan could not put in line order says so, with the scan's reason", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      lineOrder: false,
+      lineOrderReason: MIG_FORK,
+      migrations: [migRow()],
+    }),
+    migNetwork({
+      chainId: 8453,
+      network: "base",
+      lineOrder: true,
+      lineOrderReason: null,
+      migrations: [migRow()],
+    }),
+  ]));
+  const notes = migNotes(migPanel(box));
+  assert(
+    notes.length === 3 &&
+      notes[1] === `Listed in file order, not line order — ${MIG_FORK}.` &&
+      !notes[2].includes("line order"),
+    "the note follows its own network's registry line and names the reason: " +
+      notes.join("|"),
+  );
+});
+
+Deno.test("deployments: a network in line order carries no file-order note", () => {
+  const box = deploymentsBox(migData([
+    migNetwork({
+      lineOrder: true,
+      lineOrderReason: null,
+      migrations: [migRow()],
+    }),
+  ]));
+  const notes = migNotes(migPanel(box));
+  assert(
+    notes.length === 1 && !notes[0].includes("line order"),
+    "only the registry line: " + notes.join("|"),
+  );
+});
+
+Deno.test("deployments: a file-order network with no reason says the scan gave none", () => {
+  for (const reason of [{ lineOrderReason: null }, {}, { lineOrderReason: "" }]) {
+    const box = deploymentsBox(migData([
+      migNetwork({ lineOrder: false, ...reason, migrations: [migRow()] }),
+    ]));
+    const notes = migNotes(migPanel(box));
+    assert(
+      notes.length === 2 &&
+        notes[1] ===
+          "Listed in file order, not line order — the scan gave no reason.",
+      "fallback reason for " + JSON.stringify(reason) + ": " + notes.join("|"),
+    );
+  }
+});
+
+Deno.test("deployments: migrations render in the order the scan emits them, per network", () => {
+  const zeta = migRow({ script: "script/zeta.s.sol", id: MIG_ID_2 });
+  const alpha = migRow({
+    script: "script/alpha.s.sol",
+    id: MIG_ID_UNLISTED,
+    state: "applied",
+    appliedAt: 1791457413,
+  });
+  const mid = migRow({
+    script: "script/mid.s.sol",
+    id: MIG_ID_1,
+    state: "notRecorded",
+    executedAt: 1791056759,
+  });
+  const box = deploymentsBox(migData([
+    migNetwork({ lineOrder: true, migrations: [zeta, alpha, mid] }),
+    migNetwork({
+      chainId: 8453,
+      network: "base",
+      lineOrder: true,
+      migrations: [mid, zeta, alpha],
+    }),
+  ]));
+  const names = migRows(migPanel(box)).map((r) =>
+    collect(r, "own-role")[0].textContent
+  );
+  assert(
+    names.join(",") ===
+      "zeta.s.sol,alpha.s.sol,mid.s.sol,mid.s.sol,zeta.s.sol,alpha.s.sol",
+    "each network keeps the scan's order, not script, id or state order: " +
+      names.join(","),
+  );
+});
+
 const migBanners = (panel) =>
   collect(panel, "mig-banner").map((b) => ({
     cls: b.className.split(" ").find((c) => c.startsWith("own-verify-")),
