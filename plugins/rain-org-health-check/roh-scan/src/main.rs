@@ -2856,11 +2856,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // subprocess with no cache and this file is ~126KB, so a fetch per
         // section is a quarter of a megabyte of identical transfer.
         let governed_tok_lib = gh_file(deploy_org, deploy_repo, "src/lib/LibTokenInvariants.sol");
-        let privileged = privileged::parse(&gh_file(
+        let privileged_body = gh_file(
             deploy_org,
             deploy_repo,
             privileged::PRIVILEGED_ADDRESSES_PATH,
-        ));
+        );
+        let privileged = privileged::parse(&privileged_body);
         // The facts st0x.deploy emits per chain in `expected-state.json`, checked live here.
         let expected_body = gh_file(deploy_org, deploy_repo, expected::EXPECTED_STATE_PATH);
         let expected_state = expected::parse(&expected_body);
@@ -3067,7 +3068,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             }
             let chain_names: Vec<String> = chains.iter().map(|c| c.network.clone()).collect();
             if listed_all && !chain_names.is_empty() {
-                let (map, unread) = addrnames::build_address_names(&sources, &chain_names);
+                let (mut map, unread) = addrnames::build_address_names(&sources, &chain_names);
+                addrnames::add_privileged(&mut map, &privileged_body, &chain_names);
                 doc["addressNames"] = map;
                 doc["addressNamesUnread"] = serde_json::Value::from(unread);
             }

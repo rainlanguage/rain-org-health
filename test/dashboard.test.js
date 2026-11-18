@@ -3776,6 +3776,19 @@ Deno.test("deployments: unreadable migration data is an honest unavailable and t
   );
 });
 
+Deno.test("deployments: a migration writer is named from the scan's pins for its chain", () => {
+  const data = migData([migNetwork({ migrations: [migRow({})] })]);
+  data.deploymentRbac = {
+    addressNames: {
+      ethereum: { [MIG_WRITER.toLowerCase()]: [{ name: "registryRootAuthority", contract: "", path: "privileged-addresses.json" }] },
+    },
+  };
+  const row = migRows(migPanel(deploymentsBox(data)))[0];
+  const names = collect(row, "rbac-name").map((n) => n.textContent);
+  assert(names.length === 1 && names[0] === "registryRootAuthority", "writer named from pins: " + names.join());
+  assert(collect(row, "own-addr").length === 1, "the address and its link stay");
+});
+
 Deno.test("deployments: an unrecognised migration state is named, not coloured as a known one", () => {
   const box = deploymentsBox(migData([
     migNetwork({ migrations: [migRow({ state: "pending" })] }),
