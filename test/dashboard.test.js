@@ -77,6 +77,12 @@ function makeEl(tag) {
     append(...ns) {
       for (const n of ns) el._adopt(n);
     },
+    prepend(...ns) {
+      const rest = el.children;
+      el.children = [];
+      for (const n of ns) el._adopt(n);
+      el.children.push(...rest);
+    },
     appendChild(n) {
       el._adopt(n);
       return n;
@@ -7584,6 +7590,38 @@ Deno.test("deployments: unreadable migration data is an honest unavailable and t
     collect(migPanel(unread), "mig-empty").length === 1,
     "unavailable also renders when the owner constants are unread",
   );
+});
+
+const migPrivileged = (doc) => ({
+  now: () => 0,
+  fetch: (url) =>
+    url === "https://raw.githubusercontent.com/acme/deploy/main/privileged-addresses.json"
+      ? Promise.resolve({ ok: true, status: 200, json: () => Promise.resolve(doc) })
+      : Promise.reject(new TypeError("no network in tests")),
+});
+
+Deno.test("deployments: a migration writer is named by the privileged-addresses.json key that holds it", async () => {
+  const { box, done } = deploymentsRender(
+    migData([migNetwork({ migrations: [migRow({})] })]),
+    migPrivileged({ version: 1, registryRootAuthority: MIG_WRITER.toLowerCase(), chains: {} }),
+  );
+  await done;
+  const row = migRows(migPanel(box))[0];
+  const names = collect(row, "rbac-name").map((n) => n.textContent);
+  assert(names.length === 1 && names[0] === "registryRootAuthority", "writer named by its key: " + names.join());
+  assert(collect(row, "own-addr").length === 1, "the address and its link stay");
+});
+
+Deno.test("deployments: a migration writer no privileged-addresses.json key holds stays bare", async () => {
+  const { box, done } = deploymentsRender(
+    migData([migNetwork({ migrations: [migRow({})] })]),
+    migPrivileged({ version: 1, registryRootAuthority: "0x" + "11".repeat(20), chains: {} }),
+  );
+  await done;
+  const row = migRows(migPanel(box))[0];
+  assert(collect(row, "rbac-name").length === 0, "no name for an address no key holds");
+  assert(collect(row, "rbac-unknown").length === 0, "not marked unrecognised");
+  assert(collect(row, "own-addr").length === 1, "the address and its link stay");
 });
 
 Deno.test("deployments: an unrecognised migration state is named, not coloured as a known one", () => {

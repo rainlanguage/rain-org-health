@@ -3413,13 +3413,13 @@ function renderDeployments(document, $, data, io) {
     renderCodeTokens(data.deploymentCodeTokens);
     renderV2(data.deploymentV2);
     sink = panels.migrations;
-    renderMigrations(data.deploymentMigrations);
+    const migrationsDone = renderMigrations(data.deploymentMigrations);
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
     sink = panels.registry;
     const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac);
     show(hashTab() || TABS[0][0]);
-    return Promise.all([rbacDone, registryDone]);
+    return Promise.all([rbacDone, registryDone, migrationsDone]);
   }
   const sub = el("div", "own-sub");
   sub.append("Privileged addresses read from the ");
@@ -3469,13 +3469,13 @@ function renderDeployments(document, $, data, io) {
   renderCodeTokens(data.deploymentCodeTokens);
   renderV2(data.deploymentV2);
   sink = panels.migrations;
-  renderMigrations(data.deploymentMigrations);
+  const migrationsDone = renderMigrations(data.deploymentMigrations);
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
   sink = panels.registry;
   const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac);
   show(hashTab() || TABS[0][0]);
-  return Promise.all([rbacDone, registryDone]);
+  return Promise.all([rbacDone, registryDone, migrationsDone]);
 }
 let data = null;
 async function load() {
