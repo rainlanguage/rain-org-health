@@ -3289,6 +3289,15 @@ function renderDeployments(document, $, data, io) {
         where.append(` · ${n.unread} registry read${n.unread === 1 ? "" : "s"} unanswered`);
       }
       sink.append(where, banner(owed(rows), unread(rows), `on ${network}`));
+      if (n.lineOrder === false) {
+        sink.append(
+          el(
+            "div",
+            "own-groupnote",
+            `Listed in file order, not line order — ${str(n.lineOrderReason) || "the scan gave no reason"}.`,
+          ),
+        );
+      }
       const table = el("div", "own-table");
       for (const m of rows) {
         const row = el("div", `own-row mig-${m.state}`);

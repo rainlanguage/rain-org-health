@@ -279,6 +279,51 @@ fn when(t: u64) -> Value {
     }
 }
 
+/// Indices into `m.migrations`: the chain's line from genesis along `onto`, then those with no entry on the chain; `Err` says why the line cannot be followed.
+fn line_order(m: &Manifest, chain_id: u64) -> Result<Vec<usize>, String> {
+    let on: Vec<(usize, &str)> = m
+        .migrations
+        .iter()
+        .enumerate()
+        .filter_map(|(i, x)| x.on(chain_id).map(|e| (i, e.onto.as_str())))
+        .collect();
+    let script = |i: usize| m.migrations[i].script.as_str();
+    let mut line: Vec<usize> = Vec::new();
+    let mut tip = m.genesis.as_str();
+    loop {
+        let next: Vec<usize> = on
+            .iter()
+            .filter(|(_, o)| o.eq_ignore_ascii_case(tip))
+            .map(|(i, _)| *i)
+            .collect();
+        match next.as_slice() {
+            [] => break,
+            [i] if line.contains(i) => {
+                return Err(format!("the line cycles back to {}", script(*i)));
+            }
+            [i] => {
+                line.push(*i);
+                tip = m.migrations[*i].id.as_str();
+            }
+            many => {
+                let names: Vec<&str> = many.iter().map(|&i| script(i)).collect();
+                return Err(format!(
+                    "the line forks at {tip}: {} all go onto it",
+                    names.join(", ")
+                ));
+            }
+        }
+    }
+    if let Some((i, onto)) = on.iter().find(|(i, _)| !line.contains(i)) {
+        return Err(format!(
+            "{} goes onto {onto}, which is not on the line from genesis",
+            script(*i)
+        ));
+    }
+    line.extend((0..m.migrations.len()).filter(|&i| m.migrations[i].on(chain_id).is_none()));
+    Ok(line)
+}
+
 fn network_json(
     m: &Manifest,
     net: &Network,
@@ -315,9 +360,12 @@ fn network_json(
             .position(|a| a.same(r))
             .and_then(|i| answers.get(i).copied().flatten())
     };
-    let rows: Vec<Value> = m
-        .migrations
-        .iter()
+    let order = line_order(m, net.chain_id);
+    let rows: Vec<Value> = order
+        .clone()
+        .unwrap_or_else(|_| (0..m.migrations.len()).collect())
+        .into_iter()
+        .map(|i| &m.migrations[i])
         .map(|mig| {
             let Some(entry) = mig.on(net.chain_id) else {
                 return json!({
@@ -376,6 +424,8 @@ fn network_json(
         "registry": net.registry,
         "rpcHost": rpc_host,
         "unread": (0..asked.len()).filter(|i| answers.get(*i).copied().flatten().is_none()).count(),
+        "lineOrder": order.is_ok(),
+        "lineOrderReason": order.err(),
         "migrations": rows,
         "lines": lines
             .iter()
@@ -549,7 +599,7 @@ mod tests {
     }
 
     #[test]
-    fn every_migration_is_listed_on_every_network_in_file_order() {
+    fn every_migration_is_listed_on_every_network() {
         let doc = render(&fixture().to_string(), &Registry::new(vec![]));
         assert_eq!(doc["org"], "acme");
         assert_eq!(doc["repo"], "deploy");
@@ -578,6 +628,129 @@ mod tests {
         }
         assert_eq!(net(&doc, "sevenchain")["rpcHost"], "rpc.sevenchain");
         assert_eq!(net(&doc, "tenchain")["rpcHost"], Value::Null);
+    }
+
+    fn scripts(doc: &Value, network: &str) -> Vec<String> {
+        net(doc, network)["migrations"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|m| m["script"].as_str().unwrap().to_string())
+            .collect()
+    }
+
+    #[test]
+    fn each_network_lists_its_own_line_from_genesis_then_the_migrations_it_lacks() {
+        let f = json!({
+            "genesis": GENESIS,
+            "migrations": [
+                {
+                    "chains": {"10": entry(0, ID_2), "7": entry(0, ID_1)},
+                    "id": ID_3, "script": "script/c.s.sol"
+                },
+                {
+                    "chains": {"10": entry(0, GENESIS), "7": entry(0, GENESIS)},
+                    "id": ID_1, "script": "script/a.s.sol"
+                },
+                {
+                    "chains": {"10": entry(0, ID_3)},
+                    "id": ID_4, "script": "script/d.s.sol"
+                },
+                {
+                    "chains": {"10": entry(0, ID_1), "7": entry(0, ID_3)},
+                    "id": ID_2, "script": "script/b.s.sol"
+                }
+            ],
+            "namespace": NS_A,
+            "networks": {
+                "10": {"network": "tenchain", "registry": REGISTRY},
+                "7": {"network": "sevenchain", "registry": REGISTRY}
+            },
+            "version": 2,
+            "writer": SAFE_X
+        });
+        let doc = render(&f.to_string(), &Registry::new(vec![]));
+        assert_eq!(
+            scripts(&doc, "tenchain"),
+            [
+                "script/a.s.sol",
+                "script/b.s.sol",
+                "script/c.s.sol",
+                "script/d.s.sol"
+            ]
+        );
+        assert_eq!(
+            scripts(&doc, "sevenchain"),
+            [
+                "script/a.s.sol",
+                "script/c.s.sol",
+                "script/b.s.sol",
+                "script/d.s.sol"
+            ]
+        );
+        for n in ["tenchain", "sevenchain"] {
+            assert_eq!(net(&doc, n)["lineOrder"], true, "{n}");
+            assert_eq!(net(&doc, n)["lineOrderReason"], Value::Null, "{n}");
+        }
+    }
+
+    #[test]
+    fn a_forked_line_is_listed_in_file_order_with_the_fork_named() {
+        let mut f = fixture();
+        f["migrations"].as_array_mut().unwrap().reverse();
+        let doc = render(&f.to_string(), &Registry::new(vec![]));
+        let seven = net(&doc, "sevenchain");
+        assert_eq!(seven["lineOrder"], false);
+        assert_eq!(
+            seven["lineOrderReason"],
+            format!(
+                "the line forks at {ID_1}: script/three.s.sol, script/two.s.sol all go onto it"
+            )
+        );
+        assert_eq!(
+            scripts(&doc, "sevenchain"),
+            ["script/three.s.sol", "script/two.s.sol", "script/one.s.sol"]
+        );
+        assert_eq!(net(&doc, "tenchain")["lineOrder"], true);
+        assert_eq!(
+            scripts(&doc, "tenchain"),
+            ["script/one.s.sol", "script/two.s.sol", "script/three.s.sol"]
+        );
+    }
+
+    #[test]
+    fn a_broken_line_is_listed_in_file_order_with_the_break_named() {
+        let mut f = fixture();
+        f["migrations"][2]["chains"]["10"]["onto"] = Value::from(ID_4);
+        f["migrations"].as_array_mut().unwrap().reverse();
+        let doc = render(&f.to_string(), &Registry::new(vec![]));
+        let ten = net(&doc, "tenchain");
+        assert_eq!(ten["lineOrder"], false);
+        assert_eq!(
+            ten["lineOrderReason"],
+            format!("script/three.s.sol goes onto {ID_4}, which is not on the line from genesis")
+        );
+        assert_eq!(
+            scripts(&doc, "tenchain"),
+            ["script/three.s.sol", "script/two.s.sol", "script/one.s.sol"]
+        );
+    }
+
+    #[test]
+    fn a_cycle_is_listed_in_file_order_with_the_cycle_named() {
+        let mut f = fixture();
+        f["migrations"][1]["id"] = Value::from(ID_1);
+        let doc = render(&f.to_string(), &Registry::new(vec![]));
+        let ten = net(&doc, "tenchain");
+        assert_eq!(ten["lineOrder"], false);
+        assert_eq!(
+            ten["lineOrderReason"],
+            "the line cycles back to script/two.s.sol"
+        );
+        assert_eq!(
+            scripts(&doc, "tenchain"),
+            ["script/one.s.sol", "script/two.s.sol", "script/three.s.sol"]
+        );
     }
 
     #[test]
