@@ -688,7 +688,7 @@ function renderDeployments(document, $, data, io) {
       sink.append(
         el(
           "div",
-          `own-verify ${bad.length ? "own-verify-drift" : "own-verify-ok"}`,
+          `own-verify ${bad.length || unavailable || !rows.length ? "own-verify-drift" : "own-verify-ok"}`,
           `${bad.length} inconsistent · ${unavailable} unavailable · ${rows.length - bad.length - unavailable} consistent — assetId, listingTicker and listingName against st0x.registry, Nasdaq and GLEIF.`,
         ),
       );

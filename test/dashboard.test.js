@@ -18402,7 +18402,7 @@ Deno.test("deployments: listing facts list only inconsistent rows and count unav
   assert(base?.[0] === "own-verify own-verify-drift", JSON.stringify(banners));
   assert(base[1].startsWith("1 inconsistent · 1 unavailable · 1 consistent"), base[1]);
   const eth = banners.find(([, t]) => t?.startsWith("0 inconsistent · 1 unavailable · 0 consistent"));
-  assert(eth?.[0] === "own-verify own-verify-ok", JSON.stringify(banners));
+  assert(eth?.[0] === "own-verify own-verify-drift", "an all-unavailable chain is not shown as ok");
   assert(
     banners.some(([c, t]) => c === "own-verify own-verify-drift" && t === "Listing check unavailable — bad json."),
     JSON.stringify(banners),
