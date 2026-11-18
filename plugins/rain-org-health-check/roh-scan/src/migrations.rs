@@ -1,11 +1,11 @@
-//! The deploy repo's migrations joined with each registry's `appliedV5` and each line's `headV5`; the page has no RPC.
+//! The deploy repo's migrations joined with each registry's `appliedV5` and its line's `headV5`; the page has no RPC.
 
 use crate::rpc;
 use alloy_primitives::{Address, FixedBytes};
 use serde_json::{json, Map, Value};
 
 pub const PATH: &str = "migrations.json";
-const SCHEMA_VERSION: u64 = 1;
+const SCHEMA_VERSION: u64 = 2;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Record {
@@ -31,15 +31,14 @@ pub struct Network {
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct ChainEntry {
-    writer: String,
     executed_at: u64,
-    prerequisites: Vec<Record>,
+    onto: String,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Migration {
     script: String,
-    key: Option<(String, String)>,
+    id: String,
     chains: Vec<(u64, ChainEntry)>,
 }
 
@@ -50,19 +49,32 @@ impl Migration {
             .find(|(c, _)| *c == chain_id)
             .map(|(_, e)| e)
     }
-
-    fn is(&self, namespace: &str, id: &str) -> bool {
-        self.key
-            .as_ref()
-            .is_some_and(|(n, i)| n.eq_ignore_ascii_case(namespace) && i.eq_ignore_ascii_case(id))
-    }
 }
 
+/// Every migration sits on the one `(writer, namespace)` line.
 #[derive(Debug, Clone, PartialEq, Eq)]
 struct Manifest {
     genesis: String,
+    writer: String,
+    namespace: String,
     networks: Vec<Network>,
     migrations: Vec<Migration>,
+}
+
+impl Manifest {
+    fn record(&self, id: &str) -> Record {
+        Record {
+            writer: self.writer.clone(),
+            namespace: self.namespace.clone(),
+            id: id.to_string(),
+        }
+    }
+
+    fn find(&self, id: &str) -> Option<&Migration> {
+        self.migrations
+            .iter()
+            .find(|x| x.id.eq_ignore_ascii_case(id))
+    }
 }
 
 fn field<'a>(v: &'a Value, key: &str, at: &str) -> Result<&'a Value, String> {
@@ -109,6 +121,8 @@ fn parse(src: &str) -> Result<Manifest, String> {
         _ => return Err(format!("not schema version {SCHEMA_VERSION}")),
     }
     let genesis = word(&root, "genesis", "root")?;
+    let writer = address(&root, "writer", "root")?;
+    let namespace = word(&root, "namespace", "root")?;
     let mut networks = Vec::new();
     for (k, n) in object(&root, "networks", "root")? {
         let at = format!("networks.{k}");
@@ -126,50 +140,26 @@ fn parse(src: &str) -> Result<Manifest, String> {
     for (i, m) in rows.iter().enumerate() {
         let at = format!("migrations.{i}");
         let script = string(m, "script", &at)?;
-        let chains_in = object(m, "chains", &at)?;
-        let key = match (
-            field(m, "namespace", &at)?.is_null(),
-            field(m, "id", &at)?.is_null(),
-        ) {
-            (true, true) if chains_in.is_empty() => None,
-            (true, true) => return Err(format!("{at} has no id but lists chains")),
-            (false, false) => Some((word(m, "namespace", &at)?, word(m, "id", &at)?)),
-            _ => return Err(format!("{at} has one of namespace and id null")),
-        };
+        let id = word(m, "id", &at)?;
         let mut chains = Vec::new();
-        for (k, c) in chains_in {
+        for (k, c) in object(m, "chains", &at)? {
             let cat = format!("{at}.chains.{k}");
-            let mut prerequisites = Vec::new();
-            let pre = field(c, "prerequisites", &cat)?
-                .as_array()
-                .ok_or_else(|| format!("{cat}.prerequisites is not an array"))?;
-            for (j, p) in pre.iter().enumerate() {
-                let pat = format!("{cat}.prerequisites.{j}");
-                prerequisites.push(Record {
-                    writer: address(p, "writer", &pat)?,
-                    namespace: word(p, "namespace", &pat)?,
-                    id: word(p, "id", &pat)?,
-                });
-            }
             chains.push((
                 chain_id(k, &cat)?,
                 ChainEntry {
-                    writer: address(c, "writer", &cat)?,
                     executed_at: field(c, "executedAt", &cat)?
                         .as_u64()
                         .ok_or_else(|| format!("{cat}.executedAt is not a timestamp"))?,
-                    prerequisites,
+                    onto: word(c, "onto", &cat)?,
                 },
             ));
         }
-        migrations.push(Migration {
-            script,
-            key,
-            chains,
-        });
+        migrations.push(Migration { script, id, chains });
     }
     Ok(Manifest {
         genesis,
+        writer,
+        namespace,
         networks,
         migrations,
     })
@@ -198,33 +188,12 @@ pub fn read_applied(net: &Network, records: &[Record], call: EthCalls) -> Vec<Op
         .collect()
 }
 
-/// The registry and `appliedV5` key for migration `id` on `network`; the writer is that migration's entry on the chain, else its namespace's line there.
+/// The registry and `appliedV5` key for migration `id` on `network`: the file's one line.
 pub fn locate(src: &str, network: &str, id: &str) -> Option<(Network, Record)> {
     let m = parse(src).ok()?;
     let net = m.networks.iter().find(|n| n.name == network)?.clone();
-    let mig = m.migrations.iter().find(|x| {
-        x.key
-            .as_ref()
-            .is_some_and(|(_, i)| i.eq_ignore_ascii_case(id))
-    })?;
-    let (namespace, _) = mig.key.clone()?;
-    let writer = match mig.on(net.chain_id) {
-        Some(e) => e.writer.clone(),
-        None => m.migrations.iter().find_map(|x| {
-            let (ns, _) = x.key.as_ref()?;
-            let e = x.on(net.chain_id)?;
-            ns.eq_ignore_ascii_case(&namespace)
-                .then(|| e.writer.clone())
-        })?,
-    };
-    Some((
-        net,
-        Record {
-            writer,
-            namespace,
-            id: id.to_string(),
-        },
-    ))
+    m.find(id)?;
+    Some((net, m.record(id)))
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -317,20 +286,16 @@ fn network_json(
     read: ReadApplied,
     heads: ReadHeads,
 ) -> Value {
-    let genesis = |r: &Record| r.id.eq_ignore_ascii_case(&m.genesis);
+    let genesis = |id: &str| id.eq_ignore_ascii_case(&m.genesis);
     let mut asked: Vec<Record> = Vec::new();
     for mig in &m.migrations {
-        let (Some((namespace, id)), Some(entry)) = (&mig.key, mig.on(net.chain_id)) else {
+        let Some(entry) = mig.on(net.chain_id) else {
             continue;
         };
-        let own = Record {
-            writer: entry.writer.clone(),
-            namespace: namespace.clone(),
-            id: id.clone(),
-        };
-        for r in std::iter::once(&own).chain(entry.prerequisites.iter().filter(|p| !genesis(p))) {
-            if !asked.iter().any(|a| a.same(r)) {
-                asked.push(r.clone());
+        let onto = (!genesis(&entry.onto)).then(|| m.record(&entry.onto));
+        for r in std::iter::once(m.record(&mig.id)).chain(onto) {
+            if !asked.iter().any(|a| a.same(&r)) {
+                asked.push(r);
             }
         }
     }
@@ -354,75 +319,54 @@ fn network_json(
         .migrations
         .iter()
         .map(|mig| {
-            let Some((namespace, id)) = &mig.key else {
-                return json!({
-                    "script": mig.script,
-                    "namespace": null,
-                    "id": null,
-                    "writer": null,
-                    "state": "unregistered",
-                    "appliedAt": null,
-                    "executedAt": null,
-                    "waitsOn": [],
-                });
-            };
             let Some(entry) = mig.on(net.chain_id) else {
                 return json!({
                     "script": mig.script,
-                    "namespace": namespace,
-                    "id": id,
-                    "writer": null,
+                    "namespace": m.namespace,
+                    "id": mig.id,
+                    "writer": m.writer,
                     "state": "unknown",
                     "appliedAt": null,
                     "executedAt": null,
                     "waitsOn": [],
                 });
             };
-            let at = applied(&Record {
-                writer: entry.writer.clone(),
-                namespace: namespace.clone(),
-                id: id.clone(),
-            });
-            let waits: Vec<Value> = entry
-                .prerequisites
-                .iter()
-                .map(|p| {
-                    if genesis(p) {
-                        return json!({
-                            "writer": p.writer,
-                            "namespace": p.namespace,
-                            "id": p.id,
-                            "script": null,
-                            "state": "genesis",
-                            "appliedAt": null,
-                            "executedAt": null,
-                        });
-                    }
-                    let target = m.migrations.iter().find(|x| x.is(&p.namespace, &p.id));
-                    let executed = target
-                        .and_then(|x| x.on(net.chain_id))
-                        .map_or(0, |e| e.executed_at);
-                    let pa = applied(p);
-                    json!({
-                        "writer": p.writer,
-                        "namespace": p.namespace,
-                        "id": p.id,
-                        "script": target.map(|x| x.script.clone()),
-                        "state": state(pa, executed),
-                        "appliedAt": pa.map_or(Value::Null, when),
-                        "executedAt": when(executed),
-                    })
+            let at = applied(&m.record(&mig.id));
+            let onto = if genesis(&entry.onto) {
+                json!({
+                    "writer": m.writer,
+                    "namespace": m.namespace,
+                    "id": entry.onto,
+                    "script": null,
+                    "state": "genesis",
+                    "appliedAt": null,
+                    "executedAt": null,
                 })
-                .collect();
+            } else {
+                let target = m.find(&entry.onto);
+                let executed = target
+                    .and_then(|x| x.on(net.chain_id))
+                    .map_or(0, |e| e.executed_at);
+                let pa = applied(&m.record(&entry.onto));
+                json!({
+                    "writer": m.writer,
+                    "namespace": m.namespace,
+                    "id": entry.onto,
+                    "script": target.map(|x| x.script.clone()),
+                    "state": state(pa, executed),
+                    "appliedAt": pa.map_or(Value::Null, when),
+                    "executedAt": when(executed),
+                })
+            };
             json!({
                 "script": mig.script,
-                "namespace": namespace,
-                "id": id,
-                "writer": entry.writer,
+                "namespace": m.namespace,
+                "id": mig.id,
+                "writer": m.writer,
                 "state": state(at, entry.executed_at),
                 "appliedAt": at.map_or(Value::Null, when),
                 "executedAt": when(entry.executed_at),
-                "waitsOn": waits,
+                "waitsOn": [onto],
             })
         })
         .collect();
@@ -488,16 +432,13 @@ mod tests {
     const ID_1: &str = "0x0000000000000000000000000000000000000000000000000000000000000001";
     const ID_2: &str = "0x0000000000000000000000000000000000000000000000000000000000000002";
     const ID_3: &str = "0x0000000000000000000000000000000000000000000000000000000000000003";
+    const ID_4: &str = "0x0000000000000000000000000000000000000000000000000000000000000004";
     const SAFE_X: &str = "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329";
     const SAFE_Y: &str = "0xe70d821f3462a074e63b42d0AaC6523faAe1d611";
     const REGISTRY: &str = "0xc89F95eC7e626CFBef37a1F502A69BaF2022F8A8";
 
-    fn pre(writer: &str, ns: &str, id: &str) -> Value {
-        json!({"id": id, "namespace": ns, "writer": writer})
-    }
-
-    fn entry(writer: &str, executed_at: u64, prerequisites: Vec<Value>) -> Value {
-        json!({"executedAt": executed_at, "prerequisites": prerequisites, "writer": writer})
+    fn entry(executed_at: u64, onto: &str) -> Value {
+        json!({"executedAt": executed_at, "onto": onto})
     }
 
     /// Keys sorted and chain ids as string keys, as the producer writes them.
@@ -507,32 +448,27 @@ mod tests {
             "migrations": [
                 {
                     "chains": {
-                        "10": entry(SAFE_Y, 1_700_000_000, vec![pre(SAFE_Y, NS_A, GENESIS)]),
-                        "7": entry(SAFE_X, 1_700_000_500, vec![pre(SAFE_X, NS_A, GENESIS)]),
+                        "10": entry(1_700_000_000, GENESIS),
+                        "7": entry(1_700_000_500, GENESIS),
                     },
-                    "id": ID_1, "namespace": NS_A, "script": "script/one.s.sol"
-                },
-                {"chains": {}, "id": null, "namespace": null, "script": "script/unrecorded.s.sol"},
-                {
-                    "chains": {
-                        "10": entry(SAFE_Y, 0, vec![pre(SAFE_Y, NS_B, GENESIS)]),
-                        "7": entry(SAFE_X, 0, vec![pre(SAFE_X, NS_B, GENESIS)]),
-                    },
-                    "id": ID_2, "namespace": NS_B, "script": "script/two.s.sol"
+                    "id": ID_1, "script": "script/one.s.sol"
                 },
                 {
-                    "chains": {
-                        "10": entry(SAFE_Y, 0, vec![pre(SAFE_Y, NS_A, ID_1)]),
-                        "7": entry(SAFE_X, 0, vec![pre(SAFE_X, NS_A, ID_1)]),
-                    },
-                    "id": ID_3, "namespace": NS_A, "script": "script/three.s.sol"
+                    "chains": {"10": entry(0, ID_1), "7": entry(0, ID_1)},
+                    "id": ID_2, "script": "script/two.s.sol"
+                },
+                {
+                    "chains": {"10": entry(0, ID_2), "7": entry(0, ID_1)},
+                    "id": ID_3, "script": "script/three.s.sol"
                 }
             ],
+            "namespace": NS_A,
             "networks": {
                 "10": {"network": "tenchain", "registry": REGISTRY},
                 "7": {"network": "sevenchain", "registry": REGISTRY}
             },
-            "version": 1
+            "version": 2,
+            "writer": SAFE_X
         })
     }
 
@@ -637,12 +573,7 @@ mod tests {
                 .collect();
             assert_eq!(
                 scripts,
-                vec![
-                    "script/one.s.sol",
-                    "script/unrecorded.s.sol",
-                    "script/two.s.sol",
-                    "script/three.s.sol"
-                ]
+                vec!["script/one.s.sol", "script/two.s.sol", "script/three.s.sol"]
             );
         }
         assert_eq!(net(&doc, "sevenchain")["rpcHost"], "rpc.sevenchain");
@@ -650,60 +581,32 @@ mod tests {
     }
 
     #[test]
-    fn applied_carries_the_registry_time_and_the_chain_writer() {
-        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_B, ID_2, 1_791_457_413)]);
+    fn applied_carries_the_registry_time_and_the_files_line() {
+        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_A, ID_2, 1_791_457_413)]);
         let doc = render(&fixture().to_string(), &reg);
         let two = row(&doc, "sevenchain", "script/two.s.sol");
         assert_eq!(two["state"], "applied");
         assert_eq!(two["appliedAt"], 1_791_457_413u64);
         assert_eq!(two["writer"], SAFE_X);
-        assert_eq!(two["namespace"], NS_B);
+        assert_eq!(two["namespace"], NS_A);
         assert_eq!(two["id"], ID_2);
         let other = row(&doc, "tenchain", "script/two.s.sol");
         assert_eq!(other["state"], "notApplied");
         assert_eq!(other["appliedAt"], Value::Null);
-        assert_eq!(other["writer"], SAFE_Y);
+        assert_eq!(other["writer"], SAFE_X);
     }
 
     #[test]
-    fn a_record_under_another_writer_does_not_count() {
-        let reg = Registry::new(vec![("sevenchain", SAFE_Y, NS_B, ID_2, 5)]);
-        let doc = render(&fixture().to_string(), &reg);
-        assert_eq!(
-            row(&doc, "sevenchain", "script/two.s.sol")["state"],
-            "notApplied"
-        );
-    }
-
-    #[test]
-    fn the_same_id_in_another_namespace_is_its_own_record() {
-        let mut f = fixture();
-        f["migrations"][2]["id"] = Value::from(ID_1);
-        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_A, ID_1, 1_700_000_900)]);
-        let doc = render(&f.to_string(), &reg);
-        assert_eq!(
-            row(&doc, "sevenchain", "script/one.s.sol")["state"],
-            "applied"
-        );
-        assert_eq!(
-            row(&doc, "sevenchain", "script/two.s.sol")["state"],
-            "notApplied"
-        );
-    }
-
-    #[test]
-    fn a_prerequisite_under_another_writer_is_its_own_record() {
-        let mut f = fixture();
-        f["migrations"][3]["chains"]["7"]["prerequisites"] = json!([pre(SAFE_Y, NS_B, ID_2)]);
-        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_B, ID_2, 1_700_000_900)]);
-        let doc = render(&f.to_string(), &reg);
-        assert_eq!(
-            row(&doc, "sevenchain", "script/two.s.sol")["state"],
-            "applied"
-        );
-        let w = &row(&doc, "sevenchain", "script/three.s.sol")["waitsOn"][0];
-        assert_eq!(w["writer"], SAFE_Y);
-        assert_eq!(w["state"], "notApplied");
+    fn a_record_under_another_writer_or_namespace_does_not_count() {
+        for (w, ns) in [(SAFE_Y, NS_A), (SAFE_X, NS_B)] {
+            let reg = Registry::new(vec![("sevenchain", w, ns, ID_2, 5)]);
+            let doc = render(&fixture().to_string(), &reg);
+            assert_eq!(
+                row(&doc, "sevenchain", "script/two.s.sol")["state"],
+                "notApplied",
+                "{w} {ns}"
+            );
+        }
     }
 
     #[test]
@@ -781,55 +684,35 @@ mod tests {
     }
 
     #[test]
-    fn each_line_the_asked_records_sit_on_is_listed_once_with_its_head() {
-        let mut f = fixture();
-        f["migrations"][3]["chains"]["7"]["writer"] = Value::from(SAFE_X.to_lowercase());
-        f["migrations"][3]["chains"]["7"]["prerequisites"] = json!([pre(SAFE_Y, NS_B, ID_2)]);
-        let ns_a_upper = format!("0x{}", NS_A[2..].to_uppercase());
-        f["migrations"][3]["chains"]["10"]["prerequisites"] =
-            json!([pre(SAFE_Y, &ns_a_upper, ID_2)]);
+    fn the_files_line_is_listed_once_with_its_head() {
         let head = format!("0x{}", "ab".repeat(32));
         let asked = RefCell::new(Vec::new());
         let doc = build(
             "acme",
             "deploy",
-            &f.to_string(),
+            &fixture().to_string(),
             &host,
             &|_, r| vec![None; r.len()],
             &|n, l| {
                 asked.borrow_mut().push((n.name.clone(), l.to_vec()));
-                (Some(77), vec![Some(head.clone()), None])
+                (Some(77), vec![Some(head.clone())])
             },
         );
-        let line = |w: &str, ns: &str| (w.to_string(), ns.to_string());
+        let line = vec![(SAFE_X.to_string(), NS_A.to_string())];
         assert_eq!(
             *asked.borrow(),
             vec![
-                (
-                    "sevenchain".to_string(),
-                    vec![line(SAFE_X, NS_A), line(SAFE_X, NS_B), line(SAFE_Y, NS_B)]
-                ),
-                (
-                    "tenchain".to_string(),
-                    vec![line(SAFE_Y, NS_A), line(SAFE_Y, NS_B)]
-                ),
+                ("sevenchain".to_string(), line.clone()),
+                ("tenchain".to_string(), line),
             ]
         );
-        assert_eq!(
-            net(&doc, "sevenchain")["lines"],
-            json!([
-                {"writer": SAFE_X, "namespace": NS_A, "headBlock": 77, "head": head},
-                {"writer": SAFE_X, "namespace": NS_B, "headBlock": null, "head": null},
-                {"writer": SAFE_Y, "namespace": NS_B, "headBlock": null, "head": null}
-            ])
-        );
-        assert_eq!(
-            net(&doc, "tenchain")["lines"],
-            json!([
-                {"writer": SAFE_Y, "namespace": NS_A, "headBlock": 77, "head": head},
-                {"writer": SAFE_Y, "namespace": NS_B, "headBlock": null, "head": null}
-            ])
-        );
+        for n in ["sevenchain", "tenchain"] {
+            assert_eq!(
+                net(&doc, n)["lines"],
+                json!([{"writer": SAFE_X, "namespace": NS_A, "headBlock": 77, "head": head}]),
+                "{n}"
+            );
+        }
     }
 
     #[test]
@@ -942,55 +825,25 @@ mod tests {
     }
 
     #[test]
-    fn executed_but_unrecorded_is_not_recorded_with_when_it_ran() {
-        let doc = render(&fixture().to_string(), &Registry::new(vec![]));
-        let one = row(&doc, "sevenchain", "script/one.s.sol");
-        assert_eq!(one["state"], "notRecorded");
-        assert_eq!(one["executedAt"], 1_700_000_500u64);
-        assert_eq!(one["appliedAt"], Value::Null);
-        let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_A, ID_1, 1_700_000_500)]);
-        let doc = render(&fixture().to_string(), &reg);
-        let one = row(&doc, "sevenchain", "script/one.s.sol");
-        assert_eq!(one["state"], "applied");
-        assert_eq!(one["appliedAt"], 1_700_000_500u64);
-    }
-
-    #[test]
-    fn a_migration_with_no_id_is_unregistered_and_never_asked() {
-        let reg = Registry::new(vec![]);
-        let doc = render(&fixture().to_string(), &reg);
-        for n in ["sevenchain", "tenchain"] {
-            let r = row(&doc, n, "script/unrecorded.s.sol");
-            assert_eq!(r["state"], "unregistered");
-            assert_eq!(r["id"], Value::Null);
-            assert_eq!(r["namespace"], Value::Null);
-            assert_eq!(r["writer"], Value::Null);
-            assert_eq!(r["executedAt"], Value::Null);
-        }
-        for (_, records) in reg.asked.borrow().iter() {
-            assert!(records.iter().all(|r| r.id != GENESIS));
-        }
-    }
-
-    #[test]
     fn each_record_is_asked_once_and_genesis_never() {
         let reg = Registry::new(vec![]);
         render(&fixture().to_string(), &reg);
-        let asked = reg.asked.borrow();
-        let seven = &asked.iter().find(|(n, _)| n == "sevenchain").unwrap().1;
         let want: Vec<Record> = [ID_1, ID_2, ID_3]
             .iter()
             .map(|id| Record {
                 writer: SAFE_X.into(),
-                namespace: if *id == ID_2 { NS_B } else { NS_A }.into(),
+                namespace: NS_A.into(),
                 id: (*id).into(),
             })
             .collect();
-        assert_eq!(seven, &want);
+        let asked = reg.asked.borrow();
+        for n in ["sevenchain", "tenchain"] {
+            assert_eq!(&asked.iter().find(|(x, _)| x == n).unwrap().1, &want, "{n}");
+        }
     }
 
     #[test]
-    fn waits_on_names_the_prerequisite_and_its_own_state() {
+    fn waits_on_is_the_migration_the_chain_applies_it_onto() {
         let doc = render(&fixture().to_string(), &Registry::new(vec![]));
         let three = row(&doc, "sevenchain", "script/three.s.sol");
         assert_eq!(three["state"], "notApplied");
@@ -1001,6 +854,11 @@ mod tests {
         assert_eq!(w["writer"], SAFE_X);
         assert_eq!(w["state"], "notRecorded");
         assert_eq!(w["executedAt"], 1_700_000_500u64);
+        let w = &row(&doc, "tenchain", "script/three.s.sol")["waitsOn"][0];
+        assert_eq!(w["script"], "script/two.s.sol");
+        assert_eq!(w["id"], ID_2);
+        assert_eq!(w["state"], "notApplied");
+        assert_eq!(w["executedAt"], Value::Null);
         let reg = Registry::new(vec![("sevenchain", SAFE_X, NS_A, ID_1, 1_700_000_900)]);
         let doc = render(&fixture().to_string(), &reg);
         let w = &row(&doc, "sevenchain", "script/three.s.sol")["waitsOn"][0];
@@ -1009,23 +867,28 @@ mod tests {
     }
 
     #[test]
-    fn a_genesis_prerequisite_is_first_in_line_and_not_asked() {
+    fn a_migration_onto_genesis_waits_on_genesis() {
         let doc = render(&fixture().to_string(), &Registry::new(vec![]));
-        let w = &row(&doc, "sevenchain", "script/two.s.sol")["waitsOn"][0];
+        let w = &row(&doc, "sevenchain", "script/one.s.sol")["waitsOn"][0];
         assert_eq!(w["state"], "genesis");
-        assert_eq!(w["namespace"], NS_B);
+        assert_eq!(w["id"], GENESIS);
+        assert_eq!(w["namespace"], NS_A);
         assert_eq!(w["script"], Value::Null);
     }
 
     #[test]
-    fn a_prerequisite_the_file_does_not_list_is_unnamed_not_dropped() {
+    fn an_onto_the_file_does_not_list_is_unnamed_not_dropped() {
         let mut f = fixture();
-        f["migrations"][3]["chains"]["7"]["prerequisites"][0]["id"] = Value::from(ID_2);
-        let doc = render(&f.to_string(), &Registry::new(vec![]));
+        f["migrations"][2]["chains"]["7"]["onto"] = Value::from(ID_4);
+        let reg = Registry::new(vec![]);
+        let doc = render(&f.to_string(), &reg);
         let w = &row(&doc, "sevenchain", "script/three.s.sol")["waitsOn"][0];
         assert_eq!(w["script"], Value::Null);
-        assert_eq!(w["id"], ID_2);
+        assert_eq!(w["id"], ID_4);
         assert_eq!(w["state"], "notApplied");
+        let asked = reg.asked.borrow();
+        let seven = &asked.iter().find(|(n, _)| n == "sevenchain").unwrap().1;
+        assert!(seven.iter().any(|r| r.id == ID_4));
     }
 
     #[test]
@@ -1045,10 +908,6 @@ mod tests {
             assert_eq!(
                 row(&doc, n, "script/three.s.sol")["waitsOn"][0]["state"],
                 "unknown"
-            );
-            assert_eq!(
-                row(&doc, n, "script/unrecorded.s.sol")["state"],
-                "unregistered"
             );
         }
     }
@@ -1073,14 +932,15 @@ mod tests {
     #[test]
     fn a_chain_the_migration_does_not_list_is_unknown() {
         let mut f = fixture();
-        f["migrations"][2]["chains"]
+        f["migrations"][1]["chains"]
             .as_object_mut()
             .unwrap()
             .remove("10");
         let doc = render(&f.to_string(), &Registry::new(vec![]));
         let two = row(&doc, "tenchain", "script/two.s.sol");
         assert_eq!(two["state"], "unknown");
-        assert_eq!(two["writer"], Value::Null);
+        assert_eq!(two["executedAt"], Value::Null);
+        assert_eq!(two["waitsOn"], json!([]));
         assert_eq!(two["id"], ID_2);
     }
 
@@ -1102,14 +962,14 @@ mod tests {
         type Mutate = Box<dyn Fn(&mut Value)>;
         let cases: Vec<(Mutate, &str)> = vec![
             (
-                Box::new(|f| f["version"] = Value::from(2)),
-                "not schema version 1",
+                Box::new(|f| f["version"] = Value::from(1)),
+                "not schema version 2",
             ),
             (
                 Box::new(|f| {
                     f.as_object_mut().unwrap().remove("version");
                 }),
-                "not schema version 1",
+                "not schema version 2",
             ),
             (
                 Box::new(|f| f["genesis"] = Value::from("0x12")),
@@ -1120,6 +980,20 @@ mod tests {
                     f.as_object_mut().unwrap().remove("genesis");
                 }),
                 "root has no genesis",
+            ),
+            (
+                Box::new(|f| f["writer"] = Value::from("0x1")),
+                "root.writer is not an address",
+            ),
+            (
+                Box::new(|f| {
+                    f.as_object_mut().unwrap().remove("namespace");
+                }),
+                "root has no namespace",
+            ),
+            (
+                Box::new(|f| f["namespace"] = Value::from("0x1")),
+                "root.namespace is not 32 bytes of hex",
             ),
             (
                 Box::new(|f| f["networks"] = json!([])),
@@ -1147,37 +1021,38 @@ mod tests {
             ),
             (
                 Box::new(|f| f["migrations"][0]["id"] = Value::Null),
-                "migrations.0 has one of namespace and id null",
+                "migrations.0.id is not a string",
             ),
             (
-                Box::new(|f| f["migrations"][1]["chains"]["7"] = entry(SAFE_X, 0, vec![])),
-                "migrations.1 has no id but lists chains",
+                Box::new(|f| {
+                    f["migrations"][1].as_object_mut().unwrap().remove("id");
+                }),
+                "migrations.1 has no id",
             ),
             (
-                Box::new(|f| f["migrations"][2]["namespace"] = Value::from("0x1")),
-                "migrations.2.namespace is not 32 bytes of hex",
+                Box::new(|f| f["migrations"][1]["chains"] = json!([])),
+                "migrations.1.chains is not an object",
             ),
             (
-                Box::new(|f| f["migrations"][2]["chains"]["7"]["writer"] = Value::from("0x1")),
-                "migrations.2.chains.7.writer is not an address",
+                Box::new(|f| f["migrations"][1]["chains"]["7"]["onto"] = Value::from("0x1")),
+                "migrations.1.chains.7.onto is not 32 bytes of hex",
+            ),
+            (
+                Box::new(|f| {
+                    f["migrations"][1]["chains"]["7"]
+                        .as_object_mut()
+                        .unwrap()
+                        .remove("onto");
+                }),
+                "migrations.1.chains.7 has no onto",
             ),
             (
                 Box::new(|f| f["migrations"][2]["chains"]["7"]["executedAt"] = Value::from(-1)),
                 "migrations.2.chains.7.executedAt is not a timestamp",
             ),
             (
-                Box::new(|f| f["migrations"][2]["chains"]["7"]["prerequisites"] = json!({})),
-                "migrations.2.chains.7.prerequisites is not an array",
-            ),
-            (
-                Box::new(|f| {
-                    f["migrations"][2]["chains"]["7"]["prerequisites"][0]["id"] = Value::Null
-                }),
-                "migrations.2.chains.7.prerequisites.0.id is not a string",
-            ),
-            (
-                Box::new(|f| f["migrations"][3]["chains"]["x"] = entry(SAFE_X, 0, vec![])),
-                "migrations.3.chains.x is keyed \"x\", not a chain id",
+                Box::new(|f| f["migrations"][2]["chains"]["x"] = entry(0, ID_1)),
+                "migrations.2.chains.x is keyed \"x\", not a chain id",
             ),
         ];
         for (mutate, why) in cases {
@@ -1199,7 +1074,7 @@ mod tests {
     }
 
     #[test]
-    fn locate_names_the_network_registry_and_the_migration_record_on_it() {
+    fn locate_names_the_network_registry_and_the_files_line_record() {
         let src = fixture().to_string();
         let (net, rec) = locate(&src, "sevenchain", ID_2).unwrap();
         assert_eq!(
@@ -1214,14 +1089,15 @@ mod tests {
             rec,
             Record {
                 writer: SAFE_X.into(),
-                namespace: NS_B.into(),
+                namespace: NS_A.into(),
                 id: ID_2.into(),
             }
         );
         let (net, rec) = locate(&src, "tenchain", ID_3).unwrap();
         assert_eq!(net.chain_id, 10);
-        assert_eq!(rec.writer, SAFE_Y);
+        assert_eq!(rec.writer, SAFE_X);
         assert_eq!(rec.namespace, NS_A);
+        assert_eq!(rec.id, ID_3);
     }
 
     /// The migration id matches in any case and the record keeps the id as asked.
@@ -1241,30 +1117,8 @@ mod tests {
             });
         let (_, rec) = locate(&f.to_string(), "sevenchain", &lower).unwrap();
         assert_eq!(rec.writer, SAFE_X);
-        assert_eq!(rec.namespace, NS_B);
-        assert_eq!(rec.id, lower);
-    }
-
-    /// Off the chain, the writer is the migration's namespace line there, never
-    /// another namespace's.
-    #[test]
-    fn locate_takes_the_writer_of_the_namespace_line_when_the_migration_is_not_on_the_chain() {
-        let mut f = fixture();
-        f["migrations"][3]["chains"]
-            .as_object_mut()
-            .unwrap()
-            .remove("7");
-        f["migrations"][0]["chains"]["7"]["writer"] = Value::from(SAFE_Y);
-        let (_, rec) = locate(&f.to_string(), "sevenchain", ID_3).unwrap();
-        assert_eq!(rec.writer, SAFE_Y);
         assert_eq!(rec.namespace, NS_A);
-        assert_eq!(rec.id, ID_3);
-
-        f["migrations"][0]["chains"]
-            .as_object_mut()
-            .unwrap()
-            .remove("7");
-        assert_eq!(locate(&f.to_string(), "sevenchain", ID_3), None);
+        assert_eq!(rec.id, lower);
     }
 
     #[test]
@@ -1272,9 +1126,10 @@ mod tests {
         let src = fixture().to_string();
         assert_eq!(locate(&src, "elevenchain", ID_1), None);
         assert_eq!(locate(&src, "sevenchain", GENESIS), None);
+        assert_eq!(locate(&src, "sevenchain", ID_4), None);
         assert_eq!(locate("{", "sevenchain", ID_1), None);
         let mut f = fixture();
-        f["version"] = Value::from(2);
+        f["version"] = Value::from(1);
         assert_eq!(locate(&f.to_string(), "sevenchain", ID_1), None);
     }
 
@@ -1311,20 +1166,6 @@ mod tests {
                 network: "elevenchain".into(),
             })
         );
-        let mut f = fixture();
-        for m in [0, 3] {
-            f["migrations"][m]["chains"]
-                .as_object_mut()
-                .unwrap()
-                .remove("7");
-        }
-        assert_eq!(
-            renamed(&f.to_string(), "sevenchain", ID_3, &call),
-            Err(RenameUnlocated {
-                id: ID_3.into(),
-                network: "sevenchain".into(),
-            })
-        );
         assert_eq!(*asked.borrow(), 0);
     }
 
@@ -1332,7 +1173,7 @@ mod tests {
     #[test]
     fn renamed_is_unread_when_the_file_cannot_be_read() {
         let mut off_schema = fixture();
-        off_schema["version"] = Value::from(2);
+        off_schema["version"] = Value::from(1);
         let mut no_registry = fixture();
         no_registry["networks"]["7"]["registry"] = Value::from("nope");
         let asked = RefCell::new(0);
@@ -1383,7 +1224,7 @@ mod tests {
         assert_eq!(ask("sevenchain", ID_2, 0), Ok(Some(false)));
         let seven = (
             REGISTRY.to_string(),
-            rpc::applied_v5_calldata(SAFE_X, NS_B, ID_2).unwrap(),
+            rpc::applied_v5_calldata(SAFE_X, NS_A, ID_2).unwrap(),
         );
         assert_eq!(*sent.borrow(), vec![seven.clone(), seven.clone(), seven]);
 
@@ -1393,7 +1234,7 @@ mod tests {
             *sent.borrow(),
             vec![(
                 REGISTRY.to_string(),
-                rpc::applied_v5_calldata(SAFE_Y, NS_A, ID_3).unwrap(),
+                rpc::applied_v5_calldata(SAFE_X, NS_A, ID_3).unwrap(),
             )]
         );
     }

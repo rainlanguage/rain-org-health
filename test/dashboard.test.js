@@ -7052,7 +7052,9 @@ const MIG_GENESIS =
 const MIG_NS = "0x" + "aa".repeat(32);
 const MIG_ID_1 = "0x" + "01".repeat(32);
 const MIG_ID_2 = "0x" + "02".repeat(32);
+const MIG_ID_UNLISTED = "0x" + "03".repeat(32);
 const MIG_REGISTRY = "0xc89F95eC7e626CFBef37a1F502A69BaF2022F8A8";
+const MIG_WRITER = "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c";
 
 // The shape `migrations::build` emits.
 function migRow(over) {
@@ -7060,7 +7062,7 @@ function migRow(over) {
     script: "script/one.s.sol",
     namespace: MIG_NS,
     id: MIG_ID_1,
-    writer: ETH_SAFE,
+    writer: MIG_WRITER,
     state: "notApplied",
     appliedAt: null,
     executedAt: null,
@@ -7105,13 +7107,6 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
           state: "notRecorded",
           executedAt: 1791056759,
         }),
-        migRow({
-          script: "script/no-record.s.sol",
-          namespace: null,
-          id: null,
-          writer: null,
-          state: "unregistered",
-        }),
         migRow({ script: "script/pending.s.sol", id: MIG_ID_2 }),
       ],
     }),
@@ -7123,7 +7118,6 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
       migrations: [
         migRow({
           script: "script/done.s.sol",
-          writer: BASE_SAFE,
           state: "applied",
           appliedAt: 1791457413,
         }),
@@ -7146,18 +7140,18 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   const heads = collect(panel, "tok-h3").map((h) => h.textContent);
   assert(
     heads.join("|") ===
-      "ethereum — 0 applied, 1 pending, 1 not recorded, 0 unknown, 1 with no registry record|" +
-        "base — 1 applied, 0 pending, 0 not recorded, 0 unknown, 0 with no registry record",
+      "ethereum — 0 applied, 1 pending, 1 not recorded, 0 unknown|" +
+        "base — 1 applied, 0 pending, 0 not recorded, 0 unknown",
     "per-network heads count states off the rows: " + heads.join("|"),
   );
   const rows = migRows(panel);
   assert(
-    rows.length === 4,
+    rows.length === 3,
     "one row per migration per network: " + rows.length,
   );
   assert(
     rows.map((r) => collect(r, "own-role")[0].textContent).join(",") ===
-      "history.s.sol,no-record.s.sol,pending.s.sol,done.s.sol",
+      "history.s.sol,pending.s.sol,done.s.sol",
     "rows in file order, named by script file",
   );
   assert(
@@ -7171,36 +7165,26 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
     "executed but unrecorded says when it ran: " + textOf(rows[0]),
   );
   assert(
-    migChips(rows[1]).join() === "no registry record" &&
-      collect(rows[1], "own-chip-no").length === 1 &&
-      rows[1].className.split(" ").includes("mig-unregistered") &&
-      textOf(rows[1]).includes(
-        "error — writes no registry record, so it is in no line",
-      ) &&
-      collect(rows[1], "mig-hash").length === 0,
-    "a migration with no registry record is an error, not a dim not-recorded",
-  );
-  assert(
-    migChips(rows[2]).join() === "pending" &&
-      rows[2].className.split(" ").includes("mig-notApplied") &&
-      collect(rows[2], "own-chip-roll").length === 1,
+    migChips(rows[1]).join() === "pending" &&
+      rows[1].className.split(" ").includes("mig-notApplied") &&
+      collect(rows[1], "own-chip-roll").length === 1,
     "not applied is the rollout amber",
   );
   assert(
-    collect(rows[2], "mig-hash").map((h) => h.textContent).join("|") ===
+    collect(rows[1], "mig-hash").map((h) => h.textContent).join("|") ===
       `id ${MIG_ID_2}|namespace ${MIG_NS}`,
     "full id and namespace shown",
   );
   assert(
-    migChips(rows[3]).join() === "applied" &&
-      collect(rows[3], "own-chip-yes").length === 1 &&
-      textOf(rows[3]).includes("2026-10-08 11:03 UTC"),
-    "applied carries the registry's time: " + textOf(rows[3]),
+    migChips(rows[2]).join() === "applied" &&
+      collect(rows[2], "own-chip-yes").length === 1 &&
+      textOf(rows[2]).includes("2026-10-08 11:03 UTC"),
+    "applied carries the registry's time: " + textOf(rows[2]),
   );
-  const writer = collect(rows[3], "own-addr")[0];
+  const writer = collect(rows[2], "own-addr")[0];
   assert(
-    writer.textContent === BASE_SAFE &&
-      writer.href === "https://basescan.org/address/" + BASE_SAFE,
+    writer.textContent === MIG_WRITER &&
+      writer.href === "https://basescan.org/address/" + MIG_WRITER,
     "writer linked on its own chain's explorer",
   );
   const where = collect(panel, "own-groupnote").map(textOf);
@@ -7241,7 +7225,6 @@ Deno.test("deployments: every declared migration not in its registry is a pendin
       migrations: [
         migRow({
           script: "script/a.s.sol",
-          writer: BASE_SAFE,
           state: "applied",
           appliedAt: 1791457413,
         }),
@@ -7303,7 +7286,7 @@ Deno.test("deployments: a network with every migration applied reads clean, and 
     migNetwork({
       chainId: 8453,
       network: "base",
-      migrations: [migRow({ writer: BASE_SAFE })],
+      migrations: [migRow()],
     }),
   ]));
   const b = migBanners(migPanel(box));
@@ -7332,7 +7315,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
       migrations: [
         migRow({
           waitsOn: [{
-            writer: ETH_SAFE,
+            writer: MIG_WRITER,
             namespace: MIG_NS,
             id: MIG_GENESIS,
             script: null,
@@ -7344,35 +7327,39 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
         migRow({
           script: "script/two.s.sol",
           id: MIG_ID_2,
-          waitsOn: [
-            {
-              writer: ETH_SAFE,
-              namespace: MIG_NS,
-              id: MIG_ID_1,
-              script: "script/one.s.sol",
-              state: "notApplied",
-              appliedAt: null,
-              executedAt: null,
-            },
-            {
-              writer: ETH_SAFE,
-              namespace: MIG_NS,
-              id: MIG_ID_2,
-              script: null,
-              state: "applied",
-              appliedAt: 1791457413,
-              executedAt: null,
-            },
-            {
-              writer: ETH_SAFE,
-              namespace: MIG_NS,
-              id: MIG_ID_1,
-              script: "script/history.s.sol",
-              state: "notRecorded",
-              appliedAt: null,
-              executedAt: 1791056759,
-            },
-          ],
+          waitsOn: [{
+            writer: MIG_WRITER,
+            namespace: MIG_NS,
+            id: MIG_ID_1,
+            script: "script/one.s.sol",
+            state: "notApplied",
+            appliedAt: null,
+            executedAt: null,
+          }],
+        }),
+        migRow({
+          script: "script/three.s.sol",
+          waitsOn: [{
+            writer: MIG_WRITER,
+            namespace: MIG_NS,
+            id: MIG_ID_UNLISTED,
+            script: null,
+            state: "applied",
+            appliedAt: 1791457413,
+            executedAt: null,
+          }],
+        }),
+        migRow({
+          script: "script/four.s.sol",
+          waitsOn: [{
+            writer: MIG_WRITER,
+            namespace: MIG_NS,
+            id: MIG_ID_1,
+            script: "script/history.s.sol",
+            state: "notRecorded",
+            appliedAt: null,
+            executedAt: 1791056759,
+          }],
         }),
       ],
     }),
@@ -7388,24 +7375,25 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
   );
   const wait = collect(rows[1], "mig-wait");
   assert(
-    wait.length === 2 && wait[0].textContent === "one.s.sol" &&
+    wait.length === 1 && wait[0].textContent === "one.s.sol" &&
       wait[0].href ===
         "https://github.com/acme/deploy/blob/HEAD/script/one.s.sol",
     "a listed prerequisite is named by its script and linked",
   );
   assert(
-    migChips(rows[1]).join() === "pending,applied,not recorded,pending",
-    "each prerequisite carries its own chip, the row's last: " +
-      migChips(rows[1]).join(),
+    [rows[1], rows[2], rows[3]].map((r) => migChips(r).join()).join("|") ===
+      "pending,pending|applied,pending|not recorded,pending",
+    "the prerequisite carries its own chip, the row's last: " +
+      [rows[1], rows[2], rows[3]].map((r) => migChips(r).join()).join("|"),
   );
   assert(
-    textOf(rows[1]).includes(MIG_ID_2) &&
-      textOf(rows[1]).includes("2026-10-08 11:03 UTC"),
+    textOf(rows[2]).includes(MIG_ID_UNLISTED) &&
+      textOf(rows[2]).includes("2026-10-08 11:03 UTC"),
     "an unlisted prerequisite is named by its id, with its applied time",
   );
   assert(
-    textOf(rows[1]).includes("ran 2026-10-03 19:45 UTC"),
-    "an unrecorded prerequisite says when it ran: " + textOf(rows[1]),
+    textOf(rows[3]).includes("ran 2026-10-03 19:45 UTC"),
+    "an unrecorded prerequisite says when it ran: " + textOf(rows[3]),
   );
 });
 
@@ -7429,7 +7417,7 @@ Deno.test("deployments: a migration entry with no script is skipped and the rest
   );
   assert(
     collect(panel, "tok-h3")[0].textContent ===
-      "ethereum — 0 applied, 1 pending, 0 not recorded, 0 unknown, 0 with no registry record",
+      "ethereum — 0 applied, 1 pending, 0 not recorded, 0 unknown",
     "heading counts only the rendered rows",
   );
 });
@@ -7440,7 +7428,7 @@ Deno.test("deployments: an unread registry reads unknown and says why, never not
       network: "newchain",
       rpcHost: null,
       unread: 2,
-      migrations: [migRow({ state: "unknown", writer: null })],
+      migrations: [migRow({ state: "unknown" })],
     }),
   ]));
   const panel = migPanel(box);
@@ -7453,17 +7441,9 @@ Deno.test("deployments: an unread registry reads unknown and says why, never not
   const row = migRows(panel)[0];
   assert(migChips(row).join() === "unknown", "unknown chip");
   assert(
-    textOf(row).includes("names no writer on this network"),
-    "a recorded migration with no writer here says so",
-  );
-  assert(
     collect(panel, "tok-h3")[0].textContent ===
-      "newchain — 0 applied, 0 pending, 0 not recorded, 1 unknown, 0 with no registry record",
+      "newchain — 0 applied, 0 pending, 0 not recorded, 1 unknown",
     "heading counts the unknown",
-  );
-  assert(
-    collect(row, "own-addr").length === 0,
-    "no address rendered for a missing writer",
   );
 });
 
@@ -7474,9 +7454,9 @@ Deno.test("deployments: unreadable migration data is an honest unavailable and t
         org: "acme",
         repo: "deploy",
         path: "migrations.json",
-        unavailable: "migrations.json: not schema version 1",
+        unavailable: "migrations.json: not schema version 2",
       },
-      "Migrations unavailable — migrations.json: not schema version 1.",
+      "Migrations unavailable — migrations.json: not schema version 2.",
     ],
     [null, "Migrations unavailable — the scan produced no migration data."],
     [
@@ -7530,7 +7510,7 @@ Deno.test("deployments: migration fields render as text, never markup", () => {
       migrations: [migRow({
         script: `script/${payload}`,
         waitsOn: [{
-          writer: ETH_SAFE,
+          writer: MIG_WRITER,
           namespace: MIG_NS,
           id: payload,
           script: null,
