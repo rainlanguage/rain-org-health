@@ -77,7 +77,6 @@ impl Manifest {
     }
 }
 
-
 fn field<'a>(v: &'a Value, key: &str, at: &str) -> Result<&'a Value, String> {
     v.get(key).ok_or_else(|| format!("{at} has no {key}"))
 }
@@ -166,7 +165,6 @@ fn parse(src: &str) -> Result<Manifest, String> {
     })
 }
 
-
 /// One slot per record; `None` where the read did not answer.
 pub type ReadApplied<'a> = &'a dyn Fn(&Network, &[Record]) -> Vec<Option<u64>>;
 
@@ -197,7 +195,6 @@ pub fn locate(src: &str, network: &str, id: &str) -> Option<(Network, Record)> {
     m.find(id)?;
     Some((net, m.record(id)))
 }
-
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct RenameUnlocated {
@@ -827,7 +824,6 @@ mod tests {
         assert!(sent.borrow().is_empty());
     }
 
-    #[test]
     #[test]
     fn each_record_is_asked_once_and_genesis_never() {
         let reg = Registry::new(vec![]);
