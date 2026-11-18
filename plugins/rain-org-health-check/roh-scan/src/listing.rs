@@ -94,20 +94,6 @@ pub fn parse_nasdaq(body: &str) -> Option<HashMap<String, String>> {
     trailer.then_some(out)
 }
 
-/// GLEIF `LEI,ISIN` CSV → the ISIN set. `None` without the header.
-pub fn parse_gleif(body: &str) -> Option<HashSet<String>> {
-    let mut lines = body.lines();
-    if lines.next()?.trim() != "LEI,ISIN" {
-        return None;
-    }
-    Some(
-        lines
-            .filter_map(|l| l.split(',').nth(1).map(|i| i.trim().to_string()))
-            .filter(|i| !i.is_empty())
-            .collect(),
-    )
-}
-
 /// Streams GLEIF's `LEI,ISIN` CSV, keeping the `wanted` ISINs it lists. `None`
 /// without the header or on a read error.
 pub fn gleif_present(
@@ -229,8 +215,12 @@ mod tests {
         Sources {
             registry: parse_registry(REGISTRY),
             nasdaq: parse_nasdaq(NASDAQ),
-            gleif: parse_gleif(GLEIF),
+            gleif: gleif_present(GLEIF.as_bytes(), &wanted()),
         }
+    }
+
+    fn wanted() -> HashSet<String> {
+        HashSet::from(["US67066G1040".to_string(), "US0000000000".to_string()])
     }
 
     fn status(rows: &[serde_json::Value], field: &str, source: &str) -> String {
@@ -260,8 +250,8 @@ mod tests {
 
     #[test]
     fn gleif_requires_its_header() {
-        assert!(parse_gleif(GLEIF).unwrap().contains("US67066G1040"));
-        assert!(parse_gleif("ISIN\nUS67066G1040\n").is_none());
+        assert!(gleif_present(GLEIF.as_bytes(), &wanted()).unwrap().contains("US67066G1040"));
+        assert!(gleif_present("ISIN\nUS67066G1040\n".as_bytes(), &wanted()).is_none());
     }
 
     #[test]
