@@ -1707,6 +1707,48 @@ fn in_protofire_report(has_pdf: bool, has_foundry: bool) -> bool {
     has_pdf || has_foundry
 }
 
+/// A plain GET body; `None` on any transport or HTTP failure.
+fn curl_text(url: &str) -> Option<String> {
+    let out = Command::new("curl")
+        .args(["-fsSL", "-m", "60", url])
+        .output()
+        .ok()?;
+    out.status
+        .success()
+        .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
+/// Nasdaq's two symbol directories merged; `None` unless both read whole, as a
+/// ticker absent from one file may be in the other.
+fn fetch_nasdaq() -> Option<std::collections::HashMap<String, String>> {
+    let mut all = listing::parse_nasdaq(&curl_text(listing::NASDAQ_LISTED_URL)?)?;
+    all.extend(listing::parse_nasdaq(&curl_text(listing::NASDAQ_OTHER_URL)?)?);
+    Some(all)
+}
+
+/// The `wanted` ISINs GLEIF maps to an LEI, streamed out of its single-entry zip.
+/// `None` when the download or unpack fails.
+fn fetch_gleif(
+    wanted: &std::collections::HashSet<String>,
+) -> Option<std::collections::HashSet<String>> {
+    let mut child = Command::new("bash")
+        .args([
+            "-c",
+            &format!(
+                "set -o pipefail; curl -fsSL -m 600 '{}' | gzip -dc",
+                listing::GLEIF_ISIN_LEI_URL
+            ),
+        ])
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .ok()?;
+    let found = listing::gleif_present(std::io::BufReader::new(child.stdout.take()?), wanted);
+    if !child.wait().ok()?.success() {
+        return None;
+    }
+    found
+}
+
 /// The newest revision the soldeer registry holds for `pkg`.
 ///
 /// `Some(Some(v))` — published, `v` is the newest revision.

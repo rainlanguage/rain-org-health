@@ -108,6 +108,28 @@ pub fn parse_gleif(body: &str) -> Option<HashSet<String>> {
     )
 }
 
+/// Streams GLEIF's `LEI,ISIN` CSV, keeping the `wanted` ISINs it lists. `None`
+/// without the header or on a read error.
+pub fn gleif_present(
+    r: impl std::io::BufRead,
+    wanted: &HashSet<String>,
+) -> Option<HashSet<String>> {
+    let mut lines = r.lines();
+    if lines.next()?.ok()?.trim() != "LEI,ISIN" {
+        return None;
+    }
+    let mut found = HashSet::new();
+    for l in lines {
+        let l = l.ok()?;
+        if let Some(i) = l.split(',').nth(1).map(str::trim) {
+            if wanted.contains(i) {
+                found.insert(i.to_string());
+            }
+        }
+    }
+    Some(found)
+}
+
 /// The listing facts a token declares, all optional until every token carries them.
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
 pub struct Declared<'a> {
