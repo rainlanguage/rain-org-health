@@ -18376,3 +18376,40 @@ Deno.test("root registry: an unrecognised status renders as text, never markup",
     assert(tags(p, tag).length === 0, "no " + tag + " element created");
   }
 });
+
+Deno.test("deployments: listing facts list only inconsistent rows and count unavailable apart from consistent", () => {
+  const row = (field, source, status) => ({ token: "tNVDA", field, value: "NVDA", source, status });
+  const box = deploymentsBox({
+    deploymentListings: [
+      {
+        network: "base",
+        rows: [
+          row("listingTicker", "st0x.registry", "inconsistent"),
+          row("listingTicker", "Nasdaq", "consistent"),
+          row("assetId", "GLEIF", "unavailable"),
+        ],
+      },
+      { network: "ethereum", rows: [row("assetId", "GLEIF", "unavailable")] },
+      { expectedState: "expected-state.json", unavailable: true, reason: "bad json" },
+    ],
+  });
+  const panels = panelsOf(box);
+  const h = headings(panels.contracts);
+  assert(h.includes("Listing facts — base"), h.join(" | "));
+  assert(h.includes("Listing facts — all chains"), h.join(" | "));
+  const banners = collect(panels.contracts, "own-verify").map((b) => [b.className, b.textContent]);
+  const base = banners.find(([, t]) => t?.startsWith("1 inconsistent"));
+  assert(base?.[0] === "own-verify own-verify-drift", JSON.stringify(banners));
+  assert(base[1].startsWith("1 inconsistent · 1 unavailable · 1 consistent"), base[1]);
+  const eth = banners.find(([, t]) => t?.startsWith("0 inconsistent · 1 unavailable · 0 consistent"));
+  assert(eth?.[0] === "own-verify own-verify-ok", JSON.stringify(banners));
+  assert(
+    banners.some(([c, t]) => c === "own-verify own-verify-drift" && t === "Listing check unavailable — bad json."),
+    JSON.stringify(banners),
+  );
+  const rows = collect(panels.contracts, "own-row");
+  assert(rows.length === 1, `only the inconsistent row is listed, got ${rows.length}`);
+  assert(textOf(rows[0]).includes("tNVDA listingTicker"), textOf(rows[0]));
+  assert(textOf(rows[0]).includes("ours: NVDA"), textOf(rows[0]));
+  assert(textOf(rows[0]).includes("st0x.registry"), textOf(rows[0]));
+});
