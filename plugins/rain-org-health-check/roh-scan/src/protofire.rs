@@ -908,8 +908,20 @@ mod tests {
     #[test]
     fn changed_source_files_reports_compare_style_status() {
         let b = |p: &str, s: &str| (p.to_string(), s.to_string());
-        let base = vec![b("src/Keep.sol", "k"), b("src/Mod.sol", "m1"), b("src/Gone.sol", "g")];
-        let head = vec![b("src/Keep.sol", "k"), b("src/Mod.sol", "m2"), b("src/New.sol", "n")];
+        let base = vec![
+            b("src/Keep.sol", "k"),
+            b("src/Mod.sol", "m1"),
+            b("src/Gone.sol", "g"),
+            b("test/Mod.t.sol", "t1"),
+            b("test/Gone.sol", "tg"),
+        ];
+        let head = vec![
+            b("src/Keep.sol", "k"),
+            b("src/Mod.sol", "m2"),
+            b("src/New.sol", "n"),
+            b("test/Mod.t.sol", "t2"),
+            b("src/New.t.sol", "tn"),
+        ];
         let mut got = changed_source_files(&base, &head);
         got.sort();
         assert_eq!(
