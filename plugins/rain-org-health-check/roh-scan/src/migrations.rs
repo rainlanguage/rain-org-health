@@ -1114,8 +1114,6 @@ mod tests {
                 if m["id"] == ID_2 {
                     m["id"] = json!(upper);
                 }
-                    m["id"] = json!(upper);
-                }
             });
         let (_, rec) = locate(&f.to_string(), "sevenchain", &lower).unwrap();
         assert_eq!(rec.writer, SAFE_X);
