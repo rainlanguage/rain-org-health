@@ -725,6 +725,17 @@ mod tests {
             .map(|r| r["address"].as_str().unwrap())
             .collect();
         assert_eq!(listed, vec![R1, R2]);
+        // ...and never read: no RPC is spent on a raindex the record does not name.
+        let asked = RefCell::new(Vec::<String>::new());
+        let calls = |n: &str, c: &[(String, String)], at: Option<u64>| {
+            asked
+                .borrow_mut()
+                .extend(c.iter().map(|(_, data)| data.clone()));
+            calls_fixture(n, c, at)
+        };
+        build(Ok(vec![net()]), &reads_fixture(&pairs, &prices, &calls));
+        let other_balance = crate::rpc::balance_of_calldata(other).unwrap();
+        assert!(!asked.borrow().contains(&other_balance));
     }
 
     #[test]
