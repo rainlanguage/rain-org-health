@@ -178,6 +178,18 @@
   .fsm-list .fsm-dh .dhl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); }
   .fsm-list .fsm-dh .dhc { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
   .fsm-list .empty { padding: 12px 13px; }
+  .wl-sum { color: var(--ink-3); font-size: 13px; margin: 8px 0 10px; }
+  .wl { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+  .wl-row { display: flex; align-items: baseline; gap: 10px; padding: 8px 13px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .wl-row:last-child { border-bottom: 0; }
+  .wl-row .wl-age { flex: none; width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .wl-row .wl-main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .wl-row .wl-ref { color: var(--ink-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; margin-right: 6px; }
+  .wl-row .wl-prs { flex: none; display: flex; gap: 6px; font-size: 12px; }
+  .wl-row .wl-none { color: var(--ink-3); }
+  .wl a { color: var(--ink); text-decoration: none; }
+  .wl a:hover { text-decoration: underline; }
+  .wl .wl-prs a { color: var(--accent); }
   /* A list that is empty because it is BROKEN, not because the state is empty. Semantic
      --crit (defined in both themes) plus wording that says which — the colour is never the
      only carrier. Two classes deep so it outweighs `.fsm-list .empty`'s own colour. */
@@ -300,6 +312,8 @@
     <a href="metrics.html">Metrics</a>
     <a href="repositories.html">Repositories</a>
   </nav>
+  <h2>Close next: oldest open issues</h2>
+  <div id="worklist"><div class="empty">loading worklist…</div></div>
   <h2>Pipeline state machine</h2>
   <div id="fsm"><div class="empty" id="fsmempty">loading pipeline state…</div></div>
   <footer>
@@ -1625,6 +1639,67 @@ function sevenDaySlope(series, nowMs) {
   return num / den;
 }
 
+// The top WORKLIST_SIZE rows of `issueWorklist`, in the order the tool ranked them: issues an
+// open PR claims first, then the rest, oldest first within each. Closing any one lowers the
+// open count by one; the oldest moves the mean age most. The ranking is the tool's; this only
+// cuts it. Rows are untrusted, so a link is drawn only for an https://github.com/ url.
+const WORKLIST_SIZE = 20;
+function renderWorklist(hq) {
+  const box = $("worklist");
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const gh = (u) => typeof u === "string" && u.startsWith("https://github.com/");
+  const linkOrText = (cls, text, href) => {
+    if (!gh(href)) return el("span", cls, text);
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener";
+    a.target = "_blank";
+    return a;
+  };
+  box.textContent = "";
+  const rows = hq && Array.isArray(hq.issueWorklist) ? hq.issueWorklist : null;
+  if (!rows) {
+    box.append(el("div", "empty", "No worklist: human-queue.json carries no issueWorklist yet."));
+    return;
+  }
+  const claimed = rows.filter((r) => r && Array.isArray(r.prs) && r.prs.length > 0).length;
+  const top = rows.slice(0, WORKLIST_SIZE);
+  box.append(el(
+    "div",
+    "wl-sum",
+    `Top ${top.length} of ${rows.length} open issues · ${claimed} have an open PR (ranked first) · oldest first within each`,
+  ));
+  if (top.length === 0) {
+    box.append(el("div", "empty", "No open issues."));
+    return;
+  }
+  const list = el("div", "wl");
+  for (const r of top) {
+    const row = el("div", "wl-row");
+    const age = typeof r.ageDays === "number" && Number.isFinite(r.ageDays) ? `${Math.round(r.ageDays)}d` : "age ?";
+    row.append(el("span", "wl-age", age));
+    const main = el("span", "wl-main");
+    main.append(el("span", "wl-ref", `${r.repo}#${r.number}`));
+    main.append(linkOrText("wl-title", String(r.title ?? ""), r.url));
+    row.append(main);
+    const prs = el("span", "wl-prs");
+    const urls = Array.isArray(r.prs) ? r.prs : [];
+    if (urls.length === 0) prs.append(el("span", "wl-none", "no PR"));
+    for (const u of urls) {
+      const m = typeof u === "string" ? /\/pull\/(\d+)$/.exec(u) : null;
+      prs.append(linkOrText("wl-pr", m ? `PR #${m[1]}` : "PR", u));
+    }
+    row.append(prs);
+    list.append(row);
+  }
+  box.append(list);
+}
+
 // FSM-conformance state is issue-pr-cron's OWN artifact, fetched at runtime like the producer
 // metrics below — never baked into this repo or computed here (CLAUDE.md: the dashboard is a
 // consumer, not a producer, of data; new data ⇒ new fetch, not new baking). The history
@@ -1636,7 +1711,10 @@ $("meta").textContent = "pipeline conformance · issue-pr-cron";
 Promise.all([
   fetch(HQ_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
   fetch(HIST_URL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => ""),
-]).then(([hq, histText]) => renderFsm(hq, parseHistory(histText)));
+]).then(([hq, histText]) => {
+  renderWorklist(hq);
+  renderFsm(hq, parseHistory(histText));
+});
 </script>
 </body>
 </html>

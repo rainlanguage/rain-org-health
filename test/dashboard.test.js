@@ -18300,3 +18300,85 @@ Deno.test("root registry: an unrecognised status renders as text, never markup",
     assert(tags(p, tag).length === 0, "no " + tag + " element created");
   }
 });
+
+// ---- pipeline.html: issue worklist (issue-pr-cron#348 `issueWorklist`) ----
+
+function worklistBox(hq) {
+  const box = makeEl("div");
+  const $ = (id) => (id === "worklist" ? box : makeEl("div"));
+  bind("pipeline.html", "renderWorklist", [
+    "document",
+    "$",
+    "WORKLIST_SIZE",
+  ], [stubDocument(), $, 20])(hq);
+  return box;
+}
+
+function wlRow(n, ageDays, prs = []) {
+  return {
+    repo: "o/r",
+    number: n,
+    url: "https://github.com/o/r/issues/" + n,
+    title: "issue " + n,
+    prs,
+    ...(ageDays === undefined ? {} : { ageDays }),
+  };
+}
+
+Deno.test("worklist: keeps the tool's order and cuts at 20", () => {
+  const rows = [];
+  for (let i = 1; i <= 25; i++) rows.push(wlRow(i, 100 - i));
+  const box = worklistBox({ issueWorklist: rows });
+  const refs = collect(box, "wl-ref").map(textOf);
+  assert(refs.length === 20, "20 rows, got " + refs.length);
+  assert(refs[0] === "o/r#1" && refs[19] === "o/r#20", "tool order kept: " + refs);
+});
+
+Deno.test("worklist: the summary counts every row and every claimed row, not just the shown 20", () => {
+  const rows = [];
+  for (let i = 1; i <= 22; i++) {
+    rows.push(wlRow(i, 10, i <= 21 ? ["https://github.com/o/r/pull/" + i] : []));
+  }
+  const sum = textOf(collect(worklistBox({ issueWorklist: rows }), "wl-sum")[0]);
+  assert(sum.includes("Top 20 of 22"), sum);
+  assert(sum.includes("21 have an open PR"), sum);
+});
+
+Deno.test("worklist: a row shows its rounded age, its PR links, or no PR", () => {
+  const box = worklistBox({
+    issueWorklist: [
+      wlRow(1, 12.6, ["https://github.com/o/r/pull/7", "https://github.com/o/r/pull/9"]),
+      wlRow(2, undefined),
+    ],
+  });
+  const ages = collect(box, "wl-age").map(textOf);
+  assert(ages[0] === "13d" && ages[1] === "age ?", "ages: " + ages);
+  const prs = collect(box, "wl-pr");
+  assert(prs.length === 2 && prs[0].tagName === "a", "two PR links");
+  assert(textOf(prs[0]) === "PR #7" && prs[1].href === "https://github.com/o/r/pull/9", "PR text/href");
+  assert(collect(box, "wl-none").length === 1, "the unclaimed row says no PR");
+});
+
+Deno.test("worklist: an absent issueWorklist says so instead of rendering an empty list", () => {
+  for (const hq of [null, {}, { issueWorklist: "x" }]) {
+    const box = worklistBox(hq);
+    assert(collect(box, "wl-row").length === 0, "no rows");
+    assert(textOf(box).includes("no issueWorklist"), textOf(box));
+  }
+});
+
+Deno.test("worklist: untrusted strings land as text and a non-GitHub url is not linked", () => {
+  const box = worklistBox({
+    issueWorklist: [{
+      repo: XSS_IMG,
+      number: 1,
+      url: "javascript:alert(1)",
+      title: XSS_SCRIPT,
+      prs: ["javascript:alert(2)"],
+      ageDays: 1,
+    }],
+  });
+  assert(tags(box, "a").length === 0, "no link for a non-github url");
+  assert(textOf(box).includes(XSS_IMG) && textOf(box).includes(XSS_SCRIPT), "payload as text");
+  for (const tag of MARKUP_TAGS) assert(tags(box, tag).length === 0, "no " + tag);
+});
