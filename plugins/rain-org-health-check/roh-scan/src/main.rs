@@ -1492,7 +1492,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
     ) = match &cmp {
         // Compare truncated at GitHub's 300-file cap, which can't be paginated: the
         // tree blob-sha diff gives the changed `.sol` set, and a line diff of both
-        // versions of each file gives exact +/−. Truncated only when a tree read is.
+        // versions of each file gives exact +/−. Truncated when a tree or blob read fails.
         Some((base_date, _files, total, trunc)) if *trunc => {
             match changed_sol_files(gh, org, repo, &base, &default_branch) {
                 None => (
@@ -1535,7 +1535,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
                             None,
                             Some(n),
                             Some(*total),
-                            false,
+                            true,
                             None,
                         ),
                     }
