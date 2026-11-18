@@ -7054,6 +7054,7 @@ const MIG_ID_1 = "0x" + "01".repeat(32);
 const MIG_ID_2 = "0x" + "02".repeat(32);
 const MIG_ID_UNLISTED = "0x" + "03".repeat(32);
 const MIG_REGISTRY = "0xc89F95eC7e626CFBef37a1F502A69BaF2022F8A8";
+const MIG_WRITER = "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c";
 
 // The shape `migrations::build` emits.
 function migRow(over) {
@@ -7061,7 +7062,7 @@ function migRow(over) {
     script: "script/one.s.sol",
     namespace: MIG_NS,
     id: MIG_ID_1,
-    writer: ETH_SAFE,
+    writer: MIG_WRITER,
     state: "notApplied",
     appliedAt: null,
     executedAt: null,
@@ -7182,8 +7183,8 @@ Deno.test("deployments: the Migrations tab lists every migration per network wit
   );
   const writer = collect(rows[2], "own-addr")[0];
   assert(
-    writer.textContent === ETH_SAFE &&
-      writer.href === "https://basescan.org/address/" + ETH_SAFE,
+    writer.textContent === MIG_WRITER &&
+      writer.href === "https://basescan.org/address/" + MIG_WRITER,
     "writer linked on its own chain's explorer",
   );
   const where = collect(panel, "own-groupnote").map(textOf);
@@ -7314,7 +7315,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
       migrations: [
         migRow({
           waitsOn: [{
-            writer: ETH_SAFE,
+            writer: MIG_WRITER,
             namespace: MIG_NS,
             id: MIG_GENESIS,
             script: null,
@@ -7327,7 +7328,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
           script: "script/two.s.sol",
           id: MIG_ID_2,
           waitsOn: [{
-            writer: ETH_SAFE,
+            writer: MIG_WRITER,
             namespace: MIG_NS,
             id: MIG_ID_1,
             script: "script/one.s.sol",
@@ -7339,7 +7340,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
         migRow({
           script: "script/three.s.sol",
           waitsOn: [{
-            writer: ETH_SAFE,
+            writer: MIG_WRITER,
             namespace: MIG_NS,
             id: MIG_ID_UNLISTED,
             script: null,
@@ -7351,7 +7352,7 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
         migRow({
           script: "script/four.s.sol",
           waitsOn: [{
-            writer: ETH_SAFE,
+            writer: MIG_WRITER,
             namespace: MIG_NS,
             id: MIG_ID_1,
             script: "script/history.s.sol",
@@ -7509,7 +7510,7 @@ Deno.test("deployments: migration fields render as text, never markup", () => {
       migrations: [migRow({
         script: `script/${payload}`,
         waitsOn: [{
-          writer: ETH_SAFE,
+          writer: MIG_WRITER,
           namespace: MIG_NS,
           id: payload,
           script: null,
