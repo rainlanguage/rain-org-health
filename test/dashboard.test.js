@@ -7052,6 +7052,7 @@ const MIG_GENESIS =
 const MIG_NS = "0x" + "aa".repeat(32);
 const MIG_ID_1 = "0x" + "01".repeat(32);
 const MIG_ID_2 = "0x" + "02".repeat(32);
+const MIG_ID_UNLISTED = "0x" + "03".repeat(32);
 const MIG_REGISTRY = "0xc89F95eC7e626CFBef37a1F502A69BaF2022F8A8";
 
 // The shape `migrations::build` emits.
@@ -7325,35 +7326,39 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
         migRow({
           script: "script/two.s.sol",
           id: MIG_ID_2,
-          waitsOn: [
-            {
-              writer: ETH_SAFE,
-              namespace: MIG_NS,
-              id: MIG_ID_1,
-              script: "script/one.s.sol",
-              state: "notApplied",
-              appliedAt: null,
-              executedAt: null,
-            },
-            {
-              writer: ETH_SAFE,
-              namespace: MIG_NS,
-              id: MIG_ID_2,
-              script: null,
-              state: "applied",
-              appliedAt: 1791457413,
-              executedAt: null,
-            },
-            {
-              writer: ETH_SAFE,
-              namespace: MIG_NS,
-              id: MIG_ID_1,
-              script: "script/history.s.sol",
-              state: "notRecorded",
-              appliedAt: null,
-              executedAt: 1791056759,
-            },
-          ],
+          waitsOn: [{
+            writer: ETH_SAFE,
+            namespace: MIG_NS,
+            id: MIG_ID_1,
+            script: "script/one.s.sol",
+            state: "notApplied",
+            appliedAt: null,
+            executedAt: null,
+          }],
+        }),
+        migRow({
+          script: "script/three.s.sol",
+          waitsOn: [{
+            writer: ETH_SAFE,
+            namespace: MIG_NS,
+            id: MIG_ID_UNLISTED,
+            script: null,
+            state: "applied",
+            appliedAt: 1791457413,
+            executedAt: null,
+          }],
+        }),
+        migRow({
+          script: "script/four.s.sol",
+          waitsOn: [{
+            writer: ETH_SAFE,
+            namespace: MIG_NS,
+            id: MIG_ID_1,
+            script: "script/history.s.sol",
+            state: "notRecorded",
+            appliedAt: null,
+            executedAt: 1791056759,
+          }],
         }),
       ],
     }),
@@ -7369,24 +7374,25 @@ Deno.test("deployments: a migration names what it waits on and that prerequisite
   );
   const wait = collect(rows[1], "mig-wait");
   assert(
-    wait.length === 2 && wait[0].textContent === "one.s.sol" &&
+    wait.length === 1 && wait[0].textContent === "one.s.sol" &&
       wait[0].href ===
         "https://github.com/acme/deploy/blob/HEAD/script/one.s.sol",
     "a listed prerequisite is named by its script and linked",
   );
   assert(
-    migChips(rows[1]).join() === "pending,applied,not recorded,pending",
-    "each prerequisite carries its own chip, the row's last: " +
-      migChips(rows[1]).join(),
+    [rows[1], rows[2], rows[3]].map((r) => migChips(r).join()).join("|") ===
+      "pending,pending|applied,pending|not recorded,pending",
+    "the prerequisite carries its own chip, the row's last: " +
+      [rows[1], rows[2], rows[3]].map((r) => migChips(r).join()).join("|"),
   );
   assert(
-    textOf(rows[1]).includes(MIG_ID_2) &&
-      textOf(rows[1]).includes("2026-10-08 11:03 UTC"),
+    textOf(rows[2]).includes(MIG_ID_UNLISTED) &&
+      textOf(rows[2]).includes("2026-10-08 11:03 UTC"),
     "an unlisted prerequisite is named by its id, with its applied time",
   );
   assert(
-    textOf(rows[1]).includes("ran 2026-10-03 19:45 UTC"),
-    "an unrecorded prerequisite says when it ran: " + textOf(rows[1]),
+    textOf(rows[3]).includes("ran 2026-10-03 19:45 UTC"),
+    "an unrecorded prerequisite says when it ran: " + textOf(rows[3]),
   );
 });
 
