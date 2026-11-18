@@ -1162,6 +1162,9 @@ mod tests {
                 wrapped_token_vault_codehash: WTV_PROXY_HASH.into(),
                 owner: BASE_TIMELOCK.into(),
                 authoriser: BASE_V4_CLONE.into(),
+                asset_id: None,
+                listing_ticker: None,
+                listing_name: None,
             }
         );
         assert_eq!(

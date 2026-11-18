@@ -1707,6 +1707,9 @@ mod tests {
             wrapped_token_vault_codehash: h(12),
             owner: a(13),
             authoriser: a(14),
+            asset_id: None,
+            listing_ticker: None,
+            listing_name: None,
         };
         let r = |i: usize| Some(format!("r{i}"));
         let live = TokenLive {
