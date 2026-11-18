@@ -19,6 +19,7 @@ mod consumers;
 mod deployhealth;
 mod expected;
 mod graph;
+mod listing;
 mod migrations;
 mod mutation;
 mod owners;

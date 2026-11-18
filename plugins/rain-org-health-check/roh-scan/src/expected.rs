@@ -116,6 +116,9 @@ pub struct ExpectedToken {
     pub wrapped_token_vault_codehash: String,
     pub owner: String,
     pub authoriser: String,
+    pub asset_id: Option<String>,
+    pub listing_ticker: Option<String>,
+    pub listing_name: Option<String>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -408,6 +411,9 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 .map(str::to_string)
                 .ok_or_else(|| f.bad(field))
         };
+        // Optional until st0x.deploy carries listing facts for every token.
+        let opt_text =
+            |v: &serde_json::Value| v.as_str().filter(|s| !s.is_empty()).map(str::to_string);
         let tokens = list(&c["tokens"], "tokens")?
             .iter()
             .map(|t| {
@@ -466,6 +472,9 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                     )?,
                     owner: f.nonzero(&t["owner"], "tokens[].owner")?,
                     authoriser: f.nonzero(&t["authoriser"], "tokens[].authoriser")?,
+                    asset_id: opt_text(&t["assetId"]),
+                    listing_ticker: opt_text(&t["listingTicker"]),
+                    listing_name: opt_text(&t["listingName"]),
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
