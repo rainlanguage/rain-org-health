@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T20:57:53Z",
+  "generatedAt": "2026-11-18T22:00:40Z",
   "auditGraph": {
     "nodes": [
       {
@@ -49,9 +49,19 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.35",
+            "latest": "0.1.36"
+          },
+          {
             "repo": "rain.intorastring",
             "pinned": "0.1.4",
             "latest": "0.1.5"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
           }
         ]
       },
@@ -87,7 +97,13 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
+          }
+        ]
       },
       {
         "repo": "rain.extrospection.deploy",
@@ -108,7 +124,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.33",
-            "latest": "0.1.35"
+            "latest": "0.1.36"
           },
           {
             "repo": "rain.extrospection",
@@ -138,13 +154,7 @@
           "rain.factory",
           "rain.string"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.extrospection",
-            "pinned": "0.1.30",
-            "latest": "0.1.31"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.flare",
@@ -170,6 +180,11 @@
             "repo": "rain.intorastring",
             "pinned": "0.1.4",
             "latest": "0.1.5"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
           }
         ]
       },
@@ -283,7 +298,18 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.35",
+            "latest": "0.1.36"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
+          }
+        ]
       },
       {
         "repo": "rain.metadata",
@@ -344,6 +370,11 @@
             "repo": "rain.intorastring",
             "pinned": "0.1.4",
             "latest": "0.1.5"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
           }
         ]
       },
@@ -414,13 +445,7 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.extrospection",
-            "pinned": "0.1.30",
-            "latest": "0.1.31"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.vats",
@@ -448,9 +473,19 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.35",
+            "latest": "0.1.36"
+          },
+          {
             "repo": "rain.extrospection",
             "pinned": "0.1.30",
             "latest": "0.1.31"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.16",
+            "latest": "0.2.17"
           }
         ]
       },
@@ -516,7 +551,23 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.35",
+            "latest": "0.1.36"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.16",
+            "latest": "0.2.17"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
+          }
+        ]
       },
       {
         "repo": "rain.verify.interface",
@@ -575,7 +626,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.33",
-            "latest": "0.1.35"
+            "latest": "0.1.36"
           },
           {
             "repo": "rain.math.float",
@@ -590,12 +641,12 @@
           {
             "repo": "rain.metadata.deploy",
             "pinned": "0.1.5",
-            "latest": "0.1.6"
+            "latest": "0.1.7"
           },
           {
             "repo": "rain.tofu.erc20-decimals.deploy",
             "pinned": "0.1.6",
-            "latest": "0.1.7"
+            "latest": "0.1.8"
           },
           {
             "repo": "raindex.interface",
@@ -605,7 +656,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.36",
-            "latest": "0.2.37"
+            "latest": "0.2.38"
           }
         ]
       },
@@ -661,7 +712,13 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
+          }
+        ]
       },
       {
         "repo": "rainlang",
@@ -683,14 +740,14 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.35",
+            "latest": "0.1.36"
+          },
+          {
             "repo": "rain.extrospection",
             "pinned": "0.1.30",
             "latest": "0.1.31"
-          },
-          {
-            "repo": "rain.intorastring",
-            "pinned": "0.1.4",
-            "latest": "0.1.5"
           }
         ]
       },
@@ -716,9 +773,24 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.35",
+            "latest": "0.1.36"
+          },
+          {
             "repo": "rain.extrospection",
             "pinned": "0.1.30",
             "latest": "0.1.31"
+          },
+          {
+            "repo": "rain.tofu.erc20-decimals.deploy",
+            "pinned": "0.1.7",
+            "latest": "0.1.8"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.37",
+            "latest": "0.2.38"
           }
         ]
       },
@@ -758,7 +830,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.33",
-            "latest": "0.1.35"
+            "latest": "0.1.36"
           },
           {
             "repo": "rain.extrospection",
@@ -773,7 +845,7 @@
           {
             "repo": "rain.factory",
             "pinned": "0.2.14",
-            "latest": "0.2.16"
+            "latest": "0.2.17"
           },
           {
             "repo": "rain.factory.deploy",
@@ -803,7 +875,7 @@
           {
             "repo": "rain.tofu.erc20-decimals.deploy",
             "pinned": "0.1.6",
-            "latest": "0.1.7"
+            "latest": "0.1.8"
           },
           {
             "repo": "rain.vats",
@@ -813,7 +885,12 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.36",
-            "latest": "0.2.37"
+            "latest": "0.2.38"
+          },
+          {
+            "repo": "rainlang.deploy",
+            "pinned": "0.1.12",
+            "latest": "0.1.13"
           }
         ]
       },
@@ -887,13 +964,7 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.extrospection",
-            "pinned": "0.1.30",
-            "latest": "0.1.31"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.sol.codegen",
@@ -1121,8 +1192,8 @@
       {
         "from": "rain.deploy",
         "to": "rain.extrospection",
-        "stale": true,
-        "pinned": "0.1.30",
+        "stale": false,
+        "pinned": "0.1.31",
         "latest": "0.1.31"
       },
       {
@@ -1156,9 +1227,9 @@
       {
         "from": "rain.dia",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "rain.dia",
@@ -1205,9 +1276,9 @@
       {
         "from": "rain.dia",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "rain.erc4626.words",
@@ -1240,9 +1311,9 @@
       {
         "from": "rain.erc4626.words",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "rain.extrospection",
@@ -1270,7 +1341,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "rain.extrospection.deploy",
@@ -1283,8 +1354,8 @@
         "from": "rain.factory",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "pinned": "0.1.36",
+        "latest": "0.1.36"
       },
       {
         "from": "rain.factory",
@@ -1297,22 +1368,22 @@
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "pinned": "0.1.36",
+        "latest": "0.1.36"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.extrospection",
-        "stale": true,
-        "pinned": "0.1.30",
+        "stale": false,
+        "pinned": "0.1.31",
         "latest": "0.1.31"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.factory",
         "stale": false,
-        "pinned": "0.2.16",
-        "latest": "0.2.16"
+        "pinned": "0.2.17",
+        "latest": "0.2.17"
       },
       {
         "from": "rain.flare",
@@ -1352,9 +1423,9 @@
       {
         "from": "rain.flare",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "rain.intorastring",
@@ -1416,8 +1487,8 @@
         "from": "rain.math.float.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "pinned": "0.1.36",
+        "latest": "0.1.36"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1429,9 +1500,9 @@
       {
         "from": "rain.merkle.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "rain.merkle.deploy",
@@ -1457,16 +1528,16 @@
       {
         "from": "rain.merkle.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "rain.metadata.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "pinned": "0.1.36",
+        "latest": "0.1.36"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1513,9 +1584,9 @@
       {
         "from": "rain.pyth",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "rain.string",
@@ -1528,14 +1599,14 @@
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "pinned": "0.1.36",
+        "latest": "0.1.36"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.extrospection",
-        "stale": true,
-        "pinned": "0.1.30",
+        "stale": false,
+        "pinned": "0.1.31",
         "latest": "0.1.31"
       },
       {
@@ -1548,9 +1619,9 @@
       {
         "from": "rain.vats",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "rain.vats",
@@ -1562,9 +1633,9 @@
       {
         "from": "rain.vats",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.16",
-        "latest": "0.2.16"
+        "latest": "0.2.17"
       },
       {
         "from": "rain.vats",
@@ -1625,16 +1696,16 @@
       {
         "from": "rain.verify",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.16",
-        "latest": "0.2.16"
+        "latest": "0.2.17"
       },
       {
         "from": "rain.verify",
@@ -1653,16 +1724,16 @@
       {
         "from": "rain.verify",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "raindex.deploy",
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "raindex.deploy",
@@ -1697,7 +1768,7 @@
         "to": "rain.metadata.deploy",
         "stale": true,
         "pinned": "0.1.5",
-        "latest": "0.1.6"
+        "latest": "0.1.7"
       },
       {
         "from": "raindex.deploy",
@@ -1725,7 +1796,7 @@
         "to": "rain.tofu.erc20-decimals.deploy",
         "stale": true,
         "pinned": "0.1.6",
-        "latest": "0.1.7"
+        "latest": "0.1.8"
       },
       {
         "from": "raindex.deploy",
@@ -1739,7 +1810,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.36",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "raindex.governance",
@@ -1765,16 +1836,16 @@
       {
         "from": "raindex.interface",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "rainlang",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "rainlang",
@@ -1786,8 +1857,8 @@
       {
         "from": "rainlang",
         "to": "rain.intorastring",
-        "stale": true,
-        "pinned": "0.1.4",
+        "stale": false,
+        "pinned": "0.1.5",
         "latest": "0.1.5"
       },
       {
@@ -1863,9 +1934,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.35",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "rainlang.deploy",
@@ -1905,23 +1976,23 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.tofu.erc20-decimals.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.7",
-        "latest": "0.1.7"
+        "latest": "0.1.8"
       },
       {
         "from": "rainlang.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.37",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.35"
+        "latest": "0.1.36"
       },
       {
         "from": "st0x.deploy",
@@ -1942,7 +2013,7 @@
         "to": "rain.factory",
         "stale": true,
         "pinned": "0.2.14",
-        "latest": "0.2.16"
+        "latest": "0.2.17"
       },
       {
         "from": "st0x.deploy",
@@ -2012,7 +2083,7 @@
         "to": "rain.tofu.erc20-decimals.deploy",
         "stale": true,
         "pinned": "0.1.6",
-        "latest": "0.1.7"
+        "latest": "0.1.8"
       },
       {
         "from": "st0x.deploy",
@@ -2033,14 +2104,14 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.36",
-        "latest": "0.2.37"
+        "latest": "0.2.38"
       },
       {
         "from": "st0x.deploy",
         "to": "rainlang.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.12",
-        "latest": "0.1.12"
+        "latest": "0.1.13"
       }
     ]
   },
@@ -2181,11 +2252,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 12,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 1,
         "total": 13,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -2282,7 +2353,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": false
               },
               {
@@ -4163,7 +4234,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 59225760
+        "discoveredAtBlock": 59244637
       },
       {
         "network": "ethereum",
@@ -4720,7 +4791,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26444495
+        "discoveredAtBlock": 26444807
       },
       {
         "network": "bsc",
@@ -5589,7 +5660,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134379472
+        "discoveredAtBlock": 134387863
       },
       {
         "network": "hyperevm",
@@ -6130,7 +6201,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51624908
+        "discoveredAtBlock": 51628748
       },
       {
         "network": "robinhood",
@@ -6671,7 +6742,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 117695520
+        "discoveredAtBlock": 117730912
       }
     ]
   },
@@ -22646,8 +22717,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
-                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
+                "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+                "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -22708,6 +22779,26 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
                 "script": "script/20260813-execute-timelock-operations.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
+                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -22779,7 +22870,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26444495,
+            "headBlock": 26444807,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -22983,8 +23074,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
-                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
+                "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+                "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -23045,6 +23136,26 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
                 "script": "script/20260813-execute-timelock-operations.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
+                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -23116,7 +23227,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134379432,
+            "headBlock": 134387827,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -23320,8 +23431,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
-                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
+                "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+                "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -23382,6 +23493,26 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
                 "script": "script/20260813-execute-timelock-operations.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
+                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -23453,7 +23584,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51624885,
+            "headBlock": 51628725,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -23657,8 +23788,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
-                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
+                "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+                "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -23719,6 +23850,26 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
                 "script": "script/20260813-execute-timelock-operations.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
+                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -23790,7 +23941,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 117695318,
+            "headBlock": 117730695,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -23800,7 +23951,7 @@
         "network": "base",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "mainnet.base.org",
-        "unread": 0,
+        "unread": 6,
         "migrations": [
           {
             "script": "script/20260619-migrate-multisig-threshold.s.sol",
@@ -23976,7 +24127,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x933e465b962e2417c890cdb5545b101fd719b931597138569f778a2decefff3a",
                 "script": "script/20261021-schedule-underlying-naming-rename.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -23994,9 +24145,9 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
-                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "notApplied",
+                "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+                "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -24007,7 +24158,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x933e465b962e2417c890cdb5545b101fd719b931597138569f778a2decefff3a",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -24036,7 +24187,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
                 "script": "script/20261030-backfill-migration-registry-v5.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -24047,7 +24198,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -24063,11 +24214,31 @@
             ]
           },
           {
+            "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "unknown",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
+                "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
             "script": "script/20261109-execute-revoke-service-signer-deposit-withdraw.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf4f523ac3a41a095b384301b2343639f93d5e8230168648efac9fc77fa0797df",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -24076,7 +24247,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xfa3139c03ee72aab437e45a5c62dfb83fcdb9b467702bf96050df31f4de23070",
                 "script": "script/20261109-schedule-revoke-service-signer-deposit-withdraw.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -24087,7 +24258,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xfa3139c03ee72aab437e45a5c62dfb83fcdb9b467702bf96050df31f4de23070",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -24107,7 +24278,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -24116,7 +24287,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf4f523ac3a41a095b384301b2343639f93d5e8230168648efac9fc77fa0797df",
                 "script": "script/20261109-execute-revoke-service-signer-deposit-withdraw.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -24127,7 +24298,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 59225794,
+            "headBlock": 59244680,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -33585,7 +33756,7 @@
       "rpcHost": "ethereum-rpc.publicnode.com",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 10,
+      "healthy": 11,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -33608,16 +33779,16 @@
           "field": "codehash",
           "address": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
           "expected": "0x11da975b8024dd98441bfdf42a68462fa5db9bd4e3af348f05928ef359924671",
-          "live": null,
-          "status": "unknown"
+          "live": "0x11da975b8024dd98441bfdf42a68462fa5db9bd4e3af348f05928ef359924671",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-receipt-vault@0_1_30",
           "field": "codehash",
           "address": "0x52174538a83b18462c5cF898016539B086c920C7",
           "expected": "0x81f5b328841117c2b0a4759cc87e76cf2abab03b4a461d9082c1c147cd8705a6",
-          "live": null,
-          "status": "unknown"
+          "live": "0x81f5b328841117c2b0a4759cc87e76cf2abab03b4a461d9082c1c147cd8705a6",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-wrapped-token-vault@0_1_1",
@@ -33680,8 +33851,8 @@
           "field": "codehash",
           "address": "0xeaD68E489Cb19453b294dc46a3A5710b0d46d17F",
           "expected": "0x4d94318cde48f1bc20f97e00aefad84bfb7c9db15c81b882862e127b05e06e15",
-          "live": "0x4d94318cde48f1bc20f97e00aefad84bfb7c9db15c81b882862e127b05e06e15",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-corporate-actions-facet@0_1_1",
@@ -50182,8 +50353,8 @@
           "field": "receiptVault name",
           "address": "0xB41fD00d0bA60D9Ae8dCE405cB6AAd5710E5F84d",
           "expected": "Tesla Inc ST0x",
-          "live": "Tesla Inc ST0x",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTSLA",
@@ -51198,8 +51369,8 @@
           "field": "receiptVault authoriser",
           "address": "0x47C2e6644eFDF58E86dA45dC60e0f67A65043B99",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tPPLT",
@@ -68260,7 +68431,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 1381,
+      "fullSourceLoc": 1428,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -68289,7 +68460,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 704,
+      "fullSourceLoc": 751,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -68405,7 +68576,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 665,
+      "fullSourceLoc": 712,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -68579,7 +68750,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 2305,
+      "fullSourceLoc": 2540,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -68620,16 +68791,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 21870,
+      "sourceLocChangedSinceAudit": 22201,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 13563,
+      "sourceLocAddedSinceAudit": 13894,
       "sourceLocRemovedSinceAudit": 8307,
-      "filesChangedSinceAudit": 191,
-      "commitsSinceAudit": 1525,
+      "filesChangedSinceAudit": 192,
+      "commitsSinceAudit": 1543,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 3939,
+      "commentLocAddedSinceAudit": 4016,
       "commentLocRemovedSinceAudit": 3786,
-      "codeLocAddedSinceAudit": 8543,
+      "codeLocAddedSinceAudit": 8760,
       "codeLocRemovedSinceAudit": 3817,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
@@ -68659,19 +68830,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-10-07T16:17:36Z",
-      "latestTag": "sol-v0.1.35",
-      "latestTagIso": "2026-11-18T15:06:27Z",
+      "latestTag": "sol-v0.1.36",
+      "latestTagIso": "2026-11-18T21:17:31Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 19074,
+      "sourceLocChangedSinceAudit": 19185,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 15875,
+      "sourceLocAddedSinceAudit": 15986,
       "sourceLocRemovedSinceAudit": 3199,
-      "filesChangedSinceAudit": 127,
-      "commitsSinceAudit": 1171,
+      "filesChangedSinceAudit": 130,
+      "commitsSinceAudit": 1176,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 8301,
+      "commentLocAddedSinceAudit": 8332,
       "commentLocRemovedSinceAudit": 2430,
-      "codeLocAddedSinceAudit": 6465,
+      "codeLocAddedSinceAudit": 6527,
       "codeLocRemovedSinceAudit": 636,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
@@ -68749,15 +68920,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.2.16",
-      "latestTagIso": "2026-11-18T18:40:40Z",
+      "latestTag": "sol-v0.2.17",
+      "latestTagIso": "2026-11-18T21:33:57Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 4554,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 4182,
       "sourceLocRemovedSinceAudit": 372,
       "filesChangedSinceAudit": 33,
-      "commitsSinceAudit": 598,
+      "commitsSinceAudit": 602,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1178,
       "commentLocRemovedSinceAudit": 145,
@@ -69001,20 +69172,20 @@
       "anchorKind": "unanchored",
       "tagConventionAbsent": true,
       "auditedDate": "2026-11-14T21:48:13Z",
-      "latestTag": "sol-v0.2.37",
-      "latestTagIso": "2026-11-18T18:40:28Z",
+      "latestTag": "sol-v0.2.38",
+      "latestTagIso": "2026-11-18T21:04:46Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 174,
+      "sourceLocChangedSinceAudit": 182,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 87,
-      "sourceLocRemovedSinceAudit": 87,
-      "filesChangedSinceAudit": 60,
-      "commitsSinceAudit": 9,
+      "sourceLocAddedSinceAudit": 91,
+      "sourceLocRemovedSinceAudit": 91,
+      "filesChangedSinceAudit": 61,
+      "commitsSinceAudit": 14,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 0,
       "commentLocRemovedSinceAudit": 0,
-      "codeLocAddedSinceAudit": 87,
-      "codeLocRemovedSinceAudit": 87,
+      "codeLocAddedSinceAudit": 91,
+      "codeLocRemovedSinceAudit": 91,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b6ee56755517b410dbe74d6f11f06db847a0b001...main",
       "daysSinceAudit": 4
@@ -70094,7 +70265,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 43,
-      "testFiles": 252,
+      "testFiles": 257,
       "sourcesUnparsed": 1,
       "untested": []
     }
