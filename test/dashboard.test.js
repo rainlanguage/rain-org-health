@@ -18310,12 +18310,13 @@ function worklistBox(hq) {
     "document",
     "$",
     "WORKLIST_SIZE",
-  ], [stubDocument(), $, 20])(hq);
+  ], [stubDocument(), $, 20])(hq, WL_NOW);
   return box;
 }
 
 const wlText = (n) => (n._text !== undefined ? n._text : textOf(n));
 
+const WL_NOW = Date.UTC(2026, 10, 18);
 function wlRow(n, ageDays, prs = []) {
   return {
     repo: "o/r",
@@ -18323,7 +18324,7 @@ function wlRow(n, ageDays, prs = []) {
     url: "https://github.com/o/r/issues/" + n,
     title: "issue " + n,
     prs,
-    ...(ageDays === undefined ? {} : { ageDays }),
+    ...(ageDays === undefined ? {} : { createdAtMs: WL_NOW - ageDays * 86_400_000 }),
   };
 }
 
@@ -18377,7 +18378,7 @@ Deno.test("worklist: untrusted strings land as text and a non-GitHub url is not 
       url: "javascript:alert(1)",
       title: XSS_SCRIPT,
       prs: ["javascript:alert(2)"],
-      ageDays: 1,
+      createdAtMs: WL_NOW - 86_400_000,
     }],
   });
   assert(tags(box, "a").length === 0, "no link for a non-github url");
@@ -18393,5 +18394,5 @@ Deno.test("worklist: an empty issueWorklist says there are no open issues", () =
 
 Deno.test("worklist: the page bootstrap renders the worklist from the fetched snapshot", () => {
   const boot = pageScript("pipeline.html").split("Promise.all([")[1] || "";
-  assert(/renderWorklist\(hq\);/.test(boot), "bootstrap calls renderWorklist(hq)");
+  assert(/renderWorklist\(hq, Date\.now\(\)\);/.test(boot), "bootstrap calls renderWorklist(hq, Date.now())");
 });

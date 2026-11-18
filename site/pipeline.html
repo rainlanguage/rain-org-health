@@ -1644,7 +1644,7 @@ function sevenDaySlope(series, nowMs) {
 // open count by one; the oldest moves the mean age most. The ranking is the tool's; this only
 // cuts it. Rows are untrusted, so a link is drawn only for an https://github.com/ url.
 const WORKLIST_SIZE = 20;
-function renderWorklist(hq) {
+function renderWorklist(hq, nowMs) {
   const box = $("worklist");
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
@@ -1681,7 +1681,10 @@ function renderWorklist(hq) {
   const list = el("div", "wl");
   for (const r of top) {
     const row = el("div", "wl-row");
-    const age = typeof r.ageDays === "number" && Number.isFinite(r.ageDays) ? `${Math.round(r.ageDays)}d` : "age ?";
+    // The snapshot carries the creation time, not an age, so the age is as of this page load.
+    const age = typeof r.createdAtMs === "number" && Number.isFinite(r.createdAtMs)
+      ? `${Math.max(0, Math.round((nowMs - r.createdAtMs) / 86_400_000))}d`
+      : "age ?";
     row.append(el("span", "wl-age", age));
     const main = el("span", "wl-main");
     main.append(el("span", "wl-ref", `${r.repo}#${r.number}`));
@@ -1712,7 +1715,7 @@ Promise.all([
   fetch(HQ_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
   fetch(HIST_URL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => ""),
 ]).then(([hq, histText]) => {
-  renderWorklist(hq);
+  renderWorklist(hq, Date.now());
   renderFsm(hq, parseHistory(histText));
 });
 </script>
