@@ -796,7 +796,8 @@ fn open_audit_issues(
 /// that ref, the object was not a text blob, GitHub truncated it, or the query
 /// itself failed. Callers charge unknowns to code, so no failure here can read
 /// as "unchanged".
-fn gh_blobs(
+fn gh_blobs<F: GhApi>(
+    gh: &F,
     org: &str,
     repo: &str,
     wants: &[blobs::Want],
@@ -804,7 +805,9 @@ fn gh_blobs(
     let mut out = std::collections::BTreeMap::new();
     for chunk in wants.chunks(blobs::BATCH) {
         let query = blobs::blob_query(org, repo, chunk);
-        let Some(raw) = gh_stdout(&["api", "graphql", "-f", &format!("query={query}")]) else {
+        let FetchOutcome::Found(raw) =
+            gh.api_jq(&["api", "graphql", "-f", &format!("query={query}")])
+        else {
             eprintln!(
                 "::warning::blob batch failed for {org}/{repo} ({} files); \
                  their drift is charged to code and reported unclassified",
@@ -831,7 +834,8 @@ fn gh_blobs(
 /// REMOVED has no head version; those are passed as an empty string rather than
 /// `None`, because absence there is a fact, not a failed lookup. Only a genuine
 /// fetch failure yields `None`, which the split charges to code.
-fn fetch_source_versions(
+fn fetch_source_versions<F: GhApi>(
+    gh: &F,
     org: &str,
     repo: &str,
     base: &str,
@@ -856,7 +860,7 @@ fn fetch_source_versions(
     }
     wants.sort();
     wants.dedup();
-    let fetched = gh_blobs(org, repo, &wants);
+    let fetched = gh_blobs(gh, org, repo, &wants);
 
     sources
         .into_iter()
@@ -891,7 +895,7 @@ fn fetch_last_mutation(org: &str, repo: &str) -> Option<mutation::LastMutation> 
     mutation::parse_mutation_scans(&src)
 }
 
-fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
+fn fetch_last_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> Option<LastAudit> {
     // Parse with no HEAD first: a scoped/malformed/absent stamp returns None here,
     // so the extra `commits/HEAD` API call is skipped in those cases (org scale).
     let runs = gh_file(org, repo, ".audit/runs.jsonl");
@@ -935,7 +939,7 @@ fn fetch_last_audit(org: &str, repo: &str) -> Option<LastAudit> {
             let (listed, compare_truncated) = audit::parse_compare_files(&v);
             // Non-source paths keep the old filename-only meaning (any change
             // outside `.audit/` counts); Solidity gets the comment-aware verdict.
-            let versions = fetch_source_versions(org, repo, &audit.audited_commit, h, &listed);
+            let versions = fetch_source_versions(gh, org, repo, &audit.audited_commit, h, &listed);
             let classified: Vec<(String, Option<commentloc::LineDrift>)> = listed
                 .iter()
                 .map(|(path, _, _, _)| {
@@ -1508,6 +1512,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
                 Some(changed) => {
                     let n = changed.len() as u64;
                     let versions = fetch_source_versions(
+                        gh,
                         org,
                         repo,
                         &base,
@@ -1547,6 +1552,7 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
             // Lexing both versions of each changed .sol is what makes the
             // comment/code split possible; a diff hunk cannot answer it.
             let versions = fetch_source_versions(
+                gh,
                 org,
                 repo,
                 &base,
@@ -2428,7 +2434,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         // already retrieves, so this gate adds no extra request (#54).
         let has_foundry = !inputs.foundry.trim().is_empty();
         let mut signals = detect_signals(&inputs);
-        let last_audit = fetch_last_audit(org, repo);
+        let last_audit = fetch_last_audit(&gh, org, repo);
         let last_mutation = fetch_last_mutation(org, repo);
         let protofire = fetch_protofire_audit(&gh, org, repo);
         // ONE shallow clone per Foundry repo feeds both clone-based facts:
