@@ -31,7 +31,7 @@ mod untested;
 mod vaultdiscovery;
 use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
-    anchor_ref, changed_source_file_count, classify_anchor, classify_external_audit,
+    anchor_ref, changed_source_files, classify_anchor, classify_external_audit,
     counts_as_source_drift, days_between, is_stale, newest_pdf_index, source_drift, AuditAnchor,
     AuditPdf, CompareFile,
 };
@@ -1241,20 +1241,18 @@ fn fetch_tree_blobs<F: GhApi>(
     Some(blobs)
 }
 
-/// Accurate count of non-test `.sol` files changed `base…head` via two recursive
-/// tree reads (the blob-sha diff, not the 300-file-capped compare). `None` when
-/// either tree is unavailable or truncated — the caller then reports drift as
-/// indeterminate rather than a false zero.
-fn changed_sol_count<F: GhApi>(
+/// Non-test `.sol` files changed `base…head` with their status, via two recursive
+/// tree reads. `None` when either tree is unavailable or truncated.
+fn changed_sol_files<F: GhApi>(
     gh: &F,
     org: &str,
     repo: &str,
     base: &str,
     head: &str,
-) -> Option<u64> {
+) -> Option<Vec<(String, String)>> {
     let base_tree = fetch_tree_blobs(gh, org, repo, base)?;
     let head_tree = fetch_tree_blobs(gh, org, repo, head)?;
-    Some(changed_source_file_count(&base_tree, &head_tree))
+    Some(changed_source_files(&base_tree, &head_tree))
 }
 
 /// Sum non-test Solidity LOC under a directory tree (skips `.git`). The pure
@@ -1492,20 +1490,58 @@ fn fetch_protofire_audit<F: GhApi>(gh: &F, org: &str, repo: &str) -> ProtofireRe
         // Comment-vs-code split of the same drift, when the patches were available.
         line_split,
     ) = match &cmp {
-        // Compare truncated at GitHub's 300-file cap: its per-file +/− misses any
-        // `.sol` sorted beyond the cap (a false zero for large repos like raindex).
-        // Fall back to a tree blob-sha diff for an ACCURATE changed-`.sol` FILE
-        // count; line-level drift isn't recoverable from trees, so leave +/− unknown.
-        Some((base_date, _files, total, trunc)) if *trunc => (
-            base_date.clone(),
-            None,
-            None,
-            None,
-            changed_sol_count(gh, org, repo, &base, &default_branch),
-            Some(*total),
-            true,
-            None,
-        ),
+        // Compare truncated at GitHub's 300-file cap, which can't be paginated: the
+        // tree blob-sha diff gives the changed `.sol` set, and a line diff of both
+        // versions of each file gives exact +/−. Truncated only when a tree read is.
+        Some((base_date, _files, total, trunc)) if *trunc => {
+            match changed_sol_files(gh, org, repo, &base, &default_branch) {
+                None => (
+                    base_date.clone(),
+                    None,
+                    None,
+                    None,
+                    None,
+                    Some(*total),
+                    true,
+                    None,
+                ),
+                Some(changed) => {
+                    let n = changed.len() as u64;
+                    let versions = fetch_source_versions(
+                        org,
+                        repo,
+                        &base,
+                        &default_branch,
+                        &changed
+                            .into_iter()
+                            .map(|(path, status)| (path, status, 0, 0))
+                            .collect::<Vec<_>>(),
+                    );
+                    match protofire::line_diffed(versions) {
+                        Some((added, removed, versions)) => (
+                            base_date.clone(),
+                            Some(added + removed),
+                            Some(added),
+                            Some(removed),
+                            Some(n),
+                            Some(*total),
+                            false,
+                            Some(protofire::source_drift_split(&versions)),
+                        ),
+                        None => (
+                            base_date.clone(),
+                            None,
+                            None,
+                            None,
+                            Some(n),
+                            Some(*total),
+                            false,
+                            None,
+                        ),
+                    }
+                }
+            }
+        }
         Some((base_date, files, total, _)) => {
             let (added, removed, n) = source_drift(files);
             // Lexing both versions of each changed .sol is what makes the
@@ -4261,10 +4297,10 @@ mod tests {
         FetchOutcome::Found(json!({"truncated": truncated, "tree": tree}).to_string())
     }
 
-    // ---- tree-diff drift fallback: changed_sol_count / fetch_tree_blobs ----
+    // ---- tree-diff drift fallback: changed_sol_files / fetch_tree_blobs ----
 
     #[test]
-    fn changed_sol_count_diffs_trees_accurately() {
+    fn changed_sol_files_diffs_trees_accurately() {
         // Mod.sol modified, New.sol added, Gone.sol removed → 3 changed non-test
         // .sol. Keep.sol is unchanged; the test-file and .rs churn are excluded.
         let base = tree_json(
@@ -4288,20 +4324,23 @@ mod tests {
             false,
         );
         let gh = FakeGh::new(vec![("git/trees/base", base), ("git/trees/head", head)]);
-        assert_eq!(changed_sol_count(&gh, "o", "r", "base", "head"), Some(3));
+        assert_eq!(
+            changed_sol_files(&gh, "o", "r", "base", "head").map(|f| f.len()),
+            Some(3)
+        );
     }
 
     #[test]
-    fn changed_sol_count_is_none_when_a_tree_is_truncated_or_failed() {
+    fn changed_sol_files_is_none_when_a_tree_is_truncated_or_failed() {
         // A truncated tree can't give a reliable diff → None (never a false 0).
         let gh = FakeGh::new(vec![
             ("git/trees/base", tree_json(&[("src/A.sol", "a")], true)),
             ("git/trees/head", tree_json(&[("src/A.sol", "b")], false)),
         ]);
-        assert_eq!(changed_sol_count(&gh, "o", "r", "base", "head"), None);
+        assert_eq!(changed_sol_files(&gh, "o", "r", "base", "head"), None);
         // A failed fetch is likewise indeterminate, not zero.
         let gh2 = FakeGh::new(vec![("git/trees/base", FetchOutcome::Failed)]);
-        assert_eq!(changed_sol_count(&gh2, "o", "r", "base", "head"), None);
+        assert_eq!(changed_sol_files(&gh2, "o", "r", "base", "head"), None);
     }
 
     // ---- Protofire-report membership gate (#54) ----

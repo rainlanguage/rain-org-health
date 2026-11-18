@@ -50,6 +50,20 @@ impl LineDrift {
     }
 }
 
+/// Lines added and removed going from `base` to `head`.
+pub fn line_diff(base: &str, head: &str) -> (u64, u64) {
+    let mut added = 0;
+    let mut removed = 0;
+    for change in TextDiff::from_lines(base, head).iter_all_changes() {
+        match change.tag() {
+            ChangeTag::Insert => added += 1,
+            ChangeTag::Delete => removed += 1,
+            ChangeTag::Equal => {}
+        }
+    }
+    (added, removed)
+}
+
 /// The byte range each comment occupies, via the Solidity lexer.
 /// `None` if the source could not be lexed at all.
 fn comment_spans(src: &str) -> Option<Vec<(usize, usize)>> {
