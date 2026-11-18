@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-18T04:28:32Z",
+  "generatedAt": "2026-11-18T14:04:42Z",
   "auditGraph": {
     "nodes": [
       {
@@ -48,6 +48,11 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
             "repo": "rain.math.float",
             "pinned": "0.3.12",
             "latest": "0.3.13"
@@ -94,24 +99,6 @@
         ]
       },
       {
-        "repo": "rain.extrospection",
-        "org": "rainlanguage",
-        "package": "rain-extrospection",
-        "packageKnown": true,
-        "audit": "stale",
-        "depsKnown": true,
-        "lastAudit": null,
-        "openAuditIssues": 15,
-        "lastMutation": {
-          "timestamp": "2026-08-18T14:11:41Z",
-          "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
-          "skillVersion": "",
-          "scope": "whole-repo"
-        },
-        "blockedBy": [],
-        "staleDeps": []
-      },
-      {
         "repo": "rain.extrospection.deploy",
         "org": "rainlanguage",
         "package": "rain-extrospection-deploy",
@@ -126,7 +113,18 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          }
+        ]
       },
       {
         "repo": "rain.factory.deploy",
@@ -149,7 +147,23 @@
           "rain.factory",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.14",
+            "latest": "0.2.15"
+          }
+        ]
       },
       {
         "repo": "rain.flare",
@@ -264,13 +278,7 @@
           "rain.math.float",
           "rain.string"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.3.12",
-            "latest": "0.3.13"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.merkle.deploy",
@@ -290,7 +298,13 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          }
+        ]
       },
       {
         "repo": "rain.metadata",
@@ -420,7 +434,13 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          }
+        ]
       },
       {
         "repo": "rain.vats",
@@ -447,6 +467,21 @@
           "rain.string"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.14",
+            "latest": "0.2.15"
+          },
           {
             "repo": "rain.math.fixedpoint",
             "pinned": "0.2.4",
@@ -514,7 +549,18 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.14",
+            "latest": "0.2.15"
+          }
+        ]
       },
       {
         "repo": "rain.verify.interface",
@@ -569,6 +615,11 @@
           "rainlang"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
           {
             "repo": "rain.math.float",
             "pinned": "0.3.12",
@@ -648,6 +699,16 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          },
+          {
             "repo": "rain.math.float",
             "pinned": "0.3.12",
             "latest": "0.3.13"
@@ -678,7 +739,18 @@
           "rain.tofu.erc20-decimals.deploy",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          }
+        ]
       },
       {
         "repo": "st0x.deploy",
@@ -713,9 +785,29 @@
         ],
         "staleDeps": [
           {
+            "repo": "rain.deploy",
+            "pinned": "0.1.33",
+            "latest": "0.1.34"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          },
+          {
             "repo": "rain.extrospection.deploy",
             "pinned": "0.1.3",
             "latest": "0.1.4"
+          },
+          {
+            "repo": "rain.factory",
+            "pinned": "0.2.14",
+            "latest": "0.2.15"
+          },
+          {
+            "repo": "rain.lib.leakybucket",
+            "pinned": "0.5.4",
+            "latest": "0.5.5"
           },
           {
             "repo": "rain.math.float",
@@ -794,7 +886,13 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.19",
+            "latest": "0.1.20"
+          }
+        ]
       },
       {
         "repo": "rain.sol.codegen",
@@ -962,6 +1060,29 @@
         "staleDeps": []
       },
       {
+        "repo": "rain.extrospection",
+        "org": "rainlanguage",
+        "package": "rain-extrospection",
+        "packageKnown": true,
+        "audit": "stale",
+        "depsKnown": true,
+        "lastAudit": {
+          "auditedAt": "2026-09-20T15:08:29Z",
+          "auditedCommit": "611e1a778505dc3a0b3f38a2bad25d1940fd94a1",
+          "skillVersion": "0.35.0",
+          "stale": true
+        },
+        "openAuditIssues": 13,
+        "lastMutation": {
+          "timestamp": "2026-08-18T14:11:41Z",
+          "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
+          "skillVersion": "",
+          "scope": "whole-repo"
+        },
+        "blockedBy": [],
+        "staleDeps": []
+      },
+      {
         "repo": "rain.lib.leakybucket",
         "org": "rainlanguage",
         "package": "rain-lib-leakybucket",
@@ -976,22 +1097,16 @@
         },
         "openAuditIssues": 0,
         "lastMutation": {
-          "timestamp": "2026-11-16T16:18:10Z",
-          "commit": "b7cdb1e2542ac7b38b37b686c8f0b02b007cf795",
+          "timestamp": "2026-11-18T12:01:49Z",
+          "commit": "663d491f300bc4b283cef9804d5ca74bb5a9a06e",
           "skillVersion": "0.35.0",
-          "scope": "pr:133, src/lib/LibLeakyBucket.sol against rain-math-float 0.3.12 and forge-std 1.17.0; the rain-math-float bump moves the versioned import prefixes only. Between 0.3.11 and 0.3.12 the only changed source file is LibParseDecimalFloat.sol, whose rain-string import prefixes move from 0.3.9 to 0.3.10; LibDecimalFloat and its implementation are unchanged and do not import the parse library, so no function this library calls changed."
+          "scope": "pr:134, src/lib/LibLeakyBucket.sol against rain-math-float 0.3.13 and forge-std 1.17.0; the rain-math-float bump moves the versioned import prefixes only. Between 0.3.12 and 0.3.13 the only changed source file is LibParseDecimalFloat.sol, whose rain-string import prefixes move from 0.3.10 to 0.3.11; LibDecimalFloat and its implementation are unchanged and do not import the parse library, so no function this library calls changed."
         },
         "blockedBy": [
           "rain.math.float",
           "rain.string"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.3.12",
-            "latest": "0.3.13"
-          }
-        ]
+        "staleDeps": []
       }
     ],
     "edges": [
@@ -1005,9 +1120,9 @@
       {
         "from": "rain.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.deploy",
@@ -1040,9 +1155,9 @@
       {
         "from": "rain.dia",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.dia",
@@ -1152,23 +1267,23 @@
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.factory",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "pinned": "0.1.34",
+        "latest": "0.1.34"
       },
       {
         "from": "rain.factory",
@@ -1180,23 +1295,23 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.14",
-        "latest": "0.2.14"
+        "latest": "0.2.15"
       },
       {
         "from": "rain.flare",
@@ -1250,8 +1365,8 @@
       {
         "from": "rain.lib.leakybucket",
         "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.3.12",
+        "stale": false,
+        "pinned": "0.3.13",
         "latest": "0.3.13"
       },
       {
@@ -1293,22 +1408,22 @@
         "from": "rain.math.float.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "pinned": "0.1.34",
+        "latest": "0.1.34"
       },
       {
         "from": "rain.math.float.deploy",
         "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.3.12",
+        "stale": false,
+        "pinned": "0.3.13",
         "latest": "0.3.13"
       },
       {
         "from": "rain.merkle.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.merkle.deploy",
@@ -1342,8 +1457,8 @@
         "from": "rain.metadata.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "pinned": "0.1.34",
+        "latest": "0.1.34"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1405,15 +1520,15 @@
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "pinned": "0.1.34",
+        "latest": "0.1.34"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1425,23 +1540,23 @@
       {
         "from": "rain.vats",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.vats",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "rain.vats",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.14",
-        "latest": "0.2.14"
+        "latest": "0.2.15"
       },
       {
         "from": "rain.vats",
@@ -1502,16 +1617,16 @@
       {
         "from": "rain.verify",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rain.verify",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.14",
-        "latest": "0.2.14"
+        "latest": "0.2.15"
       },
       {
         "from": "rain.verify",
@@ -1537,9 +1652,9 @@
       {
         "from": "raindex.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "raindex.deploy",
@@ -1649,16 +1764,16 @@
       {
         "from": "rainlang",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rainlang",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "rainlang",
@@ -1740,16 +1855,16 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "rainlang.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "rainlang.deploy",
@@ -1796,16 +1911,16 @@
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.33",
-        "latest": "0.1.33"
+        "latest": "0.1.34"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.19",
-        "latest": "0.1.19"
+        "latest": "0.1.20"
       },
       {
         "from": "st0x.deploy",
@@ -1817,9 +1932,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.factory",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.14",
-        "latest": "0.2.14"
+        "latest": "0.2.15"
       },
       {
         "from": "st0x.deploy",
@@ -1838,9 +1953,9 @@
       {
         "from": "st0x.deploy",
         "to": "rain.lib.leakybucket",
-        "stale": false,
+        "stale": true,
         "pinned": "0.5.4",
-        "latest": "0.5.4"
+        "latest": "0.5.5"
       },
       {
         "from": "st0x.deploy",
@@ -2058,11 +2173,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 12,
+        "granted": 13,
         "missing": 0,
-        "unknown": 1,
+        "unknown": 0,
         "total": 13,
-        "state": "partial",
+        "state": "live",
         "safeKept": []
       },
       {
@@ -2197,7 +2312,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2233,7 +2348,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": false
               },
               {
@@ -2308,7 +2423,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -4040,7 +4155,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 58928961
+        "discoveredAtBlock": 59101875
       },
       {
         "network": "ethereum",
@@ -4597,7 +4712,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26439553
+        "discoveredAtBlock": 26442431
       },
       {
         "network": "bsc",
@@ -5466,7 +5581,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134247661
+        "discoveredAtBlock": 134324382
       },
       {
         "network": "hyperevm",
@@ -6007,7 +6122,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51564552
+        "discoveredAtBlock": 51599702
       },
       {
         "network": "robinhood",
@@ -6548,7 +6663,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 117133975
+        "discoveredAtBlock": 117453537
       }
     ]
   },
@@ -48101,7 +48216,7 @@
       "rpcHost": "rpc.hyperliquid.xyz/evm",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 807,
+      "healthy": 829,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -53556,8 +53671,8 @@
           "field": "receiptVault decimals",
           "address": "0xf3875383506677BCdA6b9F12c48Ff7fE300970D7",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tTQQQ",
@@ -53572,7 +53687,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x04eE4ED5FF6643eA955503f966012b684f479966",
           "expected": null,
-          "live": null,
+          "live": "wtTQQQ",
           "status": "unknown"
         },
         {
@@ -53644,8 +53759,8 @@
           "field": "receipt codehash",
           "address": "0x58916AC4e186ad201376288a6655Ea46b55b8ac5",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tTQQQ",
@@ -53676,7 +53791,7 @@
           "field": "receiptVault name",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": null,
-          "live": null,
+          "live": "Franklin Limited Duration Income Trust ST0x",
           "status": "unknown"
         },
         {
@@ -53700,7 +53815,7 @@
           "field": "wrappedTokenVault name",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": null,
-          "live": null,
+          "live": "Wrapped Franklin Limited Duration Income Trust ST0x",
           "status": "unknown"
         },
         {
@@ -53708,7 +53823,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": null,
-          "live": null,
+          "live": "wtFTF",
           "status": "unknown"
         },
         {
@@ -53716,8 +53831,8 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
@@ -53732,8 +53847,8 @@
           "field": "receiptVault owner",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": null,
-          "status": "unknown"
+          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
@@ -53748,48 +53863,48 @@
           "field": "receiptVault beacon",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": null,
-          "status": "unknown"
+          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
           "field": "receiptVault codehash",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": null,
-          "status": "unknown"
+          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
           "field": "receipt manager",
           "address": "0x05215bE061F61d341703a6b63AcFDFf396965425",
           "expected": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
-          "live": null,
-          "status": "unknown"
+          "live": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
           "field": "receipt beacon",
           "address": "0x05215bE061F61d341703a6b63AcFDFf396965425",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": null,
-          "status": "unknown"
+          "live": "0xace121ae30d754536863a546f41b147be11202db",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
           "field": "receipt codehash",
           "address": "0x05215bE061F61d341703a6b63AcFDFf396965425",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
           "field": "wrappedTokenVault asset",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
-          "live": null,
-          "status": "unknown"
+          "live": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
+          "status": "healthy"
         },
         {
           "component": "token tFTF",
@@ -53804,8 +53919,8 @@
           "field": "wrappedTokenVault codehash",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": null,
-          "status": "unknown"
+          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
@@ -53820,23 +53935,23 @@
           "field": "receiptVault symbol",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "tCBRS",
-          "live": null,
-          "status": "unknown"
+          "live": "tCBRS",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "receiptVault decimals",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "wrappedTokenVault name",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
           "expected": null,
-          "live": null,
+          "live": "Wrapped Cerebras Systems Inc. ST0x",
           "status": "unknown"
         },
         {
@@ -53844,7 +53959,7 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
           "expected": null,
-          "live": null,
+          "live": "wtCBRS",
           "status": "unknown"
         },
         {
@@ -53852,8 +53967,8 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
           "expected": "18",
-          "live": null,
-          "status": "unknown"
+          "live": "18",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
@@ -53868,56 +53983,56 @@
           "field": "receiptVault owner",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": null,
-          "status": "unknown"
+          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "receiptVault authoriser",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "receiptVault beacon",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": null,
-          "status": "unknown"
+          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "receiptVault codehash",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": null,
-          "status": "unknown"
+          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "receipt manager",
           "address": "0x8Ea1ba9Fc0CF7338B41DdDa5B778a9118274AEA8",
           "expected": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
-          "live": null,
-          "status": "unknown"
+          "live": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "receipt beacon",
           "address": "0x8Ea1ba9Fc0CF7338B41DdDa5B778a9118274AEA8",
           "expected": "0xAcE121AE30D754536863a546f41b147bE11202db",
-          "live": null,
-          "status": "unknown"
+          "live": "0xace121ae30d754536863a546f41b147be11202db",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "receipt codehash",
           "address": "0x8Ea1ba9Fc0CF7338B41DdDa5B778a9118274AEA8",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
@@ -53932,23 +54047,23 @@
           "field": "wrappedTokenVault beacon",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": null,
-          "status": "unknown"
+          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
           "field": "wrappedTokenVault codehash",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": null,
-          "status": "unknown"
+          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
+          "status": "healthy"
         },
         {
           "component": "token tMCD",
           "field": "receiptVault name",
           "address": "0xC04160F3e18e120C2259f3FE33864823bF3b9015",
           "expected": null,
-          "live": null,
+          "live": "McDonald's Corporation ST0x",
           "status": "unknown"
         },
         {
@@ -53972,7 +54087,7 @@
           "field": "wrappedTokenVault name",
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
           "expected": null,
-          "live": null,
+          "live": "Wrapped McDonald's Corporation ST0x",
           "status": "unknown"
         },
         {
@@ -54020,8 +54135,8 @@
           "field": "receiptVault beacon",
           "address": "0xC04160F3e18e120C2259f3FE33864823bF3b9015",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": null,
-          "status": "unknown"
+          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
+          "status": "healthy"
         },
         {
           "component": "token tMCD",
@@ -54052,39 +54167,39 @@
           "field": "receipt codehash",
           "address": "0x37BbE0cd96266CFc10960521EfB32A822ef780E0",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tMCD",
           "field": "wrappedTokenVault asset",
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
           "expected": "0xC04160F3e18e120C2259f3FE33864823bF3b9015",
-          "live": null,
-          "status": "unknown"
+          "live": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
+          "status": "healthy"
         },
         {
           "component": "token tMCD",
           "field": "wrappedTokenVault beacon",
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
           "expected": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
-          "live": null,
-          "status": "unknown"
+          "live": "0x9fd790f65ca3af2772358c653f097f0a4c7ee7d2",
+          "status": "healthy"
         },
         {
           "component": "token tMCD",
           "field": "wrappedTokenVault codehash",
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
           "expected": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
-          "live": null,
-          "status": "unknown"
+          "live": "0xac684843cc8b4f414e3516779bbcbdc1118a997b4125320c6b7192015e645548",
+          "status": "healthy"
         },
         {
           "component": "token tNKE",
           "field": "receiptVault name",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": null,
-          "live": null,
+          "live": "NIKE, Inc. ST0x",
           "status": "unknown"
         },
         {
@@ -54092,16 +54207,16 @@
           "field": "receiptVault symbol",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "tNKE",
-          "live": "tNKE",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tNKE",
           "field": "receiptVault decimals",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tNKE",
@@ -54132,8 +54247,8 @@
           "field": "receiptVault receipt",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "0x6884986776e2e221B7Cd5c566bBD9338051F24fB",
-          "live": "0x6884986776e2e221b7cd5c566bbd9338051f24fb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tNKE",
@@ -54148,24 +54263,24 @@
           "field": "receiptVault authoriser",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tNKE",
           "field": "receiptVault beacon",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tNKE",
           "field": "receiptVault codehash",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tNKE",
@@ -65017,8 +65132,8 @@
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
   "totalRepos": 106,
   "reposWithFindings": 35,
-  "reposWholeRepoAudited": 11,
-  "reposNeverAudited": 95,
+  "reposWholeRepoAudited": 12,
+  "reposNeverAudited": 94,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 20,
   "summary": {
@@ -65608,18 +65723,6 @@
       "lastMutation": null
     },
     {
-      "name": "rain.extrospection",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 15,
-      "lastMutation": {
-        "timestamp": "2026-08-18T14:11:41Z",
-        "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
-        "skillVersion": "",
-        "scope": "whole-repo"
-      }
-    },
-    {
       "name": "rain.extrospection.deploy",
       "org": "rainlanguage",
       "lastAudit": null,
@@ -66180,14 +66283,31 @@
       }
     },
     {
+      "name": "rain.extrospection",
+      "org": "rainlanguage",
+      "openAuditIssues": 13,
+      "lastMutation": {
+        "timestamp": "2026-08-18T14:11:41Z",
+        "commit": "28017b6e0ccd2140eab65ad4e2e7af1a033574d7",
+        "skillVersion": "",
+        "scope": "whole-repo"
+      },
+      "lastAudit": {
+        "auditedAt": "2026-09-20T15:08:29Z",
+        "auditedCommit": "611e1a778505dc3a0b3f38a2bad25d1940fd94a1",
+        "skillVersion": "0.35.0",
+        "stale": true
+      }
+    },
+    {
       "name": "rain.lib.leakybucket",
       "org": "rainlanguage",
       "openAuditIssues": 0,
       "lastMutation": {
-        "timestamp": "2026-11-16T16:18:10Z",
-        "commit": "b7cdb1e2542ac7b38b37b686c8f0b02b007cf795",
+        "timestamp": "2026-11-18T12:01:49Z",
+        "commit": "663d491f300bc4b283cef9804d5ca74bb5a9a06e",
         "skillVersion": "0.35.0",
-        "scope": "pr:133, src/lib/LibLeakyBucket.sol against rain-math-float 0.3.12 and forge-std 1.17.0; the rain-math-float bump moves the versioned import prefixes only. Between 0.3.11 and 0.3.12 the only changed source file is LibParseDecimalFloat.sol, whose rain-string import prefixes move from 0.3.9 to 0.3.10; LibDecimalFloat and its implementation are unchanged and do not import the parse library, so no function this library calls changed."
+        "scope": "pr:134, src/lib/LibLeakyBucket.sol against rain-math-float 0.3.13 and forge-std 1.17.0; the rain-math-float bump moves the versioned import prefixes only. Between 0.3.12 and 0.3.13 the only changed source file is LibParseDecimalFloat.sol, whose rain-string import prefixes move from 0.3.10 to 0.3.11; LibDecimalFloat and its implementation are unchanged and do not import the parse library, so no function this library calls changed."
       },
       "lastAudit": {
         "auditedAt": "2026-09-22T05:00:00Z",
@@ -66779,6 +66899,132 @@
       "daysSinceAudit": null
     },
     {
+      "name": "st0x.deploy",
+      "org": "S01-Issuer",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "st0x.deploy.v0.1.1.may-2026.pdf",
+          "path": "audit/protofire/st0x.deploy.v0.1.1.may-2026.pdf",
+          "lastCommitIso": "2026-07-16T12:46:26Z",
+          "auditDateIso": "2026-05-20T14:39:06Z"
+        },
+        {
+          "filename": "st0x.deploy.v6.0.aug-2026.pdf",
+          "path": "audit/protofire/st0x.deploy.v6.0.aug-2026.pdf",
+          "lastCommitIso": "2026-08-27T14:30:59Z",
+          "auditDateIso": "2026-08-27T14:30:59Z"
+        }
+      ],
+      "referencePdfIndex": 1,
+      "auditedRef": null,
+      "anchorKind": "unanchored",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-08-27T14:30:59Z",
+      "latestTag": "sol-v0.1.30",
+      "latestTagIso": "2026-08-19T10:32:06Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 21870,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 13563,
+      "sourceLocRemovedSinceAudit": 8307,
+      "filesChangedSinceAudit": 191,
+      "commitsSinceAudit": 1523,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 3939,
+      "commentLocRemovedSinceAudit": 3786,
+      "codeLocAddedSinceAudit": 8543,
+      "codeLocRemovedSinceAudit": 3817,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
+      "daysSinceAudit": 83
+    },
+    {
+      "name": "rain.deploy",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.deploy.1af8ca2a981c2f67844f343e224f4c7b1969de1c.feb-2026.pdf",
+          "path": "audit/protofire/rain.deploy.1af8ca2a981c2f67844f343e224f4c7b1969de1c.feb-2026.pdf",
+          "lastCommitIso": "2026-07-14T05:18:25Z",
+          "auditDateIso": "2026-02-08T12:06:53Z"
+        },
+        {
+          "filename": "rain.deploy.sol-v0.1.15-r4.0.oct-2026.pdf",
+          "path": "audit/protofire/rain.deploy.sol-v0.1.15-r4.0.oct-2026.pdf",
+          "lastCommitIso": "2026-10-20T09:26:28Z",
+          "auditDateIso": "2026-10-07T16:17:36Z"
+        }
+      ],
+      "referencePdfIndex": 1,
+      "auditedRef": "sol-v0.1.15",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-10-07T16:17:36Z",
+      "latestTag": "sol-v0.1.34",
+      "latestTagIso": "2026-11-18T11:23:02Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 18963,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 15764,
+      "sourceLocRemovedSinceAudit": 3199,
+      "filesChangedSinceAudit": 124,
+      "commitsSinceAudit": 1167,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 8270,
+      "commentLocRemovedSinceAudit": 2430,
+      "codeLocAddedSinceAudit": 6403,
+      "codeLocRemovedSinceAudit": 636,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
+      "daysSinceAudit": 42
+    },
+    {
+      "name": "raindex.deploy",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "raindex.e686b4d.apr-2026.pdf",
+          "path": "audit/protofire/raindex.e686b4d.apr-2026.pdf",
+          "lastCommitIso": "2026-06-02T15:52:40Z",
+          "auditDateIso": "2026-03-24T18:40:27Z"
+        },
+        {
+          "filename": "raindex.sol-v0.1.12.jun-2026.pdf",
+          "path": "audit/protofire/raindex.sol-v0.1.12.jun-2026.pdf",
+          "lastCommitIso": "2026-07-14T08:55:44Z",
+          "auditDateIso": "2026-06-15T23:31:39Z"
+        }
+      ],
+      "referencePdfIndex": 1,
+      "auditedRef": "sol-v0.1.12",
+      "anchorKind": "tag",
+      "tagConventionAbsent": false,
+      "auditedDate": "2026-06-15T23:31:39Z",
+      "latestTag": "sol-v0.1.17",
+      "latestTagIso": "2026-10-27T17:21:14Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 8501,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 5091,
+      "sourceLocRemovedSinceAudit": 3410,
+      "filesChangedSinceAudit": 91,
+      "commitsSinceAudit": 477,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 1519,
+      "commentLocRemovedSinceAudit": 1119,
+      "codeLocAddedSinceAudit": 3022,
+      "codeLocRemovedSinceAudit": 1841,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/raindex.deploy/compare/sol-v0.1.12...main",
+      "daysSinceAudit": 156
+    },
+    {
       "name": "rain.factory",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -66808,15 +67054,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-07-12T14:01:53Z",
-      "latestTag": "sol-v0.2.14",
-      "latestTagIso": "2026-11-16T14:07:04Z",
+      "latestTag": "sol-v0.2.15",
+      "latestTagIso": "2026-11-18T12:40:13Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 4554,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 4182,
       "sourceLocRemovedSinceAudit": 372,
       "filesChangedSinceAudit": 33,
-      "commitsSinceAudit": 590,
+      "commitsSinceAudit": 595,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1178,
       "commentLocRemovedSinceAudit": 145,
@@ -66856,15 +67102,15 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-12T15:16:31Z",
-      "latestTag": "sol-v0.1.19",
-      "latestTagIso": "2026-11-15T16:45:26Z",
+      "latestTag": "sol-v0.1.20",
+      "latestTagIso": "2026-11-18T11:54:50Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 1142,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 785,
       "sourceLocRemovedSinceAudit": 357,
       "filesChangedSinceAudit": 11,
-      "commitsSinceAudit": 215,
+      "commitsSinceAudit": 223,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 541,
       "commentLocRemovedSinceAudit": 183,
@@ -66976,15 +67222,15 @@
       "anchorKind": "commit",
       "tagConventionAbsent": true,
       "auditedDate": "2026-09-22T19:45:39Z",
-      "latestTag": "sol-v0.5.4",
-      "latestTagIso": "2026-11-16T22:25:10Z",
+      "latestTag": "sol-v0.5.5",
+      "latestTagIso": "2026-11-18T12:41:37Z",
       "isStale": true,
       "sourceLocChangedSinceAudit": 279,
       "fullSourceLoc": null,
       "sourceLocAddedSinceAudit": 170,
       "sourceLocRemovedSinceAudit": 109,
       "filesChangedSinceAudit": 1,
-      "commitsSinceAudit": 92,
+      "commitsSinceAudit": 96,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 91,
       "commentLocRemovedSinceAudit": 29,
@@ -67167,132 +67413,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/sol-v0.2.2...main",
       "daysSinceAudit": 48
-    },
-    {
-      "name": "rain.deploy",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.deploy.1af8ca2a981c2f67844f343e224f4c7b1969de1c.feb-2026.pdf",
-          "path": "audit/protofire/rain.deploy.1af8ca2a981c2f67844f343e224f4c7b1969de1c.feb-2026.pdf",
-          "lastCommitIso": "2026-07-14T05:18:25Z",
-          "auditDateIso": "2026-02-08T12:06:53Z"
-        },
-        {
-          "filename": "rain.deploy.sol-v0.1.15-r4.0.oct-2026.pdf",
-          "path": "audit/protofire/rain.deploy.sol-v0.1.15-r4.0.oct-2026.pdf",
-          "lastCommitIso": "2026-10-20T09:26:28Z",
-          "auditDateIso": "2026-10-07T16:17:36Z"
-        }
-      ],
-      "referencePdfIndex": 1,
-      "auditedRef": "sol-v0.1.15",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-10-07T16:17:36Z",
-      "latestTag": "sol-v0.1.33",
-      "latestTagIso": "2026-11-15T16:35:46Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 121,
-      "commitsSinceAudit": 1165,
-      "sourceDriftTruncated": true,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
-      "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
-      "daysSinceAudit": 42
-    },
-    {
-      "name": "raindex.deploy",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "raindex.e686b4d.apr-2026.pdf",
-          "path": "audit/protofire/raindex.e686b4d.apr-2026.pdf",
-          "lastCommitIso": "2026-06-02T15:52:40Z",
-          "auditDateIso": "2026-03-24T18:40:27Z"
-        },
-        {
-          "filename": "raindex.sol-v0.1.12.jun-2026.pdf",
-          "path": "audit/protofire/raindex.sol-v0.1.12.jun-2026.pdf",
-          "lastCommitIso": "2026-07-14T08:55:44Z",
-          "auditDateIso": "2026-06-15T23:31:39Z"
-        }
-      ],
-      "referencePdfIndex": 1,
-      "auditedRef": "sol-v0.1.12",
-      "anchorKind": "tag",
-      "tagConventionAbsent": false,
-      "auditedDate": "2026-06-15T23:31:39Z",
-      "latestTag": "sol-v0.1.17",
-      "latestTagIso": "2026-10-27T17:21:14Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 91,
-      "commitsSinceAudit": 477,
-      "sourceDriftTruncated": true,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
-      "compareUrl": "https://github.com/rainlanguage/raindex.deploy/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 156
-    },
-    {
-      "name": "st0x.deploy",
-      "org": "S01-Issuer",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "st0x.deploy.v0.1.1.may-2026.pdf",
-          "path": "audit/protofire/st0x.deploy.v0.1.1.may-2026.pdf",
-          "lastCommitIso": "2026-07-16T12:46:26Z",
-          "auditDateIso": "2026-05-20T14:39:06Z"
-        },
-        {
-          "filename": "st0x.deploy.v6.0.aug-2026.pdf",
-          "path": "audit/protofire/st0x.deploy.v6.0.aug-2026.pdf",
-          "lastCommitIso": "2026-08-27T14:30:59Z",
-          "auditDateIso": "2026-08-27T14:30:59Z"
-        }
-      ],
-      "referencePdfIndex": 1,
-      "auditedRef": null,
-      "anchorKind": "unanchored",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-08-27T14:30:59Z",
-      "latestTag": "sol-v0.1.30",
-      "latestTagIso": "2026-08-19T10:32:06Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": null,
-      "sourceLocRemovedSinceAudit": null,
-      "filesChangedSinceAudit": 191,
-      "commitsSinceAudit": 1523,
-      "sourceDriftTruncated": true,
-      "commentLocAddedSinceAudit": null,
-      "commentLocRemovedSinceAudit": null,
-      "codeLocAddedSinceAudit": null,
-      "codeLocRemovedSinceAudit": null,
-      "driftFullyClassified": false,
-      "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
-      "daysSinceAudit": 83
     },
     {
       "name": "rain.lib.typecast",
@@ -67982,7 +68102,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 0,
-      "testFiles": 115,
+      "testFiles": 116,
       "sourcesUnparsed": 0,
       "untested": []
     },
