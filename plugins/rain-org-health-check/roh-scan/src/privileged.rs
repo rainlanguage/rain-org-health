@@ -140,7 +140,10 @@ pub fn address_keys(body: &str, network: &str) -> Vec<(String, String)> {
         take(top);
     }
     if let Some(chains) = doc["chains"].as_object() {
-        for c in chains.values().filter(|c| c["network"].as_str() == Some(network)) {
+        for c in chains
+            .values()
+            .filter(|c| c["network"].as_str() == Some(network))
+        {
             if let Some(o) = c.as_object() {
                 take(o);
             }
