@@ -763,8 +763,10 @@ mod tests {
         let first: Vec<(String, String)> = (0..PAGE)
             .map(|i| (R1.to_string(), format!("0x{:040x}", i + 1)))
             .collect();
-        let first_refs: Vec<(&str, &str)> =
-            first.iter().map(|(r, t)| (r.as_str(), t.as_str())).collect();
+        let first_refs: Vec<(&str, &str)> = first
+            .iter()
+            .map(|(r, t)| (r.as_str(), t.as_str()))
+            .collect();
         let last_token = format!("0x{:040x}", PAGE + 1);
         let queries = RefCell::new(Vec::<String>::new());
         let post = |q: &str| {

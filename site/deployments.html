@@ -67,7 +67,6 @@
   .mig-wait { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px;
               color: var(--ink-2); overflow-wrap: anywhere; }
   .own-row.mig-notApplied, .own-row.mig-notRecorded { background: var(--debt-bg); }
-  .own-row.mig-unregistered { box-shadow: inset 3px 0 0 var(--crit); }
   .rbac-contract { display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 8px; margin-top: 18px; }
   .rbac-hist { margin-top: 10px; }
   /* An address on the Role changes tab reads as the deploy repo's name for it,
@@ -690,6 +689,37 @@ function renderDeployments(document, $, data, io) {
         table.append(row);
       }
       if (extra.length || missing.length) sink.append(table);
+    }
+  };
+  const renderListings = (f) => {
+    for (const r of Array.isArray(f) ? f : f ? [f] : []) {
+      sink.append(el("h2", null, `Listing facts — ${r.network ?? "all chains"}`));
+      if (r.unavailable) {
+        sink.append(el("div", "own-verify own-verify-drift", `Listing check unavailable — ${r.reason}.`));
+        continue;
+      }
+      const rows = Array.isArray(r.rows) ? r.rows : [];
+      const bad = rows.filter((x) => x.status === "inconsistent");
+      const unavailable = rows.filter((x) => x.status === "unavailable").length;
+      sink.append(
+        el(
+          "div",
+          `own-verify ${bad.length || unavailable || !rows.length ? "own-verify-drift" : "own-verify-ok"}`,
+          `${bad.length} inconsistent · ${unavailable} unavailable · ${rows.length - bad.length - unavailable} consistent — assetId, listingTicker and listingName against st0x.registry, Nasdaq and GLEIF.`,
+        ),
+      );
+      if (!bad.length) continue;
+      const table = el("div", "own-table");
+      for (const x of bad) {
+        const row = el("div", "own-row hlth-mismatch");
+        const rc = el("div", "own-rc");
+        rc.append(el("div", "own-role", `${x.token} ${x.field}`));
+        rc.append(el("div", "own-note", `ours: ${x.value ?? "(none)"}`));
+        if ("theirs" in x) rc.append(el("div", "own-note", `${x.source}: ${x.theirs ?? "(none)"}`));
+        row.append(rc, el("span", "own-chip own-chip-no", x.source));
+        table.append(row);
+      }
+      sink.append(table);
     }
   };
   const renderSafeSet = (f) => {
@@ -3211,11 +3241,10 @@ function renderDeployments(document, $, data, io) {
     applied: ["applied", "yes"],
     notApplied: ["pending", "roll"],
     notRecorded: ["not recorded", "roll"],
-    unregistered: ["no registry record", "no"],
     unknown: ["unknown", "dim"],
   };
   const MIG_OWED = ["notApplied", "notRecorded"];
-  const renderMigrations = (v) => {
+  const renderMigrations = (v, pinTable) => {
     sink.append(el("h2", null, "Migrations — run or not, per network"));
     if (!v || typeof v !== "object" || !Array.isArray(v.networks) || v.networks.length === 0) {
       const why =
@@ -3237,10 +3266,11 @@ function renderDeployments(document, $, data, io) {
         'Every migration the file declares for a network is required there: "pending" means its record is not ' +
         'in that registry yet. "Not recorded" means the file says it ran (and gives when) but the registry holds no record for it, ' +
         "so the record is still owed. Both are warnings. " +
-        '"No registry record" is an error: the script writes no record, so it is in no line and its run state ' +
-        'cannot be read or ordered. "Unknown" means the registry read did not answer, never that it has not run.',
+        '"Unknown" means the registry read did not answer, never that it has not run.',
     );
     sink.append(sub);
+    const pinsOn = (network) =>
+      pinTable && typeof pinTable === "object" && Object.prototype.hasOwnProperty.call(pinTable, network) ? pinTable[network] : null;
     const nets = v.networks
       .filter((n) => n && typeof n === "object")
       .map((n) => ({
@@ -3292,8 +3322,7 @@ function renderDeployments(document, $, data, io) {
           "h3",
           "tok-h3",
           `${network} — ${count("applied")} applied, ${count("notApplied")} pending, ` +
-            `${count("notRecorded")} not recorded, ${count("unknown")} unknown, ` +
-            `${count("unregistered")} with no registry record`,
+            `${count("notRecorded")} not recorded, ${count("unknown")} unknown`,
         ),
       );
       const where = el("div", "own-groupnote");
@@ -3309,6 +3338,15 @@ function renderDeployments(document, $, data, io) {
         where.append(` · ${n.unread} registry read${n.unread === 1 ? "" : "s"} unanswered`);
       }
       sink.append(where, banner(owed(rows), unread(rows), `on ${network}`));
+      if (n.lineOrder === false) {
+        sink.append(
+          el(
+            "div",
+            "own-groupnote",
+            `Listed in file order, not line order — ${str(n.lineOrderReason) || "the scan gave no reason"}.`,
+          ),
+        );
+      }
       const table = el("div", "own-table");
       for (const m of rows) {
         const row = el("div", `own-row mig-${m.state}`);
@@ -3321,12 +3359,8 @@ function renderDeployments(document, $, data, io) {
         const ac = el("div", "bcn-detail");
         if (str(m.writer)) {
           const line = el("div", "bcn-line");
-          line.append(el("span", "bcn-key", "writer"), addrNode("own-addr", m.writer, network));
+          line.append(el("span", "bcn-key", "writer"), whoNode(m.writer, network, pinsOn(network)));
           ac.append(line);
-        } else if (str(m.id)) {
-          ac.append(el("div", "own-note", "the migrations file names no writer on this network"));
-        } else {
-          ac.append(el("div", "own-note", "error — writes no registry record, so it is in no line; its script must record one"));
         }
         for (const w of Array.isArray(m.waitsOn) ? m.waitsOn : []) {
           if (!w || typeof w !== "object") continue;
@@ -3335,6 +3369,7 @@ function renderDeployments(document, $, data, io) {
           if (w.state === "genesis") {
             line.append(el("span", "own-note", "nothing — it opens its namespace's line in the registry"));
           } else {
+            if (str(w.writer)) line.append(whoNode(w.writer, network, pinsOn(network)));
             line.append(
               str(w.script) ? scriptNode(w.script, "mig-wait") : el("span", "mig-hash", str(w.id) || "an unnamed record"),
               chip(w.state),
@@ -3450,11 +3485,12 @@ function renderDeployments(document, $, data, io) {
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
+    renderListings(data.deploymentListings);
     renderInfra(data.deploymentInfra);
     renderCodeTokens(data.deploymentCodeTokens);
     renderV2(data.deploymentV2);
     sink = panels.migrations;
-    renderMigrations(data.deploymentMigrations);
+    renderMigrations(data.deploymentMigrations, data.deploymentRbac && data.deploymentRbac.addressNames);
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
     sink = panels.registry;
@@ -3506,11 +3542,12 @@ function renderDeployments(document, $, data, io) {
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
+  renderListings(data.deploymentListings);
   renderInfra(data.deploymentInfra);
   renderCodeTokens(data.deploymentCodeTokens);
   renderV2(data.deploymentV2);
   sink = panels.migrations;
-  renderMigrations(data.deploymentMigrations);
+  renderMigrations(data.deploymentMigrations, data.deploymentRbac && data.deploymentRbac.addressNames);
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
   sink = panels.registry;

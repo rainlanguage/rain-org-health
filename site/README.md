@@ -4,8 +4,9 @@ Static, dependency-free dashboard for the org-health scan.
 
 **Live: <https://rainlanguage.github.io/rain-org-health/>**
 
-- `pipeline.html` — the issue→PR pipeline's state machine, fetched from
-  `issue-pr-cron`'s `human-queue.json`.
+- `pipeline.html` — the open-issue KPIs (count, mean / median / oldest age) and
+  the top 20 issues to close next, fetched from `issue-pr-cron`'s
+  `human-queue.json`.
 - `repositories.html` — self-contained (inline CSS/JS, no build, no external
   requests), fetches `health.json` and renders per-repo modernization-debt
   signals — a per-signal magnitude summary and a filterable repo list. Theme
@@ -27,8 +28,8 @@ Static, dependency-free dashboard for the org-health scan.
 ## Deploy
 
 `.github/workflows/pages.yml` publishes `site/` to GitHub Pages on push to
-`master`. To refresh the data, run the scan locally (or in a scheduled job with
-an org-read token) and commit the regenerated `health.json`.
+`main`. To refresh the data, run the scan locally (or in a scheduled job with an
+org-read token) and commit the regenerated `health.json`.
 
 ## Design
 

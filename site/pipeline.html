@@ -133,103 +133,42 @@
   .pm-toggle button { background: none; border: 0; color: var(--ink-2); font: inherit; font-size: 12.5px;
                       padding: 5px 12px; border-radius: 6px; cursor: pointer; }
   .pm-toggle button.on { background: var(--surface-2); color: var(--ink); font-weight: 600; }
-  /* ---- Pipeline FSM conformance ---- */
-  .fsm-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(155px, 1fr)); gap: 10px; margin: 12px 0; }
-  .fsm-state { text-align: left; background: var(--surface); border: 1px solid var(--border); border-left: 3px solid var(--border);
-               border-radius: 11px; padding: 12px 14px; cursor: pointer; color: inherit; font: inherit; width: 100%; }
-  .fsm-state:hover { background: var(--surface-2); }
-  .fsm-state.sel { background: var(--surface-2); box-shadow: inset 0 0 0 1px var(--border); }
-  .fsm-state.flow { border-left-color: var(--clean); }
-  .fsm-state.rule { border-left-color: var(--accent); }
-  .fsm-state.blk { border-left-color: var(--debt); }
-  .fsm-state.zero { opacity: 0.5; }
-  /* Theory-of-Constraints bottleneck flag (#32): a state whose inventory is trending
-     UP over the trailing 7d gets a red WARNING border (semantic --crit, legible in
-     both themes) — placed after the kind rules so it wins the border-color cascade.
-     Never color-alone: it is paired with a ▲ badge + title/aria-label.
-     `.lead` — the per-actor fallback pick — shares this rule verbatim. One highlight
-     language on the board, not two: the concept is "this is where this actor should look",
-     which trend answers when there is a trend and size answers otherwise. `.lead` adds no
-     properties of its own; it only ever appears on a box in a group where nothing rose. */
-  .fsm-state.rising, .fsm-state.lead { border-color: var(--crit); box-shadow: inset 0 0 0 1px var(--crit); }
-  .fsm-scrow { display: flex; align-items: center; gap: 8px; }
-  /* Inventory sparkline: a recessive thin line + one emphasized endpoint dot, styled
-     via theme tokens so it reads in light and dark; it echoes --crit on a rising state. */
-  .fsm-spark { display: block; flex: none; overflow: visible; }
-  .fsm-spark .sl { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
-  .fsm-spark .sd { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
-  .fsm-state.rising .fsm-spark .sl, .fsm-state.lead .fsm-spark .sl { stroke: var(--crit); }
-  .fsm-state.rising .fsm-spark .sd, .fsm-state.lead .fsm-spark .sd { fill: var(--crit); }
-  .fsm-rise { color: var(--crit); font-size: 12px; font-weight: 700; line-height: 1; }
-  .fsm-state .sc { font-size: 23px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; }
-  /* A box's label comes off the snapshot too (a descriptor's `label`/`key`), so it wraps
-     inside its box instead of overflowing the grid. */
-  .fsm-state .sk { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px;
-                   overflow-wrap: anywhere; word-break: break-word; }
-  .fsm-state .sa { font-size: 11px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); margin-top: 3px; }
-  .fsm-list { margin: 18px 0 4px; border: 1px solid var(--border); border-radius: 10px; overflow: hidden; display: none; }
-  .fsm-list.open { display: block; }
-  .fsm-list .li { display: block; padding: 9px 13px; border-bottom: 1px solid var(--border); text-decoration: none; color: var(--ink); font-size: 13.5px; }
-  .fsm-list .li:last-child { border-bottom: 0; }
-  .fsm-list .li:hover { background: var(--surface); }
-  .fsm-list .li .lr { color: var(--ink-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; }
-  .fsm-list .li .lz { display: block; color: var(--ink-3); font-size: 12px; margin-top: 2px; }
-  .fsm-list .fsm-dh { display: flex; align-items: baseline; justify-content: space-between; gap: 8px; padding: 8px 13px; background: var(--surface); border-bottom: 1px solid var(--border); }
-  .fsm-list .fsm-dh .dhl { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); }
-  .fsm-list .fsm-dh .dhc { font-variant-numeric: tabular-nums; font-size: 12px; color: var(--ink-3); white-space: nowrap; }
-  .fsm-list .empty { padding: 12px 13px; }
-  /* A list that is empty because it is BROKEN, not because the state is empty. Semantic
-     --crit (defined in both themes) plus wording that says which — the colour is never the
-     only carrier. Two classes deep so it outweighs `.fsm-list .empty`'s own colour. */
-  .fsm-list .empty.miswired { color: var(--crit); }
-  /* Conservation defect (rain-org-health#164): occupancy the snapshot carries that its own
-     descriptor list does not claim — inventory the machine renders NOWHERE, the exact shape
-     of the blocked-on drift that hid 17 PRs. Semantic --crit (defined in every theme scope)
-     plus wording that names what is unclaimed: the colour is never the only carrier. */
-  .fsm-defect { border: 1.5px solid var(--crit); border-radius: 11px; padding: 12px 14px;
-                margin: 12px 0 4px; color: var(--crit); font-size: 13px; line-height: 1.5; }
-  .fsm-defect .fd-h { font-weight: 650; }
-  /* The band quotes UNTRUSTED snapshot strings (state keys, lane names, counts keys), so
-     one long unbroken token must wrap rather than push the panel sideways. */
-  .fsm-defect .fd-li { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12.5px; margin-top: 4px;
-                       overflow-wrap: anywhere; word-break: break-word; }
-  .fsm-note { color: var(--ink-3); font-size: 12px; margin: 8px 2px 0; line-height: 1.5; }
-  .fsm-note a, .fsm-note code { color: var(--ink-3); }
-  .fsm-lane { margin: 14px 0 2px; }
-  .fsm-lane-h { display: flex; align-items: baseline; gap: 8px; margin: 0 2px 6px; font-size: 11px; text-transform: uppercase; letter-spacing: 0.06em; color: var(--ink-3); }
-  .fsm-lane-h .lct { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-variant-numeric: tabular-nums; color: var(--ink-2); font-weight: 650; text-transform: none; letter-spacing: 0; }
-  .fsm-lane-h .lsub { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; color: var(--ink-3); text-transform: none; letter-spacing: 0; margin-left: -4px; }
-  .fsm-lane .fsm-grid { margin: 0; }
-  /* ---- Open-issue population band (rain-org-health#140) ----
-     Every open issue in the pipeline's scope outside an archived repo, and how old it runs.
-     NOT a state box and deliberately outside the actor lanes: this population spans all
-     three actors (it holds issues behind an open PR, behind a human ruling, and flagged
-     close-candidate alongside the untouched backlog), so its size is not an inbox anyone
-     acts on and could never be added to an actor total. */
-  .fsm-open { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px;
+  .wl-sum { color: var(--ink-3); font-size: 13px; margin: 8px 0 10px; }
+  .wl { border: 1px solid var(--border); border-radius: 10px; overflow: hidden; margin-bottom: 28px; }
+  .wl-row { display: flex; align-items: baseline; gap: 10px; padding: 8px 13px; border-bottom: 1px solid var(--border); font-size: 13.5px; }
+  .wl-row:last-child { border-bottom: 0; }
+  .wl-row .wl-age { flex: none; width: 52px; text-align: right; font-variant-numeric: tabular-nums; color: var(--ink-2); }
+  .wl-row .wl-main { flex: 1; min-width: 0; overflow-wrap: anywhere; }
+  .wl-row .wl-ref { color: var(--ink-2); font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; margin-right: 6px; }
+  .wl-row .wl-prs { flex: none; display: flex; gap: 6px; font-size: 12px; }
+  .wl-row .wl-none { color: var(--ink-3); }
+  .wl a { color: var(--ink); text-decoration: none; }
+  .wl a:hover { text-decoration: underline; }
+  .wl .wl-prs a { color: var(--accent); }
+  .oi-band { display: flex; flex-wrap: wrap; align-items: center; gap: 14px 24px;
               background: var(--surface); border: 1px solid var(--border); border-radius: 11px;
               padding: 14px 16px; margin: 12px 0 4px; }
-  .fsm-open .oi-pop { flex: 1 1 230px; min-width: 200px; }
-  .fsm-open .oi-n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; }
-  .fsm-open .oi-k { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
-  .fsm-open .oi-sub { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; margin-top: 4px; }
-  .fsm-open .oi-cell { display: flex; flex-direction: column; gap: 3px; flex: none; }
-  .fsm-open .oi-cap { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); }
-  .fsm-open .oi-ages { display: flex; flex-direction: column; gap: 5px; flex: none; }
-  .fsm-open .oi-stats { display: grid; gap: 3px; }
+  .oi-band .oi-pop { flex: 1 1 230px; min-width: 200px; }
+  .oi-band .oi-n { font-size: 26px; font-weight: 650; font-variant-numeric: tabular-nums; letter-spacing: -0.02em; line-height: 1.1; }
+  .oi-band .oi-k { font-family: ui-monospace, SFMono-Regular, Menlo, monospace; font-size: 12px; color: var(--ink-2); margin-top: 1px; }
+  .oi-band .oi-sub { font-size: 11.5px; color: var(--ink-3); line-height: 1.45; margin-top: 4px; }
+  .oi-band .oi-cell { display: flex; flex-direction: column; gap: 3px; flex: none; }
+  .oi-band .oi-cap { font-size: 10.5px; text-transform: uppercase; letter-spacing: 0.04em; color: var(--ink-3); }
+  .oi-band .oi-ages { display: flex; flex-direction: column; gap: 5px; flex: none; }
+  .oi-band .oi-stats { display: grid; gap: 3px; }
   /* mean and median are EQUALS: the same row, the same type size and weight, the same chart
      drawn in the same stroke. Nothing here ranks one above the other — they are told apart
      by their own names, which is the page's rule for identity generally. */
-  .fsm-open .oi-stat { display: flex; align-items: center; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
-  .fsm-open .oi-sn { color: var(--ink-3); min-width: 46px; }
-  .fsm-open .oi-sv { color: var(--ink); font-weight: 650; min-width: 56px; }
+  .oi-band .oi-stat { display: flex; align-items: center; gap: 10px; font-size: 13px; font-variant-numeric: tabular-nums; }
+  .oi-band .oi-sn { color: var(--ink-3); min-width: 46px; }
+  .oi-band .oi-sv { color: var(--ink); font-weight: 650; min-width: 56px; }
   /* The tail number: visible detail, not a series and not a headline. */
-  .fsm-open .oi-tail { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-top: 2px; }
-  .fsm-open .oi-chart { display: block; overflow: visible; flex: none; }
-  .fsm-open .q-l { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
-  .fsm-open .q-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
-  .fsm-open .a-l { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
-  .fsm-open .a-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+  .oi-band .oi-tail { font-size: 11.5px; color: var(--ink-3); font-variant-numeric: tabular-nums; margin-top: 2px; }
+  .oi-band .oi-chart { display: block; overflow: visible; flex: none; }
+  .oi-band .q-l { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+  .oi-band .q-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
+  .oi-band .a-l { fill: none; stroke: var(--ink-3); stroke-width: 1.25; stroke-linejoin: round; stroke-linecap: round; }
+  .oi-band .a-d { fill: var(--ink); stroke: var(--surface); stroke-width: 1; }
   /* ---- External (Protofire) audit coverage ---- */
   .au-alarm { display: flex; align-items: center; gap: 14px; border-radius: 12px; padding: 14px 18px; margin: 12px 0; }
   .au-alarm.bad { background: var(--debt-bg); border: 1.5px solid var(--crit); }
@@ -300,8 +239,10 @@
     <a href="metrics.html">Metrics</a>
     <a href="repositories.html">Repositories</a>
   </nav>
-  <h2>Pipeline state machine</h2>
-  <div id="fsm"><div class="empty" id="fsmempty">loading pipeline state…</div></div>
+  <h2>Open issues</h2>
+  <div id="kpis"><div class="empty">loading issue KPIs…</div></div>
+  <h2>Close next: oldest open issues</h2>
+  <div id="worklist"><div class="empty">loading worklist…</div></div>
   <footer>
     Org-health dashboard — status, not severity; identity is the label, not the color.
     <a href="https://github.com/rainlanguage/rain-org-health" rel="noopener noreferrer" target="_blank">source</a>.
@@ -315,16 +256,18 @@ $("theme").addEventListener("click", () => {
   const isDark = cur ? cur === "dark" : matchMedia("(prefers-color-scheme: dark)").matches;
   document.documentElement.setAttribute("data-theme", isDark ? "light" : "dark");
 });
-// ---- Pipeline FSM: the daily conformance review (README "Pipeline state machine").
-// Every open producer PR/issue sits in exactly one modeled ai:* state; the leak
-// bucket = PRs with a producer note but no state label, and should trend to zero.
-// Consumes health.json's `humanQueue` block (schema == `pr-review-report human-queue --json`).
-// All human-queue fields are UNTRUSTED (titles/reasons are attacker-influenceable PR/issue
-// content). This panel builds the DOM directly (createElement / textContent / .append / .href),
-// matching the rest of the dashboard — so escaping is BY CONSTRUCTION and there is no hand-rolled
-// HTML escaper to keep correct at every sink.
-function renderFsm(hq, history) {
-  const box = $("fsm");
+// ---- The issue KPIs: how many issues are open, and how old they run.
+// Three reads of ONE population — `counts.openIssues` for the size, and `ages.openIssues`'s
+// mean / median / oldest for the age — so the number of issues and the age of those issues
+// can never describe different sets. Consumes issue-pr-cron's `human-queue --json` snapshot
+// and its `human-queue-history.jsonl` rollup; every field is UNTRUSTED, and the DOM is built
+// directly (createElement / textContent / .append), so escaping is by construction.
+//
+// A snapshot with neither the count nor the ages renders NO band rather than a zero: the
+// recording side omits both when its read fails, and an org whose issues all closed at once
+// is not what that means.
+function renderKpis(hq, history) {
+  const box = $("kpis");
   const el = (tag, cls, text) => {
     const n = document.createElement(tag);
     if (cls) n.className = cls;
@@ -337,155 +280,45 @@ function renderFsm(hq, history) {
     for (const k in attrs) n.setAttribute(k, attrs[k]);
     return n;
   };
-  // A link whose href is set via the .href PROPERTY (the DOM escapes it) — never string-built.
-  const link = (cls, text, href) => {
-    const a = el("a", cls, text);
-    a.href = href;
-    a.rel = "noopener";
-    a.target = "_blank";
-    return a;
-  };
-
   box.textContent = "";
-  if (!hq || !hq.counts) {
-    const empty = el("div", "empty");
-    empty.append(
-      "Pipeline state not wired yet — populated once ",
-      link(null, "the human-queue tool", "https://github.com/rainlanguage/issue-pr-cron/pull/41"),
-      " lands and the scan folds it into health.json."
-    );
-    box.append(empty);
-    return;
-  }
-  const c = hq.counts;
-  // Lane items carry a resolved `url`; the top-level arrays (uncoveredIssues, closeCandidate*,
-  // leaks) carry only {repo, number, title}, so their link is built here from repo + number. A
-  // resolved `url` always WINS when the item has one, so the day the tool emits it on those
-  // arrays too (issue-pr-cron#114) nothing here has to change and nothing is inferred.
-  // Building it is safe for either population: github.com REDIRECTS between the two paths —
-  // /issues/<n> on a PR number 302s to /pull/<n>, and /pull/<n> on an issue number 302s to
-  // /issues/<n> (verified against this repo: /issues/137 → /pull/137, /pull/141 → /issues/141).
-  // That matters because the `closeCandidateUnvetted` / `closeCandidateUpheld` arrays mix
-  // issues and PRs and the item shape says nothing about which — so the `issue` flag only
-  // decides which path is tried FIRST.
-  //
-  // `it` is an object by contract: `detailBody` screens each entry before it gets here, because
-  // a malformed one has to be handled at the ROW (a link with a safe href whose very next line
-  // reads `it.repo` still throws). One guard, in the one place it can do something.
-  const urlOf = (it, issue) =>
-    (typeof it.url === "string" && it.url) ||
-    `https://github.com/${it.repo}/${issue ? "issues" : "pull"}/${Number(it.number)}`;
-
-  // ---- Theory-of-Constraints flow layer (#32): per-state inventory over time.
-  // `history` = the parsed human-queue-history.jsonl rollup ([{t:ms, counts}], one
-  // point per refresh). It is OPTIONAL — an older/unfetched history just means no
-  // sparklines and no trend borders, never a broken panel.
+  const counts = hq && hq.counts && typeof hq.counts === "object" ? hq.counts : {};
+  // `history` = the parsed rollup ([{t:ms, counts[, ages]}]). OPTIONAL: an older or
+  // unfetched rollup means no trend charts, never a broken band.
   const hist = Array.isArray(history) ? history : [];
-  // "Now" is the LATEST sample, not wall-clock: a stalled feed must not silently
-  // slide the trailing window off the data (and it keeps the render deterministic).
+  // "Now" is the LATEST sample, not wall-clock: a stalled feed must not silently slide the
+  // trailing window off the data (and it keeps the render deterministic).
   const now = hist.length ? Math.max(...hist.map((p) => Number(p.t))) : 0;
-  // Least-squares slope (items/DAY) over the last 7 days must exceed this to flag a
-  // state as an accumulating constraint. A small epsilon absorbs sampling noise and a
-  // lone +1 blip (whose regression slope stays well under it) so the border never flaps.
-  const RISE_EPS = 0.15;
-  const SPARK_DAYS = 28; // the sparkline shows ~4 trailing weeks of inventory shape.
-  // RETIRED counts keys, each mapped onto the live key that ABSORBED its inventory.
-  // issue-pr-cron#128 collapsed `awaiting-re-vet` into `un-vetted`: vetting is a pure
-  // function of the PR at its current head, so a moved head (or a verdict stamped under a
-  // superseded vet protocol) simply makes a PR un-vetted again — "judged before" was never
-  // a second state. `counts.awaitingReVet` is no longer emitted.
-  //
-  // Every rollup line written before that collapse still carries the retired key, and those
-  // are real measurements of the machine as it then was (in the live history: 134 samples
-  // carry it, 51 of them non-zero, peaking at 23). Reading only the surviving key would draw
-  // `un-vetted` as though that inventory had never existed — the series would MISREPRESENT
-  // the past, not merely start later. The two were disjoint inboxes (a PR sat in exactly
-  // one), so per-sample ADDITION is precisely the quantity the surviving state now measures,
-  // and a chart spanning the change reads as the one continuous line it now describes.
-  //
-  // The Map is the whole mechanism, and it is keyed by the SURVIVING key: every reader of
-  // history goes through `seriesFor`, so a future collapse is one entry here rather than a
-  // special case sprinkled through the render. It folds HISTORY only — the live snapshot's
-  // shape is the tool's to declare, and this page does not own that vocabulary
-  // (issue-pr-cron#130); the rollup is different because those samples are the only surviving
-  // record of a machine that no longer exists.
-  //
-  // A fold maps a retired key onto the state that ABSORBED its inventory — so a retired key
-  // with no absorbing successor has NO entry. `blockedDeploy` (issue-pr-cron#225) and
-  // `blockedInfra` (issue-pr-cron#108) have none — see RETIRED_NO_SUCCESSOR below: no
-  // surviving inbox measures what either measured, summing them into any live series would
-  // misstate that series' past, and their samples are drawn nowhere.
-  //
-  // FALLBACK-ONLY: a snapshot carrying `stateDescriptors` names each state's folds itself
-  // (`histFold`, rain-org-health#164) and the descriptor path passes that list to
-  // `seriesFor`, so this Map applies only when the frozen STATES table below renders.
-  const HIST_FOLD = new Map([
-    ["unvetted", ["awaitingReVet"]],
-    ["reject", ["humanReject", "relink"]],
-    ["closeCandidateUpheld", ["closeCandidatePrs"]],
-  ]);
-  // A state's inventory series from the rollup: one point per refresh that CARRIED this
-  // state's counts key, or any key folded into it (a snapshot carrying NONE of them ⇒ no
-  // point, not a zero). `fold` — when the caller passes one — is the descriptor's own
-  // `histFold` list and REPLACES the Map lookup outright: an empty list folds nothing,
-  // never falls back to the hand-maintained entries. Callers rendering the frozen
-  // fallback pass no fold and get the Map.
-  const seriesFor = (histKey, fold) => {
-    if (!histKey) return [];
-    const keys = [histKey, ...(fold || HIST_FOLD.get(histKey) || [])];
-    const out = [];
-    for (const p of hist) {
-      const counts = p && p.counts;
-      if (!counts) continue;
-      let sum = 0, carried = false;
-      for (const k of keys) {
-        const v = counts[k];
-        if (v != null && Number.isFinite(Number(v))) { sum += Number(v); carried = true; }
-      }
-      if (carried) out.push({ t: Number(p.t), v: sum });
-    }
-    out.sort((a, b) => a.t - b.t);
-    return out;
-  };
-  // ---- Open-issue AGES (rain-org-health#140, recorded by issue-pr-cron#167).
-  // The snapshot and every rollup line may carry an OPTIONAL sibling block beside `counts`:
-  //   "ages": { "openIssues": { "meanDays": 315.4, "medianDays": 99.0, "oldestDays": 1654.6 } }
-  // computed over the SAME population `counts.openIssues` counts — every open issue in the
-  // pipeline's scope outside an archived repo, with no coverage filter and no label filter.
-  // That is materially wider than the producer backlog (`uncoveredIssues`), which additionally
-  // drops everything covered by an open PR, flagged `ai:close-candidate` or carrying a
-  // `human:*` ruling — so it is drawn as its own band and never inside the backlog box:
-  // labelling a whole-population age with a backlog count is exactly the mismatch this key's
-  // rename was about.
-  const AGE_POP = "openIssues";
+  const SPARK_DAYS = 28; // the charts show ~4 trailing weeks.
   // A VALUE off the untrusted artifact: a real JSON number, finite, and >= 0 — or null.
   // Not `Number(x)`: that coerces `null`/`""` to 0, fabricating a "0d" age (or a "0 open
-  // issues" population) out of a malformed field — the exact absence-becomes-zero lie the
-  // recording side refuses to emit, which is why a FAILED coverage read omits both
-  // `counts.openIssues` and `ages` rather than reporting zero. A negative "age" (nothing
-  // honest produces one) must not render either.
+  // issues" population) out of a malformed field.
   const posNum = (x) => (typeof x === "number" && Number.isFinite(x) && x >= 0 ? x : null);
   const ageBlock = (o) => {
-    const a = o && typeof o === "object" ? o[AGE_POP] : null;
+    const a = o && typeof o === "object" ? o.openIssues : null;
     return a && typeof a === "object" ? a : null;
   };
-  // One age series (days) over the rollup: one point per refresh whose line carried this
-  // statistic as a finite number. Every line written before the block existed, and every
-  // refresh whose coverage read failed, contributes NO point — absence, never a zero.
+  // The open-issue count over the rollup: one point per refresh that carried it, never a
+  // zero for one that did not.
+  const sizeSeries = () => {
+    const out = [];
+    for (const p of hist) {
+      const v = posNum(p && p.counts ? p.counts.openIssues : null);
+      if (v != null) out.push({ t: Number(p.t), v });
+    }
+    return out.sort((a, b) => a.t - b.t);
+  };
+  // One age series (days): one point per refresh whose line carried this statistic as a
+  // finite number. A refresh without it contributes NO point — absence, never a zero.
   const ageSeries = (field) => {
     const out = [];
     for (const p of hist) {
       const v = posNum((ageBlock(p && p.ages) || {})[field]);
-      if (v == null) continue;
-      out.push({ t: Number(p.t), v });
+      if (v != null) out.push({ t: Number(p.t), v });
     }
-    out.sort((a, b) => a.t - b.t);
-    return out;
+    return out.sort((a, b) => a.t - b.t);
   };
-  // The CURRENT statistics: the live snapshot's own `ages` block when it carries at least one
-  // of mean/median (the same precedence counts get — the snapshot is the present, history the
-  // past), else the newest rollup line that does, else null ⇒ no numbers. Every field is
-  // validated on the way in: the snapshot is an artifact this page does not own.
+  // The CURRENT statistics: the snapshot's own `ages` when it carries mean or median, else
+  // the newest rollup line (by timestamp) that does, else null ⇒ no numbers.
   const ageCur = () => {
     const read = (blk) => {
       const a = ageBlock(blk);
@@ -493,10 +326,8 @@ function renderFsm(hq, history) {
       const cur = { mean: posNum(a.meanDays), median: posNum(a.medianDays), oldest: posNum(a.oldestDays) };
       return cur.mean == null && cur.median == null ? null : cur;
     };
-    const snap = read(hq.ages);
+    const snap = read(hq && hq.ages);
     if (snap) return snap;
-    // By TIMESTAMP, not by array position: the rollup is append-only but this page never
-    // assumes the order it is handed, exactly as the series builders sort before drawing.
     let best = null, bestT = -Infinity;
     for (const p of hist) {
       const h = read(p && p.ages);
@@ -504,1074 +335,90 @@ function renderFsm(hq, history) {
     }
     return best;
   };
-  // Built as real SVG nodes (createElementNS + setAttribute) — never markup — matching
-  // the rest of the dashboard, so nothing reaching the chart is parsed as markup.
-  // A series of ONE sample still draws: its endpoint dot, alone. A newly-emitted counts
-  // key legitimately has a single point until refreshes accrue (older snapshots carry no
-  // value for it, and seriesFor won't invent zeros), and dropping the chart made that
-  // state indistinguishable from one wired to no history key at all — silence, on the
-  // metric a reader is most likely to be checking BECAUSE it is new. The lone dot is
-  // unambiguous against a flat inventory, which has ≥2 points and so draws a horizontal
-  // LINE through that same dot; it grows into a full line as the rollup fills in.
-  const sparkline = (series) => {
-    const win = now ? series.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : series;
-    const pts = win.length ? win : series;
-    if (!pts.length) return null;
-    const W = 56, H = 16, PAD = 2;
-    const ts = pts.map((p) => p.t), vs = pts.map((p) => p.v);
-    const tMin = Math.min(...ts), tMax = Math.max(...ts);
-    const vMin = Math.min(...vs), vMax = Math.max(...vs);
-    const xOf = (t) => tMax === tMin ? W - PAD : PAD + ((t - tMin) / (tMax - tMin)) * (W - 2 * PAD);
-    const yOf = (v) => vMax === vMin ? H / 2 : H - PAD - ((v - vMin) / (vMax - vMin)) * (H - 2 * PAD);
-    const xy = pts.map((p) => [xOf(p.t), yOf(p.v)]);
-    const svg = svgEl("svg", { class: "fsm-spark", width: W, height: H, viewBox: `0 0 ${W} ${H}`, "aria-hidden": "true" });
-    // One point is a dot, not a line — a single-vertex polyline paints nothing.
-    if (xy.length > 1) svg.append(svgEl("polyline", { class: "sl", points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
-    const last = xy[xy.length - 1];
-    svg.append(svgEl("circle", { class: "sd", cx: last[0].toFixed(1), cy: last[1].toFixed(1), r: 2 }));
-    return svg;
-  };
-
-  // ---- The open-issue band's charts (rain-org-health#140).
-  // Three charts, one per QUANTITY: the population's size, its mean age, its median age.
-  // Never one chart holding several — that is the choice this panel keeps getting wrong.
-  //
-  // Each is normalized to its OWN min/max, which is the same convention every state
-  // sparkline above already uses, and it is what makes the chart worth drawing at all:
-  // these quantities barely move relative to their level. Live, the mean is 315.4 days and
-  // a month of drift is a few days — under 2% — so a chart anchored at zero, or one sharing
-  // a ruler between mean and median, draws BOTH lines dead flat and tells a reader nothing
-  // the two numbers beside them do not already say more precisely. Measured, not assumed:
-  // that variant was rendered first and its lines were flat to within half a pixel.
-  //
-  // The cost of per-chart scaling is that vertical position means nothing ACROSS charts, so
-  // nothing invites the comparison: each chart sits on its own row, against its own number,
-  // with its own unit — and the level and the 3.2x mean-to-median gap are read off the two
-  // numbers, which are on screen as equals rather than one of them in a tooltip. What the
-  // charts add is the thing numbers cannot show: whether each is moving, and whether the two
-  // move TOGETHER (a backlog ageing uniformly) or apart (a long tail doing the work).
-  const OI_PAD = 3;
-  // ONE time domain across all three, so a refresh lands at the same fraction of every
-  // chart's width and a series that starts mid-history (all of these do — `openIssues` and
-  // `ages` are new keys) reads as the short line at the right-hand edge that it is.
-  const oiWindow = (s) => {
+  // One chart per QUANTITY (size, mean age, median age), each on its OWN min/max: these
+  // barely move relative to their level, so a shared or zero-anchored ruler draws them flat.
+  // Vertical position therefore means nothing across charts, and each sits beside its own
+  // number. All three share ONE time domain, so a late-starting series starts late.
+  const PAD = 3;
+  const windowed = (s) => {
     const win = now ? s.filter((p) => p.t >= now - SPARK_DAYS * 864e5) : s;
     return win.length ? win : s;
   };
-  const oiXOf = (w, tMin, tMax) => (t) =>
-    tMax === tMin ? w - OI_PAD : OI_PAD + ((t - tMin) / (tMax - tMin)) * (w - 2 * OI_PAD);
-  const oiYOf = (h, vs) => {
+  const xOfFor = (w, tMin, tMax) => (t) =>
+    tMax === tMin ? w - PAD : PAD + ((t - tMin) / (tMax - tMin)) * (w - 2 * PAD);
+  const yOfFor = (h, vs) => {
     const vMin = Math.min(...vs), vMax = Math.max(...vs);
-    return (v) => vMax === vMin ? h / 2 : h - OI_PAD - ((v - vMin) / (vMax - vMin)) * (h - 2 * OI_PAD);
+    return (v) => vMax === vMin ? h / 2 : h - PAD - ((v - vMin) / (vMax - vMin)) * (h - 2 * PAD);
   };
-  // One series, one chart. An empty series draws NOTHING — no chart, no fabricated point,
-  // never a broken box.
-  const oiChart = (cls, w, h, xOf, pts, lineCls, dotCls) => {
+  // An empty series draws NOTHING; one point draws its dot alone.
+  const chart = (cls, w, h, xOf, pts, lineCls, dotCls) => {
     if (!pts.length) return null;
-    const yOf = oiYOf(h, pts.map((p) => p.v));
+    const yOf = yOfFor(h, pts.map((p) => p.v));
     const xy = pts.map((p) => [xOf(p.t), yOf(p.v)]);
     const svg = svgEl("svg", { class: "oi-chart " + cls, width: w, height: h, viewBox: `0 0 ${w} ${h}`, "aria-hidden": "true" });
-    // One point is a dot, not a line — a single-vertex polyline paints nothing.
     if (xy.length > 1) svg.append(svgEl("polyline", { class: lineCls, points: xy.map(([x, y]) => `${x.toFixed(1)},${y.toFixed(1)}`).join(" ") }));
     const last = xy[xy.length - 1];
     svg.append(svgEl("circle", { class: dotCls, cx: last[0].toFixed(1), cy: last[1].toFixed(1), r: 2 }));
     return svg;
   };
-
-
-  // The full machine, grouped by WHO MUST ACT NEXT (#69). A modeled state is not just
-  // a lifecycle phase — it is an INBOX owned by exactly one of three actors: the
-  // producer (cron), the vetter (cron), or the human (@thedavidmeister). The top-level
-  // headings are those actors, so the panel answers "whose inbox is this in — who do I
-  // nudge?" A state that cannot be filed under exactly one actor is a defect (an
-  // un-owned inbox stalls its token), so there is deliberately NO fourth "misc" bucket;
-  // the historically dual-owner states are each resolved to one owner in STATES
-  // below, with the rationale inline.
-  //
-  // The tool's `human-queue --json` `lanes` object is still keyed by LIFECYCLE phase
-  // (vet-lifecycle / vetter-verdicts / producer-blocked / human-decisions) and is SPARSE
-  // (only non-empty states emitted). So each state entry carries `lane` = where its
-  // { count, prs:[{repo,number,url,title}] } is READ from, independent of `owner` = how
-  // it is GROUPED. laneItems maps a state key -> its item list for the click-to-expand
-  // detail.
-  //
-  // WHERE THE SHAPE COMES FROM (issue-pr-cron#130 / rain-org-health#164): a snapshot
-  // carrying `stateDescriptors` IS the machine — the tool emits each state's owner,
-  // label, act, kind, occupancy source and history folds, and the panel renders exactly
-  // that, in that order, so adding/renaming/re-laning/retiring a state propagates on the
-  // next refresh with no edit here. The hand-written STATES table below survives ONLY as
-  // the FROZEN fallback for descriptor-less snapshots (the same posture as the legacy
-  // no-`lanes` branch): on such a snapshot a state absent from the JSON renders zero
-  // (dimmed), keeping the machine's whole shape visible.
-  const hasLanes = hq.lanes && typeof hq.lanes === "object";
-  const descriptors = Array.isArray(hq.stateDescriptors) ? hq.stateDescriptors : null;
-  // EVERY rendered state registers its item list here, whichever branch built it — a lane
-  // cell's `prs` for a lane state, the named top-level array for a `fromCounts` state. The
-  // click-to-expand reads ONLY this map, so registration is the single wiring point instead of
-  // a hand-maintained per-key if-chain in `itemsFor` (which is how #141 happened: the
-  // close-candidate split added two `fromCounts` states and nobody extended the chain, so both
-  // rendered a count that opened onto nothing).
-  //
-  // `count` rides along because the number and the list are read from different places by
-  // design (`counts.<key>` vs a top-level array) — a count with no list is the exact signature
-  // of this bug class, and recording it is what lets the panel tell "nothing is in this state"
-  // apart from "this state's list never arrived".
-  const laneItems = new Map();
-  const register = (key, arr, issue, count) =>
-    laneItems.set(key, {
-      arr: Array.isArray(arr) ? arr : [],
-      issue: !!issue,
-      count: Number(count) || 0,
-    });
-  // Total over ANY snapshot: the descriptor path reads lane occupancy even when `lanes`
-  // is absent or junk (sparse-absent ⇒ null ⇒ the box renders 0).
-  const laneState = (lane, state) => {
-    const l = hasLanes ? hq.lanes[lane] : null;
-    return (l && typeof l === "object" && l[state]) || null;
-  };
-  // ---- The design cell's split (issue-pr-cron#240). The tool attaches /ndd's own
-  // partition to the ai:design cell — a `breakdown` object beside `count` (every bucket,
-  // zeros included) and a `bucket` annotation on each `prs` entry, spelled identically —
-  // because the raw label total is not a human inbox: /ndd serves only the `presentable`
-  // rows. This page reads exactly ONE bucket of that partition, the one it draws. The
-  // rows /ndd withholds are not this panel's to report: /ndd lists them itself, at the
-  // moment it withholds them, so no number and no box here is built out of them.
-  //
-  // Both halves of the bucket are read — the stated count and the rows annotated into it
-  // — which is what lets the box render the larger of the two, the same posture
-  // `laneCount` holds for the cell itself.
-  //
-  // Every field is UNTRUSTED snapshot content: the number is validated the way `posNum`
-  // validates ages (a malformed `presentable` must not coerce to a fabricated 0 inbox),
-  // and a cell carrying no well-formed `presentable` — every snapshot written before the
-  // tool emitted the breakdown — returns null, on which every consumer below renders
-  // exactly the pre-split page.
-  const designSplit = (cell) => {
-    if (!cell || typeof cell !== "object") return null;
-    const b = cell.breakdown;
-    if (!b || typeof b !== "object") return null;
-    const stated = posNum(b.presentable);
-    if (stated == null) return null;
-    const prs = Array.isArray(cell.prs) ? cell.prs : [];
-    const listed = prs.filter(
-      (e) => e && typeof e === "object" && e.bucket === "presentable",
-    );
-    // The stated count, the annotated rows, and the larger of the two — the number the
-    // box renders, so a broken count cannot hide inventory the list proves is there.
-    return { presentable: { stated, listed, shown: Math.max(stated, listed.length) } };
-  };
-
-  const stateBox = (key, label, count, act, kind, series) => {
-    const b = el("button", "fsm-state " + kind + (count ? "" : " zero"));
-    b.dataset.t = key;
-    const scRow = el("div", "fsm-scrow");
-    scRow.append(el("div", "sc", String(Number(count))));
-    const spark = series ? sparkline(series) : null;
-    if (spark) scRow.append(spark);
-    // The bottleneck flag: inventory rising over the trailing 7d = the constraint.
-    // Red warning border (via `.rising`) PLUS a ▲ badge and title/aria-label, so the
-    // signal is never carried by color alone.
-    const slope = series && series.length ? sevenDaySlope(series, now) : null;
-    if (slope != null && slope > RISE_EPS) {
-      b.classList.add("rising");
-      const up = el("span", "fsm-rise", "▲");
-      up.setAttribute("title", "inventory rising 7d");
-      scRow.append(up);
-      b.setAttribute("title", "inventory rising over the last 7 days — likely the bottleneck");
-      b.setAttribute("aria-label", label + ": inventory rising over the last 7 days (bottleneck)");
-    }
-    b.append(scRow, el("div", "sk", label), el("div", "sa", act));
-    return b;
-  };
-
-  // ---- The open-issue band (rain-org-health#140): how many issues are open, and how old
-  // they run. Three reads of ONE population — `counts.openIssues` for the size, and
-  // `ages.openIssues`'s mean / median / oldest for the age — so the number of issues and the
-  // age of those issues can never describe different sets.
-  //
-  // It sits ABOVE the machine and outside the actor lanes on purpose. This population spans
-  // all three actors: it holds issues already covered by an open PR, issues parked behind a
-  // `human:*` ruling and issues flagged `ai:close-candidate` alongside the untouched backlog
-  // below, and so runs materially larger than it. A number spanning three actors is not an
-  // inbox anyone acts on and could never be added to an actor total — the same reason there
-  // is no combined close-candidate box in STATES.
-  //
-  // Degradation, identical in kind to the sparklines': a snapshot with neither the count nor
-  // the ages (every one written before issue-pr-cron#167, and every refresh whose coverage
-  // read FAILED — which omits both rather than reporting an org whose issues all closed at
-  // once) renders NO band at all, which is exactly the page as it was. Nothing falls back to
-  // the retired `ages.uncoveredIssues`: that block measured the narrower producer backlog,
-  // and showing it under this population's label would be a wrong number wearing a right
-  // one's copy.
   const fmtD = (v) => String(Math.round(v * 10) / 10).replace(/\.0$/, "") + "d";
-  // The current statistics, resolved once: the band draws them and the legend below is
-  // guarded on them, so neither can describe what the other did not do.
-  const openAges = ageCur();
-  const openBand = () => {
-    const cur = openAges;
-    const meanPts = oiWindow(ageSeries("meanDays"));
-    const medPts = oiWindow(ageSeries("medianDays"));
-    const sizePts = oiWindow(seriesFor("openIssues"));
-    const size = posNum(c.openIssues);
-    if (size == null && !sizePts.length && !cur) return null;
-    const band = el("div", "fsm-open");
 
-    const pop = el("div", "oi-pop");
-    // No size ⇒ no fabricated number. The ages can arrive on a snapshot whose count did not.
-    pop.append(el("div", "oi-n", size == null ? "—" : String(size)));
-    pop.append(el("div", "oi-k", "open issues"));
-    pop.append(el(
-      "div",
-      "oi-sub",
-      "every open issue in the pipeline's scope outside archived repos, which take no writes — including ones already covered by an open PR, parked on a human ruling, or flagged ai:close-candidate. The producer backlog below is the subset with none of those.",
-    ));
-    band.append(pop);
+  const cur = ageCur();
+  const meanPts = windowed(ageSeries("meanDays"));
+  const medPts = windowed(ageSeries("medianDays"));
+  const sizePts = windowed(sizeSeries());
+  const size = posNum(counts.openIssues);
+  if (size == null && !sizePts.length && !cur) {
+    box.append(el("div", "empty", "No issue KPIs: human-queue.json carries neither the open-issue count nor ages."));
+    return;
+  }
+  const band = el("div", "oi-band");
+  const pop = el("div", "oi-pop");
+  // No size ⇒ no fabricated number. The ages can arrive on a snapshot whose count did not.
+  pop.append(el("div", "oi-n", size == null ? "—" : String(size)));
+  pop.append(el("div", "oi-k", "open issues"));
+  pop.append(el(
+    "div",
+    "oi-sub",
+    "every open issue in the pipeline's scope outside archived repos, which take no writes — including ones already covered by an open PR, parked on a human ruling, or flagged ai:close-candidate.",
+  ));
+  band.append(pop);
 
-    // One time domain across all three charts.
-    const ts = [...sizePts, ...meanPts, ...medPts].map((p) => Number(p.t));
-    const tMin = ts.length ? Math.min(...ts) : 0, tMax = ts.length ? Math.max(...ts) : 0;
-
-    const sizeChart = oiChart("oi-size", 120, 34, oiXOf(120, tMin, tMax), sizePts, "q-l", "q-d");
-    if (sizeChart) {
-      const cell = el("div", "oi-cell");
-      cell.append(sizeChart, el("div", "oi-cap", "queue size · 4 weeks"));
-      band.append(cell);
-    }
-
-    if (cur) {
-      const ages = el("div", "oi-ages");
-      const stats = el("div", "oi-stats");
-      // mean and median as EQUALS: the same row, built by the same function — same type
-      // size, same weight, same chart geometry, in the order the recording half emits them.
-      // Neither is a headline and neither is a footnote in a tooltip. The human's call was
-      // "we can do both", and both numbers sitting side by side is what makes the 3.2x gap
-      // between them readable at a glance.
-      const stat = (name, v, pts, lineCls, dotCls, chartCls) => {
-        if (v == null) return;
-        const row = el("div", "oi-stat");
-        row.append(el("span", "oi-sn", name), el("span", "oi-sv", fmtD(v)));
-        const ch = oiChart(chartCls, 72, 20, oiXOf(72, tMin, tMax), pts, lineCls, dotCls);
-        // No recorded history yet ⇒ the number alone. A statistic with one refresh behind it
-        // draws its lone dot; with none it draws nothing rather than an empty frame.
-        if (ch) row.append(ch);
-        stats.append(row);
-      };
-      stat("mean", cur.mean, meanPts, "a-l", "a-d", "oi-mean");
-      stat("median", cur.median, medPts, "a-l", "a-d", "oi-med");
-      // The tail number, in the open rather than in a tooltip: it is the one figure that
-      // explains a mean running well above its median, and a tooltip is unreadable on a
-      // touch screen and invisible in a screenshot. Not a series — one issue's age has no
-      // trend worth a chart, it has a value.
-      if (cur.oldest != null) stats.append(el("div", "oi-tail", "oldest " + fmtD(cur.oldest)));
-      ages.append(stats);
-      ages.append(el("div", "oi-cap", "age in days · each trend on its own scale"));
-      band.append(ages);
-    }
-    return band;
-  };
-
-  // Per-actor FALLBACK emphasis: the bottleneck flag above only fires on a RISING series,
-  // and `sevenDaySlope` needs two points inside the 7d window — so an actor whose queues
-  // are all flat, or whose counts keys were only just emitted, gets NO highlight at all and
-  // the eye has nowhere to land even while that actor is carrying real work. The board's
-  // job is "where does this actor look first"; a group with nothing marked answers
-  // "nowhere", which is wrong whenever there is work. So when a group flags no bottleneck,
-  // mark its LARGEST non-zero queue instead.
-  //
-  // It reuses the EXISTING highlight rather than inventing a second visual language: the
-  // board says one thing, "this is where this actor should look", and trend answers that
-  // when a trend exists while size answers it otherwise. `.lead` shares every `.rising` rule
-  // and adds none of its own, so the two are indistinguishable on screen by design.
-  //
-  // It is a FALLBACK, not an addition: a group that already flags a bottleneck is left
-  // alone, because the trend is the better answer when it exists. An all-zero group gets
-  // nothing — no work really is nothing to do, and marking an empty queue would be noise.
-  //
-  // The ▲ comes along too. It is plain markup here, not a rendering of the slope, so
-  // reproducing it needs no faked trend value. Only the title/aria-label differ: those
-  // carry the REASON, and claiming "rising" on a box with no trend would be false — the
-  // one place where honesty and identical appearance do not conflict.
-  const markLead = (boxes) => {
-    if (boxes.some((x) => x.b.classList.contains("rising"))) return;
-    // Strictly-greater keeps the FIRST of equal counts, so STATES order is the tie-break
-    // and the pick is stable across renders instead of depending on iteration accidents.
-    let lead = null;
-    for (const x of boxes) if (x.count > 0 && (!lead || x.count > lead.count)) lead = x;
-    if (!lead) return;
-    lead.b.classList.add("lead");
-    const up = el("span", "fsm-rise", "▲");
-    up.setAttribute("title", "largest queue for this actor");
-    const row = lead.b.querySelector(".fsm-scrow");
-    if (row) row.append(up);
-    lead.b.setAttribute("title", "largest queue for this actor — start here");
-    lead.b.setAttribute("aria-label", lead.label + ": largest queue for this actor (start here)");
-  };
-
-  // FROZEN (rain-org-health#164): this table renders ONLY for a snapshot with no
-  // `stateDescriptors` — the same posture as the legacy no-`lanes` branch below. The live
-  // vocabulary is the tool's own descriptor list; a new, renamed, re-laned or retired
-  // state reaches the page as data, never as an edit here.
-  //
-  // Every modeled state → the actor whose inbox it sits in (`owner`), the human-queue
-  // `lane` its items live under, the next `act`, and a display `kind` (flow = moving,
-  // rule = needs a human ruling, blk = a stuck/rework pile). The dual-owner
-  // resolution (defensible against the README FSM's own exit edges):
-  //   ai:blocked-on     → VETTER — issue-pr-cron#161: deps are typed `--blocked-by` refs
-  //       and the vetter's state-load clears the flag the run after every dep merges or
-  //       closes, so the vetter's cron run is the mover and no human action sits on the
-  //       exit path; the dependency PR's own work is tracked under the dependency's own
-  //       token. The tool keys the lane cell under `vet-lifecycle` accordingly.
-  //   (human:reject is RETIRED — issue-pr-cron#133/#138 consolidated it into ai:reject: a
-  //       reject is a reject whoever ruled it, the producer is the mover either way, and
-  //       authority lives in the sha-pinned human comment rather than the label spelling.)
-  // `hist` = this state's key in the human-queue-history rollup `counts` (which mirrors
-  // the snapshot's `counts`), i.e. where its inventory time-series is read from.
-  //
-  // A `fromCounts` state additionally carries `items` = the TOP-LEVEL array its click-to-expand
-  // list is read from, and `issue` = whether those items are issues (which path `urlOf` tries
-  // first). `items` is DECLARED, never derived: the state key and the array name do not agree
-  // (`leak` lists from `leaks`), and deriving it from the state key would silently miss on
-  // exactly that state — a miss whose only symptom is the empty list this wiring exists to
-  // prevent. Declaring it makes the odd one out data rather than a convention to remember, and
-  // a `fromCounts` state that declared no `items` would register an empty list against its real
-  // count, which `detailBody` reports as a defect rather than drawing as an empty queue.
-  const STATES = [
-    // Producer inbox — the producer moves these next.
-    // ONE reject state (issue-pr-cron#133/#138): `human:reject` is RETIRED — a reject is a
-    // reject whoever ruled it, authority lives in the sha-pinned human comment, and the 42 PRs
-    // still carrying the retired label were migrated 2026-07-30. `ai:relink` is RETIRED too
-    // (#135: a relink IS a reject with a specific note; the last labelled PR was migrated
-    // 2026-07-31). Both retired states' inventory history folds into this series via
-    // HIST_FOLD above, same as awaiting-re-vet's into un-vetted.
-    { owner: "producer", state: "ai:reject", lane: "vetter-verdicts", hist: "reject", act: "rework per note", kind: "blk" },
-    // Producer BACKLOG — open issues with no covering open PR (excl. human-gated / close-candidate):
-    // the biggest producer inbox, the untouched work it must turn into PRs. Not a lane state —
-    // count from `counts.uncoveredIssues`, items from the top-level `uncoveredIssues` (0 on an older
-    // human-queue.json that predates the field). See issue-pr-cron#66. `hist` draws from the
-    // refreshes that carried the field — one sample is a lone dot, more fill in the line and
-    // (past two inside the 7d window) the trend border; none at all → no spark, never a
-    // broken box.
-    //
-    // No AGE is drawn here. The recorded ages (issue-pr-cron#167) are over `openIssues` —
-    // every open issue outside an archived repo, a materially larger set than this box's — so
-    // they belong to the band above the machine, not to this box: a whole-population median
-    // under a backlog count would be a number labelled as something it does not measure.
-    { owner: "producer", state: "uncoveredIssues", fromCounts: "uncoveredIssues", items: "uncoveredIssues", issue: true, hist: "uncoveredIssues", act: "open a PR", kind: "flow", label: "untouched (no PR)" },
-    // Vetter inbox — the vetter records the next verdict. ONE vet-lifecycle state, not two:
-    // issue-pr-cron#128 collapsed `awaiting-re-vet` into this one, because vetting is a pure
-    // function of the PR at its CURRENT head — a PR whose head moved, or whose verdict was
-    // stamped under a superseded vet protocol, is simply un-vetted, handled the one way. So
-    // the act is "vet at current head", which covers a first vet and a re-vet alike. The
-    // retired state's inventory history folds into this one's series via HIST_FOLD above.
-    { owner: "vetter", state: "un-vetted", lane: "vet-lifecycle", hist: "unvetted", act: "vet at current head", kind: "flow" },
-    // Close-candidate ISSUES awaiting a vetter verdict (issue-pr-cron#73). Hand-triage of
-    // the queue found ~1 in 3 producer flags wrong, so a flag is now JUDGED before it
-    // reaches a human — this is that inbox. Not a lane state; count from `counts`, items from
-    // the top-level `closeCandidateUnvetted`. This bucket MIXES issues and PRs (it holds
-    // whatever the producer flagged) and the item shape says nothing about which, so `issue`
-    // only picks the path tried first and github's own /issues/↔/pull/ redirect resolves the
-    // rest — see `urlOf`.
-    { owner: "vetter", state: "closeCandidateUnvetted", fromCounts: "closeCandidateUnvetted", items: "closeCandidateUnvetted", issue: true, hist: "closeCandidateUnvetted", act: "vet the flag", kind: "flow", label: "ai:close-candidate (unvetted)" },
-    // Vetter-owned per the dual-owner resolution above (issue-pr-cron#161): the vetter's
-    // state-load clears the flag once every typed dep merges/closes, so the act is that
-    // clearance, not a human merge. The tool keys this cell under `vet-lifecycle`;
-    // `staleLane` keeps a snapshot from before that re-key readable — see the lane read
-    // below, where the CURRENT lane's cell wins whenever both carry the state.
-    { owner: "vetter", state: "ai:blocked-on", lane: "vet-lifecycle", staleLane: "producer-blocked", hist: "blockedOn", act: "clears when deps merge/close", kind: "blk" },
-    // Human inbox — a human merge / ruling / close.
-    //
-    // THE INVARIANT for this owner (issue-pr-cron#240): every count filed under
-    // owner "human" is a count some human command will present — /nr serves ai:ready,
-    // /ndd serves the design inbox, /ncc + human-close serve the upheld flags, /nm
-    // serves the leaks. If no command serves a number, it is not an inbox, and
-    // displaying it as one manufactures work that cannot be done; such a number is not
-    // drawn on this panel at all. The design cell is the case in point: its box draws
-    // the `presentable` rows /ndd serves (below in the descriptor path), and the rows
-    // /ndd withholds are reported by /ndd itself, nowhere here.
-    //
-    // FSM CONFORMANCE LEAK, first because it is the loudest: producer PRs carrying a note
-    // but no `ai:*` label, so they sit in NO modeled state. This was a banner beside the
-    // machine, which read as a footnote and got ignored; but "not modelled" is not an
-    // annotation on the machine, it is a condition someone must clear — a human has to
-    // classify each one into a real state or extend the machine to cover it. As a state it
-    // lands in the human's actionable set, carries its own inventory sparkline, and trips
-    // the rising-bottleneck border like any other inbox. It should read ZERO. Not a lane
-    // state — count from `counts.leaks`, items from the top-level `leaks` array. This is the
-    // ONE state whose key (`leak`, kept so the pre-existing click-through survives) differs
-    // from the array it lists from, which is why `items` is declared rather than derived.
-    // These are producer PRs, so `issue` stays false.
-    { owner: "human", state: "leak", fromCounts: "leaks", items: "leaks", issue: false, hist: "leaks", act: "model it", kind: "blk", label: "not in any modeled state" },
-    { owner: "human", state: "ai:ready", lane: "vetter-verdicts", hist: "ready", act: "merge", kind: "flow" },
-    // Draws the whole ai:design cell. A snapshot old enough to lack `stateDescriptors`
-    // also predates the design split (issue-pr-cron#240 shipped long after descriptors
-    // did), so the raw count is everything such a snapshot can say; the presentable
-    // inbox renders on the descriptor path, where every snapshot carrying the breakdown
-    // arrives.
-    { owner: "human", state: "ai:design", lane: "vetter-verdicts", hist: "design", act: "rule on design Q", kind: "rule" },
-    { owner: "human", state: "human:design", lane: "human-decisions", hist: "humanDesign", act: "decide", kind: "rule" },
-    // Close-candidate flags the vetter UPHELD (issue-pr-cron#73/#212): the flag survived
-    // judgement, so a human disposes of the subject. ONE inbox for issues and PRs alike
-    // (issue-pr-cron#212): the act is the close whichever kind of subject it lands on, so a
-    // subject-type split would model an attribute, not a state. Like `closeCandidateUnvetted`,
-    // the array mixes both and `issue` only picks the URL path tried first — see `urlOf`.
-    // The retired PR-lane presentation's samples (`closeCandidatePrs`) measured this same
-    // inbox, so they fold into this series via HIST_FOLD above. Rejected flags need no state
-    // — the vetter strips the label and the subject falls back to its ordinary state.
-    // There is deliberately NO combined "all flagged" box: one flag produces TWO inboxes
-    // with DIFFERENT owners (unvetted → vetter, upheld → human), so their sum is not a
-    // state anyone acts on — it is a number spanning two actors, which is exactly why it
-    // could never be added to an actor total. The legacy no-`lanes` branch below still
-    // renders `closeCandidateIssues`, because a human-queue.json old enough to lack `lanes`
-    // also predates the split keys.
-    { owner: "human", state: "closeCandidateUpheld", fromCounts: "closeCandidateUpheld", items: "closeCandidateUpheld", issue: true, hist: "closeCandidateUpheld", act: "close", kind: "rule", label: "ai:close-candidate (upheld)" },
-  ];
-
-  // Retired states NO surviving state absorbed — retiring each of these moved its inventory
-  // into no successor inbox:
-  //   ai:blocked-deploy (issue-pr-cron#225) — not in the machine at all: no label, no
-  //       classifier arm, no counts emission, no parking transition. `ai:reject` is not its
-  //       successor: a reject is a verdict on the PR's code, not a fact about a deploy, so
-  //       no surviving series measures what this one measured.
-  //   ai:blocked-infra (issue-pr-cron#108) — infrastructure being down is a property of the
-  //       moment, not of a PR, so the producer records `infra-down` and ends the run.
-  // That absence of a successor is why these are not handled like the ABSORBED retirees
-  // (awaiting-re-vet, ai:relink, human:reject), whose stale cells are ignored outright: an
-  // absorbed retiree's tokens reappear in the surviving state's own cell (a PR that was
-  // awaiting-re-vet IS un-vetted), so its cell is a double-count — but a no-successor
-  // straggler reappears NOWHERE, so a snapshot still carrying a nonzero count (an old
-  // snapshot, or the label reapplied by hand) holds work no other box shows. Each entry
-  // renders ONLY while its count is nonzero: a `blk` box under the actor who clears the
-  // residue, registered like any state box so the click-to-expand lists its items. Zero or
-  // absent renders nothing — a retired state earns no permanent dimmed box describing a
-  // machine that no longer exists (rain-org-health#145). No `hist`, and no HIST_FOLD
-  // entry: no surviving series absorbed this inventory, so it is drawn nowhere. `lane` +
-  // `legacy` name where a stale snapshot carries the count — the lane cell (with its
-  // `prs`) on a `lanes` snapshot, the flat counts key on a pre-`lanes` one; a count that
-  // arrives with no list surfaces through detailBody's missing-list defect, never as an
-  // empty queue.
-  //
-  // FALLBACK-ONLY, like STATES: on a snapshot carrying `stateDescriptors` a stale cell
-  // for a retired state is occupancy no descriptor claims, and it surfaces through the
-  // conservation defect band instead of through this table.
-  const RETIRED_NO_SUCCESSOR = [
-    { owner: "human", state: "ai:blocked-deploy", lane: "producer-blocked", legacy: "blockedDeploy", act: "strip the label", kind: "blk" },
-    { owner: "human", state: "ai:blocked-infra", lane: "producer-blocked", legacy: "blockedInfra", act: "strip the label", kind: "blk" },
-  ];
-
-  // Top-level headings = the three actors, in the #69 order (the two cron actors, then
-  // the human). Each state box carries `data-t` = its state key, so the click-to-expand
-  // detail is unchanged by the regrouping.
-  const OWNERS = [
-    { key: "producer", title: "Producer action", sub: "cron" },
-    { key: "vetter", title: "Vetter action", sub: "cron" },
-    { key: "human", title: "Human action", sub: "@thedavidmeister" },
-  ];
-
-  const grid = el("div"); // container appended into the panel below
-  // Built before the machine so it renders above it; null when the snapshot carries neither
-  // the open-issue count nor any age — then the page is exactly what it was, and the legend
-  // below describes no mark that is not on screen.
-  const band = openBand();
-  if (descriptors) {
-    // ---- Descriptor-driven machine (issue-pr-cron#130 / rain-org-health#164): the tool
-    // emitted the machine's shape as data, so the panel renders exactly that — descriptor
-    // order is render order within each owner group. Every field is UNTRUSTED (the
-    // snapshot is another repo's artifact), so each descriptor is screened on the way in.
-    // A malformed one renders NO state and is REPORTED in the defect band below — never
-    // silently dropped, because a dropped descriptor is a vanished state, the drift this
-    // path exists to kill (any occupancy it meant to claim goes unclaimed, which the
-    // conservation sweep also reports). `kind` is clamped to the three display kinds so
-    // snapshot content can never smuggle a meaningful class (`zero`, `rising`, `sel`)
-    // onto a box; an unknown kind renders with the neutral default border.
-    const KINDS = new Set(["flow", "rule", "blk"]);
-    const OWNER_KEYS = new Set(OWNERS.map((o) => o.key));
-    const readDescriptor = (d) => {
-      if (!d || typeof d !== "object" || typeof d.key !== "string" || !d.key) return null;
-      if (!OWNER_KEYS.has(d.owner)) return null;
-      // `occupancy` is exactly one of {lane} (count + items from that lane's cell, keyed
-      // by the state key — sparse-absent ⇒ 0) or {counts, items, itemsAreIssues} (count
-      // from `counts.<counts>`, click-through list from the named top-level array,
-      // `itemsAreIssues` picking which URL path `urlOf` tries first).
-      const occ = d.occupancy;
-      let source = null;
-      if (occ && typeof occ === "object") {
-        if (typeof occ.lane === "string" && occ.lane) {
-          source = { lane: occ.lane };
-        } else if (
-          typeof occ.counts === "string" && occ.counts &&
-          typeof occ.items === "string" && occ.items
-        ) {
-          source = { counts: occ.counts, items: occ.items, issue: !!occ.itemsAreIssues };
-        }
-      }
-      if (!source) return null;
-      return {
-        key: d.key,
-        owner: d.owner,
-        label: typeof d.label === "string" && d.label ? d.label : d.key,
-        act: typeof d.act === "string" ? d.act : "",
-        kind: KINDS.has(d.kind) ? d.kind : "",
-        hist: typeof d.hist === "string" ? d.hist : "",
-        histFold: Array.isArray(d.histFold) ? d.histFold.filter((k) => typeof k === "string") : [],
-        source,
-      };
+  const ts = [...sizePts, ...meanPts, ...medPts].map((p) => Number(p.t));
+  const tMin = ts.length ? Math.min(...ts) : 0, tMax = ts.length ? Math.max(...ts) : 0;
+  const sizeChart = chart("oi-size", 120, 34, xOfFor(120, tMin, tMax), sizePts, "q-l", "q-d");
+  if (sizeChart) {
+    const cell = el("div", "oi-cell");
+    cell.append(sizeChart, el("div", "oi-cap", "queue size · 4 weeks"));
+    band.append(cell);
+  }
+  if (cur) {
+    const ages = el("div", "oi-ages");
+    const stats = el("div", "oi-stats");
+    // mean and median as EQUALS: the same row, built by the same function.
+    const stat = (name, v, pts, chartCls) => {
+      if (v == null) return;
+      const row = el("div", "oi-stat");
+      row.append(el("span", "oi-sn", name), el("span", "oi-sv", fmtD(v)));
+      const ch = chart(chartCls, 72, 20, xOfFor(72, tMin, tMax), pts, "a-l", "a-d");
+      if (ch) row.append(ch);
+      stats.append(row);
     };
-    const defects = [];
-    const parsed = [];
-    // Keys already taken. A state key is the panel's IDENTITY for a state: the box's
-    // `data-t`, and the `register`/`itemsFor` map key the click-to-expand reads. So two
-    // descriptors sharing one key do not merely duplicate a box — the second's
-    // registration OVERWRITES the first's, and the first box then opens onto the
-    // second's list. That is #141's exact failure (a count that opens onto something
-    // that is not its own list) and neither claim check would catch it: with different
-    // occupancy sources the two claims are different ids, so both read as singly
-    // claimed. So a repeat renders NO state and is REPORTED, exactly like a malformed
-    // entry — and, like a malformed entry, its claim is never registered, so the sweep
-    // additionally names the cell or counts key it meant to claim. FIRST occurrence
-    // wins: array order is render order, so the first is the one the tool put first.
-    const seenKeys = new Set();
-    descriptors.forEach((d, i) => {
-      const p = readDescriptor(d);
-      if (!p) {
-        defects.push(
-          "stateDescriptors[" + i + "] is malformed — it renders no state, and occupancy it meant to claim reports as unclaimed",
-        );
-        return;
-      }
-      if (seenKeys.has(p.key)) {
-        defects.push(
-          'stateDescriptors[' + i + '] repeats the key "' + p.key +
-            '" — it renders no state, and occupancy it meant to claim reports as unclaimed',
-        );
-        return;
-      }
-      seenKeys.add(p.key);
-      parsed.push(p);
-    });
-    // CONSERVATION (the invariant that would have made the blocked-on drift scream
-    // instead of hiding 17 PRs), per the ratified contract's scoping
-    // (issue-pr-cron#130): every `lanes` cell must be claimed by exactly ONE descriptor
-    // — zero exceptions (the tool stopped emitting its one redundant cell in the same
-    // change that added descriptors) — and every `counts` key must be claimed by exactly
-    // one descriptor through the keys it READS (its occupancy `counts` source, or the
-    // `hist` mirror a lane state's series draws from), outside the named frozen-legacy
-    // set below. A counts-source descriptor's declared `counts`/`items` keys must also
-    // RESOLVE in the snapshot. Unclaimed occupancy is inventory the machine renders
-    // NOWHERE; a double claim renders the same inventory twice; an unresolved source is a
-    // count with no list (or no count at all). All are the tool's defects, and all
-    // surface in the defect band.
-    const claims = new Map();
-    const itemClaims = new Map();
-    const claim = (id) => claims.set(id, (claims.get(id) || 0) + 1);
-    // The occupancy a lane-sourced descriptor RENDERS, resolved once so the sweep's
-    // cross-check below and the render loop can never read it two different ways.
-    const laneCount = (p) => {
-      const cell = laneState(p.source.lane, p.key);
-      if (!cell) return 0;
-      // A cell carries its own two numbers: the `count` it STATES and the `prs` it
-      // actually holds. `Number(cell.count) || 0` cannot tell a missing or non-numeric
-      // count from a real zero, so a broken count over a populated list would render 0
-      // while the click expanded onto PRs. Render the LARGER: a count that arrives
-      // broken must never hide inventory the list proves is there, and the box must
-      // agree with what it opens onto. The disagreement itself is reported below.
-      const stated = Number(cell.count) || 0;
-      const listed = Array.isArray(cell.prs) ? cell.prs.length : 0;
-      return Math.max(stated, listed);
-    };
-    // Claim ids are JSON-encoded so no lane/state/counts spelling can collide or forge
-    // another key's id.
-    const laneId = (lane, state) => "lane " + JSON.stringify([lane, state]);
-    const countsId = (k) => "counts " + JSON.stringify(k);
-    for (const p of parsed) {
-      // The design split (issue-pr-cron#240), resolved ONCE per descriptor and stored on
-      // it, so this sweep and the render loop below can never read the cell two different
-      // ways. Scoped to the ai:design lane row: the split's series key is fixed
-      // vocabulary (designPresentable), so a breakdown arriving on any other cell is
-      // ignored rather than drawn against another state's series. Null on every snapshot
-      // without the split, on which all of this is inert.
-      p.split = p.source.lane && p.key === "ai:design"
-        ? designSplit(laneState(p.source.lane, p.key))
-        : null;
-      if (p.source.lane) claim(laneId(p.source.lane, p.key));
-      else {
-        if (!Object.prototype.hasOwnProperty.call(c, p.source.counts)) {
-          defects.push(
-            'descriptor "' + p.key + '" names counts source "' + p.source.counts + '" which does not resolve in the snapshot',
-          );
-        }
-        if (!Array.isArray(hq[p.source.items])) {
-          defects.push(
-            'descriptor "' + p.key + '" names items source "' + p.source.items + '" which does not resolve in the snapshot',
-          );
-        }
-      }
-      // Every counts key this descriptor READS is claimed — deduped, because a
-      // counts-source descriptor's `hist` usually IS its counts key.
-      //
-      // `histFold` counts too: those keys are where this state's series draws the
-      // ABSORBED retirees' samples from, so their inventory does reach the screen — as
-      // part of this state's line. Leaving them out flags a nonzero absorbed-retiree
-      // count as unclaimed on a perfectly healthy snapshot: the successor draws the past
-      // (`ai:reject` folds `humanReject`/`relink`) while the residue rows carry no `hist`
-      // of their own, precisely so the same history is not rendered twice. Their lane
-      // cells are claimed by those residue descriptors; their counts keys are claimed
-      // here. The invariant stays honest in BOTH directions — exactly one descriptor
-      // claims a fold key, because a fold key must not also be a live row's `hist` (the
-      // producer side is held to that), so a key claimed as both still reads as the
-      // double claim it is.
-      const read = new Set();
-      if (p.source.counts) read.add(p.source.counts);
-      if (p.hist) read.add(p.hist);
-      for (const k of p.histFold) read.add(k);
-      // With the split present the box's series is drawn from `designPresentable`, so
-      // that key is read occupancy too — claimed here, exactly once, or the key a box is
-      // drawing would sweep as inventory rendering nowhere. Its withheld sibling
-      // `designNoQuestion` is claimed by nothing, because nothing here draws it; it is
-      // named in the frozen-legacy set below, where that is stated once.
-      if (p.split) read.add("designPresentable");
-      for (const k of read) claim(countsId(k));
-      // The top-level array a counts-source descriptor lists from is claimed too. It is
-      // not swept for absence (an array with no `counts` entry is not occupancy this page
-      // knows how to count), but two descriptors naming the SAME array is a defect the
-      // other checks cannot see: their keys differ, their counts keys may differ, and yet
-      // both boxes open onto one list — a count that opens onto something that is not its
-      // own list, which is #141 again.
-      if (p.source.items) itemClaims.set(p.source.items, (itemClaims.get(p.source.items) || 0) + 1);
-      // ---- The page holds TWO numbers for a lane state and is the only place they meet.
-      // The lane cell is the OCCUPANCY it renders; `hist` names the `counts` key its
-      // SERIES is drawn from — and the tool computes those two ways (issue-pr-cron#228:
-      // `counts.ready` off the label bucket, the lane cell off `classify_lane`). When
-      // they disagree, the box draws one number under a sparkline sitting at the other,
-      // and every claim check passes because each key is claimed exactly once. Only a
-      // comparison catches it, so the page makes the disagreement VISIBLE — it does not
-      // guess which number is right, and it does not drop the claim (every lane state's
-      // `hist` mirrors a counts key, so dropping it would paint false defects across a
-      // healthy snapshot). States that agree stay silent.
-      // The SAME class one level down: a cell's stated `count` against the `prs` it
-      // carries. The sweep cannot catch this — a claimed cell leaves `misclaimed` at
-      // n === 1 — so the box would read one number while its click-through showed
-      // another, silently. Only checked when the list is non-empty: a count over an
-      // EMPTY list is the missing-list case, which detailBody already reports at the
-      // click ("the list is missing, not empty") rather than as a snapshot defect.
-      if (p.source.lane) {
-        const cell = laneState(p.source.lane, p.key);
-        const stated = cell ? Number(cell.count) || 0 : 0;
-        const listed = cell && Array.isArray(cell.prs) ? cell.prs.length : 0;
-        if (listed > 0 && stated !== listed) {
-          defects.push(
-            'lanes["' + p.source.lane + '"]["' + p.key + '"] states count ' + stated +
-              " but carries " + listed + " PRs — the box renders " + Math.max(stated, listed) +
-              ", the larger, so a broken count cannot hide inventory the list proves is there",
-          );
-        }
-      }
-      if (p.split) {
-        // The same two comparisons, one level further down, on the pair the PRESENTABLE
-        // box renders — the only half of the split this page draws, so the only half
-        // either comparison has a subject for. Its stated count against the rows
-        // annotated into it (the box renders the larger, exactly as the cell-level check
-        // above)…
-        const b = p.split.presentable;
-        if (b.listed.length > 0 && b.stated !== b.listed.length) {
-          defects.push(
-            'lanes["' + p.source.lane + '"]["' + p.key + '"].breakdown.presentable states ' +
-              b.stated + " but " + b.listed.length +
-              " prs entries carry that bucket — the box renders " + b.shown +
-              ", the larger, so a broken count cannot hide inventory the list proves is there",
-          );
-        }
-        // …and the two-numbers comparison, against the counts key the box's series is
-        // drawn from — `hist` still mirrors the raw cell, a pair nothing renders any more.
-        if (Object.prototype.hasOwnProperty.call(c, "designPresentable")) {
-          const mirrored = Number(c.designPresentable) || 0;
-          if (b.shown !== mirrored) {
-            defects.push(
-              'state "' + p.key + '" is counted two ways and the snapshot disagrees with itself: ' +
-                "the design inbox box renders " + b.shown +
-                ' from the cell\'s breakdown, while counts["designPresentable"] — the key its' +
-                " series is drawn from — says " + mirrored +
-                ". Fix the tool's emit (issue-pr-cron#240)",
-            );
-          }
-        }
-      } else if (p.source.lane && p.hist && Object.prototype.hasOwnProperty.call(c, p.hist)) {
-        const shown = laneCount(p);
-        const mirrored = Number(c[p.hist]) || 0;
-        if (shown !== mirrored) {
-          defects.push(
-            'state "' + p.key + '" is counted two ways and the snapshot disagrees with itself: ' +
-              'the rendered occupancy lanes["' + p.source.lane + '"]["' + p.key + '"] holds ' + shown +
-              ', while counts["' + p.hist + '"] — the key this box\'s series is drawn from — says ' + mirrored +
-              '. The box renders ' + shown + '; fix the tool\'s emit (issue-pr-cron#228)',
-          );
-        }
-      }
-    }
-
-    OWNERS.forEach((O) => {
-      const own = parsed.filter((p) => p.owner === O.key);
-      if (!own.length) return; // an actor the tool files no state under draws no empty heading
-      const g = el("div", "fsm-grid");
-      let ownerTotal = 0;
-      const boxes = [];
-      own.forEach((p) => {
-        let count;
-        let series;
-        if (p.split) {
-          // The split cell's box is the INBOX: the presentable rows — the population
-          // /ndd serves, which reads zero when a human drains the queue — with its
-          // series drawn from the counts key measuring exactly that population. The
-          // rows /ndd withholds are drawn nowhere on this panel, in this total or any
-          // other: none of them is work this actor's command presents (the invariant at
-          // the STATES human section), and drawing them anywhere here is what produced
-          // the number issue-pr-cron#240 measured — six "design questions to rule on"
-          // over a command with nothing to present.
-          count = p.split.presentable.shown;
-          register(p.key, p.split.presentable.listed, false, count);
-          series = seriesFor("designPresentable");
-        } else if (p.source.lane) {
-          const cell = laneState(p.source.lane, p.key);
-          count = laneCount(p);
-          register(p.key, cell && cell.prs, false, count);
-          // The descriptor names its own series key AND its own retired-key folds —
-          // HIST_FOLD serves only the frozen fallback. An empty histFold folds nothing.
-          series = seriesFor(p.hist, p.histFold);
-        } else {
-          // Registration is UNCONDITIONAL on every branch (#141): a count whose list
-          // never arrived reads as detailBody's missing-list defect, never as an empty
-          // queue.
-          count = Number(c[p.source.counts]) || 0;
-          register(p.key, hq[p.source.items], p.source.issue, count);
-          series = seriesFor(p.hist, p.histFold);
-        }
-        ownerTotal += count;
-        const b = stateBox(p.key, p.label, count, p.act, p.kind, series);
-        boxes.push({ b, count, label: p.label });
-        g.append(b);
-      });
-      markLead(boxes);
-      const lane = el("div", "fsm-lane");
-      const h = el("div", "fsm-lane-h");
-      h.append(el("span", null, O.title), el("span", "lsub", O.sub), el("span", "lct", String(ownerTotal)));
-      lane.append(h, g);
-      grid.append(lane);
-    });
-
-    // The conservation sweep, over the snapshot's own occupancy keys. `legacy` marks a
-    // key the ratified contract lets go UNCLAIMED — it never licenses a double claim.
-    const misclaimed = (id, name, held, legacy) => {
-      const n = claims.get(id) || 0;
-      if (n === 1) return;
-      // Zero inventory renders nowhere VACUOUSLY — nothing is hidden. The live tool
-      // still emits drained retired counts keys at 0 (kept-while-nonzero applies to the
-      // descriptor list, not to the keys), so an unclaimed key holding nothing must not
-      // paint a permanent false defect on a healthy snapshot. A DOUBLE claim is
-      // STRUCTURAL — the same inventory wired twice — and stays a defect at any count,
-      // frozen-legacy keys included: two descriptors both drawing `openIssues` would
-      // render the open-issue population as two state series, which no exception covers.
-      if (n === 0 && (!held || legacy)) return;
-      defects.push(
-        name + " (" + held + " held) " +
-          (n === 0
-            ? "is claimed by no descriptor — its inventory renders nowhere"
-            : "is claimed by " + n + " descriptors — its inventory renders " + n + " times"),
-      );
-    };
-    if (hasLanes) {
-      for (const lane of Object.keys(hq.lanes)) {
-        const cells = hq.lanes[lane];
-        if (!cells || typeof cells !== "object") continue;
-        for (const state of Object.keys(cells)) {
-          const cell = cells[state];
-          // What the cell HOLDS is the larger of its stated count and the list it
-          // actually carries: a cell whose `count` was dropped or arrived non-numeric
-          // still holds every PR in `prs`, and scoring that 0 would let the zero-held
-          // carve-out swallow real stranded inventory. This is the one place the sweep
-          // has the list in hand, so it uses it.
-          const held = cell && typeof cell === "object"
-            ? Math.max(Number(cell.count) || 0, Array.isArray(cell.prs) ? cell.prs.length : 0)
-            : 0;
-          misclaimed(laneId(lane, state), 'lanes["' + lane + '"]["' + state + '"]', held);
-        }
-      }
-    }
-    // The FROZEN-LEGACY exception the ratified contract names (issue-pr-cron#130,
-    // 2026-08-06 clarification) — the ONLY counts keys allowed to go unclaimed:
-    //   - non-state metrics: population/rollup numbers, not inboxes anyone acts on
-    //     (`totalProducerPrs`, `openIssues` — the band above draws it — and
-    //     `archivedRepoPrs`);
-    //   - `closeCandidateIssues`: the legacy duplicate of inventory the two
-    //     close-candidate descriptors already claim;
-    //   - `designNoQuestion` (issue-pr-cron#240): the size of the withheld half of the
-    //     ai:design cell. The INVENTORY behind it is claimed — those PRs are in
-    //     `lanes["vetter-verdicts"]["ai:design"]`, a cell exactly one descriptor claims,
-    //     and the sweep scores that cell at everything it holds. What goes unclaimed is
-    //     a sub-total of a claimed cell, and it goes unclaimed because no box draws it:
-    //     /ndd is the command that withholds those rows and /ndd lists them itself, so a
-    //     box here would be the manufactured inbox this panel stopped drawing. Claiming
-    //     it while nothing reads it would be the lie the sweep exists to catch.
-    // Any OTHER unclaimed counts key is state-shaped inventory rendering nowhere.
-    const LEGACY_UNCLAIMED = new Set([
-      "totalProducerPrs",
-      "openIssues",
-      "archivedRepoPrs",
-      "closeCandidateIssues",
-      "designNoQuestion",
-    ]);
-    for (const k of Object.keys(c)) {
-      misclaimed(countsId(k), 'counts["' + k + '"]', Number(c[k]) || 0, LEGACY_UNCLAIMED.has(k));
-    }
-    for (const [k, n] of itemClaims) {
-      if (n < 2) continue;
-      defects.push(
-        'the top-level array "' + k + '" is named by ' + n +
-          " descriptors — their boxes open onto the same list",
-      );
-    }
-    if (defects.length) {
-      const dbox = el("div", "fsm-defect");
-      dbox.append(el(
-        "div",
-        "fd-h",
-        "Snapshot defect — the tool's stateDescriptors do not cover its own occupancy. Fix the tool's emit; nothing here is ignored:",
-      ));
-      for (const t of defects) dbox.append(el("div", "fd-li", t));
-      grid.append(dbox);
-    }
-  } else if (hasLanes) {
-    OWNERS.forEach((O) => {
-      const g = el("div", "fsm-grid");
-      let ownerTotal = 0;
-      const boxes = [];
-      STATES.filter((s) => s.owner === O.key).forEach((s) => {
-        let count;
-        if (s.fromCounts) {
-          count = Number(c[s.fromCounts]) || 0;
-          // The counts key names the NUMBER; `items` names the LIST. Both branches register
-          // UNCONDITIONALLY, so the click-to-expand has a source for every box the machine
-          // draws — the whole point of #141. A descriptor that declared no `items` would
-          // register an empty list against a real count, which the detail panel reports as a
-          // defect rather than passing off as an empty queue.
-          register(s.state, hq[s.items], s.issue, count);
-        } else {
-          // The CURRENT lane's cell wins outright; `staleLane` is read only when the
-          // current lane has no cell for the state — a snapshot from before an upstream
-          // lane re-key (ai:blocked-on's `producer-blocked` → `vet-lifecycle`,
-          // issue-pr-cron#161) renders its real count instead of a silent zero. One cell
-          // resolves either way, so the count and the click-to-expand list stay one box's.
-          const cell = laneState(s.lane, s.state) ||
-            (s.staleLane ? laneState(s.staleLane, s.state) : null);
-          count = cell ? Number(cell.count) || 0 : 0;
-          register(s.state, cell && cell.prs, false, count);
-        }
-        ownerTotal += count;
-        const label = s.label || s.state;
-        const b = stateBox(s.state, label, count, s.act, s.kind, seriesFor(s.hist));
-        boxes.push({ b, count, label });
-        g.append(b);
-      });
-      RETIRED_NO_SUCCESSOR.filter((s) => s.owner === O.key).forEach((s) => {
-        const cell = laneState(s.lane, s.state);
-        const count = cell ? Number(cell.count) || 0 : Number(c[s.legacy]) || 0;
-        if (!count) return;
-        register(s.state, cell && cell.prs, false, count);
-        ownerTotal += count;
-        const b = stateBox(s.state, s.state, count, s.act, s.kind, null);
-        boxes.push({ b, count, label: s.state });
-        g.append(b);
-      });
-      markLead(boxes);
-      const lane = el("div", "fsm-lane");
-      const h = el("div", "fsm-lane-h");
-      h.append(el("span", null, O.title), el("span", "lsub", O.sub), el("span", "lct", String(ownerTotal)));
-      lane.append(h, g);
-      grid.append(lane);
-    });
-  } else {
-    // Backward-compat: an older human-queue.json with no `lanes` — render the 5 states
-    // the legacy `counts` keys carry (all human-owned under the actor mapping) from
-    // `counts`, so the panel never blanks.
-    // `items` names a top-level array as in STATES; an entry with none lists from the flat
-    // `states` map keyed by the state itself, which is what a pre-`lanes` snapshot carries.
-    const legacy = [
-      { key: "leak", label: "not in any modeled state", n: c.leaks, items: "leaks", hist: "leaks", act: "model it", kind: "blk" },
-      { key: "ai:ready", label: "ai:ready", n: c.ready, hist: "ready", act: "merge", kind: "flow" },
-      // `counts.design` is the raw label total. A pre-`lanes` snapshot predates the
-      // design split (issue-pr-cron#240) by even more than it predates descriptors, so
-      // the raw number is everything it carries — see the frozen STATES row above.
-      { key: "ai:design", label: "ai:design", n: c.design, hist: "design", act: "rule on design Q", kind: "rule" },
-      { key: "closeCandidateIssues", label: "ai:close-candidate (issues)", n: c.closeCandidateIssues, items: "closeCandidateIssues", issue: true, hist: "closeCandidateIssues", act: "close issue", kind: "rule" },
-      { key: "ai:blocked-on", label: "ai:blocked-on", n: c.blockedOn, hist: "blockedOn", act: "merge dependency", kind: "blk" },
-    ];
-    const g = el("div", "fsm-grid");
-    const boxes = [];
-    legacy.forEach((s) => {
-      const n = Number(s.n) || 0;
-      register(s.key, s.items ? hq[s.items] : hq.states && hq.states[s.key], s.issue, n);
-      const b = stateBox(s.key, s.label, s.n, s.act, s.kind, seriesFor(s.hist));
-      boxes.push({ b, count: n, label: s.label });
-      g.append(b);
-    });
-    RETIRED_NO_SUCCESSOR.filter((s) => s.owner === "human").forEach((s) => {
-      const count = Number(c[s.legacy]) || 0;
-      if (!count) return;
-      register(s.state, hq.states && hq.states[s.state], false, count);
-      const b = stateBox(s.state, s.state, count, s.act, s.kind, null);
-      boxes.push({ b, count, label: s.state });
-      g.append(b);
-    });
-    markLead(boxes);
-    const lane = el("div", "fsm-lane");
-    const h = el("div", "fsm-lane-h");
-    h.append(el("span", null, "Human action"), el("span", "lsub", "@thedavidmeister"));
-    lane.append(h, g);
-    grid.append(lane);
+    stat("mean", cur.mean, meanPts, "oi-mean");
+    stat("median", cur.median, medPts, "oi-med");
+    // The tail number, in the open: it explains a mean running well above its median.
+    if (cur.oldest != null) stats.append(el("div", "oi-tail", "oldest " + fmtD(cur.oldest)));
+    ages.append(stats);
+    ages.append(el("div", "oi-cap", "age in days · each trend on its own scale"));
+    band.append(ages);
   }
-
-  // itemsFor returns a state's registration — { arr, issue, count }. Every box the machine
-  // draws registered above, in whichever branch drew it, so the fallback is only a total
-  // function for a key no box carries.
-  const itemsFor = (key) => laneItems.get(key) || { arr: [], issue: false, count: 0 };
-
-  // Detail body for a clicked box: a header naming THIS state and its OWN item count
-  // (the list length rendered directly below it), so the panel can never read as
-  // belonging to another section, then the items.
-  //
-  // A list with no rows gets one of TWO readings, because "no rows" has two causes and
-  // conflating them is what let #141 live for weeks:
-  //   count == 0  -> genuinely, deliberately empty. The normal case, and the one that made a
-  //                  broken box unfalsifiable while it happened to be zero.
-  //   count  > 0  -> the machine counts N here and no list came with it. The list is MISSING,
-  //                  which is #141's exact signature, so it reads as the defect it is
-  //                  (--crit, and in WORDS — the colour is never the only carrier).
-  const detailBody = (key, label) => {
-    const src = itemsFor(key);
-    const arr = src.arr;
-    const frag = document.createDocumentFragment();
-    const h = el("div", "fsm-dh");
-    h.append(
-      el("span", "dhl", label),
-      el("span", "dhc", arr.length + (arr.length === 1 ? " item" : " items")),
-    );
-    frag.append(h);
-    if (!arr.length) {
-      frag.append(src.count > 0
-        ? el("div", "empty miswired", "The machine counts " + src.count + " here, but the pipeline snapshot carries no list for this state — the list is missing, not empty.")
-        : el("div", "empty", "Empty — nothing is in this state."));
-      return frag;
-    }
-    arr.forEach((it) => {
-      // The snapshot is an artifact this page does not own and every field in it is UNTRUSTED
-      // (CLAUDE.md). An entry that is not an object renders as a malformed ROW: not a thrown
-      // exception, which would take the rest of the list down with it, and not a silently
-      // dropped row, which would put the header count and the visible rows back into the
-      // disagreement this whole change exists to remove.
-      if (!it || typeof it !== "object") {
-        frag.append(el("div", "li", "malformed entry — the snapshot carried no item here"));
-        return;
-      }
-      const a = link("li", undefined, urlOf(it, src.issue));
-      a.append(el("span", "lr", it.repo + "#" + Number(it.number)), " " + (it.title == null ? "" : it.title));
-      if (it.reason) a.append(el("span", "lz", it.reason));
-      frag.append(a);
-    });
-    return frag;
-  };
-
-  const note = el("div", "fsm-note");
-  note.append(
-    "The pipeline is a ",
-    link(null, "finite state machine", "https://github.com/rainlanguage/issue-pr-cron/blob/main/README.md"),
-    " — every open PR/issue sits in exactly one modeled ",
-    el("code", null, "ai:*"),
-    " state, grouped here by ",
-    el("b", null, "who must act next"),
-    " (producer / vetter / human): a state that can't be filed under exactly one actor is an un-owned inbox where tokens stall"
-  );
-  if (hq.sample) note.append(" ", el("b", null, "(sample data — live once issue-pr-cron#41 lands)"));
-  note.append(".");
-  if (descriptors) {
-    note.append(
-      " The machine's shape above is the tool's own ",
-      el("code", null, "stateDescriptors"),
-      " — states appear, move between actors, and retire on the tool's say-so, with no edit to this page.",
-    );
-  }
-  if (hist.length) {
-    note.append(
-      " Each state carries an inventory sparkline (trailing 4 weeks); a ",
-      el("b", null, "red border"),
-      " marks a state whose inventory is trending up over the last 7 days — the ",
-      link(null, "Theory-of-Constraints", "https://github.com/rainlanguage/issue-pr-cron/blob/main/README.md"),
-      " bottleneck: rising WIP is where the system is constrained."
-    );
-  }
-  // Guarded on the band actually drawing its ages (not on `hist`, and not on the mere
-  // presence of an `ages` key — an empty or all-malformed block draws nothing): the legend
-  // only ever describes marks the panel is putting on screen.
-  if (band && openAges) {
-    note.append(
-      " The band above carries that population's ",
-      el("b", null, "mean"),
-      " and ",
-      el("b", null, "median age in days"),
-      " as equals: a mean running well above its median means a long tail is doing the ageing, a mean level with it means the backlog ages uniformly."
-    );
-    // The tail clause has its OWN guard, because the band has its own: a malformed
-    // `oldestDays` costs the two statistics nothing but draws no tail number, and a legend
-    // naming a mark that is not on screen is the same defect at one remove.
-    if (openAges.oldest != null) {
-      note.append(" ", el("b", null, "oldest"), " is that tail.");
-    }
-    note.append(
-      " Each little chart is one quantity's own trend on its own scale — heights never compare across them, and days are never comparable to a queue size."
-    );
-  }
-  // Deliberately OUTSIDE the `hist` guard: the fallback is exactly what fills the gap when no
-  // trend is computable, so it can appear on a page with no sparklines at all. The sentence
-  // is not optional — without it the legend above would state a single meaning for the red
-  // mark that is no longer the only one.
-  note.append(
-    " Where nothing in an actor's group is trending up, the same mark falls back to that actor's ",
-    el("b", null, "largest queue"),
-    " — still where to start, just chosen by size rather than trend."
-  );
-
-  const detail = el("div", "fsm-list");
-  detail.id = "fsmdetail";
-  // The open-issue band leads: it is the population the machine below has to move, and the
-  // one number on this panel that is not an actor's inbox. Absent data ⇒ absent band, and
-  // the panel is byte-for-byte the machine it was.
-  if (band) box.append(band);
-  box.append(grid, detail, note);
-
-  // Header label for a clicked box: its own state label (.sk). Every [data-t] is a
-  // state box now that the leak banner is a state, so the key is only a defensive
-  // fallback.
-  const labelOf = (b, k) => {
-    const sk = b.querySelector && b.querySelector(".sk");
-    return sk && sk.textContent ? sk.textContent : k;
-  };
-
-  let openKey = null;
-  box.querySelectorAll("[data-t]").forEach((b) => b.addEventListener("click", () => {
-    const k = b.dataset.t;
-    box.querySelectorAll("[data-t]").forEach((x) => x.classList.remove("sel"));
-    if (openKey === k) { detail.classList.remove("open"); openKey = null; return; }
-    openKey = k;
-    // The detail is a single panel at the bottom of the machine; its header names
-    // the selected state (below) and CSS gives it clear vertical separation, so it
-    // reads as the clicked state's list rather than an extension of the last lane.
-    detail.replaceChildren(detailBody(k, labelOf(b, k)));
-    detail.classList.add("open");
-    if (b.classList.contains("fsm-state")) b.classList.add("sel");
-  }));
+  box.append(band);
 }
 
 // Parse the append-only human-queue-history.jsonl rollup (one {ts, counts[, ages]} per
 // refresh) into [{t:ms, counts[, ages]}] sorted oldest→newest, dropping malformed lines and
 // any with an unparseable timestamp. Timestamps are the tool's real refresh/commit times —
-// never synthesized here; this only reads them. Kept top-level (not closed over renderFsm)
+// never synthesized here; this only reads them. Kept top-level (not closed over renderKpis)
 // so the render can be tested against a plain fixture array.
 //
 // `ages` (rain-org-health#140) is OPTIONAL per line — every rollup written before the tool
@@ -1599,44 +446,84 @@ function parseHistory(text) {
   return out;
 }
 
-// Least-squares slope (inventory items per DAY) of a state's WIP over the trailing 7
-// days, anchored at nowMs (the latest sample). `series` is [{t:ms, v:count}]. This is
-// the Theory-of-Constraints trend that flags the bottleneck: a slope above a small
-// epsilon (applied at the call site) = inventory accumulating = the constraint. Returns
-// null when the window holds fewer than two distinct-time points — a single point or a
-// lone blip can't establish a trend, so it never flags a state on its own.
-function sevenDaySlope(series, nowMs) {
-  if (!Array.isArray(series) || !series.length) return null;
-  const from = nowMs - 7 * 864e5;
-  const win = series.filter((p) => p && Number(p.t) >= from && Number(p.t) <= nowMs);
-  if (win.length < 2) return null;
-  // x in days relative to nowMs; y = inventory. slope = Σ(x-x̄)(y-ȳ) / Σ(x-x̄)².
-  const xs = win.map((p) => (Number(p.t) - nowMs) / 864e5);
-  const ys = win.map((p) => Number(p.v));
-  const n = xs.length;
-  const xbar = xs.reduce((a, b) => a + b, 0) / n;
-  const ybar = ys.reduce((a, b) => a + b, 0) / n;
-  let num = 0, den = 0;
-  for (let i = 0; i < n; i++) {
-    num += (xs[i] - xbar) * (ys[i] - ybar);
-    den += (xs[i] - xbar) ** 2;
+// The top WORKLIST_SIZE rows of `issueWorklist`, in the order the tool ranked them: issues an
+// open PR claims first, then the rest, oldest first within each. Closing any one lowers the
+// open count by one; the oldest moves the mean age most. The ranking is the tool's; this only
+// cuts it. Rows are untrusted, so a link is drawn only for an https://github.com/ url.
+const WORKLIST_SIZE = 20;
+function renderWorklist(hq, nowMs) {
+  const box = $("worklist");
+  const el = (tag, cls, text) => {
+    const n = document.createElement(tag);
+    if (cls) n.className = cls;
+    if (text !== undefined) n.textContent = text;
+    return n;
+  };
+  const gh = (u) => typeof u === "string" && u.startsWith("https://github.com/");
+  const linkOrText = (cls, text, href) => {
+    if (!gh(href)) return el("span", cls, text);
+    const a = el("a", cls, text);
+    a.href = href;
+    a.rel = "noopener";
+    a.target = "_blank";
+    return a;
+  };
+  box.textContent = "";
+  const rows = hq && Array.isArray(hq.issueWorklist) ? hq.issueWorklist : null;
+  if (!rows) {
+    box.append(el("div", "empty", "No worklist: human-queue.json carries no issueWorklist yet."));
+    return;
   }
-  if (den === 0) return null; // every point shares a timestamp — no trend to fit
-  return num / den;
+  const claimed = rows.filter((r) => r && Array.isArray(r.prs) && r.prs.length > 0).length;
+  const top = rows.slice(0, WORKLIST_SIZE);
+  box.append(el(
+    "div",
+    "wl-sum",
+    `Top ${top.length} of ${rows.length} open issues · ${claimed} have an open PR (ranked first) · oldest first within each`,
+  ));
+  if (top.length === 0) {
+    box.append(el("div", "empty", "No open issues."));
+    return;
+  }
+  const list = el("div", "wl");
+  for (const r of top) {
+    const row = el("div", "wl-row");
+    // The snapshot carries the creation time, not an age, so the age is as of this page load.
+    const age = typeof r.createdAtMs === "number" && Number.isFinite(r.createdAtMs)
+      ? `${Math.max(0, Math.round((nowMs - r.createdAtMs) / 86_400_000))}d`
+      : "age ?";
+    row.append(el("span", "wl-age", age));
+    const main = el("span", "wl-main");
+    main.append(el("span", "wl-ref", `${r.repo}#${r.number}`));
+    main.append(linkOrText("wl-title", String(r.title ?? ""), r.url));
+    row.append(main);
+    const prs = el("span", "wl-prs");
+    const urls = Array.isArray(r.prs) ? r.prs : [];
+    if (urls.length === 0) prs.append(el("span", "wl-none", "no PR"));
+    for (const u of urls) {
+      const m = typeof u === "string" ? /\/pull\/(\d+)$/.exec(u) : null;
+      prs.append(linkOrText("wl-pr", m ? `PR #${m[1]}` : "PR", u));
+    }
+    row.append(prs);
+    list.append(row);
+  }
+  box.append(list);
 }
 
-// FSM-conformance state is issue-pr-cron's OWN artifact, fetched at runtime like the producer
-// metrics below — never baked into this repo or computed here (CLAUDE.md: the dashboard is a
-// consumer, not a producer, of data; new data ⇒ new fetch, not new baking). The history
-// rollup (per-state inventory over time) is a second artifact fetched the same way; if it is
-// missing/older the panel simply renders no sparklines and no trend borders.
+// The issue snapshot is issue-pr-cron's OWN artifact, fetched at runtime — never baked into
+// this repo or computed here (CLAUDE.md: the dashboard is a consumer, not a producer, of
+// data). The history rollup is a second artifact fetched the same way; if it is missing the
+// KPIs simply render without trend charts.
 const HQ_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue.json";
 const HIST_URL = "https://raw.githubusercontent.com/rainlanguage/issue-pr-cron/main/human-queue-history.jsonl";
-$("meta").textContent = "pipeline conformance · issue-pr-cron";
+$("meta").textContent = "open issues · issue-pr-cron";
 Promise.all([
   fetch(HQ_URL, { cache: "no-store" }).then((r) => (r.ok ? r.json() : null)).catch(() => null),
   fetch(HIST_URL, { cache: "no-store" }).then((r) => (r.ok ? r.text() : "")).catch(() => ""),
-]).then(([hq, histText]) => renderFsm(hq, parseHistory(histText)));
+]).then(([hq, histText]) => {
+  renderKpis(hq, parseHistory(histText));
+  renderWorklist(hq, Date.now());
+});
 </script>
 </body>
 </html>
