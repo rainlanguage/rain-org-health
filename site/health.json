@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T03:34:37Z",
+  "generatedAt": "2026-11-19T13:18:08Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2303,7 +2303,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2638,8 +2638,8 @@
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
         "granted": 3,
-        "missing": 1,
-        "unknown": 0,
+        "missing": 0,
+        "unknown": 1,
         "total": 4,
         "state": "partial",
         "safeKept": [
@@ -2709,7 +2709,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "missing",
+                "status": "unknown",
                 "safeHolds": true
               },
               {
@@ -4035,7 +4035,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 59344630
+        "discoveredAtBlock": 59520674
       },
       {
         "network": "ethereum",
@@ -4592,7 +4592,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26446471
+        "discoveredAtBlock": 26449393
       },
       {
         "network": "bsc",
@@ -5202,81 +5202,81 @@
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5362,81 +5362,81 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5450,18 +5450,18 @@
           }
         ],
         "counts": {
-          "safe": 24,
-          "timelock": 62,
+          "safe": 41,
+          "timelock": 65,
           "other": 0,
-          "unknown": 20,
+          "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 28,
-          "certificationUnknown": 20,
+          "certificationExpired": 45,
+          "certificationUnknown": 0,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134432281
+        "discoveredAtBlock": 134510473
       },
       {
         "network": "hyperevm",
@@ -6002,7 +6002,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51649075
+        "discoveredAtBlock": 51684873
       },
       {
         "network": "robinhood",
@@ -6543,7 +6543,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 117920464
+        "discoveredAtBlock": 118248418
       }
     ]
   },
@@ -26983,7 +26983,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26446471,
+            "headBlock": 26449393,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27362,7 +27362,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134432259,
+            "headBlock": 134510437,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27741,7 +27741,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51649066,
+            "headBlock": 51684850,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28120,7 +28120,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 117920391,
+            "headBlock": 118248258,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28499,7 +28499,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 59344711,
+            "headBlock": 59520707,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -37957,7 +37957,7 @@
       "rpcHost": "ethereum-rpc.publicnode.com",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 9,
+      "healthy": 24,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -38020,8 +38020,8 @@
           "field": "codehash",
           "address": "0xbe5f05C4576e6D3e7bCCb4E64f08fc4F46Adf0cA",
           "expected": "0xa2c4bd29f36bc6636938f3ad66e6de5d126ce41ed3134bed166cde259d5775ad",
-          "live": null,
-          "status": "unknown"
+          "live": "0xa2c4bd29f36bc6636938f3ad66e6de5d126ce41ed3134bed166cde259d5775ad",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-offchain-asset-receipt-vault-beacon-set-deployer@0_1_1",
@@ -38044,64 +38044,64 @@
           "field": "codehash",
           "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
           "expected": "0xf8a1d9b2fa068bae3c1a607434db48364a5cdab3020bd7e315ed2662a3b35b5f",
-          "live": null,
-          "status": "unknown"
+          "live": "0xf8a1d9b2fa068bae3c1a607434db48364a5cdab3020bd7e315ed2662a3b35b5f",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-offchain-asset-receipt-vault-payment-mint-authorizer@0_1_1",
           "field": "codehash",
           "address": "0xeaD68E489Cb19453b294dc46a3A5710b0d46d17F",
           "expected": "0x4d94318cde48f1bc20f97e00aefad84bfb7c9db15c81b882862e127b05e06e15",
-          "live": null,
-          "status": "unknown"
+          "live": "0x4d94318cde48f1bc20f97e00aefad84bfb7c9db15c81b882862e127b05e06e15",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-corporate-actions-facet@0_1_1",
           "field": "codehash",
           "address": "0x51f78B77EdffDB62b8AeB753066C318a46D05D74",
           "expected": "0x2a67c52129dff74d956bb7dcde1aac598c28dd29685237aca56dccb1d49bd6f8",
-          "live": null,
-          "status": "unknown"
+          "live": "0x2a67c52129dff74d956bb7dcde1aac598c28dd29685237aca56dccb1d49bd6f8",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-corporate-actions-facet@0_1_30",
           "field": "codehash",
           "address": "0xad6219d71cCF6904C0633e3a8a8C423F54036fd1",
           "expected": "0x870162e771dac7e0dfe7226bad633055130d1e28128bcfb8afe7fee1097eb055",
-          "live": null,
-          "status": "unknown"
+          "live": "0x870162e771dac7e0dfe7226bad633055130d1e28128bcfb8afe7fee1097eb055",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-orchestrator@0_1_30",
           "field": "codehash",
           "address": "0x1c3a4D12F88Bd39303Bb8510C6c1fa8Ad37A4b72",
           "expected": "0xbc2cc8eba1d10bc3b91a61fca8cdca9c18487e5fd99262f07d9703959ae4747c",
-          "live": null,
-          "status": "unknown"
+          "live": "0xbc2cc8eba1d10bc3b91a61fca8cdca9c18487e5fd99262f07d9703959ae4747c",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-orchestrator-beacon-set-deployer@0_1_30",
           "field": "codehash",
           "address": "0x945D0Faf6f268e805246907507ef1044e70E75D7",
           "expected": "0x779b9e3b829a16736d5d29c81e925395da9ff76d7d94c3618d48bdf1bc438a60",
-          "live": null,
-          "status": "unknown"
+          "live": "0x779b9e3b829a16736d5d29c81e925395da9ff76d7d94c3618d48bdf1bc438a60",
+          "status": "healthy"
         },
         {
           "component": "token tMSTR",
           "field": "receiptVault name",
           "address": "0x8500189061e2206Bc33Bf04DC10fFB1Fe7dED637",
           "expected": "MicroStrategy Incorporated ST0x",
-          "live": null,
-          "status": "unknown"
+          "live": "MicroStrategy Incorporated ST0x",
+          "status": "healthy"
         },
         {
           "component": "token tMSTR",
           "field": "receiptVault symbol",
           "address": "0x8500189061e2206Bc33Bf04DC10fFB1Fe7dED637",
           "expected": "tMSTR",
-          "live": null,
-          "status": "unknown"
+          "live": "tMSTR",
+          "status": "healthy"
         },
         {
           "component": "token tMSTR",
@@ -42964,8 +42964,8 @@
           "field": "wrappedTokenVault asset",
           "address": "0x3209384FB852E7D0510aFa896236f3f866c3876f",
           "expected": "0xDA52106FC0D44096Fd500E096b9045FdAc1d27B9",
-          "live": null,
-          "status": "unknown"
+          "live": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
+          "status": "healthy"
         },
         {
           "component": "token tHOOD",
@@ -43052,8 +43052,8 @@
           "field": "receiptVault authoriser",
           "address": "0xC982730643321f3643436Eb4a6E910219Caa55f0",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tORCL",
@@ -43340,8 +43340,8 @@
           "field": "receiptVault codehash",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "expected": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
-          "live": null,
-          "status": "unknown"
+          "live": "0x7551bff3fdfe5de3ee54be83a012a92d8380d601405a63c494d0b7ae3d670d2e",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
@@ -43364,16 +43364,16 @@
           "field": "receipt codehash",
           "address": "0xB7D42b94A8E51b098270ac92ceD23fDC8042FDB3",
           "expected": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
-          "live": null,
-          "status": "unknown"
+          "live": "0x593cc7f1842a4949ceca65cfd7ff2884192406c61fe9ca51735030021ffd62ee",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
           "field": "wrappedTokenVault asset",
           "address": "0x908266E3C3bFBb603d2EdF295deBE37C88985239",
           "expected": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
-          "live": null,
-          "status": "unknown"
+          "live": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
+          "status": "healthy"
         },
         {
           "component": "token tBABA",
@@ -43396,8 +43396,8 @@
           "field": "receiptVault name",
           "address": "0xf3875383506677BCdA6b9F12c48Ff7fE300970D7",
           "expected": "ProShares UltraPro QQQ ST0x",
-          "live": null,
-          "status": "unknown"
+          "live": "ProShares UltraPro QQQ ST0x",
+          "status": "healthy"
         },
         {
           "component": "token tTQQQ",
@@ -70617,8 +70617,15 @@
             "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
             "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2"
           ],
-          "live": null,
-          "status": "unknown"
+          "live": [
+            "0x4746095b1ea1a84446d34448f44e74d3d51f92f2",
+            "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d",
+            "0x8d5901d8ae48101b59400235ad8614a2e0510466",
+            "0xc1c89b7f5448f447d59f920456a9610f6b2544bc",
+            "0xab92b327c97a6e7461cbd76e2a789e5e106ff87e",
+            "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2"
+          ],
+          "status": "match"
         },
         {
           "fact": "threshold",
@@ -70632,8 +70639,8 @@
             "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c",
             "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000"
           ],
-          "live": null,
-          "status": "unknown"
+          "live": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
+          "status": "match"
         },
         {
           "fact": "singleton",
@@ -86258,16 +86265,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 22383,
+      "sourceLocChangedSinceAudit": 22446,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 14076,
+      "sourceLocAddedSinceAudit": 14139,
       "sourceLocRemovedSinceAudit": 8307,
       "filesChangedSinceAudit": 194,
-      "commitsSinceAudit": 1585,
+      "commitsSinceAudit": 1598,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4069,
+      "commentLocAddedSinceAudit": 4084,
       "commentLocRemovedSinceAudit": 3786,
-      "codeLocAddedSinceAudit": 8867,
+      "codeLocAddedSinceAudit": 8910,
       "codeLocRemovedSinceAudit": 3817,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
