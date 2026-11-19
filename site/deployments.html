@@ -3197,7 +3197,7 @@ function renderDeployments(document, $, data, io) {
     unknown: ["unknown", "dim"],
   };
   const MIG_OWED = ["notApplied", "notRecorded"];
-  const renderMigrations = (v) => {
+  const renderMigrations = (v, pinTable) => {
     sink.append(el("h2", null, "Migrations — run or not, per network"));
     if (!v || typeof v !== "object" || !Array.isArray(v.networks) || v.networks.length === 0) {
       const why =
@@ -3222,6 +3222,8 @@ function renderDeployments(document, $, data, io) {
         '"Unknown" means the registry read did not answer, never that it has not run.',
     );
     sink.append(sub);
+    const pinsOn = (network) =>
+      pinTable && typeof pinTable === "object" && Object.prototype.hasOwnProperty.call(pinTable, network) ? pinTable[network] : null;
     const nets = v.networks
       .filter((n) => n && typeof n === "object")
       .map((n) => ({
@@ -3310,7 +3312,7 @@ function renderDeployments(document, $, data, io) {
         const ac = el("div", "bcn-detail");
         if (str(m.writer)) {
           const line = el("div", "bcn-line");
-          line.append(el("span", "bcn-key", "writer"), addrNode("own-addr", m.writer, network));
+          line.append(el("span", "bcn-key", "writer"), whoNode(m.writer, network, pinsOn(network)));
           ac.append(line);
         }
         for (const w of Array.isArray(m.waitsOn) ? m.waitsOn : []) {
@@ -3320,6 +3322,7 @@ function renderDeployments(document, $, data, io) {
           if (w.state === "genesis") {
             line.append(el("span", "own-note", "nothing — it opens its namespace's line in the registry"));
           } else {
+            if (str(w.writer)) line.append(whoNode(w.writer, network, pinsOn(network)));
             line.append(
               str(w.script) ? scriptNode(w.script, "mig-wait") : el("span", "mig-hash", str(w.id) || "an unnamed record"),
               chip(w.state),
@@ -3366,7 +3369,7 @@ function renderDeployments(document, $, data, io) {
     renderCodeTokens(data.deploymentCodeTokens);
     renderV2(data.deploymentV2);
     sink = panels.migrations;
-    renderMigrations(data.deploymentMigrations);
+    renderMigrations(data.deploymentMigrations, data.deploymentRbac && data.deploymentRbac.addressNames);
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
     sink = panels.registry;
@@ -3422,7 +3425,7 @@ function renderDeployments(document, $, data, io) {
   renderCodeTokens(data.deploymentCodeTokens);
   renderV2(data.deploymentV2);
   sink = panels.migrations;
-  renderMigrations(data.deploymentMigrations);
+  renderMigrations(data.deploymentMigrations, data.deploymentRbac && data.deploymentRbac.addressNames);
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
   sink = panels.registry;

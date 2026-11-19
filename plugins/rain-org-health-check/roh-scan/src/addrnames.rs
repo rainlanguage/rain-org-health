@@ -25,6 +25,7 @@
 //! - An alias with no suffix of its own means what its target means.
 
 use crate::owners;
+use crate::privileged;
 use serde_json::{json, Map, Value};
 use solar_parse::ast::{
     Arena, CallArgsKind, ElementaryType, Expr, ExprKind, ItemKind, LitKind, TypeKind, VarMut,
@@ -263,6 +264,25 @@ pub fn build_address_names(
         }
     }
     (Value::Object(by_chain), unread)
+}
+
+/// Append each `privileged-addresses.json` key holding an address on a chain
+/// to that chain's names, after the pins.
+pub fn add_privileged(map: &mut Value, body: &str, chains: &[String]) {
+    for c in chains {
+        let Some(table) = map.get_mut(c).and_then(Value::as_object_mut) else {
+            continue;
+        };
+        for (key, address) in privileged::address_keys(body, c) {
+            if let Value::Array(list) = table.entry(address).or_insert_with(|| json!([])) {
+                list.push(json!({
+                    "name": key,
+                    "contract": "",
+                    "path": privileged::PRIVILEGED_ADDRESSES_PATH,
+                }));
+            }
+        }
+    }
 }
 
 #[cfg(test)]
@@ -674,5 +694,19 @@ mod tests {
                 A: [{"name": "Y", "contract": "M", "path": "src/generated/M.sol"}]
             }})
         );
+    }
+
+    #[test]
+    fn a_privileged_addresses_key_names_its_address() {
+        let (mut map, _) = build_address_names(&[], &chains());
+        let body = format!(
+            r#"{{"version":1,"registryRootAuthority":"{A}","chains":{{"8453":{{"network":"base","safe":"{B}","timelock":"0x0000000000000000000000000000000000000000","receiptVaults":["{C}"]}}}}}}"#
+        );
+        add_privileged(&mut map, &body, &chains());
+        assert_eq!(names(&map, "base", A), vec![".registryRootAuthority"]);
+        assert_eq!(names(&map, "ethereum", A), vec![".registryRootAuthority"]);
+        assert_eq!(names(&map, "base", B), vec![".safe"]);
+        assert!(names(&map, "ethereum", B).is_empty());
+        assert_eq!(names(&map, "base", C), vec![".receiptVaults"]);
     }
 }
