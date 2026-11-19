@@ -34,18 +34,26 @@ jobs:
           if [ -n "$(git status --porcelain site/health.json)" ]; then
             git config user.name "github-actions[bot]"
             git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-            git add site/health.json
-            # A deploy-key push fires `push` workflows, which a GITHUB_TOKEN push
-            # never did; [skip ci] keeps the hourly refresh from running them.
-            git commit -m "chore(scan): refresh site/health.json [skip ci]"
-            # A concurrent merge to master rejects a plain push (non-fast-forward).
-            # Only the scan touches health.json, so rebasing onto the latest master
-            # and retrying is conflict-free and makes the race unable to fail the scan.
+            cp site/health.json "$RUNNER_TEMP/health.json"
+            # A queued scan checks out the SHA it was triggered at, so master can
+            # already hold a newer refresh: commit this scan's file onto the latest
+            # master each attempt instead of rebasing a commit that conflicts.
             for attempt in 1 2 3 4 5; do
-              if git pull --rebase origin "${GITHUB_REF_NAME}" && git push; then
+              git fetch -q origin "${GITHUB_REF_NAME}"
+              git checkout -q -f -B scan-refresh "origin/${GITHUB_REF_NAME}"
+              cp "$RUNNER_TEMP/health.json" site/health.json
+              git add site/health.json
+              if git diff --cached --quiet; then
+                echo "site/health.json unchanged against master — nothing to commit"
                 exit 0
               fi
-              echo "push race (attempt ${attempt}/5) — rebased onto master, retrying…"
+              # A deploy-key push fires `push` workflows, which a GITHUB_TOKEN push
+              # never did; [skip ci] keeps the hourly refresh from running them.
+              git commit -q -m "chore(scan): refresh site/health.json [skip ci]"
+              if git push origin "HEAD:${GITHUB_REF_NAME}"; then
+                exit 0
+              fi
+              echo "push race (attempt ${attempt}/5) — retrying on the latest master…"
               sleep 3
             done
             echo "::error::could not push refreshed health.json after 5 attempts"

@@ -675,6 +675,37 @@ function renderDeployments(document, $, data, io) {
       if (extra.length || missing.length) sink.append(table);
     }
   };
+  const renderListings = (f) => {
+    for (const r of Array.isArray(f) ? f : f ? [f] : []) {
+      sink.append(el("h2", null, `Listing facts — ${r.network ?? "all chains"}`));
+      if (r.unavailable) {
+        sink.append(el("div", "own-verify own-verify-drift", `Listing check unavailable — ${r.reason}.`));
+        continue;
+      }
+      const rows = Array.isArray(r.rows) ? r.rows : [];
+      const bad = rows.filter((x) => x.status === "inconsistent");
+      const unavailable = rows.filter((x) => x.status === "unavailable").length;
+      sink.append(
+        el(
+          "div",
+          `own-verify ${bad.length || unavailable || !rows.length ? "own-verify-drift" : "own-verify-ok"}`,
+          `${bad.length} inconsistent · ${unavailable} unavailable · ${rows.length - bad.length - unavailable} consistent — assetId, listingTicker and listingName against st0x.registry, Nasdaq and GLEIF.`,
+        ),
+      );
+      if (!bad.length) continue;
+      const table = el("div", "own-table");
+      for (const x of bad) {
+        const row = el("div", "own-row hlth-mismatch");
+        const rc = el("div", "own-rc");
+        rc.append(el("div", "own-role", `${x.token} ${x.field}`));
+        rc.append(el("div", "own-note", `ours: ${x.value ?? "(none)"}`));
+        if ("theirs" in x) rc.append(el("div", "own-note", `${x.source}: ${x.theirs ?? "(none)"}`));
+        row.append(rc, el("span", "own-chip own-chip-no", x.source));
+        table.append(row);
+      }
+      sink.append(table);
+    }
+  };
   const renderSafeSet = (f) => {
     if (!f) return;
     if (f.unavailable || !Array.isArray(f.facts) || f.facts.length === 0) {
@@ -3365,6 +3396,7 @@ function renderDeployments(document, $, data, io) {
     renderHealth(data.deploymentHealth);
     renderBeacons(data.deploymentBeacons);
     renderTokens(data.deploymentTokens);
+    renderListings(data.deploymentListings);
     renderInfra(data.deploymentInfra);
     renderCodeTokens(data.deploymentCodeTokens);
     renderV2(data.deploymentV2);
@@ -3421,6 +3453,7 @@ function renderDeployments(document, $, data, io) {
   renderHealth(data.deploymentHealth);
   renderBeacons(data.deploymentBeacons);
   renderTokens(data.deploymentTokens);
+  renderListings(data.deploymentListings);
   renderInfra(data.deploymentInfra);
   renderCodeTokens(data.deploymentCodeTokens);
   renderV2(data.deploymentV2);
