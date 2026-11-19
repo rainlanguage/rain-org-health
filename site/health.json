@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T17:59:21Z",
+  "generatedAt": "2026-11-19T21:41:38Z",
   "auditGraph": {
     "nodes": [
       {
@@ -51,7 +51,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.36",
-            "latest": "0.1.37"
+            "latest": "0.1.38"
           },
           {
             "repo": "rainlang",
@@ -115,7 +115,18 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "rain.factory.deploy",
@@ -138,7 +149,18 @@
           "rain.factory",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "rain.flare",
@@ -256,7 +278,13 @@
           "rain.math.float",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          }
+        ]
       },
       {
         "repo": "rain.merkle.deploy",
@@ -277,7 +305,13 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          }
+        ]
       },
       {
         "repo": "rain.metadata",
@@ -312,7 +346,13 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          }
+        ]
       },
       {
         "repo": "rain.pyth",
@@ -381,6 +421,19 @@
         "staleDeps": []
       },
       {
+        "repo": "rain.time",
+        "org": "rainlanguage",
+        "package": "rain-time",
+        "packageKnown": true,
+        "audit": "never",
+        "depsKnown": true,
+        "lastAudit": null,
+        "openAuditIssues": 0,
+        "lastMutation": null,
+        "blockedBy": [],
+        "staleDeps": []
+      },
+      {
         "repo": "rain.tofu.erc20-decimals",
         "org": "rainlanguage",
         "package": "rain-tofu-erc20-decimals",
@@ -408,7 +461,18 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "rain.vats",
@@ -434,7 +498,18 @@
           "rain.math.float",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "rain.vats.flare",
@@ -461,6 +536,11 @@
           "rainlang"
         ],
         "staleDeps": [
+          {
+            "repo": "rain.flare",
+            "pinned": "0.1.10",
+            "latest": "0.1.11"
+          },
           {
             "repo": "rain.vats",
             "pinned": "0.2.24",
@@ -492,7 +572,7 @@
           {
             "repo": "rain.deploy",
             "pinned": "0.1.36",
-            "latest": "0.1.37"
+            "latest": "0.1.38"
           },
           {
             "repo": "rain.factory",
@@ -559,7 +639,13 @@
           "raindex.interface",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          }
+        ]
       },
       {
         "repo": "raindex.governance",
@@ -622,7 +708,18 @@
           "rain.math.float.deploy",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "rainlang.deploy",
@@ -644,7 +741,18 @@
           "rain.tofu.erc20-decimals.deploy",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "st0x.deploy",
@@ -678,7 +786,18 @@
           "rainlang",
           "rainlang.deploy"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.deploy",
+            "pinned": "0.1.37",
+            "latest": "0.1.38"
+          },
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "rain.math.binary",
@@ -750,7 +869,13 @@
           "rain.extrospection",
           "rain.string"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rain.extrospection",
+            "pinned": "0.1.31",
+            "latest": "0.1.33"
+          }
+        ]
       },
       {
         "repo": "rain.sol.codegen",
@@ -978,9 +1103,9 @@
       {
         "from": "rain.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "rain.deploy",
@@ -1015,7 +1140,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.36",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.dia",
@@ -1125,23 +1250,23 @@
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.extrospection.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "rain.factory",
         "to": "rain.deploy",
         "stale": false,
-        "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "pinned": "0.1.38",
+        "latest": "0.1.38"
       },
       {
         "from": "rain.factory",
@@ -1153,16 +1278,16 @@
       {
         "from": "rain.factory.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.factory.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "rain.factory.deploy",
@@ -1272,9 +1397,9 @@
       {
         "from": "rain.math.float.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.math.float.deploy",
@@ -1286,9 +1411,9 @@
       {
         "from": "rain.merkle.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.merkle.deploy",
@@ -1321,9 +1446,9 @@
       {
         "from": "rain.metadata.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1384,16 +1509,16 @@
       {
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "rain.tofu.erc20-decimals.deploy",
@@ -1405,16 +1530,16 @@
       {
         "from": "rain.vats",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.vats",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "rain.vats",
@@ -1461,9 +1586,9 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.flare",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.10"
+        "latest": "0.1.11"
       },
       {
         "from": "rain.vats.flare",
@@ -1484,7 +1609,7 @@
         "to": "rain.deploy",
         "stale": true,
         "pinned": "0.1.36",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rain.verify",
@@ -1517,9 +1642,9 @@
       {
         "from": "raindex.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "raindex.deploy",
@@ -1629,16 +1754,16 @@
       {
         "from": "rainlang",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rainlang",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "rainlang",
@@ -1720,16 +1845,16 @@
       {
         "from": "rainlang.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "rainlang.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "rainlang.deploy",
@@ -1776,16 +1901,16 @@
       {
         "from": "st0x.deploy",
         "to": "rain.deploy",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.37",
-        "latest": "0.1.37"
+        "latest": "0.1.38"
       },
       {
         "from": "st0x.deploy",
         "to": "rain.extrospection",
-        "stale": false,
+        "stale": true,
         "pinned": "0.1.31",
-        "latest": "0.1.31"
+        "latest": "0.1.33"
       },
       {
         "from": "st0x.deploy",
@@ -1856,6 +1981,20 @@
         "stale": false,
         "pinned": "0.1.39",
         "latest": "0.1.39"
+      },
+      {
+        "from": "st0x.deploy",
+        "to": "rain.solmem",
+        "stale": false,
+        "pinned": "0.1.28",
+        "latest": "0.1.28"
+      },
+      {
+        "from": "st0x.deploy",
+        "to": "rain.string",
+        "stale": false,
+        "pinned": "0.3.11",
+        "latest": "0.3.11"
       },
       {
         "from": "st0x.deploy",
@@ -2623,11 +2762,13 @@
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
         "granted": 3,
-        "missing": 0,
-        "unknown": 1,
+        "missing": 1,
+        "unknown": 0,
         "total": 4,
         "state": "partial",
-        "safeKept": []
+        "safeKept": [
+          "TIMELOCK_DEFAULT_ADMIN_ROLE"
+        ]
       },
       {
         "network": "hyperevm",
@@ -2692,8 +2833,8 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
-                "safeHolds": null
+                "status": "missing",
+                "safeHolds": true
               },
               {
                 "network": "hyperevm",
@@ -4018,7 +4159,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 59604142
+        "discoveredAtBlock": 59670826
       },
       {
         "network": "ethereum",
@@ -4575,7 +4716,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26450782
+        "discoveredAtBlock": 26451894
       },
       {
         "network": "bsc",
@@ -4945,41 +5086,41 @@
           },
           {
             "vault": "0x543e33e9276cf00b74689c8e41fd7fc921128ba0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xe2593db54e7893d311cbf5087cdb7a9027b9a7fd",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xc67038bbff91f2568b902ff171e9f9c06ed98815",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xbca97cc57916734130c9f05ea8b217682a249b75",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x042dfd33de6766a8858f188dfcf207d311da6488",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -5265,41 +5406,41 @@
           },
           {
             "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5345,41 +5486,41 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5433,18 +5574,18 @@
           }
         ],
         "counts": {
-          "safe": 32,
-          "timelock": 59,
+          "safe": 41,
+          "timelock": 65,
           "other": 0,
-          "unknown": 15,
+          "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 36,
-          "certificationUnknown": 15,
+          "certificationExpired": 45,
+          "certificationUnknown": 0,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134547544
+        "discoveredAtBlock": 134577176
       },
       {
         "network": "hyperevm",
@@ -5985,7 +6126,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51701834
+        "discoveredAtBlock": 51715392
       },
       {
         "network": "robinhood",
@@ -6526,7 +6667,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 118412739
+        "discoveredAtBlock": 118544322
       }
     ]
   },
@@ -26966,7 +27107,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26450782,
+            "headBlock": 26451893,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27345,7 +27486,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134547508,
+            "headBlock": 134577149,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27724,7 +27865,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51701819,
+            "headBlock": 51715382,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28103,7 +28244,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 118412683,
+            "headBlock": 118544247,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28482,7 +28623,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 59604155,
+            "headBlock": 59670871,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -37940,7 +38081,7 @@
       "rpcHost": "ethereum-rpc.publicnode.com",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 14,
+      "healthy": 9,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -37971,8 +38112,8 @@
           "field": "codehash",
           "address": "0x52174538a83b18462c5cF898016539B086c920C7",
           "expected": "0x81f5b328841117c2b0a4759cc87e76cf2abab03b4a461d9082c1c147cd8705a6",
-          "live": "0x81f5b328841117c2b0a4759cc87e76cf2abab03b4a461d9082c1c147cd8705a6",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-wrapped-token-vault@0_1_1",
@@ -38819,8 +38960,8 @@
           "field": "receiptVault authoriser",
           "address": "0xeF63EdB9F39Dcd03C103A11e2e7E1878308b9586",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCRCL",
@@ -39683,8 +39824,8 @@
           "field": "wrappedTokenVault asset",
           "address": "0x03bBb4148ba82d63993D32fB8E6Eff8Cc51A56f2",
           "expected": "0x36b30F5B5D1AcD3D8135Afe7a5516A300021f139",
-          "live": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tIBHG",
@@ -42723,8 +42864,8 @@
           "field": "wrappedTokenVault name",
           "address": "0xd702276d50fdCf58b0E41b3f1f9651faBC1141f4",
           "expected": "Wrapped Intel Corporation ST0x",
-          "live": "Wrapped Intel Corporation ST0x",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tINTC",
@@ -42787,8 +42928,8 @@
           "field": "receipt manager",
           "address": "0x8CF3E580465e8DFaE05FF42BbFCe0d98BfF79580",
           "expected": "0x06aE3f6CFaE124039902a79Da44ad2a4A4489250",
-          "live": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tINTC",
@@ -54266,7 +54407,7 @@
       "rpcHost": "rpc.hyperliquid.xyz/evm",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 1015,
+      "healthy": 1018,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -59073,8 +59214,8 @@
           "field": "receiptVault receipt",
           "address": "0x06aE3f6CFaE124039902a79Da44ad2a4A4489250",
           "expected": "0x8CF3E580465e8DFaE05FF42BbFCe0d98BfF79580",
-          "live": null,
-          "status": "unknown"
+          "live": "0x8cf3e580465e8dfae05ff42bbfce0d98bff79580",
+          "status": "healthy"
         },
         {
           "component": "token tINTC",
@@ -59753,8 +59894,8 @@
           "field": "receiptVault receipt",
           "address": "0xf3875383506677BCdA6b9F12c48Ff7fE300970D7",
           "expected": "0x58916AC4e186ad201376288a6655Ea46b55b8ac5",
-          "live": null,
-          "status": "unknown"
+          "live": "0x58916ac4e186ad201376288a6655ea46b55b8ac5",
+          "status": "healthy"
         },
         {
           "component": "token tTQQQ",
@@ -60009,8 +60150,8 @@
           "field": "wrappedTokenVault symbol",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
           "expected": "wtCBRS",
-          "live": "wtCBRS",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCBRS",
@@ -60793,8 +60934,8 @@
           "field": "receiptVault name",
           "address": "0xF88e511a3c762eE7E9ddd348a417F8e8db45BDEE",
           "expected": "Tootsie Roll Industries, Inc. ST0x",
-          "live": null,
-          "status": "unknown"
+          "live": "Tootsie Roll Industries, Inc. ST0x",
+          "status": "healthy"
         },
         {
           "component": "token tTR",
@@ -61177,8 +61318,8 @@
           "field": "wrappedTokenVault asset",
           "address": "0x685DFd386968B58D895F934485820C479C79a8bB",
           "expected": "0xfEa217600e2b00bBB2172a99345016a0cEb7d29f",
-          "live": null,
-          "status": "unknown"
+          "live": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
+          "status": "healthy"
         },
         {
           "component": "token tFGI",
@@ -84482,12 +84623,12 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 104,
+  "totalRepos": 105,
   "reposWithFindings": 33,
   "reposWholeRepoAudited": 12,
-  "reposNeverAudited": 92,
+  "reposNeverAudited": 93,
   "reposExternallyAudited": 25,
-  "reposNeverExternallyAudited": 20,
+  "reposNeverExternallyAudited": 21,
   "summary": {
     "per-chain-etherscan-key": 13,
     "old-nix-installer": 7,
@@ -85212,6 +85353,13 @@
     },
     {
       "name": "rain.tier.interface",
+      "org": "rainlanguage",
+      "lastAudit": null,
+      "openAuditIssues": 0,
+      "lastMutation": null
+    },
+    {
+      "name": "rain.time",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -86019,6 +86167,35 @@
       "daysSinceAudit": null
     },
     {
+      "name": "rain.time",
+      "org": "rainlanguage",
+      "hasProtofireAudit": false,
+      "externalAudit": "never",
+      "auditPdfs": [],
+      "referencePdfIndex": null,
+      "auditedRef": null,
+      "anchorKind": null,
+      "tagConventionAbsent": false,
+      "auditedDate": null,
+      "latestTag": null,
+      "latestTagIso": null,
+      "isStale": null,
+      "sourceLocChangedSinceAudit": null,
+      "fullSourceLoc": 0,
+      "sourceLocAddedSinceAudit": null,
+      "sourceLocRemovedSinceAudit": null,
+      "filesChangedSinceAudit": null,
+      "commitsSinceAudit": null,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": null,
+      "commentLocRemovedSinceAudit": null,
+      "codeLocAddedSinceAudit": null,
+      "codeLocRemovedSinceAudit": null,
+      "driftFullyClassified": false,
+      "compareUrl": null,
+      "daysSinceAudit": null
+    },
+    {
       "name": "rain.tofu.erc20-decimals.deploy",
       "org": "rainlanguage",
       "hasProtofireAudit": false,
@@ -86248,17 +86425,17 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 22449,
+      "sourceLocChangedSinceAudit": 22622,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 14142,
-      "sourceLocRemovedSinceAudit": 8307,
+      "sourceLocAddedSinceAudit": 14296,
+      "sourceLocRemovedSinceAudit": 8326,
       "filesChangedSinceAudit": 194,
-      "commitsSinceAudit": 1613,
+      "commitsSinceAudit": 1635,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4085,
-      "commentLocRemovedSinceAudit": 3786,
-      "codeLocAddedSinceAudit": 8911,
-      "codeLocRemovedSinceAudit": 3817,
+      "commentLocAddedSinceAudit": 4120,
+      "commentLocRemovedSinceAudit": 3793,
+      "codeLocAddedSinceAudit": 9025,
+      "codeLocRemovedSinceAudit": 3828,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
       "daysSinceAudit": 84
@@ -86287,19 +86464,19 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-10-07T16:17:36Z",
-      "latestTag": "sol-v0.1.37",
-      "latestTagIso": "2026-11-19T14:33:00Z",
+      "latestTag": "sol-v0.1.38",
+      "latestTagIso": "2026-11-19T19:49:05Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 19409,
+      "sourceLocChangedSinceAudit": 19520,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 16210,
+      "sourceLocAddedSinceAudit": 16321,
       "sourceLocRemovedSinceAudit": 3199,
-      "filesChangedSinceAudit": 133,
-      "commitsSinceAudit": 1197,
+      "filesChangedSinceAudit": 136,
+      "commitsSinceAudit": 1199,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 8400,
+      "commentLocAddedSinceAudit": 8431,
       "commentLocRemovedSinceAudit": 2430,
-      "codeLocAddedSinceAudit": 6658,
+      "codeLocAddedSinceAudit": 6720,
       "codeLocRemovedSinceAudit": 637,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
@@ -86391,7 +86568,7 @@
       "sourceLocAddedSinceAudit": 3721,
       "sourceLocRemovedSinceAudit": 4,
       "filesChangedSinceAudit": 20,
-      "commitsSinceAudit": 352,
+      "commitsSinceAudit": 354,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1014,
       "commentLocRemovedSinceAudit": 1,
@@ -86431,20 +86608,20 @@
       "anchorKind": "tag",
       "tagConventionAbsent": false,
       "auditedDate": "2026-05-12T15:16:31Z",
-      "latestTag": "sol-v0.1.31",
-      "latestTagIso": "2026-11-18T20:50:38Z",
+      "latestTag": "sol-v0.1.33",
+      "latestTagIso": "2026-11-19T18:16:01Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 1267,
+      "sourceLocChangedSinceAudit": 1296,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 909,
-      "sourceLocRemovedSinceAudit": 358,
+      "sourceLocAddedSinceAudit": 936,
+      "sourceLocRemovedSinceAudit": 360,
       "filesChangedSinceAudit": 12,
-      "commitsSinceAudit": 282,
+      "commitsSinceAudit": 300,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 591,
+      "commentLocAddedSinceAudit": 604,
       "commentLocRemovedSinceAudit": 183,
-      "codeLocAddedSinceAudit": 269,
-      "codeLocRemovedSinceAudit": 144,
+      "codeLocAddedSinceAudit": 281,
+      "codeLocRemovedSinceAudit": 147,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
       "daysSinceAudit": 191
@@ -87625,6 +87802,15 @@
       "untested": []
     },
     {
+      "name": "rain.time",
+      "org": "rainlanguage",
+      "state": "analyzed",
+      "externalFunctions": 0,
+      "testFiles": 0,
+      "sourcesUnparsed": 0,
+      "untested": []
+    },
+    {
       "name": "rain.tofu.erc20-decimals",
       "org": "rainlanguage",
       "state": "analyzed",
@@ -87728,7 +87914,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 43,
-      "testFiles": 262,
+      "testFiles": 269,
       "sourcesUnparsed": 1,
       "untested": []
     }
