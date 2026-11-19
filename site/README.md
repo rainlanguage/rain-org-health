@@ -28,8 +28,8 @@ Static, dependency-free dashboard for the org-health scan.
 ## Deploy
 
 `.github/workflows/pages.yml` publishes `site/` to GitHub Pages on push to
-`master`. To refresh the data, run the scan locally (or in a scheduled job with
-an org-read token) and commit the regenerated `health.json`.
+`main`. To refresh the data, run the scan locally (or in a scheduled job with an
+org-read token) and commit the regenerated `health.json`.
 
 ## Design
 
