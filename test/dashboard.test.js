@@ -14507,6 +14507,64 @@ Deno.test("root registry: an unrecognised status renders as text, never markup",
   }
 });
 
+Deno.test("deployments: listing facts list only inconsistent rows and count unavailable apart from consistent", () => {
+  const row = (field, source, status) => ({ token: "tNVDA", field, value: "NVDA", source, status });
+  const box = deploymentsBox({
+    deploymentListings: [
+      {
+        network: "base",
+        rows: [
+          row("listingTicker", "st0x.registry", "inconsistent"),
+          row("listingTicker", "Nasdaq", "consistent"),
+          row("assetId", "GLEIF", "unavailable"),
+        ],
+      },
+      { network: "ethereum", rows: [row("assetId", "GLEIF", "unavailable")] },
+      { expectedState: "expected-state.json", unavailable: true, reason: "bad json" },
+    ],
+  });
+  const panels = panelsOf(box);
+  const h = headings(panels.contracts);
+  assert(h.includes("Listing facts — base"), h.join(" | "));
+  assert(h.includes("Listing facts — all chains"), h.join(" | "));
+  const banners = collect(panels.contracts, "own-verify").map((b) => [b.className, b.textContent]);
+  const base = banners.find(([, t]) => t?.startsWith("1 inconsistent"));
+  assert(base?.[0] === "own-verify own-verify-drift", JSON.stringify(banners));
+  assert(base[1].startsWith("1 inconsistent · 1 unavailable · 1 consistent"), base[1]);
+  const eth = banners.find(([, t]) => t?.startsWith("0 inconsistent · 1 unavailable · 0 consistent"));
+  assert(eth?.[0] === "own-verify own-verify-drift", "an all-unavailable chain is not shown as ok");
+  assert(
+    banners.some(([c, t]) => c === "own-verify own-verify-drift" && t === "Listing check unavailable — bad json."),
+    JSON.stringify(banners),
+  );
+  const rows = collect(panels.contracts, "own-row");
+  assert(rows.length === 1, `only the inconsistent row is listed, got ${rows.length}`);
+  assert(textOf(rows[0]).includes("tNVDA listingTicker"), textOf(rows[0]));
+  assert(textOf(rows[0]).includes("ours: NVDA"), textOf(rows[0]));
+  assert(textOf(rows[0]).includes("st0x.registry"), textOf(rows[0]));
+});
+
+Deno.test("deployments: an inconsistent registry row shows the registry's value and a Nasdaq row shows none", () => {
+  const box = deploymentsBox({
+    deploymentListings: [
+      {
+        network: "base",
+        rows: [
+          { token: "tNVDA", field: "listingName", value: "NVIDIA", source: "st0x.registry", status: "inconsistent", theirs: "NVIDIA Corporation" },
+          { token: "tNVDA", field: "listingTicker", value: "NVDX", source: "Nasdaq", status: "inconsistent" },
+        ],
+      },
+    ],
+  });
+  const rows = collect(panelsOf(box).contracts, "own-row");
+  assert(rows.length === 2, `both inconsistent rows are listed, got ${rows.length}`);
+  const notes = (r) => collect(r, "own-note").map((n) => n.textContent);
+  const registry = notes(rows.find((r) => textOf(r).includes("listingName")));
+  assert(registry.includes("st0x.registry: NVIDIA Corporation"), registry.join(" | "));
+  const nasdaq = notes(rows.find((r) => textOf(r).includes("listingTicker")));
+  assert(nasdaq.length === 1 && nasdaq[0] === "ours: NVDX", nasdaq.join(" | "));
+});
+
 // ---- pipeline.html: issue worklist (issue-pr-cron#348 `issueWorklist`) ----
 
 function worklistBox(hq) {

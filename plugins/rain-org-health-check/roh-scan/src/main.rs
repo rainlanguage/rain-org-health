@@ -19,6 +19,7 @@ mod consumers;
 mod deployhealth;
 mod expected;
 mod graph;
+mod listing;
 mod migrations;
 mod mutation;
 mod owners;
@@ -1704,6 +1705,50 @@ struct RepoResult {
 /// and must not inflate the never-audited count (issue #54).
 fn in_protofire_report(has_pdf: bool, has_foundry: bool) -> bool {
     has_pdf || has_foundry
+}
+
+/// A plain GET body; `None` on any transport or HTTP failure.
+fn curl_text(url: &str) -> Option<String> {
+    let out = Command::new("curl")
+        .args(["-fsSL", "-m", "60", url])
+        .output()
+        .ok()?;
+    out.status
+        .success()
+        .then(|| String::from_utf8_lossy(&out.stdout).into_owned())
+}
+
+/// Nasdaq's two symbol directories merged; `None` unless both read whole, as a
+/// ticker absent from one file may be in the other.
+fn fetch_nasdaq() -> Option<std::collections::HashMap<String, String>> {
+    let mut all = listing::parse_nasdaq(&curl_text(listing::NASDAQ_LISTED_URL)?)?;
+    all.extend(listing::parse_nasdaq(&curl_text(
+        listing::NASDAQ_OTHER_URL,
+    )?)?);
+    Some(all)
+}
+
+/// The `wanted` ISINs GLEIF maps to an LEI, streamed out of its single-entry zip.
+/// `None` when the download or unpack fails.
+fn fetch_gleif(
+    wanted: &std::collections::HashSet<String>,
+) -> Option<std::collections::HashSet<String>> {
+    let mut child = Command::new("bash")
+        .args([
+            "-c",
+            &format!(
+                "set -o pipefail; curl -fsSL -m 600 '{}' | gzip -dc",
+                listing::GLEIF_ISIN_LEI_URL
+            ),
+        ])
+        .stdout(std::process::Stdio::piped())
+        .spawn()
+        .ok()?;
+    let found = listing::gleif_present(std::io::BufReader::new(child.stdout.take()?), wanted);
+    if !child.wait().ok()?.success() {
+        return None;
+    }
+    found
 }
 
 /// The newest revision the soldeer registry holds for `pkg`.
@@ -3420,6 +3465,60 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             )
         });
 
+        let listing_sets: Vec<serde_json::Value> = match &expected_state {
+            Err(e) => vec![json!({
+                "expectedState": expected::EXPECTED_STATE_PATH,
+                "unavailable": true,
+                "reason": e.to_string(),
+            })],
+            Ok(chains) => {
+                let nasdaq = fetch_nasdaq();
+                let wanted: std::collections::HashSet<String> = chains
+                    .iter()
+                    .flat_map(|c| &c.tokens)
+                    .filter_map(|t| t.asset_id.clone())
+                    .collect();
+                // No declared ISIN leaves every GLEIF row unavailable, so skip the download.
+                let gleif = if wanted.is_empty() {
+                    None
+                } else {
+                    fetch_gleif(&wanted)
+                };
+                chains
+                    .iter()
+                    .map(|c| {
+                        let sources = listing::Sources {
+                            registry: listing::parse_registry(&gh_file(
+                                deployhealth::REGISTRY_ORG,
+                                deployhealth::REGISTRY_REPO,
+                                &deployhealth::registry_list_path(&c.network),
+                            )),
+                            nasdaq: nasdaq.clone(),
+                            gleif: gleif.clone(),
+                        };
+                        let rows: Vec<serde_json::Value> = c
+                            .tokens
+                            .iter()
+                            .flat_map(|t| {
+                                listing::token_rows(
+                                    &listing::Declared {
+                                        symbol: &t.symbol,
+                                        wrapped_token_vault: &t.wrapped_token_vault,
+                                        asset_id: t.asset_id.as_deref(),
+                                        listing_ticker: t.listing_ticker.as_deref(),
+                                        listing_name: t.listing_name.as_deref(),
+                                        region: t.region.as_deref(),
+                                    },
+                                    &sources,
+                                )
+                            })
+                            .collect();
+                        json!({ "network": c.network, "rows": rows })
+                    })
+                    .collect()
+            }
+        };
+
         let doc = json!({
             "generatedAt": now,
             "auditGraph": audit_graph,
@@ -3437,6 +3536,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentCodeTokens": code_token_sets,
             "deploymentSafes": safe_sets,
             "deploymentTokens": registry_sets,
+            "deploymentListings": listing_sets,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.
             "orgs": orgs,
