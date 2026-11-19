@@ -14507,7 +14507,6 @@ Deno.test("root registry: an unrecognised status renders as text, never markup",
   }
 });
 
-<<<<<<< HEAD
 // ---- deployments.html: dex TVL tab (#248) ----
 
 const tvlText = (n) => (n._text !== undefined ? n._text : textOf(n));
@@ -14589,7 +14588,6 @@ Deno.test("dex TVL: off-chain token symbols land as text", () => {
   assert(textOf(box).includes(XSS_IMG), "payload as text");
   for (const tag of MARKUP_TAGS) assert(tags(box, tag).length === 0, "no " + tag);
 });
-=======
 Deno.test("deployments: listing facts list only inconsistent rows and count unavailable apart from consistent", () => {
   const row = (field, source, status) => ({ token: "tNVDA", field, value: "NVDA", source, status });
   const box = deploymentsBox({
@@ -14744,4 +14742,3 @@ Deno.test("worklist: the page bootstrap renders the worklist from the fetched sn
   assert(/renderKpis\(hq, parseHistory\(histText\)\);/.test(boot), "bootstrap calls renderKpis with the parsed rollup");
   assert(/renderWorklist\(hq, Date\.now\(\)\);/.test(boot), "bootstrap calls renderWorklist(hq, Date.now())");
 });
->>>>>>> origin/main
