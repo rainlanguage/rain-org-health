@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T01:04:00Z",
+  "generatedAt": "2026-11-19T03:34:37Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2053,11 +2053,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 11,
+        "granted": 13,
         "missing": 0,
-        "unknown": 2,
+        "unknown": 0,
         "total": 13,
-        "state": "partial",
+        "state": "live",
         "safeKept": []
       },
       {
@@ -2117,7 +2117,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": false
               },
               {
@@ -2192,7 +2192,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -2339,8 +2339,8 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
-                "safeHolds": null
+                "status": "granted",
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -4035,7 +4035,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 59299555
+        "discoveredAtBlock": 59344630
       },
       {
         "network": "ethereum",
@@ -4592,7 +4592,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26445722
+        "discoveredAtBlock": 26446471
       },
       {
         "network": "bsc",
@@ -5202,81 +5202,81 @@
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5362,81 +5362,81 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5450,18 +5450,18 @@
           }
         ],
         "counts": {
-          "safe": 41,
-          "timelock": 65,
+          "safe": 24,
+          "timelock": 62,
           "other": 0,
-          "unknown": 0,
+          "unknown": 20,
           "unpinned": 0,
-          "certificationExpired": 45,
-          "certificationUnknown": 0,
+          "certificationExpired": 28,
+          "certificationUnknown": 20,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134412272
+        "discoveredAtBlock": 134432281
       },
       {
         "network": "hyperevm",
@@ -6002,7 +6002,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51639911
+        "discoveredAtBlock": 51649075
       },
       {
         "network": "robinhood",
@@ -6543,7 +6543,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 117834736
+        "discoveredAtBlock": 117920464
       }
     ]
   },
@@ -26957,13 +26957,33 @@
                 "executedAt": null
               }
             ]
+          },
+          {
+            "script": "script/20261113-bind-orchestrator-config.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x5d10a7a02021ef39866cec3eebe58b030443648637c1fee80fa23d257d682e19",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
+                "script": "script/20261111-qsep-set-fleet-authoriser.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
           }
         ],
         "lines": [
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26445722,
+            "headBlock": 26446471,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27316,13 +27336,33 @@
                 "executedAt": null
               }
             ]
+          },
+          {
+            "script": "script/20261113-bind-orchestrator-config.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x5d10a7a02021ef39866cec3eebe58b030443648637c1fee80fa23d257d682e19",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
+                "script": "script/20261111-qsep-set-fleet-authoriser.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
           }
         ],
         "lines": [
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134412233,
+            "headBlock": 134432259,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27675,13 +27715,33 @@
                 "executedAt": null
               }
             ]
+          },
+          {
+            "script": "script/20261113-bind-orchestrator-config.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x5d10a7a02021ef39866cec3eebe58b030443648637c1fee80fa23d257d682e19",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
+                "script": "script/20261111-qsep-set-fleet-authoriser.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
           }
         ],
         "lines": [
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51639895,
+            "headBlock": 51649066,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28034,13 +28094,33 @@
                 "executedAt": null
               }
             ]
+          },
+          {
+            "script": "script/20261113-bind-orchestrator-config.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x5d10a7a02021ef39866cec3eebe58b030443648637c1fee80fa23d257d682e19",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
+                "script": "script/20261111-qsep-set-fleet-authoriser.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
           }
         ],
         "lines": [
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 117834611,
+            "headBlock": 117920391,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28393,13 +28473,33 @@
                 "executedAt": null
               }
             ]
+          },
+          {
+            "script": "script/20261113-bind-orchestrator-config.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0x5d10a7a02021ef39866cec3eebe58b030443648637c1fee80fa23d257d682e19",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
+                "script": "script/20261111-qsep-set-fleet-authoriser.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
           }
         ],
         "lines": [
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 59299611,
+            "headBlock": 59344711,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -37857,7 +37957,7 @@
       "rpcHost": "ethereum-rpc.publicnode.com",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 10,
+      "healthy": 9,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -37912,16 +38012,16 @@
           "field": "codehash",
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
           "expected": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
-          "live": null,
-          "status": "unknown"
+          "live": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-wrapped-token-vault-beacon-set-deployer@0_1_1",
           "field": "codehash",
           "address": "0xbe5f05C4576e6D3e7bCCb4E64f08fc4F46Adf0cA",
           "expected": "0xa2c4bd29f36bc6636938f3ad66e6de5d126ce41ed3134bed166cde259d5775ad",
-          "live": "0xa2c4bd29f36bc6636938f3ad66e6de5d126ce41ed3134bed166cde259d5775ad",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-offchain-asset-receipt-vault-beacon-set-deployer@0_1_1",
@@ -37944,8 +38044,8 @@
           "field": "codehash",
           "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
           "expected": "0xf8a1d9b2fa068bae3c1a607434db48364a5cdab3020bd7e315ed2662a3b35b5f",
-          "live": "0xf8a1d9b2fa068bae3c1a607434db48364a5cdab3020bd7e315ed2662a3b35b5f",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-offchain-asset-receipt-vault-payment-mint-authorizer@0_1_1",
@@ -54183,7 +54283,7 @@
       "rpcHost": "rpc.hyperliquid.xyz/evm",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 1015,
+      "healthy": 1019,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -54998,8 +55098,8 @@
           "field": "receiptVault name",
           "address": "0xeF63EdB9F39Dcd03C103A11e2e7E1878308b9586",
           "expected": "Circle Internet Group Inc ST0x",
-          "live": null,
-          "status": "unknown"
+          "live": "Circle Internet Group Inc ST0x",
+          "status": "healthy"
         },
         {
           "component": "token tCRCL",
@@ -59166,8 +59266,8 @@
           "field": "receipt manager",
           "address": "0x9e2C9bE59aEB0D9ea7bF070B37fc02AF8a5af239",
           "expected": "0xDA52106FC0D44096Fd500E096b9045FdAc1d27B9",
-          "live": null,
-          "status": "unknown"
+          "live": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
+          "status": "healthy"
         },
         {
           "component": "token tHOOD",
@@ -59958,8 +60058,8 @@
           "field": "receiptVault authoriser",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tCBRS",
@@ -62230,8 +62330,8 @@
           "field": "wrappedTokenVault name",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": "Wrapped Technoprobe S.p.A. ST0x",
-          "live": null,
-          "status": "unknown"
+          "live": "Wrapped Technoprobe S.p.A. ST0x",
+          "status": "healthy"
         },
         {
           "component": "token tTPRO",
@@ -70517,15 +70617,8 @@
             "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
             "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2"
           ],
-          "live": [
-            "0x4746095b1ea1a84446d34448f44e74d3d51f92f2",
-            "0xcec2cb8b8ee4000ffa3f8a7f8e0fa0a3e3dab72d",
-            "0x8d5901d8ae48101b59400235ad8614a2e0510466",
-            "0xc1c89b7f5448f447d59f920456a9610f6b2544bc",
-            "0xab92b327c97a6e7461cbd76e2a789e5e106ff87e",
-            "0x5ccd3ce683b66ff271ddb8915ff528b8fcfa23c2"
-          ],
-          "status": "match"
+          "live": null,
+          "status": "unknown"
         },
         {
           "fact": "threshold",
@@ -70539,8 +70632,8 @@
             "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c",
             "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000"
           ],
-          "live": "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000",
-          "status": "match"
+          "live": null,
+          "status": "unknown"
         },
         {
           "fact": "singleton",
@@ -86165,16 +86258,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 22203,
+      "sourceLocChangedSinceAudit": 22383,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 13896,
+      "sourceLocAddedSinceAudit": 14076,
       "sourceLocRemovedSinceAudit": 8307,
-      "filesChangedSinceAudit": 192,
-      "commitsSinceAudit": 1547,
+      "filesChangedSinceAudit": 194,
+      "commitsSinceAudit": 1585,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4016,
+      "commentLocAddedSinceAudit": 4069,
       "commentLocRemovedSinceAudit": 3786,
-      "codeLocAddedSinceAudit": 8762,
+      "codeLocAddedSinceAudit": 8867,
       "codeLocRemovedSinceAudit": 3817,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
@@ -87639,7 +87732,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 43,
-      "testFiles": 257,
+      "testFiles": 262,
       "sourcesUnparsed": 1,
       "untested": []
     }
