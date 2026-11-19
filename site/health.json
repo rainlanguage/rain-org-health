@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-19T00:11:25Z",
+  "generatedAt": "2026-11-19T01:04:00Z",
   "auditGraph": {
     "nodes": [
       {
@@ -431,23 +431,7 @@
           "rain.vats",
           "rainlang"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.flare",
-            "pinned": "0.1.8",
-            "latest": "0.1.10"
-          },
-          {
-            "repo": "rain.math.fixedpoint",
-            "pinned": "0.2.4",
-            "latest": "0.2.5"
-          },
-          {
-            "repo": "rain.vats",
-            "pinned": "0.2.22",
-            "latest": "0.2.24"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "rain.verify",
@@ -524,43 +508,7 @@
           "raindex.interface",
           "rainlang"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.deploy",
-            "pinned": "0.1.33",
-            "latest": "0.1.36"
-          },
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.3.12",
-            "latest": "0.3.13"
-          },
-          {
-            "repo": "rain.math.float.deploy",
-            "pinned": "0.1.10",
-            "latest": "0.1.12"
-          },
-          {
-            "repo": "rain.metadata.deploy",
-            "pinned": "0.1.5",
-            "latest": "0.1.7"
-          },
-          {
-            "repo": "rain.tofu.erc20-decimals.deploy",
-            "pinned": "0.1.6",
-            "latest": "0.1.8"
-          },
-          {
-            "repo": "raindex.interface",
-            "pinned": "0.1.14",
-            "latest": "0.1.16"
-          },
-          {
-            "repo": "rainlang",
-            "pinned": "0.2.36",
-            "latest": "0.2.39"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "raindex.governance",
@@ -582,18 +530,7 @@
           "raindex.interface",
           "rainlang"
         ],
-        "staleDeps": [
-          {
-            "repo": "rain.math.float",
-            "pinned": "0.3.12",
-            "latest": "0.3.13"
-          },
-          {
-            "repo": "raindex.interface",
-            "pinned": "0.1.14",
-            "latest": "0.1.16"
-          }
-        ]
+        "staleDeps": []
       },
       {
         "repo": "raindex.interface",
@@ -1539,22 +1476,22 @@
       {
         "from": "rain.vats.flare",
         "to": "rain.flare",
-        "stale": true,
-        "pinned": "0.1.8",
+        "stale": false,
+        "pinned": "0.1.10",
         "latest": "0.1.10"
       },
       {
         "from": "rain.vats.flare",
         "to": "rain.math.fixedpoint",
-        "stale": true,
-        "pinned": "0.2.4",
+        "stale": false,
+        "pinned": "0.2.5",
         "latest": "0.2.5"
       },
       {
         "from": "rain.vats.flare",
         "to": "rain.vats",
-        "stale": true,
-        "pinned": "0.2.22",
+        "stale": false,
+        "pinned": "0.2.24",
         "latest": "0.2.24"
       },
       {
@@ -1595,8 +1532,8 @@
       {
         "from": "raindex.deploy",
         "to": "rain.deploy",
-        "stale": true,
-        "pinned": "0.1.33",
+        "stale": false,
+        "pinned": "0.1.36",
         "latest": "0.1.36"
       },
       {
@@ -1609,15 +1546,15 @@
       {
         "from": "raindex.deploy",
         "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.3.12",
+        "stale": false,
+        "pinned": "0.3.13",
         "latest": "0.3.13"
       },
       {
         "from": "raindex.deploy",
         "to": "rain.math.float.deploy",
-        "stale": true,
-        "pinned": "0.1.10",
+        "stale": false,
+        "pinned": "0.1.12",
         "latest": "0.1.12"
       },
       {
@@ -1630,8 +1567,8 @@
       {
         "from": "raindex.deploy",
         "to": "rain.metadata.deploy",
-        "stale": true,
-        "pinned": "0.1.5",
+        "stale": false,
+        "pinned": "0.1.7",
         "latest": "0.1.7"
       },
       {
@@ -1658,36 +1595,36 @@
       {
         "from": "raindex.deploy",
         "to": "rain.tofu.erc20-decimals.deploy",
-        "stale": true,
-        "pinned": "0.1.6",
+        "stale": false,
+        "pinned": "0.1.8",
         "latest": "0.1.8"
       },
       {
         "from": "raindex.deploy",
         "to": "raindex.interface",
-        "stale": true,
-        "pinned": "0.1.14",
+        "stale": false,
+        "pinned": "0.1.16",
         "latest": "0.1.16"
       },
       {
         "from": "raindex.deploy",
         "to": "rainlang",
-        "stale": true,
-        "pinned": "0.2.36",
+        "stale": false,
+        "pinned": "0.2.39",
         "latest": "0.2.39"
       },
       {
         "from": "raindex.governance",
         "to": "rain.math.float",
-        "stale": true,
-        "pinned": "0.3.12",
+        "stale": false,
+        "pinned": "0.3.13",
         "latest": "0.3.13"
       },
       {
         "from": "raindex.governance",
         "to": "raindex.interface",
-        "stale": true,
-        "pinned": "0.1.14",
+        "stale": false,
+        "pinned": "0.1.16",
         "latest": "0.1.16"
       },
       {
@@ -2116,11 +2053,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 11,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 2,
         "total": 13,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -2180,7 +2117,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": false
               },
               {
@@ -2255,7 +2192,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2402,8 +2339,8 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
-                "safeHolds": false
+                "status": "unknown",
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -4098,7 +4035,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 59284549
+        "discoveredAtBlock": 59299555
       },
       {
         "network": "ethereum",
@@ -4655,7 +4592,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26445476
+        "discoveredAtBlock": 26445722
       },
       {
         "network": "bsc",
@@ -5524,7 +5461,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134405899
+        "discoveredAtBlock": 134412272
       },
       {
         "network": "hyperevm",
@@ -6065,7 +6002,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51637008
+        "discoveredAtBlock": 51639911
       },
       {
         "network": "robinhood",
@@ -6606,7 +6543,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 117807232
+        "discoveredAtBlock": 117834736
       }
     ]
   },
@@ -27026,7 +26963,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26445476,
+            "headBlock": 26445722,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27385,7 +27322,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134405642,
+            "headBlock": 134412233,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27744,7 +27681,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51636878,
+            "headBlock": 51639895,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28103,7 +28040,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 117806056,
+            "headBlock": 117834611,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28462,7 +28399,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 59284775,
+            "headBlock": 59299611,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28635,7 +28572,7 @@
       "timelockOwner": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
       "source": "expected-state.json",
       "total": 4,
-      "healthy": 3,
+      "healthy": 4,
       "beacons": [
         {
           "name": "Orchestrator beacon",
@@ -28668,12 +28605,12 @@
           "address": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
           "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
           "ownerLabel": "timelock",
-          "implementation": null,
-          "implVersion": "unknown",
+          "implementation": "0x52174538a83b18462c5cf898016539b086c920c7",
+          "implVersion": "expected",
           "targetImpl": "0x52174538a83b18462c5cF898016539B086c920C7",
           "targetOwner": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "atTarget": null,
-          "status": "unknown",
+          "atTarget": true,
+          "status": "healthy",
           "reason": null
         },
         {
@@ -37920,7 +37857,7 @@
       "rpcHost": "ethereum-rpc.publicnode.com",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 13,
+      "healthy": 10,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -37975,8 +37912,8 @@
           "field": "codehash",
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
           "expected": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
-          "live": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-wrapped-token-vault-beacon-set-deployer@0_1_1",
@@ -38015,16 +37952,16 @@
           "field": "codehash",
           "address": "0xeaD68E489Cb19453b294dc46a3A5710b0d46d17F",
           "expected": "0x4d94318cde48f1bc20f97e00aefad84bfb7c9db15c81b882862e127b05e06e15",
-          "live": "0x4d94318cde48f1bc20f97e00aefad84bfb7c9db15c81b882862e127b05e06e15",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-corporate-actions-facet@0_1_1",
           "field": "codehash",
           "address": "0x51f78B77EdffDB62b8AeB753066C318a46D05D74",
           "expected": "0x2a67c52129dff74d956bb7dcde1aac598c28dd29685237aca56dccb1d49bd6f8",
-          "live": "0x2a67c52129dff74d956bb7dcde1aac598c28dd29685237aca56dccb1d49bd6f8",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-corporate-actions-facet@0_1_30",
@@ -54246,7 +54183,7 @@
       "rpcHost": "rpc.hyperliquid.xyz/evm",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 1018,
+      "healthy": 1015,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -55061,8 +54998,8 @@
           "field": "receiptVault name",
           "address": "0xeF63EdB9F39Dcd03C103A11e2e7E1878308b9586",
           "expected": "Circle Internet Group Inc ST0x",
-          "live": "Circle Internet Group Inc ST0x",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCRCL",
@@ -57373,8 +57310,8 @@
           "field": "receiptVault name",
           "address": "0x2C845ed32c5fDE012eb14508d0d24BD3300B1D71",
           "expected": "Micron Technology, Inc. ST0x",
-          "live": null,
-          "status": "unknown"
+          "live": "Micron Technology, Inc. ST0x",
+          "status": "healthy"
         },
         {
           "component": "token tMU",
@@ -59229,8 +59166,8 @@
           "field": "receipt manager",
           "address": "0x9e2C9bE59aEB0D9ea7bF070B37fc02AF8a5af239",
           "expected": "0xDA52106FC0D44096Fd500E096b9045FdAc1d27B9",
-          "live": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tHOOD",
@@ -60021,8 +59958,8 @@
           "field": "receiptVault authoriser",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tCBRS",
@@ -62293,8 +62230,8 @@
           "field": "wrappedTokenVault name",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "expected": "Wrapped Technoprobe S.p.A. ST0x",
-          "live": "Wrapped Technoprobe S.p.A. ST0x",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tTPRO",
@@ -84471,8 +84408,8 @@
   "summary": {
     "per-chain-etherscan-key": 13,
     "old-nix-installer": 7,
-    "old-actions-checkout": 6,
     "removed-rainix-task": 6,
+    "old-actions-checkout": 5,
     "untested-externals": 4,
     "dead-magic-nix-cache": 3,
     "bespoke-ci": 2,
@@ -84521,14 +84458,6 @@
       "signals": [
         "telegram-secret-drift",
         "untested-externals"
-      ]
-    },
-    {
-      "name": "raindex.deploy",
-      "org": "rainlanguage",
-      "signals": [
-        "old-actions-checkout",
-        "per-chain-etherscan-key"
       ]
     },
     {
@@ -84716,6 +84645,13 @@
       "org": "rainlanguage",
       "signals": [
         "old-actions-checkout"
+      ]
+    },
+    {
+      "name": "raindex.deploy",
+      "org": "rainlanguage",
+      "signals": [
+        "per-chain-etherscan-key"
       ]
     },
     {
@@ -86318,7 +86254,7 @@
       "sourceLocAddedSinceAudit": 5091,
       "sourceLocRemovedSinceAudit": 3410,
       "filesChangedSinceAudit": 91,
-      "commitsSinceAudit": 477,
+      "commitsSinceAudit": 497,
       "sourceDriftTruncated": false,
       "commentLocAddedSinceAudit": 1519,
       "commentLocRemovedSinceAudit": 1119,
@@ -87667,7 +87603,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 16,
-      "testFiles": 265,
+      "testFiles": 266,
       "sourcesUnparsed": 0,
       "untested": []
     },
