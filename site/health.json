@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-20T03:23:37Z",
+  "generatedAt": "2026-11-20T13:02:24Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2533,7 +2533,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -2695,7 +2695,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -4148,7 +4148,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 59773388
+        "discoveredAtBlock": 59947085
       },
       {
         "network": "ethereum",
@@ -4705,7 +4705,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26453593
+        "discoveredAtBlock": 26456480
       },
       {
         "network": "bsc",
@@ -5315,81 +5315,81 @@
           },
           {
             "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5435,41 +5435,41 @@
           },
           {
             "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xc6e584f4341e418962a0dde3f2969b6be58f1920",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
@@ -5515,41 +5515,41 @@
           },
           {
             "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xea6093bad015af29adfa4013904e0f75f140b59b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+            "label": "timelock",
+            "certificationExpired": false,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5563,18 +5563,18 @@
           }
         ],
         "counts": {
-          "safe": 25,
-          "timelock": 61,
+          "safe": 41,
+          "timelock": 65,
           "other": 0,
-          "unknown": 20,
+          "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 29,
-          "certificationUnknown": 20,
+          "certificationExpired": 45,
+          "certificationUnknown": 0,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134622725
+        "discoveredAtBlock": 134699908
       },
       {
         "network": "hyperevm",
@@ -6115,7 +6115,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51736240
+        "discoveredAtBlock": 51771573
       },
       {
         "network": "robinhood",
@@ -6656,7 +6656,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 118741681
+        "discoveredAtBlock": 119069655
       }
     ]
   },
@@ -27096,7 +27096,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26453594,
+            "headBlock": 26456480,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27475,7 +27475,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134622713,
+            "headBlock": 134699886,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -27854,7 +27854,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51736234,
+            "headBlock": 51771556,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28233,7 +28233,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 118741594,
+            "headBlock": 119069474,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -28612,7 +28612,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 59773408,
+            "headBlock": 59947122,
             "head": "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f"
           }
         ]
@@ -38141,8 +38141,8 @@
           "field": "codehash",
           "address": "0xd64246e6b25F745f005E6233e050C9B879E660Dc",
           "expected": "0x621c1edbd850939acba8bcd999812a83999b5680d4ca6804e1995b95f138b9e5",
-          "live": null,
-          "status": "unknown"
+          "live": "0x621c1edbd850939acba8bcd999812a83999b5680d4ca6804e1995b95f138b9e5",
+          "status": "healthy"
         },
         {
           "component": "zoltu stox-offchain-asset-receipt-vault-beacon-set-deployer@0_1_30",
@@ -38204,7 +38204,7 @@
           "component": "token tMSTR",
           "field": "receiptVault name",
           "address": "0x8500189061e2206Bc33Bf04DC10fFB1Fe7dED637",
-          "expected": null,
+          "expected": "MicroStrategy Incorporated ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38228,7 +38228,7 @@
           "component": "token tMSTR",
           "field": "wrappedTokenVault name",
           "address": "0xd9fE7488B86D3aEaf457b181C744BD1A5a120833",
-          "expected": null,
+          "expected": "Wrapped MicroStrategy Incorporated ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38236,7 +38236,7 @@
           "component": "token tMSTR",
           "field": "wrappedTokenVault symbol",
           "address": "0xd9fE7488B86D3aEaf457b181C744BD1A5a120833",
-          "expected": null,
+          "expected": "wtMSTR",
           "live": null,
           "status": "unknown"
         },
@@ -38340,7 +38340,7 @@
           "component": "token tTSLA",
           "field": "receiptVault name",
           "address": "0xB41fD00d0bA60D9Ae8dCE405cB6AAd5710E5F84d",
-          "expected": null,
+          "expected": "Tesla Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38364,7 +38364,7 @@
           "component": "token tTSLA",
           "field": "wrappedTokenVault name",
           "address": "0x550499e28A3CE8cb1dB3e3Db23fDD0357eD3ff48",
-          "expected": null,
+          "expected": "Wrapped Tesla Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38372,7 +38372,7 @@
           "component": "token tTSLA",
           "field": "wrappedTokenVault symbol",
           "address": "0x550499e28A3CE8cb1dB3e3Db23fDD0357eD3ff48",
-          "expected": null,
+          "expected": "wtTSLA",
           "live": null,
           "status": "unknown"
         },
@@ -38476,7 +38476,7 @@
           "component": "token tCOIN",
           "field": "receiptVault name",
           "address": "0x5100ED387Ab3ED37667199aD8f9F6D963157d28e",
-          "expected": null,
+          "expected": "Coinbase Global Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38500,7 +38500,7 @@
           "component": "token tCOIN",
           "field": "wrappedTokenVault name",
           "address": "0xa3d1be1Ab9F4E72309Cb9Bfeaa14aFe46D012e36",
-          "expected": null,
+          "expected": "Wrapped Coinbase Global Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38508,7 +38508,7 @@
           "component": "token tCOIN",
           "field": "wrappedTokenVault symbol",
           "address": "0xa3d1be1Ab9F4E72309Cb9Bfeaa14aFe46D012e36",
-          "expected": null,
+          "expected": "wtCOIN",
           "live": null,
           "status": "unknown"
         },
@@ -38612,7 +38612,7 @@
           "component": "token tSPYM",
           "field": "receiptVault name",
           "address": "0x484AaA9e6542774026b24aeD4EC3058400eD2439",
-          "expected": null,
+          "expected": "State Street SPDR Portfolio S&P 500 ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38636,7 +38636,7 @@
           "component": "token tSPYM",
           "field": "wrappedTokenVault name",
           "address": "0x7dF3ad1ECC10DBF0296D05F91a697e4A059771c2",
-          "expected": null,
+          "expected": "Wrapped State Street SPDR Portfolio S&P 500 ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38644,7 +38644,7 @@
           "component": "token tSPYM",
           "field": "wrappedTokenVault symbol",
           "address": "0x7dF3ad1ECC10DBF0296D05F91a697e4A059771c2",
-          "expected": null,
+          "expected": "wtSPYM",
           "live": null,
           "status": "unknown"
         },
@@ -38748,7 +38748,7 @@
           "component": "token tSIVR",
           "field": "receiptVault name",
           "address": "0xc6100518997004eFb0701Da3c56000B3d093470a",
-          "expected": null,
+          "expected": "abrdn Physical Silver Shares ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38772,7 +38772,7 @@
           "component": "token tSIVR",
           "field": "wrappedTokenVault name",
           "address": "0x2B310218001C38cf82816c2098AedDCE22D3Df27",
-          "expected": null,
+          "expected": "Wrapped abrdn Physical Silver Shares ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38780,7 +38780,7 @@
           "component": "token tSIVR",
           "field": "wrappedTokenVault symbol",
           "address": "0x2B310218001C38cf82816c2098AedDCE22D3Df27",
-          "expected": null,
+          "expected": "wtSIVR",
           "live": null,
           "status": "unknown"
         },
@@ -38884,7 +38884,7 @@
           "component": "token tCRCL",
           "field": "receiptVault name",
           "address": "0xeF63EdB9F39Dcd03C103A11e2e7E1878308b9586",
-          "expected": null,
+          "expected": "Circle Internet Group Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38908,7 +38908,7 @@
           "component": "token tCRCL",
           "field": "wrappedTokenVault name",
           "address": "0x25Ab6926BA171e1618b214cda774104B2f6ec884",
-          "expected": null,
+          "expected": "Wrapped Circle Internet Group Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -38916,7 +38916,7 @@
           "component": "token tCRCL",
           "field": "wrappedTokenVault symbol",
           "address": "0x25Ab6926BA171e1618b214cda774104B2f6ec884",
-          "expected": null,
+          "expected": "wtCRCL",
           "live": null,
           "status": "unknown"
         },
@@ -39020,7 +39020,7 @@
           "component": "token tNVDA",
           "field": "receiptVault name",
           "address": "0xf6A89b0c9FF897000E37bBD06397992278FfC50d",
-          "expected": null,
+          "expected": "NVIDIA Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39044,7 +39044,7 @@
           "component": "token tNVDA",
           "field": "wrappedTokenVault name",
           "address": "0xa3947d2A74F5a3A7135A9d0c66B28fC7315f30Da",
-          "expected": null,
+          "expected": "Wrapped NVIDIA Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39052,7 +39052,7 @@
           "component": "token tNVDA",
           "field": "wrappedTokenVault symbol",
           "address": "0xa3947d2A74F5a3A7135A9d0c66B28fC7315f30Da",
-          "expected": null,
+          "expected": "wtNVDA",
           "live": null,
           "status": "unknown"
         },
@@ -39156,7 +39156,7 @@
           "component": "token tIAU",
           "field": "receiptVault name",
           "address": "0xb9A1D1822F57f52959b8c5097A8322D534bceDEe",
-          "expected": null,
+          "expected": "iShares Gold Trust ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39180,7 +39180,7 @@
           "component": "token tIAU",
           "field": "wrappedTokenVault name",
           "address": "0x33f3a6401ce08f705eE4B8a03fc37F298395b720",
-          "expected": null,
+          "expected": "Wrapped iShares Gold Trust ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39188,7 +39188,7 @@
           "component": "token tIAU",
           "field": "wrappedTokenVault symbol",
           "address": "0x33f3a6401ce08f705eE4B8a03fc37F298395b720",
-          "expected": null,
+          "expected": "wtIAU",
           "live": null,
           "status": "unknown"
         },
@@ -39292,7 +39292,7 @@
           "component": "token tPPLT",
           "field": "receiptVault name",
           "address": "0x47C2e6644eFDF58E86dA45dC60e0f67A65043B99",
-          "expected": null,
+          "expected": "abrdn Physical Platinum Shares ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39316,7 +39316,7 @@
           "component": "token tPPLT",
           "field": "wrappedTokenVault name",
           "address": "0xCbD06C802BFe993de94d0d635AB5B1fa764519D8",
-          "expected": null,
+          "expected": "Wrapped abrdn Physical Platinum Shares ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39324,7 +39324,7 @@
           "component": "token tPPLT",
           "field": "wrappedTokenVault symbol",
           "address": "0xCbD06C802BFe993de94d0d635AB5B1fa764519D8",
-          "expected": null,
+          "expected": "wtPPLT",
           "live": null,
           "status": "unknown"
         },
@@ -39428,7 +39428,7 @@
           "component": "token tAMZN",
           "field": "receiptVault name",
           "address": "0x6615f3D82989949fa7d167b40FEc0Ef30cdbA476",
-          "expected": null,
+          "expected": "Amazon.com Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39452,7 +39452,7 @@
           "component": "token tAMZN",
           "field": "wrappedTokenVault name",
           "address": "0x4404E24629a33b85FC1E2D7beA673Cd283054594",
-          "expected": null,
+          "expected": "Wrapped Amazon.com Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39460,7 +39460,7 @@
           "component": "token tAMZN",
           "field": "wrappedTokenVault symbol",
           "address": "0x4404E24629a33b85FC1E2D7beA673Cd283054594",
-          "expected": null,
+          "expected": "wtAMZN",
           "live": null,
           "status": "unknown"
         },
@@ -39564,7 +39564,7 @@
           "component": "token tBMNR",
           "field": "receiptVault name",
           "address": "0x00472aA0D0611F933c22b8148F02B0cDd1Ae5fbc",
-          "expected": null,
+          "expected": "Bitmine Immersion Technologies, Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39588,7 +39588,7 @@
           "component": "token tBMNR",
           "field": "wrappedTokenVault name",
           "address": "0x35e1D3d3Fa6D43438641d2b8f63cBf84C84435c0",
-          "expected": null,
+          "expected": "Wrapped Bitmine Immersion Technologies, Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39596,7 +39596,7 @@
           "component": "token tBMNR",
           "field": "wrappedTokenVault symbol",
           "address": "0x35e1D3d3Fa6D43438641d2b8f63cBf84C84435c0",
-          "expected": null,
+          "expected": "wtBMNR",
           "live": null,
           "status": "unknown"
         },
@@ -39700,7 +39700,7 @@
           "component": "token tIBHG",
           "field": "receiptVault name",
           "address": "0x36b30F5B5D1AcD3D8135Afe7a5516A300021f139",
-          "expected": null,
+          "expected": "iShares iBonds 2027 Term High Yield and Income ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39724,7 +39724,7 @@
           "component": "token tIBHG",
           "field": "wrappedTokenVault name",
           "address": "0x03bBb4148ba82d63993D32fB8E6Eff8Cc51A56f2",
-          "expected": null,
+          "expected": "Wrapped iShares iBonds 2027 Term High Yield and Income ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39732,7 +39732,7 @@
           "component": "token tIBHG",
           "field": "wrappedTokenVault symbol",
           "address": "0x03bBb4148ba82d63993D32fB8E6Eff8Cc51A56f2",
-          "expected": null,
+          "expected": "wtIBHG",
           "live": null,
           "status": "unknown"
         },
@@ -39836,7 +39836,7 @@
           "component": "token tSGOV",
           "field": "receiptVault name",
           "address": "0x344147366F648640076d363FAF659c214788E99d",
-          "expected": null,
+          "expected": " iShares 0-3 Month Treasury Bond ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39860,7 +39860,7 @@
           "component": "token tSGOV",
           "field": "wrappedTokenVault name",
           "address": "0x06b17E431a957Dd8522Bf106653BAc6B39F437E6",
-          "expected": null,
+          "expected": "Wrapped  iShares 0-3 Month Treasury Bond ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39868,7 +39868,7 @@
           "component": "token tSGOV",
           "field": "wrappedTokenVault symbol",
           "address": "0x06b17E431a957Dd8522Bf106653BAc6B39F437E6",
-          "expected": null,
+          "expected": "wtSGOV",
           "live": null,
           "status": "unknown"
         },
@@ -39972,7 +39972,7 @@
           "component": "token tQQQM",
           "field": "receiptVault name",
           "address": "0x5Aa65dfF455C7f18C21370086EaFaEe4f2b63608",
-          "expected": null,
+          "expected": "Invesco NASDAQ 100 ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -39996,7 +39996,7 @@
           "component": "token tQQQM",
           "field": "wrappedTokenVault name",
           "address": "0x63fDfe9cf53cB1FD5d98fE7537B881B86aE04A31",
-          "expected": null,
+          "expected": "Wrapped Invesco NASDAQ 100 ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40004,7 +40004,7 @@
           "component": "token tQQQM",
           "field": "wrappedTokenVault symbol",
           "address": "0x63fDfe9cf53cB1FD5d98fE7537B881B86aE04A31",
-          "expected": null,
+          "expected": "wtQQQM",
           "live": null,
           "status": "unknown"
         },
@@ -40108,7 +40108,7 @@
           "component": "token tVWO",
           "field": "receiptVault name",
           "address": "0x2cc8DCfC649f9633C482C81473cC251226375fE3",
-          "expected": null,
+          "expected": "Vanguard Emerging Markets Stock Index Fund ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40132,7 +40132,7 @@
           "component": "token tVWO",
           "field": "wrappedTokenVault name",
           "address": "0x01EE8b582147D1Aa8A8f2Adc2EBB91fA60082AB0",
-          "expected": null,
+          "expected": "Wrapped Vanguard Emerging Markets Stock Index Fund ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40140,7 +40140,7 @@
           "component": "token tVWO",
           "field": "wrappedTokenVault symbol",
           "address": "0x01EE8b582147D1Aa8A8f2Adc2EBB91fA60082AB0",
-          "expected": null,
+          "expected": "wtVWO",
           "live": null,
           "status": "unknown"
         },
@@ -40244,7 +40244,7 @@
           "component": "token tARKK",
           "field": "receiptVault name",
           "address": "0xDf406836D5A092894ee5d5bdC7F58e5bdc8D196A",
-          "expected": null,
+          "expected": "ARK Innovation ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40268,7 +40268,7 @@
           "component": "token tARKK",
           "field": "wrappedTokenVault name",
           "address": "0x5D80cAcaABCe0ab4C1541493ceB25D97970D250a",
-          "expected": null,
+          "expected": "Wrapped ARK Innovation ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40276,7 +40276,7 @@
           "component": "token tARKK",
           "field": "wrappedTokenVault symbol",
           "address": "0x5D80cAcaABCe0ab4C1541493ceB25D97970D250a",
-          "expected": null,
+          "expected": "wtARKK",
           "live": null,
           "status": "unknown"
         },
@@ -40380,7 +40380,7 @@
           "component": "token tSPCX",
           "field": "receiptVault name",
           "address": "0x659Ea9dd1C833fc76E5328E0E616d8b9D9836dc3",
-          "expected": null,
+          "expected": "Space Exploration Technologies Corp. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40404,7 +40404,7 @@
           "component": "token tSPCX",
           "field": "wrappedTokenVault name",
           "address": "0xC32C8166164E2cA18BB5fbf3E82CB776943d97FB",
-          "expected": null,
+          "expected": "Wrapped Space Exploration Technologies Corp. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40412,7 +40412,7 @@
           "component": "token tSPCX",
           "field": "wrappedTokenVault symbol",
           "address": "0xC32C8166164E2cA18BB5fbf3E82CB776943d97FB",
-          "expected": null,
+          "expected": "wtSPCX",
           "live": null,
           "status": "unknown"
         },
@@ -40516,7 +40516,7 @@
           "component": "token tCEG",
           "field": "receiptVault name",
           "address": "0x6240E93f1A08d43002e52b210cD49c54C813D780",
-          "expected": null,
+          "expected": "Constellation Energy Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40540,7 +40540,7 @@
           "component": "token tCEG",
           "field": "wrappedTokenVault name",
           "address": "0xc842fC56Dd39B62357d027a0F3B3266353cac991",
-          "expected": null,
+          "expected": "Wrapped Constellation Energy Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40548,7 +40548,7 @@
           "component": "token tCEG",
           "field": "wrappedTokenVault symbol",
           "address": "0xc842fC56Dd39B62357d027a0F3B3266353cac991",
-          "expected": null,
+          "expected": "wtCEG",
           "live": null,
           "status": "unknown"
         },
@@ -40652,7 +40652,7 @@
           "component": "token tDRAM",
           "field": "receiptVault name",
           "address": "0x5F5a1Bdc00ade7702ea5944B1374DC598dA3759f",
-          "expected": null,
+          "expected": "Roundhill Memory ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40676,7 +40676,7 @@
           "component": "token tDRAM",
           "field": "wrappedTokenVault name",
           "address": "0x7e1263f1e1EeF7eCe7fA7e568842f213a6CEa956",
-          "expected": null,
+          "expected": "Wrapped Roundhill Memory ETF ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40684,7 +40684,7 @@
           "component": "token tDRAM",
           "field": "wrappedTokenVault symbol",
           "address": "0x7e1263f1e1EeF7eCe7fA7e568842f213a6CEa956",
-          "expected": null,
+          "expected": "wtDRAM",
           "live": null,
           "status": "unknown"
         },
@@ -40788,7 +40788,7 @@
           "component": "token tTSM",
           "field": "receiptVault name",
           "address": "0x7Ac659f601bEa2d9f490E0D0D8a68c4282fD9B21",
-          "expected": null,
+          "expected": "Taiwan Semiconductor Manufacturing Company Limited ADR ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40812,7 +40812,7 @@
           "component": "token tTSM",
           "field": "wrappedTokenVault name",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
-          "expected": null,
+          "expected": "Wrapped Taiwan Semiconductor Manufacturing Company Limited ADR ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40820,7 +40820,7 @@
           "component": "token tTSM",
           "field": "wrappedTokenVault symbol",
           "address": "0x050dB961D36DC2047c779798694AeE455CD40BE6",
-          "expected": null,
+          "expected": "wtTSM",
           "live": null,
           "status": "unknown"
         },
@@ -40924,7 +40924,7 @@
           "component": "token tSKHY",
           "field": "receiptVault name",
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
-          "expected": null,
+          "expected": "SK hynix Inc. ADR ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40948,7 +40948,7 @@
           "component": "token tSKHY",
           "field": "wrappedTokenVault name",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
-          "expected": null,
+          "expected": "Wrapped SK hynix Inc. ADR ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -40956,7 +40956,7 @@
           "component": "token tSKHY",
           "field": "wrappedTokenVault symbol",
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
-          "expected": null,
+          "expected": "wtSKHY",
           "live": null,
           "status": "unknown"
         },
@@ -41060,7 +41060,7 @@
           "component": "token tASML",
           "field": "receiptVault name",
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
-          "expected": null,
+          "expected": "ASML Holding N.V. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41084,7 +41084,7 @@
           "component": "token tASML",
           "field": "wrappedTokenVault name",
           "address": "0xb8605a64B57E7A8631c87F3187c783493231bdD9",
-          "expected": null,
+          "expected": "Wrapped ASML Holding N.V. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41092,7 +41092,7 @@
           "component": "token tASML",
           "field": "wrappedTokenVault symbol",
           "address": "0xb8605a64B57E7A8631c87F3187c783493231bdD9",
-          "expected": null,
+          "expected": "wtASML",
           "live": null,
           "status": "unknown"
         },
@@ -41196,7 +41196,7 @@
           "component": "token tMU",
           "field": "receiptVault name",
           "address": "0x2C845ed32c5fDE012eb14508d0d24BD3300B1D71",
-          "expected": null,
+          "expected": "Micron Technology, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41220,7 +41220,7 @@
           "component": "token tMU",
           "field": "wrappedTokenVault name",
           "address": "0xF01523C4ca52dF88f07938D4Fb32FCBb6b159867",
-          "expected": null,
+          "expected": "Wrapped Micron Technology, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41228,7 +41228,7 @@
           "component": "token tMU",
           "field": "wrappedTokenVault symbol",
           "address": "0xF01523C4ca52dF88f07938D4Fb32FCBb6b159867",
-          "expected": null,
+          "expected": "wtMU",
           "live": null,
           "status": "unknown"
         },
@@ -41332,7 +41332,7 @@
           "component": "token tAMD",
           "field": "receiptVault name",
           "address": "0xe2De878d8Ca6bA544BFE80a10fAb0395DF32Cff0",
-          "expected": null,
+          "expected": "Advanced Micro Devices, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41356,7 +41356,7 @@
           "component": "token tAMD",
           "field": "wrappedTokenVault name",
           "address": "0xb904955bC71FE6c8e6aBE676ACca640Abc771622",
-          "expected": null,
+          "expected": "Wrapped Advanced Micro Devices, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41364,7 +41364,7 @@
           "component": "token tAMD",
           "field": "wrappedTokenVault symbol",
           "address": "0xb904955bC71FE6c8e6aBE676ACca640Abc771622",
-          "expected": null,
+          "expected": "wtAMD",
           "live": null,
           "status": "unknown"
         },
@@ -41468,7 +41468,7 @@
           "component": "token tAVGO",
           "field": "receiptVault name",
           "address": "0x503a69b2918DFA152eb0e0803174ed90ba5be756",
-          "expected": null,
+          "expected": "Broadcom Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41492,7 +41492,7 @@
           "component": "token tAVGO",
           "field": "wrappedTokenVault name",
           "address": "0xCee4981Fc273C105e2b9eA1fD19031Aa9a6cf113",
-          "expected": null,
+          "expected": "Wrapped Broadcom Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41500,7 +41500,7 @@
           "component": "token tAVGO",
           "field": "wrappedTokenVault symbol",
           "address": "0xCee4981Fc273C105e2b9eA1fD19031Aa9a6cf113",
-          "expected": null,
+          "expected": "wtAVGO",
           "live": null,
           "status": "unknown"
         },
@@ -41604,7 +41604,7 @@
           "component": "token tAMAT",
           "field": "receiptVault name",
           "address": "0x26139195f7a82a52c62C4047F843C99c61Ed9a5E",
-          "expected": null,
+          "expected": "Applied Materials, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41628,7 +41628,7 @@
           "component": "token tAMAT",
           "field": "wrappedTokenVault name",
           "address": "0x44DE27A07B33CD708A49fa79629fAC1df03C56d3",
-          "expected": null,
+          "expected": "Wrapped Applied Materials, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41636,7 +41636,7 @@
           "component": "token tAMAT",
           "field": "wrappedTokenVault symbol",
           "address": "0x44DE27A07B33CD708A49fa79629fAC1df03C56d3",
-          "expected": null,
+          "expected": "wtAMAT",
           "live": null,
           "status": "unknown"
         },
@@ -41740,7 +41740,7 @@
           "component": "token tLRCX",
           "field": "receiptVault name",
           "address": "0xe68A46547CdBBB181587B32cCD1A505Bedf0a994",
-          "expected": null,
+          "expected": "Lam Research Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41764,7 +41764,7 @@
           "component": "token tLRCX",
           "field": "wrappedTokenVault name",
           "address": "0xD1c1D974837d3f79A92E14048993AD28a6228831",
-          "expected": null,
+          "expected": "Wrapped Lam Research Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41772,7 +41772,7 @@
           "component": "token tLRCX",
           "field": "wrappedTokenVault symbol",
           "address": "0xD1c1D974837d3f79A92E14048993AD28a6228831",
-          "expected": null,
+          "expected": "wtLRCX",
           "live": null,
           "status": "unknown"
         },
@@ -41876,7 +41876,7 @@
           "component": "token tTTWO",
           "field": "receiptVault name",
           "address": "0xb62E913f0cC881862527Fa7e41e1C98eEf09cedD",
-          "expected": null,
+          "expected": "Take-Two Interactive Software, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41900,7 +41900,7 @@
           "component": "token tTTWO",
           "field": "wrappedTokenVault name",
           "address": "0x1D6F0763e58FA6d472d470Eaaef0a4C08080d208",
-          "expected": null,
+          "expected": "Wrapped Take-Two Interactive Software, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -41908,7 +41908,7 @@
           "component": "token tTTWO",
           "field": "wrappedTokenVault symbol",
           "address": "0x1D6F0763e58FA6d472d470Eaaef0a4C08080d208",
-          "expected": null,
+          "expected": "wtTTWO",
           "live": null,
           "status": "unknown"
         },
@@ -42012,7 +42012,7 @@
           "component": "token tRKLB",
           "field": "receiptVault name",
           "address": "0xED0c085d92C262FB46937CB0B3C9763Af7fCCf30",
-          "expected": null,
+          "expected": "Rocket Lab USA Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42036,7 +42036,7 @@
           "component": "token tRKLB",
           "field": "wrappedTokenVault name",
           "address": "0x8FC87Be766C0cB6f254F1FDc9351D4B85B560FB3",
-          "expected": null,
+          "expected": "Wrapped Rocket Lab USA Inc ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42044,7 +42044,7 @@
           "component": "token tRKLB",
           "field": "wrappedTokenVault symbol",
           "address": "0x8FC87Be766C0cB6f254F1FDc9351D4B85B560FB3",
-          "expected": null,
+          "expected": "wtRKLB",
           "live": null,
           "status": "unknown"
         },
@@ -42085,8 +42085,8 @@
           "field": "receiptVault beacon",
           "address": "0xED0c085d92C262FB46937CB0B3C9763Af7fCCf30",
           "expected": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
-          "live": "0x24e98b8f8f951b1868df88762cef589aedbc01eb",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tRKLB",
@@ -42148,7 +42148,7 @@
           "component": "token tGOOGL",
           "field": "receiptVault name",
           "address": "0x50DE74136b67911799fc39B726bFC2707cCec769",
-          "expected": null,
+          "expected": "Alphabet Inc. Class A ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42172,7 +42172,7 @@
           "component": "token tGOOGL",
           "field": "wrappedTokenVault name",
           "address": "0xca678d0d69F9E815d1A4f4dF05C904b2DDE017f8",
-          "expected": null,
+          "expected": "Wrapped Alphabet Inc. Class A ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42180,7 +42180,7 @@
           "component": "token tGOOGL",
           "field": "wrappedTokenVault symbol",
           "address": "0xca678d0d69F9E815d1A4f4dF05C904b2DDE017f8",
-          "expected": null,
+          "expected": "wtGOOGL",
           "live": null,
           "status": "unknown"
         },
@@ -42284,7 +42284,7 @@
           "component": "token tAAPL",
           "field": "receiptVault name",
           "address": "0xb526Bf49DAB7F72B772FEF4B6D572C254A454ef7",
-          "expected": null,
+          "expected": "Apple Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42308,7 +42308,7 @@
           "component": "token tAAPL",
           "field": "wrappedTokenVault name",
           "address": "0x4E3600f48C61eF4513c72923ab50851bD546FFA9",
-          "expected": null,
+          "expected": "Wrapped Apple Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42316,7 +42316,7 @@
           "component": "token tAAPL",
           "field": "wrappedTokenVault symbol",
           "address": "0x4E3600f48C61eF4513c72923ab50851bD546FFA9",
-          "expected": null,
+          "expected": "wtAAPL",
           "live": null,
           "status": "unknown"
         },
@@ -42420,7 +42420,7 @@
           "component": "token tMSFT",
           "field": "receiptVault name",
           "address": "0xb3f9A61b0e97c7F7Bb85Ea5E9Dad0da8f3496B57",
-          "expected": null,
+          "expected": "Microsoft Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42444,7 +42444,7 @@
           "component": "token tMSFT",
           "field": "wrappedTokenVault name",
           "address": "0xAbb2641950C7dE9D3ec9AA05668e112E1DB701F6",
-          "expected": null,
+          "expected": "Wrapped Microsoft Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42452,7 +42452,7 @@
           "component": "token tMSFT",
           "field": "wrappedTokenVault symbol",
           "address": "0xAbb2641950C7dE9D3ec9AA05668e112E1DB701F6",
-          "expected": null,
+          "expected": "wtMSFT",
           "live": null,
           "status": "unknown"
         },
@@ -42556,7 +42556,7 @@
           "component": "token tLLY",
           "field": "receiptVault name",
           "address": "0x1eE2cE9654FFa008029e8e328a95f45EBfB3bC63",
-          "expected": null,
+          "expected": "Eli Lilly and Company ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42580,7 +42580,7 @@
           "component": "token tLLY",
           "field": "wrappedTokenVault name",
           "address": "0xa6890e89D99Fd4F275c016d89A28ec24A428846D",
-          "expected": null,
+          "expected": "Wrapped Eli Lilly and Company ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42588,7 +42588,7 @@
           "component": "token tLLY",
           "field": "wrappedTokenVault symbol",
           "address": "0xa6890e89D99Fd4F275c016d89A28ec24A428846D",
-          "expected": null,
+          "expected": "wtLLY",
           "live": null,
           "status": "unknown"
         },
@@ -42692,7 +42692,7 @@
           "component": "token tPTY",
           "field": "receiptVault name",
           "address": "0xdf4F0897Ec6f0C37Bfc974a815cA440A3c2C2e8B",
-          "expected": null,
+          "expected": "PIMCO Corporate & Income Opportunity Fund ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42716,7 +42716,7 @@
           "component": "token tPTY",
           "field": "wrappedTokenVault name",
           "address": "0xc80730995D2C53114BAaFd2736E02f4E274D5B83",
-          "expected": null,
+          "expected": "Wrapped PIMCO Corporate & Income Opportunity Fund ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42724,7 +42724,7 @@
           "component": "token tPTY",
           "field": "wrappedTokenVault symbol",
           "address": "0xc80730995D2C53114BAaFd2736E02f4E274D5B83",
-          "expected": null,
+          "expected": "wtPTY",
           "live": null,
           "status": "unknown"
         },
@@ -42828,7 +42828,7 @@
           "component": "token tINTC",
           "field": "receiptVault name",
           "address": "0x06aE3f6CFaE124039902a79Da44ad2a4A4489250",
-          "expected": null,
+          "expected": "Intel Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42852,7 +42852,7 @@
           "component": "token tINTC",
           "field": "wrappedTokenVault name",
           "address": "0xd702276d50fdCf58b0E41b3f1f9651faBC1141f4",
-          "expected": null,
+          "expected": "Wrapped Intel Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42860,7 +42860,7 @@
           "component": "token tINTC",
           "field": "wrappedTokenVault symbol",
           "address": "0xd702276d50fdCf58b0E41b3f1f9651faBC1141f4",
-          "expected": null,
+          "expected": "wtINTC",
           "live": null,
           "status": "unknown"
         },
@@ -42964,7 +42964,7 @@
           "component": "token tHOOD",
           "field": "receiptVault name",
           "address": "0xDA52106FC0D44096Fd500E096b9045FdAc1d27B9",
-          "expected": null,
+          "expected": "Robinhood Markets, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42988,7 +42988,7 @@
           "component": "token tHOOD",
           "field": "wrappedTokenVault name",
           "address": "0x3209384FB852E7D0510aFa896236f3f866c3876f",
-          "expected": null,
+          "expected": "Wrapped Robinhood Markets, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -42996,7 +42996,7 @@
           "component": "token tHOOD",
           "field": "wrappedTokenVault symbol",
           "address": "0x3209384FB852E7D0510aFa896236f3f866c3876f",
-          "expected": null,
+          "expected": "wtHOOD",
           "live": null,
           "status": "unknown"
         },
@@ -43100,7 +43100,7 @@
           "component": "token tORCL",
           "field": "receiptVault name",
           "address": "0xC982730643321f3643436Eb4a6E910219Caa55f0",
-          "expected": null,
+          "expected": "Oracle Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43124,7 +43124,7 @@
           "component": "token tORCL",
           "field": "wrappedTokenVault name",
           "address": "0x1B2A2C8c3621642c64cf1245016488fA0f76da78",
-          "expected": null,
+          "expected": "Wrapped Oracle Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43132,7 +43132,7 @@
           "component": "token tORCL",
           "field": "wrappedTokenVault symbol",
           "address": "0x1B2A2C8c3621642c64cf1245016488fA0f76da78",
-          "expected": null,
+          "expected": "wtORCL",
           "live": null,
           "status": "unknown"
         },
@@ -43236,7 +43236,7 @@
           "component": "token tSMCI",
           "field": "receiptVault name",
           "address": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
-          "expected": null,
+          "expected": "Super Micro Computer, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43260,7 +43260,7 @@
           "component": "token tSMCI",
           "field": "wrappedTokenVault name",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
-          "expected": null,
+          "expected": "Wrapped Super Micro Computer, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43268,7 +43268,7 @@
           "component": "token tSMCI",
           "field": "wrappedTokenVault symbol",
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
-          "expected": null,
+          "expected": "wtSMCI",
           "live": null,
           "status": "unknown"
         },
@@ -43372,7 +43372,7 @@
           "component": "token tBABA",
           "field": "receiptVault name",
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
-          "expected": null,
+          "expected": "Alibaba Group Holding Limited ADR ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43396,7 +43396,7 @@
           "component": "token tBABA",
           "field": "wrappedTokenVault name",
           "address": "0x908266E3C3bFBb603d2EdF295deBE37C88985239",
-          "expected": null,
+          "expected": "Wrapped Alibaba Group Holding Limited ADR ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43404,7 +43404,7 @@
           "component": "token tBABA",
           "field": "wrappedTokenVault symbol",
           "address": "0x908266E3C3bFBb603d2EdF295deBE37C88985239",
-          "expected": null,
+          "expected": "wtBABA",
           "live": null,
           "status": "unknown"
         },
@@ -43508,7 +43508,7 @@
           "component": "token tTQQQ",
           "field": "receiptVault name",
           "address": "0xf3875383506677BCdA6b9F12c48Ff7fE300970D7",
-          "expected": null,
+          "expected": "ProShares UltraPro QQQ ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43532,7 +43532,7 @@
           "component": "token tTQQQ",
           "field": "wrappedTokenVault name",
           "address": "0x04eE4ED5FF6643eA955503f966012b684f479966",
-          "expected": null,
+          "expected": "Wrapped ProShares UltraPro QQQ ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43540,7 +43540,7 @@
           "component": "token tTQQQ",
           "field": "wrappedTokenVault symbol",
           "address": "0x04eE4ED5FF6643eA955503f966012b684f479966",
-          "expected": null,
+          "expected": "wtTQQQ",
           "live": null,
           "status": "unknown"
         },
@@ -43644,7 +43644,7 @@
           "component": "token tFTF",
           "field": "receiptVault name",
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
-          "expected": null,
+          "expected": "Franklin Limited Duration Income Trust ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43668,7 +43668,7 @@
           "component": "token tFTF",
           "field": "wrappedTokenVault name",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
-          "expected": null,
+          "expected": "Wrapped Franklin Limited Duration Income Trust ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43676,7 +43676,7 @@
           "component": "token tFTF",
           "field": "wrappedTokenVault symbol",
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
-          "expected": null,
+          "expected": "wtFTF",
           "live": null,
           "status": "unknown"
         },
@@ -43780,7 +43780,7 @@
           "component": "token tCBRS",
           "field": "receiptVault name",
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
-          "expected": null,
+          "expected": "Cerebras Systems Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43804,7 +43804,7 @@
           "component": "token tCBRS",
           "field": "wrappedTokenVault name",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
-          "expected": null,
+          "expected": "Wrapped Cerebras Systems Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43812,7 +43812,7 @@
           "component": "token tCBRS",
           "field": "wrappedTokenVault symbol",
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
-          "expected": null,
+          "expected": "wtCBRS",
           "live": null,
           "status": "unknown"
         },
@@ -43916,7 +43916,7 @@
           "component": "token tMCD",
           "field": "receiptVault name",
           "address": "0xC04160F3e18e120C2259f3FE33864823bF3b9015",
-          "expected": null,
+          "expected": "McDonald's Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43940,7 +43940,7 @@
           "component": "token tMCD",
           "field": "wrappedTokenVault name",
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
-          "expected": null,
+          "expected": "Wrapped McDonald's Corporation ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -43948,7 +43948,7 @@
           "component": "token tMCD",
           "field": "wrappedTokenVault symbol",
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
-          "expected": null,
+          "expected": "wtMCD",
           "live": null,
           "status": "unknown"
         },
@@ -44052,7 +44052,7 @@
           "component": "token tNKE",
           "field": "receiptVault name",
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
-          "expected": null,
+          "expected": "NIKE, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44076,7 +44076,7 @@
           "component": "token tNKE",
           "field": "wrappedTokenVault name",
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
-          "expected": null,
+          "expected": "Wrapped NIKE, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44084,7 +44084,7 @@
           "component": "token tNKE",
           "field": "wrappedTokenVault symbol",
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
-          "expected": null,
+          "expected": "wtNKE",
           "live": null,
           "status": "unknown"
         },
@@ -44188,7 +44188,7 @@
           "component": "token tGRND",
           "field": "receiptVault name",
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
-          "expected": null,
+          "expected": "Grindr Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44212,7 +44212,7 @@
           "component": "token tGRND",
           "field": "wrappedTokenVault name",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
-          "expected": null,
+          "expected": "Wrapped Grindr Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44220,7 +44220,7 @@
           "component": "token tGRND",
           "field": "wrappedTokenVault symbol",
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
-          "expected": null,
+          "expected": "wtGRND",
           "live": null,
           "status": "unknown"
         },
@@ -44324,7 +44324,7 @@
           "component": "token tDNUT",
           "field": "receiptVault name",
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
-          "expected": null,
+          "expected": "Krispy Kreme, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44348,7 +44348,7 @@
           "component": "token tDNUT",
           "field": "wrappedTokenVault name",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
-          "expected": null,
+          "expected": "Wrapped Krispy Kreme, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44356,7 +44356,7 @@
           "component": "token tDNUT",
           "field": "wrappedTokenVault symbol",
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
-          "expected": null,
+          "expected": "wtDNUT",
           "live": null,
           "status": "unknown"
         },
@@ -44460,7 +44460,7 @@
           "component": "token tPLBY",
           "field": "receiptVault name",
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
-          "expected": null,
+          "expected": "Playboy, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44484,7 +44484,7 @@
           "component": "token tPLBY",
           "field": "wrappedTokenVault name",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
-          "expected": null,
+          "expected": "Wrapped Playboy, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44492,7 +44492,7 @@
           "component": "token tPLBY",
           "field": "wrappedTokenVault symbol",
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
-          "expected": null,
+          "expected": "wtPLBY",
           "live": null,
           "status": "unknown"
         },
@@ -44596,7 +44596,7 @@
           "component": "token tTR",
           "field": "receiptVault name",
           "address": "0xF88e511a3c762eE7E9ddd348a417F8e8db45BDEE",
-          "expected": null,
+          "expected": "Tootsie Roll Industries, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44620,7 +44620,7 @@
           "component": "token tTR",
           "field": "wrappedTokenVault name",
           "address": "0x1abADE2601DA2617f441e2c2B3Fff870445FEfd1",
-          "expected": null,
+          "expected": "Wrapped Tootsie Roll Industries, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44628,7 +44628,7 @@
           "component": "token tTR",
           "field": "wrappedTokenVault symbol",
           "address": "0x1abADE2601DA2617f441e2c2B3Fff870445FEfd1",
-          "expected": null,
+          "expected": "wtTR",
           "live": null,
           "status": "unknown"
         },
@@ -44732,7 +44732,7 @@
           "component": "token tWEN",
           "field": "receiptVault name",
           "address": "0x6c6f1CBe2fA860b1a15A02922d97A2d614db4923",
-          "expected": null,
+          "expected": "The Wendy's Company ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44756,7 +44756,7 @@
           "component": "token tWEN",
           "field": "wrappedTokenVault name",
           "address": "0x441Eaae749B7BA0C4462F2b19a47fBe8De0DFac2",
-          "expected": null,
+          "expected": "Wrapped The Wendy's Company ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44764,7 +44764,7 @@
           "component": "token tWEN",
           "field": "wrappedTokenVault symbol",
           "address": "0x441Eaae749B7BA0C4462F2b19a47fBe8De0DFac2",
-          "expected": null,
+          "expected": "wtWEN",
           "live": null,
           "status": "unknown"
         },
@@ -44868,7 +44868,7 @@
           "component": "token tFGI",
           "field": "receiptVault name",
           "address": "0xfEa217600e2b00bBB2172a99345016a0cEb7d29f",
-          "expected": null,
+          "expected": "FGI Industries Ltd. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44892,7 +44892,7 @@
           "component": "token tFGI",
           "field": "wrappedTokenVault name",
           "address": "0x685DFd386968B58D895F934485820C479C79a8bB",
-          "expected": null,
+          "expected": "Wrapped FGI Industries Ltd. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -44900,7 +44900,7 @@
           "component": "token tFGI",
           "field": "wrappedTokenVault symbol",
           "address": "0x685DFd386968B58D895F934485820C479C79a8bB",
-          "expected": null,
+          "expected": "wtFGI",
           "live": null,
           "status": "unknown"
         },
@@ -45004,7 +45004,7 @@
           "component": "token tBIRD",
           "field": "receiptVault name",
           "address": "0x2E04C503ebd584C3c0Bb1d57E0C51E7B7EaE28E1",
-          "expected": null,
+          "expected": "Smartbird, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45028,7 +45028,7 @@
           "component": "token tBIRD",
           "field": "wrappedTokenVault name",
           "address": "0xe93A1Bb48e797dDa936f405A7A253f55040584D5",
-          "expected": null,
+          "expected": "Wrapped Smartbird, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45036,7 +45036,7 @@
           "component": "token tBIRD",
           "field": "wrappedTokenVault symbol",
           "address": "0xe93A1Bb48e797dDa936f405A7A253f55040584D5",
-          "expected": null,
+          "expected": "wtBIRD",
           "live": null,
           "status": "unknown"
         },
@@ -45140,7 +45140,7 @@
           "component": "token tSPY",
           "field": "receiptVault name",
           "address": "0x76D34283ec6d29b1b07E0e6077f5c436AD163B9c",
-          "expected": null,
+          "expected": "State Street SPDR S&P 500 ETF Trust ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45164,7 +45164,7 @@
           "component": "token tSPY",
           "field": "wrappedTokenVault name",
           "address": "0xfBA650082205E5807a5eAF28BdcC8E851bB2f753",
-          "expected": null,
+          "expected": "Wrapped State Street SPDR S&P 500 ETF Trust ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45172,7 +45172,7 @@
           "component": "token tSPY",
           "field": "wrappedTokenVault symbol",
           "address": "0xfBA650082205E5807a5eAF28BdcC8E851bB2f753",
-          "expected": null,
+          "expected": "wtSPY",
           "live": null,
           "status": "unknown"
         },
@@ -45276,7 +45276,7 @@
           "component": "token tSNES",
           "field": "receiptVault name",
           "address": "0xF8bF43D61E4Cd2a5b5DfaD01BaC84693d7B95e51",
-          "expected": null,
+          "expected": "SenesTech, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45300,7 +45300,7 @@
           "component": "token tSNES",
           "field": "wrappedTokenVault name",
           "address": "0x06096908dBC38fc54509024674E4fd1891B5F7CA",
-          "expected": null,
+          "expected": "Wrapped SenesTech, Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45308,7 +45308,7 @@
           "component": "token tSNES",
           "field": "wrappedTokenVault symbol",
           "address": "0x06096908dBC38fc54509024674E4fd1891B5F7CA",
-          "expected": null,
+          "expected": "wtSNES",
           "live": null,
           "status": "unknown"
         },
@@ -45412,7 +45412,7 @@
           "component": "token tWMT",
           "field": "receiptVault name",
           "address": "0xfAE9AfE275E57759f8Fbae5f252c65aDBF1b773F",
-          "expected": null,
+          "expected": "Walmart Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45436,7 +45436,7 @@
           "component": "token tWMT",
           "field": "wrappedTokenVault name",
           "address": "0x23A0944e82766242dA76cb0f77e0b7812e5487EA",
-          "expected": null,
+          "expected": "Wrapped Walmart Inc. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45444,7 +45444,7 @@
           "component": "token tWMT",
           "field": "wrappedTokenVault symbol",
           "address": "0x23A0944e82766242dA76cb0f77e0b7812e5487EA",
-          "expected": null,
+          "expected": "wtWMT",
           "live": null,
           "status": "unknown"
         },
@@ -45548,7 +45548,7 @@
           "component": "token tMC",
           "field": "receiptVault name",
           "address": "0x4d4D633bf04ABF6e4cF152C7c5c1ecD906Ab3de4",
-          "expected": null,
+          "expected": "LVMH Moët Hennessy Louis Vuitton SE ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45572,7 +45572,7 @@
           "component": "token tMC",
           "field": "wrappedTokenVault name",
           "address": "0x5Ce8b84756dDdE011734F04dC4bA2930C981B443",
-          "expected": null,
+          "expected": "Wrapped LVMH Moët Hennessy Louis Vuitton SE ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45580,7 +45580,7 @@
           "component": "token tMC",
           "field": "wrappedTokenVault symbol",
           "address": "0x5Ce8b84756dDdE011734F04dC4bA2930C981B443",
-          "expected": null,
+          "expected": "wtMC",
           "live": null,
           "status": "unknown"
         },
@@ -45684,7 +45684,7 @@
           "component": "token tDIS",
           "field": "receiptVault name",
           "address": "0xd78025Aa344E549A1D76eCE1591c481cC7Bc3548",
-          "expected": null,
+          "expected": "The Walt Disney Company ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45708,7 +45708,7 @@
           "component": "token tDIS",
           "field": "wrappedTokenVault name",
           "address": "0x81f40cbCFAE7A1aD1f4474eD95A210DfA3B90B0f",
-          "expected": null,
+          "expected": "Wrapped The Walt Disney Company ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45716,7 +45716,7 @@
           "component": "token tDIS",
           "field": "wrappedTokenVault symbol",
           "address": "0x81f40cbCFAE7A1aD1f4474eD95A210DfA3B90B0f",
-          "expected": null,
+          "expected": "wtDIS",
           "live": null,
           "status": "unknown"
         },
@@ -45820,7 +45820,7 @@
           "component": "token tIFX",
           "field": "receiptVault name",
           "address": "0x89857176e95973FDC8f365532CF4c162b3EE11f0",
-          "expected": null,
+          "expected": "Infineon Technologies AG ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45844,7 +45844,7 @@
           "component": "token tIFX",
           "field": "wrappedTokenVault name",
           "address": "0x88c10BEcFf283c21e9253d688ec06804359cF795",
-          "expected": null,
+          "expected": "Wrapped Infineon Technologies AG ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45852,7 +45852,7 @@
           "component": "token tIFX",
           "field": "wrappedTokenVault symbol",
           "address": "0x88c10BEcFf283c21e9253d688ec06804359cF795",
-          "expected": null,
+          "expected": "wtIFX",
           "live": null,
           "status": "unknown"
         },
@@ -45956,7 +45956,7 @@
           "component": "token tSOI",
           "field": "receiptVault name",
           "address": "0xdab834808F67f8aC69642996A28571D4B2aD484E",
-          "expected": null,
+          "expected": "Soitec SA ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45980,7 +45980,7 @@
           "component": "token tSOI",
           "field": "wrappedTokenVault name",
           "address": "0xE828671B6EDd47122e4AcDE7aba6D12c58F244A3",
-          "expected": null,
+          "expected": "Wrapped Soitec SA ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -45988,7 +45988,7 @@
           "component": "token tSOI",
           "field": "wrappedTokenVault symbol",
           "address": "0xE828671B6EDd47122e4AcDE7aba6D12c58F244A3",
-          "expected": null,
+          "expected": "wtSOI",
           "live": null,
           "status": "unknown"
         },
@@ -46092,7 +46092,7 @@
           "component": "token tTPRO",
           "field": "receiptVault name",
           "address": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
-          "expected": null,
+          "expected": "Technoprobe S.p.A. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -46116,7 +46116,7 @@
           "component": "token tTPRO",
           "field": "wrappedTokenVault name",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
-          "expected": null,
+          "expected": "Wrapped Technoprobe S.p.A. ST0x",
           "live": null,
           "status": "unknown"
         },
@@ -46124,7 +46124,7 @@
           "component": "token tTPRO",
           "field": "wrappedTokenVault symbol",
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
-          "expected": null,
+          "expected": "wtTPRO",
           "live": null,
           "status": "unknown"
         },
@@ -54396,7 +54396,7 @@
       "rpcHost": "rpc.hyperliquid.xyz/evm",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 1015,
+      "healthy": 1019,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -55675,8 +55675,8 @@
           "field": "receiptVault owner",
           "address": "0x47C2e6644eFDF58E86dA45dC60e0f67A65043B99",
           "expected": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-          "live": null,
-          "status": "unknown"
+          "live": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
+          "status": "healthy"
         },
         {
           "component": "token tPPLT",
@@ -56227,8 +56227,8 @@
           "field": "receiptVault authoriser",
           "address": "0x344147366F648640076d363FAF659c214788E99d",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tSGOV",
@@ -61147,8 +61147,8 @@
           "field": "receipt manager",
           "address": "0x8231910EA52Ce2753C70D07545cEBfe476a609bA",
           "expected": "0x6c6f1CBe2fA860b1a15A02922d97A2d614db4923",
-          "live": null,
-          "status": "unknown"
+          "live": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
+          "status": "healthy"
         },
         {
           "component": "token tWEN",
@@ -61667,8 +61667,8 @@
           "field": "receiptVault authoriser",
           "address": "0xF8bF43D61E4Cd2a5b5DfaD01BaC84693d7B95e51",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": null,
-          "status": "unknown"
+          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
+          "status": "healthy"
         },
         {
           "component": "token tSNES",
