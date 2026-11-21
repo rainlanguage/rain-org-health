@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T11:12:47Z",
+  "generatedAt": "2026-11-21T18:02:11Z",
   "auditGraph": {
     "nodes": [
       {
@@ -165,8 +165,13 @@
         "audit": "never",
         "depsKnown": true,
         "lastAudit": null,
-        "openAuditIssues": 13,
-        "lastMutation": null,
+        "openAuditIssues": 10,
+        "lastMutation": {
+          "timestamp": "2026-11-21T14:24:10Z",
+          "commit": "e4e138bc47497e124ab16e10af79d2ca27cc8603",
+          "skillVersion": "0.35.0",
+          "scope": "PR #125: the two staleness checks (LibFtsoCurrentPriceUsd.ftsoCurrentPriceUsd, LibFtsoV2LTS.ftsoV2LTSGetFeed) calling rain-time LibTime.isStale, and their revert arguments"
+        },
         "blockedBy": [
           "rain.deploy",
           "rain.extrospection",
@@ -174,6 +179,7 @@
           "rain.math.float",
           "rain.math.float.deploy",
           "rain.string",
+          "rain.time",
           "rainlang"
         ],
         "staleDeps": [
@@ -532,6 +538,7 @@
           "rain.math.float",
           "rain.math.float.deploy",
           "rain.string",
+          "rain.time",
           "rain.vats",
           "rainlang"
         ],
@@ -539,7 +546,7 @@
           {
             "repo": "rain.flare",
             "pinned": "0.1.10",
-            "latest": "0.1.11"
+            "latest": "0.1.12"
           },
           {
             "repo": "rain.vats",
@@ -1327,6 +1334,13 @@
       },
       {
         "from": "rain.flare",
+        "to": "rain.time",
+        "stale": false,
+        "pinned": "0.1.1",
+        "latest": "0.1.1"
+      },
+      {
+        "from": "rain.flare",
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.39",
@@ -1582,7 +1596,7 @@
         "to": "rain.flare",
         "stale": true,
         "pinned": "0.1.10",
-        "latest": "0.1.11"
+        "latest": "0.1.12"
       },
       {
         "from": "rain.vats.flare",
@@ -2066,11 +2080,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 11,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 2,
         "total": 13,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -2357,7 +2371,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": false
               },
               {
@@ -2450,7 +2464,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -4174,7 +4188,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 60346191
+        "discoveredAtBlock": 60469040
       },
       {
         "network": "ethereum",
@@ -4731,7 +4745,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26463107
+        "discoveredAtBlock": 26465145
       },
       {
         "network": "bsc",
@@ -5600,7 +5614,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134877240
+        "discoveredAtBlock": 134931807
       },
       {
         "network": "hyperevm",
@@ -6141,7 +6155,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51852646
+        "discoveredAtBlock": 51877644
       },
       {
         "network": "robinhood",
@@ -6682,7 +6696,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 119833049
+        "discoveredAtBlock": 120059183
       },
       {
         "network": "zerog",
@@ -30368,7 +30382,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26463106,
+            "headBlock": 26465144,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -30767,7 +30781,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134877218,
+            "headBlock": 134931785,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31166,7 +31180,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51852646,
+            "headBlock": 51877628,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31565,7 +31579,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 119832896,
+            "headBlock": 120059023,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31964,7 +31978,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 60346225,
+            "headBlock": 60469084,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -32673,17 +32687,17 @@
     "ST0x-Technology"
   ],
   "org": "rainlanguage, cyclofinance, S01-Issuer, ST0x-Technology",
-  "totalRepos": 105,
-  "reposWithFindings": 33,
+  "totalRepos": 104,
+  "reposWithFindings": 32,
   "reposWholeRepoAudited": 12,
-  "reposNeverAudited": 93,
+  "reposNeverAudited": 92,
   "reposExternallyAudited": 25,
   "reposNeverExternallyAudited": 21,
   "summary": {
     "per-chain-etherscan-key": 13,
     "old-nix-installer": 7,
-    "removed-rainix-task": 6,
     "old-actions-checkout": 5,
+    "removed-rainix-task": 5,
     "untested-externals": 4,
     "dead-magic-nix-cache": 3,
     "bespoke-ci": 2,
@@ -32891,13 +32905,6 @@
       "org": "rainlanguage",
       "signals": [
         "stale-foundry-lock"
-      ]
-    },
-    {
-      "name": "rain.subgraph.docker",
-      "org": "rainlanguage",
-      "signals": [
-        "removed-rainix-task"
       ]
     },
     {
@@ -33259,8 +33266,13 @@
       "name": "rain.flare",
       "org": "rainlanguage",
       "lastAudit": null,
-      "openAuditIssues": 13,
-      "lastMutation": null
+      "openAuditIssues": 10,
+      "lastMutation": {
+        "timestamp": "2026-11-21T14:24:10Z",
+        "commit": "e4e138bc47497e124ab16e10af79d2ca27cc8603",
+        "skillVersion": "0.35.0",
+        "scope": "PR #125: the two staleness checks (LibFtsoCurrentPriceUsd.ftsoCurrentPriceUsd, LibFtsoV2LTS.ftsoV2LTSGetFeed) calling rain-time LibTime.isStale, and their revert arguments"
+      }
     },
     {
       "name": "rain.forker",
@@ -33382,13 +33394,6 @@
     },
     {
       "name": "rain.subgraph.cli",
-      "org": "rainlanguage",
-      "lastAudit": null,
-      "openAuditIssues": 0,
-      "lastMutation": null
-    },
-    {
-      "name": "rain.subgraph.docker",
       "org": "rainlanguage",
       "lastAudit": null,
       "openAuditIssues": 0,
@@ -34062,7 +34067,7 @@
       "latestTagIso": null,
       "isStale": null,
       "sourceLocChangedSinceAudit": null,
-      "fullSourceLoc": 2938,
+      "fullSourceLoc": 2933,
       "sourceLocAddedSinceAudit": null,
       "sourceLocRemovedSinceAudit": null,
       "filesChangedSinceAudit": null,
@@ -34480,16 +34485,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 23532,
+      "sourceLocChangedSinceAudit": 23749,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 15195,
+      "sourceLocAddedSinceAudit": 15412,
       "sourceLocRemovedSinceAudit": 8337,
       "filesChangedSinceAudit": 197,
-      "commitsSinceAudit": 1641,
+      "commitsSinceAudit": 1667,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4423,
+      "commentLocAddedSinceAudit": 4430,
       "commentLocRemovedSinceAudit": 3801,
-      "codeLocAddedSinceAudit": 9548,
+      "codeLocAddedSinceAudit": 9758,
       "codeLocRemovedSinceAudit": 3827,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
@@ -34564,16 +34569,16 @@
       "latestTag": "sol-v0.1.18",
       "latestTagIso": "2026-11-19T17:41:47Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 8856,
+      "sourceLocChangedSinceAudit": 9566,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 5446,
+      "sourceLocAddedSinceAudit": 6156,
       "sourceLocRemovedSinceAudit": 3410,
-      "filesChangedSinceAudit": 97,
-      "commitsSinceAudit": 519,
+      "filesChangedSinceAudit": 98,
+      "commitsSinceAudit": 532,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 1617,
+      "commentLocAddedSinceAudit": 1652,
       "commentLocRemovedSinceAudit": 1119,
-      "codeLocAddedSinceAudit": 3232,
+      "codeLocAddedSinceAudit": 3896,
       "codeLocRemovedSinceAudit": 1841,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/raindex.deploy/compare/sol-v0.1.12...main",
@@ -35969,7 +35974,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 43,
-      "testFiles": 278,
+      "testFiles": 280,
       "sourcesUnparsed": 1,
       "untested": []
     }
