@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-21T18:02:11Z",
+  "generatedAt": "2026-11-21T23:24:06Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2328,7 +2328,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": false
               },
               {
@@ -2371,7 +2371,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": false
               },
               {
@@ -2464,7 +2464,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -2600,7 +2600,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3d0CD66EFA66c05d86c3d4316B03eAE87ab9E8aE",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -4188,7 +4188,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 60469040
+        "discoveredAtBlock": 60565562
       },
       {
         "network": "ethereum",
@@ -4745,7 +4745,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26465145
+        "discoveredAtBlock": 26466748
       },
       {
         "network": "bsc",
@@ -5614,7 +5614,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 134931807
+        "discoveredAtBlock": 134974697
       },
       {
         "network": "hyperevm",
@@ -6155,7 +6155,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51877644
+        "discoveredAtBlock": 51897270
       },
       {
         "network": "robinhood",
@@ -6696,7 +6696,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 120059183
+        "discoveredAtBlock": 120225866
       },
       {
         "network": "zerog",
@@ -30382,7 +30382,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26465144,
+            "headBlock": 26466748,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -30781,7 +30781,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 134931785,
+            "headBlock": 134974670,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31180,7 +31180,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51877628,
+            "headBlock": 51897251,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31579,7 +31579,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 120059023,
+            "headBlock": 120225708,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31978,7 +31978,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 60469084,
+            "headBlock": 60565598,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -34485,16 +34485,16 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 23749,
+      "sourceLocChangedSinceAudit": 23923,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 15412,
+      "sourceLocAddedSinceAudit": 15586,
       "sourceLocRemovedSinceAudit": 8337,
       "filesChangedSinceAudit": 197,
-      "commitsSinceAudit": 1667,
+      "commitsSinceAudit": 1682,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4430,
+      "commentLocAddedSinceAudit": 4445,
       "commentLocRemovedSinceAudit": 3801,
-      "codeLocAddedSinceAudit": 9758,
+      "codeLocAddedSinceAudit": 9913,
       "codeLocRemovedSinceAudit": 3827,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
@@ -35974,7 +35974,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 43,
-      "testFiles": 280,
+      "testFiles": 283,
       "sourcesUnparsed": 1,
       "untested": []
     }
