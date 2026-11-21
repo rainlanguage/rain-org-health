@@ -17,6 +17,7 @@ mod cli;
 mod commentloc;
 mod consumers;
 mod deployhealth;
+mod dextvl;
 mod expected;
 mod graph;
 mod listing;
@@ -257,6 +258,60 @@ const BSC_RPCS: &[&str] = &[
     "https://bsc.drpc.org",
     "https://bsc-dataseed1.binance.org",
 ];
+
+/// Keyless public endpoints for the chains only the dex TVL section reads
+/// (every network raindex.deploy records a raindex on). The rest reuse the
+/// sets above.
+const ARBITRUM_RPCS: &[&str] = &[
+    "https://arb1.arbitrum.io/rpc",
+    "https://arbitrum-one.public.blastapi.io",
+    "https://arbitrum.drpc.org",
+];
+const BASE_SEPOLIA_RPCS: &[&str] = &[
+    "https://sepolia.base.org",
+    "https://base-sepolia-rpc.publicnode.com",
+];
+const FLARE_RPCS: &[&str] = &[
+    "https://flare-api.flare.network/ext/C/rpc",
+    "https://flare.rpc.thirdweb.com",
+];
+const LINEA_RPCS: &[&str] = &[
+    "https://rpc.linea.build",
+    "https://linea-rpc.publicnode.com",
+];
+const MATCHAIN_RPCS: &[&str] = &["https://rpc.matchain.io"];
+const POLYGON_RPCS: &[&str] = &[
+    "https://polygon-bor-rpc.publicnode.com",
+    "https://polygon.drpc.org",
+];
+
+/// The endpoints for a tokens-subgraph (graph) network name; `None` for one
+/// this scanner has none for, which the section reports by name.
+fn tvl_rpcs(network: &str) -> Option<&'static [&'static str]> {
+    Some(match network {
+        "arbitrum-one" => ARBITRUM_RPCS,
+        "base" => BASE_RPCS,
+        "base-sepolia" => BASE_SEPOLIA_RPCS,
+        "bsc" => BSC_RPCS,
+        "flare" => FLARE_RPCS,
+        "hyperevm" => HYPEREVM_RPCS,
+        "linea" => LINEA_RPCS,
+        "mainnet" => ETHEREUM_RPCS,
+        "matchain" => MATCHAIN_RPCS,
+        "matic" => POLYGON_RPCS,
+        "robinhood" => ROBINHOOD_RPCS,
+        _ => return None,
+    })
+}
+
+/// GET `url`; `None` on any transport or HTTP failure.
+fn curl_get(url: &str) -> Option<Vec<u8>> {
+    let o = Command::new("curl")
+        .args(["-fsS", "-m", "25", "--retry", "2", url])
+        .output()
+        .ok()?;
+    o.status.success().then_some(o.stdout)
+}
 
 /// The chains the scan reads production state from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
@@ -3465,6 +3520,82 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             )
         });
 
+        // Dex TVL (#248): every raindex raindex.deploy records, the tokens its
+        // tokens subgraph has seen deposited, balanceOf at each chain's head,
+        // priced from one source. See dextvl.rs.
+        let dex_tvl = {
+            let (org, repo) = ("rainlanguage", "raindex.deploy");
+            let source = dextvl::parse_tokens_source(&gh_file(
+                org,
+                repo,
+                ".github/workflows/deploy-subgraph.yaml",
+            ));
+            let networks: Result<Vec<dextvl::Network>, String> =
+                match gh_contents_entries(&gh, org, repo, "tokens-subgraph/manifests") {
+                    ContentsListing::Found(entries) => entries
+                        .iter()
+                        .filter(|(t, _, name)| t == "file" && name.ends_with(".yaml"))
+                        .map(|(_, path, name)| {
+                            dextvl::parse_manifest(&gh_file(org, repo, path))
+                                .ok_or_else(|| format!("raindex.deploy {path} ({name}) is not a manifest this scan can read"))
+                        })
+                        .collect(),
+                    ContentsListing::NotFound => {
+                        Err("raindex.deploy has no tokens-subgraph/manifests".to_string())
+                    }
+                    ContentsListing::Failed => {
+                        Err("raindex.deploy's tokens-subgraph/manifests could not be listed".to_string())
+                    }
+                };
+            let pairs = |n: &str| {
+                let src = source.as_ref().ok_or_else(|| {
+                    "the tokens subgraph location could not be read from raindex.deploy's deploy-subgraph workflow".to_string()
+                })?;
+                let url = rbac::endpoint(src, n);
+                dextvl::discover(&|body| post_json(&url, body))
+            };
+            let head = |n: &str| {
+                let rpcs = tvl_rpcs(n)
+                    .ok_or_else(|| format!("this scanner has no RPC endpoints for {n}"))?;
+                first_body(
+                    rpcs,
+                    0,
+                    r#"{"jsonrpc":"2.0","id":1,"method":"eth_blockNumber","params":[]}"#,
+                    &curl_post,
+                )
+                .and_then(|b| rpc::result_hex(&b))
+                .and_then(|h| rpc::decode_quantity(&h))
+                .ok_or_else(|| format!("no {n} RPC answered eth_blockNumber"))
+            };
+            let calls = |n: &str, calls: &[(String, String)], at: Option<u64>| match tvl_rpcs(n) {
+                Some(rpcs) => {
+                    let tag = at.map_or_else(|| "latest".to_string(), rpc::block_tag);
+                    eth_call_batch_at_via(rpcs, 0, calls, &tag, &curl_post)
+                }
+                None => vec![None; calls.len()],
+            };
+            let prices = |n: &str, tokens: &[String]| {
+                let chain = dextvl::llama_chain(n)
+                    .ok_or_else(|| format!("the price source does not price {n}"))?;
+                let mut out = std::collections::BTreeMap::new();
+                for chunk in tokens.chunks(50) {
+                    let body = curl_get(&dextvl::llama_url(chain, chunk))
+                        .ok_or_else(|| "the price source did not answer".to_string())?;
+                    out.extend(dextvl::parse_llama(chain, &body)?);
+                }
+                Ok(out)
+            };
+            dextvl::build(
+                networks,
+                &dextvl::Reads {
+                    pairs: &pairs,
+                    head: &head,
+                    calls: &calls,
+                    prices: &prices,
+                },
+            )
+        };
+
         let listing_sets: Vec<serde_json::Value> = match &expected_state {
             Err(e) => vec![json!({
                 "expectedState": expected::EXPECTED_STATE_PATH,
@@ -3536,6 +3667,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentCodeTokens": code_token_sets,
             "deploymentSafes": safe_sets,
             "deploymentTokens": registry_sets,
+            "dexTvl": dex_tvl,
             "deploymentListings": listing_sets,
             // Every org scanned. `org` stays as a joined display string so any
             // reader that has not moved to `orgs` still shows something sensible.

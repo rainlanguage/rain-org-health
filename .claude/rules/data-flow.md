@@ -23,6 +23,7 @@ another repo's tooling. Every data source is owned + emitted by its
 | st0x root registry delegate recognition (Safe / timelock)   | the RBAC subgraph's `contracts` for the same network (`deploymentRbac`)                                                                                               | runtime GraphQL POST         |
 | st0x migrations, run or not                                 | `roh-scan` reads st0x.deploy's `migrations.json` + each registry's `appliedV5`                                                                                        | same-origin fetch            |
 | st0x expected live state                                    | `roh-scan` reads st0x.deploy's `expected-state.json` per chain: beacons, Safe policy, infra (beacon set deployer, timelock, orchestrator, authorisers), zoltu, tokens | same-origin fetch            |
+| dex TVL (every raindex, per token, USD)                     | `roh-scan` reads raindex.deploy's `tokens-subgraph/manifests` + its tokens subgraph, `balanceOf` per pair at each chain head, DefiLlama prices (`dexTvl`)             | same-origin fetch            |
 
 Do not regress this:
 

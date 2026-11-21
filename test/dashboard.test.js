@@ -3185,13 +3185,13 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   const box = deploymentsBox(OWNERS);
   const btns = collect(box, "subnav-btn");
   assert(
-    btns.length === 7,
-    "seven sub-tabs: " + btns.map((b) => b.textContent).join(","),
+    btns.length === 8,
+    "eight sub-tabs: " + btns.map((b) => b.textContent).join(","),
   );
   assert(
     btns.map((b) => b.dataset.tab).join(",") ===
-      "safe,contracts,rbac,held,registry,migrations,historical",
-    "tabs in order safe,contracts,rbac,held,registry,migrations,historical: " +
+      "safe,contracts,rbac,held,registry,migrations,historical,tvl",
+    "tabs in order safe,contracts,rbac,held,registry,migrations,historical,tvl: " +
       btns.map((b) => b.dataset.tab).join(","),
   );
   assert(
@@ -3207,7 +3207,7 @@ Deno.test("deployments: sub-tabs split the page and start on Safe & ownership", 
   );
 
   const panels = collect(box, "tabpanel");
-  assert(panels.length === 7, "seven panels");
+  assert(panels.length === 8, "eight panels");
   const byTab = Object.fromEntries(panels.map((p) => [p.dataset.tab, p]));
   assert(
     !byTab.safe.classList.contains("tab-hidden"),
@@ -14507,6 +14507,87 @@ Deno.test("root registry: an unrecognised status renders as text, never markup",
   }
 });
 
+// ---- deployments.html: dex TVL tab (#248) ----
+
+const tvlText = (n) => (n._text !== undefined ? n._text : textOf(n));
+const TVL = {
+  dexTvl: {
+    priceSource: "DefiLlama coins API, current prices",
+    usd: 6001.5,
+    excludedTokens: 1,
+    unreadableNetworks: 1,
+    networks: [
+      {
+        network: "base",
+        block: 1000,
+        subgraphBlock: 990,
+        usd: 6001.5,
+        excludedTokens: 1,
+        raindexes: [
+          {
+            address: "0xa1",
+            usd: 6001.5,
+            excludedTokens: 1,
+            tokens: [
+              { token: "0x11", symbol: "USDC", balance: "1500000", decimals: 6, amount: "1.5", priceUsd: 1, usd: 1.5 },
+              { token: "0x22", symbol: "WETH", balance: "2", decimals: 0, amount: "2", priceUsd: 3000, usd: 6000 },
+              { token: "0x33", symbol: "ODD", balance: "5", decimals: 0, amount: "5", unpriced: "the price source has no price for this token" },
+              { token: "0x44", symbol: "ZERO", balance: "0", decimals: 0, amount: "0", priceUsd: 1, usd: 0 },
+            ],
+          },
+          { address: "0xa2", usd: 0, excludedTokens: 0, tokens: [] },
+        ],
+      },
+      { network: "linea", error: "the tokens subgraph did not answer", raindexes: [{ address: "0xb1" }] },
+    ],
+  },
+};
+
+Deno.test("dex TVL: the org total states its price source and what it excludes", () => {
+  const box = deploymentsBox(TVL);
+  const total = tvlText(collect(box, "tvl-total")[0]);
+  assert(total.includes("$6,002"), total);
+  assert(total.includes("excludes 1 unpriced or unread token"), total);
+  assert(total.includes("1 network(s) unreadable"), total);
+  assert(total.includes("DefiLlama"), total);
+});
+
+Deno.test("dex TVL: network → raindex → held tokens; a zero balance is not listed", () => {
+  const box = deploymentsBox(TVL);
+  assert(collect(box, "tvl-net").length === 2, "one section per network");
+  assert(collect(box, "tvl-raindex").length === 3, "every raindex, readable or not");
+  const syms = collect(box, "tvl-sym").map(tvlText);
+  assert(syms.join(",") === "USDC,WETH,ODD", syms.join(","));
+  assert(tvlText(collect(box, "tvl-none")[0]) === "holds nothing", "an empty raindex says so");
+});
+
+Deno.test("dex TVL: an unpriced token shows why, never $0", () => {
+  const box = deploymentsBox(TVL);
+  const unpriced = collect(box, "tvl-unpriced").map(tvlText);
+  assert(unpriced.length === 1 && unpriced[0].includes("no price"), unpriced.join("|"));
+});
+
+Deno.test("dex TVL: an unreadable network shows its reason and no USD", () => {
+  const box = deploymentsBox(TVL);
+  const linea = collect(box, "tvl-net")[1];
+  assert(textOf(linea).includes("not read: the tokens subgraph did not answer"), textOf(linea));
+  assert(collect(linea, "tvl-usd").length === 0, "no figure for an unread network");
+});
+
+Deno.test("dex TVL: absent or failed blocks say so", () => {
+  assert(textOf(deploymentsBox({})).includes("No dex TVL in this scan."), "absent");
+  const failed = deploymentsBox({ dexTvl: { error: "raindex.deploy has no tokens-subgraph/manifests" } });
+  assert(textOf(failed).includes("Not read: raindex.deploy has no tokens-subgraph/manifests"), "failed");
+  assert(collect(failed, "tvl-total").length === 0, "no total without data");
+});
+
+Deno.test("dex TVL: off-chain token symbols land as text", () => {
+  const data = structuredClone(TVL);
+  data.dexTvl.networks[0].raindexes[0].tokens[0].symbol = XSS_IMG;
+  const box = deploymentsBox(data);
+  assert(textOf(box).includes(XSS_IMG), "payload as text");
+  for (const tag of MARKUP_TAGS) assert(tags(box, tag).length === 0, "no " + tag);
+});
 Deno.test("deployments: listing facts list only inconsistent rows and count unavailable apart from consistent", () => {
   const row = (field, source, status) => ({ token: "tNVDA", field, value: "NVDA", source, status });
   const box = deploymentsBox({
