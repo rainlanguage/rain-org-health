@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-22T06:57:15Z",
+  "generatedAt": "2026-11-22T15:24:11Z",
   "auditGraph": {
     "nodes": [
       {
@@ -811,7 +811,7 @@
           "auditedAt": "2026-07-17T16:34:10Z",
           "auditedCommit": "336405eb3411369b578b2739708b42ef927e4215",
           "skillVersion": "0.14.0",
-          "stale": null
+          "stale": true
         },
         "openAuditIssues": 0,
         "lastMutation": {
@@ -2080,11 +2080,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 11,
+        "granted": 13,
         "missing": 0,
-        "unknown": 2,
+        "unknown": 0,
         "total": 13,
-        "state": "partial",
+        "state": "live",
         "safeKept": []
       },
       {
@@ -2414,7 +2414,7 @@
               {
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -2507,7 +2507,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "unknown",
+                "status": "granted",
                 "safeHolds": null
               },
               {
@@ -4188,7 +4188,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 60701526
+        "discoveredAtBlock": 60853779
       },
       {
         "network": "ethereum",
@@ -4745,7 +4745,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26469008
+        "discoveredAtBlock": 26471539
       },
       {
         "network": "bsc",
@@ -5614,7 +5614,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 135035092
+        "discoveredAtBlock": 135102762
       },
       {
         "network": "hyperevm",
@@ -6155,7 +6155,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51924915
+        "discoveredAtBlock": 51955866
       },
       {
         "network": "robinhood",
@@ -6696,7 +6696,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 120455148
+        "discoveredAtBlock": 120720922
       },
       {
         "network": "zerog",
@@ -30382,7 +30382,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26469008,
+            "headBlock": 26471539,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -30781,7 +30781,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 135035076,
+            "headBlock": 135102713,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31180,7 +31180,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51924898,
+            "headBlock": 51955853,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31579,7 +31579,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 120455047,
+            "headBlock": 120720736,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31589,7 +31589,7 @@
         "network": "base",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "mainnet.base.org",
-        "unread": 0,
+        "unread": 4,
         "lineOrder": true,
         "lineOrderReason": null,
         "migrations": [
@@ -31818,7 +31818,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31847,7 +31847,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
                 "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31898,7 +31898,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xfa3139c03ee72aab437e45a5c62dfb83fcdb9b467702bf96050df31f4de23070",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31927,7 +31927,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xfa3139c03ee72aab437e45a5c62dfb83fcdb9b467702bf96050df31f4de23070",
                 "script": "script/20261109-schedule-revoke-service-signer-deposit-withdraw.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31938,7 +31938,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31958,7 +31958,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5d10a7a02021ef39866cec3eebe58b030443648637c1fee80fa23d257d682e19",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31967,7 +31967,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
                 "script": "script/20261111-qsep-set-fleet-authoriser.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31978,7 +31978,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 60701559,
+            "headBlock": 60853802,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -33657,7 +33657,7 @@
         "auditedAt": "2026-07-17T16:34:10Z",
         "auditedCommit": "336405eb3411369b578b2739708b42ef927e4215",
         "skillVersion": "0.14.0",
-        "stale": null
+        "stale": true
       }
     },
     {
