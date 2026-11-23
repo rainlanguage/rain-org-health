@@ -2892,7 +2892,9 @@ function renderDeployments(document, $, data, io) {
     }
     return { ...out, ...got };
   };
-  const regBody = (slot, n, chain, endpoint, published, pins, base) => {
+  const regExpKey = (registry, account, delegate, unscoped, scope) =>
+    [registry, account, delegate, unscoped ? "*" : scope].map((v) => (v === "*" ? v : regLow(v))).join(":");
+  const regBody = (slot, n, chain, endpoint, published, pins, base, exp) => {
     const labels = { ...base, ...(n && n.preimages) };
     slot.replaceChildren(rbacBanner(n, endpoint, published));
     if (n.absent) {
@@ -2966,6 +2968,10 @@ function renderDeployments(document, $, data, io) {
       box.append(node, " ", el("span", "own-note", type));
       return box;
     };
+    const emitted = Boolean(exp) && exp.emitted === true && Array.isArray(exp.delegates);
+    const listed = emitted
+      ? new Set(exp.delegates.map((e) => regExpKey(e && e.registry, e && e.account, e && e.delegate, e && e.unscoped === true, e && e.scope)))
+      : null;
     // Current approvals first: they are who may write right now.
     const live = n.delegates.filter((d) => d.approved === true);
     section(
@@ -2973,7 +2979,8 @@ function renderDeployments(document, $, data, io) {
       live,
       "No account has approved a delegate in either registry.",
       (d) => {
-        const stray = n.recognition.checked && !d.expectedAs;
+        const unlisted = listed !== null && !listed.has(regExpKey(d.registry && d.registry.id, d.account, d.delegate, d.unscoped === true, d.scope));
+        const stray = listed !== null ? unlisted : n.recognition.checked && !d.expectedAs;
         const row = el("div", stray ? "own-row reg-delegate rbac-off" : "own-row reg-delegate");
         const ac = el("div", "bcn-detail");
         ac.append(
@@ -2983,7 +2990,15 @@ function renderDeployments(document, $, data, io) {
         );
         const tail = el("div", "own-prov");
         tail.append(el("span", "own-chip own-chip-yes", "approved"));
-        if (!n.recognition.checked) {
+        if (listed !== null) {
+          if (unlisted) {
+            const tag = el("span", "rbac-tag rbac-tag-unexpected reg-stray", "not in expected state");
+            tag.title = "Not in this network's expected-state registryDelegates.";
+            tail.append(tag);
+          } else {
+            tail.append(el("span", "own-chip own-chip-yes", "expected"));
+          }
+        } else if (!n.recognition.checked) {
           const chip = el("span", "own-chip own-chip-dim reg-unchecked", "not checked");
           chip.title = `Not checked against the RBAC index: ${n.recognition.why}.`;
           tail.append(chip);
@@ -2999,6 +3014,36 @@ function renderDeployments(document, $, data, io) {
         return row;
       },
     );
+    if (!emitted) {
+      slot.append(el("div", "own-grouphead", "Expected delegations"));
+      slot.append(
+        el(
+          "div",
+          "rbac-empty reg-unemitted",
+          exp ? "not emitted — this network's expected state has no registryDelegates." : "not emitted — the scan carries no expected delegations for this network.",
+        ),
+      );
+    } else {
+      section(
+        `Expected delegations — ${exp.delegates.length}`,
+        exp.delegates,
+        "This network's expected state lists no registry delegate.",
+        (e) => {
+          const st = e.approved === true ? ["approved", "yes"] : e.approved === false ? ["expected, not approved", "no"] : ["unknown", "dim"];
+          const row = el("div", e.approved === true ? "own-row reg-expected" : "own-row reg-expected rbac-off");
+          const ac = el("div", "bcn-detail");
+          ac.append(
+            line("in", whoNode(String(e.registry), chain, pins)),
+            line("approver", whoNode(String(e.account), chain, pins)),
+            line("delegate", whoNode(String(e.delegate), chain, pins)),
+          );
+          const tail = el("div", "own-prov");
+          tail.append(el("span", `own-chip own-chip-${st[1]}`, st[0]));
+          row.append(scopeNode(e.scope, e.unscoped === true), ac, tail);
+          return row;
+        },
+      );
+    }
     const anyDelegate = live.length > 0;
     if (anyDelegate && !n.recognition.checked) {
       slot.append(el("div", "own-note rbac-ideal-gap", `Delegate recognition was not checked on this network — ${n.recognition.why}.`));
@@ -3137,7 +3182,7 @@ function renderDeployments(document, $, data, io) {
   };
   // Builds the Root registry tab and starts one live read per network.
   // Returns a promise that settles once every network has rendered.
-  const renderRegistry = (r, migrations, rbac) => {
+  const renderRegistry = (r, migrations, rbac, expected) => {
     sink.append(el("h2", null, "Root registry — delegations and config changes, per network"));
     const off = (why) => {
       sink.append(el("div", "rbac-empty", `Registry history unavailable — ${why}.`));
@@ -3165,6 +3210,11 @@ function renderDeployments(document, $, data, io) {
     };
     const nets = Array.isArray(r.networks) ? r.networks : [];
     if (nets.length === 0) return off("the subgraph declares no networks");
+    const expBy = new Map(
+      (Array.isArray(expected) ? expected : [])
+        .filter((x) => x && typeof x === "object" && typeof x.network === "string")
+        .map((x) => [x.network, x]),
+    );
     const labels = {};
     const g = migrations && typeof migrations === "object" ? migrations.genesis : null;
     const genesis = typeof g === "string" && /^0x[0-9a-fA-F]{64}$/.test(g) ? g.toLowerCase() : null;
@@ -3204,10 +3254,10 @@ function renderDeployments(document, $, data, io) {
       const endpoint = typeof n.endpoint === "string" && n.endpoint.startsWith("https://") ? n.endpoint : null;
       const published = `${r.subgraph}-${n.network}/${r.tag}`;
       if (!endpoint) {
-        regBody(slot, { state: "error", detail: "the scan gave no https endpoint for this network" }, chain, null, published, pins, labels);
+        regBody(slot, { state: "error", detail: "the scan gave no https endpoint for this network" }, chain, null, published, pins, labels, expBy.get(chain));
         continue;
       }
-      regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels);
+      regBody(slot, { state: "loading" }, chain, endpoint, published, pins, labels, expBy.get(chain));
       reads.push(
         regRead(
           endpoint,
@@ -3216,7 +3266,7 @@ function renderDeployments(document, $, data, io) {
           configBy.get(n.network) ?? null,
           headsBy.get(chain) ?? new Map(),
           rbacFor(n.network),
-        ).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels)),
+        ).then((res) => regBody(slot, res, chain, endpoint, published, pins, labels, expBy.get(chain))),
       );
     }
     return Promise.all(reads);
@@ -3405,7 +3455,7 @@ function renderDeployments(document, $, data, io) {
     sink = panels.rbac;
     const rbacDone = renderRbac(data.deploymentRbac);
     sink = panels.registry;
-    const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac);
+    const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac, data.deploymentRegistryDelegates);
     show(hashTab() || TABS[0][0]);
     return Promise.all([rbacDone, registryDone]);
   }
@@ -3462,7 +3512,7 @@ function renderDeployments(document, $, data, io) {
   sink = panels.rbac;
   const rbacDone = renderRbac(data.deploymentRbac);
   sink = panels.registry;
-  const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac);
+  const registryDone = renderRegistry(data.deploymentRegistry, data.deploymentMigrations, data.deploymentRbac, data.deploymentRegistryDelegates);
   show(hashTab() || TABS[0][0]);
   return Promise.all([rbacDone, registryDone]);
 }
