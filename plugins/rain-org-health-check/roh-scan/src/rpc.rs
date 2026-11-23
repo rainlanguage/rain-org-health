@@ -21,6 +21,8 @@ sol! {
     function authorizer() external view returns (address);
     function appliedV5(address writer, bytes32 namespace, bytes32 migration) external view returns (uint256);
     function headV5(address writer, bytes32 namespace) external view returns (bytes32);
+    function approvedV5(address account, bytes32 scope, address delegate) external view returns (bool);
+    function approvedUnscopedV5(address account, address delegate) external view returns (bool);
     function isCertificationExpired() external view returns (bool);
     function getMinDelay() external view returns (uint256);
     function receipt() external view returns (address);
@@ -136,6 +138,28 @@ pub fn applied_v5_calldata(writer: &str, namespace: &str, migration: &str) -> Op
         }
         .abi_encode(),
     ))
+}
+/// `approvedUnscopedV5(account, delegate)` when `unscoped`, else `approvedV5(account, scope, delegate)`; `None` unless both are addresses and `scope` is 32-byte hex.
+pub fn approved_v5_calldata(
+    account: &str,
+    delegate: &str,
+    unscoped: bool,
+    scope: &str,
+) -> Option<String> {
+    let account: Address = account.parse().ok()?;
+    let delegate: Address = delegate.parse().ok()?;
+    Some(if unscoped {
+        to_hex(approvedUnscopedV5Call { account, delegate }.abi_encode())
+    } else {
+        to_hex(
+            approvedV5Call {
+                account,
+                scope: scope.parse().ok()?,
+                delegate,
+            }
+            .abi_encode(),
+        )
+    })
 }
 pub fn is_certification_expired_calldata() -> String {
     to_hex(isCertificationExpiredCall {}.abi_encode())

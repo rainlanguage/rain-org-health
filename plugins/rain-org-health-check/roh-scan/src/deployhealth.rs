@@ -337,6 +337,28 @@ pub struct InfraLive {
 }
 
 /// Every infra row `c` pins, against `live`.
+/// One chain's expected registry delegations, each with its live approval (`null` where the read did not answer); `emitted: false` when the expected state has no `registryDelegates`.
+pub fn registry_delegates_set(c: &ExpectedChain, approved: Vec<Option<bool>>) -> serde_json::Value {
+    let Some(expected) = &c.registry_delegates else {
+        return json!({ "network": c.network, "emitted": false, "delegates": [] });
+    };
+    let delegates: Vec<serde_json::Value> = expected
+        .iter()
+        .zip(approved)
+        .map(|(d, a)| {
+            json!({
+                "registry": d.registry,
+                "account": d.account,
+                "delegate": d.delegate,
+                "unscoped": d.unscoped,
+                "scope": d.scope,
+                "approved": a,
+            })
+        })
+        .collect();
+    json!({ "network": c.network, "emitted": true, "delegates": delegates })
+}
+
 pub fn infra_rows(c: &ExpectedChain, live: InfraLive) -> Vec<serde_json::Value> {
     let mut rows = vec![infra_row(
         "beaconSetDeployer",

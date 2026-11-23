@@ -3293,6 +3293,32 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             )
         };
 
+        let registry_delegate_sets: Vec<serde_json::Value> = per_chain(
+            &expected_state,
+            |c| c.network.as_str(),
+            |c, chain| {
+                let expected = c.registry_delegates.as_deref().unwrap_or_default();
+                let calls: Vec<Option<(String, String)>> = expected
+                    .iter()
+                    .map(|d| {
+                        rpc::approved_v5_calldata(&d.account, &d.delegate, d.unscoped, &d.scope)
+                            .map(|data| (d.registry.clone(), data))
+                    })
+                    .collect();
+                let batch: Vec<(String, String)> = calls.iter().flatten().cloned().collect();
+                let mut answers = eth_call_batch(rpc_session(chain), &batch).into_iter();
+                let approved = calls
+                    .iter()
+                    .map(|call| {
+                        call.as_ref().and_then(|_| {
+                            answers.next().flatten().and_then(|h| rpc::decode_bool(&h))
+                        })
+                    })
+                    .collect();
+                deployhealth::registry_delegates_set(c, approved)
+            },
+        );
+
         // Every infra fact `expected-state.json` pins per chain, read live.
         let infra_sets: Vec<serde_json::Value> = per_chain(
             &expected_state,
@@ -3532,6 +3558,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentHealth": deployment_health,
             "deploymentBeacons": beacon_sets,
             "deploymentInfra": infra_sets,
+            "deploymentRegistryDelegates": registry_delegate_sets,
             "deploymentV2": v2_sets,
             "deploymentCodeTokens": code_token_sets,
             "deploymentSafes": safe_sets,

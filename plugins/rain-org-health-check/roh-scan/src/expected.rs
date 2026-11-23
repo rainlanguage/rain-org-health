@@ -123,6 +123,15 @@ pub struct ExpectedToken {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+pub struct ExpectedDelegate {
+    pub registry: String,
+    pub account: String,
+    pub delegate: String,
+    pub unscoped: bool,
+    pub scope: String,
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ExpectedChain {
     pub chain_id: u64,
     pub network: String,
@@ -139,6 +148,8 @@ pub struct ExpectedChain {
     pub qsep: Option<ExpectedQsep>,
     /// In file order.
     pub tokens: Vec<ExpectedToken>,
+    /// `None` when the file does not emit `registryDelegates`.
+    pub registry_delegates: Option<Vec<ExpectedDelegate>>,
 }
 
 /// tQSEP: outside the production token list, on the shared reference-network beacons.
@@ -511,6 +522,31 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 authoriser: f.nonzero(&q["authoriser"], "qsep.authoriser")?,
             }),
         };
+        let registry_delegates = match &c["registryDelegates"] {
+            serde_json::Value::Null => None,
+            v => Some(
+                list(v, "registryDelegates")?
+                    .iter()
+                    .map(|d| {
+                        let unscoped = d["unscoped"]
+                            .as_bool()
+                            .ok_or_else(|| f.bad("registryDelegates[].unscoped"))?;
+                        let scope = d["scope"]
+                            .as_str()
+                            .filter(|h| is_bytes32(h) && is_zero(h) == unscoped)
+                            .ok_or_else(|| f.bad("registryDelegates[].scope"))?
+                            .to_string();
+                        Ok(ExpectedDelegate {
+                            registry: f.nonzero(&d["registry"], "registryDelegates[].registry")?,
+                            account: f.nonzero(&d["account"], "registryDelegates[].account")?,
+                            delegate: f.nonzero(&d["delegate"], "registryDelegates[].delegate")?,
+                            unscoped,
+                            scope,
+                        })
+                    })
+                    .collect::<Result<Vec<_>, _>>()?,
+            ),
+        };
         out.push(ExpectedChain {
             chain_id,
             network,
@@ -525,6 +561,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             rename_migration,
             qsep,
             tokens,
+            registry_delegates,
         });
     }
     out.sort_by_key(|c| (c.network != REFERENCE_NETWORK, c.chain_id));
