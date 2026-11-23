@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-23T02:51:06Z",
+  "generatedAt": "2026-11-23T12:55:40Z",
   "auditGraph": {
     "nodes": [
       {
@@ -56,7 +56,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.39",
-            "latest": "0.2.40"
+            "latest": "0.2.41"
           }
         ]
       },
@@ -96,7 +96,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.39",
-            "latest": "0.2.40"
+            "latest": "0.2.41"
           }
         ]
       },
@@ -186,7 +186,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.39",
-            "latest": "0.2.40"
+            "latest": "0.2.41"
           }
         ]
       },
@@ -311,6 +311,11 @@
             "repo": "rain.deploy",
             "pinned": "0.1.37",
             "latest": "0.1.38"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.40",
+            "latest": "0.2.41"
           }
         ]
       },
@@ -378,7 +383,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.39",
-            "latest": "0.2.40"
+            "latest": "0.2.41"
           }
         ]
       },
@@ -589,7 +594,7 @@
           {
             "repo": "rainlang",
             "pinned": "0.2.39",
-            "latest": "0.2.40"
+            "latest": "0.2.41"
           }
         ]
       },
@@ -646,7 +651,13 @@
           "raindex.interface",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.40",
+            "latest": "0.2.41"
+          }
+        ]
       },
       {
         "repo": "raindex.governance",
@@ -689,7 +700,13 @@
           "rain.string",
           "rainlang"
         ],
-        "staleDeps": []
+        "staleDeps": [
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.40",
+            "latest": "0.2.41"
+          }
+        ]
       },
       {
         "repo": "rainlang",
@@ -752,6 +769,11 @@
             "repo": "rain.extrospection",
             "pinned": "0.1.31",
             "latest": "0.1.33"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.40",
+            "latest": "0.2.41"
           }
         ]
       },
@@ -797,6 +819,11 @@
             "repo": "rain.factory",
             "pinned": "0.2.18",
             "latest": "0.2.19"
+          },
+          {
+            "repo": "rainlang",
+            "pinned": "0.2.40",
+            "latest": "0.2.41"
           }
         ]
       },
@@ -1190,7 +1217,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.39",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "rain.erc4626.words",
@@ -1225,7 +1252,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.39",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "rain.extrospection",
@@ -1344,7 +1371,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.39",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "rain.intorastring",
@@ -1447,9 +1474,9 @@
       {
         "from": "rain.merkle.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.40",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "rain.metadata.deploy",
@@ -1505,7 +1532,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.39",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "rain.string",
@@ -1645,7 +1672,7 @@
         "to": "rainlang",
         "stale": true,
         "pinned": "0.2.39",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "raindex.deploy",
@@ -1727,9 +1754,9 @@
       {
         "from": "raindex.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.40",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "raindex.governance",
@@ -1755,9 +1782,9 @@
       {
         "from": "raindex.interface",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.40",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "rainlang",
@@ -1902,9 +1929,9 @@
       {
         "from": "rainlang.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.40",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "st0x.deploy",
@@ -2035,9 +2062,9 @@
       {
         "from": "st0x.deploy",
         "to": "rainlang",
-        "stale": false,
+        "stale": true,
         "pinned": "0.2.40",
-        "latest": "0.2.40"
+        "latest": "0.2.41"
       },
       {
         "from": "st0x.deploy",
@@ -2200,7 +2227,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -4188,7 +4215,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 61059729
+        "discoveredAtBlock": 61241068
       },
       {
         "network": "ethereum",
@@ -4632,7 +4659,7 @@
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -4648,7 +4675,7 @@
             "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -4656,7 +4683,7 @@
             "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -4664,7 +4691,7 @@
             "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -4739,13 +4766,13 @@
           "other": 2,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 4,
+          "certificationExpired": 0,
           "certificationUnknown": 0,
           "notPinned": 8,
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26474960
+        "discoveredAtBlock": 26477976
       },
       {
         "network": "bsc",
@@ -5075,41 +5102,41 @@
           },
           {
             "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5155,41 +5182,41 @@
           },
           {
             "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcc23ef9e1e74c22ab2a9b73e253af01531385b08",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5205,7 +5232,7 @@
             "vault": "0x2c5374933d1e7208b2184fa1a45119fdcac13123",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -5213,7 +5240,7 @@
             "vault": "0xc361da5ac6523fbc40a1b160ce98d1e84667325b",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -5221,7 +5248,7 @@
             "vault": "0x21ebe855f15c2e1badea603c1cb07b964096a616",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -5235,41 +5262,41 @@
           },
           {
             "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x194c6ebe9919c8681aa17c8814ee6c8a0534b28f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5315,41 +5342,41 @@
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5395,81 +5422,81 @@
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5515,41 +5542,41 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5603,18 +5630,18 @@
           }
         ],
         "counts": {
-          "safe": 41,
-          "timelock": 65,
+          "safe": 20,
+          "timelock": 51,
           "other": 0,
-          "unknown": 0,
+          "unknown": 35,
           "unpinned": 0,
-          "certificationExpired": 45,
-          "certificationUnknown": 0,
+          "certificationExpired": 20,
+          "certificationUnknown": 35,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 135194246
+        "discoveredAtBlock": 135274760
       },
       {
         "network": "hyperevm",
@@ -6058,7 +6085,7 @@
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -6074,7 +6101,7 @@
             "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -6082,7 +6109,7 @@
             "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -6090,7 +6117,7 @@
             "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -6149,13 +6176,13 @@
           "other": 0,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 4,
-          "certificationUnknown": 0,
+          "certificationExpired": 0,
+          "certificationUnknown": 1,
           "notPinned": 6,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 51997735
+        "discoveredAtBlock": 52034610
       },
       {
         "network": "robinhood",
@@ -6599,7 +6626,7 @@
             "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
             "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
             "label": "timelock",
-            "certificationExpired": true,
+            "certificationExpired": false,
             "pinned": true,
             "onChain": true
           },
@@ -6690,13 +6717,13 @@
           "other": 0,
           "unknown": 0,
           "unpinned": 0,
-          "certificationExpired": 1,
+          "certificationExpired": 0,
           "certificationUnknown": 0,
           "notPinned": 6,
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 121089347
+        "discoveredAtBlock": 121423863
       },
       {
         "network": "zerog",
@@ -30382,7 +30409,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26474960,
+            "headBlock": 26477975,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -30781,7 +30808,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 135194223,
+            "headBlock": 135274750,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31180,7 +31207,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 51997727,
+            "headBlock": 52034605,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31579,7 +31606,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 121089257,
+            "headBlock": 121423755,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31589,7 +31616,7 @@
         "network": "base",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "mainnet.base.org",
-        "unread": 13,
+        "unread": 0,
         "lineOrder": true,
         "lineOrderReason": null,
         "migrations": [
@@ -31638,8 +31665,8 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5d15d95cf2517d0c33b08ddf7a2f113416f9ca27461e224d4d565c9fa4bd8978",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
-            "appliedAt": null,
+            "state": "applied",
+            "appliedAt": 1787152049,
             "executedAt": 1787152049,
             "waitsOn": [
               {
@@ -31658,8 +31685,8 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
-            "appliedAt": null,
+            "state": "applied",
+            "appliedAt": 1787336483,
             "executedAt": 1787336483,
             "waitsOn": [
               {
@@ -31667,8 +31694,8 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x5d15d95cf2517d0c33b08ddf7a2f113416f9ca27461e224d4d565c9fa4bd8978",
                 "script": "script/20260813-timelock-rehearsal-cancel.s.sol",
-                "state": "unknown",
-                "appliedAt": null,
+                "state": "applied",
+                "appliedAt": 1787152049,
                 "executedAt": 1787152049
               }
             ]
@@ -31687,8 +31714,8 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
                 "script": "script/20260813-execute-timelock-operations.s.sol",
-                "state": "unknown",
-                "appliedAt": null,
+                "state": "applied",
+                "appliedAt": 1787336483,
                 "executedAt": 1787336483
               }
             ]
@@ -31718,8 +31745,8 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
-            "appliedAt": null,
+            "state": "applied",
+            "appliedAt": 1792605015,
             "executedAt": 1792605015,
             "waitsOn": [
               {
@@ -31738,8 +31765,8 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
-            "appliedAt": null,
+            "state": "applied",
+            "appliedAt": 1795193372,
             "executedAt": null,
             "waitsOn": [
               {
@@ -31747,8 +31774,8 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "unknown",
-                "appliedAt": null,
+                "state": "applied",
+                "appliedAt": 1792605015,
                 "executedAt": 1792605015
               }
             ]
@@ -31758,7 +31785,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31767,8 +31794,8 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5",
                 "script": "script/20261030-backfill-migration-registry-v5.s.sol",
-                "state": "unknown",
-                "appliedAt": null,
+                "state": "applied",
+                "appliedAt": 1795193372,
                 "executedAt": null
               }
             ]
@@ -31778,7 +31805,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31787,7 +31814,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
                 "script": "script/20261119-create-zerog-tokens.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31798,7 +31825,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31807,7 +31834,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
                 "script": "script/20261022-bind-beacon-initial-owner.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31818,7 +31845,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31827,7 +31854,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdf1d7890b98737bae0df512744c6d6e9af57d6eafb71a5990d6dd43829b85651",
                 "script": "script/20261006-orchestrator-admin-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31838,7 +31865,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x43b60cbbe0baf80197f9bd765484b69a4ce99c4bb6e1ac3a0e2d127529c5ec61",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31847,7 +31874,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x0f02a904a527c04adbf4e86c5cc75178f1fef739875facc7df3b8c32addab3ad",
                 "script": "script/20261103-hand-safe-owned-base-vaults-to-timelock.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31858,7 +31885,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x933e465b962e2417c890cdb5545b101fd719b931597138569f778a2decefff3a",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31867,7 +31894,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x43b60cbbe0baf80197f9bd765484b69a4ce99c4bb6e1ac3a0e2d127529c5ec61",
                 "script": "script/20261021-schedule-underlying-naming-beacons.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31878,7 +31905,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31887,7 +31914,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x933e465b962e2417c890cdb5545b101fd719b931597138569f778a2decefff3a",
                 "script": "script/20261021-schedule-underlying-naming-rename.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31907,7 +31934,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2",
                 "script": "script/20261021-execute-underlying-naming.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31938,7 +31965,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31958,7 +31985,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5d10a7a02021ef39866cec3eebe58b030443648637c1fee80fa23d257d682e19",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "unknown",
+            "state": "notApplied",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31967,7 +31994,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xc5460b80776aaef69ac86650f14170040ae62c98bfa9f9f459b2f8c73519db8d",
                 "script": "script/20261111-qsep-set-fleet-authoriser.s.sol",
-                "state": "unknown",
+                "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -31978,7 +32005,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 61059745,
+            "headBlock": 61241105,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -34807,6 +34834,54 @@
       "daysSinceAudit": 292
     },
     {
+      "name": "rainlang",
+      "org": "rainlanguage",
+      "hasProtofireAudit": true,
+      "externalAudit": "stale",
+      "auditPdfs": [
+        {
+          "filename": "rain.interpreter.interface.6ef2666f4567320d181a6d0c48695f1fd923aff6.oct-2026.pdf",
+          "path": "audit/protofire/rain.interpreter.interface.6ef2666f4567320d181a6d0c48695f1fd923aff6.oct-2026.pdf",
+          "lastCommitIso": "2026-11-14T21:48:13Z",
+          "auditDateIso": "2026-11-14T21:48:13Z"
+        },
+        {
+          "filename": "rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
+          "path": "audit/protofire/rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
+          "lastCommitIso": "2026-10-26T19:17:00Z",
+          "auditDateIso": "2026-10-26T19:17:00Z"
+        },
+        {
+          "filename": "rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
+          "path": "audit/protofire/rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
+          "lastCommitIso": "2026-07-15T19:41:05Z",
+          "auditDateIso": "2026-03-08T19:12:56Z"
+        }
+      ],
+      "referencePdfIndex": 0,
+      "auditedRef": null,
+      "anchorKind": "unanchored",
+      "tagConventionAbsent": true,
+      "auditedDate": "2026-11-14T21:48:13Z",
+      "latestTag": "sol-v0.2.41",
+      "latestTagIso": "2026-11-23T11:46:58Z",
+      "isStale": true,
+      "sourceLocChangedSinceAudit": 392,
+      "fullSourceLoc": null,
+      "sourceLocAddedSinceAudit": 298,
+      "sourceLocRemovedSinceAudit": 94,
+      "filesChangedSinceAudit": 65,
+      "commitsSinceAudit": 34,
+      "sourceDriftTruncated": false,
+      "commentLocAddedSinceAudit": 51,
+      "commentLocRemovedSinceAudit": 0,
+      "codeLocAddedSinceAudit": 232,
+      "codeLocRemovedSinceAudit": 94,
+      "driftFullyClassified": true,
+      "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b6ee56755517b410dbe74d6f11f06db847a0b001...main",
+      "daysSinceAudit": 9
+    },
+    {
       "name": "rain.lib.leakybucket",
       "org": "rainlanguage",
       "hasProtofireAudit": true,
@@ -34841,54 +34916,6 @@
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.leakybucket/compare/06baa59b15b0b4ad51189288e3137eee677db37d...main",
       "daysSinceAudit": 62
-    },
-    {
-      "name": "rainlang",
-      "org": "rainlanguage",
-      "hasProtofireAudit": true,
-      "externalAudit": "stale",
-      "auditPdfs": [
-        {
-          "filename": "rain.interpreter.interface.6ef2666f4567320d181a6d0c48695f1fd923aff6.oct-2026.pdf",
-          "path": "audit/protofire/rain.interpreter.interface.6ef2666f4567320d181a6d0c48695f1fd923aff6.oct-2026.pdf",
-          "lastCommitIso": "2026-11-14T21:48:13Z",
-          "auditDateIso": "2026-11-14T21:48:13Z"
-        },
-        {
-          "filename": "rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
-          "path": "audit/protofire/rain.interpreter.interface.f83d8e0e2ea529acb9b76f622ff73464c65a3ba8.feb-2026.pdf",
-          "lastCommitIso": "2026-10-26T19:17:00Z",
-          "auditDateIso": "2026-10-26T19:17:00Z"
-        },
-        {
-          "filename": "rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
-          "path": "audit/protofire/rainlang.b44c664fe7cc175748f8cf19a99cdb43d7f3a0d1.mar-2026.pdf",
-          "lastCommitIso": "2026-07-15T19:41:05Z",
-          "auditDateIso": "2026-03-08T19:12:56Z"
-        }
-      ],
-      "referencePdfIndex": 0,
-      "auditedRef": null,
-      "anchorKind": "unanchored",
-      "tagConventionAbsent": true,
-      "auditedDate": "2026-11-14T21:48:13Z",
-      "latestTag": "sol-v0.2.40",
-      "latestTagIso": "2026-11-19T16:01:51Z",
-      "isStale": true,
-      "sourceLocChangedSinceAudit": 182,
-      "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 91,
-      "sourceLocRemovedSinceAudit": 91,
-      "filesChangedSinceAudit": 61,
-      "commitsSinceAudit": 19,
-      "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 0,
-      "commentLocRemovedSinceAudit": 0,
-      "codeLocAddedSinceAudit": 91,
-      "codeLocRemovedSinceAudit": 91,
-      "driftFullyClassified": true,
-      "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b6ee56755517b410dbe74d6f11f06db847a0b001...main",
-      "daysSinceAudit": 9
     },
     {
       "name": "rain.math.float",
@@ -35956,7 +35983,7 @@
       "org": "rainlanguage",
       "state": "analyzed",
       "externalFunctions": 7,
-      "testFiles": 310,
+      "testFiles": 314,
       "sourcesUnparsed": 0,
       "untested": []
     },
