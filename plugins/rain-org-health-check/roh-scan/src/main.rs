@@ -258,6 +258,13 @@ const BSC_RPCS: &[&str] = &[
     "https://bsc-dataseed1.binance.org",
 ];
 
+/// Keyless public 0G endpoints (chainId 0x4115 = 16661).
+const ZEROG_RPCS: &[&str] = &[
+    "https://evmrpc.0g.ai",
+    "https://0g.drpc.org",
+    "https://16661.rpc.thirdweb.com",
+];
+
 /// The chains the scan reads production state from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Chain {
@@ -266,6 +273,7 @@ enum Chain {
     HyperEvm,
     Robinhood,
     Bsc,
+    Zerog,
 }
 
 impl Chain {
@@ -276,6 +284,7 @@ impl Chain {
             Chain::HyperEvm => HYPEREVM_RPCS,
             Chain::Robinhood => ROBINHOOD_RPCS,
             Chain::Bsc => BSC_RPCS,
+            Chain::Zerog => ZEROG_RPCS,
         }
     }
 
@@ -288,6 +297,7 @@ impl Chain {
             Chain::HyperEvm => "rpc.hyperliquid.xyz/evm",
             Chain::Robinhood => "rpc.mainnet.chain.robinhood.com",
             Chain::Bsc => "bsc-dataseed.bnbchain.org",
+            Chain::Zerog => "evmrpc.0g.ai",
         }
     }
 
@@ -305,6 +315,7 @@ impl Chain {
             "hyperevm" => Some(Chain::HyperEvm),
             "robinhood" => Some(Chain::Robinhood),
             "bsc" => Some(Chain::Bsc),
+            "zerog" => Some(Chain::Zerog),
             _ => None,
         }
     }
@@ -346,6 +357,49 @@ fn per_chain<T>(
                 ),
             })
             .collect(),
+    }
+}
+
+/// The pins of the chains whose expected state has an orchestrator.
+fn orchestrator_chains(
+    pins: &[owners::ChainPin],
+    state: &[expected::ExpectedChain],
+) -> Vec<owners::ChainPin> {
+    pins.iter()
+        .filter(|p| {
+            state
+                .iter()
+                .any(|c| c.network == p.network && c.orchestrator.is_some())
+        })
+        .cloned()
+        .collect()
+}
+
+/// The orchestrator grants entry when expected-state.json cannot be read.
+fn orchestrator_grants_unavailable(
+    org: &str,
+    repo: &str,
+    e: &expected::ExpectedError,
+) -> serde_json::Value {
+    json!({
+        "org": org,
+        "repo": repo,
+        "contract": "orchestrator",
+        "unavailable": true,
+        "reason": e.to_string(),
+    })
+}
+
+/// Whether `c`'s rename migration has run. A chain with no rename migration is
+/// not renamed.
+fn chain_renamed(
+    migrations_src: &str,
+    c: &expected::ExpectedChain,
+    call: migrations::EthCalls,
+) -> Result<Option<bool>, migrations::RenameUnlocated> {
+    match &c.rename_migration {
+        Some(id) => migrations::renamed(migrations_src, &c.network, id, call),
+        None => Ok(Some(false)),
     }
 }
 
@@ -2997,15 +3051,18 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             &check_grant,
         )
         .unwrap_or(serde_json::Value::Null);
-        let deployment_orchestrator_grants = owners::build_grants(
-            deploy_org,
-            deploy_repo,
-            &deploy_sources,
-            &owners::GrantSpec::orchestrator(&orchestrator_lib, &deploy_sources, &role_names),
-            &chains,
-            &check_grant,
-        )
-        .unwrap_or(serde_json::Value::Null);
+        let deployment_orchestrator_grants = match &expected_state {
+            Ok(state) => owners::build_grants(
+                deploy_org,
+                deploy_repo,
+                &deploy_sources,
+                &owners::GrantSpec::orchestrator(&orchestrator_lib, &deploy_sources, &role_names),
+                &orchestrator_chains(&chains, state),
+                &check_grant,
+            )
+            .unwrap_or(serde_json::Value::Null),
+            Err(e) => orchestrator_grants_unavailable(deploy_org, deploy_repo, e),
+        };
 
         // Where the deploy repo's RBAC subgraph is published per network, and
         // the role names its sources spell out. The role history itself is read
@@ -3018,12 +3075,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let subgraph = rbac::parse_deploy_workflow(&subgraph_workflow);
         let subgraph_networks_src = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
         let subgraph_networks = rbac::parse_networks(&subgraph_networks_src);
+        let goldsky_networks = {
+            let (org, repo, path) = rbac::RAINIX_SUBGRAPH_TARGETS;
+            rbac::parse_goldsky_networks(&gh_file(org, repo, path))
+        };
         let deployment_rbac = {
             let mut doc = rbac::build_rbac(
                 deploy_org,
                 deploy_repo,
                 subgraph.as_ref(),
                 subgraph_networks.as_deref(),
+                goldsky_networks.as_deref(),
                 &role_names,
             );
             doc["configRegistries"] =
@@ -3076,13 +3138,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             doc
         };
 
-        let deployment_registry = rbac::build_registry(&deployment_rbac, gh_file);
+        let deployment_registry =
+            rbac::build_registry(&deployment_rbac, goldsky_networks.as_deref(), gh_file);
 
         let migrations_src = gh_file(deploy_org, deploy_repo, migrations::PATH);
         let renamed_on = |c: &expected::ExpectedChain, s: Session| {
-            migrations::renamed(&migrations_src, &c.network, &c.rename_migration, &|calls| {
-                eth_call_batch(s, calls)
-            })
+            chain_renamed(&migrations_src, c, &|calls| eth_call_batch(s, calls))
         };
         let deployment_migrations = migrations::build(
             deploy_org,
@@ -3151,6 +3212,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 let url = vaultdiscovery::endpoint(
                     subgraph.as_ref(),
                     subgraph_networks.as_deref(),
+                    goldsky_networks.as_deref(),
                     chain,
                 )?;
                 vaultdiscovery::discover(&|body| post_json(&url, body))
@@ -3306,7 +3368,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
                 };
                 let tl = &c.timelock.code.address;
-                let o = &c.orchestrator;
+                let o = c.orchestrator.as_ref();
                 let live = deployhealth::InfraLive {
                     beacon_set_deployer_has_code: has_code(&c.beacon_set_deployer),
                     beacon_codehashes: c.beacons.iter().map(|b| codehash(&b.address)).collect(),
@@ -3314,19 +3376,16 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     timelock_min_delay: eth_call(s, tl, &rpc::min_delay_calldata())
                         .and_then(|h| rpc::decode_uint(&h))
                         .map(|d| d.to_string()),
-                    orchestrator_set_deployer_has_code: has_code(&o.set_deployer),
-                    orchestrator_beacon_codehash: codehash(&o.beacon),
-                    orchestrator_beacon_implementation: call_addr(
-                        &o.beacon,
-                        rpc::implementation_calldata(),
-                    ),
-                    orchestrator_beacon_owner: call_addr(&o.beacon, rpc::owner_calldata()),
-                    orchestrator_instance_beacon: eth_get_storage_at(
-                        s,
-                        &o.instance,
-                        ERC1967_BEACON_SLOT,
-                    )
-                    .and_then(|h| rpc::decode_address(&h)),
+                    orchestrator_set_deployer_has_code: o.and_then(|o| has_code(&o.set_deployer)),
+                    orchestrator_beacon_codehash: o.and_then(|o| codehash(&o.beacon)),
+                    orchestrator_beacon_implementation: o
+                        .and_then(|o| call_addr(&o.beacon, rpc::implementation_calldata())),
+                    orchestrator_beacon_owner: o
+                        .and_then(|o| call_addr(&o.beacon, rpc::owner_calldata())),
+                    orchestrator_instance_beacon: o.and_then(|o| {
+                        eth_get_storage_at(s, &o.instance, ERC1967_BEACON_SLOT)
+                            .and_then(|h| rpc::decode_address(&h))
+                    }),
                     authoriser_codehash: codehash(&c.authoriser.address),
                     eu_authoriser_codehash: codehash(&c.eu_authoriser.address),
                 };
@@ -3696,6 +3755,199 @@ mod tests {
         );
     }
 
+    // ---- orchestrator grants and rename per chain ----
+
+    fn expected_chains() -> Vec<expected::ExpectedChain> {
+        let mut state = expected::parse(include_str!("../testdata/expected-state.json")).unwrap();
+        state.extend(
+            expected::parse(include_str!("../testdata/expected-state-zerog.json")).unwrap(),
+        );
+        state
+    }
+
+    fn expected_chain(network: &str) -> expected::ExpectedChain {
+        expected_chains()
+            .into_iter()
+            .find(|c| c.network == network)
+            .unwrap()
+    }
+
+    fn pin(network: &str, n: u8) -> owners::ChainPin {
+        owners::ChainPin {
+            network: network.into(),
+            authoriser: Some(format!("0x{n:040x}")),
+            safe: Some(format!("0x{:040x}", n + 0x10)),
+            admin_holder: Some(format!("0x{:040x}", n + 0x20)),
+            rpc_host: Some(format!("{network}.rpc")),
+        }
+    }
+
+    type PinFields = (
+        String,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+        Option<String>,
+    );
+
+    fn pin_fields(p: &owners::ChainPin) -> PinFields {
+        (
+            p.network.clone(),
+            p.authoriser.clone(),
+            p.safe.clone(),
+            p.admin_holder.clone(),
+            p.rpc_host.clone(),
+        )
+    }
+
+    #[test]
+    fn orchestrator_grants_are_read_on_the_pinned_chains_whose_expected_state_has_an_orchestrator()
+    {
+        let state = expected_chains();
+        assert!(expected_chain("zerog").orchestrator.is_none());
+        let pins = [
+            pin("zerog", 1),
+            pin("base", 2),
+            pin("nochain", 3),
+            pin("ethereum", 4),
+        ];
+        assert_eq!(
+            orchestrator_chains(&pins, &state)
+                .iter()
+                .map(pin_fields)
+                .collect::<Vec<_>>(),
+            [pin_fields(&pins[1]), pin_fields(&pins[3])]
+        );
+        assert!(orchestrator_chains(&pins, &[]).is_empty());
+        assert!(orchestrator_chains(&[], &state).is_empty());
+    }
+
+    #[test]
+    fn an_unreadable_expected_state_is_one_unavailable_orchestrator_grants_entry_with_its_reason() {
+        let e = expected::ExpectedError::Malformed {
+            chain: "16661".into(),
+            field: "beacons",
+        };
+        assert_eq!(
+            orchestrator_grants_unavailable("S01-Issuer", "st0x.deploy", &e),
+            json!({
+                "org": "S01-Issuer",
+                "repo": "st0x.deploy",
+                "contract": "orchestrator",
+                "unavailable": true,
+                "reason": "expected-state.json chain 16661 has a missing or malformed beacons",
+            })
+        );
+        for e in [
+            expected::ExpectedError::Empty,
+            expected::ExpectedError::NotJson,
+            expected::ExpectedError::UnsupportedVersion(Some(2)),
+            expected::ExpectedError::NoChains,
+        ] {
+            assert_eq!(
+                orchestrator_grants_unavailable("o", "r", &e)["reason"],
+                e.to_string()
+            );
+        }
+    }
+
+    const RENAME_ID: &str = "0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2";
+    const MIGRATION_GENESIS: &str =
+        "0xd85a7f14bb19a07649810ac09029cc9c29667e4059cb83e258bc52e213365d3f";
+    const MIGRATION_NS: &str = "0x00000000000000000000000000000000000000000000000000000000000000aa";
+    const MIGRATION_WRITER: &str = "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329";
+    const MIGRATION_REGISTRY: &str = "0xc89F95eC7e626CFBef37a1F502A69BaF2022F8A8";
+
+    /// A migrations.json whose one migration is `RENAME_ID`, on base only.
+    fn rename_migrations() -> String {
+        json!({
+            "genesis": MIGRATION_GENESIS,
+            "migrations": [{
+                "chains": {"8453": {"executedAt": 1_700_000_000u64, "onto": MIGRATION_GENESIS}},
+                "id": RENAME_ID,
+                "script": "script/rename.s.sol",
+            }],
+            "namespace": MIGRATION_NS,
+            "networks": {"8453": {"network": "base", "registry": MIGRATION_REGISTRY}},
+            "version": 2,
+            "writer": MIGRATION_WRITER,
+        })
+        .to_string()
+    }
+
+    fn applied_at(t: u64) -> Option<String> {
+        Some(format!("0x{t:064x}"))
+    }
+
+    #[test]
+    fn a_chain_without_a_rename_migration_is_not_renamed_and_reads_nothing() {
+        let asked = std::cell::RefCell::new(0);
+        let call = |c: &[(String, String)]| {
+            *asked.borrow_mut() += 1;
+            vec![applied_at(1); c.len()]
+        };
+        let zerog = expected_chain("zerog");
+        assert_eq!(zerog.rename_migration, None);
+        let mut base = expected_chain("base");
+        base.rename_migration = None;
+        for c in [&zerog, &base] {
+            for src in [String::new(), "{".to_string(), rename_migrations()] {
+                assert_eq!(
+                    chain_renamed(&src, c, &call),
+                    Ok(Some(false)),
+                    "{} {src}",
+                    c.network
+                );
+            }
+        }
+        assert_eq!(*asked.borrow(), 0);
+    }
+
+    #[test]
+    fn a_chain_with_a_rename_migration_reads_it_applied_on_its_own_network() {
+        let src = rename_migrations();
+        let base = expected_chain("base");
+        assert_eq!(base.rename_migration.as_deref(), Some(RENAME_ID));
+        let sent = std::cell::RefCell::new(Vec::new());
+        let ask = |c: &expected::ExpectedChain, src: &str, answer: Option<String>| {
+            chain_renamed(src, c, &|calls| {
+                sent.borrow_mut().extend_from_slice(calls);
+                vec![answer.clone()]
+            })
+        };
+        assert_eq!(ask(&base, &src, applied_at(1_700_000_000)), Ok(Some(true)));
+        assert_eq!(ask(&base, &src, applied_at(0)), Ok(Some(false)));
+        assert_eq!(ask(&base, &src, None), Ok(None));
+        let applied = (
+            MIGRATION_REGISTRY.to_string(),
+            rpc::applied_v5_calldata(MIGRATION_WRITER, MIGRATION_NS, RENAME_ID).unwrap(),
+        );
+        assert_eq!(
+            *sent.borrow(),
+            vec![applied.clone(), applied.clone(), applied]
+        );
+
+        sent.borrow_mut().clear();
+        assert_eq!(ask(&base, "", applied_at(1)), Ok(None));
+        assert_eq!(
+            ask(&expected_chain("ethereum"), &src, applied_at(1)),
+            Err(migrations::RenameUnlocated {
+                id: RENAME_ID.into(),
+                network: "ethereum".into(),
+            })
+        );
+        let mut other = base.clone();
+        other.rename_migration = Some(MIGRATION_NS.into());
+        assert_eq!(
+            ask(&other, &src, applied_at(1)),
+            Err(migrations::RenameUnlocated {
+                id: MIGRATION_NS.into(),
+                network: "base".into(),
+            })
+        );
+        assert!(sent.borrow().is_empty());
+    }
+
     // ---- batch failover ----
 
     const REFUSED: &[u8] =
@@ -3833,7 +4085,7 @@ mod tests {
     /// three whole grant maps.
     #[test]
     fn every_pinned_network_resolves_to_a_chain() {
-        for n in ["base", "ethereum", "hyperevm", "robinhood", "bsc"] {
+        for n in ["base", "ethereum", "hyperevm", "robinhood", "bsc", "zerog"] {
             assert!(
                 Chain::from_network(n).is_some(),
                 "no endpoint set for pinned network {n}"
@@ -3872,6 +4124,7 @@ mod tests {
             Chain::HyperEvm,
             Chain::Robinhood,
             Chain::Bsc,
+            Chain::Zerog,
         ];
         let mut hosts = std::collections::HashSet::new();
         let mut firsts = std::collections::HashSet::new();

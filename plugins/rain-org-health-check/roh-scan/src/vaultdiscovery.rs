@@ -20,6 +20,8 @@ pub struct Discovered {
 pub enum DiscoveryError {
     NoSource,
     NoNetworks,
+    NoHosts,
+    NoQueryBase(String),
     NotIndexed(String),
     Unreachable,
     NotJson,
@@ -38,6 +40,8 @@ impl std::fmt::Display for DiscoveryError {
             DiscoveryError::NoNetworks => {
                 write!(f, "st0x.deploy's subgraph/networks.json could not be read")
             }
+            DiscoveryError::NoHosts => f.write_str(&rbac::goldsky_networks_unread()),
+            DiscoveryError::NoQueryBase(why) => f.write_str(why),
             DiscoveryError::NotIndexed(n) => {
                 write!(f, "st0x.deploy's subgraph is not deployed for {n}")
             }
@@ -64,13 +68,15 @@ pub fn subgraph_network<'a>(networks: &'a [String], chain: &str) -> Option<&'a s
 pub fn endpoint(
     src: Option<&rbac::SubgraphSource>,
     networks: Option<&[String]>,
+    goldsky_networks: Option<&[String]>,
     chain: &str,
 ) -> Result<String, DiscoveryError> {
     let src = src.ok_or(DiscoveryError::NoSource)?;
     let networks = networks.ok_or(DiscoveryError::NoNetworks)?;
+    let goldsky = goldsky_networks.ok_or(DiscoveryError::NoHosts)?;
     let network = subgraph_network(networks, chain)
         .ok_or_else(|| DiscoveryError::NotIndexed(chain.to_string()))?;
-    Ok(rbac::endpoint(src, network))
+    rbac::endpoint(src, goldsky, network).map_err(DiscoveryError::NoQueryBase)
 }
 
 /// One page of vaults after `after`, at `block` once the first page has fixed it.
@@ -323,12 +329,13 @@ mod tests {
 
     #[test]
     fn a_chain_is_found_under_the_subgraphs_own_network_name() {
-        let nets: Vec<String> = ["base", "mainnet", "hyper-evm", "bsc"]
+        let nets: Vec<String> = ["base", "mainnet", "hyper-evm", "bsc", "0g"]
             .map(String::from)
             .to_vec();
         assert_eq!(subgraph_network(&nets, "ethereum"), Some("mainnet"));
         assert_eq!(subgraph_network(&nets, "hyperevm"), Some("hyper-evm"));
         assert_eq!(subgraph_network(&nets, "bsc"), Some("bsc"));
+        assert_eq!(subgraph_network(&nets, "zerog"), Some("0g"));
         assert_eq!(subgraph_network(&nets, "robinhood"), None);
     }
 
@@ -336,24 +343,63 @@ mod tests {
     fn a_chain_is_queried_at_its_networks_endpoint_or_says_what_is_missing() {
         let src = rbac::SubgraphSource {
             name: "st0x".into(),
-            query_base: "https://q".into(),
+            ormi_query_base: Some("https://q".into()),
+            goldsky_query_base: Some("https://g".into()),
         };
-        let nets: Vec<String> = ["mainnet", "bsc"].map(String::from).to_vec();
+        let nets: Vec<String> = ["mainnet", "bsc", "0g"].map(String::from).to_vec();
+        let goldsky = vec!["0g".to_string()];
         assert_eq!(
-            endpoint(Some(&src), Some(&nets), "ethereum"),
-            Ok(rbac::endpoint(&src, "mainnet"))
+            endpoint(Some(&src), Some(&nets), Some(&goldsky), "ethereum"),
+            Ok("https://q/subgraphs/st0x-mainnet/prod/gn".into())
         );
         assert_eq!(
-            endpoint(Some(&src), Some(&nets), "base"),
+            endpoint(Some(&src), Some(&nets), Some(&goldsky), "zerog"),
+            Ok("https://g/subgraphs/st0x-0g/prod/gn".into())
+        );
+        assert_eq!(
+            endpoint(Some(&src), Some(&nets), Some(&goldsky), "base"),
             Err(DiscoveryError::NotIndexed("base".into()))
         );
         assert_eq!(
-            endpoint(None, Some(&nets), "bsc"),
+            endpoint(None, Some(&nets), Some(&goldsky), "bsc"),
             Err(DiscoveryError::NoSource)
         );
         assert_eq!(
-            endpoint(Some(&src), None, "bsc"),
+            endpoint(Some(&src), None, Some(&goldsky), "bsc"),
             Err(DiscoveryError::NoNetworks)
+        );
+        assert_eq!(
+            endpoint(Some(&src), Some(&nets), None, "bsc"),
+            Err(DiscoveryError::NoHosts)
+        );
+        let ormi_only = rbac::SubgraphSource {
+            goldsky_query_base: None,
+            ..src.clone()
+        };
+        assert_eq!(
+            endpoint(Some(&ormi_only), Some(&nets), Some(&goldsky), "zerog"),
+            Err(DiscoveryError::NoQueryBase(
+                "deploy-subgraph.yaml has no goldsky-query-base for 0g".into()
+            ))
+        );
+        assert_eq!(
+            endpoint(Some(&ormi_only), Some(&nets), Some(&goldsky), "bsc"),
+            Ok("https://q/subgraphs/st0x-bsc/prod/gn".into())
+        );
+    }
+
+    #[test]
+    fn an_unlocated_chain_says_why() {
+        assert_eq!(
+            DiscoveryError::NoHosts.to_string(),
+            "could not read GOLDSKY_NETWORKS from rainlanguage/rainix rainix-static/src/subgraph_targets.rs"
+        );
+        assert_eq!(
+            DiscoveryError::NoQueryBase(
+                "deploy-subgraph.yaml has no goldsky-query-base for 0g".into()
+            )
+            .to_string(),
+            "deploy-subgraph.yaml has no goldsky-query-base for 0g"
         );
     }
 }

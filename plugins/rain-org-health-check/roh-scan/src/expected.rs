@@ -130,11 +130,13 @@ pub struct ExpectedChain {
     pub beacons: Vec<ExpectedBeacon>,
     pub safe: ExpectedSafe,
     pub timelock: ExpectedTimelock,
-    pub orchestrator: ExpectedOrchestrator,
+    /// `None` where the file zeroes every field: the chain runs no orchestrator.
+    pub orchestrator: Option<ExpectedOrchestrator>,
     pub authoriser: ExpectedCode,
     pub eu_authoriser: ExpectedCode,
     pub zoltu: Vec<ExpectedZoltu>,
-    pub rename_migration: String,
+    /// `None` where the file carries zero: the chain expects no renamed state.
+    pub rename_migration: Option<String>,
     /// tQSEP, present exactly on the reference network.
     pub qsep: Option<ExpectedQsep>,
     /// In file order.
@@ -198,6 +200,24 @@ fn is_bytes32(s: &str) -> bool {
 
 fn is_zero(s: &str) -> bool {
     s[2..].chars().all(|c| c == '0')
+}
+
+/// A non-empty object whose every field is zero at its own width: a bytes32
+/// for a field named in `bytes32_fields`, an address for any other.
+fn is_all_zero(v: &serde_json::Value, bytes32_fields: &[&str]) -> bool {
+    v.as_object().is_some_and(|m| {
+        !m.is_empty()
+            && m.iter().all(|(k, f)| {
+                f.as_str().is_some_and(|s| {
+                    let at_width = if bytes32_fields.contains(&k.as_str()) {
+                        is_bytes32(s)
+                    } else {
+                        is_address(s)
+                    };
+                    at_width && is_zero(s)
+                })
+            })
+    })
 }
 
 /// The `section` object's chain entries from a body of the supported version.
@@ -264,7 +284,9 @@ impl ChainFields<'_> {
 ///
 /// Every expected value must be a non-zero address: a zero expectation would
 /// match a contract answering the zero address and report it as on target, and
-/// a zero codehash would match an address with no account.
+/// a zero codehash would match an address with no account. The file's zeros
+/// that mean absence are read as `None`: an all-zero `orchestrator` and a zero
+/// `renameMigration`.
 pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
     let chains = chain_entries(body, "chains")?;
     let mut out = Vec::with_capacity(chains.len());
@@ -286,9 +308,24 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             .ok_or_else(|| f.bad("network"))?
             .to_string();
         let beacon_set_deployer = f.nonzero(&c["beaconSetDeployer"], "beaconSetDeployer")?;
+        let o = &c["orchestrator"];
+        let orchestrator = if is_all_zero(o, &["beaconCodehash"]) {
+            None
+        } else {
+            Some(ExpectedOrchestrator {
+                set_deployer: f.nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
+                beacon: f.nonzero(&o["beacon"], "orchestrator.beacon")?,
+                beacon_codehash: f.codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
+                implementation: f.nonzero(&o["implementation"], "orchestrator.implementation")?,
+                owner: f.nonzero(&o["owner"], "orchestrator.owner")?,
+                instance: f.nonzero(&o["instance"], "orchestrator.instance")?,
+            })
+        };
+        // The orchestrator beacon is in use exactly where the orchestrator is.
+        let in_use = BEACON_NAMES.len() - usize::from(orchestrator.is_none());
         let beacons_raw = c["beacons"]
             .as_array()
-            .filter(|b| b.len() == BEACON_NAMES.len())
+            .filter(|b| b.len() == in_use)
             .ok_or_else(|| f.bad("beacons"))?;
         let beacons = beacons_raw
             .iter()
@@ -373,15 +410,6 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 .as_u64()
                 .ok_or_else(|| f.bad("timelock.minDelay"))?,
         };
-        let o = &c["orchestrator"];
-        let orchestrator = ExpectedOrchestrator {
-            set_deployer: f.nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
-            beacon: f.nonzero(&o["beacon"], "orchestrator.beacon")?,
-            beacon_codehash: f.codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
-            implementation: f.nonzero(&o["implementation"], "orchestrator.implementation")?,
-            owner: f.nonzero(&o["owner"], "orchestrator.owner")?,
-            instance: f.nonzero(&o["instance"], "orchestrator.instance")?,
-        };
         let authoriser = code(
             &c["authoriser"],
             "authoriser.address",
@@ -405,7 +433,11 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let rename_migration = f.codehash(&c["renameMigration"], "renameMigration")?;
+        let rename_migration = c["renameMigration"]
+            .as_str()
+            .filter(|h| is_bytes32(h))
+            .ok_or_else(|| f.bad("renameMigration"))?;
+        let rename_migration = (!is_zero(rename_migration)).then(|| rename_migration.to_string());
         let text = |v: &serde_json::Value, field: &'static str| {
             v.as_str()
                 .filter(|s| !s.is_empty())
@@ -1089,14 +1121,14 @@ mod tests {
         );
         assert_eq!(
             base.orchestrator,
-            ExpectedOrchestrator {
+            Some(ExpectedOrchestrator {
                 set_deployer: ORCH_SET_DEPLOYER.into(),
                 beacon: ORCH_BEACON.into(),
                 beacon_codehash: ORCH_BEACON_HASH.into(),
                 implementation: ORCH_IMPL.into(),
                 owner: BASE_TIMELOCK.into(),
                 instance: ORCH_INSTANCE.into(),
-            }
+            })
         );
         assert_eq!(
             base.authoriser,
@@ -1123,7 +1155,7 @@ mod tests {
                     .into(),
             }
         );
-        assert_eq!(base.rename_migration, RENAME);
+        assert_eq!(base.rename_migration.as_deref(), Some(RENAME));
     }
 
     #[test]
@@ -1494,12 +1526,17 @@ mod tests {
             ),
             (
                 format!("{b}/renameMigration"),
-                json!(zero_hash),
+                json!(ZERO),
                 "renameMigration",
             ),
             (
                 format!("{b}/renameMigration"),
-                json!(ZERO),
+                json!("0xdb5e"),
+                "renameMigration",
+            ),
+            (
+                format!("{b}/renameMigration"),
+                json!(format!("0x{}g", "0".repeat(63))),
                 "renameMigration",
             ),
             (format!("{b}/tokens"), json!({}), "tokens"),
@@ -1804,8 +1841,182 @@ mod tests {
             .unwrap()
             .push(extra);
         assert_eq!(malformed(&long), "beacons");
-        let body = r#"{"version": 1, "chains": {"8453": {"network": "base", "beaconSetDeployer": "0x2191981Ca2477B745870cC307cbEB4cB2967ACe3"}}}"#;
-        assert_eq!(malformed(&serde_json::from_str(body).unwrap()), "beacons");
+        let orchestrator = good()["chains"]["8453"]["orchestrator"].clone();
+        let body = json!({"version": 1, "chains": {"8453": {
+            "network": "base",
+            "beaconSetDeployer": BASE_DEPLOYER,
+            "orchestrator": orchestrator,
+        }}});
+        assert_eq!(malformed(&body), "beacons");
+    }
+
+    fn zero_orchestrator() -> Value {
+        let zero_hash = format!("0x{}", "0".repeat(64));
+        json!({
+            "setDeployer": ZERO,
+            "beacon": ZERO,
+            "beaconCodehash": zero_hash,
+            "implementation": ZERO,
+            "owner": ZERO,
+            "instance": ZERO,
+        })
+    }
+
+    /// Chain 1 as st0x.deploy writes a chain that runs no orchestrator.
+    fn without_orchestrator() -> Value {
+        let mut d = with("/chains/1/orchestrator", zero_orchestrator());
+        d["chains"]["1"]["beacons"].as_array_mut().unwrap().pop();
+        d["chains"]["1"]["renameMigration"] = json!(format!("0x{}", "0".repeat(64)));
+        d
+    }
+
+    #[test]
+    fn a_chain_without_an_orchestrator_parses_with_three_beacons_and_no_rename() {
+        let got = parse(&without_orchestrator().to_string()).unwrap();
+        let eth = &got[1];
+        assert_eq!(eth.network, "ethereum");
+        assert_eq!(eth.orchestrator, None);
+        assert_eq!(eth.rename_migration, None);
+        assert_eq!(
+            eth.beacons.iter().map(|b| b.name).collect::<Vec<_>>(),
+            BEACON_NAMES[..3]
+        );
+        assert_eq!(
+            eth.beacons
+                .iter()
+                .map(|b| b.address.as_str())
+                .collect::<Vec<_>>(),
+            [ETH_RECEIPT_BEACON, ETH_RECEIPT_VAULT_BEACON, ETH_WTV_BEACON]
+        );
+        assert_eq!(eth.timelock.code.address, ETH_TIMELOCK);
+        assert_eq!(eth.authoriser.address, ETH_V4_CLONE);
+        let base = &got[0];
+        assert!(base.orchestrator.is_some());
+        assert_eq!(base.beacons.len(), BEACON_NAMES.len());
+        assert_eq!(base.rename_migration.as_deref(), Some(RENAME));
+    }
+
+    #[test]
+    fn a_zero_rename_migration_is_no_rename_with_or_without_an_orchestrator() {
+        let zero_hash = format!("0x{}", "0".repeat(64));
+        let got =
+            parse(&with("/chains/8453/renameMigration", json!(zero_hash)).to_string()).unwrap();
+        assert_eq!(got[0].rename_migration, None);
+        assert!(got[0].orchestrator.is_some());
+        assert_eq!(got[1].rename_migration.as_deref(), Some(RENAME));
+        let mut d = without_orchestrator();
+        d["chains"]["1"]["renameMigration"] = json!(RENAME);
+        let got = parse(&d.to_string()).unwrap();
+        assert_eq!(got[1].orchestrator, None);
+        assert_eq!(got[1].rename_migration.as_deref(), Some(RENAME));
+    }
+
+    #[test]
+    fn a_partly_zero_orchestrator_is_malformed_at_its_first_zero_field() {
+        let keys = [
+            ("setDeployer", "orchestrator.setDeployer"),
+            ("beacon", "orchestrator.beacon"),
+            ("beaconCodehash", "orchestrator.beaconCodehash"),
+            ("implementation", "orchestrator.implementation"),
+            ("owner", "orchestrator.owner"),
+            ("instance", "orchestrator.instance"),
+        ];
+        let full = good()["chains"]["1"]["orchestrator"].clone();
+        for (i, (key, _)) in keys.iter().enumerate() {
+            let mut o = zero_orchestrator();
+            o[key] = full[key].clone();
+            let mut d = without_orchestrator();
+            d["chains"]["1"]["orchestrator"] = o;
+            let first_zero = if i == 0 { keys[1].1 } else { keys[0].1 };
+            assert_eq!(malformed(&d), first_zero, "only {key} set");
+        }
+        for v in [json!({}), json!("none"), Value::Null] {
+            let mut d = without_orchestrator();
+            d["chains"]["1"]["orchestrator"] = v.clone();
+            assert_eq!(malformed(&d), "orchestrator.setDeployer", "{v}");
+        }
+        let mut short = zero_orchestrator();
+        short["beacon"] = json!("0x0");
+        let mut d = without_orchestrator();
+        d["chains"]["1"]["orchestrator"] = short;
+        assert_eq!(malformed(&d), "orchestrator.setDeployer");
+    }
+
+    #[test]
+    fn the_beacon_count_follows_whether_the_chain_has_an_orchestrator() {
+        let mut four = with("/chains/1/orchestrator", zero_orchestrator());
+        four["chains"]["1"]["renameMigration"] = json!(format!("0x{}", "0".repeat(64)));
+        assert_eq!(malformed(&four), "beacons");
+        let mut three = good();
+        three["chains"]["1"]["beacons"]
+            .as_array_mut()
+            .unwrap()
+            .pop();
+        assert_eq!(malformed(&three), "beacons");
+        let mut two = without_orchestrator();
+        two["chains"]["1"]["beacons"].as_array_mut().unwrap().pop();
+        assert_eq!(malformed(&two), "beacons");
+    }
+
+    #[test]
+    fn an_orchestrator_field_is_zero_only_at_its_own_width() {
+        let bytes32 = &["beaconCodehash"];
+        let zero_hash = format!("0x{}", "0".repeat(64));
+        assert!(is_all_zero(&zero_orchestrator(), bytes32));
+        let mut wide_address = zero_orchestrator();
+        wide_address["beacon"] = json!(zero_hash);
+        let mut narrow_codehash = zero_orchestrator();
+        narrow_codehash["beaconCodehash"] = json!(ZERO);
+        assert!(!is_all_zero(&wide_address, bytes32));
+        assert!(!is_all_zero(&narrow_codehash, bytes32));
+        assert!(!is_all_zero(&zero_orchestrator(), &[]));
+        for v in [
+            json!({}),
+            json!([ZERO]),
+            json!(ZERO),
+            Value::Null,
+            json!({"setDeployer": 0}),
+        ] {
+            assert!(!is_all_zero(&v, bytes32), "{v}");
+        }
+        for (label, o) in [
+            ("wide beacon", wide_address),
+            ("narrow codehash", narrow_codehash),
+        ] {
+            let mut d = without_orchestrator();
+            d["chains"]["1"]["orchestrator"] = o;
+            assert_eq!(malformed(&d), "orchestrator.setDeployer", "{label}");
+        }
+    }
+
+    /// st0x.deploy's published `expected-state.json` chain 16661 (0G), at
+    /// 5cd0f4bf.
+    #[test]
+    fn parses_the_published_zerog_chain_without_an_orchestrator() {
+        let got = parse(include_str!("../testdata/expected-state-zerog.json")).unwrap();
+        assert_eq!(got.len(), 1);
+        let zerog = &got[0];
+        assert_eq!((zerog.chain_id, zerog.network.as_str()), (16661, "zerog"));
+        assert_eq!(zerog.orchestrator, None);
+        assert_eq!(zerog.rename_migration, None);
+        assert_eq!(zerog.qsep, None);
+        assert!(zerog.tokens.is_empty());
+        assert_eq!(
+            zerog
+                .beacons
+                .iter()
+                .map(|b| (b.name, b.address.as_str()))
+                .collect::<Vec<_>>(),
+            [
+                ("Receipt beacon", ETH_RECEIPT_BEACON),
+                ("Receipt-vault beacon", ETH_RECEIPT_VAULT_BEACON),
+                ("Wrapped-token-vault beacon", ETH_WTV_BEACON),
+            ]
+        );
+        assert!(zerog.beacons.iter().all(|b| b.owner == ETH_TIMELOCK));
+        assert_eq!(zerog.timelock.code.address, ETH_TIMELOCK);
+        assert_eq!(zerog.beacon_set_deployer, DEPLOYER);
+        assert_eq!(zerog.zoltu.len(), 14);
     }
 
     /// An empty token, Zoltu or module list is a chain with none, not a gap.

@@ -2906,6 +2906,44 @@ Deno.test("deployments: with no orchestrator grant data its section is absent", 
   );
 });
 
+Deno.test("deployments: unavailable orchestrator grant data renders its heading and the reason", () => {
+  const reason =
+    "expected-state.json chain 16661 has a missing or malformed beacons";
+  const box = deploymentsBox({
+    ...grantsData(),
+    deploymentOrchestratorGrants: {
+      org: "S01-Issuer",
+      repo: "st0x.deploy",
+      contract: "orchestrator",
+      unavailable: true,
+      reason,
+    },
+  });
+  const heads = tags(box, "h2");
+  const titles = heads.map((h) => h.textContent);
+  const orch = heads.find((h) =>
+    h.textContent ===
+      "Orchestrator role grants — who can mint, burn and recover"
+  );
+  assert(orch, "the orchestrator heading renders: " + titles.join(" | "));
+  const auth = titles.indexOf("Authoriser role grants — who can move value");
+  assert(
+    auth >= 0 && heads.indexOf(orch) === auth + 1,
+    "the authoriser section still renders, before it: " + titles.join(" | "),
+  );
+  const sib = orch.parent.children;
+  const body = sib[sib.indexOf(orch) + 1];
+  assert(
+    body.className === "empty" &&
+      body.textContent === `Grant data unavailable — ${reason}.`,
+    "the heading is followed by the reason: " + textOf(body),
+  );
+  assert(
+    collect(box, "own-row").some((r) => textOf(r).includes(SERVICE_EOA)),
+    "the authoriser's grantees still render",
+  );
+});
+
 Deno.test("deployments: 0.1.1 suite health renders per-contract code + keccak checks", () => {
   const data = {
     deploymentOwners: null, // health must render even without owners

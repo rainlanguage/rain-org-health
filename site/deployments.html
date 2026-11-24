@@ -965,6 +965,12 @@ function renderDeployments(document, $, data, io) {
     },
   };
   const renderGrants = (g) => {
+    if (g?.unavailable === true) {
+      const copy = GRANT_COPY[g.contract === "orchestrator" ? "orchestrator" : "authoriser"];
+      sink.append(el("h2", null, copy.title));
+      sink.append(el("div", "empty", `Grant data unavailable — ${g.reason}.`));
+      return;
+    }
     if (!g || !Array.isArray(g.grantees) || g.grantees.length === 0) return;
     const contract = g.contract === "orchestrator" ? "orchestrator" : "authoriser";
     const copy = GRANT_COPY[contract];

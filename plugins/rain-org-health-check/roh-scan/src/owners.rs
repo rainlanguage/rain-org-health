@@ -552,6 +552,7 @@ pub const REFERENCE_NETWORK: &str = "base";
 /// pinned in the source but not yet reachable from here still appears — with its
 /// pins and an unread status — because a chain that vanishes reads as "we do not
 /// deploy there", which is the opposite of "its rollout has not reached us yet".
+#[derive(Clone)]
 pub struct ChainPin {
     pub network: String,
     pub authoriser: Option<String>,
