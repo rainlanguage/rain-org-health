@@ -202,13 +202,20 @@ fn is_zero(s: &str) -> bool {
     s[2..].chars().all(|c| c == '0')
 }
 
-/// A non-empty object whose every field is a zero address or bytes32.
-fn is_all_zero(v: &serde_json::Value) -> bool {
+/// A non-empty object whose every field is zero at its own width: a bytes32
+/// for a field named in `bytes32_fields`, an address for any other.
+fn is_all_zero(v: &serde_json::Value, bytes32_fields: &[&str]) -> bool {
     v.as_object().is_some_and(|m| {
         !m.is_empty()
-            && m.values().all(|f| {
-                f.as_str()
-                    .is_some_and(|s| (is_address(s) || is_bytes32(s)) && is_zero(s))
+            && m.iter().all(|(k, f)| {
+                f.as_str().is_some_and(|s| {
+                    let at_width = if bytes32_fields.contains(&k.as_str()) {
+                        is_bytes32(s)
+                    } else {
+                        is_address(s)
+                    };
+                    at_width && is_zero(s)
+                })
             })
     })
 }
@@ -302,7 +309,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             .to_string();
         let beacon_set_deployer = f.nonzero(&c["beaconSetDeployer"], "beaconSetDeployer")?;
         let o = &c["orchestrator"];
-        let orchestrator = if is_all_zero(o) {
+        let orchestrator = if is_all_zero(o, &["beaconCodehash"]) {
             None
         } else {
             Some(ExpectedOrchestrator {
