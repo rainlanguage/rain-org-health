@@ -20,6 +20,8 @@ pub struct Discovered {
 pub enum DiscoveryError {
     NoSource,
     NoNetworks,
+    NoHosts,
+    NoQueryBase(String),
     NotIndexed(String),
     Unreachable,
     NotJson,
@@ -38,6 +40,8 @@ impl std::fmt::Display for DiscoveryError {
             DiscoveryError::NoNetworks => {
                 write!(f, "st0x.deploy's subgraph/networks.json could not be read")
             }
+            DiscoveryError::NoHosts => f.write_str(&rbac::goldsky_networks_unread()),
+            DiscoveryError::NoQueryBase(why) => f.write_str(why),
             DiscoveryError::NotIndexed(n) => {
                 write!(f, "st0x.deploy's subgraph is not deployed for {n}")
             }
@@ -64,13 +68,15 @@ pub fn subgraph_network<'a>(networks: &'a [String], chain: &str) -> Option<&'a s
 pub fn endpoint(
     src: Option<&rbac::SubgraphSource>,
     networks: Option<&[String]>,
+    goldsky_networks: Option<&[String]>,
     chain: &str,
 ) -> Result<String, DiscoveryError> {
     let src = src.ok_or(DiscoveryError::NoSource)?;
     let networks = networks.ok_or(DiscoveryError::NoNetworks)?;
+    let goldsky = goldsky_networks.ok_or(DiscoveryError::NoHosts)?;
     let network = subgraph_network(networks, chain)
         .ok_or_else(|| DiscoveryError::NotIndexed(chain.to_string()))?;
-    Ok(rbac::endpoint(src, network))
+    rbac::endpoint(src, goldsky, network).map_err(DiscoveryError::NoQueryBase)
 }
 
 /// One page of vaults after `after`, at `block` once the first page has fixed it.

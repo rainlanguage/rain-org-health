@@ -3053,12 +3053,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let subgraph = rbac::parse_deploy_workflow(&subgraph_workflow);
         let subgraph_networks_src = gh_file(deploy_org, deploy_repo, "subgraph/networks.json");
         let subgraph_networks = rbac::parse_networks(&subgraph_networks_src);
+        let goldsky_networks = {
+            let (org, repo, path) = rbac::RAINIX_SUBGRAPH_TARGETS;
+            rbac::parse_goldsky_networks(&gh_file(org, repo, path))
+        };
         let deployment_rbac = {
             let mut doc = rbac::build_rbac(
                 deploy_org,
                 deploy_repo,
                 subgraph.as_ref(),
                 subgraph_networks.as_deref(),
+                goldsky_networks.as_deref(),
                 &role_names,
             );
             doc["configRegistries"] =
@@ -3111,7 +3116,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             doc
         };
 
-        let deployment_registry = rbac::build_registry(&deployment_rbac, gh_file);
+        let deployment_registry =
+            rbac::build_registry(&deployment_rbac, goldsky_networks.as_deref(), gh_file);
 
         let migrations_src = gh_file(deploy_org, deploy_repo, migrations::PATH);
         let renamed_on = |c: &expected::ExpectedChain, s: Session| match &c.rename_migration {
@@ -3187,6 +3193,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                 let url = vaultdiscovery::endpoint(
                     subgraph.as_ref(),
                     subgraph_networks.as_deref(),
+                    goldsky_networks.as_deref(),
                     chain,
                 )?;
                 vaultdiscovery::discover(&|body| post_json(&url, body))

@@ -14,8 +14,10 @@
 //!
 //! Everything that locates the subgraph is read from the deploy repo, not typed
 //! here: the networks are `subgraph/networks.json`'s keys, and the deployment
-//! name and query base are the `subgraph-name` / `ormi-query-base` inputs its
-//! deploy workflow passes to rainix's `rainix-subgraph-deploy` reusable. That
+//! name and query bases are the `subgraph-name` / `ormi-query-base` /
+//! `goldsky-query-base` inputs its deploy workflow passes to rainix's
+//! `rainix-subgraph-deploy` reusable, and which host a network is on is
+//! rainix's own `GOLDSKY_NETWORKS` split. That
 //! publishes each network as `<subgraph-name>-<network>` at version label
 //! `<address>-<commit>`, which changes on every redeploy, and keeps the name
 //! shape so a tag can move between versions. Consumers address the tag —
@@ -29,35 +31,69 @@ use serde_json::{json, Map, Value};
 /// `prod` is the tag the org's consumers address (raindex's settings).
 pub const PROD_TAG: &str = "prod";
 
+/// The rainix source that defines which networks deploy to Goldsky.
+pub const RAINIX_SUBGRAPH_TARGETS: (&str, &str, &str) = (
+    "rainlanguage",
+    "rainix",
+    "rainix-static/src/subgraph_targets.rs",
+);
+
+/// rainix's `GOLDSKY_NETWORKS`: the networks its subgraph deploy publishes to
+/// Goldsky; every other network is published to Ormi. `None` when the constant
+/// is not in `src`.
+pub fn parse_goldsky_networks(src: &str) -> Option<Vec<String>> {
+    let decl =
+        Regex::new(r"GOLDSKY_NETWORKS\s*:\s*&\[\s*&str\s*\]\s*=\s*&\[([^\]]*)\]").ok()?;
+    let body = decl.captures(src)?.get(1)?.as_str();
+    let item = Regex::new(r#""([^"]*)""#).ok()?;
+    Some(item.captures_iter(body).map(|c| c[1].to_string()).collect())
+}
+
+/// Why a location cannot be built without rainix's network→host split.
+pub fn goldsky_networks_unread() -> String {
+    let (org, repo, path) = RAINIX_SUBGRAPH_TARGETS;
+    format!("could not read GOLDSKY_NETWORKS from {org}/{repo} {path}")
+}
+
 /// Where the subgraph is published, as the deploy workflow names it.
 #[derive(Debug, PartialEq, Eq, Clone)]
 pub struct SubgraphSource {
     /// `subgraph-name` — each network is published as `<name>-<network>`.
     pub name: String,
     /// `ormi-query-base` — the public query root for the Ormi account.
-    pub query_base: String,
+    pub ormi_query_base: Option<String>,
+    /// `goldsky-query-base` — the public query root for the Goldsky project.
+    pub goldsky_query_base: Option<String>,
 }
 
-/// Read the `subgraph-name` and `ormi-query-base` inputs out of the deploy
-/// workflow.
-/// `None` unless both are present: half a location is not a location.
+/// Read the `subgraph-name`, `ormi-query-base` and `goldsky-query-base` inputs
+/// out of the deploy workflow.
+/// `None` without a name and at least one query base, or when a query base is
+/// not https: the page POSTs to it and renders the answer as the chain's role
+/// history, so a response rewritten in transit would be shown as that history.
 pub fn parse_deploy_workflow(yaml: &str) -> Option<SubgraphSource> {
     let value = |key: &str| -> Option<String> {
         let re = Regex::new(&format!(r#"(?m)^\s*{key}:\s*["']?([^"'\s#]+)"#)).ok()?;
         re.captures(yaml)
             .and_then(|c| c.get(1))
-            .map(|m| m.as_str().to_string())
+            .map(|m| m.as_str().trim_end_matches('/').to_string())
     };
     let name = value("subgraph-name")?;
-    let query_base = value("ormi-query-base")?.trim_end_matches('/').to_string();
-    // The page POSTs to this base and renders the answer as the chain's role
-    // history. Anything but https is refused for the reason rainix's
-    // `ormi-probe` refuses it: a response rewritten in transit would be shown
-    // as that history.
-    if !query_base.starts_with("https://") {
+    let ormi_query_base = value("ormi-query-base");
+    let goldsky_query_base = value("goldsky-query-base");
+    let bases = [&ormi_query_base, &goldsky_query_base];
+    if bases.iter().all(|b| b.is_none())
+        || bases
+            .iter()
+            .any(|b| b.as_ref().is_some_and(|b| !b.starts_with("https://")))
+    {
         return None;
     }
-    Some(SubgraphSource { name, query_base })
+    Some(SubgraphSource {
+        name,
+        ormi_query_base,
+        goldsky_query_base,
+    })
 }
 
 /// The networks the subgraph is deployed to, in `networks.json` order. `None`
@@ -95,16 +131,30 @@ pub fn chain_name(network: &str) -> Option<&'static str> {
         "hyper-evm" | "hyperevm" => Some("hyperevm"),
         "robinhood" => Some("robinhood"),
         "bsc" => Some("bsc"),
+        "0g" => Some("zerog"),
         _ => None,
     }
 }
 
-/// The tagged query URL for one network.
-pub fn endpoint(src: &SubgraphSource, network: &str) -> String {
-    format!(
+/// The tagged query URL for one network, on the host `goldsky_networks` routes
+/// it to. `Err` names the query base the deploy workflow does not give.
+pub fn endpoint(
+    src: &SubgraphSource,
+    goldsky_networks: &[String],
+    network: &str,
+) -> Result<String, String> {
+    let (input, base) = if goldsky_networks.iter().any(|n| n == network) {
+        ("goldsky-query-base", &src.goldsky_query_base)
+    } else {
+        ("ormi-query-base", &src.ormi_query_base)
+    };
+    let base = base
+        .as_ref()
+        .ok_or_else(|| format!("deploy-subgraph.yaml has no {input} for {network}"))?;
+    Ok(format!(
         "{}/subgraphs/{}-{}/{}/gn",
-        src.query_base, src.name, network, PROD_TAG
-    )
+        base, src.name, network, PROD_TAG
+    ))
 }
 
 /// Every role name the deploy repo spells out, keyed by its on-chain id.
@@ -163,6 +213,7 @@ pub fn build_location(
     repo: &str,
     source: Option<&SubgraphSource>,
     networks: Option<&[String]>,
+    goldsky_networks: Option<&[String]>,
 ) -> Value {
     let mut doc = json!({
         "org": org,
@@ -170,9 +221,7 @@ pub fn build_location(
         "tag": PROD_TAG,
     });
     let Some(src) = source else {
-        doc["unavailable"] = Value::from(
-            "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml",
-        );
+        doc["unavailable"] = Value::from(SOURCE_UNREAD);
         return doc;
     };
     doc["subgraph"] = Value::from(src.name.clone());
@@ -180,19 +229,33 @@ pub fn build_location(
         doc["unavailable"] = Value::from("could not read subgraph/networks.json");
         return doc;
     };
+    let Some(goldsky) = goldsky_networks else {
+        doc["unavailable"] = Value::from(goldsky_networks_unread());
+        return doc;
+    };
     doc["networks"] = Value::from(
         nets.iter()
             .map(|n| {
-                json!({
+                let mut net = json!({
                     "network": n,
                     "chain": chain_name(n),
-                    "endpoint": endpoint(src, n),
-                })
+                });
+                match endpoint(src, goldsky, n) {
+                    Ok(url) => net["endpoint"] = Value::from(url),
+                    Err(why) => {
+                        net["endpoint"] = Value::Null;
+                        net["unavailable"] = Value::from(why);
+                    }
+                }
+                net
             })
             .collect::<Vec<_>>(),
     );
     doc
 }
+
+/// Why a location has no source: the deploy workflow's inputs did not parse.
+pub const SOURCE_UNREAD: &str = "could not read subgraph-name / ormi-query-base / goldsky-query-base from .github/workflows/deploy-subgraph.yaml";
 
 /// The `deploymentRbac` document: [`build_location`] plus the role names.
 pub fn build_rbac(
@@ -200,10 +263,11 @@ pub fn build_rbac(
     repo: &str,
     source: Option<&SubgraphSource>,
     networks: Option<&[String]>,
+    goldsky_networks: Option<&[String]>,
     names: &[(String, String)],
 ) -> Value {
-    let mut doc = build_location(org, repo, source, networks);
-    if source.is_none() || networks.is_none() {
+    let mut doc = build_location(org, repo, source, networks, goldsky_networks);
+    if source.is_none() || networks.is_none() || goldsky_networks.is_none() {
         return doc;
     }
     doc["roleNames"] = Value::Object(
@@ -221,7 +285,11 @@ pub const REGISTRY_REPO: &str = "rain.deploy";
 
 /// The `deploymentRegistry` document: [`build_location`] for the registry repo,
 /// its config registries, and the address names `rbac_doc` holds.
-pub fn build_registry(rbac_doc: &Value, fetch: impl Fn(&str, &str, &str) -> String) -> Value {
+pub fn build_registry(
+    rbac_doc: &Value,
+    goldsky_networks: Option<&[String]>,
+    fetch: impl Fn(&str, &str, &str) -> String,
+) -> Value {
     let workflow_src = fetch(
         REGISTRY_ORG,
         REGISTRY_REPO,
@@ -233,6 +301,7 @@ pub fn build_registry(rbac_doc: &Value, fetch: impl Fn(&str, &str, &str) -> Stri
         REGISTRY_REPO,
         parse_deploy_workflow(&workflow_src).as_ref(),
         parse_networks(&networks_src).as_deref(),
+        goldsky_networks,
     );
     doc["configRegistries"] = Value::Object(config_registries(&networks_src));
     if let Some(names) = rbac_doc.get("addressNames") {
