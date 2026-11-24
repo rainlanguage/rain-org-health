@@ -623,6 +623,75 @@ function renderDeployments(document, $, data, io) {
     for (const set of Array.isArray(f) ? f : f ? [f] : [])
       renderInfraSet(set, "V2", "v2 deployment codehashes; each v2 beacon's implementation and owner");
   };
+  const renderVerificationSet = (f) => {
+    if (!f) return;
+    if (f.unavailable || !Array.isArray(f.rows) || f.rows.length === 0) {
+      sink.append(el("h2", null, `Explorer verification — ${f.network ?? "all chains"}`));
+      sink.append(
+        el(
+          "div",
+          "own-sub",
+          `Explorer verification unavailable — ${f.reason ?? "the scan produced no contracts for this chain"}.`,
+        ),
+      );
+      return;
+    }
+    sink.append(el("h2", null, `Explorer verification — ${f.network}`));
+    sink.append(
+      el(
+        "div",
+        "own-sub",
+        `Every contract the sections above report on ${f.network}, checked for verified source on the explorer st0x.deploy's ${f.source ?? "foundry.toml"} [etherscan] entry names.`,
+      ),
+    );
+    const allVerified = f.verified === f.total;
+    const banner = el("div", `own-verify ${allVerified ? "own-verify-ok" : "own-verify-drift"}`);
+    banner.append(
+      el(
+        "span",
+        "own-verify-msg",
+        `${f.verified} verified · ${f.unverified} unverified · ${f.unknown} unknown of ${f.total} contracts on ${f.network}.`,
+      ),
+    );
+    banner.append(el("span", "own-verify-src", `via ${f.explorer}`));
+    sink.append(banner);
+    const row = (r) => {
+      const st = r.status || "unknown";
+      const row = el("div", `own-row hlth-${st}`);
+      const rc = el("div", "own-rc");
+      rc.append(el("div", "own-role", (r.components || []).join(", ") || "contract"));
+      const note = el("div", "own-note");
+      note.append(addrNode("own-addr", r.address, f.network));
+      rc.append(note);
+      const detail = el("div", "bcn-detail");
+      const line = el("div", "bcn-line");
+      line.append(el("span", "bcn-key", "contract"));
+      line.append(el("span", "own-addr", r.contractName ?? "—"));
+      detail.append(line);
+      if (r.reason) detail.append(el("div", "own-note", r.reason));
+      const stCls = st === "verified" ? "yes" : st === "unknown" ? "dim" : "no";
+      row.append(rc, detail, el("span", `own-chip own-chip-${stCls}`, st));
+      return row;
+    };
+    const flagged = f.rows.filter((r) => r.status !== "verified");
+    if (flagged.length > 0) {
+      const table = el("div", "own-table");
+      for (const r of flagged) table.append(row(r));
+      sink.append(table);
+    }
+    const ok = f.rows.filter((r) => r.status === "verified");
+    if (ok.length > 0) {
+      const d = el("details", "vault-clean");
+      d.append(el("summary", null, `${ok.length} verified`));
+      const table = el("div", "own-table");
+      for (const r of ok) table.append(row(r));
+      d.append(table);
+      sink.append(d);
+    }
+  };
+  const renderVerification = (f) => {
+    for (const set of Array.isArray(f) ? f : f ? [f] : []) renderVerificationSet(set);
+  };
   const renderTokens = (f) => {
     for (const r of Array.isArray(f) ? f : f ? [f] : []) {
       sink.append(el("h2", null, `Registry tokens — ${r.network ?? "all chains"}`));
@@ -3400,6 +3469,7 @@ function renderDeployments(document, $, data, io) {
     renderInfra(data.deploymentInfra);
     renderCodeTokens(data.deploymentCodeTokens);
     renderV2(data.deploymentV2);
+    renderVerification(data.deploymentVerification);
     sink = panels.migrations;
     renderMigrations(data.deploymentMigrations, data.deploymentRbac && data.deploymentRbac.addressNames);
     sink = panels.rbac;
@@ -3457,6 +3527,7 @@ function renderDeployments(document, $, data, io) {
   renderInfra(data.deploymentInfra);
   renderCodeTokens(data.deploymentCodeTokens);
   renderV2(data.deploymentV2);
+  renderVerification(data.deploymentVerification);
   sink = panels.migrations;
   renderMigrations(data.deploymentMigrations, data.deploymentRbac && data.deploymentRbac.addressNames);
   sink = panels.rbac;
