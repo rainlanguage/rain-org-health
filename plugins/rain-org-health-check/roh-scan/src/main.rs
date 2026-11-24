@@ -3052,21 +3052,15 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         )
         .unwrap_or(serde_json::Value::Null);
         let deployment_orchestrator_grants = match &expected_state {
-            Ok(state) => {
-                owners::build_grants(
-                    deploy_org,
-                    deploy_repo,
-                    &deploy_sources,
-                    &owners::GrantSpec::orchestrator(
-                        &orchestrator_lib,
-                        &deploy_sources,
-                        &role_names,
-                    ),
-                    &orchestrator_chains(&chains, state),
-                    &check_grant,
-                )
-                .unwrap_or(serde_json::Value::Null)
-            }
+            Ok(state) => owners::build_grants(
+                deploy_org,
+                deploy_repo,
+                &deploy_sources,
+                &owners::GrantSpec::orchestrator(&orchestrator_lib, &deploy_sources, &role_names),
+                &orchestrator_chains(&chains, state),
+                &check_grant,
+            )
+            .unwrap_or(serde_json::Value::Null),
             Err(e) => orchestrator_grants_unavailable(deploy_org, deploy_repo, e),
         };
 
@@ -3384,9 +3378,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         .map(|d| d.to_string()),
                     orchestrator_set_deployer_has_code: o.and_then(|o| has_code(&o.set_deployer)),
                     orchestrator_beacon_codehash: o.and_then(|o| codehash(&o.beacon)),
-                    orchestrator_beacon_implementation: o.and_then(|o| {
-                        call_addr(&o.beacon, rpc::implementation_calldata())
-                    }),
+                    orchestrator_beacon_implementation: o
+                        .and_then(|o| call_addr(&o.beacon, rpc::implementation_calldata())),
                     orchestrator_beacon_owner: o
                         .and_then(|o| call_addr(&o.beacon, rpc::owner_calldata())),
                     orchestrator_instance_beacon: o.and_then(|o| {

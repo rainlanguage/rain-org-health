@@ -315,8 +315,7 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             Some(ExpectedOrchestrator {
                 set_deployer: f.nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
                 beacon: f.nonzero(&o["beacon"], "orchestrator.beacon")?,
-                beacon_codehash: f
-                    .codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
+                beacon_codehash: f.codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
                 implementation: f.nonzero(&o["implementation"], "orchestrator.implementation")?,
                 owner: f.nonzero(&o["owner"], "orchestrator.owner")?,
                 instance: f.nonzero(&o["instance"], "orchestrator.instance")?,

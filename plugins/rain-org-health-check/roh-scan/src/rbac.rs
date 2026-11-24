@@ -42,8 +42,7 @@ pub const RAINIX_SUBGRAPH_TARGETS: (&str, &str, &str) = (
 /// Goldsky; every other network is published to Ormi. `None` when the constant
 /// is not in `src`.
 pub fn parse_goldsky_networks(src: &str) -> Option<Vec<String>> {
-    let decl =
-        Regex::new(r"GOLDSKY_NETWORKS\s*:\s*&\[\s*&str\s*\]\s*=\s*&\[([^\]]*)\]").ok()?;
+    let decl = Regex::new(r"GOLDSKY_NETWORKS\s*:\s*&\[\s*&str\s*\]\s*=\s*&\[([^\]]*)\]").ok()?;
     let body = decl.captures(src)?.get(1)?.as_str();
     let item = Regex::new(r#""([^"]*)""#).ok()?;
     Some(item.captures_iter(body).map(|c| c[1].to_string()).collect())
