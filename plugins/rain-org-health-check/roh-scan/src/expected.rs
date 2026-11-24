@@ -130,11 +130,13 @@ pub struct ExpectedChain {
     pub beacons: Vec<ExpectedBeacon>,
     pub safe: ExpectedSafe,
     pub timelock: ExpectedTimelock,
-    pub orchestrator: ExpectedOrchestrator,
+    /// `None` where the file zeroes every field: the chain runs no orchestrator.
+    pub orchestrator: Option<ExpectedOrchestrator>,
     pub authoriser: ExpectedCode,
     pub eu_authoriser: ExpectedCode,
     pub zoltu: Vec<ExpectedZoltu>,
-    pub rename_migration: String,
+    /// `None` where the file carries zero: the chain expects no renamed state.
+    pub rename_migration: Option<String>,
     /// tQSEP, present exactly on the reference network.
     pub qsep: Option<ExpectedQsep>,
     /// In file order.
@@ -198,6 +200,17 @@ fn is_bytes32(s: &str) -> bool {
 
 fn is_zero(s: &str) -> bool {
     s[2..].chars().all(|c| c == '0')
+}
+
+/// A non-empty object whose every field is a zero address or bytes32.
+fn is_all_zero(v: &serde_json::Value) -> bool {
+    v.as_object().is_some_and(|m| {
+        !m.is_empty()
+            && m.values().all(|f| {
+                f.as_str()
+                    .is_some_and(|s| (is_address(s) || is_bytes32(s)) && is_zero(s))
+            })
+    })
 }
 
 /// The `section` object's chain entries from a body of the supported version.
@@ -264,7 +277,9 @@ impl ChainFields<'_> {
 ///
 /// Every expected value must be a non-zero address: a zero expectation would
 /// match a contract answering the zero address and report it as on target, and
-/// a zero codehash would match an address with no account.
+/// a zero codehash would match an address with no account. The file's zeros
+/// that mean absence are read as `None`: an all-zero `orchestrator` and a zero
+/// `renameMigration`.
 pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
     let chains = chain_entries(body, "chains")?;
     let mut out = Vec::with_capacity(chains.len());
@@ -286,9 +301,25 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
             .ok_or_else(|| f.bad("network"))?
             .to_string();
         let beacon_set_deployer = f.nonzero(&c["beaconSetDeployer"], "beaconSetDeployer")?;
+        let o = &c["orchestrator"];
+        let orchestrator = if is_all_zero(o) {
+            None
+        } else {
+            Some(ExpectedOrchestrator {
+                set_deployer: f.nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
+                beacon: f.nonzero(&o["beacon"], "orchestrator.beacon")?,
+                beacon_codehash: f
+                    .codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
+                implementation: f.nonzero(&o["implementation"], "orchestrator.implementation")?,
+                owner: f.nonzero(&o["owner"], "orchestrator.owner")?,
+                instance: f.nonzero(&o["instance"], "orchestrator.instance")?,
+            })
+        };
+        // The orchestrator beacon is in use exactly where the orchestrator is.
+        let in_use = BEACON_NAMES.len() - usize::from(orchestrator.is_none());
         let beacons_raw = c["beacons"]
             .as_array()
-            .filter(|b| b.len() == BEACON_NAMES.len())
+            .filter(|b| b.len() == in_use)
             .ok_or_else(|| f.bad("beacons"))?;
         let beacons = beacons_raw
             .iter()
@@ -373,15 +404,6 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 .as_u64()
                 .ok_or_else(|| f.bad("timelock.minDelay"))?,
         };
-        let o = &c["orchestrator"];
-        let orchestrator = ExpectedOrchestrator {
-            set_deployer: f.nonzero(&o["setDeployer"], "orchestrator.setDeployer")?,
-            beacon: f.nonzero(&o["beacon"], "orchestrator.beacon")?,
-            beacon_codehash: f.codehash(&o["beaconCodehash"], "orchestrator.beaconCodehash")?,
-            implementation: f.nonzero(&o["implementation"], "orchestrator.implementation")?,
-            owner: f.nonzero(&o["owner"], "orchestrator.owner")?,
-            instance: f.nonzero(&o["instance"], "orchestrator.instance")?,
-        };
         let authoriser = code(
             &c["authoriser"],
             "authoriser.address",
@@ -405,7 +427,11 @@ pub fn parse(body: &str) -> Result<Vec<ExpectedChain>, ExpectedError> {
                 })
             })
             .collect::<Result<Vec<_>, _>>()?;
-        let rename_migration = f.codehash(&c["renameMigration"], "renameMigration")?;
+        let rename_migration = c["renameMigration"]
+            .as_str()
+            .filter(|h| is_bytes32(h))
+            .ok_or_else(|| f.bad("renameMigration"))?;
+        let rename_migration = (!is_zero(rename_migration)).then(|| rename_migration.to_string());
         let text = |v: &serde_json::Value, field: &'static str| {
             v.as_str()
                 .filter(|s| !s.is_empty())
@@ -1089,14 +1115,14 @@ mod tests {
         );
         assert_eq!(
             base.orchestrator,
-            ExpectedOrchestrator {
+            Some(ExpectedOrchestrator {
                 set_deployer: ORCH_SET_DEPLOYER.into(),
                 beacon: ORCH_BEACON.into(),
                 beacon_codehash: ORCH_BEACON_HASH.into(),
                 implementation: ORCH_IMPL.into(),
                 owner: BASE_TIMELOCK.into(),
                 instance: ORCH_INSTANCE.into(),
-            }
+            })
         );
         assert_eq!(
             base.authoriser,
@@ -1123,7 +1149,7 @@ mod tests {
                     .into(),
             }
         );
-        assert_eq!(base.rename_migration, RENAME);
+        assert_eq!(base.rename_migration.as_deref(), Some(RENAME));
     }
 
     #[test]

@@ -357,7 +357,6 @@ pub fn infra_rows(c: &ExpectedChain, live: InfraLive) -> Vec<serde_json::Value> 
     }
     let tl = &c.timelock.code.address;
     let min_delay = c.timelock.min_delay.to_string();
-    let o = &c.orchestrator;
     rows.extend([
         infra_row(
             "timelock",
@@ -373,41 +372,47 @@ pub fn infra_rows(c: &ExpectedChain, live: InfraLive) -> Vec<serde_json::Value> 
             Some(&min_delay),
             live.timelock_min_delay,
         ),
-        infra_row(
-            "orchestrator",
-            "setDeployer hasCode",
-            Some(&o.set_deployer),
-            Some("true"),
-            live.orchestrator_set_deployer_has_code,
-        ),
-        infra_row(
-            "orchestrator",
-            "beacon codehash",
-            Some(&o.beacon),
-            Some(&o.beacon_codehash),
-            live.orchestrator_beacon_codehash,
-        ),
-        infra_row(
-            "orchestrator",
-            "beacon implementation",
-            Some(&o.beacon),
-            Some(&o.implementation),
-            live.orchestrator_beacon_implementation,
-        ),
-        infra_row(
-            "orchestrator",
-            "beacon owner",
-            Some(&o.beacon),
-            Some(&o.owner),
-            live.orchestrator_beacon_owner,
-        ),
-        infra_row(
-            "orchestrator",
-            "instance beacon",
-            Some(&o.instance),
-            Some(&o.beacon),
-            live.orchestrator_instance_beacon,
-        ),
+    ]);
+    if let Some(o) = &c.orchestrator {
+        rows.extend([
+            infra_row(
+                "orchestrator",
+                "setDeployer hasCode",
+                Some(&o.set_deployer),
+                Some("true"),
+                live.orchestrator_set_deployer_has_code,
+            ),
+            infra_row(
+                "orchestrator",
+                "beacon codehash",
+                Some(&o.beacon),
+                Some(&o.beacon_codehash),
+                live.orchestrator_beacon_codehash,
+            ),
+            infra_row(
+                "orchestrator",
+                "beacon implementation",
+                Some(&o.beacon),
+                Some(&o.implementation),
+                live.orchestrator_beacon_implementation,
+            ),
+            infra_row(
+                "orchestrator",
+                "beacon owner",
+                Some(&o.beacon),
+                Some(&o.owner),
+                live.orchestrator_beacon_owner,
+            ),
+            infra_row(
+                "orchestrator",
+                "instance beacon",
+                Some(&o.instance),
+                Some(&o.beacon),
+                live.orchestrator_instance_beacon,
+            ),
+        ]);
+    }
+    rows.extend([
         infra_row(
             "authoriser",
             "codehash",
@@ -1374,7 +1379,7 @@ mod tests {
 
     fn unlocated(c: &crate::expected::ExpectedChain) -> RenameUnlocated {
         RenameUnlocated {
-            id: c.rename_migration.clone(),
+            id: c.rename_migration.clone().unwrap(),
             network: c.network.clone(),
         }
     }
