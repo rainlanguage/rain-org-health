@@ -395,8 +395,10 @@ mod tests {
             "could not read GOLDSKY_NETWORKS from rainlanguage/rainix rainix-static/src/subgraph_targets.rs"
         );
         assert_eq!(
-            DiscoveryError::NoQueryBase("deploy-subgraph.yaml has no goldsky-query-base for 0g".into())
-                .to_string(),
+            DiscoveryError::NoQueryBase(
+                "deploy-subgraph.yaml has no goldsky-query-base for 0g".into()
+            )
+            .to_string(),
             "deploy-subgraph.yaml has no goldsky-query-base for 0g"
         );
     }

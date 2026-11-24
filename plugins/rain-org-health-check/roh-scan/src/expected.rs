@@ -1900,8 +1900,8 @@ mod tests {
     #[test]
     fn a_zero_rename_migration_is_no_rename_with_or_without_an_orchestrator() {
         let zero_hash = format!("0x{}", "0".repeat(64));
-        let got = parse(&with("/chains/8453/renameMigration", json!(zero_hash)).to_string())
-            .unwrap();
+        let got =
+            parse(&with("/chains/8453/renameMigration", json!(zero_hash)).to_string()).unwrap();
         assert_eq!(got[0].rename_migration, None);
         assert!(got[0].orchestrator.is_some());
         assert_eq!(got[1].rename_migration.as_deref(), Some(RENAME));
@@ -1980,7 +1980,10 @@ mod tests {
         ] {
             assert!(!is_all_zero(&v, bytes32), "{v}");
         }
-        for (label, o) in [("wide beacon", wide_address), ("narrow codehash", narrow_codehash)] {
+        for (label, o) in [
+            ("wide beacon", wide_address),
+            ("narrow codehash", narrow_codehash),
+        ] {
             let mut d = without_orchestrator();
             d["chains"]["1"]["orchestrator"] = o;
             assert_eq!(malformed(&d), "orchestrator.setDeployer", "{label}");

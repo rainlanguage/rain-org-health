@@ -1985,8 +1985,9 @@ mod tests {
             .remove(0);
         let rows = infra_rows(&zerog, InfraLive::default());
         assert_eq!(rows.len(), 8);
-        assert!(rows.iter().all(|r| r["component"] != "orchestrator"
-            && r["component"] != "Orchestrator beacon"));
+        assert!(rows
+            .iter()
+            .all(|r| r["component"] != "orchestrator" && r["component"] != "Orchestrator beacon"));
     }
 
     /// A Zoltu suite's codehash is its row; no code reads `none` and drifts.

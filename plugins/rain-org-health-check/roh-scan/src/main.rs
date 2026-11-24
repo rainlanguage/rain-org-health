@@ -3808,8 +3808,8 @@ mod tests {
     }
 
     #[test]
-    fn orchestrator_grants_are_read_on_the_pinned_chains_whose_expected_state_has_an_orchestrator(
-    ) {
+    fn orchestrator_grants_are_read_on_the_pinned_chains_whose_expected_state_has_an_orchestrator()
+    {
         let state = expected_chains();
         assert!(expected_chain("zerog").orchestrator.is_none());
         let pins = [
@@ -3929,7 +3929,10 @@ mod tests {
             MIGRATION_REGISTRY.to_string(),
             rpc::applied_v5_calldata(MIGRATION_WRITER, MIGRATION_NS, RENAME_ID).unwrap(),
         );
-        assert_eq!(*sent.borrow(), vec![applied.clone(), applied.clone(), applied]);
+        assert_eq!(
+            *sent.borrow(),
+            vec![applied.clone(), applied.clone(), applied]
+        );
 
         sent.borrow_mut().clear();
         assert_eq!(ask(&base, "", applied_at(1)), Ok(None));

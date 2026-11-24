@@ -357,7 +357,8 @@ jobs:
 "#;
     const ORMI_BASE: &str =
         "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
-    const GOLDSKY_BASE: &str = "https://api.goldsky.com/api/public/project_cmjr2df7svg6t01tl2ic706ao";
+    const GOLDSKY_BASE: &str =
+        "https://api.goldsky.com/api/public/project_cmjr2df7svg6t01tl2ic706ao";
 
     /// rainix `rainix-static/src/subgraph_targets.rs` at 2d16db31.
     const RAINIX_TARGETS: &str = r#"
@@ -1069,11 +1070,15 @@ jobs:
                 .collect(),
         );
         want["addressNames"] = rbac_doc["addressNames"].clone();
-        let d = build_registry(&rbac_doc, Some(&goldsky()), |_: &str, _: &str, path: &str| match path {
-            ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
-            "subgraph/networks.json" => networks_src.clone(),
-            _ => String::new(),
-        });
+        let d = build_registry(
+            &rbac_doc,
+            Some(&goldsky()),
+            |_: &str, _: &str, path: &str| match path {
+                ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
+                "subgraph/networks.json" => networks_src.clone(),
+                _ => String::new(),
+            },
+        );
         assert_eq!(d, want);
         assert_eq!(d["subgraph"], "rain-deploy-registry");
         assert_eq!(d["networks"].as_array().map(Vec::len), Some(9));
@@ -1092,18 +1097,22 @@ jobs:
         .to_string();
         let asked = std::cell::RefCell::new(Vec::new());
         let rbac_doc = rbac_doc_with_address_names();
-        let d = build_registry(&rbac_doc, Some(ALL_ORMI), |org: &str, repo: &str, path: &str| {
-            asked
-                .borrow_mut()
-                .push((org.to_string(), repo.to_string(), path.to_string()));
-            match (org, repo, path) {
-                ("rainlanguage", "rain.deploy", ".github/workflows/deploy-subgraph.yaml") => {
-                    workflow.to_string()
+        let d = build_registry(
+            &rbac_doc,
+            Some(ALL_ORMI),
+            |org: &str, repo: &str, path: &str| {
+                asked
+                    .borrow_mut()
+                    .push((org.to_string(), repo.to_string(), path.to_string()));
+                match (org, repo, path) {
+                    ("rainlanguage", "rain.deploy", ".github/workflows/deploy-subgraph.yaml") => {
+                        workflow.to_string()
+                    }
+                    ("rainlanguage", "rain.deploy", "subgraph/networks.json") => networks.clone(),
+                    _ => String::new(),
                 }
-                ("rainlanguage", "rain.deploy", "subgraph/networks.json") => networks.clone(),
-                _ => String::new(),
-            }
-        });
+            },
+        );
         let mut asked = asked.into_inner();
         asked.sort();
         assert_eq!(
@@ -1150,11 +1159,15 @@ jobs:
             "flare": {"MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31"}},
         })
         .to_string();
-        let d = build_registry(&json!({}), Some(ALL_ORMI), |_: &str, _: &str, path: &str| match path {
-            ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
-            "subgraph/networks.json" => networks_src.clone(),
-            _ => String::new(),
-        });
+        let d = build_registry(
+            &json!({}),
+            Some(ALL_ORMI),
+            |_: &str, _: &str, path: &str| match path {
+                ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
+                "subgraph/networks.json" => networks_src.clone(),
+                _ => String::new(),
+            },
+        );
         assert_eq!(
             d["networks"]
                 .as_array()
@@ -1181,11 +1194,16 @@ jobs:
             build_rbac("o", "r", None, None, Some(ALL_ORMI), &[]),
             located,
         ] {
-            let d = build_registry(&rbac_doc, Some(ALL_ORMI), |_: &str, _: &str, path: &str| match path {
-                ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
-                "subgraph/networks.json" => networks_src.clone(),
-                _ => String::new(),
-            });
+            let d =
+                build_registry(
+                    &rbac_doc,
+                    Some(ALL_ORMI),
+                    |_: &str, _: &str, path: &str| match path {
+                        ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
+                        "subgraph/networks.json" => networks_src.clone(),
+                        _ => String::new(),
+                    },
+                );
             assert!(d.get("addressNames").is_none(), "{rbac_doc}");
             assert_eq!(d["networks"].as_array().map(Vec::len), Some(9));
         }
