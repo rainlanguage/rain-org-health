@@ -3008,12 +3008,24 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             &check_grant,
         )
         .unwrap_or(serde_json::Value::Null);
+        let orchestrator_chains: Vec<owners::ChainPin> = match &expected_state {
+            Ok(state) => chains
+                .iter()
+                .filter(|p| {
+                    state
+                        .iter()
+                        .any(|c| c.network == p.network && c.orchestrator.is_some())
+                })
+                .cloned()
+                .collect(),
+            Err(_) => Vec::new(),
+        };
         let deployment_orchestrator_grants = owners::build_grants(
             deploy_org,
             deploy_repo,
             &deploy_sources,
             &owners::GrantSpec::orchestrator(&orchestrator_lib, &deploy_sources, &role_names),
-            &chains,
+            &orchestrator_chains,
             &check_grant,
         )
         .unwrap_or(serde_json::Value::Null);
@@ -3090,10 +3102,11 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         let deployment_registry = rbac::build_registry(&deployment_rbac, gh_file);
 
         let migrations_src = gh_file(deploy_org, deploy_repo, migrations::PATH);
-        let renamed_on = |c: &expected::ExpectedChain, s: Session| {
-            migrations::renamed(&migrations_src, &c.network, &c.rename_migration, &|calls| {
+        let renamed_on = |c: &expected::ExpectedChain, s: Session| match &c.rename_migration {
+            Some(id) => migrations::renamed(&migrations_src, &c.network, id, &|calls| {
                 eth_call_batch(s, calls)
-            })
+            }),
+            None => Ok(Some(false)),
         };
         let deployment_migrations = migrations::build(
             deploy_org,
@@ -3317,7 +3330,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     eth_call(s, a, &data).and_then(|h| rpc::decode_address(&h))
                 };
                 let tl = &c.timelock.code.address;
-                let o = &c.orchestrator;
+                let o = c.orchestrator.as_ref();
                 let live = deployhealth::InfraLive {
                     beacon_set_deployer_has_code: has_code(&c.beacon_set_deployer),
                     beacon_codehashes: c.beacons.iter().map(|b| codehash(&b.address)).collect(),
@@ -3325,19 +3338,17 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     timelock_min_delay: eth_call(s, tl, &rpc::min_delay_calldata())
                         .and_then(|h| rpc::decode_uint(&h))
                         .map(|d| d.to_string()),
-                    orchestrator_set_deployer_has_code: has_code(&o.set_deployer),
-                    orchestrator_beacon_codehash: codehash(&o.beacon),
-                    orchestrator_beacon_implementation: call_addr(
-                        &o.beacon,
-                        rpc::implementation_calldata(),
-                    ),
-                    orchestrator_beacon_owner: call_addr(&o.beacon, rpc::owner_calldata()),
-                    orchestrator_instance_beacon: eth_get_storage_at(
-                        s,
-                        &o.instance,
-                        ERC1967_BEACON_SLOT,
-                    )
-                    .and_then(|h| rpc::decode_address(&h)),
+                    orchestrator_set_deployer_has_code: o.and_then(|o| has_code(&o.set_deployer)),
+                    orchestrator_beacon_codehash: o.and_then(|o| codehash(&o.beacon)),
+                    orchestrator_beacon_implementation: o.and_then(|o| {
+                        call_addr(&o.beacon, rpc::implementation_calldata())
+                    }),
+                    orchestrator_beacon_owner: o
+                        .and_then(|o| call_addr(&o.beacon, rpc::owner_calldata())),
+                    orchestrator_instance_beacon: o.and_then(|o| {
+                        eth_get_storage_at(s, &o.instance, ERC1967_BEACON_SLOT)
+                            .and_then(|h| rpc::decode_address(&h))
+                    }),
                     authoriser_codehash: codehash(&c.authoriser.address),
                     eu_authoriser_codehash: codehash(&c.eu_authoriser.address),
                 };
