@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-24T11:00:43Z",
+  "generatedAt": "2026-11-24T17:39:26Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2074,7 +2074,7 @@
     "repo": "st0x.deploy",
     "org": "S01-Issuer",
     "unavailable": true,
-    "reason": "expected-state.json chain 16661 has a missing or malformed beacons"
+    "reason": "expected-state.json chain 16661 has a missing or malformed renameMigration"
   },
   "deploymentGrants": {
     "org": "S01-Issuer",
@@ -4210,7 +4210,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 61638487
+        "discoveredAtBlock": 61758189
       },
       {
         "network": "ethereum",
@@ -4767,7 +4767,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26484583
+        "discoveredAtBlock": 26486572
       },
       {
         "network": "bsc",
@@ -5057,81 +5057,81 @@
           },
           {
             "vault": "0x0d2029ed7497a8cc5c65e808393ced0af2259385",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x683dd1c36169b25355c8c110942a820f395ffb7d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x185ccb3c9c09300b3877f71e747f041604f7603f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcb8b0c80560a66c96a25297cc98b23fa1d7acc6a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcd49da53d0570e6d34ab786aa4eb4f9e0e6ab045",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x162d65e4e4313b88d7efc37f9c8110b334110406",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xb51c6a5c30a37814128e143e307e1f9c8cc9e32b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x1169cda99aec045f9a42227d32df005650bc0d9d",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2fa89b48915fdaa098e0d2eb61ff7a72760a558c",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x4fdce96b5eb6545c157619f835da16dc71de5e2e",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
@@ -5177,201 +5177,201 @@
           },
           {
             "vault": "0x21a53882b0023c1f4d98087564e91ae6cea0b4ec",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x788e2fee2eda979739a7e4b3ebfc2aeb7e4f3a12",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x9a13ca5347146d705e33bb42b336ca3b6868cc61",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xcc23ef9e1e74c22ab2a9b73e253af01531385b08",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x28019de1de36d5fa0077dfe7859ed54664982081",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xe39a028cdc8a50e655a5b31ba8a48ce36f3a8243",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x2c5374933d1e7208b2184fa1a45119fdcac13123",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0xc361da5ac6523fbc40a1b160ce98d1e84667325b",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x21ebe855f15c2e1badea603c1cb07b964096a616",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": true,
             "onChain": true
           },
           {
             "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x194c6ebe9919c8681aa17c8814ee6c8a0534b28f",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x344147366f648640076d363faf659c214788e99d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5417,81 +5417,81 @@
           },
           {
             "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x710645ee06d013581617f9fdbccfbcc8d891d43a",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7a54a3d95721e086bc9f7f50ae6b6a2f440c5983",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xa814255182f68cd5176bdb356a57411340f87d84",
-            "owner": "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b",
-            "label": "timelock",
-            "certificationExpired": false,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
-            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
-            "label": "safe",
-            "certificationExpired": true,
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
             "pinned": false,
             "onChain": true
           },
@@ -5537,41 +5537,41 @@
           },
           {
             "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
           {
             "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
-            "owner": null,
-            "label": "unknown",
-            "certificationExpired": null,
+            "owner": "0x3840aedaec8e82f79d8f6a8f6adca271e13e0329",
+            "label": "safe",
+            "certificationExpired": true,
             "pinned": false,
             "onChain": true
           },
@@ -5625,18 +5625,18 @@
           }
         ],
         "counts": {
-          "safe": 36,
-          "timelock": 65,
+          "safe": 19,
+          "timelock": 42,
           "other": 0,
-          "unknown": 5,
+          "unknown": 45,
           "unpinned": 0,
-          "certificationExpired": 36,
-          "certificationUnknown": 5,
+          "certificationExpired": 19,
+          "certificationUnknown": 45,
           "notPinned": 47,
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 135451290
+        "discoveredAtBlock": 135504473
       },
       {
         "network": "hyperevm",
@@ -6177,7 +6177,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 52115422
+        "discoveredAtBlock": 52139762
       },
       {
         "network": "robinhood",
@@ -6718,27 +6718,547 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 122173745
+        "discoveredAtBlock": 122407364
       },
       {
         "network": "zerog",
         "chainId": 16661,
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "timelock": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
-        "vaults": [],
+        "vaults": [
+          {
+            "vault": "0x8500189061e2206bc33bf04dc10ffb1fe7ded637",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x5100ed387ab3ed37667199ad8f9f6d963157d28e",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x484aaa9e6542774026b24aed4ec3058400ed2439",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xc6100518997004efb0701da3c56000b3d093470a",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xef63edb9f39dcd03c103a11e2e7e1878308b9586",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xf6a89b0c9ff897000e37bbd06397992278ffc50d",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xb9a1d1822f57f52959b8c5097a8322d534bcedee",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x47c2e6644efdf58e86da45dc60e0f67a65043b99",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x6615f3d82989949fa7d167b40fec0ef30cdba476",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x36b30f5b5d1acd3d8135afe7a5516a300021f139",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x344147366f648640076d363faf659c214788e99d",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x5aa65dff455c7f18c21370086eafaee4f2b63608",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x2cc8dcfc649f9633c482c81473cc251226375fe3",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x6240e93f1a08d43002e52b210cd49c54c813d780",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xa3a7becf428b250ec1b88dbc65f579a9570670c7",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x503a69b2918dfa152eb0e0803174ed90ba5be756",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x26139195f7a82a52c62c4047f843c99c61ed9a5e",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xe68a46547cdbbb181587b32ccd1a505bedf0a994",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xb62e913f0cc881862527fa7e41e1c98eef09cedd",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xed0c085d92c262fb46937cb0b3c9763af7fccf30",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xda52106fc0d44096fd500e096b9045fdac1d27b9",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xc982730643321f3643436eb4a6e910219caa55f0",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x15d415952a36d4ce80671e918b2531bdb25274e5",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xf3875383506677bcda6b9f12c48ff7fe300970d7",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xb526bf49dab7f72b772fef4b6d572c254a454ef7",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x50de74136b67911799fc39b726bfc2707ccec769",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x06ae3f6cfae124039902a79da44ad2a4a4489250",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x334ccad2e7d774f5e6a13437977dd0878926def8",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x4da175a70020eeefa71c36d710307ed0803aed60",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x6872cee8e1a07dd8c1154755f7e215f2973cae52",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xae7115d434c84f2f4a1196bad67415d479804af1",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xa1768bae756058fe00dd281c405dde1c48b00f3b",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x8790337c4ce51b66cba179129d830a3683780ff6",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xc04160f3e18e120c2259f3fe33864823bf3b9015",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xdca06fddf5320870c8e9d0534aa102677c36bcc4",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x4a18036dce22168d8891919a1c75ac2caf9a08ab",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xfea217600e2b00bbb2172a99345016a0ceb7d29f",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xfae9afe275e57759f8fbae5f252c65adbf1b773f",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xd78025aa344e549a1d76ece1591c481cc7bc3548",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0x89857176e95973fdc8f365532cf4c162b3ee11f0",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xdab834808f67f8ac69642996a28571d4b2ad484e",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          },
+          {
+            "vault": "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536",
+            "owner": null,
+            "label": "unknown",
+            "certificationExpired": null,
+            "pinned": true,
+            "onChain": null
+          }
+        ],
         "counts": {
           "safe": 0,
           "timelock": 0,
           "other": 0,
-          "unknown": 0,
+          "unknown": 65,
           "unpinned": 0,
           "certificationExpired": 0,
-          "certificationUnknown": 0,
+          "certificationUnknown": 65,
           "notPinned": 0,
           "notOnChain": 0
         },
-        "discoveryError": "st0x.deploy's subgraph is not deployed for zerog",
-        "error": "privileged-addresses.json lists no receipt vaults for zerog"
+        "discoveryError": "st0x.deploy's subgraph is not deployed for zerog"
       }
     ]
   },
@@ -18373,6 +18893,461 @@
             "contract": "",
             "path": "privileged-addresses.json"
           }
+        ],
+        "0x8500189061e2206bc33bf04dc10ffb1fe7ded637": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5100ed387ab3ed37667199ad8f9f6d963157d28e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x484aaa9e6542774026b24aed4ec3058400ed2439": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xc6100518997004efb0701da3c56000b3d093470a": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xef63edb9f39dcd03c103a11e2e7e1878308b9586": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf6a89b0c9ff897000e37bbd06397992278ffc50d": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb9a1d1822f57f52959b8c5097a8322d534bcedee": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x47c2e6644efdf58e86da45dc60e0f67a65043b99": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6615f3d82989949fa7d167b40fec0ef30cdba476": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x36b30f5b5d1acd3d8135afe7a5516a300021f139": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x344147366f648640076d363faf659c214788e99d": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5aa65dff455c7f18c21370086eafaee4f2b63608": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x2cc8dcfc649f9633c482c81473cc251226375fe3": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6240e93f1a08d43002e52b210cd49c54c813d780": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xa3a7becf428b250ec1b88dbc65f579a9570670c7": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x503a69b2918dfa152eb0e0803174ed90ba5be756": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x26139195f7a82a52c62c4047f843c99c61ed9a5e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xe68a46547cdbbb181587b32ccd1a505bedf0a994": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb62e913f0cc881862527fa7e41e1c98eef09cedd": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xed0c085d92c262fb46937cb0b3c9763af7fccf30": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xda52106fc0d44096fd500e096b9045fdac1d27b9": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xc982730643321f3643436eb4a6e910219caa55f0": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x15d415952a36d4ce80671e918b2531bdb25274e5": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf3875383506677bcda6b9f12c48ff7fe300970d7": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb526bf49dab7f72b772fef4b6d572c254a454ef7": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x50de74136b67911799fc39b726bfc2707ccec769": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x06ae3f6cfae124039902a79da44ad2a4a4489250": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x334ccad2e7d774f5e6a13437977dd0878926def8": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4da175a70020eeefa71c36d710307ed0803aed60": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6872cee8e1a07dd8c1154755f7e215f2973cae52": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xae7115d434c84f2f4a1196bad67415d479804af1": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xa1768bae756058fe00dd281c405dde1c48b00f3b": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x8790337c4ce51b66cba179129d830a3683780ff6": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xc04160f3e18e120c2259f3fe33864823bf3b9015": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdca06fddf5320870c8e9d0534aa102677c36bcc4": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4a18036dce22168d8891919a1c75ac2caf9a08ab": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xfea217600e2b00bbb2172a99345016a0ceb7d29f": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xfae9afe275e57759f8fbae5f252c65adbf1b773f": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xd78025aa344e549a1d76ece1591c481cc7bc3548": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x89857176e95973fdc8f365532cf4c162b3ee11f0": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdab834808f67f8ac69642996a28571d4b2ad484e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
         ]
       }
     },
@@ -30000,6 +30975,461 @@
             "contract": "",
             "path": "privileged-addresses.json"
           }
+        ],
+        "0x8500189061e2206bc33bf04dc10ffb1fe7ded637": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb41fd00d0ba60d9ae8dce405cb6aad5710e5f84d": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5100ed387ab3ed37667199ad8f9f6d963157d28e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x484aaa9e6542774026b24aed4ec3058400ed2439": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xc6100518997004efb0701da3c56000b3d093470a": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xef63edb9f39dcd03c103a11e2e7e1878308b9586": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf6a89b0c9ff897000e37bbd06397992278ffc50d": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb9a1d1822f57f52959b8c5097a8322d534bcedee": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x47c2e6644efdf58e86da45dc60e0f67a65043b99": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6615f3d82989949fa7d167b40fec0ef30cdba476": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x00472aa0d0611f933c22b8148f02b0cdd1ae5fbc": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x36b30f5b5d1acd3d8135afe7a5516a300021f139": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x344147366f648640076d363faf659c214788e99d": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5aa65dff455c7f18c21370086eafaee4f2b63608": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x2cc8dcfc649f9633c482c81473cc251226375fe3": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdf406836d5a092894ee5d5bdc7f58e5bdc8d196a": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x659ea9dd1c833fc76e5328e0e616d8b9d9836dc3": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6240e93f1a08d43002e52b210cd49c54c813d780": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5f5a1bdc00ade7702ea5944b1374dc598da3759f": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x7ac659f601bea2d9f490e0d0d8a68c4282fd9b21": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xa3a7becf428b250ec1b88dbc65f579a9570670c7": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x77ee94c8b85cf48a426f84b0f2d796ec77e41c7b": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x2c845ed32c5fde012eb14508d0d24bd3300b1d71": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xe2de878d8ca6ba544bfe80a10fab0395df32cff0": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x503a69b2918dfa152eb0e0803174ed90ba5be756": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x26139195f7a82a52c62c4047f843c99c61ed9a5e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xe68a46547cdbbb181587b32ccd1a505bedf0a994": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb62e913f0cc881862527fa7e41e1c98eef09cedd": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xed0c085d92c262fb46937cb0b3c9763af7fccf30": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xda52106fc0d44096fd500e096b9045fdac1d27b9": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xc982730643321f3643436eb4a6e910219caa55f0": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x3b3936b5ec170cdb5823012dbf4df1d56cfa1ba5": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x15d415952a36d4ce80671e918b2531bdb25274e5": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf3875383506677bcda6b9f12c48ff7fe300970d7": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb526bf49dab7f72b772fef4b6d572c254a454ef7": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x50de74136b67911799fc39b726bfc2707ccec769": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x06ae3f6cfae124039902a79da44ad2a4a4489250": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x1ee2ce9654ffa008029e8e328a95f45ebfb3bc63": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb3f9a61b0e97c7f7bb85ea5e9dad0da8f3496b57": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdf4f0897ec6f0c37bfc974a815ca440a3c2c2e8b": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x334ccad2e7d774f5e6a13437977dd0878926def8": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x75e0d127794b9c26ee35c55fbabcc41c53ccb37c": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4da175a70020eeefa71c36d710307ed0803aed60": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6872cee8e1a07dd8c1154755f7e215f2973cae52": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xae7115d434c84f2f4a1196bad67415d479804af1": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x269ca594b6463f0d94086fb2d77dfaad32d1c6c4": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xa1768bae756058fe00dd281c405dde1c48b00f3b": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x8790337c4ce51b66cba179129d830a3683780ff6": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xc04160f3e18e120c2259f3fe33864823bf3b9015": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x5e6e803242e52451ffda82fd7b5ce4967b95c76e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdca06fddf5320870c8e9d0534aa102677c36bcc4": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4a88c84aa04a5151997e8e503bee7fd92e0918a9": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4a18036dce22168d8891919a1c75ac2caf9a08ab": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf88e511a3c762ee7e9ddd348a417f8e8db45bdee": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x6c6f1cbe2fa860b1a15a02922d97a2d614db4923": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xfea217600e2b00bbb2172a99345016a0ceb7d29f": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x2e04c503ebd584c3c0bb1d57e0c51e7b7eae28e1": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x76d34283ec6d29b1b07e0e6077f5c436ad163b9c": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xf8bf43d61e4cd2a5b5dfad01bac84693d7b95e51": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xfae9afe275e57759f8fbae5f252c65adbf1b773f": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x4d4d633bf04abf6e4cf152c7c5c1ecd906ab3de4": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xd78025aa344e549a1d76ece1591c481cc7bc3548": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0x89857176e95973fdc8f365532cf4c162b3ee11f0": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xdab834808f67f8ac69642996a28571d4b2ad484e": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
+        ],
+        "0xb4e960909a3fe9179ed7e0fbc6abf3301ce85536": [
+          {
+            "name": "receiptVaults",
+            "contract": "",
+            "path": "privileged-addresses.json"
+          }
         ]
       }
     }
@@ -30200,6 +31630,46 @@
             ]
           },
           {
+            "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
+                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+                "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
             "script": "script/20261022-bind-beacon-initial-owner.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
@@ -30211,8 +31681,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
-                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+                "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -30404,7 +31874,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26484583,
+            "headBlock": 26486571,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -30599,6 +32069,46 @@
             ]
           },
           {
+            "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
+                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+                "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
             "script": "script/20261022-bind-beacon-initial-owner.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
@@ -30610,8 +32120,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
-                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+                "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -30803,7 +32313,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 135451283,
+            "headBlock": 135504455,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -30998,6 +32508,46 @@
             ]
           },
           {
+            "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
+                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+                "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
             "script": "script/20261022-bind-beacon-initial-owner.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
@@ -31009,8 +32559,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
-                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+                "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -31202,7 +32752,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 52115415,
+            "headBlock": 52139749,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31397,6 +32947,46 @@
             ]
           },
           {
+            "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
+                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+                "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
             "script": "script/20261022-bind-beacon-initial-owner.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
@@ -31408,8 +32998,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
-                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+                "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
                 "state": "notApplied",
                 "appliedAt": null,
                 "executedAt": null
@@ -31601,7 +33191,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 122173689,
+            "headBlock": 122407215,
             "head": "0xca7a81997f3128d0e751bd68bb27ad05b583be109e6814115a2abf0a62a032f5"
           }
         ]
@@ -31611,7 +33201,7 @@
         "network": "base",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": "mainnet.base.org",
-        "unread": 6,
+        "unread": 10,
         "lineOrder": true,
         "lineOrderReason": null,
         "migrations": [
@@ -31660,8 +33250,8 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5d15d95cf2517d0c33b08ddf7a2f113416f9ca27461e224d4d565c9fa4bd8978",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "applied",
-            "appliedAt": 1787152049,
+            "state": "unknown",
+            "appliedAt": null,
             "executedAt": 1787152049,
             "waitsOn": [
               {
@@ -31680,8 +33270,8 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "applied",
-            "appliedAt": 1787336483,
+            "state": "unknown",
+            "appliedAt": null,
             "executedAt": 1787336483,
             "waitsOn": [
               {
@@ -31689,8 +33279,8 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x5d15d95cf2517d0c33b08ddf7a2f113416f9ca27461e224d4d565c9fa4bd8978",
                 "script": "script/20260813-timelock-rehearsal-cancel.s.sol",
-                "state": "applied",
-                "appliedAt": 1787152049,
+                "state": "unknown",
+                "appliedAt": null,
                 "executedAt": 1787152049
               }
             ]
@@ -31709,8 +33299,8 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0x78c5d1206f96fb65a53e48d63d4d21553a84165dc07dfd1b2d8178ef9d6fefc1",
                 "script": "script/20260813-execute-timelock-operations.s.sol",
-                "state": "applied",
-                "appliedAt": 1787336483,
+                "state": "unknown",
+                "appliedAt": null,
                 "executedAt": 1787336483
               }
             ]
@@ -31740,8 +33330,8 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "applied",
-            "appliedAt": 1792605015,
+            "state": "unknown",
+            "appliedAt": null,
             "executedAt": 1792605015,
             "waitsOn": [
               {
@@ -31769,8 +33359,8 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xf6d09b5d9e041681bdc72dc4947c5dc15a93c4ba4fe715d383660172e1718cb0",
                 "script": "script/20261006-grant-orchestrator-emergency.s.sol",
-                "state": "applied",
-                "appliedAt": 1792605015,
+                "state": "unknown",
+                "appliedAt": null,
                 "executedAt": 1792605015
               }
             ]
@@ -31796,6 +33386,46 @@
             ]
           },
           {
+            "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
+                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "state": "applied",
+                "appliedAt": 1795454214,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "notApplied",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+                "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
             "script": "script/20261022-bind-beacon-initial-owner.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
@@ -31807,10 +33437,10 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
-                "script": "script/20261119-create-zerog-tokens.s.sol",
-                "state": "applied",
-                "appliedAt": 1795454214,
+                "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+                "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
+                "state": "notApplied",
+                "appliedAt": null,
                 "executedAt": null
               }
             ]
@@ -31900,7 +33530,7 @@
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2",
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
-            "state": "notApplied",
+            "state": "unknown",
             "appliedAt": null,
             "executedAt": null,
             "waitsOn": [
@@ -31929,7 +33559,7 @@
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
                 "id": "0xdb5ef986dc4f7bfd8e32c1ce772cfd820f03b142b96044f33c019782c97273e2",
                 "script": "script/20261021-execute-underlying-naming.s.sol",
-                "state": "notApplied",
+                "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
               }
@@ -32000,7 +33630,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 61638525,
+            "headBlock": 61758206,
             "head": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f"
           }
         ]
@@ -32010,7 +33640,7 @@
         "network": "zerog",
         "registry": "0xd708186f68D527B64c001398550627508205EE31",
         "rpcHost": null,
-        "unread": 19,
+        "unread": 21,
         "lineOrder": true,
         "lineOrderReason": null,
         "migrations": [
@@ -32195,6 +33825,46 @@
             ]
           },
           {
+            "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "unknown",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
+                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "state": "unknown",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
+            "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
+            "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+            "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+            "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+            "state": "unknown",
+            "appliedAt": null,
+            "executedAt": null,
+            "waitsOn": [
+              {
+                "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
+                "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
+                "id": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f",
+                "script": "script/20261123-schedule-zerog-orchestrator-roles.s.sol",
+                "state": "unknown",
+                "appliedAt": null,
+                "executedAt": null
+              }
+            ]
+          },
+          {
             "script": "script/20261022-bind-beacon-initial-owner.s.sol",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
             "id": "0x5fbef4067513a5c39a8d35b370b8919bbdefd2388f5fd2bfbfbf8f5b2ea2bff6",
@@ -32206,8 +33876,8 @@
               {
                 "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
                 "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-                "id": "0x5870a2bb2eb234a432c205e098d54a99b4f4f7592752e4345c60b0ad95e8873f",
-                "script": "script/20261119-create-zerog-tokens.s.sol",
+                "id": "0xc0fba8f31245831dc4dfb184c901beddc595ed9eceba437c54e8e4a33e4f56c2",
+                "script": "script/20261123-execute-zerog-orchestrator-roles.s.sol",
                 "state": "unknown",
                 "appliedAt": null,
                 "executedAt": null
@@ -32502,7 +34172,7 @@
       "network": null,
       "rpcHost": null,
       "unavailable": true,
-      "reason": "expected-state.json chain 16661 has a missing or malformed beacons"
+      "reason": "expected-state.json chain 16661 has a missing or malformed renameMigration"
     }
   ],
   "deploymentInfra": [
@@ -32510,7 +34180,7 @@
       "network": null,
       "rpcHost": null,
       "unavailable": true,
-      "reason": "expected-state.json chain 16661 has a missing or malformed beacons"
+      "reason": "expected-state.json chain 16661 has a missing or malformed renameMigration"
     }
   ],
   "deploymentV2": [
@@ -32675,7 +34345,7 @@
       "network": null,
       "rpcHost": null,
       "unavailable": true,
-      "reason": "expected-state.json chain 16661 has a missing or malformed beacons"
+      "reason": "expected-state.json chain 16661 has a missing or malformed renameMigration"
     }
   ],
   "deploymentSafes": [
@@ -32683,7 +34353,7 @@
       "network": null,
       "rpcHost": null,
       "unavailable": true,
-      "reason": "expected-state.json chain 16661 has a missing or malformed beacons"
+      "reason": "expected-state.json chain 16661 has a missing or malformed renameMigration"
     }
   ],
   "deploymentTokens": [
@@ -32692,14 +34362,14 @@
       "registryRepo": "st0x.registry",
       "expectedState": "expected-state.json",
       "unavailable": true,
-      "reason": "expected-state.json chain 16661 has a missing or malformed beacons"
+      "reason": "expected-state.json chain 16661 has a missing or malformed renameMigration"
     }
   ],
   "deploymentListings": [
     {
       "expectedState": "expected-state.json",
       "unavailable": true,
-      "reason": "expected-state.json chain 16661 has a missing or malformed beacons"
+      "reason": "expected-state.json chain 16661 has a missing or malformed renameMigration"
     }
   ],
   "orgs": [
@@ -34507,17 +36177,17 @@
       "latestTag": "sol-v0.1.30",
       "latestTagIso": "2026-08-19T10:32:06Z",
       "isStale": true,
-      "sourceLocChangedSinceAudit": 23923,
+      "sourceLocChangedSinceAudit": 24793,
       "fullSourceLoc": null,
-      "sourceLocAddedSinceAudit": 15586,
-      "sourceLocRemovedSinceAudit": 8337,
-      "filesChangedSinceAudit": 197,
-      "commitsSinceAudit": 1738,
+      "sourceLocAddedSinceAudit": 16454,
+      "sourceLocRemovedSinceAudit": 8339,
+      "filesChangedSinceAudit": 200,
+      "commitsSinceAudit": 1756,
       "sourceDriftTruncated": false,
-      "commentLocAddedSinceAudit": 4445,
+      "commentLocAddedSinceAudit": 4584,
       "commentLocRemovedSinceAudit": 3801,
-      "codeLocAddedSinceAudit": 9913,
-      "codeLocRemovedSinceAudit": 3827,
+      "codeLocAddedSinceAudit": 10581,
+      "codeLocRemovedSinceAudit": 3831,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
       "daysSinceAudit": 89
@@ -35996,7 +37666,7 @@
       "org": "S01-Issuer",
       "state": "analyzed",
       "externalFunctions": 43,
-      "testFiles": 284,
+      "testFiles": 295,
       "sourcesUnparsed": 1,
       "untested": []
     }
