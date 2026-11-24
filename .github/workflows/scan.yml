@@ -28,17 +28,15 @@ jobs:
           # (PAT with org read) only if private repos must be scanned.
           GH_TOKEN: ${{ secrets.SCAN_TOKEN || github.token }}
           ORGS: "rainlanguage cyclofinance S01-Issuer ST0x-Technology"
-          # st0x.deploy's [etherscan] keys; Etherscan V2 is one key for every chain.
+          # The Etherscan V2 key for st0x.deploy's Etherscan [etherscan] entries; Blockscout,
+          # chainscan and Routescan never get it.
           CI_DEPLOY_ARBITRUM_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
           CI_DEPLOY_BASE_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
           CI_DEPLOY_BASE_SEPOLIA_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
           CI_DEPLOY_BSC_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
           CI_DEPLOY_ETHEREUM_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
-          CI_DEPLOY_FLARE_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
           CI_DEPLOY_HYPEREVM_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
           CI_DEPLOY_POLYGON_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
-          CI_DEPLOY_ROBINHOOD_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
-          CI_DEPLOY_ZEROG_ETHERSCAN_API_KEY: ${{ secrets.EXPLORER_VERIFICATION_KEY }}
         run: nix run .#roh-scan
       - name: Commit if changed
         run: |
