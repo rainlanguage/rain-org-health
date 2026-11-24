@@ -331,6 +331,56 @@ jobs:
         parse_deploy_workflow(WORKFLOW).unwrap()
     }
 
+    /// No network on Goldsky: every network routes to Ormi.
+    const ALL_ORMI: &[String] = &[];
+
+    /// st0x.deploy's `.github/workflows/deploy-subgraph.yaml` at
+    /// S01-Issuer/st0x.deploy#638 head 451a9a3f.
+    const BOTH_HOSTS_WORKFLOW: &str = r#"
+name: Deploy subgraph
+on:
+  workflow_dispatch:
+jobs:
+  deploy:
+    permissions:
+      contents: read
+    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main
+    with:
+      subgraph-name: st0x-rbac
+      ormi-query-base: https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71
+      goldsky-query-base: https://api.goldsky.com/api/public/project_cmjr2df7svg6t01tl2ic706ao
+    secrets:
+      CACHIX_AUTH_TOKEN: ${{ secrets.CACHIX_AUTH_TOKEN }}
+      # GitHub secret ORMI_DEPLOY_KEY, from Vault secret/infra/rain/ormi (deploy_key).
+      ORMI_DEPLOY_KEY: ${{ secrets.ORMI_DEPLOY_KEY }}
+      CI_GOLDSKY_TOKEN: ${{ secrets.CI_GOLDSKY_TOKEN }}
+"#;
+    const ORMI_BASE: &str =
+        "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
+    const GOLDSKY_BASE: &str = "https://api.goldsky.com/api/public/project_cmjr2df7svg6t01tl2ic706ao";
+
+    /// rainix `rainix-static/src/subgraph_targets.rs` at 2d16db31.
+    const RAINIX_TARGETS: &str = r#"
+//! [`GOLDSKY_NETWORKS`] (Ormi does not index it), Ormi for every other.
+
+/// Graph network names Ormi does not index, so their subgraphs deploy to
+/// Goldsky. Every other network deploys to Ormi.
+pub(crate) const GOLDSKY_NETWORKS: &[&str] = &["0g"];
+
+/// The host a network's subgraph deploys to.
+pub(crate) fn host(network: &str) -> &'static str {
+    if GOLDSKY_NETWORKS.contains(&network) {
+        "goldsky"
+    } else {
+        "ormi"
+    }
+}
+"#;
+
+    fn goldsky() -> Vec<String> {
+        parse_goldsky_networks(RAINIX_TARGETS).unwrap()
+    }
+
     fn reusable_caller(inputs: &[&str]) -> String {
         let mut y = "jobs:\n  deploy:\n    uses: rainlanguage/rainix/.github/workflows/rainix-subgraph-deploy.yaml@main\n    with:\n".to_string();
         for i in inputs {
@@ -345,19 +395,50 @@ jobs:
             src(),
             SubgraphSource {
                 name: "st0x-rbac".into(),
-                query_base: "https://subgraph.api.ormilabs.com/api/public/9f4f".into(),
+                ormi_query_base: Some("https://subgraph.api.ormilabs.com/api/public/9f4f".into()),
+                goldsky_query_base: None,
             }
         );
     }
 
     #[test]
-    fn workflow_missing_either_value_is_unread() {
+    fn workflow_names_both_query_bases_each_from_its_own_input() {
+        assert_eq!(
+            parse_deploy_workflow(BOTH_HOSTS_WORKFLOW),
+            Some(SubgraphSource {
+                name: "st0x-rbac".into(),
+                ormi_query_base: Some(ORMI_BASE.into()),
+                goldsky_query_base: Some(GOLDSKY_BASE.into()),
+            })
+        );
+        assert_eq!(
+            parse_deploy_workflow(&reusable_caller(&[
+                "subgraph-name: x",
+                "goldsky-query-base: https://g/",
+            ])),
+            Some(SubgraphSource {
+                name: "x".into(),
+                ormi_query_base: None,
+                goldsky_query_base: Some("https://g".into()),
+            })
+        );
+    }
+
+    #[test]
+    fn workflow_without_a_name_or_any_query_base_is_unread() {
         assert_eq!(
             parse_deploy_workflow(&reusable_caller(&["subgraph-name: x"])),
             None
         );
         assert_eq!(
             parse_deploy_workflow(&reusable_caller(&["ormi-query-base: https://a"])),
+            None
+        );
+        assert_eq!(
+            parse_deploy_workflow(&reusable_caller(&[
+                "ormi-query-base: https://a",
+                "goldsky-query-base: https://g",
+            ])),
             None
         );
     }
@@ -371,6 +452,30 @@ jobs:
             ])),
             None
         );
+        for (ormi, goldsky) in [
+            ("https://a", "http://g"),
+            ("http://a", "https://g"),
+            ("http://a", "http://g"),
+        ] {
+            let ormi_input = format!("ormi-query-base: {ormi}");
+            let goldsky_input = format!("goldsky-query-base: {goldsky}");
+            assert_eq!(
+                parse_deploy_workflow(&reusable_caller(&[
+                    "subgraph-name: x",
+                    ormi_input.as_str(),
+                    goldsky_input.as_str(),
+                ])),
+                None,
+                "{ormi} / {goldsky}"
+            );
+        }
+        assert_eq!(
+            parse_deploy_workflow(&reusable_caller(&[
+                "subgraph-name: x",
+                "goldsky-query-base: http://g",
+            ])),
+            None
+        );
     }
 
     #[test]
@@ -378,9 +483,49 @@ jobs:
         let s = parse_deploy_workflow(&reusable_caller(&[
             "subgraph-name: \"x\"",
             "ormi-query-base: 'https://a'",
+            "goldsky-query-base: \"https://g/\"",
         ]))
         .unwrap();
-        assert_eq!((s.name.as_str(), s.query_base.as_str()), ("x", "https://a"));
+        assert_eq!(
+            (
+                s.name.as_str(),
+                s.ormi_query_base.as_deref(),
+                s.goldsky_query_base.as_deref()
+            ),
+            ("x", Some("https://a"), Some("https://g"))
+        );
+    }
+
+    #[test]
+    fn goldsky_networks_are_read_from_rainixs_constant() {
+        assert_eq!(goldsky(), ["0g"]);
+        assert_eq!(
+            parse_goldsky_networks(
+                "pub(crate) const GOLDSKY_NETWORKS: &[&str] = &[\n    \"0g\",\n    \"x-y\",\n];"
+            ),
+            Some(vec!["0g".to_string(), "x-y".to_string()])
+        );
+        assert_eq!(
+            parse_goldsky_networks("const GOLDSKY_NETWORKS:&[&str]=&[];"),
+            Some(vec![])
+        );
+    }
+
+    #[test]
+    fn goldsky_networks_are_unread_without_the_constant() {
+        for src in [
+            "",
+            "not found",
+            "//! [`GOLDSKY_NETWORKS`] (Ormi does not index it)",
+            "if GOLDSKY_NETWORKS.contains(&network) {}",
+            "const ORMI_NETWORKS: &[&str] = &[\"0g\"];",
+        ] {
+            assert_eq!(parse_goldsky_networks(src), None, "{src:?}");
+        }
+        assert_eq!(
+            goldsky_networks_unread(),
+            "could not read GOLDSKY_NETWORKS from rainlanguage/rainix rainix-static/src/subgraph_targets.rs"
+        );
     }
 
     #[test]
@@ -400,17 +545,68 @@ jobs:
 "#;
         assert_eq!(parse_deploy_workflow(env_form), None);
         assert_eq!(
-            build_location("o", "r", parse_deploy_workflow(env_form).as_ref(), Some(&[]))
-                ["unavailable"],
-            "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml"
+            build_location(
+                "o",
+                "r",
+                parse_deploy_workflow(env_form).as_ref(),
+                Some(&[]),
+                Some(ALL_ORMI)
+            )["unavailable"],
+            "could not read subgraph-name / ormi-query-base / goldsky-query-base from .github/workflows/deploy-subgraph.yaml"
         );
     }
 
     #[test]
     fn endpoint_addresses_the_prod_tag_not_a_version() {
         assert_eq!(
-            endpoint(&src(), "hyperevm"),
-            "https://subgraph.api.ormilabs.com/api/public/9f4f/subgraphs/st0x-rbac-hyperevm/prod/gn"
+            endpoint(&src(), ALL_ORMI, "hyperevm"),
+            Ok("https://subgraph.api.ormilabs.com/api/public/9f4f/subgraphs/st0x-rbac-hyperevm/prod/gn".into())
+        );
+    }
+
+    #[test]
+    fn endpoint_routes_a_goldsky_network_to_the_goldsky_base_and_every_other_to_ormi() {
+        let s = parse_deploy_workflow(BOTH_HOSTS_WORKFLOW).unwrap();
+        assert_eq!(
+            endpoint(&s, &goldsky(), "0g"),
+            Ok(format!("{GOLDSKY_BASE}/subgraphs/st0x-rbac-0g/prod/gn"))
+        );
+        for n in ["base", "mainnet", "hyper-evm", "bsc", "robinhood"] {
+            assert_eq!(
+                endpoint(&s, &goldsky(), n),
+                Ok(format!("{ORMI_BASE}/subgraphs/st0x-rbac-{n}/prod/gn")),
+                "{n}"
+            );
+        }
+        assert_eq!(
+            endpoint(&s, ALL_ORMI, "0g"),
+            Ok(format!("{ORMI_BASE}/subgraphs/st0x-rbac-0g/prod/gn"))
+        );
+        let all_goldsky = ["base".to_string()];
+        assert_eq!(
+            endpoint(&s, &all_goldsky, "base"),
+            Ok(format!("{GOLDSKY_BASE}/subgraphs/st0x-rbac-base/prod/gn"))
+        );
+    }
+
+    #[test]
+    fn endpoint_names_the_query_base_the_workflow_does_not_give() {
+        assert_eq!(
+            endpoint(&src(), &goldsky(), "0g"),
+            Err("deploy-subgraph.yaml has no goldsky-query-base for 0g".into())
+        );
+        let goldsky_only = SubgraphSource {
+            name: "st0x-rbac".into(),
+            ormi_query_base: None,
+            goldsky_query_base: Some(GOLDSKY_BASE.into()),
+        };
+        assert_eq!(
+            endpoint(&goldsky_only, &goldsky(), "base"),
+            Err("deploy-subgraph.yaml has no ormi-query-base for base".into())
+        );
+        assert_eq!(
+            endpoint(&goldsky_only, &goldsky(), "0g"),
+            Ok(format!("{GOLDSKY_BASE}/subgraphs/st0x-rbac-0g/prod/gn"))
         );
     }
 
@@ -463,6 +659,8 @@ jobs:
         assert_eq!(chain_name("base"), Some("base"));
         assert_eq!(chain_name("robinhood"), Some("robinhood"));
         assert_eq!(chain_name("bsc"), Some("bsc"));
+        assert_eq!(chain_name("0g"), Some("zerog"));
+        assert_eq!(chain_name("zerog"), None);
         assert_eq!(chain_name("arbitrum-one"), None);
     }
 
@@ -510,17 +708,30 @@ jobs:
 
     #[test]
     fn rbac_doc_says_which_source_was_unread() {
-        let d = build_rbac("o", "r", None, None, &[]);
+        let d = build_rbac("o", "r", None, None, Some(ALL_ORMI), &[]);
         assert!(d["unavailable"]
             .as_str()
             .unwrap()
             .contains("deploy-subgraph.yaml"));
         assert!(d.get("networks").is_none());
         let s = src();
-        let d = build_rbac("o", "r", Some(&s), None, &[]);
+        let d = build_rbac("o", "r", Some(&s), None, Some(ALL_ORMI), &[]);
         assert!(d["unavailable"].as_str().unwrap().contains("networks.json"));
         assert_eq!(d["subgraph"], "st0x-rbac");
         assert!(d.get("networks").is_none());
+        let nets = vec!["base".to_string()];
+        let d = build_rbac(
+            "o",
+            "r",
+            Some(&s),
+            Some(&nets),
+            None,
+            &[("0xaa".to_string(), "MINT".to_string())],
+        );
+        assert_eq!(d["unavailable"], goldsky_networks_unread());
+        assert_eq!(d["subgraph"], "st0x-rbac");
+        assert!(d.get("networks").is_none());
+        assert!(d.get("roleNames").is_none());
     }
 
     #[test]
@@ -530,7 +741,7 @@ jobs:
             ("0xaa".to_string(), "MINT".to_string()),
             ("0xbb".to_string(), "BURN".to_string()),
         ];
-        let d = build_rbac("o", "r", Some(&src()), Some(&nets), &names);
+        let d = build_rbac("o", "r", Some(&src()), Some(&nets), Some(ALL_ORMI), &names);
         assert!(d.get("unavailable").is_none());
         assert_eq!(d["tag"], "prod");
         assert_eq!(
@@ -553,24 +764,29 @@ jobs:
 
     #[test]
     fn location_doc_says_which_source_was_unread_and_lists_no_networks() {
-        let d = build_location("o", "r", None, None);
+        let d = build_location("o", "r", None, None, Some(ALL_ORMI));
         assert_eq!(
             d,
             json!({
                 "org": "o",
                 "repo": "r",
                 "tag": "prod",
-                "unavailable": "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml",
+                "unavailable": "could not read subgraph-name / ormi-query-base / goldsky-query-base from .github/workflows/deploy-subgraph.yaml",
             })
         );
         let nets = vec!["base".to_string()];
         assert_eq!(
-            build_location("o", "r", None, Some(&nets)),
+            build_location("o", "r", None, Some(&nets), Some(ALL_ORMI)),
             d,
             "networks without a source are no location"
         );
         assert_eq!(
-            build_location("o", "r", Some(&src()), None),
+            build_location("o", "r", None, Some(&nets), None),
+            d,
+            "an unread source is named before an unread host split"
+        );
+        assert_eq!(
+            build_location("o", "r", Some(&src()), None, Some(ALL_ORMI)),
             json!({
                 "org": "o",
                 "repo": "r",
@@ -579,13 +795,71 @@ jobs:
                 "unavailable": "could not read subgraph/networks.json",
             })
         );
+        assert_eq!(
+            build_location("o", "r", Some(&src()), None, None)["unavailable"],
+            "could not read subgraph/networks.json"
+        );
+        assert_eq!(
+            build_location("o", "r", Some(&src()), Some(&nets), None),
+            json!({
+                "org": "o",
+                "repo": "r",
+                "tag": "prod",
+                "subgraph": "st0x-rbac",
+                "unavailable": "could not read GOLDSKY_NETWORKS from rainlanguage/rainix rainix-static/src/subgraph_targets.rs",
+            })
+        );
+    }
+
+    #[test]
+    fn location_doc_routes_each_network_to_its_host() {
+        let s = parse_deploy_workflow(BOTH_HOSTS_WORKFLOW).unwrap();
+        let nets = vec!["base".to_string(), "0g".to_string()];
+        assert_eq!(
+            build_location("o", "r", Some(&s), Some(&nets), Some(&goldsky()))["networks"],
+            json!([
+                {
+                    "network": "base",
+                    "chain": "base",
+                    "endpoint": format!("{ORMI_BASE}/subgraphs/st0x-rbac-base/prod/gn"),
+                },
+                {
+                    "network": "0g",
+                    "chain": "zerog",
+                    "endpoint": format!("{GOLDSKY_BASE}/subgraphs/st0x-rbac-0g/prod/gn"),
+                },
+            ])
+        );
+    }
+
+    #[test]
+    fn location_doc_lists_a_network_whose_host_has_no_query_base_as_unavailable() {
+        let nets = vec!["base".to_string(), "0g".to_string()];
+        let d = build_location("o", "r", Some(&src()), Some(&nets), Some(&goldsky()));
+        assert!(d.get("unavailable").is_none());
+        assert_eq!(
+            d["networks"],
+            json!([
+                {
+                    "network": "base",
+                    "chain": "base",
+                    "endpoint": "https://subgraph.api.ormilabs.com/api/public/9f4f/subgraphs/st0x-rbac-base/prod/gn",
+                },
+                {
+                    "network": "0g",
+                    "chain": "zerog",
+                    "endpoint": null,
+                    "unavailable": "deploy-subgraph.yaml has no goldsky-query-base for 0g",
+                },
+            ])
+        );
     }
 
     #[test]
     fn location_doc_lists_each_network_with_its_chain_and_tagged_endpoint_and_nothing_else() {
         let nets = vec!["mainnet".to_string(), "arbitrum-one".to_string()];
         assert_eq!(
-            build_location("o", "r", Some(&src()), Some(&nets)),
+            build_location("o", "r", Some(&src()), Some(&nets), Some(ALL_ORMI)),
             json!({
                 "org": "o",
                 "repo": "r",
@@ -606,7 +880,7 @@ jobs:
             })
         );
         assert_eq!(
-            build_location("o", "r", Some(&src()), Some(&[]))["networks"],
+            build_location("o", "r", Some(&src()), Some(&[]), Some(ALL_ORMI))["networks"],
             json!([])
         );
     }
@@ -616,19 +890,30 @@ jobs:
         let names = vec![("0xaa".to_string(), "MINT".to_string())];
         let nets = vec!["base".to_string()];
         let s = src();
-        for (source, networks) in [(None, None), (None, Some(&nets)), (Some(&s), None)] {
+        let hosts = goldsky();
+        for (source, networks, goldsky_networks) in [
+            (None, None, Some(&hosts)),
+            (None, Some(&nets), Some(&hosts)),
+            (Some(&s), None, Some(&hosts)),
+            (Some(&s), Some(&nets), None),
+            (None, None, None),
+        ] {
             let networks = networks.map(|n| n.as_slice());
+            let goldsky_networks = goldsky_networks.map(|n| n.as_slice());
             assert_eq!(
-                build_rbac("o", "r", source, networks, &names),
-                build_location("o", "r", source, networks),
+                build_rbac("o", "r", source, networks, goldsky_networks, &names),
+                build_location("o", "r", source, networks, goldsky_networks),
                 "an unlocated doc carries no role names"
             );
         }
-        let mut want = build_location("o", "r", Some(&s), Some(&nets));
+        let mut want = build_location("o", "r", Some(&s), Some(&nets), Some(&hosts));
         want["roleNames"] = json!({"0xaa": "MINT"});
-        assert_eq!(build_rbac("o", "r", Some(&s), Some(&nets), &names), want);
         assert_eq!(
-            build_rbac("o", "r", Some(&s), Some(&nets), &[])["roleNames"],
+            build_rbac("o", "r", Some(&s), Some(&nets), Some(&hosts), &names),
+            want
+        );
+        assert_eq!(
+            build_rbac("o", "r", Some(&s), Some(&nets), Some(&hosts), &[])["roleNames"],
             json!({}),
             "a located doc with no names says so with an empty map"
         );
@@ -689,6 +974,7 @@ jobs:
             "rain.deploy",
             Some(&source),
             Some(&networks),
+            Some(&goldsky()),
         );
         let base =
             "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
@@ -743,6 +1029,7 @@ jobs:
             "r",
             Some(&src()),
             Some(&["base".to_string()]),
+            Some(ALL_ORMI),
             &[("0xaa".to_string(), "MINT".to_string())],
         );
         d["configRegistries"] = json!({"base": "0x2222222222222222222222222222222222222222"});
@@ -768,6 +1055,7 @@ jobs:
             "rain.deploy",
             parse_deploy_workflow(REGISTRY_WORKFLOW).as_ref(),
             parse_networks(&networks_src).as_deref(),
+            Some(&goldsky()),
         );
         want["configRegistries"] = Value::Object(
             REGISTRY_NETWORKS
@@ -781,7 +1069,7 @@ jobs:
                 .collect(),
         );
         want["addressNames"] = rbac_doc["addressNames"].clone();
-        let d = build_registry(&rbac_doc, |_: &str, _: &str, path: &str| match path {
+        let d = build_registry(&rbac_doc, Some(&goldsky()), |_: &str, _: &str, path: &str| match path {
             ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
             "subgraph/networks.json" => networks_src.clone(),
             _ => String::new(),
@@ -804,7 +1092,7 @@ jobs:
         .to_string();
         let asked = std::cell::RefCell::new(Vec::new());
         let rbac_doc = rbac_doc_with_address_names();
-        let d = build_registry(&rbac_doc, |org: &str, repo: &str, path: &str| {
+        let d = build_registry(&rbac_doc, Some(ALL_ORMI), |org: &str, repo: &str, path: &str| {
             asked
                 .borrow_mut()
                 .push((org.to_string(), repo.to_string(), path.to_string()));
@@ -862,7 +1150,7 @@ jobs:
             "flare": {"MigrationRegistryV5": {"address": "0xd708186f68D527B64c001398550627508205EE31"}},
         })
         .to_string();
-        let d = build_registry(&json!({}), |_: &str, _: &str, path: &str| match path {
+        let d = build_registry(&json!({}), Some(ALL_ORMI), |_: &str, _: &str, path: &str| match path {
             ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
             "subgraph/networks.json" => networks_src.clone(),
             _ => String::new(),
@@ -890,10 +1178,10 @@ jobs:
         for rbac_doc in [
             json!({}),
             Value::Null,
-            build_rbac("o", "r", None, None, &[]),
+            build_rbac("o", "r", None, None, Some(ALL_ORMI), &[]),
             located,
         ] {
-            let d = build_registry(&rbac_doc, |_: &str, _: &str, path: &str| match path {
+            let d = build_registry(&rbac_doc, Some(ALL_ORMI), |_: &str, _: &str, path: &str| match path {
                 ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
                 "subgraph/networks.json" => networks_src.clone(),
                 _ => String::new(),
@@ -906,7 +1194,7 @@ jobs:
     #[test]
     fn registry_doc_says_which_rain_deploy_source_was_unread() {
         let networks_src = registry_networks_json();
-        let workflow_unread = "could not read subgraph-name / ormi-query-base from .github/workflows/deploy-subgraph.yaml";
+        let workflow_unread = "could not read subgraph-name / ormi-query-base / goldsky-query-base from .github/workflows/deploy-subgraph.yaml";
         let networks_unread = "could not read subgraph/networks.json";
         let plain_http = REGISTRY_WORKFLOW.replace("https://", "http://");
         let name_only = reusable_caller(&["subgraph-name: rain-deploy-registry"]);
@@ -946,6 +1234,7 @@ jobs:
         ] {
             let d = build_registry(
                 &rbac_doc_with_address_names(),
+                Some(ALL_ORMI),
                 |_: &str, _: &str, path: &str| match path {
                     ".github/workflows/deploy-subgraph.yaml" => workflow.to_string(),
                     "subgraph/networks.json" => networks.to_string(),
@@ -964,6 +1253,48 @@ jobs:
             );
             assert!(d.get("networks").is_none(), "{case}");
         }
+    }
+
+    #[test]
+    fn registry_doc_routes_its_networks_by_the_given_host_split() {
+        let networks_src = json!({
+            "base": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
+            "0g": {"ConfigRegistryV5": {"address": REGISTRY_CONFIG_V5}},
+        })
+        .to_string();
+        let fetch = |_: &str, _: &str, path: &str| match path {
+            ".github/workflows/deploy-subgraph.yaml" => REGISTRY_WORKFLOW.to_string(),
+            "subgraph/networks.json" => networks_src.clone(),
+            _ => String::new(),
+        };
+        let base =
+            "https://subgraph.api.ormilabs.com/api/public/9f4fc2fa-4a15-44f7-a7c1-66fdaa518a71";
+        let d = build_registry(&json!({}), Some(&goldsky()), fetch);
+        assert_eq!(
+            d["networks"],
+            json!([
+                {
+                    "network": "base",
+                    "chain": "base",
+                    "endpoint": format!("{base}/subgraphs/rain-deploy-registry-base/prod/gn"),
+                },
+                {
+                    "network": "0g",
+                    "chain": "zerog",
+                    "endpoint": null,
+                    "unavailable": "deploy-subgraph.yaml has no goldsky-query-base for 0g",
+                },
+            ])
+        );
+        let d = build_registry(&json!({}), Some(ALL_ORMI), fetch);
+        assert_eq!(
+            d["networks"][1]["endpoint"],
+            format!("{base}/subgraphs/rain-deploy-registry-0g/prod/gn")
+        );
+        let d = build_registry(&json!({}), None, fetch);
+        assert_eq!(d["unavailable"], goldsky_networks_unread());
+        assert_eq!(d["subgraph"], "rain-deploy-registry");
+        assert!(d.get("networks").is_none());
     }
 
     #[test]

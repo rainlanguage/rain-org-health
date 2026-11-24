@@ -1,0 +1,157 @@
+{
+  "version": 1,
+  "chains": {
+    "16661": {
+      "authoriser": {
+        "address": "0x6173C9ac3cCb2f6a2F175b0d1fb5DA86fDD5F221",
+        "codehash": "0x2089950d3cc1112dd66a58adcfadeadc490b50053ac67be8bc676b4a2dcd1717"
+      },
+      "beaconSetDeployer": "0xd64246e6b25F745f005E6233e050C9B879E660Dc",
+      "beacons": [
+        {
+          "beacon": "0xAcE121AE30D754536863a546f41b147bE11202db",
+          "codehash": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
+          "implementation": "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E",
+          "owner": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          "renamedImplementation": "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E"
+        },
+        {
+          "beacon": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
+          "codehash": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
+          "implementation": "0x52174538a83b18462c5cF898016539B086c920C7",
+          "owner": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          "renamedImplementation": "0x52174538a83b18462c5cF898016539B086c920C7"
+        },
+        {
+          "beacon": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
+          "codehash": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
+          "implementation": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
+          "owner": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+          "renamedImplementation": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099"
+        }
+      ],
+      "euAuthoriser": {
+        "address": "0x8Fc06579571A105C5a699FA11d95b9c73747f8eb",
+        "codehash": "0x2089950d3cc1112dd66a58adcfadeadc490b50053ac67be8bc676b4a2dcd1717"
+      },
+      "network": "zerog",
+      "orchestrator": {
+        "beacon": "0x0000000000000000000000000000000000000000",
+        "beaconCodehash": "0x0000000000000000000000000000000000000000000000000000000000000000",
+        "implementation": "0x0000000000000000000000000000000000000000",
+        "instance": "0x0000000000000000000000000000000000000000",
+        "owner": "0x0000000000000000000000000000000000000000",
+        "setDeployer": "0x0000000000000000000000000000000000000000"
+      },
+      "renameMigration": "0x0000000000000000000000000000000000000000000000000000000000000000",
+      "safe": {
+        "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
+        "fallbackHandler": "0xfd0732Dc9E303f09fCEf3a7388Ad10A83459Ec99",
+        "fallbackHandlerCodehash": "0x7c6007a5d711cea8dfd5d91f5940ec29c7f200fe511eb1fc1397b367af3c42f9",
+        "guard": "0x0000000000000000000000000000000000000000",
+        "modules": [],
+        "owners": [
+          "0x4746095B1Ea1A84446d34448f44e74D3d51f92F2",
+          "0xceC2cb8B8EE4000FFA3F8a7f8E0Fa0A3E3DAb72d",
+          "0x8D5901d8aE48101B59400235ad8614A2e0510466",
+          "0xC1C89b7f5448F447d59f920456A9610f6b2544bC",
+          "0xAB92b327c97A6E7461cBd76E2a789E5e106FF87e",
+          "0x5CCd3cE683b66ff271DDB8915fF528b8fcFa23c2"
+        ],
+        "proxyCodehashes": [
+          "0xd7d408ebcd99b2b70be43e20253d6d92a8ea8fab29bd3be7f55b10032331fb4c",
+          "0xb89c1b3bdf2cf8827818646bce9a8f6e372885f8c55e5c07acbd307cb133b000"
+        ],
+        "singletonCodehashes": [
+          "0x1fe2df852ba3299d6534ef416eefa406e56ced995bca886ab7a553e6d0c5e1c4",
+          "0xb1f926978a0f44a2c0ec8fe822418ae969bd8c3f18d61e5103100339894f81ff"
+        ],
+        "singletons": [
+          "0x41675C099F32341bf84BFc5382aF534df5C7461a",
+          "0x29fcB43b46531BcA003ddC8FCB67FFE91900C762"
+        ],
+        "threshold": 3,
+        "version": "1.4.1"
+      },
+      "timelock": {
+        "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
+        "codehash": "0xb6234401d5b271d66957815831adcde1e66f80a4c7a9d01881c7eecb70e96993",
+        "minDelay": 172800
+      },
+      "tokenTableHydrated": false,
+      "tokens": [],
+      "zoltu": [
+        {
+          "address": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
+          "codehash": "0x06fffbad12ea80897d55aab5d4f1cd3f34f674237db44a148cc133334a0cca54",
+          "key": "stox-receipt@0_1_1"
+        },
+        {
+          "address": "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E",
+          "codehash": "0xba9e672e00e89c68294ae67b2d99a80f7509a6b10da809bf84b5c2e578579862",
+          "key": "stox-receipt@0_1_30"
+        },
+        {
+          "address": "0x2BCcEd626566Ef1e65F922DD03748C5C7aa2d748",
+          "codehash": "0x11da975b8024dd98441bfdf42a68462fa5db9bd4e3af348f05928ef359924671",
+          "key": "stox-receipt-vault@0_1_1"
+        },
+        {
+          "address": "0x52174538a83b18462c5cF898016539B086c920C7",
+          "codehash": "0x81f5b328841117c2b0a4759cc87e76cf2abab03b4a461d9082c1c147cd8705a6",
+          "key": "stox-receipt-vault@0_1_30"
+        },
+        {
+          "address": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
+          "codehash": "0x6de4c556c1811293da4ad2e509ee476f3eb635f019845087e1d2777a1b272034",
+          "key": "stox-wrapped-token-vault@0_1_1"
+        },
+        {
+          "address": "0x81D0ecD58346bf2d484E7774f55EABc1AA3F4bcc",
+          "codehash": "0x91035080d8e610cc0657d7f44efa8fbf57ce5800e6a35694d107c05987d24e3f",
+          "key": "stox-unified-deployer@0_1_1"
+        },
+        {
+          "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
+          "codehash": "0x8e95867e52db417944afd90f3b6c3c980962831e8a944e7f6958ba8f8cc10630",
+          "key": "stox-wrapped-token-vault-beacon@0_1_1"
+        },
+        {
+          "address": "0xbe5f05C4576e6D3e7bCCb4E64f08fc4F46Adf0cA",
+          "codehash": "0xa2c4bd29f36bc6636938f3ad66e6de5d126ce41ed3134bed166cde259d5775ad",
+          "key": "stox-wrapped-token-vault-beacon-set-deployer@0_1_1"
+        },
+        {
+          "address": "0xd64246e6b25F745f005E6233e050C9B879E660Dc",
+          "codehash": "0x621c1edbd850939acba8bcd999812a83999b5680d4ca6804e1995b95f138b9e5",
+          "key": "stox-offchain-asset-receipt-vault-beacon-set-deployer@0_1_1"
+        },
+        {
+          "address": "0x59aFE8ae48De65D9916b99C8CF9977061955C9A7",
+          "codehash": "0x6b2699420a64c92fc4f8a027a5769d0a27291e4489eaeb0e185cb660bf49d42f",
+          "key": "stox-offchain-asset-receipt-vault-beacon-set-deployer@0_1_30"
+        },
+        {
+          "address": "0x2EA0d35d0B1F57C42e6130f298930228bCbFDe9b",
+          "codehash": "0xf8a1d9b2fa068bae3c1a607434db48364a5cdab3020bd7e315ed2662a3b35b5f",
+          "key": "stox-offchain-asset-receipt-vault-authorizer@0_1_1"
+        },
+        {
+          "address": "0x51f78B77EdffDB62b8AeB753066C318a46D05D74",
+          "codehash": "0x2a67c52129dff74d956bb7dcde1aac598c28dd29685237aca56dccb1d49bd6f8",
+          "key": "stox-corporate-actions-facet@0_1_1"
+        },
+        {
+          "address": "0xad6219d71cCF6904C0633e3a8a8C423F54036fd1",
+          "codehash": "0x870162e771dac7e0dfe7226bad633055130d1e28128bcfb8afe7fee1097eb055",
+          "key": "stox-corporate-actions-facet@0_1_30"
+        },
+        {
+          "address": "0x1c3a4D12F88Bd39303Bb8510C6c1fa8Ad37A4b72",
+          "codehash": "0xbc2cc8eba1d10bc3b91a61fca8cdca9c18487e5fd99262f07d9703959ae4747c",
+          "key": "stox-orchestrator@0_1_30"
+        }
+      ]
+    }
+  }
+}

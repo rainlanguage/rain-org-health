@@ -1935,6 +1935,60 @@ mod tests {
         assert_eq!(statuses(&infra_rows(&c, short)), exp);
     }
 
+    /// A chain with no orchestrator pins no orchestrator row, whatever was read.
+    #[test]
+    fn infra_rows_omit_the_orchestrator_on_a_chain_without_one() {
+        let mut c = base();
+        c.orchestrator = None;
+        c.beacons.truncate(3);
+        let read = Some(OTHER.to_string());
+        let live = InfraLive {
+            beacon_set_deployer_has_code: Some("true".into()),
+            beacon_codehashes: c.beacons.iter().map(|b| Some(b.codehash.clone())).collect(),
+            timelock_codehash: Some(c.timelock.code.codehash.clone()),
+            timelock_min_delay: Some(c.timelock.min_delay.to_string()),
+            orchestrator_set_deployer_has_code: read.clone(),
+            orchestrator_beacon_codehash: read.clone(),
+            orchestrator_beacon_implementation: read.clone(),
+            orchestrator_beacon_owner: read.clone(),
+            orchestrator_instance_beacon: read,
+            authoriser_codehash: Some(c.authoriser.codehash.clone()),
+            eu_authoriser_codehash: Some(c.eu_authoriser.codehash.clone()),
+        };
+        let rows = infra_rows(&c, live);
+        assert_eq!(
+            rows.iter()
+                .map(|r| (
+                    r["component"].as_str().unwrap(),
+                    r["field"].as_str().unwrap(),
+                    r["status"].as_str().unwrap(),
+                ))
+                .collect::<Vec<_>>(),
+            [
+                ("beaconSetDeployer", "hasCode", "healthy"),
+                ("Receipt beacon", "codehash", "healthy"),
+                ("Receipt-vault beacon", "codehash", "healthy"),
+                ("Wrapped-token-vault beacon", "codehash", "healthy"),
+                ("timelock", "codehash", "healthy"),
+                ("timelock", "minDelay", "healthy"),
+                ("authoriser", "codehash", "healthy"),
+                ("euAuthoriser", "codehash", "healthy"),
+            ]
+        );
+    }
+
+    /// The published 0G chain reads every infra fact but the orchestrator's.
+    #[test]
+    fn the_published_zerog_chain_has_no_orchestrator_rows() {
+        let zerog = crate::expected::parse(include_str!("../testdata/expected-state-zerog.json"))
+            .unwrap()
+            .remove(0);
+        let rows = infra_rows(&zerog, InfraLive::default());
+        assert_eq!(rows.len(), 8);
+        assert!(rows.iter().all(|r| r["component"] != "orchestrator"
+            && r["component"] != "Orchestrator beacon"));
+    }
+
     /// A Zoltu suite's codehash is its row; no code reads `none` and drifts.
     #[test]
     fn zoltu_row_checks_the_suite_codehash() {
