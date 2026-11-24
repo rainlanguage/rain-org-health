@@ -42,9 +42,14 @@ pub fn explorer(
         .ok_or("the deploy repo's foundry.toml has no [etherscan] table")?
         .get(network)
         .and_then(|e| e.as_table())
-        .ok_or_else(|| format!("the deploy repo's foundry.toml has no [etherscan] entry for {network}"))?;
+        .ok_or_else(|| {
+            format!("the deploy repo's foundry.toml has no [etherscan] entry for {network}")
+        })?;
     Ok(Explorer {
-        url: entry.get("url").and_then(|u| u.as_str()).map(str::to_string),
+        url: entry
+            .get("url")
+            .and_then(|u| u.as_str())
+            .map(str::to_string),
         chain: entry
             .get("chain")
             .and_then(|c| c.as_integer())
@@ -58,7 +63,10 @@ pub fn explorer(
 
 /// The API base the entry answers at: its `url`, else Etherscan V2 for its
 /// `chain`, else Etherscan V2 for `live_chain_id`.
-pub fn api_url(e: &Explorer, live_chain_id: impl FnOnce() -> Option<u64>) -> Result<String, String> {
+pub fn api_url(
+    e: &Explorer,
+    live_chain_id: impl FnOnce() -> Option<u64>,
+) -> Result<String, String> {
     if let Some(u) = &e.url {
         return Ok(u.clone());
     }
@@ -91,12 +99,23 @@ pub fn source_url(api: &str, address: &str, key: Option<&str>) -> String {
 /// empty, `unknown` when there was no answer or it carries no result object.
 pub fn source_status(body: Option<&[u8]>) -> (&'static str, Option<String>, Option<String>) {
     let Some(body) = body else {
-        return ("unknown", None, Some("the explorer did not answer".to_string()));
+        return (
+            "unknown",
+            None,
+            Some("the explorer did not answer".to_string()),
+        );
     };
     let Ok(v) = serde_json::from_slice::<serde_json::Value>(body) else {
-        return ("unknown", None, Some("the explorer answer is not JSON".to_string()));
+        return (
+            "unknown",
+            None,
+            Some("the explorer answer is not JSON".to_string()),
+        );
     };
-    match v["result"].get(0).and_then(|r| r["SourceCode"].as_str().map(|s| (r, s))) {
+    match v["result"]
+        .get(0)
+        .and_then(|r| r["SourceCode"].as_str().map(|s| (r, s)))
+    {
         Some((r, src)) => {
             let name = r["ContractName"]
                 .as_str()
@@ -113,7 +132,11 @@ pub fn source_status(body: Option<&[u8]>) -> (&'static str, Option<String>, Opti
                 .as_str()
                 .or_else(|| v["message"].as_str())
                 .unwrap_or("no result");
-            ("unknown", None, Some(format!("the explorer answered: {why}")))
+            (
+                "unknown",
+                None,
+                Some(format!("the explorer answered: {why}")),
+            )
         }
     }
 }
@@ -140,7 +163,11 @@ pub fn contracts(docs: &[&serde_json::Value], network: &str) -> Vec<(String, Vec
             }
             None => out.push((
                 a.to_string(),
-                if component.is_empty() { vec![] } else { vec![component] },
+                if component.is_empty() {
+                    vec![]
+                } else {
+                    vec![component]
+                },
             )),
         }
     }
@@ -168,7 +195,8 @@ pub fn build(
     rows: Vec<serde_json::Value>,
 ) -> serde_json::Value {
     let count = |s: &str| rows.iter().filter(|r| r["status"] == s).count();
-    let (verified, unverified, unknown) = (count("verified"), count("unverified"), count("unknown"));
+    let (verified, unverified, unknown) =
+        (count("verified"), count("unverified"), count("unknown"));
     json!({
         "org": org,
         "repo": repo,

@@ -3490,8 +3490,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                     }
                     .and_then(|e| {
                         let live_id = || {
-                            Chain::from_network(network)
-                                .and_then(|c| eth_chain_id(rpc_session(c)))
+                            Chain::from_network(network).and_then(|c| eth_chain_id(rpc_session(c)))
                         };
                         verification::api_url(&e, live_id).map(|api| (api, e.key))
                     });
