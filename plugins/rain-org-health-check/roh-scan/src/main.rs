@@ -360,6 +360,49 @@ fn per_chain<T>(
     }
 }
 
+/// The pins of the chains whose expected state has an orchestrator.
+fn orchestrator_chains(
+    pins: &[owners::ChainPin],
+    state: &[expected::ExpectedChain],
+) -> Vec<owners::ChainPin> {
+    pins.iter()
+        .filter(|p| {
+            state
+                .iter()
+                .any(|c| c.network == p.network && c.orchestrator.is_some())
+        })
+        .cloned()
+        .collect()
+}
+
+/// The orchestrator grants entry when expected-state.json cannot be read.
+fn orchestrator_grants_unavailable(
+    org: &str,
+    repo: &str,
+    e: &expected::ExpectedError,
+) -> serde_json::Value {
+    json!({
+        "org": org,
+        "repo": repo,
+        "contract": "orchestrator",
+        "unavailable": true,
+        "reason": e.to_string(),
+    })
+}
+
+/// Whether `c`'s rename migration has run. A chain with no rename migration is
+/// not renamed.
+fn chain_renamed(
+    migrations_src: &str,
+    c: &expected::ExpectedChain,
+    call: migrations::EthCalls,
+) -> Result<Option<bool>, migrations::RenameUnlocated> {
+    match &c.rename_migration {
+        Some(id) => migrations::renamed(migrations_src, &c.network, id, call),
+        None => Ok(Some(false)),
+    }
+}
+
 /// A per-entity starting endpoint. All the calls that make up ONE verdict — a
 /// beacon's `owner()` + `implementation()`, a contract's two ERC-165 probes, the
 /// Safe's `getOwners()` + `getThreshold()` — share a `session` so they hit the
@@ -3010,15 +3053,6 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
         .unwrap_or(serde_json::Value::Null);
         let deployment_orchestrator_grants = match &expected_state {
             Ok(state) => {
-                let orchestrator_chains: Vec<owners::ChainPin> = chains
-                    .iter()
-                    .filter(|p| {
-                        state
-                            .iter()
-                            .any(|c| c.network == p.network && c.orchestrator.is_some())
-                    })
-                    .cloned()
-                    .collect();
                 owners::build_grants(
                     deploy_org,
                     deploy_repo,
@@ -3028,18 +3062,12 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
                         &deploy_sources,
                         &role_names,
                     ),
-                    &orchestrator_chains,
+                    &orchestrator_chains(&chains, state),
                     &check_grant,
                 )
                 .unwrap_or(serde_json::Value::Null)
             }
-            Err(e) => json!({
-                "org": deploy_org,
-                "repo": deploy_repo,
-                "contract": "orchestrator",
-                "unavailable": true,
-                "reason": e.to_string(),
-            }),
+            Err(e) => orchestrator_grants_unavailable(deploy_org, deploy_repo, e),
         };
 
         // Where the deploy repo's RBAC subgraph is published per network, and
@@ -3120,11 +3148,8 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             rbac::build_registry(&deployment_rbac, goldsky_networks.as_deref(), gh_file);
 
         let migrations_src = gh_file(deploy_org, deploy_repo, migrations::PATH);
-        let renamed_on = |c: &expected::ExpectedChain, s: Session| match &c.rename_migration {
-            Some(id) => migrations::renamed(&migrations_src, &c.network, id, &|calls| {
-                eth_call_batch(s, calls)
-            }),
-            None => Ok(Some(false)),
+        let renamed_on = |c: &expected::ExpectedChain, s: Session| {
+            chain_renamed(&migrations_src, c, &|calls| eth_call_batch(s, calls))
         };
         let deployment_migrations = migrations::build(
             deploy_org,
