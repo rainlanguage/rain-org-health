@@ -4949,6 +4949,213 @@ Deno.test("deployments: an unavailable infra or Safe chain says why and via whic
   );
 });
 
+// ---- deployments.html: explorer verification per chain ----
+
+// One chain of `deploymentVerification`, shaped like `verification::build`.
+function verificationDoc(network, rows) {
+  const count = (s) => rows.filter((r) => r.status === s).length;
+  return {
+    org: "S01-Issuer",
+    repo: "st0x.deploy",
+    network,
+    explorer: "api.etherscan.io/v2/api",
+    source: "foundry.toml",
+    total: rows.length,
+    verified: count("verified"),
+    unverified: count("unverified"),
+    unknown: count("unknown"),
+    rows,
+  };
+}
+
+// `verification::row`.
+function verificationRow(
+  address,
+  components,
+  contractName,
+  status,
+  reason = null,
+) {
+  return { address, components, contractName, status, reason };
+}
+
+// A panel's direct children from the h2 `heading` up to the next h2.
+function sectionUnder(panel, heading) {
+  const start = panel.children.findIndex((c) =>
+    c.tagName === "h2" && c.textContent === heading
+  );
+  if (start < 0) return null;
+  const rest = panel.children.slice(start + 1);
+  const end = rest.findIndex((c) => c.tagName === "h2");
+  const sec = makeEl("div");
+  sec.children = end < 0 ? rest : rest.slice(0, end);
+  return sec;
+}
+
+Deno.test("deployments: explorer verification shows each chain's unverified contracts and folds the verified ones", () => {
+  const TL = "0x831e4e1bb2b9a67c00b7d17f252a18a22cd0bd2b";
+  const RV = "0x5e4d55a5b5e3b7d1c0f1a2b3c4d5e6f708090a0b";
+  const EU = "0xdb9152e46c1d140db6a6f814461f21c571f3275e";
+  const BCN = "0x2df5cfe6d688ef9ff1b7c59a499d254b1527b286";
+  const NOKEY = "the explorer answered: Missing/Invalid API Key";
+  const box = deploymentsBox({
+    deploymentVerification: [
+      verificationDoc("base", [
+        verificationRow(TL, ["timelock"], "TimelockController", "verified"),
+        verificationRow(
+          RV,
+          ["token tMSTR", "orchestrator"],
+          "OffchainAssetReceiptVault",
+          "verified",
+        ),
+        verificationRow(EU, ["euAuthoriser"], null, "unverified"),
+        verificationRow(BCN, ["v2 beacon"], null, "unknown", NOKEY),
+      ]),
+      verificationDoc("ethereum", [
+        verificationRow(TL, ["timelock"], "TimelockController", "verified"),
+      ]),
+    ],
+  });
+  const panels = panelsOf(box);
+  const base = sectionUnder(panels.contracts, "Explorer verification — base");
+  const eth = sectionUnder(
+    panels.contracts,
+    "Explorer verification — ethereum",
+  );
+  assert(
+    base && eth,
+    "each chain has its own section on the contracts tab: " +
+      headings(panels.contracts).join(" | "),
+  );
+
+  const baseBanner = collect(base, "own-verify")[0];
+  assert(
+    textOf(baseBanner).includes(
+      "2 verified · 1 unverified · 1 unknown of 4 contracts on base.",
+    ),
+    textOf(baseBanner),
+  );
+  assert(
+    textOf(baseBanner).includes("via api.etherscan.io/v2/api"),
+    textOf(baseBanner),
+  );
+  assert(
+    baseBanner.className.includes("own-verify-drift"),
+    baseBanner.className,
+  );
+  const ethBanner = collect(eth, "own-verify")[0];
+  assert(ethBanner.className.includes("own-verify-ok"), ethBanner.className);
+
+  const addrOf = (r) => collect(r, "own-addr")[0].textContent;
+  const folds = collect(base, "vault-clean");
+  assert(
+    folds.length === 1 && folds[0].tagName === "details",
+    "one fold for the verified rows",
+  );
+  assert(
+    tags(folds[0], "summary")[0].textContent === "2 verified",
+    tags(folds[0], "summary")[0].textContent,
+  );
+  const folded = collect(folds[0], "own-row");
+  const shown = collect(base, "own-row").filter((r) => !folded.includes(r));
+  assert(
+    folded.map(addrOf).join() === [TL, RV].join(),
+    "only the verified rows are folded: " + folded.map(addrOf).join(),
+  );
+  assert(
+    shown.map(addrOf).join() === [EU, BCN].join(),
+    "the unverified and unknown rows are shown: " + shown.map(addrOf).join(),
+  );
+  assert(
+    shown.every((r) => r.parent.parent === panels.contracts),
+    "the shown rows sit outside any fold",
+  );
+
+  const [eu, unk] = shown;
+  assert(eu.className === "own-row hlth-unverified", eu.className);
+  assert(
+    collect(eu, "own-role")[0].textContent === "euAuthoriser",
+    collect(eu, "own-role")[0].textContent,
+  );
+  assert(
+    statusChip(eu).textContent === "unverified" &&
+      statusChip(eu).className === "own-chip own-chip-no",
+    statusChip(eu).className,
+  );
+  assert(factLines(eu).contract === "—", JSON.stringify(factLines(eu)));
+  assert(
+    statusChip(unk).textContent === "unknown" &&
+      statusChip(unk).className === "own-chip own-chip-dim",
+    statusChip(unk).className,
+  );
+  const unkNotes = collect(collect(unk, "bcn-detail")[0], "own-note").map((n) =>
+    n.textContent
+  );
+  assert(
+    unkNotes.length === 1 && unkNotes[0] === NOKEY,
+    unkNotes.join(" | "),
+  );
+
+  const rv = folded[1];
+  assert(
+    collect(rv, "own-role")[0].textContent === "token tMSTR, orchestrator",
+    collect(rv, "own-role")[0].textContent,
+  );
+  assert(
+    factLines(rv).contract === "OffchainAssetReceiptVault",
+    JSON.stringify(factLines(rv)),
+  );
+  assert(
+    statusChip(rv).textContent === "verified" &&
+      statusChip(rv).className === "own-chip own-chip-yes",
+    statusChip(rv).className,
+  );
+
+  const ethFolded = collect(eth, "vault-clean").flatMap((d) =>
+    collect(d, "own-row")
+  );
+  assert(
+    collect(eth, "own-row").length === 1 && ethFolded.length === 1,
+    "an all-verified chain shows no rows outside its fold",
+  );
+});
+
+Deno.test("deployments: an unavailable verification chain says why under its own heading", () => {
+  const REASON =
+    "the deploy repo's foundry.toml has no [etherscan] entry for flare";
+  const box = deploymentsBox({
+    deploymentVerification: [
+      { network: "flare", unavailable: true, reason: REASON },
+      verificationDoc("polygon", []),
+    ],
+  });
+  const panels = panelsOf(box);
+  const flare = sectionUnder(
+    panels.contracts,
+    "Explorer verification — flare",
+  );
+  assert(flare, headings(panels.contracts).join(" | "));
+  assert(
+    textOf(flare) === `Explorer verification unavailable — ${REASON}.`,
+    textOf(flare),
+  );
+  const polygon = sectionUnder(
+    panels.contracts,
+    "Explorer verification — polygon",
+  );
+  assert(polygon, headings(panels.contracts).join(" | "));
+  assert(
+    textOf(polygon) ===
+      "Explorer verification unavailable — the scan produced no contracts for this chain.",
+    textOf(polygon),
+  );
+  assert(
+    collect(flare, "own-verify").length === 0 &&
+      collect(polygon, "own-verify").length === 0,
+    "an unavailable chain renders no banner",
+  );
+});
+
 Deno.test("deployments: an owner reason without the unavailable flag is not shown as the cause", () => {
   const box = deploymentsBox({
     deploymentOwners: { groups: [], reason: "stale" },
