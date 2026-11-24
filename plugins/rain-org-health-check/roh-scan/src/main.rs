@@ -258,6 +258,13 @@ const BSC_RPCS: &[&str] = &[
     "https://bsc-dataseed1.binance.org",
 ];
 
+/// Keyless public 0G endpoints (chainId 0x4115 = 16661).
+const ZEROG_RPCS: &[&str] = &[
+    "https://evmrpc.0g.ai",
+    "https://0g.drpc.org",
+    "https://16661.rpc.thirdweb.com",
+];
+
 /// The chains the scan reads production state from.
 #[derive(Clone, Copy, PartialEq, Eq, Debug)]
 enum Chain {
@@ -266,6 +273,7 @@ enum Chain {
     HyperEvm,
     Robinhood,
     Bsc,
+    Zerog,
 }
 
 impl Chain {
@@ -276,6 +284,7 @@ impl Chain {
             Chain::HyperEvm => HYPEREVM_RPCS,
             Chain::Robinhood => ROBINHOOD_RPCS,
             Chain::Bsc => BSC_RPCS,
+            Chain::Zerog => ZEROG_RPCS,
         }
     }
 
@@ -288,6 +297,7 @@ impl Chain {
             Chain::HyperEvm => "rpc.hyperliquid.xyz/evm",
             Chain::Robinhood => "rpc.mainnet.chain.robinhood.com",
             Chain::Bsc => "bsc-dataseed.bnbchain.org",
+            Chain::Zerog => "evmrpc.0g.ai",
         }
     }
 
@@ -305,6 +315,7 @@ impl Chain {
             "hyperevm" => Some(Chain::HyperEvm),
             "robinhood" => Some(Chain::Robinhood),
             "bsc" => Some(Chain::Bsc),
+            "zerog" => Some(Chain::Zerog),
             _ => None,
         }
     }
@@ -3833,7 +3844,7 @@ mod tests {
     /// three whole grant maps.
     #[test]
     fn every_pinned_network_resolves_to_a_chain() {
-        for n in ["base", "ethereum", "hyperevm", "robinhood", "bsc"] {
+        for n in ["base", "ethereum", "hyperevm", "robinhood", "bsc", "zerog"] {
             assert!(
                 Chain::from_network(n).is_some(),
                 "no endpoint set for pinned network {n}"
@@ -3872,6 +3883,7 @@ mod tests {
             Chain::HyperEvm,
             Chain::Robinhood,
             Chain::Bsc,
+            Chain::Zerog,
         ];
         let mut hosts = std::collections::HashSet::new();
         let mut firsts = std::collections::HashSet::new();
