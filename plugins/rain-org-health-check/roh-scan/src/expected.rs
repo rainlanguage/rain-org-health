@@ -1959,6 +1959,34 @@ mod tests {
         assert_eq!(malformed(&two), "beacons");
     }
 
+    #[test]
+    fn an_orchestrator_field_is_zero_only_at_its_own_width() {
+        let bytes32 = &["beaconCodehash"];
+        let zero_hash = format!("0x{}", "0".repeat(64));
+        assert!(is_all_zero(&zero_orchestrator(), bytes32));
+        let mut wide_address = zero_orchestrator();
+        wide_address["beacon"] = json!(zero_hash);
+        let mut narrow_codehash = zero_orchestrator();
+        narrow_codehash["beaconCodehash"] = json!(ZERO);
+        assert!(!is_all_zero(&wide_address, bytes32));
+        assert!(!is_all_zero(&narrow_codehash, bytes32));
+        assert!(!is_all_zero(&zero_orchestrator(), &[]));
+        for v in [
+            json!({}),
+            json!([ZERO]),
+            json!(ZERO),
+            Value::Null,
+            json!({"setDeployer": 0}),
+        ] {
+            assert!(!is_all_zero(&v, bytes32), "{v}");
+        }
+        for (label, o) in [("wide beacon", wide_address), ("narrow codehash", narrow_codehash)] {
+            let mut d = without_orchestrator();
+            d["chains"]["1"]["orchestrator"] = o;
+            assert_eq!(malformed(&d), "orchestrator.setDeployer", "{label}");
+        }
+    }
+
     /// st0x.deploy's published `expected-state.json` chain 16661 (0G), at
     /// 5cd0f4bf.
     #[test]
