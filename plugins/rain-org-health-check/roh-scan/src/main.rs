@@ -3008,27 +3008,39 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             &check_grant,
         )
         .unwrap_or(serde_json::Value::Null);
-        let orchestrator_chains: Vec<owners::ChainPin> = match &expected_state {
-            Ok(state) => chains
-                .iter()
-                .filter(|p| {
-                    state
-                        .iter()
-                        .any(|c| c.network == p.network && c.orchestrator.is_some())
-                })
-                .cloned()
-                .collect(),
-            Err(_) => Vec::new(),
+        let deployment_orchestrator_grants = match &expected_state {
+            Ok(state) => {
+                let orchestrator_chains: Vec<owners::ChainPin> = chains
+                    .iter()
+                    .filter(|p| {
+                        state
+                            .iter()
+                            .any(|c| c.network == p.network && c.orchestrator.is_some())
+                    })
+                    .cloned()
+                    .collect();
+                owners::build_grants(
+                    deploy_org,
+                    deploy_repo,
+                    &deploy_sources,
+                    &owners::GrantSpec::orchestrator(
+                        &orchestrator_lib,
+                        &deploy_sources,
+                        &role_names,
+                    ),
+                    &orchestrator_chains,
+                    &check_grant,
+                )
+                .unwrap_or(serde_json::Value::Null)
+            }
+            Err(e) => json!({
+                "org": deploy_org,
+                "repo": deploy_repo,
+                "contract": "orchestrator",
+                "unavailable": true,
+                "reason": e.to_string(),
+            }),
         };
-        let deployment_orchestrator_grants = owners::build_grants(
-            deploy_org,
-            deploy_repo,
-            &deploy_sources,
-            &owners::GrantSpec::orchestrator(&orchestrator_lib, &deploy_sources, &role_names),
-            &orchestrator_chains,
-            &check_grant,
-        )
-        .unwrap_or(serde_json::Value::Null);
 
         // Where the deploy repo's RBAC subgraph is published per network, and
         // the role names its sources spell out. The role history itself is read
