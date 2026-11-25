@@ -30,6 +30,7 @@ mod rpc;
 mod signals;
 mod untested;
 mod vaultdiscovery;
+mod verification;
 use audit::{audit_sort_key, parse_last_audit, parse_runs_jsonl, LastAudit};
 use protofire::{
     anchor_ref, changed_source_files, classify_anchor, classify_external_audit,
@@ -432,6 +433,23 @@ fn eth_call_payload_at(to: &str, data: &str, tag: &str) -> String {
     format!(
         r#"{{"jsonrpc":"2.0","id":1,"method":"eth_call","params":[{{"to":"{to}","data":"{data}"}},"{tag}"]}}"#
     )
+}
+
+/// GET `url`; `None` on any transport or HTTP failure.
+fn curl_get(url: &str) -> Option<Vec<u8>> {
+    let o = Command::new("curl")
+        .args(["-fsS", "-m", "25", "--retry", "2", url])
+        .output()
+        .ok()?;
+    o.status.success().then_some(o.stdout)
+}
+
+fn eth_chain_id(session: Session) -> Option<u64> {
+    let body = curl_json(
+        session,
+        r#"{"jsonrpc":"2.0","id":1,"method":"eth_chainId","params":[]}"#,
+    )?;
+    rpc::decode_quantity(&rpc::result_hex(&body)?)
 }
 
 fn eth_block_number(session: Session) -> Option<u64> {
@@ -3444,6 +3462,65 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             },
         );
 
+        // Explorer source verification of every contract the infra, Zoltu +
+        // tokens and v2 sections report, per chain.
+        let verification_sets: Vec<serde_json::Value> = {
+            let foundry = gh_file(deploy_org, deploy_repo, "foundry.toml");
+            let docs: Vec<&serde_json::Value> = infra_sets
+                .iter()
+                .chain(&code_token_sets)
+                .chain(&v2_sets)
+                .filter(|d| d["unavailable"] != true)
+                .collect();
+            let mut networks: Vec<String> = Vec::new();
+            for n in docs.iter().filter_map(|d| d["network"].as_str()) {
+                if !networks.iter().any(|x| x == n) {
+                    networks.push(n.to_string());
+                }
+            }
+            networks
+                .iter()
+                .map(|network| {
+                    let api = if foundry.is_empty() {
+                        Err(format!(
+                            "{deploy_org}/{deploy_repo}'s foundry.toml could not be read"
+                        ))
+                    } else {
+                        verification::explorer(&foundry, network, |v| std::env::var(v).ok())
+                    }
+                    .and_then(|e| {
+                        let live_id = || {
+                            Chain::from_network(network).and_then(|c| eth_chain_id(rpc_session(c)))
+                        };
+                        verification::api_url(&e, live_id).map(|api| (api, e.key))
+                    });
+                    match api {
+                        Err(reason) => verification::unavailable(network, &reason),
+                        Ok((api, key)) => {
+                            let rows = verification::contracts(&docs, network)
+                                .iter()
+                                .map(|(a, cs)| {
+                                    let body = curl_get(&verification::source_url(
+                                        &api,
+                                        a,
+                                        key.as_deref(),
+                                    ));
+                                    verification::row(a, cs, body.as_deref())
+                                })
+                                .collect();
+                            verification::build(
+                                deploy_org,
+                                deploy_repo,
+                                network,
+                                &verification::explorer_host(&api),
+                                rows,
+                            )
+                        }
+                    }
+                })
+                .collect()
+        };
+
         // Every Safe fact `expected-state.json` pins per chain, read live.
         let safe_sets: Vec<serde_json::Value> = per_chain(
             &expected_state,
@@ -3534,6 +3611,7 @@ fn run_scan(json_flag: Option<String>, repos_arg: Vec<String>) {
             "deploymentInfra": infra_sets,
             "deploymentV2": v2_sets,
             "deploymentCodeTokens": code_token_sets,
+            "deploymentVerification": verification_sets,
             "deploymentSafes": safe_sets,
             "deploymentTokens": registry_sets,
             "deploymentListings": listing_sets,
