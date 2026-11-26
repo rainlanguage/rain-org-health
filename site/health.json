@@ -1,5 +1,5 @@
 {
-  "generatedAt": "2026-11-25T15:41:33Z",
+  "generatedAt": "2026-11-26T00:26:59Z",
   "auditGraph": {
     "nodes": [
       {
@@ -2214,11 +2214,11 @@
         "target": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
         "safe": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
         "rpcHost": "ethereum-rpc.publicnode.com",
-        "granted": 13,
+        "granted": 12,
         "missing": 0,
-        "unknown": 0,
+        "unknown": 1,
         "total": 13,
-        "state": "live",
+        "state": "partial",
         "safeKept": []
       },
       {
@@ -2291,7 +2291,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": false
+                "safeHolds": null
               },
               {
                 "network": "hyperevm",
@@ -2506,7 +2506,7 @@
                 "network": "ethereum",
                 "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
                 "status": "granted",
-                "safeHolds": null
+                "safeHolds": false
               },
               {
                 "network": "hyperevm",
@@ -2641,7 +2641,7 @@
               {
                 "network": "ethereum",
                 "address": "0x3840aeDaEc8e82f79d8F6a8F6ADCa271E13E0329",
-                "status": "granted",
+                "status": "unknown",
                 "safeHolds": null
               },
               {
@@ -4322,7 +4322,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 144,
-        "discoveredAtBlock": 62154901
+        "discoveredAtBlock": 62313162
       },
       {
         "network": "ethereum",
@@ -4879,7 +4879,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 67,
-        "discoveredAtBlock": 26493164
+        "discoveredAtBlock": 26495792
       },
       {
         "network": "bsc",
@@ -5748,7 +5748,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 106,
-        "discoveredAtBlock": 135680748
+        "discoveredAtBlock": 135751220
       },
       {
         "network": "hyperevm",
@@ -6289,7 +6289,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 52220432
+        "discoveredAtBlock": 52252689
       },
       {
         "network": "robinhood",
@@ -6830,7 +6830,7 @@
           "notOnChain": 0
         },
         "discoveredCount": 65,
-        "discoveredAtBlock": 123153849
+        "discoveredAtBlock": 123362694
       },
       {
         "network": "zerog",
@@ -31986,7 +31986,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 26493164,
+            "headBlock": 26495791,
             "head": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f"
           }
         ]
@@ -32425,7 +32425,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 135680719,
+            "headBlock": 135751030,
             "head": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f"
           }
         ]
@@ -32864,7 +32864,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 52220415,
+            "headBlock": 52252597,
             "head": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f"
           }
         ]
@@ -33303,7 +33303,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 123153666,
+            "headBlock": 123362162,
             "head": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f"
           }
         ]
@@ -33742,7 +33742,7 @@
           {
             "writer": "0x0b300013CD54a8F1aC40981f80FaaA18b8Cc1E4c",
             "namespace": "0xd9cec8396b568ba46ea521970e5edeac9163854e75287e989c213c3e9e84bda4",
-            "headBlock": 62154930,
+            "headBlock": 62313195,
             "head": "0xd0116b2b7c586191807fe957ae044549c829f1722aeda499735e07cb51eb232f"
           }
         ]
@@ -43651,7 +43651,7 @@
       "rpcHost": "ethereum-rpc.publicnode.com",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 7,
+      "healthy": 6,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -43690,8 +43690,8 @@
           "field": "codehash",
           "address": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
           "expected": "0x6de4c556c1811293da4ad2e509ee476f3eb635f019845087e1d2777a1b272034",
-          "live": "0x6de4c556c1811293da4ad2e509ee476f3eb635f019845087e1d2777a1b272034",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "zoltu stox-unified-deployer@0_1_1",
@@ -59977,7 +59977,7 @@
       "rpcHost": "rpc.hyperliquid.xyz/evm",
       "source": "expected-state.json",
       "total": 1019,
-      "healthy": 1018,
+      "healthy": 1016,
       "rows": [
         {
           "component": "zoltu stox-receipt@0_1_1",
@@ -64872,8 +64872,8 @@
           "field": "receiptVault name",
           "address": "0xDA52106FC0D44096Fd500E096b9045FdAc1d27B9",
           "expected": "Robinhood Markets, Inc. ST0x",
-          "live": null,
-          "status": "unknown"
+          "live": "Robinhood Markets, Inc. ST0x",
+          "status": "healthy"
         },
         {
           "component": "token tHOOD",
@@ -66976,8 +66976,8 @@
           "field": "receiptVault authoriser",
           "address": "0x2E04C503ebd584C3c0Bb1d57E0C51E7B7EaE28E1",
           "expected": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
-          "live": "0x66566cc91deaf818859bd4b09b7903ac48998157",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tBIRD",
@@ -67080,8 +67080,8 @@
           "field": "wrappedTokenVault symbol",
           "address": "0xfBA650082205E5807a5eAF28BdcC8E851bB2f753",
           "expected": "wtSPY",
-          "live": "wtSPY",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tSPY",
@@ -67768,8 +67768,8 @@
           "field": "wrappedTokenVault decimals",
           "address": "0x88c10BEcFf283c21e9253d688ec06804359cF795",
           "expected": "18",
-          "live": "18",
-          "status": "healthy"
+          "live": null,
+          "status": "unknown"
         },
         {
           "component": "token tIFX",
@@ -76311,9 +76311,9 @@
       "explorer": "api.etherscan.io/v2/api",
       "source": "foundry.toml",
       "total": 216,
-      "verified": 144,
+      "verified": 159,
       "unverified": 4,
-      "unknown": 68,
+      "unknown": 53,
       "rows": [
         {
           "address": "0x2191981Ca2477B745870cC307cbEB4cB2967ACe3",
@@ -76347,9 +76347,9 @@
           "components": [
             "Wrapped-token-vault beacon"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "UpgradeableBeacon",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb9DCd744b0413Dff0EDC70A5B229c7aa03734613",
@@ -76376,18 +76376,18 @@
             "orchestrator",
             "zoltu stox-orchestrator-beacon-set-deployer@0_1_30"
           ],
-          "contractName": "ST0xOrchestratorBeaconSetDeployer",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
           "components": [
             "orchestrator"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x315b16faa6eE413faBCa877d3851B3818369f0cD",
@@ -76619,9 +76619,9 @@
           "components": [
             "token tCOIN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8Fdf41116F755771Bfe0747D5F8C3711D5DEbfBb",
@@ -76646,18 +76646,18 @@
           "components": [
             "token tSPYM"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x58cE5024B89B4f73C27814C0f0aBbEa331C99Be8",
           "components": [
             "token tSIVR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xEB7F3E4093C9d68253b6104FbbfF561F3eC0442F",
@@ -76682,18 +76682,18 @@
           "components": [
             "token tCRCL"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8AFba81DEc38DE0A18E2Df5E1967a7493651eebf",
           "components": [
             "token tCRCL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xd508B97975fBE04E62bFf18959549b046bD8FA78",
@@ -76718,18 +76718,18 @@
           "components": [
             "token tNVDA"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8Dd4c6f08E446075879310AFae8167CC4DE2f805",
           "components": [
             "token tNVDA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x9A507314EA2a6C5686C0D07BfecB764dCF324dFF",
@@ -76754,27 +76754,27 @@
           "components": [
             "token tIAU"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1f17523b147CcC2A2328c0F014f6d49c479ea063",
           "components": [
             "token tPPLT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x82f5BAEE1076334357a34A19E04f7c282D51cE47",
           "components": [
             "token tPPLT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x61b5a0424cD3adcd3b312619fC58B6fCeFA1ECb6",
@@ -76790,9 +76790,9 @@
           "components": [
             "token tAMZN"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x997baE3EC193a249596d3708C3fAB7C501Bb8a53",
@@ -76808,27 +76808,27 @@
           "components": [
             "token tAMZN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xfBde45dF60249203b12148452fC77C3B5F811eB2",
           "components": [
             "token tBMNR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x2512EC661f0bA089c275EA105E31bAD6FcFcf319",
           "components": [
             "token tBMNR"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x67aeAFD8c274F62933fEc34E8c0724189AaD01fc",
@@ -76853,9 +76853,9 @@
           "components": [
             "token tIBHG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xE603De6450555cEf32be7e666eEd70fddDa13e1e",
@@ -76898,9 +76898,9 @@
           "components": [
             "token tQQQM"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x823FF7Bbde2869aAe73A6CD53e7f614442836757",
@@ -76925,9 +76925,9 @@
           "components": [
             "token tVWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x23ec6886b49D7ab123E9ee8e474D2fa7AB6Cbc2d",
@@ -76979,9 +76979,9 @@
           "components": [
             "token tSPCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x19F89aaEf8a93f38A974beca9776f09aB844887F",
@@ -77006,27 +77006,27 @@
           "components": [
             "token tCEG"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x3aF952888Cd89DAD3e8AF67cf4b7E740B36829C3",
           "components": [
             "token tCEG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xc6bc19DF197cCd0DB4c02cCd6AAFf7B2Ce698e08",
           "components": [
             "token tCEG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x96DE077262609298CD891E4Ab21bd34837dE33aB",
@@ -77042,27 +77042,27 @@
           "components": [
             "token tDRAM"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x728734768a772c137A5364b10e61943De13921C4",
           "components": [
             "token tDRAM"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x7001e2974F775f0Fd73a3D2e5914e591f3EC3fBB",
           "components": [
             "token tTSM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x71C66449d2528E23514A9c197BFD55Ae9DB3B714",
@@ -77087,18 +77087,18 @@
           "components": [
             "token tSKHY"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xFcD17aC4c4BF6a72c93018096F3fC09e66573Ff9",
           "components": [
             "token tSKHY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xE26105d49e57cEd5Ce83d20Ca5f04C3B0dCC876C",
@@ -77123,18 +77123,18 @@
           "components": [
             "token tASML"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x17021e305D28c4CfA8ec02817ad22B2ef432dC85",
           "components": [
             "token tASML"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7d89a2DFfDaF9f48A64337C725D925381b431aE2",
@@ -77159,9 +77159,9 @@
           "components": [
             "token tMU"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x50b5225409A55B873fD6C2Fd5880AF5a11acE9b1",
@@ -77213,9 +77213,9 @@
           "components": [
             "token tAVGO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x98C02B58b7E65EF5a4262d9536162949e3B2E141",
@@ -77240,27 +77240,27 @@
           "components": [
             "token tAMAT"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xDdE9346107609A05439A0B59Ab6eD4f7F81a1FBF",
           "components": [
             "token tLRCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x328B9aFFa511fE26673edBb4fEa37eDaF908A3bc",
           "components": [
             "token tLRCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xDa588aceE0E45F29dfF1E48988D5108122491388",
@@ -77276,9 +77276,9 @@
           "components": [
             "token tTTWO"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x045Fb493D970f94a54FeaF931033622fC82192e6",
@@ -77294,27 +77294,27 @@
           "components": [
             "token tTTWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xf6744Fd94e27c2f58F6110aa9fDC77A87e41766B",
           "components": [
             "token tRKLB"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xF4f8c66085910d583c01f3b4e44Bf731D4e2c565",
           "components": [
             "token tRKLB"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x34Bf3d8DFaa92e554FBCf48135E5d814210DA1dd",
@@ -77339,9 +77339,9 @@
           "components": [
             "token tGOOGL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x85ac79F639C692B2f1290d0994c79eEffF350D00",
@@ -77357,9 +77357,9 @@
           "components": [
             "token tAAPL"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1020EC8Aa3f709a1f3D8705cdBa89b950451bd88",
@@ -77384,9 +77384,9 @@
           "components": [
             "token tMSFT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x515A3Ac2a6aB590bDFa970caFFFd7fAdC680886E",
@@ -77474,9 +77474,9 @@
           "components": [
             "token tINTC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xAFEd850e458d331EF2A13569547258A84e2e42D2",
@@ -77501,9 +77501,9 @@
           "components": [
             "token tHOOD"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x942639370E1c095ECCe2BdffebFB295d0B3e384e",
@@ -77519,9 +77519,9 @@
           "components": [
             "token tORCL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xCB9571aB96aA47374eF30D8E9ACCC1cD51064726",
@@ -77546,18 +77546,18 @@
           "components": [
             "token tSMCI"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xA759FAbbD866e6DB8bF76613C35825dC2e380bf0",
           "components": [
             "token tSMCI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xC23aC719988d2ABeffEE8AC75C790E328c44Fe79",
@@ -77582,27 +77582,27 @@
           "components": [
             "token tBABA"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x635983387673B0Da01f70a94985c6F88BfAf78c2",
           "components": [
             "token tBABA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xcA1A378F9a250131A2fE51c10f120FeF7EDCa56E",
           "components": [
             "token tTQQQ"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x295e9eCAb319006900a53b3f8D6Fcb0C131F4ada",
@@ -77618,9 +77618,9 @@
           "components": [
             "token tTQQQ"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x51D5C8C8040358686952A30fAC116aAC32390d6A",
@@ -77636,27 +77636,27 @@
           "components": [
             "token tFTF"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4CA18bF0DcCCBbD80CeF238f4c9399eFBDE3927b",
           "components": [
             "token tFTF"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xBeB0c2011bd5520A0998b69132E9245E39Ac5D1D",
           "components": [
             "token tCBRS"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xB457cfBF31995d3aAAa704dA9999cC0b011820ca",
@@ -77681,18 +77681,18 @@
           "components": [
             "token tMCD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7ecAE30Ed8ee4F72653ada7b0941bDE7a0a8eE8d",
           "components": [
             "token tMCD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x1Cfa3Af9DcEc40dCa8f8588c7b7FCE5a1BA6eC3f",
@@ -77717,27 +77717,27 @@
           "components": [
             "token tNKE"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8A0037757d67084f5431c02eE2A352593eFe2957",
           "components": [
             "token tNKE"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xA4178410216F5f00C718BE88C2fF8AC24de192bc",
           "components": [
             "token tGRND"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x1197E6FA778c4D13E47875bD1761c68C22c928e0",
@@ -77753,9 +77753,9 @@
           "components": [
             "token tGRND"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6C2b6Ed57d4d9e93F3E4975FAc70eE4B180F4Eb9",
@@ -77771,27 +77771,27 @@
           "components": [
             "token tDNUT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xE06eD5d80Db468a10fCfadF27ee9771DD73C7e35",
           "components": [
             "token tDNUT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xe9bc7eF69f123cA2bcA1021D1BE30224271a9217",
           "components": [
             "token tPLBY"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x35fDe767dBFAa610D12cf99914bCd6CFEda73B7B",
@@ -77816,9 +77816,9 @@
           "components": [
             "token tTR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x433fd2Fc0964B07E9820e4cd01774eDE59D1F002",
@@ -77870,9 +77870,9 @@
           "components": [
             "token tFGI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x6aed8b1aCfb04F4e0e6db580F12fF41438a394e5",
@@ -77897,27 +77897,27 @@
           "components": [
             "token tBIRD"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x95d46fC0faf4141C508D037469F472366093415a",
           "components": [
             "token tBIRD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5ae4611fD6944613E2947A44fd76ad4B48551F6A",
           "components": [
             "token tBIRD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xdA2E8d6e2A7D0a38A6b39a274D6911476062298B",
@@ -77933,9 +77933,9 @@
           "components": [
             "token tSPY"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1113A5DCAe56f5C7320024780079C9c79767DDb8",
@@ -77951,9 +77951,9 @@
           "components": [
             "token tSNES"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x07234e86246fcDBa320E5d59f1Ccb618d765DbFb",
@@ -77969,9 +77969,9 @@
           "components": [
             "token tSNES"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x31F55e6dCF09E706Ba10e4cBB455dE0Fbf932BcA",
@@ -77987,27 +77987,27 @@
           "components": [
             "token tWMT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x223a69C7E4634cF4FF821719959E5a8d0063128a",
           "components": [
             "token tWMT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x6eC2421d74F2AF61b7EE7bCCAE25A3b6a7961Aa0",
           "components": [
             "token tMC"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x378a04202D25659763A02dA5FE77c0a35e64Ce1D",
@@ -78032,9 +78032,9 @@
           "components": [
             "token tDIS"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8EA3c97D23872eC4FAe1cA3189039056b77bc703",
@@ -78050,9 +78050,9 @@
           "components": [
             "token tDIS"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x90687ba21Da53189047Cd168A66eCC76282bf800",
@@ -78077,9 +78077,9 @@
           "components": [
             "token tIFX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x6540478507ab063b03a704AC2c8E9118F1760848",
@@ -78249,9 +78249,9 @@
           "components": [
             "Receipt beacon"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "UpgradeableBeacon",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7328C39029f6Ee7Ff8d48932FFB4eCD44b6Fbb8C",
@@ -78271,9 +78271,9 @@
       "explorer": "api.etherscan.io/v2/api",
       "source": "foundry.toml",
       "total": 200,
-      "verified": 126,
-      "unverified": 1,
-      "unknown": 73,
+      "verified": 128,
+      "unverified": 0,
+      "unknown": 72,
       "rows": [
         {
           "address": "0xd64246e6b25F745f005E6233e050C9B879E660Dc",
@@ -78299,9 +78299,9 @@
           "components": [
             "Receipt-vault beacon"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "UpgradeableBeacon",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
@@ -78320,17 +78320,17 @@
             "orchestrator"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
           "components": [
             "timelock"
           ],
-          "contractName": "TimelockController",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x945D0Faf6f268e805246907507ef1044e70E75D7",
@@ -78338,18 +78338,18 @@
             "orchestrator",
             "zoltu stox-orchestrator-beacon-set-deployer@0_1_30"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "ST0xOrchestratorBeaconSetDeployer",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
           "components": [
             "orchestrator"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
@@ -78518,36 +78518,36 @@
           "components": [
             "token tTSLA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x550499e28A3CE8cb1dB3e3Db23fDD0357eD3ff48",
           "components": [
             "token tTSLA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x3a3E00d6fb65E686941f77DD375ca677Ad7772c2",
           "components": [
             "token tTSLA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x5100ED387Ab3ED37667199aD8f9F6D963157d28e",
           "components": [
             "token tCOIN"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xa3d1be1Ab9F4E72309Cb9Bfeaa14aFe46D012e36",
@@ -78563,36 +78563,36 @@
           "components": [
             "token tCOIN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x484AaA9e6542774026b24aeD4EC3058400eD2439",
           "components": [
             "token tSPYM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7dF3ad1ECC10DBF0296D05F91a697e4A059771c2",
           "components": [
             "token tSPYM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xB023d277f4a50cE056Dd921C28fF7e27F56B3445",
           "components": [
             "token tSPYM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xc6100518997004eFb0701Da3c56000B3d093470a",
@@ -78608,36 +78608,36 @@
           "components": [
             "token tSIVR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x89dC2d5B33e8DcbD24A2e4A07f7B06f55b5bb24e",
           "components": [
             "token tSIVR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xeF63EdB9F39Dcd03C103A11e2e7E1878308b9586",
           "components": [
             "token tCRCL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x25Ab6926BA171e1618b214cda774104B2f6ec884",
           "components": [
             "token tCRCL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xDf228279B380e8445970a3B4162B9509D4339520",
@@ -78653,36 +78653,36 @@
           "components": [
             "token tNVDA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xa3947d2A74F5a3A7135A9d0c66B28fC7315f30Da",
           "components": [
             "token tNVDA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xA26C89357e6cb53Bf670db2e0e939f5489Ba26A8",
           "components": [
             "token tNVDA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xb9A1D1822F57f52959b8c5097A8322D534bceDEe",
           "components": [
             "token tIAU"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x33f3a6401ce08f705eE4B8a03fc37F298395b720",
@@ -78698,36 +78698,36 @@
           "components": [
             "token tIAU"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x47C2e6644eFDF58E86dA45dC60e0f67A65043B99",
           "components": [
             "token tPPLT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xCbD06C802BFe993de94d0d635AB5B1fa764519D8",
           "components": [
             "token tPPLT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x216cbEeC16cF7e4dBd53e6e3D8B54b7dA23BE146",
           "components": [
             "token tPPLT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6615f3D82989949fa7d167b40FEc0Ef30cdbA476",
@@ -78743,36 +78743,36 @@
           "components": [
             "token tAMZN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xA583addaA69142E8588D9ffE3767Dbb0F23fd516",
           "components": [
             "token tAMZN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x00472aA0D0611F933c22b8148F02B0cDd1Ae5fbc",
           "components": [
             "token tBMNR"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x35e1D3d3Fa6D43438641d2b8f63cBf84C84435c0",
           "components": [
             "token tBMNR"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x34BF824C28121EbD421026D70a03A7Ec9Ee5a0d4",
@@ -78788,36 +78788,36 @@
           "components": [
             "token tIBHG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x03bBb4148ba82d63993D32fB8E6Eff8Cc51A56f2",
           "components": [
             "token tIBHG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8e05CB17994Ee9B207e87993717F6Fb2ee7D0bD3",
           "components": [
             "token tIBHG"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x344147366F648640076d363FAF659c214788E99d",
           "components": [
             "token tSGOV"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x06b17E431a957Dd8522Bf106653BAc6B39F437E6",
@@ -78833,36 +78833,36 @@
           "components": [
             "token tSGOV"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5Aa65dfF455C7f18C21370086EaFaEe4f2b63608",
           "components": [
             "token tQQQM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x63fDfe9cf53cB1FD5d98fE7537B881B86aE04A31",
           "components": [
             "token tQQQM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1Eb9583d1BB2b00B3CB5ead921d021b445F77dBc",
           "components": [
             "token tQQQM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x2cc8DCfC649f9633C482C81473cC251226375fE3",
@@ -78878,36 +78878,36 @@
           "components": [
             "token tVWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x1A09A154E2ae3890d1e18507a37bC3e2FCfA10cc",
           "components": [
             "token tVWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xDf406836D5A092894ee5d5bdC7F58e5bdc8D196A",
           "components": [
             "token tARKK"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x5D80cAcaABCe0ab4C1541493ceB25D97970D250a",
           "components": [
             "token tARKK"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF1E5f11e7fAA40b2C2CEdfAD825D81207f793862",
@@ -78923,36 +78923,36 @@
           "components": [
             "token tSPCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xC32C8166164E2cA18BB5fbf3E82CB776943d97FB",
           "components": [
             "token tSPCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x46dC08972b1d5D5876d244292c551dbbbC7d7e80",
           "components": [
             "token tSPCX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6240E93f1A08d43002e52b210cD49c54C813D780",
           "components": [
             "token tCEG"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xc842fC56Dd39B62357d027a0F3B3266353cac991",
@@ -78968,36 +78968,36 @@
           "components": [
             "token tCEG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5F5a1Bdc00ade7702ea5944B1374DC598dA3759f",
           "components": [
             "token tDRAM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7e1263f1e1EeF7eCe7fA7e568842f213a6CEa956",
           "components": [
             "token tDRAM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xbD4Fa8Fd2643b46eADC499b5A468108817988830",
           "components": [
             "token tDRAM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x7Ac659f601bEa2d9f490E0D0D8a68c4282fD9B21",
@@ -79013,36 +79013,36 @@
           "components": [
             "token tTSM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x2Ce6A6B9E573ec0444C00103ACEee9dC23223621",
           "components": [
             "token tTSM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
           "components": [
             "token tSKHY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xD13bBc46C4582246656868d32227A99A538D97E1",
           "components": [
             "token tSKHY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xd3150728FFDb338eFd9b07ae90A7D5e688bc3B20",
@@ -79058,36 +79058,36 @@
           "components": [
             "token tASML"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb8605a64B57E7A8631c87F3187c783493231bdD9",
           "components": [
             "token tASML"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x6AEBd84df448d2E25080590797075b399Ca43549",
           "components": [
             "token tASML"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x2C845ed32c5fDE012eb14508d0d24BD3300B1D71",
           "components": [
             "token tMU"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF01523C4ca52dF88f07938D4Fb32FCBb6b159867",
@@ -79103,36 +79103,36 @@
           "components": [
             "token tMU"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xe2De878d8Ca6bA544BFE80a10fAb0395DF32Cff0",
           "components": [
             "token tAMD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb904955bC71FE6c8e6aBE676ACca640Abc771622",
           "components": [
             "token tAMD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x0e257A952817ef779407aA27E5CD5F27863883Aa",
           "components": [
             "token tAMD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x503a69b2918DFA152eb0e0803174ed90ba5be756",
@@ -79148,36 +79148,36 @@
           "components": [
             "token tAVGO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x607991FE92F9476eBedA4761295E5E2cc37e2834",
           "components": [
             "token tAVGO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x26139195f7a82a52c62C4047F843C99c61Ed9a5E",
           "components": [
             "token tAMAT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x44DE27A07B33CD708A49fa79629fAC1df03C56d3",
           "components": [
             "token tAMAT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8C8810F83a0F5a8C1A3D541411100DBFB68C5b0c",
@@ -79193,36 +79193,36 @@
           "components": [
             "token tLRCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xD1c1D974837d3f79A92E14048993AD28a6228831",
           "components": [
             "token tLRCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x2630CA3D952b265F88C189f3679FA985dF34A93D",
           "components": [
             "token tLRCX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xb62E913f0cC881862527Fa7e41e1C98eEf09cedD",
           "components": [
             "token tTTWO"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1D6F0763e58FA6d472d470Eaaef0a4C08080d208",
@@ -79238,36 +79238,36 @@
           "components": [
             "token tTTWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xED0c085d92C262FB46937CB0B3C9763Af7fCCf30",
           "components": [
             "token tRKLB"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8FC87Be766C0cB6f254F1FDc9351D4B85B560FB3",
           "components": [
             "token tRKLB"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xFf5b15a4f478F296893b0b244D9b118Be87bCda2",
           "components": [
             "token tRKLB"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x50DE74136b67911799fc39B726bFC2707cCec769",
@@ -79283,36 +79283,36 @@
           "components": [
             "token tGOOGL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xdC29d07D2125699FA44cAB7e940542b526dB0abd",
           "components": [
             "token tGOOGL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb526Bf49DAB7F72B772FEF4B6D572C254A454ef7",
           "components": [
             "token tAAPL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x4E3600f48C61eF4513c72923ab50851bD546FFA9",
           "components": [
             "token tAAPL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x5f1DBfBf9345f3185C52aC3c080a0EDDb4f540c2",
@@ -79328,36 +79328,36 @@
           "components": [
             "token tMSFT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xAbb2641950C7dE9D3ec9AA05668e112E1DB701F6",
           "components": [
             "token tMSFT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x824eA918F35821a72E34b4eaD257AF60603cb20C",
           "components": [
             "token tMSFT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1eE2cE9654FFa008029e8e328a95f45EBfB3bC63",
           "components": [
             "token tLLY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xa6890e89D99Fd4F275c016d89A28ec24A428846D",
@@ -79373,36 +79373,36 @@
           "components": [
             "token tLLY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xdf4F0897Ec6f0C37Bfc974a815cA440A3c2C2e8B",
           "components": [
             "token tPTY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xc80730995D2C53114BAaFd2736E02f4E274D5B83",
           "components": [
             "token tPTY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x7b66449B3d7cD6569F1e235f6E4A664C24538EA8",
           "components": [
             "token tPTY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x06aE3f6CFaE124039902a79Da44ad2a4A4489250",
@@ -79418,36 +79418,36 @@
           "components": [
             "token tINTC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8CF3E580465e8DFaE05FF42BbFCe0d98BfF79580",
           "components": [
             "token tINTC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xDA52106FC0D44096Fd500E096b9045FdAc1d27B9",
           "components": [
             "token tHOOD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x3209384FB852E7D0510aFa896236f3f866c3876f",
           "components": [
             "token tHOOD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x9e2C9bE59aEB0D9ea7bF070B37fc02AF8a5af239",
@@ -79463,36 +79463,36 @@
           "components": [
             "token tORCL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x1B2A2C8c3621642c64cf1245016488fA0f76da78",
           "components": [
             "token tORCL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xE3D23D83a750789D6c4150B70013D896e623c948",
           "components": [
             "token tORCL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x3b3936b5Ec170Cdb5823012dBF4dF1d56Cfa1ba5",
           "components": [
             "token tSMCI"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8DdAEC53399E5324BbC60a368eA853c713629B1d",
@@ -79508,36 +79508,36 @@
           "components": [
             "token tSMCI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x15d415952a36D4cE80671e918B2531bdB25274E5",
           "components": [
             "token tBABA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x908266E3C3bFBb603d2EdF295deBE37C88985239",
           "components": [
             "token tBABA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xB7D42b94A8E51b098270ac92ceD23fDC8042FDB3",
           "components": [
             "token tBABA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xf3875383506677BCdA6b9F12c48Ff7fE300970D7",
@@ -79553,36 +79553,36 @@
           "components": [
             "token tTQQQ"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x58916AC4e186ad201376288a6655Ea46b55b8ac5",
           "components": [
             "token tTQQQ"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
           "components": [
             "token tFTF"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x710A14a41a8Ea2e25376124C48bf9cAdc1E69be5",
           "components": [
             "token tFTF"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x05215bE061F61d341703a6b63AcFDFf396965425",
@@ -79598,36 +79598,36 @@
           "components": [
             "token tCBRS"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x15925E1c19c0F0d392F6FCb40FdE9144Dd823962",
           "components": [
             "token tCBRS"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8Ea1ba9Fc0CF7338B41DdDa5B778a9118274AEA8",
           "components": [
             "token tCBRS"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xC04160F3e18e120C2259f3FE33864823bF3b9015",
           "components": [
             "token tMCD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
@@ -79643,36 +79643,36 @@
           "components": [
             "token tMCD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5e6e803242E52451FfdA82Fd7b5Ce4967B95C76E",
           "components": [
             "token tNKE"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
           "components": [
             "token tNKE"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6884986776e2e221B7Cd5c566bBD9338051F24fB",
           "components": [
             "token tNKE"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
@@ -79688,36 +79688,36 @@
           "components": [
             "token tGRND"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x9765A993735a639191ea2AAd2ac92eb122Bd394c",
           "components": [
             "token tGRND"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "components": [
             "token tDNUT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "components": [
             "token tDNUT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x0eE9d8bB4D7d035b5Dc33937573Cc03BDb419c6e",
@@ -79733,36 +79733,36 @@
           "components": [
             "token tPLBY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xBe127eeD812DC1F622227FAdc8639d4138B47b2e",
           "components": [
             "token tPLBY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xea8AF911CE3582d8fB5d6F1cd4695Ba115d1BdCA",
           "components": [
             "token tPLBY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF88e511a3c762eE7E9ddd348a417F8e8db45BDEE",
           "components": [
             "token tTR"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1abADE2601DA2617f441e2c2B3Fff870445FEfd1",
@@ -79778,36 +79778,36 @@
           "components": [
             "token tTR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x6c6f1CBe2fA860b1a15A02922d97A2d614db4923",
           "components": [
             "token tWEN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x441Eaae749B7BA0C4462F2b19a47fBe8De0DFac2",
           "components": [
             "token tWEN"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8231910EA52Ce2753C70D07545cEBfe476a609bA",
           "components": [
             "token tWEN"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xfEa217600e2b00bBB2172a99345016a0cEb7d29f",
@@ -79823,36 +79823,36 @@
           "components": [
             "token tFGI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7B3aA82Ca4Ef0eE146C32183366f3dED77400E0c",
           "components": [
             "token tFGI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x2E04C503ebd584C3c0Bb1d57E0C51E7B7EaE28E1",
           "components": [
             "token tBIRD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe93A1Bb48e797dDa936f405A7A253f55040584D5",
           "components": [
             "token tBIRD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x34a8386fd0a943D4c1F182e9eb6b5e125509dFF2",
@@ -79868,36 +79868,36 @@
           "components": [
             "token tSPY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xfBA650082205E5807a5eAF28BdcC8E851bB2f753",
           "components": [
             "token tSPY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xc3f3EAfCc5927C645cdb22CEEB68844D53AA7C7C",
           "components": [
             "token tSPY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF8bF43D61E4Cd2a5b5DfaD01BaC84693d7B95e51",
           "components": [
             "token tSNES"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x06096908dBC38fc54509024674E4fd1891B5F7CA",
@@ -79913,36 +79913,36 @@
           "components": [
             "token tSNES"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xfAE9AfE275E57759f8Fbae5f252c65aDBF1b773F",
           "components": [
             "token tWMT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x23A0944e82766242dA76cb0f77e0b7812e5487EA",
           "components": [
             "token tWMT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x395717EE8201419b21B40A400ea959a7D7d43A36",
           "components": [
             "token tWMT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x4d4D633bf04ABF6e4cF152C7c5c1ecD906Ab3de4",
@@ -79958,36 +79958,36 @@
           "components": [
             "token tMC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x9835e52FAFA9A92678C8A9420034706B1edD431e",
           "components": [
             "token tMC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xd78025Aa344E549A1D76eCE1591c481cC7Bc3548",
           "components": [
             "token tDIS"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x81f40cbCFAE7A1aD1f4474eD95A210DfA3B90B0f",
           "components": [
             "token tDIS"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x29e7fe750DFffd4D7C8e907C126324B8a5A9AdB7",
@@ -80003,36 +80003,36 @@
           "components": [
             "token tIFX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x88c10BEcFf283c21e9253d688ec06804359cF795",
           "components": [
             "token tIFX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xe509C440B68c4FBf95e24d7476d3e5Bc8b25a8BB",
           "components": [
             "token tIFX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xdab834808F67f8aC69642996A28571D4B2aD484E",
           "components": [
             "token tSOI"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xE828671B6EDd47122e4AcDE7aba6D12c58F244A3",
@@ -80048,36 +80048,36 @@
           "components": [
             "token tSOI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb4e960909A3fe9179Ed7e0FBC6ABF3301Ce85536",
           "components": [
             "token tTPRO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "components": [
             "token tTPRO"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe26C011A6dcFd8286a3Cf47718F14299d33f9478",
           "components": [
             "token tTPRO"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         }
       ]
     },
@@ -80088,8 +80088,8 @@
       "explorer": "api.etherscan.io/v2/api",
       "source": "foundry.toml",
       "total": 200,
-      "verified": 106,
-      "unverified": 12,
+      "verified": 107,
+      "unverified": 11,
       "unknown": 82,
       "rows": [
         {
@@ -80108,8 +80108,8 @@
             "Receipt beacon"
           ],
           "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "status": "unverified",
+          "reason": null
         },
         {
           "address": "0x24e98B8f8f951b1868DF88762Cef589AEdBC01eB",
@@ -80117,8 +80117,8 @@
             "Receipt-vault beacon"
           ],
           "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "status": "unverified",
+          "reason": null
         },
         {
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
@@ -80127,8 +80127,8 @@
             "zoltu stox-wrapped-token-vault-beacon@0_1_1"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xb9DCd744b0413Dff0EDC70A5B229c7aa03734613",
@@ -80137,17 +80137,17 @@
             "orchestrator"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x831E4e1bB2b9a67C00b7d17F252A18a22cd0bD2B",
           "components": [
             "timelock"
           ],
-          "contractName": "TimelockController",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x945D0Faf6f268e805246907507ef1044e70E75D7",
@@ -80156,17 +80156,17 @@
             "zoltu stox-orchestrator-beacon-set-deployer@0_1_30"
           ],
           "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "status": "unverified",
+          "reason": null
         },
         {
           "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
           "components": [
             "orchestrator"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
@@ -80183,8 +80183,8 @@
             "euAuthoriser"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x2dF5cFE6d688EF9fF1B7c59A499D254b1527b286",
@@ -80192,8 +80192,8 @@
             "zoltu stox-receipt@0_1_1"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xB092f127Bd44F19BFa96e78dB4BeaF1066D2914E",
@@ -80210,8 +80210,8 @@
             "zoltu stox-receipt-vault@0_1_1"
           ],
           "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "status": "unverified",
+          "reason": null
         },
         {
           "address": "0x52174538a83b18462c5cF898016539B086c920C7",
@@ -80219,8 +80219,8 @@
             "zoltu stox-receipt-vault@0_1_30"
           ],
           "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "status": "unverified",
+          "reason": null
         },
         {
           "address": "0x0D99e0174DbF885ceD6AE8dEb939b0F890450099",
@@ -80237,8 +80237,8 @@
             "zoltu stox-unified-deployer@0_1_1"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xbe5f05C4576e6D3e7bCCb4E64f08fc4F46Adf0cA",
@@ -80246,8 +80246,8 @@
             "zoltu stox-wrapped-token-vault-beacon-set-deployer@0_1_1"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x59aFE8ae48De65D9916b99C8CF9977061955C9A7",
@@ -80264,8 +80264,8 @@
             "zoltu stox-offchain-asset-receipt-vault-authorizer@0_1_1"
           ],
           "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "status": "unverified",
+          "reason": null
         },
         {
           "address": "0xeaD68E489Cb19453b294dc46a3A5710b0d46d17F",
@@ -80273,8 +80273,8 @@
             "zoltu stox-offchain-asset-receipt-vault-payment-mint-authorizer@0_1_1"
           ],
           "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "status": "unverified",
+          "reason": null
         },
         {
           "address": "0x51f78B77EdffDB62b8AeB753066C318a46D05D74",
@@ -80291,8 +80291,8 @@
             "zoltu stox-corporate-actions-facet@0_1_30"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1c3a4D12F88Bd39303Bb8510C6c1fa8Ad37A4b72",
@@ -80300,8 +80300,8 @@
             "zoltu stox-orchestrator@0_1_30"
           ],
           "contractName": null,
-          "status": "unverified",
-          "reason": null
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x75E0d127794b9C26eE35c55fbaBcc41c53Ccb37C",
@@ -80317,18 +80317,18 @@
           "components": [
             "token tMSTR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8Ea1ba9Fc0CF7338B41DdDa5B778a9118274AEA8",
           "components": [
             "token tMSTR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4Da175A70020EeEFa71C36d710307ed0803Aed60",
@@ -80344,36 +80344,36 @@
           "components": [
             "token tTSLA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x9452c603A552f35003206f9001C51007C36F530F",
           "components": [
             "token tTSLA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6872cEe8E1a07Dd8C1154755f7e215F2973caE52",
           "components": [
             "token tCOIN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x36FE4dc30b3b4906c9A64D5C957D49388E8d38E8",
           "components": [
             "token tCOIN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7bc0B10f99c95F9F3e1e12a436a3869B53c9cb9C",
@@ -80389,36 +80389,36 @@
           "components": [
             "token tSPYM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xeaA6da57f120D5a0acB9Ff4807F7990EfBbE303a",
           "components": [
             "token tSPYM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xc562dB7c3B8A41cBF8B84D3C057787723BD13d2F",
           "components": [
             "token tSPYM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x269CA594b6463F0D94086fb2D77dFaad32d1c6C4",
           "components": [
             "token tSIVR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x08A85a5AcE300e881e7c8828412A3Bdfd6F99054",
@@ -80434,36 +80434,36 @@
           "components": [
             "token tSIVR"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xA1768baE756058fE00dD281C405DDe1C48B00F3B",
           "components": [
             "token tCRCL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6a73364EaE305199B62585C4486C24f3b72b2C72",
           "components": [
             "token tCRCL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5536F0308E969C2DB0e52dBe99CB6871cC9E35f4",
           "components": [
             "token tCRCL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8790337c4Ce51b66CBa179129d830A3683780ff6",
@@ -80479,36 +80479,36 @@
           "components": [
             "token tNVDA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xbf56725da5a71B3111C660c2279ADA6D1270772E",
           "components": [
             "token tNVDA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xC04160F3e18e120C2259f3FE33864823bF3b9015",
           "components": [
             "token tIAU"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xe26b53fb8B0819682432d27C88D6505883cabafF",
           "components": [
             "token tIAU"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x37BbE0cd96266CFc10960521EfB32A822ef780E0",
@@ -80524,36 +80524,36 @@
           "components": [
             "token tPPLT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
           "components": [
             "token tPPLT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6884986776e2e221B7Cd5c566bBD9338051F24fB",
           "components": [
             "token tPPLT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xdca06fddf5320870C8E9D0534aa102677C36bCc4",
           "components": [
             "token tAMZN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
@@ -80569,36 +80569,36 @@
           "components": [
             "token tAMZN"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x4a88c84AA04a5151997e8E503BEe7fD92E0918A9",
           "components": [
             "token tBMNR"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xb7fC2b7881cceeB73D8DEccf69B6AcB8aC2E0826",
           "components": [
             "token tBMNR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x0eE9d8bB4D7d035b5Dc33937573Cc03BDb419c6e",
           "components": [
             "token tBMNR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
@@ -80614,36 +80614,36 @@
           "components": [
             "token tIBHG"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xea8AF911CE3582d8fB5d6F1cd4695Ba115d1BdCA",
           "components": [
             "token tIBHG"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF88e511a3c762eE7E9ddd348a417F8e8db45BDEE",
           "components": [
             "token tSGOV"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x1abADE2601DA2617f441e2c2B3Fff870445FEfd1",
           "components": [
             "token tSGOV"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xEb36fc7B191b8358c0Cc839A873fCe1108fc36d1",
@@ -80659,36 +80659,36 @@
           "components": [
             "token tQQQM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x441Eaae749B7BA0C4462F2b19a47fBe8De0DFac2",
           "components": [
             "token tQQQM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8231910EA52Ce2753C70D07545cEBfe476a609bA",
           "components": [
             "token tQQQM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xfEa217600e2b00bBB2172a99345016a0cEb7d29f",
           "components": [
             "token tVWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x685DFd386968B58D895F934485820C479C79a8bB",
@@ -80704,36 +80704,36 @@
           "components": [
             "token tVWO"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x2E04C503ebd584C3c0Bb1d57E0C51E7B7EaE28E1",
           "components": [
             "token tARKK"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe93A1Bb48e797dDa936f405A7A253f55040584D5",
           "components": [
             "token tARKK"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x34a8386fd0a943D4c1F182e9eb6b5e125509dFF2",
           "components": [
             "token tARKK"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x76D34283ec6d29b1b07E0e6077f5c436AD163B9c",
@@ -80749,36 +80749,36 @@
           "components": [
             "token tSPCX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xc3f3EAfCc5927C645cdb22CEEB68844D53AA7C7C",
           "components": [
             "token tSPCX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF8bF43D61E4Cd2a5b5DfaD01BaC84693d7B95e51",
           "components": [
             "token tCEG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x06096908dBC38fc54509024674E4fd1891B5F7CA",
           "components": [
             "token tCEG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4ed13d2C1f545FA73f53bE8c0BB82D279738C10f",
@@ -80794,36 +80794,36 @@
           "components": [
             "token tDRAM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x23A0944e82766242dA76cb0f77e0b7812e5487EA",
           "components": [
             "token tDRAM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x395717EE8201419b21B40A400ea959a7D7d43A36",
           "components": [
             "token tDRAM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4d4D633bf04ABF6e4cF152C7c5c1ecD906Ab3de4",
           "components": [
             "token tTSM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5Ce8b84756dDdE011734F04dC4bA2930C981B443",
@@ -80839,36 +80839,36 @@
           "components": [
             "token tTSM"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xd78025Aa344E549A1D76eCE1591c481cC7Bc3548",
           "components": [
             "token tSKHY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x81f40cbCFAE7A1aD1f4474eD95A210DfA3B90B0f",
           "components": [
             "token tSKHY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x29e7fe750DFffd4D7C8e907C126324B8a5A9AdB7",
           "components": [
             "token tSKHY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x89857176e95973FDC8f365532CF4c162b3EE11f0",
@@ -80884,36 +80884,36 @@
           "components": [
             "token tASML"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe509C440B68c4FBf95e24d7476d3e5Bc8b25a8BB",
           "components": [
             "token tASML"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xdab834808F67f8aC69642996A28571D4B2aD484E",
           "components": [
             "token tMU"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xE828671B6EDd47122e4AcDE7aba6D12c58F244A3",
           "components": [
             "token tMU"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x7e26dE68d52b54f9CBc8D64833c1fEDA82C36A92",
@@ -80929,36 +80929,36 @@
           "components": [
             "token tAMD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
           "components": [
             "token tAMD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe26C011A6dcFd8286a3Cf47718F14299d33f9478",
           "components": [
             "token tAMD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xaAb11f0141C2AA6B9A3845EFdB1a6D16DC40924a",
           "components": [
             "token tAVGO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xF4a7b2f0D02C488099e80874Bb035A5490fBB063",
@@ -80974,36 +80974,36 @@
           "components": [
             "token tAVGO"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x516d6c697C40E24De9D17811e642a07a6D70Cf07",
           "components": [
             "token tAMAT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xFF4d9a957868fAa99c8E46B16614527806BF9Df5",
           "components": [
             "token tAMAT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x53405346fc8a6235408083FE612bbc41703a32e2",
           "components": [
             "token tAMAT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x012ec0436407b8ade9A00614e01Abf1FaAB69755",
@@ -81019,36 +81019,36 @@
           "components": [
             "token tLRCX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe8A142fbDCFa6Ca663b507d4f23Df20d71cb4EFB",
           "components": [
             "token tLRCX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe319e212860ef85c4082B3B73641bD25721c88B2",
           "components": [
             "token tTTWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5A61EF0b15e4B2805aE066848f63ECA646988129",
           "components": [
             "token tTTWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xd06c1c388769FFeB47BDE408B0C5BBb071797aE1",
@@ -81064,36 +81064,36 @@
           "components": [
             "token tRKLB"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xcF06ba5e81B5148f371823d86e88a9508FA3c7E9",
           "components": [
             "token tRKLB"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xBF907e8bE14FfFeDef6FD2f02E780E03176Fc514",
           "components": [
             "token tRKLB"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x925eB169Ed82889a7AFE5292D97998acb26B6233",
           "components": [
             "token tGOOGL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xc7f956fc103bDD062C01B9cAaa1829a55fC9dE9F",
@@ -81109,36 +81109,36 @@
           "components": [
             "token tGOOGL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xfa63F568c4487711124D9f258D3A9167a89797c3",
           "components": [
             "token tAAPL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x407DEa5B6a1B7B7DbA021C55A9ecb294530A89Df",
           "components": [
             "token tAAPL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xC617Fe6239A8Eb2aD2CB2151fb56C9B5ACb72cE6",
           "components": [
             "token tAAPL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb9c3a133e2425eeC6D8a1dAD9A0D78308BE79a5E",
@@ -81154,36 +81154,36 @@
           "components": [
             "token tMSFT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xaCfd9C413fe0253dc9336dA97e426eaaB9A5AfbD",
           "components": [
             "token tMSFT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xd2F6AbFB251a3e43df9191486485dE0E46a9E6A5",
           "components": [
             "token tLLY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x55b3dcc96d635495831c3BE68ef7b1A28982De60",
           "components": [
             "token tLLY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x698E03e7504dcACF0D526d79713f51F363e961D4",
@@ -81199,36 +81199,36 @@
           "components": [
             "token tPTY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xEf58b9197cA61C09d140f37F009dAF5df5c811e8",
           "components": [
             "token tPTY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x27544f69AAceca9752714FE0c44B580FFef7f59A",
           "components": [
             "token tPTY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x2aA2258B97f44425769cF1a4E92a3562060A93E8",
           "components": [
             "token tINTC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x73d02c80d3611FB1E33fa61E9c99B4FD732418F3",
@@ -81244,36 +81244,36 @@
           "components": [
             "token tINTC"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x0D2029Ed7497A8CC5c65E808393CEd0AF2259385",
           "components": [
             "token tHOOD"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x83527768c19F845fC981A2deAeaD8C4E6c33b9Ce",
           "components": [
             "token tHOOD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x78E9123ba21f52B976FaB92dCF8944E8dE32b9Be",
           "components": [
             "token tHOOD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x683dd1C36169b25355c8c110942A820f395FFB7d",
@@ -81289,36 +81289,36 @@
           "components": [
             "token tORCL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x5Ac28Db4773d6B1903c96479E7ecfaBe83E90f8A",
           "components": [
             "token tORCL"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x185CcB3c9C09300b3877f71E747f041604f7603F",
           "components": [
             "token tSMCI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xaE817035eEabF45E7Ae1a145c29EBEb285349474",
           "components": [
             "token tSMCI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x0d685C1A795059Ed93873b80FE87617B99D01897",
@@ -81334,36 +81334,36 @@
           "components": [
             "token tBABA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xDE6d3a82B44ac3a5618e348646591d72448Ae7e0",
           "components": [
             "token tBABA"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x9d846203E00d5561F57648A6063d1D9E80B920AE",
           "components": [
             "token tBABA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xCd49DA53D0570E6d34AB786aA4EB4F9E0e6aB045",
           "components": [
             "token tTQQQ"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x2304ad0f88635f6088522FBe2703D27C4c3168c1",
@@ -81379,27 +81379,27 @@
           "components": [
             "token tTQQQ"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x162d65E4E4313b88D7eFc37F9c8110b334110406",
           "components": [
             "token tFTF"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xd6c50a60b46eeF15ae2E8dbeFC417A6F0F154bc5",
           "components": [
             "token tFTF"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xaa10C79156b09701A8ca313a985dbB671FaAe04D",
@@ -81424,9 +81424,9 @@
           "components": [
             "token tCBRS"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xdEa3AA3Ad91C7989Dd9986b8E5558d0e9889d718",
@@ -81442,9 +81442,9 @@
           "components": [
             "token tMCD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xf0FA8bC5ca94BeE5074dA2467dF3c8057a2D0502",
@@ -81469,9 +81469,9 @@
           "components": [
             "token tNKE"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1Cf7DCAd8f2Cd57FD84B3058eB389a31BD49C47e",
@@ -81487,9 +81487,9 @@
           "components": [
             "token tNKE"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4fdCE96b5EB6545C157619f835DA16dc71DE5E2e",
@@ -81514,9 +81514,9 @@
           "components": [
             "token tGRND"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x543e33E9276Cf00B74689c8E41FD7fC921128ba0",
@@ -81532,9 +81532,9 @@
           "components": [
             "token tDNUT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8E6176f684Ed70A790B86B69F1F7Fa5ac45Ce299",
@@ -81559,9 +81559,9 @@
           "components": [
             "token tPLBY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x80c55176C9F1D155B0B8E546e49368516813a8ec",
@@ -81577,9 +81577,9 @@
           "components": [
             "token tTR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xCf819a3E3746B543343D268B092BaB5244F8fE12",
@@ -81604,9 +81604,9 @@
           "components": [
             "token tWEN"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x82894CeD5F0b7009E4D531abe81863A523F4d9A5",
@@ -81622,9 +81622,9 @@
           "components": [
             "token tWEN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x042Dfd33De6766a8858f188DFcf207D311da6488",
@@ -81649,9 +81649,9 @@
           "components": [
             "token tFGI"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x21a53882B0023c1F4D98087564e91ae6CEA0b4Ec",
@@ -81667,9 +81667,9 @@
           "components": [
             "token tBIRD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x6cFDdBddbCe10Cda74329F5B85FAa01d9d8081F8",
@@ -81694,9 +81694,9 @@
           "components": [
             "token tSPY"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xDF7aBB7e9eA11b158CC17a84e79916Df3AA3f8f9",
@@ -81712,9 +81712,9 @@
           "components": [
             "token tSNES"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xbF85d4451CcB77B497532dBc4ACa58d10b5DC192",
@@ -81739,9 +81739,9 @@
           "components": [
             "token tWMT"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x0590F2C3ecE606F9E01af0291EFDEA7A28899782",
@@ -81757,9 +81757,9 @@
           "components": [
             "token tWMT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x28019de1dE36d5fA0077Dfe7859ED54664982081",
@@ -81784,9 +81784,9 @@
           "components": [
             "token tMC"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xe39a028cdC8a50e655A5b31ba8A48ce36f3A8243",
@@ -81802,9 +81802,9 @@
           "components": [
             "token tDIS"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x67d8ACfE2DADa892411b4A86CBAC6901383C8F4e",
@@ -81829,9 +81829,9 @@
           "components": [
             "token tIFX"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x7D20cc31248faFfCDA2FE9570EABA52b33E81661",
@@ -81847,9 +81847,9 @@
           "components": [
             "token tSOI"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xB29E832De5fA5E84636E97020983Fd16AEB500bB",
@@ -81874,9 +81874,9 @@
           "components": [
             "token tTPRO"
           ],
-          "contractName": "FraxBeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x8626f71cFB43D7e14a26728ba74a5dc5170d7794",
@@ -81892,9 +81892,9 @@
           "components": [
             "token tTPRO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "FraxBeaconProxy",
+          "status": "verified",
+          "reason": null
         }
       ]
     },
@@ -81905,9 +81905,9 @@
       "explorer": "api.etherscan.io/v2/api",
       "source": "foundry.toml",
       "total": 200,
-      "verified": 138,
+      "verified": 150,
       "unverified": 1,
-      "unknown": 61,
+      "unknown": 49,
       "rows": [
         {
           "address": "0xd64246e6b25F745f005E6233e050C9B879E660Dc",
@@ -81933,9 +81933,9 @@
           "components": [
             "Receipt-vault beacon"
           ],
-          "contractName": "UpgradeableBeacon",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x9FD790f65CA3aF2772358c653F097f0a4c7EE7d2",
@@ -81943,9 +81943,9 @@
             "Wrapped-token-vault beacon",
             "zoltu stox-wrapped-token-vault-beacon@0_1_1"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "UpgradeableBeacon",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb9DCd744b0413Dff0EDC70A5B229c7aa03734613",
@@ -81972,18 +81972,18 @@
             "orchestrator",
             "zoltu stox-orchestrator-beacon-set-deployer@0_1_30"
           ],
-          "contractName": "ST0xOrchestratorBeaconSetDeployer",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x3A7387a484d87Aa8bBA45E98AAB401Ce4FBF03E2",
           "components": [
             "orchestrator"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x66566cc91dEAf818859bD4b09B7903ac48998157",
@@ -82161,9 +82161,9 @@
           "components": [
             "token tTSLA"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x3a3E00d6fb65E686941f77DD375ca677Ad7772c2",
@@ -82440,9 +82440,9 @@
           "components": [
             "token tIBHG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x344147366F648640076d363FAF659c214788E99d",
@@ -82467,18 +82467,18 @@
           "components": [
             "token tSGOV"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x5Aa65dfF455C7f18C21370086EaFaEe4f2b63608",
           "components": [
             "token tQQQM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x63fDfe9cf53cB1FD5d98fE7537B881B86aE04A31",
@@ -82503,27 +82503,27 @@
           "components": [
             "token tVWO"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x01EE8b582147D1Aa8A8f2Adc2EBB91fA60082AB0",
           "components": [
             "token tVWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x1A09A154E2ae3890d1e18507a37bC3e2FCfA10cc",
           "components": [
             "token tVWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xDf406836D5A092894ee5d5bdC7F58e5bdc8D196A",
@@ -82539,9 +82539,9 @@
           "components": [
             "token tARKK"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF1E5f11e7fAA40b2C2CEdfAD825D81207f793862",
@@ -82557,27 +82557,27 @@
           "components": [
             "token tSPCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xC32C8166164E2cA18BB5fbf3E82CB776943d97FB",
           "components": [
             "token tSPCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x46dC08972b1d5D5876d244292c551dbbbC7d7e80",
           "components": [
             "token tSPCX"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x6240E93f1A08d43002e52b210cD49c54C813D780",
@@ -82602,9 +82602,9 @@
           "components": [
             "token tCEG"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5F5a1Bdc00ade7702ea5944B1374DC598dA3759f",
@@ -82656,9 +82656,9 @@
           "components": [
             "token tTSM"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xa3a7BEcF428b250Ec1b88Dbc65F579a9570670c7",
@@ -82683,27 +82683,27 @@
           "components": [
             "token tSKHY"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x77Ee94C8B85cF48a426F84B0F2d796eC77e41c7b",
           "components": [
             "token tASML"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb8605a64B57E7A8631c87F3187c783493231bdD9",
           "components": [
             "token tASML"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x6AEBd84df448d2E25080590797075b399Ca43549",
@@ -82719,9 +82719,9 @@
           "components": [
             "token tMU"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF01523C4ca52dF88f07938D4Fb32FCBb6b159867",
@@ -82737,27 +82737,27 @@
           "components": [
             "token tMU"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xe2De878d8Ca6bA544BFE80a10fAb0395DF32Cff0",
           "components": [
             "token tAMD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb904955bC71FE6c8e6aBE676ACca640Abc771622",
           "components": [
             "token tAMD"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x0e257A952817ef779407aA27E5CD5F27863883Aa",
@@ -82782,9 +82782,9 @@
           "components": [
             "token tAVGO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x607991FE92F9476eBedA4761295E5E2cc37e2834",
@@ -82836,9 +82836,9 @@
           "components": [
             "token tLRCX"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x2630CA3D952b265F88C189f3679FA985dF34A93D",
@@ -82863,27 +82863,27 @@
           "components": [
             "token tTTWO"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x47E3487B12272Bb1F933452F855CEb1C5e27204E",
           "components": [
             "token tTTWO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xED0c085d92C262FB46937CB0B3C9763Af7fCCf30",
           "components": [
             "token tRKLB"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8FC87Be766C0cB6f254F1FDc9351D4B85B560FB3",
@@ -82899,36 +82899,36 @@
           "components": [
             "token tRKLB"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x50DE74136b67911799fc39B726bFC2707cCec769",
           "components": [
             "token tGOOGL"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xca678d0d69F9E815d1A4f4dF05C904b2DDE017f8",
           "components": [
             "token tGOOGL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xdC29d07D2125699FA44cAB7e940542b526dB0abd",
           "components": [
             "token tGOOGL"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xb526Bf49DAB7F72B772FEF4B6D572C254A454ef7",
@@ -82944,9 +82944,9 @@
           "components": [
             "token tAAPL"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x5f1DBfBf9345f3185C52aC3c080a0EDDb4f540c2",
@@ -82962,9 +82962,9 @@
           "components": [
             "token tMSFT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xAbb2641950C7dE9D3ec9AA05668e112E1DB701F6",
@@ -82980,9 +82980,9 @@
           "components": [
             "token tMSFT"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x1eE2cE9654FFa008029e8e328a95f45EBfB3bC63",
@@ -82998,27 +82998,27 @@
           "components": [
             "token tLLY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x9a288A27a9898f145AF9575b46617bB1DF705106",
           "components": [
             "token tLLY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xdf4F0897Ec6f0C37Bfc974a815cA440A3c2C2e8B",
           "components": [
             "token tPTY"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xc80730995D2C53114BAaFd2736E02f4E274D5B83",
@@ -83043,9 +83043,9 @@
           "components": [
             "token tINTC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xd702276d50fdCf58b0E41b3f1f9651faBC1141f4",
@@ -83169,9 +83169,9 @@
           "components": [
             "token tBABA"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xf3875383506677BCdA6b9F12c48Ff7fE300970D7",
@@ -83196,9 +83196,9 @@
           "components": [
             "token tTQQQ"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x334ccaD2e7D774F5e6A13437977dD0878926deF8",
@@ -83286,9 +83286,9 @@
           "components": [
             "token tNKE"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x8fe134109A9Eb38D3f071a9Df4911081B4aa0814",
@@ -83313,18 +83313,18 @@
           "components": [
             "token tGRND"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xB80Bd4D599EeBBF2851d4E7F5594918B82FF1823",
           "components": [
             "token tGRND"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x9765A993735a639191ea2AAd2ac92eb122Bd394c",
@@ -83349,18 +83349,18 @@
           "components": [
             "token tDNUT"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x0eE9d8bB4D7d035b5Dc33937573Cc03BDb419c6e",
           "components": [
             "token tDNUT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x4a18036Dce22168D8891919a1c75aC2CAf9a08AB",
@@ -83385,27 +83385,27 @@
           "components": [
             "token tPLBY"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xF88e511a3c762eE7E9ddd348a417F8e8db45BDEE",
           "components": [
             "token tTR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x1abADE2601DA2617f441e2c2B3Fff870445FEfd1",
           "components": [
             "token tTR"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xEb36fc7B191b8358c0Cc839A873fCe1108fc36d1",
@@ -83421,9 +83421,9 @@
           "components": [
             "token tWEN"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x441Eaae749B7BA0C4462F2b19a47fBe8De0DFac2",
@@ -83439,9 +83439,9 @@
           "components": [
             "token tWEN"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xfEa217600e2b00bBB2172a99345016a0cEb7d29f",
@@ -83457,9 +83457,9 @@
           "components": [
             "token tFGI"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x7B3aA82Ca4Ef0eE146C32183366f3dED77400E0c",
@@ -83475,36 +83475,36 @@
           "components": [
             "token tBIRD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xe93A1Bb48e797dDa936f405A7A253f55040584D5",
           "components": [
             "token tBIRD"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x34a8386fd0a943D4c1F182e9eb6b5e125509dFF2",
           "components": [
             "token tBIRD"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x76D34283ec6d29b1b07E0e6077f5c436AD163B9c",
           "components": [
             "token tSPY"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0xfBA650082205E5807a5eAF28BdcC8E851bB2f753",
@@ -83520,27 +83520,27 @@
           "components": [
             "token tSPY"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xF8bF43D61E4Cd2a5b5DfaD01BaC84693d7B95e51",
           "components": [
             "token tSNES"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x06096908dBC38fc54509024674E4fd1891B5F7CA",
           "components": [
             "token tSNES"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x4ed13d2C1f545FA73f53bE8c0BB82D279738C10f",
@@ -83565,18 +83565,18 @@
           "components": [
             "token tWMT"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x395717EE8201419b21B40A400ea959a7D7d43A36",
           "components": [
             "token tWMT"
           ],
-          "contractName": "BeaconProxy",
-          "status": "verified",
-          "reason": null
+          "contractName": null,
+          "status": "unknown",
+          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
         },
         {
           "address": "0x4d4D633bf04ABF6e4cF152C7c5c1ecD906Ab3de4",
@@ -83601,9 +83601,9 @@
           "components": [
             "token tMC"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0xd78025Aa344E549A1D76eCE1591c481cC7Bc3548",
@@ -83691,9 +83691,9 @@
           "components": [
             "token tTPRO"
           ],
-          "contractName": null,
-          "status": "unknown",
-          "reason": "the explorer answered: Max calls per sec rate limit reached (3/sec)"
+          "contractName": "BeaconProxy",
+          "status": "verified",
+          "reason": null
         },
         {
           "address": "0x5d6775Cb5b22faF47471986e99265C1a4846d845",
@@ -103874,7 +103874,7 @@
       "codeLocRemovedSinceAudit": 3831,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/S01-Issuer/st0x.deploy/compare/3d6f480c57e81ce9fd730c33e2d93429c3ab4a6a...main",
-      "daysSinceAudit": 90
+      "daysSinceAudit": 91
     },
     {
       "name": "rain.deploy",
@@ -103916,7 +103916,7 @@
       "codeLocRemovedSinceAudit": 637,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.deploy/compare/sol-v0.1.15...main",
-      "daysSinceAudit": 49
+      "daysSinceAudit": 50
     },
     {
       "name": "raindex.deploy",
@@ -103958,7 +103958,7 @@
       "codeLocRemovedSinceAudit": 1841,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/raindex.deploy/compare/sol-v0.1.12...main",
-      "daysSinceAudit": 163
+      "daysSinceAudit": 164
     },
     {
       "name": "rain.factory",
@@ -104012,7 +104012,7 @@
       "codeLocRemovedSinceAudit": 3,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.factory/compare/sol-v0.2.4...main",
-      "daysSinceAudit": 35
+      "daysSinceAudit": 36
     },
     {
       "name": "rain.extrospection",
@@ -104060,7 +104060,7 @@
       "codeLocRemovedSinceAudit": 147,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.extrospection/compare/v0.1.1...main",
-      "daysSinceAudit": 197
+      "daysSinceAudit": 198
     },
     {
       "name": "rain.vats",
@@ -104108,7 +104108,7 @@
       "codeLocRemovedSinceAudit": 197,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.vats/compare/v0.1.5...main",
-      "daysSinceAudit": 189
+      "daysSinceAudit": 190
     },
     {
       "name": "rain.merkle.deploy",
@@ -104144,7 +104144,7 @@
       "codeLocRemovedSinceAudit": 109,
       "driftFullyClassified": false,
       "compareUrl": "https://github.com/rainlanguage/rain.merkle.deploy/compare/4d89f934342367f5be6ac4e03fd86d3d765dcff7...main",
-      "daysSinceAudit": 311
+      "daysSinceAudit": 312
     },
     {
       "name": "rain.intorastring",
@@ -104180,7 +104180,7 @@
       "codeLocRemovedSinceAudit": 2,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.intorastring/compare/8e5f0db1b84fc746b736368bd12f08fc5392bcfe...main",
-      "daysSinceAudit": 294
+      "daysSinceAudit": 295
     },
     {
       "name": "rainlang",
@@ -104228,7 +104228,7 @@
       "codeLocRemovedSinceAudit": 94,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rainlang/compare/b6ee56755517b410dbe74d6f11f06db847a0b001...main",
-      "daysSinceAudit": 11
+      "daysSinceAudit": 12
     },
     {
       "name": "rain.lib.leakybucket",
@@ -104264,7 +104264,7 @@
       "codeLocRemovedSinceAudit": 70,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.leakybucket/compare/06baa59b15b0b4ad51189288e3137eee677db37d...main",
-      "daysSinceAudit": 64
+      "daysSinceAudit": 65
     },
     {
       "name": "rain.math.float",
@@ -104306,7 +104306,7 @@
       "codeLocRemovedSinceAudit": 4,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.float/compare/8d1aec3214376797ee5d4c02087cfe9a1c2ad8b7...main",
-      "daysSinceAudit": 40
+      "daysSinceAudit": 41
     },
     {
       "name": "rain.string",
@@ -104348,7 +104348,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.string/compare/79b2f4fd3fbd0e21b8e757d94abd361178cefa62...main",
-      "daysSinceAudit": 92
+      "daysSinceAudit": 93
     },
     {
       "name": "rain.math.fixedpoint",
@@ -104390,7 +104390,7 @@
       "codeLocRemovedSinceAudit": 6,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.fixedpoint/compare/sol-v0.2.2...main",
-      "daysSinceAudit": 55
+      "daysSinceAudit": 56
     },
     {
       "name": "rain.lib.typecast",
@@ -104426,7 +104426,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.typecast/compare/fe4b2a4c05632e394b0643990d6de39658fb8fb5...main",
-      "daysSinceAudit": 311
+      "daysSinceAudit": 312
     },
     {
       "name": "rain.math.saturating",
@@ -104462,7 +104462,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.saturating/compare/22e58d70a223b18d83dfc5529e3ac87aef3ff478...main",
-      "daysSinceAudit": 359
+      "daysSinceAudit": 360
     },
     {
       "name": "rain.math.binary",
@@ -104498,7 +104498,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.math.binary/compare/c7ebb6cb99e1648d18594f888331bd584c6a911d...main",
-      "daysSinceAudit": 310
+      "daysSinceAudit": 311
     },
     {
       "name": "rain.datacontract",
@@ -104552,7 +104552,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.datacontract/compare/sol-v0.2.0...main",
-      "daysSinceAudit": 92
+      "daysSinceAudit": 93
     },
     {
       "name": "rain.lib.hash",
@@ -104594,7 +104594,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.hash/compare/092293e9f180a6df6c4fdfae5461870c117c0fb9...main",
-      "daysSinceAudit": 70
+      "daysSinceAudit": 71
     },
     {
       "name": "rain.lib.memkv",
@@ -104636,7 +104636,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.lib.memkv/compare/05dd78183e919872924ee061b855e29424bc43b4...main",
-      "daysSinceAudit": 68
+      "daysSinceAudit": 69
     },
     {
       "name": "rain.metadata",
@@ -104678,7 +104678,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.metadata/compare/sol-v0.1.43...main",
-      "daysSinceAudit": 83
+      "daysSinceAudit": 84
     },
     {
       "name": "rain.sol.binmaskflag",
@@ -104714,7 +104714,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.binmaskflag/compare/41d8dfb2edf9695d1344e8d56ddae7c1789690c4...main",
-      "daysSinceAudit": 300
+      "daysSinceAudit": 301
     },
     {
       "name": "rain.sol.codegen",
@@ -104762,7 +104762,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.sol.codegen/compare/sol-v0.1.39...main",
-      "daysSinceAudit": 55
+      "daysSinceAudit": 56
     },
     {
       "name": "rain.solmem",
@@ -104804,7 +104804,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.solmem/compare/e75080f460876f4070c4e127c8668d778df93e94...main",
-      "daysSinceAudit": 99
+      "daysSinceAudit": 100
     },
     {
       "name": "rain.tofu.erc20-decimals",
@@ -104846,7 +104846,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.tofu.erc20-decimals/compare/sol-v0.1.4...main",
-      "daysSinceAudit": 96
+      "daysSinceAudit": 97
     },
     {
       "name": "rain.verify.interface",
@@ -104882,7 +104882,7 @@
       "codeLocRemovedSinceAudit": 0,
       "driftFullyClassified": true,
       "compareUrl": "https://github.com/rainlanguage/rain.verify.interface/compare/f5f3bf39d6ab70cd177692a39b20eae6143899bf...main",
-      "daysSinceAudit": 296
+      "daysSinceAudit": 297
     }
   ],
   "untestedExternals": [
